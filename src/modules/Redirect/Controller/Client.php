@@ -45,6 +45,9 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $service = $this->di['mod_service']('redirect');
         $redirects = $service->getRedirects();
         foreach ($redirects as $redirect) {
+            if (($redirect['path'] ?? '') === '') {
+                continue;
+            }
             $app->get('/' . $redirect['path'], 'do_redirect', [], static::class);
         }
     }

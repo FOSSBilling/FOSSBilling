@@ -113,7 +113,7 @@ test('new entity columns ship with a MySQL migration', function (): void {
         $patchSources = [Path::join(PATH_ROOT, 'core', 'Update', 'Patcher.php'), ...glob(Path::join(PATH_ROOT, 'core', 'Update', 'Patch', 'Patch*.php')) ?: []];
         $patcher = '';
         foreach ($patchSources as $patchSource) {
-            $patcher .= (string) file_get_contents($patchSource) . "\n";
+            $patcher .= file_get_contents($patchSource) . "\n";
         }
         $uncovered = array_values(array_filter(
             $added,

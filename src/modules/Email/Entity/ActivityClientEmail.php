@@ -28,6 +28,7 @@ use FOSSBilling\Core\Doctrine\TimestampTrait;
 // Named per-table (unlike the pre-cutover schema's bare `client_id_idx`) because index names must be
 // unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
 #[ORM\Index(name: 'activity_client_email_client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'activity_client_email_created_at_idx', columns: ['created_at'])]
 #[ORM\HasLifecycleCallbacks]
 class ActivityClientEmail implements ArrayInterface, TimestampInterface
 {

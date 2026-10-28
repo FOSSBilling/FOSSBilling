@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Core\Update\Patch\Patch129;
 use FOSSBilling\Core\Update\Patch\Patch134;
 use FOSSBilling\Core\Update\Patch\Patch135;
+use FOSSBilling\Core\Update\Patch\Patch136;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -3523,10 +3524,10 @@ test('ensureSchemaInSync restores promo bundle and auto-apply columns missing fr
 });
 
 test('library cleanup follows the main migrations and preserves adapter directories', function (): void {
-    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 134);
-    expect($patches)->toHaveKey(135)
-        ->and($patches[135][1])->toBe('apply')
-        ->and($patches)->not->toHaveKey(136);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 135);
+    expect($patches)->toHaveKey(136)
+        ->and($patches[136][1])->toBe('apply')
+        ->and($patches)->not->toHaveKey(137);
 
     $patcher = new Patcher();
     $filesystem = Mockery::mock(Filesystem::class);
@@ -3536,7 +3537,7 @@ test('library cleanup follows the main migrations and preserves adapter director
         $filesystem->expects('remove')->with($path);
     }
     $patcher->filesystem = $filesystem;
-    (new Patch135())->apply($patcher);
+    (new Patch136())->apply($patcher);
 });
 
 test('custom page charset repair follows the promotion patch', function (): void {
@@ -3595,6 +3596,26 @@ test('Unicode migration classifies every current text and JSON field', function 
     sort($textColumns);
     expect($reviewed)->toBe($textColumns);
 });
+
+test('activity retention migration adds each created_at index only when missing', function (bool $migrated): void {
+    $tables = ['activity_admin_history', 'activity_client_email', 'activity_client_history', 'activity_system'];
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    foreach ($tables as $table) {
+        $index = $table . '_created_at_idx';
+        $alterSql = sprintf('ALTER TABLE `%s` ADD INDEX `%s` (`created_at`)', $table, $index);
+        $patcher->shouldReceive('tableHasIndex')->with($table, $index)->atLeast()->once()->andReturn($migrated);
+        if ($migrated) {
+            $patcher->shouldNotReceive('executeSql')->with($alterSql);
+        } else {
+            $patcher->shouldReceive('executeSql')->with($alterSql)->atLeast()->once();
+        }
+    }
+
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 134);
+    expect($patches)->toHaveKey(135)->and($patches[135][1])->toBe('apply');
+
+    (new Patch135())->apply($patcher);
+})->with([false, true]);
 
 test('hosting recovery migration adds the pending step only when missing', function (bool $migrated): void {
     $sql = 'SHOW COLUMNS FROM `service_hosting`';

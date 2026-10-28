@@ -117,8 +117,14 @@ class DomainValidator implements InjectionAwareInterface
         });
 
         if (!$validTlds) {
-            // Fallback behavior if we fail to get a valid list
-            return str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld) === 1;
+            // Fallback behavior if we fail to get a valid list. Accept dot-separated
+            // labels of letters, digits and inner hyphens, so multi-level public suffixes such as com.np
+            // or co.uk still validate. The last label must contain a letter because TLDs are never
+            // all-numeric, and empty labels or labels starting/ending with a hyphen are rejected.
+            // Intentionally permissive with no length limits (normalizeTld() enforces those): this only
+            // runs when the PSL is unreachable and must not block checkout. Leading dots are stripped
+            // above to match the online path; \z keeps trailing dots and newlines invalid.
+            return preg_match('/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)*(?=[a-z0-9-]*[a-z])[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\z/', $tld) === 1;
         }
 
         return $validTlds[$tld] ?? false;
