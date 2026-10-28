@@ -18,10 +18,13 @@ class Crypt implements InjectionAwareInterface
     protected ?Container $di = null;
 
     /**
-     * Derived keys for this PHP process, keyed by a hash of the passphrase. Deriving a key takes
-     * 100,000 PBKDF2 rounds (around 200 ms), so doing it on every encrypt and decrypt made reading
-     * encrypted settings expensive. Never persisted. Capped so a long-lived worker fed many distinct
-     * passphrases cannot grow memory without bound; the oldest entry is evicted first.
+     * Derived keys memoized for the remainder of the current request, keyed by a hash of the
+     * passphrase. Deriving a key takes 100,000 PBKDF2 rounds (around 200 ms), so doing it on
+     * every encrypt and decrypt made reading encrypted settings expensive. Never persisted:
+     * statics are reset at request shutdown under PHP-FPM, so each web request derives its key
+     * once, while CLI processes and long-lived workers reuse it for their whole lifetime.
+     * Capped so a worker fed many distinct passphrases cannot grow memory without bound;
+     * the oldest entry is evicted first.
      *
      * @var array<string, string>
      */

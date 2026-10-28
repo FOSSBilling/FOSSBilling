@@ -52,3 +52,23 @@ test('the derived key is computed once per passphrase and kept only in memory', 
     $keys = (new ReflectionClass(FOSSBilling\Crypt::class))->getStaticPropertyValue('derivedKeys');
     expect(array_keys($keys))->not->toContain('memo-passphrase-1');
 });
+
+test('a cache hit reuses the stored derived key without deriving it again', function (): void {
+    FOSSBilling\Crypt::clearDerivedKeys();
+    $crypt = new FOSSBilling\Crypt();
+    $crypt->encrypt('warm up', 'hit-passphrase');
+
+    // Replace the cached entry with a sentinel. A cache hit returns the stored value,
+    // so the sentinel must survive the next call; re-deriving would overwrite it.
+    $cache = new ReflectionClass(FOSSBilling\Crypt::class);
+    $id = hash('sha256', 'hit-passphrase');
+    $sentinel = str_repeat('s', 32);
+
+    $derived = $cache->getStaticPropertyValue('derivedKeys');
+    $derived[$id] = $sentinel;
+    $cache->setStaticPropertyValue('derivedKeys', $derived);
+
+    $crypt->encrypt('again', 'hit-passphrase');
+
+    expect($cache->getStaticPropertyValue('derivedKeys')[$id])->toBe($sentinel);
+});
