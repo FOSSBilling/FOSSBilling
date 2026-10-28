@@ -3605,16 +3605,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v22.0.0",
+            "version": "v22.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "c4c1f658483e717519935222e47af224ef4a508b"
+                "reference": "4acff32c29243bb716c54ecec78b5ecb729ce2be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/c4c1f658483e717519935222e47af224ef4a508b",
-                "reference": "c4c1f658483e717519935222e47af224ef4a508b",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/4acff32c29243bb716c54ecec78b5ecb729ce2be",
+                "reference": "4acff32c29243bb716c54ecec78b5ecb729ce2be",
                 "shasum": ""
             },
             "require": {
@@ -3661,9 +3661,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v22.0.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v22.0.1"
             },
-            "time": "2026-10-01T00:43:03+00:00"
+            "time": "2026-10-27T18:18:59+00:00"
         },
         {
             "name": "symfony/cache",
