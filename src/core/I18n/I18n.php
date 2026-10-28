@@ -145,7 +145,7 @@ class I18n
             return null;
         }
 
-        $cookies?->queue(CookieNames::LOCALE, (string) $matchingLocale, strtotime('+1 month'), '/');
+        $cookies?->queue(CookieNames::LOCALE, $matchingLocale, strtotime('+1 month'), '/');
 
         return $matchingLocale;
     }
