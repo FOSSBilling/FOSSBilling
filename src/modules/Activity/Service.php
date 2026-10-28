@@ -181,7 +181,7 @@ class Service implements InjectionAwareInterface
                 return;
             }
             $ids = $dbal->fetchFirstColumn(
-                sprintf('SELECT id FROM %s WHERE created_at <= ? ORDER BY id LIMIT %d', $table, self::RETENTION_BATCH_SIZE),
+                sprintf('SELECT id FROM %s WHERE created_at <= ? ORDER BY created_at, id LIMIT %d', $table, self::RETENTION_BATCH_SIZE),
                 [$cutoff],
             );
             if ($ids === []) {
