@@ -45,6 +45,36 @@ test('is tld valid falls back gracefully when the PSL download fails at the tran
     expect($validate->isTldValid('123'))->toBeFalse();
 });
 
+test('the TLD fallback accepts multi-level, hyphenated and punycode suffixes but not nonsense', function (string $tld, bool $expected): void {
+    $validate = new FOSSBilling\Validate();
+    $di = new Pimple\Container();
+    $di['cache'] = fn (): ArrayAdapter => new ArrayAdapter();
+    // The public suffix list cannot be fetched, so the fallback decides.
+    $di['http_client'] = fn (): MockHttpClient => new MockHttpClient(fn (): MockResponse => new MockResponse('', ['error' => 'offline']));
+    $validate->setDi($di);
+
+    expect($validate->isTldValid($tld))->toBe($expected);
+})->with([
+    'plain' => ['com', true],
+    'second level, Nepal' => ['com.np', true],
+    'second level, UK' => ['co.uk', true],
+    'hyphenated' => ['my-tld', true],
+    'punycode' => ['xn--p1ai', true],
+    'digit-prefixed final label containing a letter' => ['co.3abc', true],
+    'leading dot is stripped' => ['.com.np', true],
+    'multiple leading dots are stripped to match the online path' => ['..co.uk', true],
+    'all numeric is never a TLD' => ['123', false],
+    'numeric last label' => ['co.123', false],
+    'punycode with numeric final label' => ['xn--p1ai.123', false],
+    'malformed punycode prefix' => ['xn--', false],
+    'leading hyphen' => ['-com', false],
+    'trailing hyphen' => ['com-', false],
+    'empty label' => ['com..np', false],
+    'trailing dot' => ['co.uk.', false],
+    'trailing newline' => ["co.uk\n", false],
+    'space' => ['co m', false],
+]);
+
 dataset('domainProvider', fn (): array => domainProvider());
 
 test('is email valid using builtin filter', function (string $email, bool $expected): void {

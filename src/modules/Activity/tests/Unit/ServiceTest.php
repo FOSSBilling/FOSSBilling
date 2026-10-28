@@ -162,6 +162,7 @@ test('typed admin login event persists history', function (): void {
 
 test('logs retention failures through the application logger', function (): void {
     $dbal = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbal->shouldReceive('fetchFirstColumn')->once()->andReturn([1, 2]);
     $dbal->shouldReceive('executeStatement')
         ->once()
         ->andThrow(new RuntimeException('activity cleanup failed'));
@@ -186,6 +187,63 @@ test('logs retention failures through the application logger', function (): void
         'method' => 'error',
         'params' => ['activity cleanup failed'],
     ]);
+});
+
+test('retention removes old rows in batches, keeps recent rows and spares tables that are switched off', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([
+        $em->getClassMetadata(ActivityAdminHistory::class),
+        $em->getClassMetadata(ActivityClientHistory::class),
+        $em->getClassMetadata(ActivitySystem::class),
+        $em->getClassMetadata(Box\Mod\Email\Entity\ActivityClientEmail::class),
+    ]);
+
+    $old = date('Y-m-d H:i:s', time() - 200 * 86_400);
+    $recent = date('Y-m-d H:i:s', time() - 5 * 86_400);
+    // More old rows than one batch, so the loop has to run more than once.
+    $oldRows = Box\Mod\Activity\Service::RETENTION_BATCH_SIZE * 2 + 17;
+    $connection->beginTransaction();
+    for ($i = 0; $i < $oldRows; ++$i) {
+        $connection->insert('activity_system', ['priority' => 6, 'message' => 'old', 'created_at' => $old]);
+    }
+    $connection->insert('activity_system', ['priority' => 6, 'message' => 'recent', 'created_at' => $recent]);
+    $connection->insert('activity_admin_history', ['admin_id' => 1, 'ip' => '192.0.2.1', 'created_at' => $old]);
+    $connection->insert('activity_client_history', ['client_id' => 1, 'ip' => '192.0.2.1', 'created_at' => $old]);
+    $connection->insert('activity_client_email', ['client_id' => 1, 'sender' => 's', 'recipients' => 'r', 'subject' => 'x', 'content_html' => 'h', 'content_text' => 't', 'created_at' => $old, 'updated_at' => $old]);
+    $connection->commit();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    // Email retention is off (0), so the old email row must survive.
+    $extensionService->shouldReceive('getConfig')->with('mod_activity')->andReturn(['max_age' => 90, 'email_max_age' => 0]);
+    $di = container();
+    $di['dbal'] = $connection;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
+
+    $service = new Box\Mod\Activity\Service();
+    $service->setDi($di);
+    $service->cleanupOldActivity(new BeforeAdminCronRunEvent());
+
+    expect((int) $connection->fetchOne("SELECT COUNT(*) FROM activity_system WHERE message = 'old'"))->toBe(0)
+        ->and((int) $connection->fetchOne("SELECT COUNT(*) FROM activity_system WHERE message = 'recent'"))->toBe(1)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM activity_admin_history'))->toBe(0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM activity_client_history'))->toBe(0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM activity_client_email'))->toBe(1);
+});
+
+test('every activity table has an index on created_at for the retention sweep', function (): void {
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+
+    foreach ([ActivityAdminHistory::class, ActivityClientHistory::class, ActivitySystem::class, Box\Mod\Email\Entity\ActivityClientEmail::class] as $entity) {
+        $metadata = $em->getClassMetadata($entity);
+        $indexed = array_filter(
+            $metadata->table['indexes'] ?? [],
+            static fn (array $index): bool => ($index['columns'][0] ?? null) === 'created_at',
+        );
+        // Retention deletes by created_at; without an index every cron tick scans the whole table.
+        expect($indexed)->not->toBeEmpty("{$metadata->getTableName()} has no created_at index");
+    }
 });
 
 test('log email', function (): void {

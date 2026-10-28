@@ -34,8 +34,15 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Invalid invoice hash', null, 4001);
         }
 
+        // The per-IP bucket is charged first: it is what stops someone enumerating invoice hashes.
+        // The per-hash bucket is charged only once the read is allowed. Charging it before the
+        // authorization check would let anyone who holds the link spend the invoice's own budget
+        // with refused requests and lock the owner out for the rest of the window.
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
+
+        // Fail fast when the per-hash budget is already exhausted, before touching the database.
+        // The probe spends nothing; the budget is charged below, after authorization.
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash'], 0);
 
         $model = $this->getService()->getInvoiceRepository()->findByHash((string) $data['hash']);
         if (!$model) {
@@ -43,6 +50,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
         $service = $this->getService();
         $service->checkInvoiceAuth($model, InvoiceOperation::READ);
+
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
 
         $result = $service->toApiArray($model, true, $this->getIdentity());
         $result['debited_by_invoice_ids'] = $service->getDebitingInvoiceIds($model);
@@ -94,9 +103,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());
+
+        // Check the per-hash budget without spending it, so an exhausted invoice is refused before the
+        // gateway is contacted. It is spent below, after processInvoice() has run its own authorization
+        // check, so a refused request does not count against the invoice. The probe is best-effort:
+        // in a race the final charge below remains authoritative and may still throw afterwards.
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash'], 0);
+
+        $result = $this->getService()->processInvoice($data);
+
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash']);
 
-        return $this->getService()->processInvoice($data);
+        return $result;
     }
 
     /**
@@ -120,8 +138,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
+
+        // Fail fast when the per-hash budget is already exhausted, before rendering the PDF.
+        // The probe spends nothing; generatePDF() performs the authorization check itself and the
+        // budget is charged below, only for a PDF the caller was allowed to have.
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash'], 0);
+
+        // generatePDF() performs the authorization check itself; charge the per-hash bucket only
+        // for a PDF the caller was allowed to have.
+        $pdf = $this->getService()->generatePDF($data['hash'], $this->getIdentity());
+
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
 
-        return $this->getService()->generatePDF($data['hash'], $this->getIdentity());
+        return $pdf;
     }
 }
