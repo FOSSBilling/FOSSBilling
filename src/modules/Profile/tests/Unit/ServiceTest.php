@@ -269,6 +269,27 @@ test('throws exception when email change is not allowed', function (): void {
     expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeClientProfileUpdateEvent::class);
 });
 
+test('does not reject a save that omits the email when email changes are disabled', function (): void {
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getConfig')->andReturn(['disable_change_email' => 1]);
+
+    $di = container();
+    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['event_dispatcher'] = new ProfileTestEventDispatcher();
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
+    $model->setEmail('info@example.com');
+
+    $service = new Service();
+    $service->setDi($di);
+
+    // No email key at all: the email is left unchanged, so this is not an attempt to change it.
+    expect($service->updateClient($model, ['first_name' => 'A', 'last_name' => 'B']))->toBeTrue()
+        ->and($model->getEmail())->toBe('info@example.com');
+});
+
 test('throws exception when email already registered', function (): void {
     $eventDispatcher = new ProfileTestEventDispatcher();
 
