@@ -42,7 +42,7 @@ test('password reset confirmation passes the validated hash to the template', fu
 test('route constraints are keyed by parameters that exist in the route', function (): void {
     $routes = [];
     $app = Mockery::mock('\Box_App');
-    $app->shouldReceive('get')->andReturnUsing(function (string $url, string $method, array $conditions) use (&$routes): void {
+    $app->shouldReceive('get')->andReturnUsing(function (string $url, string $method, array $conditions, ?string $class = null) use (&$routes): void {
         $routes[$url] = $conditions;
     });
 
@@ -51,7 +51,7 @@ test('route constraints are keyed by parameters that exist in the route', functi
 
     expect($routes)->not->toBeEmpty();
     foreach ($routes as $url => $conditions) {
-        preg_match_all('/:(\w+)/', $url, $matches);
+        preg_match_all('@:([a-zA-Z_\-]+)@', $url, $matches);
         // A constraint keyed by a name that is not in the path is silently ignored, leaving the real
         // parameter unconstrained.
         expect(array_diff(array_keys($conditions), $matches[1]))->toBe([], "unknown constraint key on {$url}");
