@@ -29,8 +29,18 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
-    final public const int RETENTION_BATCH_SIZE = 5000;
+    public const int RETENTION_BATCH_SIZE = 5000;
     private const int RETENTION_TIME_BUDGET_SECONDS = 15;
+
+    /**
+     * @var list<string>
+     */
+    private const array RETENTION_TABLES = [
+        'activity_admin_history',
+        'activity_client_history',
+        'activity_system',
+        'activity_client_email',
+    ];
 
     protected ?\Pimple\Container $di = null;
 
@@ -126,7 +136,6 @@ class Service implements InjectionAwareInterface
 
         $ageInSeconds = $retention * 86_400;
         $emailAgeInSeconds = $emailRetention * 86_400;
-        $dbal = $this->getDbal();
 
         try {
             if ($retention !== 0) {
@@ -151,6 +160,10 @@ class Service implements InjectionAwareInterface
      */
     private function purgeOlderThan(string $table, string $cutoff): void
     {
+        if (!in_array($table, self::RETENTION_TABLES, true)) {
+            throw new \InvalidArgumentException('Unsupported activity table: ' . $table);
+        }
+
         $dbal = $this->getDbal();
         $deadline = microtime(true) + self::RETENTION_TIME_BUDGET_SECONDS;
 
