@@ -18,7 +18,11 @@
     "homepage": "https://fossbilling.org",
     "scripts": {
         "post-install-cmd": [
-            "php src/vendor/symfony/intl/Resources/bin/compress || true"
+            "php src/vendor/symfony/intl/Resources/bin/compress || true",
+            "php tools/composer/sync-rector-phpdoc-parser.php || true"
+        ],
+        "post-update-cmd": [
+            "php tools/composer/sync-rector-phpdoc-parser.php || true"
         ],
         "test": "pest --test-directory ../tests",
         "phpstan": "phpstan analyze --memory-limit=512M",
@@ -92,6 +96,7 @@
         "mockery/mockery": "^1.6",
         "pestphp/pest": "^4.0",
         "phpstan/extension-installer": "^1.4.3",
+        "phpstan/phpdoc-parser": "^2.4",
         "phpstan/phpstan": "^2.1.33",
         "phpstan/phpstan-deprecation-rules": "^2.0.3",
         "rector/rector": "^2.3"
