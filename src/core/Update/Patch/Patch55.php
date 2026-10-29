@@ -39,9 +39,6 @@ class Patch55 implements PatchInterface
 
             $patcher->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'spamchecker' AND meta_key = 'listener'");
 
-            $hookService = $patcher->di['mod_service']('hook');
-            $hookService->batchConnect('antispam');
-
             $patcher->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
             $spamcheckerExt = $extService->getExtensionRepository()->findOneByTypeAndName('mod', 'spamchecker');
