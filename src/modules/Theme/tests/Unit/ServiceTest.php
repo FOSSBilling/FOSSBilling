@@ -294,6 +294,24 @@ test('getThemeSettings falls back to the shipped preset for a preset created in 
     expect($service->getThemeSettings($themeMock, 'My preset'))->toBe(['custom_key' => 'saved', 'new_key' => 'shipped-value']);
 });
 
+test('getThemeSettings returns shipped defaults for a preset without saved metadata', function (): void {
+    $service = new Service();
+
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')->andReturn(null);
+
+    $themeMock = Mockery::mock(Model\Theme::class);
+    $themeMock->shouldReceive('getName')->andReturn('default');
+    // 'My preset' exists only in the database, so settings_data.json has no entry for it.
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('My preset')->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('Default');
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('Default')->andReturn(['custom_key' => 'shipped', 'new_key' => 'shipped-value']);
+
+    $service->setDi(themeContainerWithRepository($repositoryMock));
+
+    expect($service->getThemeSettings($themeMock, 'My preset'))->toBe(['custom_key' => 'shipped', 'new_key' => 'shipped-value']);
+});
+
 test('getThemeSettings with empty presets returns empty array', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();

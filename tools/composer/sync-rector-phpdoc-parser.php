@@ -55,7 +55,8 @@ if (!is_array($composerConfig)) {
     fail('could not parse composer.json');
 }
 
-$vendorDir = $projectRoot . '/' . ($composerConfig['config']['vendor-dir'] ?? 'vendor');
+$configuredVendorDir = getenv('COMPOSER_VENDOR_DIR') ?: ($composerConfig['config']['vendor-dir'] ?? 'vendor');
+$vendorDir = str_starts_with($configuredVendorDir, '/') ? $configuredVendorDir : $projectRoot . '/' . $configuredVendorDir;
 $rootPackageDir = $vendorDir . '/phpstan/phpdoc-parser';
 $nestedPackageDir = $vendorDir . '/rector/rector/vendor/phpstan/phpdoc-parser';
 
@@ -102,27 +103,30 @@ if (version_compare($nestedVersion, $rootVersion, '>=')) {
     exit(0);
 }
 
-function removeTree(string $path): void
+function removeTree(string $path): bool
 {
     if (is_link($path) || is_file($path)) {
-        unlink($path);
-
-        return;
+        return unlink($path);
     }
+    $ok = true;
     foreach ((array) scandir($path) as $entry) {
         if ($entry === '.' || $entry === '..') {
             continue;
         }
-        removeTree($path . '/' . $entry);
+        $removed = removeTree($path . '/' . $entry);
+        $ok = $ok && $removed;
     }
-    rmdir($path);
+    $removed = rmdir($path);
+
+    return $ok && $removed;
 }
 
-function copyTree(string $from, string $to): void
+function copyTree(string $from, string $to): bool
 {
-    if (!is_dir($to)) {
-        mkdir($to, 0o755, true);
+    if (!is_dir($to) && !mkdir($to, 0o755, true)) {
+        return false;
     }
+    $ok = true;
     foreach ((array) scandir($from) as $entry) {
         if ($entry === '.' || $entry === '..') {
             continue;
@@ -130,17 +134,26 @@ function copyTree(string $from, string $to): void
         $source = $from . '/' . $entry;
         $target = $to . '/' . $entry;
         if (is_link($source)) {
-            symlink((string) readlink($source), $target);
+            $copied = symlink((string) readlink($source), $target);
         } elseif (is_dir($source)) {
-            copyTree($source, $target);
+            $copied = copyTree($source, $target);
         } else {
-            copy($source, $target);
+            $copied = copy($source, $target);
         }
+        $ok = $ok && $copied;
     }
+
+    return $ok;
 }
 
-removeTree($nestedPackageDir);
-copyTree($rootPackageDir, $nestedPackageDir);
+$removed = removeTree($nestedPackageDir);
+$copied = $removed && copyTree($rootPackageDir, $nestedPackageDir);
+if (!$copied) {
+    // Leave a partial tree and the old metadata in place so a later run retries
+    // instead of treating the nested copy as up to date. Never fail the install.
+    out('warning: sync failed, leaving the nested copy for a later run to retry');
+    exit(0);
+}
 
 // Keep the nested metadata truthful so repeat runs are a no-op. Composer
 // never reads this file (the nested copy is not composer-managed); it only

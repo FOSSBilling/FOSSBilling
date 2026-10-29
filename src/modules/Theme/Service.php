@@ -184,9 +184,12 @@ class Service implements InjectionAwareInterface
     {
         $preset ??= $this->getCurrentThemePreset($theme);
 
-        // A preset created in the admin has no entry in settings_data.json. Fall back to the theme's
-        // shipped preset so the settings are complete and templates need no defaults of their own.
+        // A preset created in the admin has no entry in settings_data.json. Fall back to the
+        // shipped defaults so the settings are complete and templates need no defaults of their
+        // own. Prefer the 'Default' preset over the file's current preset, which may name another
+        // custom preset once the admin has saved one.
         $defaults = $theme->getPresetFromSettingsDataFile($preset)
+            ?: $theme->getPresetFromSettingsDataFile('Default')
             ?: $theme->getPresetFromSettingsDataFile($theme->getCurrentPreset());
 
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
