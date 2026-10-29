@@ -108,8 +108,12 @@ function removeTree(string $path): bool
     if (is_link($path) || is_file($path)) {
         return unlink($path);
     }
+    $entries = scandir($path);
+    if ($entries === false) {
+        return false;
+    }
     $ok = true;
-    foreach ((array) scandir($path) as $entry) {
+    foreach ($entries as $entry) {
         if ($entry === '.' || $entry === '..') {
             continue;
         }
@@ -126,8 +130,12 @@ function copyTree(string $from, string $to): bool
     if (!is_dir($to) && !mkdir($to, 0o755, true)) {
         return false;
     }
+    $entries = scandir($from);
+    if ($entries === false) {
+        return false;
+    }
     $ok = true;
-    foreach ((array) scandir($from) as $entry) {
+    foreach ($entries as $entry) {
         if ($entry === '.' || $entry === '..') {
             continue;
         }
@@ -146,14 +154,31 @@ function copyTree(string $from, string $to): bool
     return $ok;
 }
 
-$removed = removeTree($nestedPackageDir);
-$copied = $removed && copyTree($rootPackageDir, $nestedPackageDir);
-if (!$copied) {
-    // Leave a partial tree and the old metadata in place so a later run retries
-    // instead of treating the nested copy as up to date. Never fail the install.
-    out('warning: sync failed, leaving the nested copy for a later run to retry');
+// Stage the copy beside the nested copy so a failed copy never leaves the working
+// tree half-replaced: the existing directory is only swapped out once the staged
+// copy is complete. Never fail the install.
+$stagingDir = $nestedPackageDir . '.staging-' . getmypid();
+$backupDir = $nestedPackageDir . '.backup-' . getmypid();
+if (!copyTree($rootPackageDir, $stagingDir) || !is_file($stagingDir . '/src/Ast/Type/CallableTypeNode.php')) {
+    removeTree($stagingDir);
+    out('warning: sync failed, keeping the existing nested copy for a later run to retry');
     exit(0);
 }
+if (!rename($nestedPackageDir, $backupDir)) {
+    removeTree($stagingDir);
+    out('warning: sync failed, keeping the existing nested copy for a later run to retry');
+    exit(0);
+}
+if (!rename($stagingDir, $nestedPackageDir)) {
+    if (!rename($backupDir, $nestedPackageDir)) {
+        out('warning: sync failed and the nested copy could not be restored from ' . $backupDir);
+        exit(0);
+    }
+    removeTree($stagingDir);
+    out('warning: sync failed, keeping the existing nested copy for a later run to retry');
+    exit(0);
+}
+removeTree($backupDir);
 
 // Keep the nested metadata truthful so repeat runs are a no-op. Composer
 // never reads this file (the nested copy is not composer-managed); it only
