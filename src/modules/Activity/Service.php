@@ -20,6 +20,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Event\AfterClientLoginEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use FOSSBilling\InjectionAwareInterface;
@@ -28,6 +29,22 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
+    // Sized to stay within every supported driver's bound-parameter ceiling: the
+    // batched DELETE expands to one placeholder per id, and SQLite before 3.32
+    // allows only 999 host parameters per statement.
+    public const int RETENTION_BATCH_SIZE = 500;
+    private const int RETENTION_TIME_BUDGET_SECONDS = 15;
+
+    /**
+     * @var list<string>
+     */
+    private const array RETENTION_TABLES = [
+        'activity_admin_history',
+        'activity_client_history',
+        'activity_system',
+        'activity_client_email',
+    ];
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -122,24 +139,60 @@ class Service implements InjectionAwareInterface
 
         $ageInSeconds = $retention * 86_400;
         $emailAgeInSeconds = $emailRetention * 86_400;
-        $dbal = $this->getDbal();
+        // One budget for the whole sweep: this listener runs before the cron task
+        // loop, so per-table budgets could delay later tasks by up to ~60s.
+        // Anything not purged in time is picked up on the next run.
+        $deadline = microtime(true) + self::RETENTION_TIME_BUDGET_SECONDS;
 
         try {
             if ($retention !== 0) {
                 $createdAt = date('Y-m-d H:i:s', time() - $ageInSeconds);
-                $dbal->executeStatement('DELETE FROM activity_admin_history WHERE created_at <= ?', [$createdAt]);
-                $dbal->executeStatement('DELETE FROM activity_client_history WHERE created_at <= ?', [$createdAt]);
-                $dbal->executeStatement('DELETE FROM activity_system WHERE created_at <= ?', [$createdAt]);
+                $this->purgeOlderThan('activity_admin_history', $createdAt, $deadline);
+                $this->purgeOlderThan('activity_client_history', $createdAt, $deadline);
+                $this->purgeOlderThan('activity_system', $createdAt, $deadline);
             }
 
             if ($emailRetention !== 0) {
-                $dbal->executeStatement('DELETE FROM activity_client_email WHERE created_at <= ?', [
-                    date('Y-m-d H:i:s', time() - $emailAgeInSeconds),
-                ]);
+                $this->purgeOlderThan('activity_client_email', date('Y-m-d H:i:s', time() - $emailAgeInSeconds), $deadline);
             }
         } catch (\Exception $e) {
             $this->di['logger']->error($e->getMessage());
         }
+    }
+
+    /**
+     * Delete rows older than the cutoff in bounded batches, so a large backlog (a long-lived install, or
+     * retention just switched on) is worked off over a few cron runs instead of one huge DELETE that
+     * holds locks and can exceed the time limit. Whatever is left is picked up on the next run.
+     *
+     * The deadline is shared across all tables in one sweep, so the whole purge
+     * stays within a single time budget instead of one budget per table.
+     */
+    private function purgeOlderThan(string $table, string $cutoff, float $deadline): void
+    {
+        if (!in_array($table, self::RETENTION_TABLES, true)) {
+            throw new \InvalidArgumentException('Unsupported activity table: ' . $table);
+        }
+
+        $dbal = $this->getDbal();
+
+        do {
+            if (microtime(true) >= $deadline) {
+                return;
+            }
+            $ids = $dbal->fetchFirstColumn(
+                sprintf('SELECT id FROM %s WHERE created_at <= ? ORDER BY created_at, id LIMIT %d', $table, self::RETENTION_BATCH_SIZE),
+                [$cutoff],
+            );
+            if ($ids === []) {
+                return;
+            }
+            $dbal->executeStatement(
+                sprintf('DELETE FROM %s WHERE id IN (?)', $table),
+                [$ids],
+                [ArrayParameterType::INTEGER],
+            );
+        } while (count($ids) === self::RETENTION_BATCH_SIZE && microtime(true) < $deadline);
     }
 
     public function getSearchQuery($data): array

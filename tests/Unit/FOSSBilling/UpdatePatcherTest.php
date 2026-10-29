@@ -3638,3 +3638,32 @@ test('hosting recovery migration adds the pending step only when missing', funct
     expect($patches)->toHaveKey(134)->and($patches[134][1])->toBe('patch134');
     (new ReflectionMethod($patcher, 'patch134'))->invoke($patcher);
 })->with([false, true]);
+
+test('activity retention migration adds each created_at index only when missing', function (bool $migrated): void {
+    $tables = ['activity_admin_history', 'activity_client_email', 'activity_client_history', 'activity_system'];
+    $pdo = Mockery::mock(PDO::class);
+    foreach ($tables as $table) {
+        $index = "{$table}_created_at_idx";
+        $show = Mockery::mock(PDOStatement::class);
+        $show->expects('execute')->with([])->andReturnTrue();
+        $show->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn($migrated ? [['Key_name' => $index]] : [['Key_name' => 'PRIMARY']]);
+        $pdo->expects('prepare')->with("SHOW INDEX FROM `{$table}`")->andReturn($show);
+
+        $sql = "ALTER TABLE `{$table}` ADD INDEX `{$index}` (`created_at`)";
+        if ($migrated) {
+            $pdo->shouldNotReceive('prepare')->with($sql);
+        } else {
+            $statement = Mockery::mock(PDOStatement::class);
+            $statement->expects('execute')->with([])->andReturnTrue();
+            $pdo->expects('prepare')->with($sql)->andReturn($statement);
+        }
+    }
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    $patches = (new ReflectionMethod($patcher, 'getPatches'))->invoke($patcher, 134);
+    expect($patches)->toHaveKey(135)->and($patches[135][1])->toBe('patch135');
+    (new ReflectionMethod($patcher, 'patch135'))->invoke($patcher);
+})->with([false, true]);
