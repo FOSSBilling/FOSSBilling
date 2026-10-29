@@ -330,7 +330,7 @@ class Service implements InjectionAwareInterface
         return $client instanceof Client ? $client->getFullName() : '';
     }
 
-    public function getExpirationDate(ServiceLicense $model)
+    public function getExpirationDate(ServiceLicense $model): ?string
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
