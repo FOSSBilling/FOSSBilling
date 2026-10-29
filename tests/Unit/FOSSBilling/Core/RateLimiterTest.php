@@ -104,7 +104,9 @@ test('consume or throw raises rate limit exception', function (): void {
             expect($exception->getRateLimitResult()->getPolicy())->toBe('client_password_reset_email');
             expect($exception->hasRetryAfter())->toBeTrue();
             expect($exception->getRetryAfterSeconds())->toBeGreaterThan(0);
-            expect($exception->getRetryAfterSeconds())->toBeLessThanOrEqual(3600);
+            // Since symfony/rate-limiter 7.4.22, retryAfter is rounded up (up to one second late)
+            // rather than up to one second early, so a 1-hour window can report 3601.
+            expect($exception->getRetryAfterSeconds())->toBeLessThanOrEqual(3601);
         });
 });
 
