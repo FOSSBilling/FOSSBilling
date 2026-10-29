@@ -14,7 +14,7 @@ if (php_sapi_name() !== 'cli') {
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
-use FOSSBilling\Environment;
+use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Path;
 
 $di = include Path::join(PATH_ROOT, 'di.php');

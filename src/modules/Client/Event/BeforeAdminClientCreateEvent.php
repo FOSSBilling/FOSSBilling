@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Admin client creation input excluding the password fields. */
 final class BeforeAdminClientCreateEvent extends Event

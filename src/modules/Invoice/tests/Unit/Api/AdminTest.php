@@ -62,7 +62,7 @@ test('gets invoice list', function (): void {
         ->with([])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper(createEntity(Invoice::class))]]);
@@ -100,7 +100,7 @@ test('gets invoice summaries without loading invoice models', function (): void 
         ->with([1])
         ->andReturn([1 => ['subtotal' => 25.0, 'taxable_subtotal' => 0.0]]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper($invoice)]]);
@@ -261,13 +261,13 @@ test('marking a deposit invoice as paid requires the balance permission', functi
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('client', 'manage_balance', null, Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('You need the "client.manage_balance" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "client.manage_balance" permission to perform this action', [], 403));
     $api->setDi($di);
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     expect(fn () => $api->mark_as_paid($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'client.manage_balance');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'client.manage_balance');
 });
 
 test('prepares an invoice', function (): void {
@@ -421,7 +421,7 @@ test('rejects a debit note without lines', function (): void {
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
-    expect(fn () => $api->debit(['id' => 1]))->toThrow(FOSSBilling\InformationException::class, 'Debit lines are missing');
+    expect(fn () => $api->debit(['id' => 1]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Debit lines are missing');
 });
 
 test('attaches a product order to an invoice', function (): void {
@@ -1061,7 +1061,7 @@ test('gets transaction list', function (): void {
         ->with([])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe', 'gateway_code' => 'Stripe'])]]);
@@ -1173,7 +1173,7 @@ test('gets gateway list', function (): void {
     $gatewayService->shouldReceive('toApiArray')
         ->andReturn(['id' => 1, 'code' => 'Custom']);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->with($qb, Mockery::any(), Mockery::any())
@@ -1334,13 +1334,13 @@ test('uploads a gateway image from the multipart request', function (): void {
 test('gateway image upload requires gateway management permission before processing the file', function (): void {
     $api = apiEndpoint(new Admin());
     $staff = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('invoice', 'manage_gateways', null, null)
-        ->andThrow(new FOSSBilling\Exception('Denied'));
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('invoice', 'manage_gateways', Mockery::any(), Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\BaseException('Denied'));
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['staff' => $staff]));
     $api->setDi($di);
 
-    expect(fn () => $api->gateway_update(['id' => 1]))->toThrow(FOSSBilling\Exception::class, 'Denied');
+    expect(fn () => $api->gateway_update(['id' => 1]))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Denied');
 });
 
 test('deletes a gateway', function (): void {
@@ -1381,7 +1381,7 @@ test('gets subscription list', function (): void {
     $subscriptionService->shouldReceive('getSubscriptionRepository')->andReturn($subscriptionRepository);
     $subscriptionService->shouldReceive('toApiArray')->andReturn([]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->atLeast()->once()
         ->andReturn(['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20]);
@@ -1449,7 +1449,7 @@ test('throws exception when creating subscription with currency mismatch', funct
     $api->setDi($di);
 
     expect(fn () => $api->subscription_create($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
 });
 
 test('creates a subscription with case-insensitive currency match', function (): void {
@@ -1623,7 +1623,7 @@ test('gets tax list', function (): void {
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('getTaxRepository')->andReturn($taxRepo);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateDoctrineQuery')
         ->atLeast()->once()
         ->andReturn([]);
@@ -1697,14 +1697,14 @@ test('batch delete aborts on the first failure instead of skipping it', function
     // allowed to perform (or that fails validation) must surface instead of
     // being silently skipped while the rest of the batch proceeds.
     $activityMock->shouldReceive('delete')->once()->with(['id' => 1])->andReturn(true);
-    $activityMock->shouldReceive('delete')->once()->with(['id' => 2])->andThrow(new FOSSBilling\InformationException('Only unissued, unpaid invoices (drafts) can be deleted'));
+    $activityMock->shouldReceive('delete')->once()->with(['id' => 2])->andThrow(new FOSSBilling\Core\Exception\InformationException('Only unissued, unpaid invoices (drafts) can be deleted'));
     $activityMock->shouldNotReceive('delete')->with(['id' => 3]);
 
     $di = container();
     $activityMock->setDi($di);
 
     expect(fn () => $activityMock->batch_delete(['ids' => [1, 2, 3]]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only unissued, unpaid invoices');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only unissued, unpaid invoices');
 });
 
 test('gets a tax', function (): void {
@@ -1771,13 +1771,13 @@ test('export_csv requires both view and export permissions', function (): void {
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('invoice', 'view', null, Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('You need the "invoice.view" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "invoice.view" permission to perform this action', [], 403));
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     expect(fn () => $api->export_csv(['headers' => ['id']]))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('export_csv delegates to service when permissions granted', function (): void {
@@ -1813,10 +1813,10 @@ test('export_csv delegates to service when permissions granted', function (): vo
 
 test('requires an invoice id on invoice endpoints', function ($method): void {
     $adminApi = apiEndpoint(new Admin());
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, $method, []))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invoice ID is missing');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invoice ID is missing');
 })->with([
     'get',
     'mark_as_paid',
@@ -1919,9 +1919,9 @@ test('promo endpoints require a promo reference', function (): void {
     $api->setService($serviceMock);
 
     expect(fn () => $api->promo_add(['id' => 10]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promo code or promo ID was not passed');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promo code or promo ID was not passed');
     expect(fn () => $api->promo_remove(['id' => 10]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promo code or promo ID was not passed');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promo code or promo ID was not passed');
 });
 
 test('refunding a deposit invoice as a gateway refund requires the balance permission', function (): void {
@@ -1948,13 +1948,13 @@ test('refunding a deposit invoice as a gateway refund requires the balance permi
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('client', 'manage_balance', null, Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('You need the "client.manage_balance" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "client.manage_balance" permission to perform this action', [], 403));
     $api->setDi($di);
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     expect(fn () => $api->refund($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'client.manage_balance');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'client.manage_balance');
 });
 
 test('ignores the gateway_returned flag from API callers', function (): void {

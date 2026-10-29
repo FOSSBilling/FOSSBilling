@@ -101,7 +101,7 @@ test('create dispatches the typed event after persisting the notification', func
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->calls->steps[] = 'typed';
             $this->calls->events[] = $event;

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before nameservers are sent to the registrar. */
 final class BeforeClientChangeNameserversEvent extends Event

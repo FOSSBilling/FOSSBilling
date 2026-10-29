@@ -15,7 +15,7 @@ use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class ClientRepository extends EntityRepository
 {

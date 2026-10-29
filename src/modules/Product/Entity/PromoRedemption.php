@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\PromoRedemptionRepository::class)]
 #[ORM\Table(name: 'promo_redemption')]
@@ -26,7 +26,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Index(name: 'promo_redemption_phase_idx', columns: ['phase'])]
 #[ORM\Index(name: 'promo_redemption_status_idx', columns: ['status'])]
 #[ORM\HasLifecycleCallbacks]
-class PromoRedemption implements ApiArrayInterface, TimestampInterface
+class PromoRedemption implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

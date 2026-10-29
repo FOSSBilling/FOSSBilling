@@ -15,8 +15,8 @@ use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Exception\InformationException;
 
 class AdminPasswordResetRepository extends EntityRepository
 {

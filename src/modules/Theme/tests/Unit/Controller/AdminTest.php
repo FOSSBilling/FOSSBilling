@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 use Box\Mod\Theme\Event\BeforeAdminThemeSettingsSaveEvent;
 use Box\Mod\Theme\Model\Theme;
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
-use FOSSBilling\Twig\SandboxedStringRenderer;
+use FOSSBilling\Core\HtmlSanitizerFactory;
+use FOSSBilling\Core\Twig\SandboxedStringRenderer;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
@@ -37,7 +37,7 @@ function renderClientThemeFooterLinkCheckboxes(array $settings): array
         ['settings' => $settings],
         'Theme settings template',
     );
-    $html = BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($html);
+    $html = HtmlSanitizerFactory::sanitize($html, 'theme_settings');
 
     $document = new DOMDocument();
     $previousLibxmlErrorsSetting = libxml_use_internal_errors(true);
@@ -64,7 +64,7 @@ test('getDi returns dependency injection container', function (): void {
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('get')
         ->atLeast()
         ->once();
@@ -79,7 +79,7 @@ test('getTheme renders theme preset', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('render')
         ->atLeast()
         ->once()
@@ -131,7 +131,7 @@ test('getTheme renders theme preset', function (): void {
         ->andReturn([]);
 
     // Create a mod mock that returns the service via getService()
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getService')
         ->atLeast()
         ->once()
@@ -174,7 +174,7 @@ test('save theme settings dispatches safe typed event and strips preset control 
     $themeServiceMock->shouldReceive('regenerateThemeCssAndJsFiles');
     $themeServiceMock->shouldReceive('regenerateThemeSettingsDataFile');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getService')->andReturn($themeServiceMock);
 
     $eventDispatcher = new class($steps, $events) {
@@ -182,7 +182,7 @@ test('save theme settings dispatches safe typed event and strips preset control 
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->steps[] = 'event';
             $this->events[] = $event;
@@ -212,7 +212,7 @@ test('save theme settings dispatches safe typed event and strips preset control 
         'save-current-setting-preset' => 'My Preset',
     ]);
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('redirect')
         ->once()
@@ -282,13 +282,13 @@ test('theme save rejects restricted staff before any side effects', function (ar
     $dispatcher = Mockery::mock();
     $dispatcher->shouldNotReceive('dispatch');
     $di['event_dispatcher'] = $dispatcher;
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldNotReceive('getRequest');
     $controller = new Box\Mod\Theme\Controller\Admin();
     $controller->setDi($di);
 
     expect(fn () => $controller->save_theme_settings($app, 'default/client'))
-        ->toThrow(FOSSBilling\InformationException::class, 'theme.manage_settings', 403);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'theme.manage_settings', 403);
 })->with([
     'missing permission' => [['access' => true, 'view' => true]],
     'false permission' => [['access' => true, 'view' => true, 'manage_settings' => false]],
@@ -301,8 +301,8 @@ test('theme settings page requires view permission', function (): void {
     themeStaffWithPermissions($di, ['access' => true]);
     $controller = new Box\Mod\Theme\Controller\Admin();
     $controller->setDi($di);
-    expect(fn () => $controller->get_theme(Mockery::mock(Box_App::class), 'default/client'))
-        ->toThrow(FOSSBilling\InformationException::class, 'theme.view', 403);
+    expect(fn () => $controller->get_theme(Mockery::mock(FOSSBilling\Core\Http\App::class), 'default/client'))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'theme.view', 403);
 });
 
 test('theme save rejects invalid CSRF tokens before any side effects', function (mixed $token, mixed $sessionToken): void {
@@ -320,13 +320,13 @@ test('theme save rejects invalid CSRF tokens before any side effects', function 
         'save-current-setting' => '1',
         'save-current-setting-preset' => 'Malicious',
     ]);
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->once()->andReturn($request);
     $controller = new Box\Mod\Theme\Controller\Admin();
     $controller->setDi($di);
 
     expect(fn () => $controller->save_theme_settings($app, 'default/client'))
-        ->toThrow(FOSSBilling\InformationException::class, 'CSRF token invalid', 403);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'CSRF token invalid', 403);
 })->with([
     'missing' => [null, 'valid-token'],
     'mismatch' => ['wrong-token', 'valid-token'],

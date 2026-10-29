@@ -191,7 +191,7 @@ test('logs retention failures through the application logger', function (): void
 
 test('retention removes old rows in batches, keeps recent rows and spares tables that are switched off', function (): void {
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([
         $em->getClassMetadata(ActivityAdminHistory::class),
         $em->getClassMetadata(ActivityClientHistory::class),
@@ -233,7 +233,7 @@ test('retention removes old rows in batches, keeps recent rows and spares tables
 });
 
 test('every activity table has an index on created_at for the retention sweep', function (): void {
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
 
     foreach ([ActivityAdminHistory::class, ActivityClientHistory::class, ActivitySystem::class, Box\Mod\Email\Entity\ActivityClientEmail::class] as $entity) {
         $metadata = $em->getClassMetadata($entity);

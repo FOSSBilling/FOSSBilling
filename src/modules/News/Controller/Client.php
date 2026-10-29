@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\News\Controller;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -25,18 +25,18 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/news', 'get_news', [], static::class);
         $app->get('/news/:slug', 'get_news_item', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_news(\Box_App $app): string
+    public function get_news(\FOSSBilling\Core\Http\App $app): string
     {
         return $app->render('mod_news_index');
     }
 
-    public function get_news_item(\Box_App $app, $slug): string
+    public function get_news_item(\FOSSBilling\Core\Http\App $app, $slug): string
     {
         $post = $this->di['api_guest']->news_get(['slug' => $slug]);
 

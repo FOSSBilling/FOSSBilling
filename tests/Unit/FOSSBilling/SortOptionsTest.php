@@ -24,7 +24,7 @@ dataset('directionProvider', fn (): array => [
 ]);
 
 test('resolves a valid sort key and direction', function (): void {
-    $sort = FOSSBilling\SortOptions::fromArray(
+    $sort = FOSSBilling\Core\SortOptions::fromArray(
         ['sort' => 'tld', 'direction' => 'DESC'],
         ['tld' => 't.tld', 'id' => 't.id']
     );
@@ -36,7 +36,7 @@ test('resolves a valid sort key and direction', function (): void {
 });
 
 test('direction resolves case-insensitively with fallback', function (mixed $input, SortDirection $expected): void {
-    $sort = FOSSBilling\SortOptions::fromArray(
+    $sort = FOSSBilling\Core\SortOptions::fromArray(
         ['sort' => 'id', 'direction' => $input],
         ['id' => 't.id']
     );
@@ -48,7 +48,7 @@ test('unknown sort keys fall back to unsorted instead of throwing', function ():
     $allowed = ['tld' => 't.tld'];
 
     foreach ([[], ['sort' => 'nonexistent'], ['sort' => 't.tld'], ['sort' => 'tld; DROP TABLE tld'], ['sort' => 123], ['sort' => ['tld']]] as $data) {
-        $sort = FOSSBilling\SortOptions::fromArray($data, $allowed);
+        $sort = FOSSBilling\Core\SortOptions::fromArray($data, $allowed);
 
         expect($sort->expression)->toBeNull()
             ->and($sort->isSorted())->toBeFalse()
@@ -57,13 +57,13 @@ test('unknown sort keys fall back to unsorted instead of throwing', function ():
 });
 
 test('sort keys match case-insensitively', function (): void {
-    $sort = FOSSBilling\SortOptions::fromArray(['sort' => 'TLD'], ['tld' => 't.tld']);
+    $sort = FOSSBilling\Core\SortOptions::fromArray(['sort' => 'TLD'], ['tld' => 't.tld']);
 
     expect($sort->expression)->toBe('t.tld');
 });
 
 test('supports custom parameter names', function (): void {
-    $sort = FOSSBilling\SortOptions::fromArray(
+    $sort = FOSSBilling\Core\SortOptions::fromArray(
         ['registrar_sort' => 'title', 'registrar_direction' => 'desc'],
         ['title' => 'tr.name'],
         'registrar_sort',
@@ -77,7 +77,7 @@ test('supports custom parameter names', function (): void {
 });
 
 test('appends the tie-breaker in the same direction', function (): void {
-    $sort = FOSSBilling\SortOptions::fromArray(
+    $sort = FOSSBilling\Core\SortOptions::fromArray(
         ['sort' => 'status', 'direction' => 'DESC'],
         ['id' => 'm.id', 'status' => 'm.status']
     );
@@ -86,13 +86,13 @@ test('appends the tie-breaker in the same direction', function (): void {
 });
 
 test('skips the tie-breaker when it duplicates the primary expression', function (): void {
-    $sort = FOSSBilling\SortOptions::fromArray(['sort' => 'id'], ['id' => 'm.id']);
+    $sort = FOSSBilling\Core\SortOptions::fromArray(['sort' => 'id'], ['id' => 'm.id']);
 
     expect($sort->toOrderByClause('m.id'))->toBe('m.id ASC');
 });
 
 test('tie-breaker is null-safe when nothing was requested', function (): void {
-    $sort = FOSSBilling\SortOptions::fromArray(['sort' => 'bogus'], ['id' => 'm.id']);
+    $sort = FOSSBilling\Core\SortOptions::fromArray(['sort' => 'bogus'], ['id' => 'm.id']);
 
     expect($sort->toOrderByClause('m.id'))->toBeNull();
 });

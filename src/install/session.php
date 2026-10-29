@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Http\CookieNames;
+use FOSSBilling\Core\Http\CookieNames;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;

@@ -11,7 +11,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Repository\ProductCategoryRepository;
 use Box\Mod\Product\Service;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 
 use function Tests\Helpers\container;
 
@@ -64,7 +64,7 @@ test('category icon URLs within the column limit are preserved', function (?stri
         {
         }
     };
-    $logger = Mockery::mock(FOSSBilling\Logger::class);
+    $logger = Mockery::mock(FOSSBilling\Core\Logging\Logger::class);
     $logger->shouldReceive('info')->once();
     $di = container();
     $di['em'] = $em;

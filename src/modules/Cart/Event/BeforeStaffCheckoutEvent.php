@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cart\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 final class BeforeStaffCheckoutEvent extends Event
 {

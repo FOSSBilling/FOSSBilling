@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     description: 'Clears the cache',
     hidden: false
 )]
-class CacheClear extends Command implements \FOSSBilling\InjectionAwareInterface
+class CacheClear extends Command implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected $di;
 

@@ -15,13 +15,13 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Servicedomain\Entity\TldRegistrar;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Domain order management.
  */
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Update domain service.
@@ -186,7 +186,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $query,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             fn (Tld $tld): array => $this->getService()->tldToApiArray($tld, $this->identity),
         );
     }
@@ -196,7 +196,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_get($data)
@@ -205,7 +205,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof Tld) {
-            throw new \FOSSBilling\InformationException('TLD not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model, $this->identity);
@@ -216,7 +216,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['id' => 'ID is missing'])]
     public function tld_get_id($data)
@@ -225,7 +225,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->tldFindOneById($data['id']);
         if (!$model instanceof Tld) {
-            throw new \FOSSBilling\InformationException('TLD not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model, $this->identity);
@@ -236,7 +236,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_delete($data)
@@ -247,15 +247,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getService()->tldFindOneByTld($normalizedTld);
 
         if (!$model instanceof Tld) {
-            throw new \FOSSBilling\InformationException('TLD not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD not found');
         }
         $service_domains = $this->getDi()['em']->getConnection()->fetchAllAssociative(
             'SELECT id FROM service_domain WHERE LOWER(TRIM(TRAILING \'.\' FROM TRIM(tld))) IN (?, ?)',
             [$normalizedTld, ltrim((string) $normalizedTld, '.')],
         );
-        $count = \FOSSBilling\Tools::safeCount($service_domains);
+        $count = \FOSSBilling\Core\Utils\Arr::safeCount($service_domains);
         if ($count > 0) {
-            throw new \FOSSBilling\InformationException('TLD is used by :count: domains', [':count:' => $count], 707);
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD is used by :count: domains', [':count:' => $count], 707);
         }
 
         return $this->getService()->tldRm($model);
@@ -271,7 +271,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams([
         'tld' => 'TLD is missing',
@@ -285,7 +285,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('servicedomain', 'manage_tlds');
 
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
-            throw new \FOSSBilling\InformationException('TLD already registered');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD already registered');
         }
 
         return $this->getService()->tldCreate($data);
@@ -306,7 +306,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_update($data)
@@ -315,7 +315,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof Tld) {
-            throw new \FOSSBilling\InformationException('TLD not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD not found');
         }
 
         return $this->getService()->tldUpdate($model, $data);
@@ -336,7 +336,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $query,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             fn (TldRegistrar $registrar): array => $this->getService()->registrarToApiArray($registrar),
         );
     }
@@ -377,7 +377,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $code = $data['code'];
         if (!in_array($code, $this->getService()->registrarGetAvailable())) {
-            throw new \FOSSBilling\Exception('Registrar is not available for installation.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Registrar is not available for installation.');
         }
 
         return $this->getService()->registrarCreate($data['code']);
@@ -466,14 +466,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->getDi()['em']->getRepository(Order::class)->find($orderId);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
 
         if (!$s instanceof ServiceDomain) {
-            throw new \FOSSBilling\Exception('Domain order is not activated');
+            throw new \FOSSBilling\Core\Exception\BaseException('Domain order is not activated');
         }
 
         return $s;
@@ -483,7 +483,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getDi()['em']->getRepository(TldRegistrar::class)->find($id);
         if (!$model instanceof TldRegistrar) {
-            throw new \FOSSBilling\Exception('Registrar not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Registrar not found');
         }
 
         return $model;

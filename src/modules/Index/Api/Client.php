@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Index\Api;
 
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     public function get_dashboard(): array
     {

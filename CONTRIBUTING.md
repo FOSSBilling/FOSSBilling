@@ -62,14 +62,14 @@ Other modules extend the whole FOSSBilling API with any functionality needed. Ch
 
 ### Typed module events
 
-FOSSBilling modules use typed events for extension points. Event classes extend `FOSSBilling\Events\Event`, and each module keeps its event classes in `src/modules/<Module>/Event/`. The shared base event is in `src/library/FOSSBilling/Events/Event.php`.
+FOSSBilling modules use typed events for extension points. Event classes extend `FOSSBilling\Core\Events\Event`, and each module keeps its event classes in `src/modules/<Module>/Event/`. The shared base event is in `src/core/Events/Event.php`.
 
 Define an event in the owning module's `Event/` directory and dispatch it from the code that owns the operation:
 
 ```php
 namespace Box\Mod\Example\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 final class BeforeExampleOperationEvent extends Event
 {

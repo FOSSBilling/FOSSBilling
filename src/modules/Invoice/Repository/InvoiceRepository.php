@@ -17,9 +17,8 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\SortOptions;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\SortOptions;
 
 class InvoiceRepository extends EntityRepository
 {
@@ -80,7 +79,7 @@ class InvoiceRepository extends EntityRepository
 
         $issued = $data['issued'] ?? null;
         if ($issued !== null && $issued !== '') {
-            $qb->andWhere('i.issued = :issued')->setParameter('issued', Tools::normalizeBoolean($issued));
+            $qb->andWhere('i.issued = :issued')->setParameter('issued', \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($issued));
         }
 
         $status = $data['status'] ?? null;
@@ -208,7 +207,7 @@ class InvoiceRepository extends EntityRepository
     public function lockAndGetStatus(int $invoiceId): ?string
     {
         if (!$this->getEntityManager()->getConnection()->isTransactionActive()) {
-            throw new \FOSSBilling\Exception('Invoice status cannot be locked outside of a transaction.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invoice status cannot be locked outside of a transaction.');
         }
 
         $state = $this->lockAndGetState($invoiceId);
@@ -226,7 +225,7 @@ class InvoiceRepository extends EntityRepository
         $connection = $this->getEntityManager()->getConnection();
 
         if (!$connection->isTransactionActive()) {
-            throw new \FOSSBilling\Exception('Invoice state cannot be locked outside of a transaction.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invoice state cannot be locked outside of a transaction.');
         }
 
         $row = $connection->fetchAssociative(

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -21,17 +21,17 @@ use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
-use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\Config;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\Environment;
-use FOSSBilling\GeoIP\Reader;
-use FOSSBilling\Period;
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
-use FOSSBilling\SentryHelper;
-use FOSSBilling\Twig\SandboxedStringRenderer;
-use FOSSBilling\Version;
+use FOSSBilling\Core\Cache\CacheFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\GeoIP\Reader;
+use FOSSBilling\Core\HtmlSanitizerFactory;
+use FOSSBilling\Core\Period;
+use FOSSBilling\Core\SentryHelper;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
+use FOSSBilling\Core\System\Version;
+use FOSSBilling\Core\Twig\SandboxedStringRenderer;
 use Pimple\Container;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
@@ -119,7 +119,7 @@ class Service
     public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
-            throw new \FOSSBilling\Exception('Parameter key is missing.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Parameter key is missing.');
         }
 
         $setting = $this->settingRepository->findOneByParam($param);
@@ -150,7 +150,7 @@ class Service
         // agree on it, then reject anything outside the canonical charset.
         $param = strtolower($param);
         if (!preg_match('/^[a-z0-9_]+$/', $param)) {
-            throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
         }
 
         // Skip this param if the user isn't permitted to update it.
@@ -191,7 +191,7 @@ class Service
     {
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
-                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
+                throw new \FOSSBilling\Core\Exception\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
             }
         }
         $result = [];
@@ -291,19 +291,19 @@ class Service
 
         foreach ($data as $key => $val) {
             if (!$this->canUpdateParam($key)) {
-                throw new \FOSSBilling\InformationException('You do not have permission to update the parameter :param', [':param' => $key]);
+                throw new \FOSSBilling\Core\Exception\InformationException('You do not have permission to update the parameter :param', [':param' => $key]);
             }
 
             if (strtolower((string) $key) === 'invoice_starting_number'
                 && ((!is_int($val) && !is_string($val))
                     || filter_var($val, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX - 1]]) === false)) {
-                throw new \FOSSBilling\InformationException('Next invoice number must be a positive whole number no greater than :max.', [':max' => PHP_INT_MAX - 1]);
+                throw new \FOSSBilling\Core\Exception\InformationException('Next invoice number must be a positive whole number no greater than :max.', [':max' => PHP_INT_MAX - 1]);
             }
 
             if (strtolower((string) $key) === 'invoice_reminder_send_time'
                 && $val !== null && trim((string) $val) !== ''
                 && !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', trim((string) $val))) {
-                throw new \FOSSBilling\InformationException('Reminder send time must be empty or a valid 24-hour time (HH:MM).');
+                throw new \FOSSBilling\Core\Exception\InformationException('Reminder send time must be empty or a valid 24-hour time (HH:MM).');
             }
         }
 
@@ -519,7 +519,7 @@ class Service
     {
         try {
             return $this->di['central_alerts']->filterAlerts();
-        } catch (\FOSSBilling\Exception $e) {
+        } catch (\FOSSBilling\Core\Exception\BaseException $e) {
             return [
                 $this->createAdminAlert('warning', $e->getMessage()),
             ];
@@ -575,7 +575,7 @@ class Service
             }
         );
 
-        return BrowserHtmlSanitizer::sanitizeAdapterHtml($rendered);
+        return HtmlSanitizerFactory::sanitize($rendered, 'adapter');
     }
 
     /**
@@ -596,7 +596,7 @@ class Service
      *
      * @return string The rendered template
      *
-     * @throws \FOSSBilling\InformationException If template violates sandbox policy or has syntax errors
+     * @throws \FOSSBilling\Core\Exception\InformationException If template violates sandbox policy or has syntax errors
      */
     public function renderEmailTplString(string $tpl, array $vars, ?string $timezone = null, ?string $locale = null): string
     {
@@ -637,9 +637,9 @@ class Service
             $stream = $twig->tokenize(new \Twig\Source($tpl, '__validation__'));
             $twig->parse($stream);
         } catch (\Twig\Error\SyntaxError $e) {
-            throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
+            throw new \FOSSBilling\Core\Exception\InformationException('Email template syntax error: ' . $e->getMessage());
         } catch (\Twig\Sandbox\SecurityError $e) {
-            throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
+            throw new \FOSSBilling\Core\Exception\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
         }
     }
 
@@ -671,13 +671,13 @@ class Service
     {
         if ($fetchExternalIp) {
             try {
-                return $this->di['tools']->getExternalIP();
+                return $this->di['network']->getExternalIP();
             } catch (\Exception) {
                 return '';
             }
         }
 
-        $r = new \FOSSBilling\Requirements();
+        $r = new \FOSSBilling\Core\System\Requirements();
         $data = $r->checkCompat();
         $data['last_patch'] = $this->getParamValue('last_patch');
 
@@ -716,7 +716,7 @@ class Service
     {
         $setting = $this->settingRepository->findOnePublicByParam((string) $param);
         if ($setting === null) {
-            throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Parameter :param does not exist', [':param' => $param]);
         }
 
         return $setting->getValue();
@@ -813,7 +813,7 @@ class Service
     public function reserveNextNumericParamValue(string $param, ?int $seed = null): ?int
     {
         if (empty($param)) {
-            throw new \FOSSBilling\Exception('Parameter key is missing.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Parameter key is missing.');
         }
 
         // On MySQL/PostgreSQL this only ever needs the single, unconditional retry below: two

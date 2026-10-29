@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before a license is reset; validator data is intentionally omitted. */
 final class BeforeServiceLicenseResetEvent extends Event

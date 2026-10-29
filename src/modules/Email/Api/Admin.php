@@ -16,10 +16,10 @@ declare(strict_types=1);
 namespace Box\Mod\Email\Api;
 
 use Box\Mod\Staff\Entity\AdminGroup;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get list of sent emails.
@@ -37,7 +37,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
         );
     }
 
@@ -92,7 +92,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_resend($data)
@@ -107,7 +107,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete sent email from logs.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_delete($data): bool
@@ -164,7 +164,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_get($data)
@@ -179,7 +179,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete email template.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data): bool
@@ -189,7 +189,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $template = $service->getTemplate((int) $data['id']);
         if (!$template->isCustom() && $service->hasDefaultTemplate($template->getActionCode())) {
-            throw new \FOSSBilling\Exception('Only custom email templates can be deleted');
+            throw new \FOSSBilling\Core\Exception\BaseException('Only custom email templates can be deleted');
         }
 
         $id = $template->getId();
@@ -208,7 +208,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - newly created template id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams([
         'action_code' => 'Email template code is required',
@@ -232,7 +232,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
@@ -444,15 +444,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('email', 'send_emails');
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
-            throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
+            throw new \FOSSBilling\Core\Exception\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
 
         if (isset($data['client_billing_email'])) {
-            throw new \FOSSBilling\InformationException('client_billing_email cannot be set via the API');
+            throw new \FOSSBilling\Core\Exception\InformationException('client_billing_email cannot be set via the API');
         }
 
         if (!empty($data['to_client']) && !empty($data['to'])) {
-            throw new \FOSSBilling\InformationException('Parameters `to` and `to_client` cannot be combined. Client-bound emails are always sent to the client\'s registered email address.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Parameters `to` and `to_client` cannot be combined. Client-bound emails are always sent to the client\'s registered email address.');
         }
 
         return $this->getService()->sendTemplate($data);
@@ -507,7 +507,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
         );
     }
 }

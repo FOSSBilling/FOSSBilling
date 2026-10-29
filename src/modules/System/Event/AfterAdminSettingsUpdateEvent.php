@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after admin system settings have been persisted. */
 final class AfterAdminSettingsUpdateEvent extends Event

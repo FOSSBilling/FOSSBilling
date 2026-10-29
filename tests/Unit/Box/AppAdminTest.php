@@ -12,12 +12,12 @@ declare(strict_types=1);
 
 use Symfony\Component\HttpFoundation\Request;
 
-function appAdminWithController(object $controller): Box_AppAdmin
+function appAdminWithController(object $controller): FOSSBilling\Core\Http\AppAdmin
 {
     $mod = Mockery::mock();
     $mod->shouldReceive('getAdminController')->andReturn($controller);
 
-    $app = new class extends Box_AppAdmin {
+    $app = new class extends FOSSBilling\Core\Http\AppAdmin {
         public function setMod(string $mod): void
         {
             $this->mod = $mod;

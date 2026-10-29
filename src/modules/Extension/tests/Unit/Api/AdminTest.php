@@ -183,7 +183,7 @@ test('update dispatches the typed before event before the current unsupported up
     $service->shouldReceive('update')
         ->once()
         ->with($extension)
-        ->andThrow(new FOSSBilling\InformationException('Update is unavailable'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Update is unavailable'));
     $dispatcher = new SymfonyEventDispatcher();
     $dispatcher->addListener(BeforeAdminUpdateExtensionEvent::class, static function (BeforeAdminUpdateExtensionEvent $event) use (&$steps): void {
         $steps[] = $event;
@@ -198,7 +198,7 @@ test('update dispatches the typed before event before the current unsupported up
     $api->setService($service);
 
     expect(fn () => $api->update(['id' => 'example', 'type' => 'mod']))
-        ->toThrow(FOSSBilling\InformationException::class)
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class)
         ->and($steps)->toHaveCount(1)
         ->and($steps[0])->toBeInstanceOf(BeforeAdminUpdateExtensionEvent::class)
         ->and($steps[0]->extensionRecordId)->toBe(53)

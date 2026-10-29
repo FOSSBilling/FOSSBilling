@@ -14,8 +14,8 @@ use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Exception\InformationException;
 
 function staffResetEntityManager(): EntityManagerInterface
 {
@@ -39,10 +39,10 @@ function staffResetContainer(EntityManagerInterface $em): Pimple\Container
     $di = Tests\Helpers\container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['password'] = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $di['password'] = Mockery::mock(FOSSBilling\Core\Security\PasswordManager::class);
     $di['password']->shouldReceive('hashIt')->with('NewPassword1!')->andReturn('new-hash');
     $di['event_dispatcher'] = new Symfony\Component\EventDispatcher\EventDispatcher();
-    $di['rate_limiter'] = Mockery::mock(FOSSBilling\Security\RateLimiter::class)->shouldIgnoreMissing();
+    $di['rate_limiter'] = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class)->shouldIgnoreMissing();
     $profile = Mockery::mock(Box\Mod\Profile\Service::class);
     $profile->shouldReceive('invalidateSessions')->with('admin', Mockery::type('int'))->andReturn(true);
     $email = Mockery::mock(Box\Mod\Email\Service::class)->shouldIgnoreMissing();
@@ -55,9 +55,9 @@ function staffResetGuest(Pimple\Container $di): Box\Mod\Staff\Api\Guest
 {
     $guest = new Box\Mod\Staff\Api\Guest();
     $guest->setDi($di);
-    $mod = Mockery::mock(FOSSBilling\Module::class);
+    $mod = Mockery::mock(FOSSBilling\Core\Module::class);
     $mod->shouldReceive('getConfig')->andReturn([]);
-    $guest->setMod($mod);
+    $guest->setModule($mod);
     $guest->setIp('192.0.2.10');
 
     return $guest;
@@ -252,11 +252,8 @@ test('recovery request preserves its generic response when eligibility changes a
         $em->getConnection()->update('admin', $state === 'cron' ? ['system_name' => Admin::SYSTEM_CRON] : ['status' => Admin::STATUS_INACTIVE], ['id' => $admin->getId()]);
     }
     $di = staffResetContainer($em);
-    $tools = Mockery::mock(FOSSBilling\Tools::class);
-    $tools->shouldReceive('validateAndSanitizeEmail')->andReturn('staff@example.com');
-    $di['tools'] = $tools;
-    $limiter = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
-    $limiter->shouldReceive('consume')->andReturn(new FOSSBilling\Security\RateLimitResult('test', false, 5, 4));
+    $limiter = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class);
+    $limiter->shouldReceive('consume')->andReturn(new FOSSBilling\Core\Security\RateLimitResult('test', false, 5, 4));
     $di['rate_limiter'] = $limiter;
     $extension = Mockery::mock(Box\Mod\Extension\Service::class);
     $extension->shouldReceive('isExtensionActive')->andReturn(false);

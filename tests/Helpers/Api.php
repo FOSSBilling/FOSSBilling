@@ -104,7 +104,7 @@ class ApiClient
         $html = self::fetchLoginPage($baseUrl);
 
         // Prefer the double-submit cookie: it mirrors the session token
-        // (FOSSBilling\Http\CookieNames::CSRF, set on every client page
+        // (FOSSBilling\Core\Http\CookieNames::CSRF, set on every client page
         // render) and stays valid across session-id rotation. Unlike the
         // login form markup, it is also available when /login redirects
         // because the jar's session is already authenticated, so back to

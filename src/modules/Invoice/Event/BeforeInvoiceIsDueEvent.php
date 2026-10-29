@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched for every unpaid, issued invoice with a future due date. */
 final class BeforeInvoiceIsDueEvent extends Event

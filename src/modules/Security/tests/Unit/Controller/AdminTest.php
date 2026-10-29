@@ -14,7 +14,7 @@ use function Tests\Helpers\container;
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Security\Controller\Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('get')->atLeast()->once();
 
     $controller->register($boxAppMock);
@@ -37,7 +37,7 @@ test('ip lookup performs lookup for a valid ip', function (): void {
 
     $request = Symfony\Component\HttpFoundation\Request::create('/security/iplookup?ip=1.1.1.1');
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('render')
         ->once()
@@ -61,7 +61,7 @@ test('ip lookup skips lookup for an invalid ip', function (): void {
 
     $request = Symfony\Component\HttpFoundation\Request::create('/security/iplookup?ip=not-an-ip');
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('render')
         ->once()
@@ -85,7 +85,7 @@ test('ip lookup skips lookup when ip parameter is missing', function (): void {
 
     $request = Symfony\Component\HttpFoundation\Request::create('/security/iplookup');
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('render')
         ->once()
@@ -122,7 +122,7 @@ test('rate limits sorts counters with request sort parameters before pagination'
     $pager = Mockery::mock();
     $pager->shouldReceive('paginateArray')
         ->once()
-        ->with($counters, Mockery::type(FOSSBilling\PaginationOptions::class))
+        ->with($counters, Mockery::type(FOSSBilling\Core\Pagination\Options::class))
         ->andReturn(['list' => $counters]);
     $di['pager'] = $pager;
 
@@ -130,7 +130,7 @@ test('rate limits sorts counters with request sort parameters before pagination'
 
     $request = Symfony\Component\HttpFoundation\Request::create('/security/rate-limits?sort=policy&direction=DESC');
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('render')
         ->once()

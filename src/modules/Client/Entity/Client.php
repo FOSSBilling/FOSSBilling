@@ -15,15 +15,15 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientRepository::class)]
 #[ORM\Table(name: 'client')]
 #[ORM\Index(name: 'alternative_id_idx', columns: ['aid'])]
 #[ORM\HasLifecycleCallbacks]
-class Client implements ApiArrayInterface, TimestampInterface
+class Client implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -944,7 +944,7 @@ class Client implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function toApiArray(self|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(self|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null): array
     {
         $details = [
             'id' => $this->id,

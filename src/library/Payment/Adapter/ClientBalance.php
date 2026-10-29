@@ -13,7 +13,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 
-class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_ClientBalance implements FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
 
@@ -76,7 +76,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
-        $invoiceUrl = $this->di['tools']->url('invoice/' . $invoiceModel->getHash());
+        $invoiceUrl = $this->di['url']->link('invoice/' . $invoiceModel->getHash());
 
         return "<script>
                 document.addEventListener('DOMContentLoaded', function() {

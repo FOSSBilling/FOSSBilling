@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 final class AdminLoginFailedEvent extends Event
 {

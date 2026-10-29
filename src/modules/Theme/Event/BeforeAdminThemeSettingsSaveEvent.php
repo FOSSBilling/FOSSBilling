@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Theme\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before theme settings are validated and saved. */
 final class BeforeAdminThemeSettingsSaveEvent extends Event

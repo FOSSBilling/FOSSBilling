@@ -15,8 +15,8 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientPasswordReset;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Exception\InformationException;
 
 class ClientPasswordResetRepository extends EntityRepository
 {

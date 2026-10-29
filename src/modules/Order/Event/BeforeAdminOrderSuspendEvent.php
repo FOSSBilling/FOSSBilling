@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before an order is suspended. */
 final class BeforeAdminOrderSuspendEvent extends Event

@@ -13,7 +13,7 @@ namespace Box\Mod\Invoice\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
+use FOSSBilling\Core\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceEventRepository::class)]
 #[ORM\Table(name: 'invoice_event')]

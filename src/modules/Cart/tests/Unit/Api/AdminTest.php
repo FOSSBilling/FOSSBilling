@@ -23,7 +23,7 @@ test('getList returns array', function (): void {
         ],
     ];
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $paginatorMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -150,7 +150,7 @@ test('staff_basket_add_item rejects standalone addons', function (): void {
     $adminApi->setService($serviceMock);
 
     expect(fn () => $adminApi->staff_basket_add_item(['client_id' => 9, 'id' => 7]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Addon products cannot be added separately.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Addon products cannot be added separately.');
 });
 
 test('staff_basket_add_item rejects a negative price override', function (): void {
@@ -179,7 +179,7 @@ test('staff_basket_add_item rejects a negative price override', function (): voi
     $adminApi->setService($serviceMock);
 
     expect(fn () => $adminApi->staff_basket_add_item(['client_id' => 9, 'id' => 5, 'price' => -2]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Price override must be a non-negative number');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Price override must be a non-negative number');
 });
 
 test('staff_basket_apply_promo requires promo management permission', function (): void {
@@ -194,7 +194,7 @@ test('staff_basket_apply_promo requires promo management permission', function (
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('product', 'manage_promos', null, Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('Denied', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Denied', [], 403));
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
@@ -206,7 +206,7 @@ test('staff_basket_apply_promo requires promo management permission', function (
     $adminApi->setService($serviceMock);
 
     expect(fn () => $adminApi->staff_basket_apply_promo(['client_id' => 9, 'promocode' => 'SAVE']))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('staff_basket_checkout requires invoice permission for mark as paid', function (): void {
@@ -221,7 +221,7 @@ test('staff_basket_checkout requires invoice permission for mark as paid', funct
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('invoice', null, null, Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('Denied', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Denied', [], 403));
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
@@ -233,13 +233,13 @@ test('staff_basket_checkout requires invoice permission for mark as paid', funct
     $adminApi->setService($serviceMock);
 
     expect(fn () => $adminApi->staff_basket_checkout(['client_id' => 9, 'mark_invoice_paid' => 1, 'gateway_id' => 5]))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('batchExpire skips staff baskets', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
 
     $conn = Mockery::mock(Doctrine\DBAL\Connection::class);
     $conn->shouldReceive('fetchAllKeyValue')
@@ -335,7 +335,7 @@ test('staff_basket_add_item rejects an override without a usable currency rate',
     $adminApi->setService($serviceMock);
 
     expect(fn () => $adminApi->staff_basket_add_item(['client_id' => 9, 'id' => 5, 'price' => 15]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Basket currency has no valid conversion rate');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Basket currency has no valid conversion rate');
 });
 
 function cartApiClientAndCurrencyRepoEm(int $clientId, Mockery\MockInterface $currencyRepoMock): Mockery\MockInterface
@@ -379,7 +379,7 @@ function cartApiClientRepoEm(int $clientId): Mockery\MockInterface
 test('batchExpire returns true', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
 
     $conn = Mockery::mock(Doctrine\DBAL\Connection::class);
     $conn->shouldReceive('fetchAllKeyValue')->atLeast()->once()->andReturn([1 => date('Y-m-d H:i:s')]);

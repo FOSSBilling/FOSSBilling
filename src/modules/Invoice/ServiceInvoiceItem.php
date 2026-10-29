@@ -18,9 +18,9 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Validation\PriceValidator;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Validation\PriceValidator;
 
 class ServiceInvoiceItem implements InjectionAwareInterface
 {
@@ -62,7 +62,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                     ? $invoiceService->isInvoiceEditable($invoice)
                     : $invoiceService->isInvoiceStateEditable($state['status'], $state['issued']);
                 if (!$editable) {
-                    throw new \FOSSBilling\InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
                 }
             }
 
@@ -89,7 +89,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         if ($charge && !$item->getCharged()) {
             $invoice = $item->getInvoice();
             if ($invoice === null) {
-                throw new \FOSSBilling\Exception('Invoice not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Invoice not found');
             }
             $total = $this->getTotalWithTax($item);
             $em = $this->di['em'];
@@ -142,7 +142,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 $order_id = $this->getOrderId($item);
                 $order = $this->di['em']->getRepository(Order::class)->find($order_id);
                 if (!$order instanceof Order) {
-                    throw new \FOSSBilling\Exception('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
+                    throw new \FOSSBilling\Core\Exception\BaseException('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
                 }
                 $orderService = $this->di['mod_service']('Order');
                 switch ($item->getTask()) {
@@ -211,13 +211,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         // so they may only be created through the Add Funds flow
         // (generateForAddFunds) — never from generic invoice input.
         if (($data['type'] ?? InvoiceItem::TYPE_CUSTOM) === InvoiceItem::TYPE_DEPOSIT) {
-            throw new \FOSSBilling\InformationException('Deposit invoice items can only be created through the Add Funds flow.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Deposit invoice items can only be created through the Add Funds flow.');
         }
 
         return $this->runInvoiceMutation($proforma, $skipEditableCheck, function () use ($proforma, $data): int {
             $title = $data['title'] ?? '';
             if (empty($title)) {
-                throw new \FOSSBilling\InformationException('Invoice item title is missing');
+                throw new \FOSSBilling\Core\Exception\InformationException('Invoice item title is missing');
             }
 
             $period = $this->normalizePeriod($data['period'] ?? null);
@@ -336,7 +336,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         $invoice = $item->getInvoice();
         if ($invoice === null) {
-            throw new \FOSSBilling\Exception('Invoice not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invoice not found');
         }
         $total = $this->getTotalWithTax($item);
         $this->persistCredit($item, $invoice, $total);
@@ -367,7 +367,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
     {
         $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
-            ?? throw new \FOSSBilling\Exception('Client not found');
+            ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
 
         $credit = new ClientBalance();
         $credit->setClient($client);
@@ -431,11 +431,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         $item = $this->invoiceItemRepository->find($id);
         if (!$item instanceof InvoiceItem) {
-            throw new \FOSSBilling\InformationException('Invoice item was not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invoice item was not found');
         }
 
         if ($item->getStatus() !== InvoiceItem::STATUS_FAILED) {
-            throw new \FOSSBilling\InformationException('Invoice item is not in a failed state');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invoice item is not in a failed state');
         }
 
         $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);

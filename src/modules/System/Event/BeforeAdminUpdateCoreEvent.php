@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched immediately before the core update files are installed. */
 final class BeforeAdminUpdateCoreEvent extends Event

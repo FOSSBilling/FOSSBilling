@@ -633,7 +633,7 @@ test('updateSettings denies unauthorized writes before persistence', function ()
     $di = container();
     $staff = $di['mod_service']('Staff');
     $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings')
-        ->andThrow(new FOSSBilling\InformationException('Permission denied', null, 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied', null, 403));
     $repository = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
     $repository->shouldNotReceive('findOneByExtensionAndScope');
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -645,5 +645,5 @@ test('updateSettings denies unauthorized writes before persistence', function ()
     $service->setDi($di);
 
     expect(fn () => $service->updateSettings(new Model\Theme('default/client'), 'Default', ['inject_javascript' => '<script>alert(1)</script>']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied', 403);
 });

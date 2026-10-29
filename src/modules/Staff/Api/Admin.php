@@ -19,10 +19,10 @@ use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Activity\Repository\ActivityAdminHistoryRepository;
 use Box\Mod\Staff\Entity\Admin as AdminEntity;
 use Box\Mod\Staff\Entity\AdminGroup;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get paginated list of staff members.
@@ -37,12 +37,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('staff', 'view');
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $staff = $this->getDi()['em']->getRepository(AdminEntity::class)->find($item['id'] ?? 0);
             if (!$staff instanceof AdminEntity) {
-                throw new \FOSSBilling\Exception('Admin is not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Admin is not found');
             }
             $pager['list'][$key] = $this->getService()->toApiArray($staff);
         }
@@ -69,7 +69,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function get($data)
@@ -100,7 +100,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function update($data)
@@ -109,7 +109,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('staff', 'create_and_edit_staff');
 
         if (isset($data['email'])) {
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->update($model, $data);
@@ -120,7 +120,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function delete($data)
@@ -136,7 +136,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams([
         'id' => 'ID was not passed',
@@ -163,7 +163,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - ID of newly created staff member
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams([
         'email' => 'Email address was not passed',
@@ -175,7 +175,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'create_and_edit_staff');
 
-        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
         $this->getDi()['validator']->isPasswordStrong($data['password']);
 
@@ -186,7 +186,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $group = $this->getService()->getAdminGroupRepository()->findById($id);
         if (!$group instanceof AdminGroup) {
-            throw new \FOSSBilling\Exception('Group not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Group not found');
         }
 
         return $group;
@@ -196,7 +196,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $admin = $this->getDi()['em']->getRepository(AdminEntity::class)->find($id);
         if (!$admin instanceof AdminEntity) {
-            throw new \FOSSBilling\Exception('Staff member not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Staff member not found');
         }
 
         return $admin;
@@ -236,7 +236,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new staff group ID
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['name' => 'Group name was not passed'])]
     public function group_create($data)
@@ -253,7 +253,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array - group details
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_get($data)
@@ -270,7 +270,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_delete($data)
@@ -289,7 +289,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_update($data)
@@ -374,7 +374,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('staff', 'manage_settings');
 
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = $this->getService()->toActivityAdminHistoryRowApiArray($item);

@@ -57,8 +57,8 @@ function gatewayLogoService(MockHttpClient $client, Filesystem $filesystem): Ser
     $di['em'] = $em;
     $di['http_client'] = $client;
     $di['filesystem'] = $filesystem;
-    $di['url'] = Mockery::mock(FOSSBilling\Url::class);
-    $di['url']->shouldReceive('link')->andReturn('https://billing.example/');
+    $di['url'] = Mockery::mock(FOSSBilling\Core\Url::class);
+    $di['url']->shouldReceive('link')->andReturnUsing(fn (string $path): string => SYSTEM_URL . ltrim($path, '/'));
     $service = new ServicePayGateway();
     $service->setDi($di);
 
@@ -119,7 +119,7 @@ test('gateway image rejects invalid or private URLs without making a request or 
     $service->getDi()['em']->shouldReceive('flush')->never();
     $gateway = createEntity(PayGateway::class, ['enabled' => false, 'name' => 'Original', 'customLogo' => 'original.png']);
 
-    expect(fn () => $service->update($gateway, ['title' => 'Changed', 'logo_url' => $url]))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['title' => 'Changed', 'logo_url' => $url]))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($gateway->getName())->toBe('Original')->and($gateway->getCustomLogo())->toBe('original.png');
 })->with([
     'file:///etc/passwd', 'ftp://8.8.8.8/logo.png', 'https://',
@@ -137,7 +137,7 @@ test('gateway image rejects unsuccessful or unsafe downloads', function (string 
     $service->getDi()['em']->shouldReceive('flush')->never();
     $gateway = createEntity(PayGateway::class, ['enabled' => false, 'customLogo' => 'original.png']);
 
-    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($gateway->getCustomLogo())->toBe('original.png');
 })->with([
     'HTML' => ['<html>not an image</html>', 200],
@@ -159,7 +159,7 @@ test('gateway image rejects redirects to private networks', function (): void {
     $service = gatewayLogoService($client, $filesystem);
     $gateway = createEntity(PayGateway::class, ['enabled' => false]);
 
-    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('active gateways use the imported local image and fall back if it is missing', function (bool $exists): void {
@@ -248,7 +248,7 @@ test('gateway image rejects a changed connection address and excessive advertise
     $service = gatewayLogoService($client, $filesystem);
     $gateway = createEntity(PayGateway::class, ['enabled' => false]);
 
-    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with([['127.0.0.1', 0], ['8.8.8.8', 2 * 1024 * 1024 + 1]]);
 
 test('gateway settings render image import and default restoration controls', function (?string $imageUrl): void {
@@ -319,7 +319,7 @@ test('gateway image upload rejects errors, GIFs, and oversized files without cha
         $gateway = createEntity(PayGateway::class, ['enabled' => false, 'customLogo' => 'original.png', 'name' => 'Original']);
         $file = new UploadedFile($path, 'logo.png', 'image/png', $error, true);
 
-        expect(fn () => $service->update($gateway, ['title' => 'Changed'], $file))->toThrow(FOSSBilling\Exception::class);
+        expect(fn () => $service->update($gateway, ['title' => 'Changed'], $file))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
         expect($gateway->getCustomLogo())->toBe('original.png')->and($gateway->getName())->toBe('Original');
     } finally {
         $realFilesystem->remove($path);
@@ -359,7 +359,7 @@ test('gateway SVG sanitizer preserves artwork while removing active and external
         . '<path transform="translate(1, 2)" d="M0 0L10 10" fill="url(#g)" style="stroke:red;fill:url(https://evil.example/a);opacity:0.5"/>'
         . '<rect fill="&#117;rl(https://evil.example/a)"/>'
         . '</svg>';
-    $clean = FOSSBilling\Sanitizer\GatewaySvgSanitizer::sanitize($svg);
+    $clean = FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer::sanitize($svg);
 
     expect($clean)->toContain('linearGradient')->toContain('fill="url(#g)"')->toContain('transform="translate(1, 2)"')
         ->toContain('style="stroke:red;opacity:0.5"')->not->toContain('evil.example')
@@ -367,7 +367,7 @@ test('gateway SVG sanitizer preserves artwork while removing active and external
 });
 
 test('gateway SVG rejects entities and non SVG documents', function (string $bytes): void {
-    expect(fn () => FOSSBilling\Sanitizer\GatewaySvgSanitizer::sanitize($bytes))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer::sanitize($bytes))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with([
     '<!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg">&x;</svg>',
     '<html><body>not svg</body></html>',
@@ -405,7 +405,7 @@ test('raster normalization rejects a PNG with valid headers but corrupt image da
     $gateway = createEntity(PayGateway::class, ['enabled' => false]);
 
     expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))
-        ->toThrow(FOSSBilling\Exception::class, 'Could not decode the payment gateway image.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Could not decode the payment gateway image.');
 });
 
 test('raster images store PNG and at most one AVIF generated from the same decoded image', function (): void {
@@ -496,6 +496,6 @@ test('gateway images above four million pixels are rejected before decoding or c
     $gateway = createEntity(PayGateway::class, ['enabled' => false, 'name' => 'Original', 'customLogo' => 'original.png']);
 
     expect(fn () => $service->update($gateway, ['title' => 'Changed', 'logo_url' => 'https://8.8.8.8/logo.png']))
-        ->toThrow(FOSSBilling\Exception::class, 'no more than 4 million pixels');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'no more than 4 million pixels');
     expect($gateway->getName())->toBe('Original')->and($gateway->getCustomLogo())->toBe('original.png');
 });

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after a license reset has been persisted. */
 final class AfterServiceLicenseResetEvent extends Event

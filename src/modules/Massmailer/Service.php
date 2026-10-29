@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,16 +11,16 @@ declare(strict_types=1);
 
 namespace Box\Mod\Massmailer;
 
+use Box\Mod\Client\Enum\Status as ClientStatus;
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
+use Box\Mod\Order\Enum\Status as OrderStatus;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
-use FOSSBilling\Enums\ClientOrderStatusEnum;
-use FOSSBilling\Enums\ClientStatusEnum;
-use FOSSBilling\Environment;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Environment;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     private const string FILTER_CLIENT_STATUS = 'client_status';
     private const string FILTER_CLIENT_GROUPS = 'client_groups';
@@ -33,17 +33,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         self::FILTER_HAS_ORDER_WITH_STATUS,
     ];
     private const array CLIENT_STATUSES = [
-        ClientStatusEnum::ACTIVE->value,
-        ClientStatusEnum::SUSPENDED->value,
-        ClientStatusEnum::CANCELED->value,
+        ClientStatus::ACTIVE->value,
+        ClientStatus::SUSPENDED->value,
+        ClientStatus::CANCELED->value,
     ];
     private const array ORDER_STATUSES = [
-        ClientOrderStatusEnum::PENDING_SETUP->value,
-        ClientOrderStatusEnum::FAILED_SETUP->value,
-        ClientOrderStatusEnum::FAILED_RENEW->value,
-        ClientOrderStatusEnum::ACTIVE->value,
-        ClientOrderStatusEnum::CANCELED->value,
-        ClientOrderStatusEnum::SUSPENDED->value,
+        OrderStatus::PENDING_SETUP->value,
+        OrderStatus::FAILED_SETUP->value,
+        OrderStatus::FAILED_RENEW->value,
+        OrderStatus::ACTIVE->value,
+        OrderStatus::CANCELED->value,
+        OrderStatus::SUSPENDED->value,
     ];
 
     protected ?\Pimple\Container $di = null;
@@ -64,7 +64,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         if ($this->messageRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->messageRepository = $this->di['em']->getRepository(MassmailerMessage::class);
@@ -111,7 +111,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // catches up) just this module's own table from current metadata, additively and
         // safely, scoped so installing this one extension never reports every *other* table in
         // the app as missing.
-        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [MassmailerMessage::class]);
+        \FOSSBilling\Core\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [MassmailerMessage::class]);
 
         // default config values
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);

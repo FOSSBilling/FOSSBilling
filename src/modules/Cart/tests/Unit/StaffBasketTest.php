@@ -221,7 +221,7 @@ test('addItem strips a forged price override from client input', function (): vo
     $di['em'] = $emMock;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $serviceMock->setDi($di);
 
     expect($serviceMock->addItem($cartModel, $productModel, [ProductService::PRICE_OVERRIDE_KEY => 0.01]))->toBeTrue();
@@ -268,7 +268,7 @@ test('addItem stamps a staff price override on the main row only', function (): 
     $di['em'] = $emMock;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $serviceMock->setDi($di);
 
     expect($serviceMock->addItem($cartModel, $parentModel, ['addons' => ['9' => ['selected' => true]]], 7.5))->toBeTrue();
@@ -285,7 +285,7 @@ test('addItem rejects a negative price override', function (): void {
     $service->setDi(container());
 
     expect(fn () => $service->addItem(new Cart(), createProductEntity(type: 'custom'), [], -1.0))
-        ->toThrow(FOSSBilling\InformationException::class, 'Price override cannot be negative');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Price override cannot be negative');
 });
 
 test('checkoutStaffBasket rejects baskets outside staff keying', function (): void {
@@ -299,7 +299,7 @@ test('checkoutStaffBasket rejects baskets outside staff keying', function (): vo
     $sessionCart->setSessionId('rrcpqo7tkjh14d2vmf0car64k7');
 
     expect(fn () => $service->checkoutStaffBasket($sessionCart, $client, 4))
-        ->toThrow(FOSSBilling\Exception::class, 'Not a staff basket');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Not a staff basket');
 });
 
 test('checkoutStaffBasket rejects a basket owned by another admin or client', function (): void {
@@ -313,7 +313,7 @@ test('checkoutStaffBasket rejects a basket owned by another admin or client', fu
     $otherBasket->setSessionId('staff:4:10');
 
     expect(fn () => $service->checkoutStaffBasket($otherBasket, $client, 4))
-        ->toThrow(FOSSBilling\Exception::class, 'does not belong');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'does not belong');
 });
 
 test('checkoutStaffBasket checks out and destroys the basket', function (): void {
@@ -352,7 +352,7 @@ test('checkoutStaffBasket checks out and destroys the basket', function (): void
 
     $di = container();
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
     $serviceMock->setDi($di);
 
@@ -401,7 +401,7 @@ test('checkoutStaffBasket marks the invoice paid when requested', function (): v
 
     $di = container();
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
         'Product' => $productServiceMock,
         'Invoice' => $invoiceServiceMock,

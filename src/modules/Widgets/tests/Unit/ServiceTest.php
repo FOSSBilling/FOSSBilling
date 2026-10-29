@@ -10,7 +10,7 @@ declare(strict_types=1);
 use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
 use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
 use Box\Mod\Widgets\Service;
-use FOSSBilling\Events\EventDispatcher;
+use FOSSBilling\Core\Events\EventDispatcher;
 
 use function Tests\Helpers\container;
 

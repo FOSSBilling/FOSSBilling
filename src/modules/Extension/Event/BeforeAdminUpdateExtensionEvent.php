@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before an extension update is requested. */
 final class BeforeAdminUpdateExtensionEvent extends Event

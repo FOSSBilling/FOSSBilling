@@ -75,7 +75,7 @@ test('creates a subscription and dispatches its typed event', function (): void 
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->calls->entries[] = ['typed', $event];
 
@@ -432,7 +432,7 @@ test('deletes a subscription and dispatches its typed event', function (): void 
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->calls->entries[] = ['typed', $event];
 

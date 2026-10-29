@@ -95,7 +95,7 @@ test('locking checkout-application check requires a transaction and sees committ
 
     // Outside a transaction no lock can be held until the redemption rows are written.
     expect(fn () => $repository->clientHasActiveCheckoutApplicationForUpdate($promoId, 1))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 
     expect($entityManager->wrapInTransaction(
         fn () => $repository->clientHasActiveCheckoutApplicationForUpdate($promoId, 1)

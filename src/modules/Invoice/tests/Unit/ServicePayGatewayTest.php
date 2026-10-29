@@ -119,7 +119,7 @@ test('throws exception when installing unavailable gateway', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->install($code))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment gateway is not available for installation.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Payment gateway is not available for installation.');
 });
 
 test('converts to api array', function (): void {
@@ -362,7 +362,7 @@ test('refuses to delete a gateway with existing invoices', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->delete($payGateway))
-        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing invoices');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Cannot remove payment gateway with existing invoices');
 });
 
 test('refuses to delete a gateway with existing subscriptions', function (): void {
@@ -387,7 +387,7 @@ test('refuses to delete a gateway with existing subscriptions', function (): voi
     $service->setDi($di);
 
     expect(fn () => $service->delete($payGateway))
-        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing subscriptions');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Cannot remove payment gateway with existing subscriptions');
 });
 
 test('refuses to delete a gateway with existing transactions', function (): void {
@@ -416,7 +416,7 @@ test('refuses to delete a gateway with existing transactions', function (): void
     $service->setDi($di);
 
     expect(fn () => $service->delete($payGateway))
-        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing transactions');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Cannot remove payment gateway with existing transactions');
 });
 
 test('active gateways without an adapter logo get a default logo', function (): void {
@@ -495,18 +495,12 @@ test('gets payment adapter', function (): void {
         ->atLeast()->once()
         ->andReturn($expected);
 
-    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
     $urlMock->shouldReceive('link')
         ->atLeast()->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('url')
-        ->atLeast()->once()
-        ->andReturn('http://example.com/');
-
     $service = payGatewayService();
     $service->getDi()['url'] = $urlMock;
-    $service->getDi()['tools'] = $toolsMock;
     $serviceMock->setDi($service->getDi());
 
     $optional = [
@@ -530,22 +524,16 @@ test('throws exception when payment gateway adapter class is missing', function 
         ->atLeast()->once()
         ->andReturn('');
 
-    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
     $urlMock->shouldReceive('link')
         ->atLeast()->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('url')
-        ->atLeast()->once()
-        ->andReturn('http://example.com/');
-
     $service = payGatewayService();
     $service->getDi()['url'] = $urlMock;
-    $service->getDi()['tools'] = $toolsMock;
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getPaymentAdapter($payGateway, $invoiceModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment gateway  was not found.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Payment gateway  was not found.');
 });
 
 test('gets adapter config', function (): void {
@@ -607,7 +595,7 @@ test('throws exception when adapter class does not exist', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getAdapterConfig($payGateway))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
 });
 
 test('throws exception when adapter does not exist', function (): void {
@@ -627,7 +615,7 @@ test('throws exception when adapter does not exist', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getAdapterConfig($payGateway))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
 });
 
 test('gets adapter class name', function (): void {
@@ -733,14 +721,11 @@ test('PayPal handoffs contain no session capability and retain invoice and callb
     ]);
     $invoice = $withInvoice ? createEntity(Invoice::class, ['id' => 16, 'hash' => 'abc123']) : null;
     $service = payGatewayService();
-    $url = new FOSSBilling\Url();
+    $url = new FOSSBilling\Core\Url();
     $url->setBaseUri('https://billing.example/subdir/');
     $service->getDi()['url'] = $url;
-    $tools = Mockery::mock(FOSSBilling\Tools::class);
-    $tools->shouldReceive('url')->andReturnUsing(fn (string $path): string => $url->link($path));
-    $service->getDi()['tools'] = $tools;
     // No payment URL generation may read or export the active session ID.
-    $session = Mockery::mock(FOSSBilling\Session::class);
+    $session = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $session->shouldNotReceive('getId');
     $service->getDi()['session'] = $session;
     $adapter = $service->getPaymentAdapter($gateway, $invoice);
@@ -767,6 +752,6 @@ test('PayPal handoffs contain no session capability and retain invoice and callb
             ->and($fields['cancel_return'])->toBe($config['cancel_url'])
             ->and($fields['rm'])->toBe('1');
         parse_str((string) parse_url($fields['notify_url'], PHP_URL_QUERY), $callback);
-        expect(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $callback['sig'] ?? null))->toBeTrue();
+        expect(FOSSBilling\Core\Security\Credential::verifyCallbackSignature(2, 16, $callback['sig'] ?? null))->toBeTrue();
     }
 })->with([true, false]);

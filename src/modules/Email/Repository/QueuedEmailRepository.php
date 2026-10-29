@@ -14,7 +14,7 @@ namespace Box\Mod\Email\Repository;
 use Box\Mod\Email\Entity\QueuedEmail;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class QueuedEmailRepository extends EntityRepository
 {

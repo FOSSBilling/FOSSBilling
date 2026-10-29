@@ -15,14 +15,14 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\CannedResponseCategoryRepository::class)]
 #[ORM\Table(name: 'support_pr_category')]
 #[ORM\HasLifecycleCallbacks]
-class CannedResponseCategory implements ApiArrayInterface, TimestampInterface
+class CannedResponseCategory implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -47,7 +47,7 @@ class CannedResponseCategory implements ApiArrayInterface, TimestampInterface
         $this->responses = new ArrayCollection();
     }
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,

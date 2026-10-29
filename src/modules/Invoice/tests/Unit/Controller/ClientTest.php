@@ -19,11 +19,11 @@ test('invoice browser controller redirects denied invoice access to invoice list
     $api = new class {
         public function invoice_get(array $data): array
         {
-            throw new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+            throw new FOSSBilling\Core\Exception\InformationException('You do not have permission to perform this action', [], 403);
         }
     };
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('redirect')
         ->once()
         ->with('invoice')
@@ -49,7 +49,7 @@ test('invoice print and thank-you pages render an accessible invoice', function 
         }
     };
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('render')
         ->once()
         ->with('mod_invoice_print', ['invoice' => ['id' => 7, 'hash' => 'abc']])
@@ -84,7 +84,7 @@ test('banklink renders the payment form for a payable invoice', function (): voi
 
     $request = new Symfony\Component\HttpFoundation\Request(['allow_subscription' => '1']);
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
     $app->shouldReceive('render')
         ->once()
@@ -109,13 +109,13 @@ test('banklink redirects when payment is denied and rethrows other failures', fu
 
         public function invoice_payment(array $data): array
         {
-            throw new FOSSBilling\InformationException('denied', [], 403);
+            throw new FOSSBilling\Core\Exception\InformationException('denied', [], 403);
         }
     };
 
     $request = new Symfony\Component\HttpFoundation\Request(['allow_subscription' => '1']);
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
     $app->shouldReceive('redirect')->once()->with('invoice')->andReturn(new RedirectResponse('/invoice'));
 
@@ -137,14 +137,14 @@ test('banklink redirects when payment is denied and rethrows other failures', fu
 
         public function invoice_payment(array $data): array
         {
-            throw new FOSSBilling\InformationException('This invoice is already paid', [], 400);
+            throw new FOSSBilling\Core\Exception\InformationException('This invoice is already paid', [], 400);
         }
     };
 
     $di['api_guest'] = $alreadyPaid;
 
     expect(fn () => $controller->get_banklink($app, 'abc', 2))
-        ->toThrow(FOSSBilling\InformationException::class, 'already paid');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'already paid');
 });
 
 test('pdf download returns the response, redirects on denial, and rejects garbage', function (): void {
@@ -155,7 +155,7 @@ test('pdf download returns the response, redirects on denial, and rejects garbag
         }
     };
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
 
     $di = container();
     $di['api_guest'] = $ok;
@@ -168,7 +168,7 @@ test('pdf download returns the response, redirects on denial, and rejects garbag
     $denied = new class {
         public function invoice_pdf(array $data): Symfony\Component\HttpFoundation\Response
         {
-            throw new FOSSBilling\InformationException('denied', [], 403);
+            throw new FOSSBilling\Core\Exception\InformationException('denied', [], 403);
         }
     };
 

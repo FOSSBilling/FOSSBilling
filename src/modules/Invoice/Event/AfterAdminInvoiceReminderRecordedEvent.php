@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after an invoice reminder has been recorded. */
 final class AfterAdminInvoiceReminderRecordedEvent extends Event

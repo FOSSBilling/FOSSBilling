@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Widgets\Api;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get all registered widgets grouped by slots.

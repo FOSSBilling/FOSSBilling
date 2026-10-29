@@ -15,7 +15,7 @@ use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 
 function extensionMetaRepoCreateRepository(): ExtensionMetaRepository
 {

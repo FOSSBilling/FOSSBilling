@@ -14,7 +14,7 @@ namespace Box\Mod\Massmailer\Repository;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class MassmailerMessageRepository extends EntityRepository
 {

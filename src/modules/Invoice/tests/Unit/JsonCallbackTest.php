@@ -95,7 +95,7 @@ test('rejects unauthenticated JSON before transaction persistence events and log
         $data['source'] = 'admin';
         $data['http_raw_post_data'] = " \n[{}]";
     }
-    expect(fn () => $service->create($data))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->create($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($service->getDi()['logger']->calls)->toBe([]);
 })->with(['missing gateway', 'unknown gateway', 'unsupported adapter', 'missing signature', 'invalid signature', 'expired signature', 'missing secret', 'malformed JSON', 'oversized body', 'alternate representation', 'scalar JSON']);
 

@@ -5,12 +5,12 @@ declare(strict_types=1);
 // cspell:ignore Résumé boîtes
 
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\DriverManagerFactory;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Doctrine\InstallSeeder;
-use FOSSBilling\Doctrine\SchemaInstaller;
-use FOSSBilling\Doctrine\SchemaSynchronizer;
-use FOSSBilling\UpdatePatcher;
+use FOSSBilling\Core\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\InstallSeeder;
+use FOSSBilling\Core\Doctrine\SchemaInstaller;
+use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
+use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -50,7 +50,7 @@ beforeEach(function (): void {
     $di['pdo'] = $this->pdo;
     $di['dbal'] = $this->connection;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $this->patcher = new UpdatePatcher();
+    $this->patcher = new Patcher();
     $this->patcher->setDi($di);
     $this->runPatch = (new ReflectionMethod($this->patcher, 'patch133'))->getClosure($this->patcher);
 });
@@ -122,7 +122,7 @@ test('Unicode repair covers authored text across legacy first-party tables', fun
         'transaction' => ['output' => 'Result 🚀', 'txn_status' => 'Result 🚀'],
     ];
     $original = 'Résumé 日本語';
-    expect((new FOSSBilling\Validate())->isSldValid('𠮷'))->toBeTrue();
+    expect((new FOSSBilling\Core\Validation\Validator())->isSldValid('𠮷'))->toBeTrue();
     foreach ($cases as $table => $values) {
         // Column-definition preservation is tested separately with complete table definitions.
         $definitions = array_map(static fn (string $name): string => '`' . $name . '` TEXT NULL', array_keys($values));
@@ -243,7 +243,7 @@ test('Unicode repair can resume after DDL failure without repeating completed co
         $this->pdo->exec('CREATE TABLE ' . $table . ' (id INT PRIMARY KEY, notes TEXT NULL, title TEXT NULL) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
     }
     $this->pdo->rejectAlter = '`product`';
-    expect(fn () => ($this->runPatch)())->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => ($this->runPatch)())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'client'"))->toBe('utf8mb4_general_ci')
         ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'product'"))->not->toStartWith('utf8mb4');
     $this->pdo->rejectAlter = null;
