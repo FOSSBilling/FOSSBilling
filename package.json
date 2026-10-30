@@ -33,7 +33,7 @@
     "@playwright/test": "1.64.1",
     "@types/node": "26.6.5",
     "autoprefixer": "10.6.2",
-    "ckeditor5": "49.0.0",
+    "ckeditor5": "49.0.1",
     "esbuild": "0.28.2",
     "github-markdown-css": "5.9.0",
     "postcss": "8.5.32",
