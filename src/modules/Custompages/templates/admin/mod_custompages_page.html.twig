@@ -9,9 +9,11 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
     <li class="breadcrumb-item">
-        <svg class="icon">
-            <use href="#home" />
-        </svg>
+        <a href="{{ '/'|url }}" aria-label="{{ 'Dashboard'|trans }}">
+            <svg class="icon">
+                <use href="#home" />
+            </svg>
+        </a>
     </li>
     <li class="breadcrumb-item">
         <a href="{{ 'custompages'|url }}">{{ 'Custom Pages'|trans }}</a>
