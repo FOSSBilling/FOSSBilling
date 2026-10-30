@@ -1,6 +1,6 @@
 // cspell:words Faible Moyen valuetext
 import { test, expect, type Page } from '@playwright/test';
-import { build } from 'esbuild';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
@@ -11,27 +11,12 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.beforeAll(async () => {
-  const result = await build({
-    stdin: {
-      contents: `
-        import initDatepickers from './src/themes/default/admin/assets/js/datepicker.ts';
-        import initClipboard from './src/themes/default/admin/assets/js/clipboard.ts';
-        import TomSelect from 'tom-select';
-        import { Clipboard } from '@tabler/core';
-
-        document.querySelectorAll('.test-select').forEach(el => new TomSelect(el));
-        window.initDatepickers = initDatepickers;
-        initDatepickers();
-        document.querySelectorAll('[data-test-initialized]').forEach(el => Clipboard.getOrCreateInstance(el));
-        initClipboard();
-      `,
-      resolveDir: root,
-    },
-    bundle: true,
-    write: false,
-    format: 'iife',
-  });
-  script = result.outputFiles[0].text;
+  if (process.env.TABLER_WIDGET_SCRIPT) {
+    script = await readFile(process.env.TABLER_WIDGET_SCRIPT, 'utf8');
+  } else {
+    const { buildWidgetScript } = await import('../../helpers/widget-script');
+    script = await buildWidgetScript(root);
+  }
 });
 
 async function mount(page: Page, markup: string) {

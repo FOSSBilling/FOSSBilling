@@ -83,12 +83,22 @@ install_payload=(
 
 compose exec -T app curl -fsS "${install_payload[@]}" >/dev/null
 
+report_mount=()
+if [[ -n "${FOSSBILLING_TEST_RESULTS_DIR:-}" ]]; then
+  mkdir -p "${FOSSBILLING_TEST_RESULTS_DIR}"
+  report_mount=(--volume "${FOSSBILLING_TEST_RESULTS_DIR}:/test-results" --env FOSSBILLING_JUNIT_FILE=/test-results/live.xml)
+fi
+
 compose run --rm --no-deps \
+  "${report_mount[@]}" \
   --env APP_ENV=test \
   --env APP_URL="${app_url}" \
   --env TEST_API_KEY="${test_api_key}" \
   app \
-  sh -euxc "
+  sh -euxc '
     cd /workspace
-    ./src/vendor/bin/pest --test-directory ../tests --testsuite=E2E --ci
-  "
+    if [ -n "${FOSSBILLING_JUNIT_FILE:-}" ]; then
+      set -- --log-junit "$FOSSBILLING_JUNIT_FILE"
+    fi
+    exec ./src/vendor/bin/pest --test-directory ../tests --testsuite=E2E --ci "$@"
+  ' sh

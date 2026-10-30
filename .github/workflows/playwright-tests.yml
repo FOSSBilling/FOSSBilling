@@ -23,6 +23,9 @@ jobs:
       - name: 'Typecheck Test Suite'
         run: npm ci --no-audit --no-fund && npm run pw:tsc
 
+      - name: 'JavaScript Unit Tests'
+        run: npm run test:js
+
       - name: 'Build Admin Widget Assets'
         run: NODE_ENV=production npm run build-admin_default
 
