@@ -60,6 +60,11 @@ class Client implements InjectionAwareInterface
 
     public function get_method(\Box_App $app, $role, $class, $method): Response
     {
+        // Canonical case: PHP resolves API methods case-insensitively, so every
+        // downstream guard must see one normalized name or case variants can
+        // evade the checks that compare literal method names.
+        $class = strtolower($class);
+        $method = strtolower($method);
         $call = $class . '_' . $method;
 
         return $this->tryCall($role, $class, $call, $app->getRequest()->query->all());
@@ -75,6 +80,8 @@ class Client implements InjectionAwareInterface
             return $this->renderJson(null, new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => $message], 400));
         }
 
+        $class = strtolower($class);
+        $method = strtolower($method);
         $call = $class . '_' . $method;
 
         return $this->tryCall($role, $class, $call, $p);

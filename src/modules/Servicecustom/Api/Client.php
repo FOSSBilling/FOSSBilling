@@ -35,6 +35,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Method is required');
         }
 
+        if (!is_string($data['method'])) {
+            throw new \FOSSBilling\Exception('Method must be a string');
+        }
+
         $identity = $this->getIdentity();
         $model = $this->getService()->getServiceCustomByOrderId($data['order_id'], $identity->getId());
 
