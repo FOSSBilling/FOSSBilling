@@ -321,6 +321,32 @@ test('guest client login is throttled under the anti-brute-force api_login polic
         ->and($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
 });
 
+test('mixed-case API method names reach rate limiting and dispatch in canonical form', function (string $class, string $method, string $expectedCall): void {
+    [$controller, $rateLimitCalls] = createTestController(['csrf_token' => 'browser-nonce']);
+    $params = ['email' => 'client@example.test', 'password' => 'password', 'CSRFToken' => 'browser-nonce'];
+    $request = Request::create('/api/guest/' . $class . '/' . $method, 'POST', $params);
+    $controller->getDi()['request'] = $request;
+
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), $expectedCall, ['email' => 'client@example.test', 'password' => 'password'])->andReturn(['ok' => true]);
+    $controller->getDi()['api_dispatcher'] = $dispatcher;
+
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $controller->post_method($app, 'guest', $class, $method);
+
+    expect($controller->renderedData)->toBe(['ok' => true])
+        ->and($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
+})->with([
+    ['client', 'login', 'client_login'],
+    ['client', 'LoGiN', 'client_login'],
+    ['CLIENT', 'LOGIN', 'client_login'],
+    ['staff', 'login', 'staff_login'],
+    ['staff', 'LoGiN', 'staff_login'],
+    ['STAFF', 'LOGIN', 'staff_login'],
+]);
+
 test('admin impersonation of client login is not throttled under the guest api_login policy', function (): void {
     [$controller, $rateLimitCalls] = createTestController(['admin' => ['id' => 7]]);
     $controller->hasValidSession = true;
