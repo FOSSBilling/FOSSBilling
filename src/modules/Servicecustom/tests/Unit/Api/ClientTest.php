@@ -68,3 +68,19 @@ test('throws exception when calling custom method without method', function (): 
     expect(fn () => $api->call(['order_id' => 1]))
         ->toThrow(Exception::class);
 });
+
+test('throws exception when calling custom method with a non-string method', function (): void {
+    $api = apiEndpoint(new Client());
+    $identity = \Tests\Helpers\client(['id' => 1]);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getServiceCustomByOrderId')
+        ->never();
+    $serviceMock->shouldReceive('customCall')
+        ->never();
+
+    $api->setService($serviceMock);
+    $api->setIdentity($identity);
+
+    expect(fn () => $api->call(['order_id' => 1, 'method' => ['delete']]))
+        ->toThrow(Exception::class);
+});

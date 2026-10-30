@@ -203,7 +203,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function customCall(ServiceCustom $model, $method, $params = [])
+    public function customCall(ServiceCustom $model, string $method, $params = [])
     {
         $forbidden_methods = [
             'delete',
@@ -214,7 +214,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'renew',
             'activate',
         ];
-        if (in_array($method, $forbidden_methods)) {
+        if (in_array(strtolower($method), $forbidden_methods, true)) {
             throw new \FOSSBilling\Exception('Custom plugin method :method is forbidden', [':method' => $method], 403);
         }
 
