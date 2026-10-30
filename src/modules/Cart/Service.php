@@ -559,41 +559,59 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Throw when the promo's bundle condition is not met by the cart,
-     * naming the missing products.
+     * Throw when the promo's cart condition is not met by the cart,
+     * describing what is missing.
      */
     private function assertPromoCartConditionMet(Cart $cart, Promo $promo, ?array $cartProducts = null): void
     {
         $productService = $this->getProductService();
-        $missing = $productService->findMissingRequiredProductIds($promo, $this->getCartProductIds($cart, $cartProducts));
-        if ($missing === []) {
+        $unmetRequirements = $productService->findUnmetPromoConditions($promo, $this->getCartProductQuantities($cart, $cartProducts));
+        if ($unmetRequirements === []) {
             return;
         }
 
-        $titles = [];
-        foreach ($productService->getProductSnapshotMap($missing) as $id => $snapshot) {
-            $titles[] = $snapshot['title'] ?? '#' . $id;
-        }
-        if ($titles === []) {
-            $titles = array_map(static fn (int $id): string => '#' . $id, $missing);
+        $referencedProductIds = [];
+        foreach ($unmetRequirements as $requirement) {
+            foreach ($requirement['from'] ?? [$requirement] as $requiredProduct) {
+                $referencedProductIds[] = (int) $requiredProduct['product'];
+            }
         }
 
-        throw new \FOSSBilling\InformationException('This promo code requires the following products in the cart: :products', [':products' => implode(', ', $titles)]);
+        $productTitles = [];
+        foreach ($productService->getProductSnapshotMap(array_values(array_unique($referencedProductIds))) as $productId => $snapshot) {
+            $productTitles[(int) $productId] = $snapshot['title'] ?? '#' . $productId;
+        }
+
+        $describeProduct = static function (array $requiredProduct) use ($productTitles): string {
+            $title = $productTitles[(int) $requiredProduct['product']] ?? '#' . $requiredProduct['product'];
+
+            return isset($requiredProduct['min_qty']) ? __trans('at least :qty × :product', [':qty' => $requiredProduct['min_qty'], ':product' => $title]) : $title;
+        };
+
+        $requirementDescriptions = [];
+        foreach ($unmetRequirements as $requirement) {
+            $requirementDescriptions[] = isset($requirement['pick'])
+                ? __trans(':count of (:products)', [':count' => $requirement['pick'], ':products' => implode(', ', array_map($describeProduct, $requirement['from']))])
+                : $describeProduct($requirement);
+        }
+
+        throw new \FOSSBilling\InformationException('This promo code requires the following products in the cart: :products', [':products' => implode(', ', $requirementDescriptions)]);
     }
 
     /**
-     * Raw product ids on the cart rows, without resolving products.
+     * Units of each product on the cart rows, without resolving products.
      *
-     * @return list<int>
+     * @return array<int, int>
      */
-    private function getCartProductIds(Cart $cart, ?array $cartProducts = null): array
+    private function getCartProductQuantities(Cart $cart, ?array $cartProducts = null): array
     {
-        $ids = [];
+        $cartQuantities = [];
         foreach ($cartProducts ?? $this->getCartProducts($cart) as $cartProduct) {
-            $ids[] = (int) $cartProduct->getProductId();
+            $productId = (int) $cartProduct->getProductId();
+            $cartQuantities[$productId] = ($cartQuantities[$productId] ?? 0) + $this->getRequestedQuantity($this->getItemConfig($cartProduct));
         }
 
-        return $ids;
+        return $cartQuantities;
     }
 
     protected function isEmptyCart(Cart $cart): bool
@@ -706,7 +724,7 @@ class Service implements InjectionAwareInterface
         $promoId = $cart->getPromoId();
         if ($promoId) {
             $promo = $this->getProductService()->findPromoById((int) $promoId);
-            $conditionMet = $this->getProductService()->findMissingRequiredProductIds($promo, $this->getCartProductIds($cart, $cartProducts)) === [];
+            $conditionMet = $this->getProductService()->findUnmetPromoConditions($promo, $this->getCartProductQuantities($cart, $cartProducts)) === [];
 
             return [
                 'source' => 'manual',
@@ -1074,7 +1092,7 @@ class Service implements InjectionAwareInterface
 
                 if ($effectivePromos !== []) {
                     // The cart may have changed since the code was applied;
-                    // re-check the bundle condition inside the transaction.
+                    // re-check the cart condition inside the transaction.
                     $this->assertPromoCartConditionMet($cart, $effectivePromos[0], $cartProducts);
                 }
 
