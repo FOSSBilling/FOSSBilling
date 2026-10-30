@@ -347,6 +347,23 @@ test('mixed-case API method names reach rate limiting and dispatch in canonical 
     ['STAFF', 'LOGIN', 'staff_login'],
 ]);
 
+test('mixed-case session-preference method names still authenticate via session', function (string $method): void {
+    [$controller] = createTestController(['client_id' => 123]);
+    $controller->hasValidSession = true;
+    $controller->shouldUseTokenLogin = true;
+    $controller->shouldFailCsrf = true;
+    $request = Request::create('/api/client/profile/' . $method);
+    $controller->getDi()['request'] = $request;
+
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $controller->get_method($app, 'client', 'profile', $method);
+
+    expect($controller->calls)->toBe(['csrf'])
+        ->and($controller->renderedException?->getCode())->toBe(403);
+})->with(['api_key_get', 'API_KEY_GET', 'Api_Key_Get']);
+
 test('admin impersonation of client login is not throttled under the guest api_login policy', function (): void {
     [$controller, $rateLimitCalls] = createTestController(['admin' => ['id' => 7]]);
     $controller->hasValidSession = true;
