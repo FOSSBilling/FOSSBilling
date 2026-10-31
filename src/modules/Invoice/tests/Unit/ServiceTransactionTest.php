@@ -300,6 +300,72 @@ test('creates a transaction with safe lifecycle events and excludes raw IPN and 
         ->and($events[1][1])->toBeTrue();
 });
 
+test('stores only an allow-list of the callback server data', function (): void {
+    $stored = null;
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once()->with(Mockery::on(static function (Transaction $transaction) use (&$stored): bool {
+        setEntityId($transaction, 28);
+        $stored = $transaction;
+
+        return true;
+    }));
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(null, null, $em);
+    $service->getDi()['event_dispatcher'] = new SymfonyEventDispatcher();
+
+    $service->create([
+        'skip_validation' => true,
+        'source' => 'ipn',
+        'server' => [
+            'REMOTE_ADDR' => '203.0.113.9',
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_TIME_FLOAT' => 1790000000.123456,
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'HTTP_USER_AGENT' => 'GatewayBot/1.0',
+            'HTTP_PAYPAL_TRANSMISSION_SIG' => 'signature-value',
+            'HTTP_COOKIE' => 'fb_sid=session-secret; BBLANG=en',
+            'HTTP_AUTHORIZATION' => 'Bearer authorization-secret',
+            'PHP_AUTH_PW' => 'basic-auth-secret',
+            'DB_PASSWORD' => 'environment-secret',
+        ],
+    ]);
+
+    $ipn = json_decode((string) $stored->getIpn(), true);
+
+    expect($ipn['server'])->toBe([
+        'REMOTE_ADDR' => '203.0.113.9',
+        'REQUEST_METHOD' => 'POST',
+        'REQUEST_TIME_FLOAT' => 1790000000.123456,
+        'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+        'HTTP_USER_AGENT' => 'GatewayBot/1.0',
+        'HTTP_PAYPAL_TRANSMISSION_SIG' => 'signature-value',
+    ])
+        ->and($stored->getIpn())->not->toContain('session-secret')
+        ->not->toContain('authorization-secret')
+        ->not->toContain('basic-auth-secret')
+        ->not->toContain('environment-secret');
+});
+
+test('a callback without server data stores none', function (): void {
+    $stored = null;
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once()->with(Mockery::on(static function (Transaction $transaction) use (&$stored): bool {
+        setEntityId($transaction, 29);
+        $stored = $transaction;
+
+        return true;
+    }));
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(null, null, $em);
+    $service->getDi()['event_dispatcher'] = new SymfonyEventDispatcher();
+
+    $service->create(['skip_validation' => true, 'source' => 'ipn']);
+
+    expect(json_decode((string) $stored->getIpn(), true)['server'])->toBeNull();
+});
+
 test('deletes a transaction', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $balanceRepository = Mockery::mock(ClientBalanceRepository::class);

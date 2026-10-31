@@ -200,6 +200,22 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public const MAX_CALLBACK_BODY_SIZE = 1048576;
 
+    /**
+     * The only parts of a callback's $_SERVER that are stored with the transaction. Everything else is
+     * dropped, in particular the Cookie header (session ids), Authorization and PHP_AUTH_* credentials, and
+     * the process environment that PHP-FPM exposes through $_SERVER. REQUEST_TIME_FLOAT stays: the IPN
+     * hash below covers the stored payload, and it is what keeps two identical callbacks apart.
+     */
+    private const array STORED_SERVER_KEYS = [
+        'REMOTE_ADDR', 'REQUEST_METHOD', 'REQUEST_URI', 'QUERY_STRING', 'REQUEST_TIME', 'REQUEST_TIME_FLOAT',
+        'REQUEST_SCHEME', 'SERVER_NAME', 'SERVER_PORT', 'HTTPS', 'CONTENT_TYPE', 'CONTENT_LENGTH',
+        'HTTP_HOST', 'HTTP_USER_AGENT', 'HTTP_REFERER', 'HTTP_ORIGIN',
+        'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED_PROTO', 'HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP',
+    ];
+
+    /** Webhook signature headers (Stripe-Signature, PayPal-Transmission-Sig...) stay with the stored callback. */
+    private const string SIGNATURE_HEADER_PATTERN = '/^HTTP_[A-Z0-9_]*(?:SIGNATURE|_SIG|HMAC|DIGEST)(?:_[0-9]+)?$/';
+
     private function authenticateJsonCallback(array $data): void
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
@@ -294,7 +310,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
             'post' => (isset($data['post']) && is_array($data['post'])) ? $data['post'] : null,
             'http_raw_post_data' => $data['http_raw_post_data'] ?? null,
-            'server' => $data['server'] ?? null,
+            'server' => $this->filterServerData($data['server'] ?? null),
         ];
 
         // Fallback dedupe: compute a canonical hash of the IPN payload and
@@ -334,6 +350,27 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionCreateEvent($newId));
 
         return $newId;
+    }
+
+    /**
+     * Reduce a callback's $_SERVER to what is worth keeping with the transaction, which admins can read
+     * through the API.
+     */
+    private function filterServerData(mixed $server): ?array
+    {
+        if (!is_array($server)) {
+            return null;
+        }
+
+        $kept = [];
+        foreach ($server as $key => $value) {
+            $key = (string) $key;
+            if (in_array($key, self::STORED_SERVER_KEYS, true) || preg_match(self::SIGNATURE_HEADER_PATTERN, $key) === 1) {
+                $kept[$key] = $value;
+            }
+        }
+
+        return $kept;
     }
 
     private function supportsTransactionIpnHash(): bool
