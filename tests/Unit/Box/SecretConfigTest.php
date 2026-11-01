@@ -76,7 +76,7 @@ test('encryption does not mistake a plaintext value for ciphertext', function ()
         ->and($crypt->decrypt($stored['api_key'], 'test-passphrase'))->toBe('v2:looks-marked-but-is-not-ciphertext');
 });
 
-test('decryption passes through legacy plaintext and undecryptable values', function (): void {
+test('decryption passes through legacy plaintext and values that cannot be decrypted', function (): void {
     $crypt = new Crypt();
 
     $result = SecretConfig::decryptMarkedValues(
