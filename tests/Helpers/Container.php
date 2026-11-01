@@ -471,6 +471,31 @@ function createEntity(string $class, array $properties = []): object
 }
 
 /**
+ * Create a Crypt double that emulates the real encrypt/decrypt contract
+ * (v2:-prefixed ciphertext, false for legacy plaintext) without depending on
+ * the application config passphrase.
+ */
+function cryptMock(): object
+{
+    $crypt = \Mockery::mock(\Box_Crypt::class);
+    $crypt->shouldReceive('encrypt')
+        ->byDefault()
+        ->andReturnUsing(static fn (string $text, ?string $pass = null): string => \Box_Crypt::CURRENT_FORMAT_PREFIX . base64_encode($text));
+    $crypt->shouldReceive('decrypt')
+        ->byDefault()
+        ->andReturnUsing(static function (?string $text, ?string $pass = null): string|false {
+            if (!is_string($text) || !str_starts_with($text, \Box_Crypt::CURRENT_FORMAT_PREFIX)) {
+                return false;
+            }
+            $decoded = base64_decode(substr($text, strlen(\Box_Crypt::CURRENT_FORMAT_PREFIX)), true);
+
+            return $decoded === false ? false : $decoded;
+        });
+
+    return $crypt;
+}
+
+/**
  * Inject a mock filesystem into a service that has a private filesystem property.
  */
 function injectMockFilesystem(object $service, \Mockery\MockInterface $filesystemMock): void

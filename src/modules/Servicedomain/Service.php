@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedomain;
 
 use Box\Mod\Product\Entity\Product;
+use FOSSBilling\SecretConfig;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -1183,7 +1184,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetConfiguration(\Model_TldRegistrar $model): array
     {
-        return json_decode($model->config ?? '', true) ?? [];
+        $config = json_decode($model->config ?? '', true) ?? [];
+
+        return SecretConfig::decryptMarkedValues($config, $this->di['crypt']);
     }
 
     public function registrarGetRegistrarAdapterConfig(\Model_TldRegistrar $model)
@@ -1311,7 +1314,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 }
             }
 
-            $model->config = json_encode($configuration, JSON_THROW_ON_ERROR);
+            $model->config = json_encode(SecretConfig::encryptSecretFields($configuration, $secretFields, $this->di['crypt']), JSON_THROW_ON_ERROR);
             $this->registrarValidateConfiguration($model);
         }
 
@@ -1394,6 +1397,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'form' => $c['form'],
             'test_mode' => $model->test_mode,
         ];
+    }
+
+    /**
+     * Config field names for this registrar's adapter whose stored values are
+     * encrypted at rest. Public for the install-time data migration; runtime
+     * callers that already resolved the adapter config should keep using
+     * {@see resolveRegistrarSecretFields()} directly.
+     *
+     * @return string[]
+     */
+    public function registrarGetSecretFields(\Model_TldRegistrar $model): array
+    {
+        try {
+            $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
     }
 
     /**

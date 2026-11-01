@@ -566,6 +566,9 @@ class UpdatePatcher implements InjectionAwareInterface
             119 => 'patch119',
             120 => 'patch120',
             121 => 'patch121',
+            // 0.8-next-only number (main used 122 for an unrelated invoice
+            // migration): encrypt stored payment gateway and registrar secrets.
+            122 => 'patch122',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3091,5 +3094,68 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $this->executeSql('UPDATE `product_category` SET `priority` = `id` * 10 WHERE `priority` IS NULL');
+    }
+
+    private function patch122(): void
+    {
+        // The numbered patch loop runs on every driver this branch supports,
+        // so no separate portable copy is needed. Minimal test containers
+        // lack the crypt and module services; without them there is nothing
+        // safe to migrate with, so leave the rows for a full run.
+        if (!$this->di instanceof \Pimple\Container || !isset($this->di['crypt'], $this->di['mod_service'], $this->di['db'])) {
+            return;
+        }
+
+        $this->encryptStoredAdapterSecrets('PayGateway', 'pay_gateway', 'gateway');
+        $this->encryptStoredAdapterSecrets('TldRegistrar', 'tld_registrar', 'registrar');
+    }
+
+    /**
+     * Encrypt the secret fields of every stored adapter configuration row in
+     * the given table.
+     */
+    private function encryptStoredAdapterSecrets(string $modelName, string $table, string $adapterColumn): void
+    {
+        /** @var \Box_Crypt $crypt */
+        $crypt = $this->di['crypt'];
+        $salt = Config::getProperty('info.salt');
+
+        $rows = $this->fetchAll(sprintf(
+            'SELECT id, %s AS adapter, config FROM %s',
+            $this->quoteIdentifier($adapterColumn),
+            $this->quoteIdentifier($table)
+        ));
+
+        foreach ($rows as $row) {
+            $config = json_decode((string) ($row['config'] ?? ''), true);
+            if (!is_array($config) || $config === []) {
+                continue;
+            }
+
+            try {
+                $model = $this->di['db']->load($modelName, $row['id']);
+                $secretFields = $table === 'pay_gateway'
+                    ? $this->di['mod_service']('invoice', 'PayGateway')->getSecretFields($model)
+                    : $this->di['mod_service']('servicedomain')->registrarGetSecretFields($model);
+            } catch (\Throwable) {
+                // Unknown adapter or unreadable row: leave it untouched rather
+                // than aborting the migration for the remaining rows.
+                continue;
+            }
+
+            if ($secretFields === []) {
+                continue;
+            }
+
+            $encrypted = SecretConfig::encryptSecretFields($config, $secretFields, $crypt, $salt);
+            if ($encrypted === $config) {
+                continue;
+            }
+
+            // Only write when the row still holds what was read: an admin save
+            // racing the migration keeps its newer values instead of being
+            // overwritten, and the row is picked up by a later run.
+            $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+        }
     }
 }

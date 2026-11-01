@@ -463,3 +463,62 @@ test('refund handling reuses the invoice refund routine', function (): void {
     expect($result)->toBe($transactionModel);
     expect($transactionModel->status)->toBe(Model_Transaction::STATUS_PROCESSED);
 });
+
+test('stores only an allow-list of the callback server data', function (): void {
+    $service = new ServiceTransaction();
+    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock->shouldReceive('fire')->atLeast()->once();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')->andReturn(new Model_Invoice());
+    $dbMock->shouldReceive('findOne')->andReturn(null);
+
+    $stored = null;
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock->shouldReceive('dispense')->with('Transaction')->andReturn($transactionModel);
+    $dbMock->shouldReceive('store')->once()->andReturnUsing(function ($model) use (&$stored): int {
+        $stored = $model;
+
+        return 28;
+    });
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventsMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $result = $service->create([
+        'skip_validation' => true,
+        'source' => 'ipn',
+        'server' => [
+            'REMOTE_ADDR' => '203.0.113.9',
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_TIME_FLOAT' => 1790000000.123456,
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'HTTP_USER_AGENT' => 'GatewayBot/1.0',
+            'HTTP_PAYPAL_TRANSMISSION_SIG' => 'signature-value',
+            'HTTP_COOKIE' => 'fb_sid=session-secret; BBLANG=en',
+            'HTTP_AUTHORIZATION' => 'Bearer authorization-secret',
+            'PHP_AUTH_PW' => 'basic-auth-secret',
+            'DB_PASSWORD' => 'environment-secret',
+        ],
+    ]);
+
+    expect($result)->toBe(28);
+
+    $ipn = json_decode((string) $stored->ipn, true);
+    expect($ipn['server'])->toBe([
+        'REMOTE_ADDR' => '203.0.113.9',
+        'REQUEST_METHOD' => 'POST',
+        'REQUEST_TIME_FLOAT' => 1790000000.123456,
+        'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+        'HTTP_USER_AGENT' => 'GatewayBot/1.0',
+        'HTTP_PAYPAL_TRANSMISSION_SIG' => 'signature-value',
+    ])
+        ->and($stored->ipn)->not->toContain('session-secret')
+        ->not->toContain('authorization-secret')
+        ->not->toContain('basic-auth-secret')
+        ->not->toContain('environment-secret');
+});

@@ -15,6 +15,7 @@ use Box\Mod\Servicedomain\Service;
 use Box\Mod\System\Service as SystemService;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\cryptMock;
 
 class ServicedomainServiceSyncProbe extends Service
 {
@@ -1954,6 +1955,7 @@ test('gets registrar configuration', function (): void {
     ];
 
     $di = container();
+    $di['crypt'] = cryptMock();
     $service->setDi($di);
 
     $model = new Model_TldRegistrar();
@@ -1989,6 +1991,7 @@ test('throws exception when getting registrar adapter config for non-existing re
 test('gets registrar adapter', function (): void {
     $service = new Service();
     $di = container();
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
     $model = new Model_TldRegistrar();
@@ -2109,6 +2112,7 @@ test('converts registrar to api array', function (): void {
 test('converts registrar to api array masks secrets for an admin', function (): void {
     $service = new Service();
     $di = container();
+    $di['crypt'] = cryptMock();
     $service->setDi($di);
 
     $model = new Model_TldRegistrar();
@@ -2141,6 +2145,7 @@ test('registrarUpdate keeps the existing secret when the incoming value is blank
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['loggedin_admin'] = new Model_Admin();
     $service->setDi($di);
@@ -2164,9 +2169,11 @@ test('registrarUpdate keeps the existing secret when the incoming value is blank
     ]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $model->config, true);
+    $stored = json_decode((string) $model->config, true);
+    $config = FOSSBilling\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
     expect($config['api-key'])->toBe('existing-secret');
     expect($config['api-user-id'])->toBe('new-reseller-id');
+    expect($stored['api-user-id'])->toBe('new-reseller-id');
 });
 
 test('registrarUpdate rotates a secret when a new value is submitted', function (): void {
@@ -2177,6 +2184,7 @@ test('registrarUpdate rotates a secret when a new value is submitted', function 
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['loggedin_admin'] = new Model_Admin();
     $service->setDi($di);
@@ -2195,8 +2203,98 @@ test('registrarUpdate rotates a secret when a new value is submitted', function 
     $result = $service->registrarUpdate($model, ['config' => ['api-key' => 'new-secret']]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $model->config, true);
+    $stored = json_decode((string) $model->config, true);
+    $config = FOSSBilling\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
     expect($config['api-key'])->toBe('new-secret');
+});
+
+test('registrarUpdate stores registrar secrets encrypted at rest', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->registrar = 'Namecheap';
+    $model->config = json_encode([
+        'api-user-id' => 'reseller-id',
+        'api-key' => 'old-secret',
+        'username' => 'existing-username',
+        'ip' => '127.0.0.1',
+    ]);
+
+    $result = $service->registrarUpdate($model, ['config' => ['api-key' => 'new-secret']]);
+
+    expect($result)->toBeTrue();
+
+    $raw = (string) $model->config;
+    expect($raw)->not->toContain('new-secret')
+        ->and($raw)->toContain('reseller-id');
+
+    $stored = json_decode($raw, true);
+    expect($stored['api-key'])->toStartWith(Box_Crypt::CURRENT_FORMAT_PREFIX);
+
+    $config = FOSSBilling\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    expect($config['api-key'])->toBe('new-secret');
+});
+
+test('reads a legacy plaintext registrar configuration', function (): void {
+    $service = new Service();
+    $di = container();
+    $di['crypt'] = cryptMock();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->name = 'Namecheap';
+    $model->registrar = 'Namecheap';
+    $model->test_mode = false;
+    $model->config = json_encode([
+        'api-key' => 'legacy-secret-key',
+    ]);
+
+    $result = $service->registrarToApiArray($model);
+
+    expect($result['config']['api-key'])->toBeNull()
+        ->and($result['config']['api-key_set'])->toBeTrue();
+});
+
+test('registrar adapter receives decrypted secrets from encrypted storage', function (): void {
+    $service = new Service();
+    $di = container();
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $stored = FOSSBilling\SecretConfig::encryptSecretFields(
+        ['api-key' => 'super-secret-key', 'username' => 'my-username', 'api-user-id' => 'reseller-id', 'ip' => '127.0.0.1'],
+        ['api-key'],
+        $di['crypt']
+    );
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->name = 'Namecheap';
+    $model->registrar = 'Namecheap';
+    $model->test_mode = false;
+    $model->config = json_encode($stored);
+
+    $adapter = $service->registrarGetRegistrarAdapter($model);
+
+    expect($adapter)->toBeInstanceOf(Registrar_Adapter_Namecheap::class)
+        ->and($adapter->config['api-key'])->toBe('super-secret-key')
+        ->and($adapter->config['api-user-id'])->toBe('reseller-id');
 });
 
 test('creates tld', function (): void {
@@ -2467,6 +2565,7 @@ test('updates registrar', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -2499,6 +2598,7 @@ test('preserves registrar configuration fields omitted from an update', function
     $dbMock->shouldReceive('store')->once()->andReturn(1);
     $di = container();
     $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 

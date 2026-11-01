@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Box\Mod\Invoice\ServicePayGateway;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\cryptMock;
 
 test('gets dependency injection container', function (): void {
     $service = new ServicePayGateway();
@@ -166,6 +167,7 @@ test('converts to api array', function (): void {
     ];
 
     $di = container();
+    $di['crypt'] = cryptMock();
 
     $serviceMock->setDi($di);
 
@@ -208,6 +210,7 @@ test('updates a gateway', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -238,6 +241,7 @@ test('converts to api array masks secrets for an admin', function (): void {
 
     $service = new ServicePayGateway();
     $di = container();
+    $di['crypt'] = cryptMock();
     $service->setDi($di);
 
     $result = $service->toApiArray($payGatewayModel, false, new Model_Admin());
@@ -266,6 +270,7 @@ test('update keeps the existing secret gateway value when the incoming value is 
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['loggedin_admin'] = new Model_Admin();
 
@@ -280,9 +285,11 @@ test('update keeps the existing secret gateway value when the incoming value is 
     ]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $payGatewayModel->config, true);
+    $stored = json_decode((string) $payGatewayModel->config, true);
+    $config = FOSSBilling\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
     expect($config['api_key'])->toBe('sk_live_existing');
     expect($config['pub_key'])->toBe('pk_live_new');
+    expect($stored['pub_key'])->toBe('pk_live_new');
 });
 
 test('update rotates a secret gateway value when a new value is submitted', function (): void {
@@ -296,6 +303,7 @@ test('update rotates a secret gateway value when a new value is submitted', func
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['loggedin_admin'] = new Model_Admin();
 
@@ -305,8 +313,93 @@ test('update rotates a secret gateway value when a new value is submitted', func
     $result = $service->update($payGatewayModel, ['config' => ['api_key' => 'sk_live_new']]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $payGatewayModel->config, true);
+    $stored = json_decode((string) $payGatewayModel->config, true);
+    $config = FOSSBilling\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
     expect($config['api_key'])->toBe('sk_live_new');
+});
+
+test('update stores gateway secrets encrypted at rest', function (): void {
+    $payGatewayModel = new Model_PayGateway();
+    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->gateway = 'Stripe';
+    $payGatewayModel->enabled = 0;
+    $payGatewayModel->config = json_encode(['api_key' => 'sk_live_old']);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+
+    $service = new ServicePayGateway();
+    $service->setDi($di);
+
+    $result = $service->update($payGatewayModel, ['config' => ['api_key' => 'sk_live_new', 'pub_key' => 'pk_live_new']]);
+
+    expect($result)->toBeTrue();
+
+    $raw = (string) $payGatewayModel->config;
+    expect($raw)->not->toContain('sk_live_new')
+        ->and($raw)->toContain('pk_live_new');
+
+    $stored = json_decode($raw, true);
+    expect($stored['api_key'])->toStartWith(Box_Crypt::CURRENT_FORMAT_PREFIX);
+
+    $config = FOSSBilling\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    expect($config['api_key'])->toBe('sk_live_new');
+});
+
+test('reads a legacy plaintext gateway config', function (): void {
+    $payGatewayModel = new Model_PayGateway();
+    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->gateway = 'Stripe';
+    $payGatewayModel->accepted_currencies = json_encode(['USD']);
+    $payGatewayModel->config = json_encode(['api_key' => 'sk_live_legacy']);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['crypt'] = cryptMock();
+    $service->setDi($di);
+
+    $result = $service->toApiArray($payGatewayModel, false, new Model_Admin());
+
+    expect($result['config']['api_key'])->toBeNull()
+        ->and($result['config']['api_key_set'])->toBeTrue();
+});
+
+test('payment adapter receives decrypted secrets from encrypted storage', function (): void {
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['crypt'] = cryptMock();
+    $url = new Box_Url();
+    $url->setBaseUri('https://billing.example/subdir/');
+    $di['url'] = $url;
+    $tools = Mockery::mock(FOSSBilling\Tools::class);
+    $tools->shouldReceive('url')->andReturnUsing(fn (string $path): string => $url->link($path));
+    $di['tools'] = $tools;
+    $service->setDi($di);
+
+    $stored = FOSSBilling\SecretConfig::encryptSecretFields(
+        ['api_key' => 'sk_live_secret', 'pub_key' => 'pk_live_visible'],
+        ['api_key'],
+        $di['crypt']
+    );
+
+    $payGatewayModel = new Model_PayGateway();
+    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->gateway = 'Stripe';
+    $payGatewayModel->test_mode = 0;
+    $payGatewayModel->config = json_encode($stored);
+
+    $adapter = $service->getPaymentAdapter($payGatewayModel);
+
+    expect($adapter)->toBeInstanceOf(Payment_Adapter_Stripe::class);
+
+    $storedConfig = (new ReflectionClass($adapter))->getProperty('config')->getValue($adapter);
+    expect($storedConfig['api_key'])->toBe('sk_live_secret');
 });
 
 test('deletes a gateway', function (): void {
@@ -393,6 +486,7 @@ test('gets payment adapter', function (): void {
         ->andReturn('http://example.com/');
 
     $di = container();
+    $di['crypt'] = cryptMock();
     $di['url'] = $urlMock;
     $di['tools'] = $toolsMock;
     $serviceMock->setDi($di);
@@ -426,6 +520,7 @@ test('throws exception when payment gateway is not found', function (): void {
         ->andReturn('http://example.com/');
 
     $di = container();
+    $di['crypt'] = cryptMock();
     $di['url'] = $urlMock;
     $di['tools'] = $toolsMock;
     $serviceMock->setDi($di);
@@ -605,6 +700,7 @@ test('payment handoffs contain no session capability and retain invoice context'
     $sessionMock->shouldNotReceive('getId');
 
     $di = container();
+    $di['crypt'] = cryptMock();
     $di['url'] = $url;
     $di['tools'] = $toolsMock;
     $di['session'] = $sessionMock;
