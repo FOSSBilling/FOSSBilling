@@ -724,12 +724,8 @@ class Service implements InjectionAwareInterface
             }
 
             $installedVersion = $this->getInstalledModuleVersion($dependency);
-            if ($installedVersion === null) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => 'null']);
-            }
-
-            if (!(new \Composer\Semver\VersionParser())->isValid($installedVersion)) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => $installedVersion]);
+            if (!is_string($installedVersion) || !(new \Composer\Semver\VersionParser())->isValid($installedVersion)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => is_string($installedVersion) ? $installedVersion : 'null']);
             }
 
             $this->assertConstraintSatisfied(
@@ -767,9 +763,10 @@ class Service implements InjectionAwareInterface
 
     /**
      * Block deactivating a module that installed modules still require.
-     * Only core and installed modules are consulted: core manifests ship
-     * with empty requirements, and manifests that cannot be read cannot
-     * declare a requirement, so both are safely skipped.
+     * Only installed (non-core) modules are consulted: core modules cannot
+     * be uninstalled and ship without requirements, while manifests that
+     * cannot be read - or do not declare valid requirements - cannot name
+     * a dependent and are safely skipped.
      *
      * @throws \FOSSBilling\Core\Exception\InformationException when a dependent is found
      */
