@@ -375,6 +375,36 @@ test('reads a legacy plaintext gateway config', function (): void {
         ->and($result['config']['api_key_set'])->toBeTrue();
 });
 
+test('payment adapter receives decrypted secrets from encrypted storage', function (): void {
+    $service = payGatewayService();
+    $url = new FOSSBilling\Url();
+    $url->setBaseUri('https://billing.example/subdir/');
+    $service->getDi()['url'] = $url;
+    $tools = Mockery::mock(FOSSBilling\Tools::class);
+    $tools->shouldReceive('url')->andReturnUsing(fn (string $path): string => $url->link($path));
+    $service->getDi()['tools'] = $tools;
+
+    $stored = FOSSBilling\SecretConfig::encryptSecretFields(
+        ['api_key' => 'sk_live_secret', 'pub_key' => 'pk_live_visible'],
+        ['api_key'],
+        $service->getDi()['crypt']
+    );
+
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'gateway' => 'Stripe',
+        'testMode' => false,
+        'config' => json_encode($stored),
+    ]);
+
+    $adapter = $service->getPaymentAdapter($payGateway);
+
+    expect($adapter)->toBeInstanceOf(Payment_Adapter_Stripe::class);
+
+    $storedConfig = (new ReflectionClass($adapter))->getProperty('config')->getValue($adapter);
+    expect($storedConfig['api_key'])->toBe('sk_live_secret');
+});
+
 test('deletes a gateway', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 

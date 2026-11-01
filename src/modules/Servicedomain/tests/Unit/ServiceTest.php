@@ -2322,6 +2322,32 @@ test('reads a legacy plaintext registrar configuration', function (): void {
         ->and($result['config']['api-key_set'])->toBeTrue();
 });
 
+test('registrar adapter receives decrypted secrets from encrypted storage', function (): void {
+    $service = new Service();
+    $di = container();
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $stored = FOSSBilling\SecretConfig::encryptSecretFields(
+        ['api-key' => 'super-secret-key', 'username' => 'my-username', 'api-user-id' => 'reseller-id', 'ip' => '127.0.0.1'],
+        ['api-key'],
+        $di['crypt']
+    );
+
+    $model = new TldRegistrar();
+    setEntityId($model, 1);
+    $model->setName('Namecheap');
+    $model->setRegistrar('Namecheap');
+    $model->setTestMode(false);
+    $model->setConfig(json_encode($stored));
+
+    $adapter = $service->registrarGetRegistrarAdapter($model);
+
+    expect($adapter)->toBeInstanceOf(Registrar_Adapter_Namecheap::class)
+        ->and($adapter->config['api-key'])->toBe('super-secret-key');
+});
+
 test('creates tld', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('registrarValidateConfiguration')->once();
