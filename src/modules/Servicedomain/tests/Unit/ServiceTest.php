@@ -2345,7 +2345,8 @@ test('registrar adapter receives decrypted secrets from encrypted storage', func
     $adapter = $service->registrarGetRegistrarAdapter($model);
 
     expect($adapter)->toBeInstanceOf(Registrar_Adapter_Namecheap::class)
-        ->and($adapter->config['api-key'])->toBe('super-secret-key');
+        ->and($adapter->config['api-key'])->toBe('super-secret-key')
+        ->and($adapter->config['api-user-id'])->toBe('reseller-id');
 });
 
 test('creates tld', function (): void {
