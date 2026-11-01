@@ -713,7 +713,7 @@ class Service implements InjectionAwareInterface
                     $installedVersion,
                     (string) $constraint,
                     'Module cannot be installed. It requires :dependency :constraint, installed version is :v.',
-                    [':dependency' => $dependency, ':v' => $installedVersion]
+                    [':dependency' => $dependency, ':constraint' => (string) $constraint, ':v' => $installedVersion]
                 );
             }
         }
