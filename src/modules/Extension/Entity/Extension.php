@@ -32,11 +32,6 @@ use FOSSBilling\Core\Api\ArrayInterface;
 #[ORM\UniqueConstraint(name: 'type_name', columns: ['type', 'name'])]
 class Extension implements ArrayInterface
 {
-    final public const string TYPE_MOD = 'mod';
-    final public const string TYPE_THEME = 'theme';
-    final public const string TYPE_PG = 'pg';
-    final public const string TYPE_TRANSLATION = 'translation';
-
     final public const string STATUS_INSTALLED = 'installed';
     final public const string STATUS_DEACTIVATED = 'deactivated';
 
