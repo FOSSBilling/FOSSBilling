@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Box\Mod\Extension\Entity\Extension;
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Servicedomain\Entity\TldRegistrar;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\ModuleEntityScope;
@@ -251,6 +253,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // plain check-then-insert SQL, idempotent, so every platform gets them even though no
         // MySQL-only patch can run there.
         $this->seedInvoiceNoteSettings();
+
+        // Gateway and registrar secrets need encrypting on every database driver, but the
+        // numbered patch loop above is MySQL-only. Like migrateThemePackageLayout(), this
+        // runs here for all drivers and keeps a numbered patch for the MySQL bookkeeping.
+        $this->migrateEncryptedAdapterSecrets();
 
         // Portable invoice settings/rename steps, shared with the drift healer.
         $this->applyPortableInvoiceMigrations();
@@ -1506,6 +1513,7 @@ class UpdatePatcher implements InjectionAwareInterface
             133 => 'patch133',
             134 => 'patch134',
             135 => 'patch135',
+            136 => 'patch136',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4948,6 +4956,100 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->executeSql(sprintf('ALTER TABLE `%s` ADD INDEX `%s` (`created_at`)', $table, $index));
             }
         }
+    }
+
+    private function patch136(): void
+    {
+        $this->migrateEncryptedAdapterSecrets();
+    }
+
+    /**
+     * Encrypt the secret fields of every stored payment gateway and domain
+     * registrar configuration row. Portable (plain SELECT/UPDATE) and
+     * idempotent, so it runs on every platform: rows that are already
+     * encrypted, have no secrets, or belong to an unknown adapter are left
+     * untouched, making this safe to re-run.
+     */
+    private function migrateEncryptedAdapterSecrets(): void
+    {
+        // The portable update path can run with a minimal container that
+        // lacks the crypt and module services; without them there is nothing
+        // safe to migrate with, so leave the rows for a full run.
+        if (!$this->di instanceof \Pimple\Container || !isset($this->di['crypt'], $this->di['mod_service'])) {
+            return;
+        }
+
+        // Payment gateway and domain registrar secrets were stored as readable
+        // JSON. Encrypt the marked secret fields in place.
+        $this->encryptStoredAdapterSecrets('pay_gateway', 'gateway');
+        $this->encryptStoredAdapterSecrets('tld_registrar', 'registrar');
+    }
+
+    /**
+     * Encrypt the secret fields of every stored adapter configuration row in
+     * the given table.
+     */
+    private function encryptStoredAdapterSecrets(string $table, string $adapterColumn): void
+    {
+        /** @var Crypt $crypt */
+        $crypt = $this->di['crypt'];
+        $salt = Config::getProperty('info.salt');
+
+        $rows = $this->fetchAll(sprintf(
+            'SELECT id, %s AS adapter, config FROM %s',
+            $this->quoteIdentifier($adapterColumn),
+            $this->quoteIdentifier($table)
+        ));
+
+        foreach ($rows as $row) {
+            $config = json_decode((string) ($row['config'] ?? ''), true);
+            if (!is_array($config) || $config === []) {
+                continue;
+            }
+
+            $secretFields = $this->storedAdapterSecretFields($table, (string) ($row['adapter'] ?? ''));
+            if ($secretFields === []) {
+                continue;
+            }
+
+            $encrypted = SecretConfig::encryptSecretFields($config, $secretFields, $crypt, $salt);
+            if ($encrypted === $config) {
+                continue;
+            }
+
+            // Only write when the row still holds what was read: an admin save
+            // racing the migration keeps its newer values instead of being
+            // overwritten, and the row is picked up by a later run.
+            $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function storedAdapterSecretFields(string $table, string $adapter): array
+    {
+        if ($adapter === '') {
+            return [];
+        }
+
+        if ($table === 'pay_gateway') {
+            $model = new PayGateway();
+            $model->setGateway($adapter);
+
+            try {
+                return $this->di['mod_service']('invoice', 'PayGateway')->getSecretFields($model);
+            } catch (\Throwable) {
+                // Unknown or broken adapter: leave its stored values untouched
+                // rather than aborting the migration for the remaining rows.
+                return [];
+            }
+        }
+
+        $model = new TldRegistrar();
+        $model->setRegistrar($adapter);
+
+        return $this->di['mod_service']('servicedomain')->registrarGetSecretFields($model);
     }
 
     /** @return array<string, list<string>> */
