@@ -61,6 +61,21 @@ test('encryption skips empty values and existing ciphertext', function (): void 
         ->and(substr_count($result['again'], Crypt::CURRENT_FORMAT_PREFIX))->toBe(1);
 });
 
+test('encryption does not mistake a plaintext value for ciphertext', function (): void {
+    $crypt = new Crypt();
+
+    $stored = SecretConfig::encryptSecretFields(
+        ['api_key' => 'v2:looks-marked-but-is-not-ciphertext'],
+        ['api_key'],
+        $crypt,
+        'test-passphrase'
+    );
+
+    expect($stored['api_key'])->toStartWith(Crypt::CURRENT_FORMAT_PREFIX)
+        ->and($stored['api_key'])->not->toBe('v2:looks-marked-but-is-not-ciphertext')
+        ->and($crypt->decrypt($stored['api_key'], 'test-passphrase'))->toBe('v2:looks-marked-but-is-not-ciphertext');
+});
+
 test('decryption passes through legacy plaintext and undecryptable values', function (): void {
     $crypt = new Crypt();
 

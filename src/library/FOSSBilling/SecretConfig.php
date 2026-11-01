@@ -15,7 +15,7 @@ namespace FOSSBilling;
 final class SecretConfig
 {
     /**
-     * Encrypt the listed secret fields. Non-strings, empty values, and existing ciphertext are left alone, keeping this idempotent.
+     * Encrypt the listed secret fields. Non-strings and empty values are left alone. A value is treated as already encrypted only when it actually decrypts, so a plaintext value that happens to carry the format prefix is still encrypted; keeping this idempotent.
      *
      * @param array<string, mixed> $config
      * @param string[]             $secretFields
@@ -26,7 +26,11 @@ final class SecretConfig
     {
         foreach ($secretFields as $field) {
             $value = $config[$field] ?? null;
-            if (!is_string($value) || $value === '' || str_starts_with($value, Crypt::CURRENT_FORMAT_PREFIX)) {
+            if (!is_string($value) || $value === '') {
+                continue;
+            }
+
+            if (str_starts_with($value, Crypt::CURRENT_FORMAT_PREFIX) && is_string($crypt->decrypt($value, $passphrase))) {
                 continue;
             }
 

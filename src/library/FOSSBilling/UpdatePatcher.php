@@ -254,6 +254,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // MySQL-only patch can run there.
         $this->seedInvoiceNoteSettings();
 
+        // Gateway and registrar secrets need encrypting on every database driver, but the
+        // numbered patch loop above is MySQL-only. Like migrateThemePackageLayout(), this
+        // runs here for all drivers and keeps a numbered patch for the MySQL bookkeeping.
+        $this->migrateEncryptedAdapterSecrets();
+
         // Portable invoice settings/rename steps, shared with the drift healer.
         $this->applyPortableInvoiceMigrations();
 
@@ -4955,10 +4960,27 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch136(): void
     {
+        $this->migrateEncryptedAdapterSecrets();
+    }
+
+    /**
+     * Encrypt the secret fields of every stored payment gateway and domain
+     * registrar configuration row. Portable (plain SELECT/UPDATE) and
+     * idempotent, so it runs on every platform: rows that are already
+     * encrypted, have no secrets, or belong to an unknown adapter are left
+     * untouched, making this safe to re-run.
+     */
+    private function migrateEncryptedAdapterSecrets(): void
+    {
+        // The portable update path can run with a minimal container that
+        // lacks the crypt and module services; without them there is nothing
+        // safe to migrate with, so leave the rows for a full run.
+        if (!$this->di instanceof \Pimple\Container || !isset($this->di['crypt'], $this->di['mod_service'])) {
+            return;
+        }
+
         // Payment gateway and domain registrar secrets were stored as readable
-        // JSON. Encrypt the marked secret fields in place. Rows that are
-        // already encrypted, have no secrets, or belong to an unknown adapter
-        // are left untouched, so this is safe to re-run.
+        // JSON. Encrypt the marked secret fields in place.
         $this->encryptStoredAdapterSecrets('pay_gateway', 'gateway');
         $this->encryptStoredAdapterSecrets('tld_registrar', 'registrar');
     }
@@ -4995,7 +5017,10 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
-            $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id']]);
+            // Only write when the row still holds what was read: an admin save
+            // racing the migration keeps its newer values instead of being
+            // overwritten, and the row is picked up by a later run.
+            $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
         }
     }
 
@@ -5012,7 +5037,13 @@ class UpdatePatcher implements InjectionAwareInterface
             $model = new PayGateway();
             $model->setGateway($adapter);
 
-            return $this->di['mod_service']('invoice', 'PayGateway')->getSecretFields($model);
+            try {
+                return $this->di['mod_service']('invoice', 'PayGateway')->getSecretFields($model);
+            } catch (\Throwable) {
+                // Unknown or broken adapter: leave its stored values untouched
+                // rather than aborting the migration for the remaining rows.
+                return [];
+            }
         }
 
         $model = new TldRegistrar();

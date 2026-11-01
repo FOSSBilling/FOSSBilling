@@ -219,6 +219,7 @@ test('secret encryption migration encrypts stored gateway and registrar secrets'
     $insertGateway = $pdo->prepare('INSERT INTO pay_gateway (gateway, config) VALUES (?, ?)');
     $insertGateway->execute(['Stripe', json_encode(['api_key' => 'sk_live_secret', 'pub_key' => 'pk_live_visible'])]);
     $insertGateway->execute(['Custom', json_encode(['label' => 'Manual approval'])]);
+    $insertGateway->execute(['MissingAdapter', json_encode(['api_key' => 'unmigrated-secret'])]);
     $insertGateway->execute(['Unknown', null]);
     $insertRegistrar = $pdo->prepare('INSERT INTO tld_registrar (registrar, config) VALUES (?, ?)');
     $insertRegistrar->execute(['Namecheap', json_encode(['api-key' => 'registrar-secret', 'username' => 'reseller'])]);
@@ -258,7 +259,8 @@ test('secret encryption migration encrypts stored gateway and registrar secrets'
 
     $custom = json_decode($gatewayRows[1]['config'], true);
     expect($custom)->toBe(['label' => 'Manual approval']);
-    expect($gatewayRows[2]['config'])->toBeNull();
+    expect(json_decode($gatewayRows[2]['config'], true))->toBe(['api_key' => 'unmigrated-secret']);
+    expect($gatewayRows[3]['config'])->toBeNull();
 
     $registrarRows = $pdo->query('SELECT registrar, config FROM tld_registrar ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
     $namecheap = json_decode($registrarRows[0]['config'], true);
