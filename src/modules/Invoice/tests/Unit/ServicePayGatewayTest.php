@@ -23,6 +23,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\cryptMock;
 
 function payGatewayService(?PayGatewayRepository $repo = null, ?EntityManagerInterface $em = null): ServicePayGateway
 {
@@ -32,6 +33,7 @@ function payGatewayService(?PayGatewayRepository $repo = null, ?EntityManagerInt
     $repo ??= Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $di['em'] = $em;
+    $di['crypt'] = cryptMock();
     $service->setDi($di);
 
     return $service;
@@ -203,6 +205,7 @@ test('updates a gateway', function (): void {
     $service = new ServicePayGateway();
     $di = container();
     $di['em'] = $em;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -269,6 +272,7 @@ test('update keeps the existing secret gateway value when the incoming value is 
     $service = new ServicePayGateway();
     $di = container();
     $di['em'] = $em;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
@@ -281,9 +285,11 @@ test('update keeps the existing secret gateway value when the incoming value is 
     ]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $payGateway->getConfig(), true);
+    $stored = json_decode((string) $payGateway->getConfig(), true);
+    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
     expect($config['api_key'])->toBe('sk_live_existing');
     expect($config['pub_key'])->toBe('pk_live_new');
+    expect($stored['pub_key'])->toBe('pk_live_new');
 });
 
 test('update rotates a secret gateway value when a new value is submitted', function (): void {
@@ -302,6 +308,7 @@ test('update rotates a secret gateway value when a new value is submitted', func
     $service = new ServicePayGateway();
     $di = container();
     $di['em'] = $em;
+    $di['crypt'] = cryptMock();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
@@ -309,8 +316,90 @@ test('update rotates a secret gateway value when a new value is submitted', func
     $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new']]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $payGateway->getConfig(), true);
+    $stored = json_decode((string) $payGateway->getConfig(), true);
+    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
     expect($config['api_key'])->toBe('sk_live_new');
+});
+
+test('update stores gateway secrets encrypted at rest', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_old']),
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+
+    $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new', 'pub_key' => 'pk_live_new']]);
+
+    expect($result)->toBeTrue();
+
+    $raw = (string) $payGateway->getConfig();
+    expect($raw)->not->toContain('sk_live_new')
+        ->and($raw)->toContain('pk_live_new');
+
+    $stored = json_decode($raw, true);
+    expect($stored['api_key'])->toStartWith(FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX);
+
+    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    expect($config['api_key'])->toBe('sk_live_new');
+});
+
+test('reads a legacy plaintext gateway config', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'acceptedCurrencies' => json_encode(['USD']),
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_legacy']),
+    ]);
+
+    $service = payGatewayService();
+
+    $result = $service->toApiArray($payGateway, false, \Tests\Helpers\admin());
+
+    expect($result['config']['api_key'])->toBeNull()
+        ->and($result['config']['api_key_set'])->toBeTrue();
+});
+
+test('payment adapter receives decrypted secrets from encrypted storage', function (): void {
+    $service = payGatewayService();
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/subdir/');
+    $service->getDi()['url'] = $url;
+
+    $stored = FOSSBilling\Core\SecretConfig::encryptSecretFields(
+        ['api_key' => 'sk_live_secret', 'pub_key' => 'pk_live_visible'],
+        ['api_key'],
+        $service->getDi()['crypt']
+    );
+
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'gateway' => 'Stripe',
+        'testMode' => false,
+        'config' => json_encode($stored),
+    ]);
+
+    $adapter = $service->getPaymentAdapter($payGateway);
+
+    expect($adapter)->toBeInstanceOf(Payment_Adapter_Stripe::class);
+
+    $storedConfig = (new ReflectionClass($adapter))->getProperty('config')->getValue($adapter);
+    expect($storedConfig['api_key'])->toBe('sk_live_secret');
 });
 
 test('deletes a gateway', function (): void {

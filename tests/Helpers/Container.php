@@ -430,6 +430,31 @@ function accessPrivate(object $instance, string $property, mixed $value = null):
 }
 
 /**
+ * Create a Crypt double that emulates the real encrypt/decrypt contract
+ * (v2:-prefixed ciphertext, false for legacy plaintext) without depending
+ * on the application config passphrase.
+ */
+function cryptMock(): object
+{
+    $crypt = \Mockery::mock(\FOSSBilling\Core\Security\Crypt::class);
+    $crypt->shouldReceive('encrypt')
+        ->byDefault()
+        ->andReturnUsing(static fn (string $text, ?string $pass = null): string => \FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX . base64_encode($text));
+    $crypt->shouldReceive('decrypt')
+        ->byDefault()
+        ->andReturnUsing(static function (?string $text, ?string $pass = null): string|false {
+            if (!is_string($text) || !str_starts_with($text, \FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX)) {
+                return false;
+            }
+            $decoded = base64_decode(substr($text, strlen(\FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX)), true);
+
+            return $decoded === false ? false : $decoded;
+        });
+
+    return $crypt;
+}
+
+/**
  * Create a Doctrine entity proxy that accepts snake_case and camelCase properties.
  *
  * The helper keeps focused unit tests concise while leaving production entities

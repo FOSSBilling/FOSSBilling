@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\cryptMock;
 
 function gatewayLogoPng(): string
 {
@@ -55,6 +56,7 @@ function gatewayLogoService(MockHttpClient $client, Filesystem $filesystem): Ser
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $em->shouldReceive('flush')->byDefault();
     $di['em'] = $em;
+    $di['crypt'] = cryptMock();
     $di['http_client'] = $client;
     $di['filesystem'] = $filesystem;
     $di['url'] = Mockery::mock(FOSSBilling\Core\Url::class);
@@ -215,7 +217,8 @@ test('active gateways keep the adapter display size for custom logos', function 
     $logo = $service->getActive([])[0]['logo'];
     expect($logo['logo'])->toContain('public/gateways/custom/' . $filename)
         ->and($logo['height'])->toBe($expectedHeight)
-        ->and($logo['width'])->toBe($expectedWidth);
+        ->and($logo['width'])->toBe($expectedWidth)
+        ->and($logo['custom'])->toBeTrue();
 })->with([
     'tall Stripe-style logo keeps its portrait box' => [['logo' => 'stripe.png', 'height' => '86px', 'width' => '65px'], '86px', '65px'],
     'default Stripe logo keeps its configured size' => [['logo' => 'stripe.png', 'height' => '30px', 'width' => '65px'], '30px', '65px'],
@@ -479,6 +482,38 @@ test('payment selectors render AVIF with one PNG fallback and support images wit
     ['Invoice/templates/client/mod_invoice_invoice.html.twig', false],
     ['Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', true],
     ['Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', false],
+]);
+
+test('payment selectors keep custom image aspect ratio with width-only sizing', function (string $template): void {
+    $gateway = [
+        'id' => 1, 'title' => 'Cards', 'accepted_currencies' => ['USD'],
+        'allow_single' => true, 'allow_recurrent' => false,
+        'logo' => ['logo' => 'https://billing.example/custom.png', 'height' => '30px', 'width' => '65px', 'custom' => true],
+    ];
+    $guest = new Tests\Support\PermissiveStub([
+        'invoice_gateways' => [$gateway],
+        'cart_get' => new Tests\Support\PermissiveStub([
+            'items' => [new Tests\Support\PermissiveStub(['id' => 1, 'title' => 'Service', 'quantity' => 1, 'total' => 10, 'discount_price' => 0, 'setup_price' => 0, 'discount_setup' => 0, 'form_id' => false, 'period' => false])],
+            'currency' => ['code' => 'USD', 'conversion_rate' => 1], 'total' => 10, 'discount' => 0, 'subtotal' => 10,
+        ]),
+    ]);
+    $html = (new Tests\Support\StrictTemplateRenderer())->renderTemplate(PATH_MODS . '/' . $template, [
+        'app_area' => 'client', 'client' => null, 'guest' => $guest,
+        'invoice' => new Tests\Support\PermissiveStub([
+            'status' => 'unpaid', 'currency' => 'USD', 'items' => [],
+            'credit_note_for_invoice_id' => false, 'debit_note_for_invoice_id' => false,
+            'refunded_by_invoice_ids' => [], 'debited_by_invoice_ids' => [],
+            'paid_at' => '', 'created_at' => '2026-10-12', 'tax' => 0, 'subtotal' => 10, 'total' => 10,
+            'buyer' => new Tests\Support\PermissiveStub(['country' => 'US']),
+        ]),
+        'request' => new Tests\Support\PermissiveStub(['checkout' => true, 'show_custom_form_values' => false]),
+    ]);
+    expect($html)->toContain('style="width:65px; padding: 0;"')
+        ->and($html)->toContain('style="max-width: 100%; max-height: 150px; width: auto; height: auto; display: block; margin: 0 auto;"')
+        ->and($html)->not->toContain('style="height:30px; width:65px; padding: 0;"');
+})->with([
+    ['Invoice/templates/client/mod_invoice_invoice.html.twig'],
+    ['Orderbutton/templates/client/mod_orderbutton_checkout.html.twig'],
 ]);
 
 test('gateway images above four million pixels are rejected before decoding or changing settings', function (): void {

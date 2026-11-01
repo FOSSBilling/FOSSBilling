@@ -513,12 +513,12 @@ test('to api array', function (): void {
     expect($result['created_at'])->toEqual($model->getCreatedAt()?->format('Y-m-d H:i:s'));
 });
 
-test('custom call forbidden method exception', function (): void {
+test('custom call forbidden method exception', function (string $method): void {
     $service = new Service();
 
-    expect(fn () => $service->customCall(new ServiceCustom(), 'delete'))
+    expect(fn () => $service->customCall(new ServiceCustom(), $method))
         ->toThrow(Exception::class);
-});
+})->with(['delete', 'Delete', 'RENEW', 'Activate', 'uncancel']);
 
 test('get service custom by order id', function (): void {
     $service = new Service();

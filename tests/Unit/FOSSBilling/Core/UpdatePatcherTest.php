@@ -11,6 +11,7 @@ use FOSSBilling\Core\Update\Patch\Patch129;
 use FOSSBilling\Core\Update\Patch\Patch134;
 use FOSSBilling\Core\Update\Patch\Patch135;
 use FOSSBilling\Core\Update\Patch\Patch136;
+use FOSSBilling\Core\Update\Patch\Patch137;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -207,6 +208,65 @@ test('fresh installs start at the latest patch level', function (): void {
     preg_match("/\\(1,'last_patch','(\\d+)'/", $content, $matches);
 
     expect((int) ($matches[1] ?? 0))->toBe((new Patcher())->latestPatchLevel());
+});
+
+test('secret encryption migration encrypts stored gateway and registrar secrets', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE pay_gateway (id INTEGER PRIMARY KEY, gateway TEXT, config TEXT)');
+    $pdo->exec('CREATE TABLE tld_registrar (id INTEGER PRIMARY KEY, registrar TEXT, config TEXT)');
+    $insertGateway = $pdo->prepare('INSERT INTO pay_gateway (gateway, config) VALUES (?, ?)');
+    $insertGateway->execute(['Stripe', json_encode(['api_key' => 'sk_live_secret', 'pub_key' => 'pk_live_visible'])]);
+    $insertGateway->execute(['Custom', json_encode(['label' => 'Manual approval'])]);
+    $insertGateway->execute(['MissingAdapter', json_encode(['api_key' => 'unmigrated-secret'])]);
+    $insertGateway->execute(['Unknown', null]);
+    $insertRegistrar = $pdo->prepare('INSERT INTO tld_registrar (registrar, config) VALUES (?, ?)');
+    $insertRegistrar->execute(['Namecheap', json_encode(['api-key' => 'registrar-secret', 'username' => 'reseller'])]);
+    $insertRegistrar->execute(['Custom', json_encode(['note' => 'nothing secret here'])]);
+
+    $crypt = new FOSSBilling\Core\Security\Crypt();
+    $payGatewayService = new Box\Mod\Invoice\ServicePayGateway();
+    $payGatewayDi = Tests\Helpers\container();
+    $payGatewayDi['crypt'] = $crypt;
+    $payGatewayService->setDi($payGatewayDi);
+    $registrarService = new Box\Mod\Servicedomain\Service();
+    $registrarDi = Tests\Helpers\container();
+    $registrarDi['crypt'] = $crypt;
+    $registrarService->setDi($registrarDi);
+
+    $di = new Pimple\Container(['pdo' => $pdo, 'crypt' => $crypt, 'filesystem' => new Filesystem()]);
+    $di['mod_service'] = $di->protect(
+        static fn (string $mod, string $sub = ''): object => match ([$mod, $sub]) {
+            ['invoice', 'PayGateway'] => $payGatewayService,
+            ['servicedomain', ''] => $registrarService,
+            default => throw new RuntimeException("Unexpected mod_service call: {$mod}/{$sub}"),
+        }
+    );
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new Patch136())->apply($patcher);
+    }
+
+    $gatewayRows = $pdo->query('SELECT gateway, config FROM pay_gateway ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    $stripe = json_decode($gatewayRows[0]['config'], true);
+    expect($stripe['api_key'])->toStartWith(FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX)
+        ->and($gatewayRows[0]['config'])->not->toContain('sk_live_secret')
+        ->and($stripe['pub_key'])->toBe('pk_live_visible')
+        ->and($crypt->decrypt($stripe['api_key'], FOSSBilling\Core\System\Config::getProperty('info.salt')))->toBe('sk_live_secret');
+
+    $custom = json_decode($gatewayRows[1]['config'], true);
+    expect($custom)->toBe(['label' => 'Manual approval']);
+    expect(json_decode($gatewayRows[2]['config'], true))->toBe(['api_key' => 'unmigrated-secret']);
+    expect($gatewayRows[3]['config'])->toBeNull();
+
+    $registrarRows = $pdo->query('SELECT registrar, config FROM tld_registrar ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    $namecheap = json_decode($registrarRows[0]['config'], true);
+    expect($namecheap['api-key'])->toStartWith(FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX)
+        ->and($registrarRows[0]['config'])->not->toContain('registrar-secret')
+        ->and($namecheap['username'])->toBe('reseller');
+
+    expect(json_decode($registrarRows[1]['config'], true))->toBe(['note' => 'nothing secret here']);
 });
 
 test('fresh installs index order suspension candidates', function (): void {
@@ -3524,10 +3584,10 @@ test('ensureSchemaInSync restores promo bundle and auto-apply columns missing fr
 });
 
 test('library cleanup follows the main migrations and preserves adapter directories', function (): void {
-    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 135);
-    expect($patches)->toHaveKey(136)
-        ->and($patches[136][1])->toBe('apply')
-        ->and($patches)->not->toHaveKey(137);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 136);
+    expect($patches)->toHaveKey(137)
+        ->and($patches[137][1])->toBe('apply')
+        ->and($patches)->not->toHaveKey(138);
 
     $patcher = new Patcher();
     $filesystem = Mockery::mock(Filesystem::class);
@@ -3537,7 +3597,7 @@ test('library cleanup follows the main migrations and preserves adapter director
         $filesystem->expects('remove')->with($path);
     }
     $patcher->filesystem = $filesystem;
-    (new Patch136())->apply($patcher);
+    (new Patch137())->apply($patcher);
 });
 
 test('custom page charset repair follows the promotion patch', function (): void {

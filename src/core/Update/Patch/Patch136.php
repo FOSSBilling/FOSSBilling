@@ -12,16 +12,11 @@ declare(strict_types=1);
 namespace FOSSBilling\Core\Update\Patch;
 
 use FOSSBilling\Core\Update\Patcher;
-use Symfony\Component\Filesystem\Path;
 
 class Patch136 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Remove obsolete files left behind by the core library reorganization.
-        $patcher->executeFileActions([
-            Path::join(PATH_LIBRARY, 'FOSSBilling') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Box') => 'unlink',
-        ]);
+        $patcher->migrateEncryptedAdapterSecrets();
     }
 }

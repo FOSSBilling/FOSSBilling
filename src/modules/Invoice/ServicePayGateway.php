@@ -18,6 +18,7 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer;
+use FOSSBilling\Core\SecretConfig;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
@@ -166,7 +167,7 @@ class ServicePayGateway implements InjectionAwareInterface
         ];
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $config = json_decode($model->getConfig() ?? '', true) ?? [];
+            $config = SecretConfig::decryptMarkedValues(json_decode($model->getConfig() ?? '', true) ?? [], $this->di['crypt']);
             $secretFields = $this->getSecretFields($model);
             foreach ($secretFields as $field) {
                 $value = $config[$field] ?? null;
@@ -246,8 +247,9 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
-        $existingConfig = json_decode($model->getConfig() ?? '', true) ?? [];
+        $existingConfig = SecretConfig::decryptMarkedValues(json_decode($model->getConfig() ?? '', true) ?? [], $this->di['crypt']);
         $mergedConfig = $existingConfig;
+        $secretFields = [];
         if (isset($data['config']) && is_array($data['config'])) {
             $secretFields = $this->getSecretFields($model);
             foreach ($data['config'] as $key => $value) {
@@ -274,7 +276,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->setCustomLogo($customLogo);
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->setConfig(json_encode($mergedConfig));
+            $model->setConfig(json_encode(SecretConfig::encryptSecretFields($mergedConfig, $secretFields, $this->di['crypt'])));
         }
 
         if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
@@ -395,10 +397,10 @@ class ServicePayGateway implements InjectionAwareInterface
                 }
 
                 if (($customLogoUrl = $this->getCustomLogoUrl($gtw)) !== null) {
-                    // Custom images reuse the adapter's display size.
+                    // Custom images keep their aspect ratio; width follows the adapter size, height capped in templates.
                     $height = $gateway['logo']['height'] ?? '50px';
                     $width = $gateway['logo']['width'] ?? '150px';
-                    $gateway['logo'] = ['logo' => $customLogoUrl, 'avif' => $this->getCustomLogoUrl($gtw, true), 'height' => $height, 'width' => $width];
+                    $gateway['logo'] = ['logo' => $customLogoUrl, 'avif' => $this->getCustomLogoUrl($gtw, true), 'height' => $height, 'width' => $width, 'custom' => true];
                 }
 
                 $result[] = $gateway;
@@ -613,7 +615,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object
     {
-        $config = json_decode($pg->getConfig() ?? '', true) ?? [];
+        $config = SecretConfig::decryptMarkedValues(json_decode($pg->getConfig() ?? '', true) ?? [], $this->di['crypt']);
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['gateway_id'] = (int) $pg->getId();
