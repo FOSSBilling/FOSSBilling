@@ -101,6 +101,20 @@ class Module implements InjectionAwareInterface
         ];
 
         $info = array_merge($info, $json);
+
+        // v1 manifests declare author as an object; the admin templates
+        // expect the legacy scalar name plus a separate author URL.
+        if (isset($json['author']) && is_array($json['author'])) {
+            $info['author'] = $json['author']['name'] ?? $info['author'];
+            $info['author_url'] = $json['author']['url'] ?? $info['author_url'];
+        }
+
+        // v1 dropped the legacy project_url field; fall back to the
+        // module homepage so "Learn more" keeps pointing somewhere useful.
+        if (!isset($json['project_url']) && isset($json['homepage_url'])) {
+            $info['project_url'] = $json['homepage_url'];
+        }
+
         $info['id'] = $this->module;
         $info['type'] = 'mod';
 

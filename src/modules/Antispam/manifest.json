@@ -10,7 +10,7 @@
     "url": "https://fossbilling.org/"
   },
   "license": "Apache-2.0",
-  "homepage_url": "https://fossbilling.org/",
+  "homepage_url": "https://docs.fossbilling.org/admin-guide/anti-spam/",
   "icon_url": "icon.svg",
   "requires": {
     "fossbilling": ">=0.8.9",

@@ -13,15 +13,21 @@ $failures = [];
 $parser = new VersionParser();
 $spdx = new SpdxLicenses();
 
-$packages = array_values(array_filter(glob($root . '/*', GLOB_ONLYDIR) ?: [], static fn (string $d): bool => is_file($d . '/manifest.json')));
+$packages = array_values(glob($root . '/*', GLOB_ONLYDIR) ?: []);
 if ($packages === []) {
-    fwrite(STDERR, "No packages with manifest.json found under {$root}\n");
+    fwrite(STDERR, "No module directories found under {$root}\n");
     exit(1);
 }
 
 foreach ($packages as $dir) {
     $id = basename($dir);
     $errors = [];
+    if (!is_file($dir . '/manifest.json')) {
+        $errors[] = 'manifest.json is missing';
+        printResult($id, $errors, $failures);
+
+        continue;
+    }
     $raw = file_get_contents($dir . '/manifest.json');
     $data = json_decode($raw);
     if (!$data instanceof stdClass) {
@@ -54,7 +60,8 @@ foreach ($packages as $dir) {
     if (isset($m['icon_url'])) {
         $icon = $m['icon_url'];
         $resolved = realpath($dir . '/' . $icon) ?: $dir . '/' . $icon;
-        if (!is_file($dir . '/' . $icon) || !str_starts_with($resolved, (string) realpath($dir))) {
+        $base = realpath($dir);
+        if (!is_file($dir . '/' . $icon) || $base === false || !str_starts_with($resolved, $base . DIRECTORY_SEPARATOR)) {
             $errors[] = 'icon_url target missing or escapes module dir';
         }
     }
