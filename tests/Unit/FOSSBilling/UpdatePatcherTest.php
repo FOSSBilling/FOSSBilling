@@ -192,25 +192,25 @@ test('secret encryption migration encrypts stored gateway and registrar secrets'
     $registrarService->setDi($registrarDi);
 
     $gateways = [];
-    foreach ([['Stripe', 'sk_live_secret', 'pk_live_visible'], ['Custom', null, null], ['MissingAdapter', 'unmigrated-secret', null]] as [$adapter, $secret, $pub]) {
+    foreach ([1 => 'Stripe', 2 => 'Custom', 3 => 'MissingAdapter'] as $id => $adapter) {
         $model = new Model_PayGateway();
         $model->loadBean(new Tests\Helpers\DummyBean());
         $model->gateway = $adapter;
-        $gateways[$adapter] = $model;
+        $gateways[$id] = $model;
     }
     $registrars = [];
-    foreach ([['Namecheap', 'registrar-secret', 'reseller'], ['Custom', null, null]] as [$adapter, $secret, $user]) {
+    foreach ([1 => 'Namecheap', 2 => 'Custom'] as $id => $adapter) {
         $model = new Model_TldRegistrar();
         $model->loadBean(new Tests\Helpers\DummyBean());
         $model->registrar = $adapter;
-        $registrars[$adapter] = $model;
+        $registrars[$id] = $model;
     }
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('load')->andReturnUsing(
         static fn (string $model, int $id): object => match ($model) {
-            'PayGateway' => $gateways[['Stripe', 'Custom', 'MissingAdapter'][$id - 1]],
-            'TldRegistrar' => $registrars[['Namecheap', 'Custom'][$id - 1]],
+            'PayGateway' => $gateways[$id],
+            'TldRegistrar' => $registrars[$id],
             default => throw new RuntimeException("Unexpected model: {$model}"),
         }
     );
