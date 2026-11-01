@@ -37,7 +37,7 @@ foreach ($packages as $dir) {
     if (isset($m['icon_url'])) {
         $icon = $m['icon_url'];
         $resolved = realpath($dir . '/' . $icon) ?: $dir . '/' . $icon;
-        if (!is_file($dir . '/' . $icon) || !str_starts_with((string) $resolved, (string) realpath($dir))) { $errors[] = 'icon_url target missing or escapes module dir'; }
+        if (!is_file($dir . '/' . $icon) || !str_starts_with($resolved, (string) realpath($dir))) { $errors[] = 'icon_url target missing or escapes module dir'; }
     }
     try { $parser->normalize($m['version'] ?? ''); if (str_starts_with((string) ($m['version'] ?? ''), 'v')) { $errors[] = 'version must not have a "v" prefix'; } }
     catch (\UnexpectedValueException) { $errors[] = 'version is not valid semver'; }
