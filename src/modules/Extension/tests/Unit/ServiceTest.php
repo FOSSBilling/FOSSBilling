@@ -685,13 +685,13 @@ test('activate blocks a dependency without an installed version', function (): v
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
 
     $depMock = Mockery::mock(FOSSBilling\Core\Module::class);
-    $depMock->shouldReceive('getManifest')->andReturn(['id' => 'noversion']);
+    $depMock->shouldReceive('getManifest')->andReturn(['id' => 'missingVersion']);
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
         'version' => '1.0.0',
-        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['noversion' => '>=1.0']],
-    ], $extensionRepository, ['noversion' => $depMock]);
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['missingVersion' => '>=1.0']],
+    ], $extensionRepository, ['missingVersion' => $depMock]);
     $modMock->shouldReceive('install')->never();
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
