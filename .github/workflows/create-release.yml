@@ -231,13 +231,19 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
           AWS_S3_BUCKET: ${{ vars.CLOUDFLARE_R2_DOWNLOAD_BUCKET }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           AWS_REGION: 'auto'
         run: |
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID repository variable is not set. Set it under repository Settings > Variables > Actions."
+            exit 1
+          fi
+
           asset="./dist/FOSSBilling-${RELEASE_VERSION}.zip"
           key="releases/${RELEASE_VERSION}/FOSSBilling-${RELEASE_VERSION}.zip"
 
           aws s3 cp "${asset}" "s3://${AWS_S3_BUCKET}/${key}" \
-            --endpoint-url https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --endpoint-url "https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" \
             --metadata="digest=${FOSSBILLING_RELEASE_DIGEST},version=${RELEASE_VERSION}" \
             --no-progress
 

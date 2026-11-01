@@ -215,8 +215,13 @@ jobs:
       - name: 'Upload Downloadable Preview to S3'
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID repository variable is not set. Set it under repository Settings > Variables > Actions."
+            exit 1
+          fi
+
           aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
-            --endpoint-url https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --endpoint-url "https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" \
             --metadata="digest=${{ env.FOSSBILLING_PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
             --follow-symlinks \
             --no-progress
@@ -224,6 +229,7 @@ jobs:
           AWS_S3_BUCKET: ${{ vars.CLOUDFLARE_R2_DOWNLOAD_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           AWS_REGION: 'auto'
           SOURCE_DIR: './dist'
 
