@@ -73,7 +73,7 @@ final class Arr implements InjectionAwareInterface
         $slots = $count ? implode(',', array_fill(0, $count, '?')) : '';
 
         $rows = $this->di['em']->getConnection()->fetchAllAssociative(
-            'SELECT id, title FROM `' . $table . '` WHERE id in (' . $slots . ')',
+            'SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')',
             $ids
         );
 

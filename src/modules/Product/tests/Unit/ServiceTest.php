@@ -1647,7 +1647,8 @@ test('to promo api array resolves group-restricted client groups', function (): 
     $connection = new class {
         public function fetchAllAssociative(string $sql, array $params = []): array
         {
-            expect($sql)->toContain('client_group')
+            // Portable across drivers: the table name is validated, never quoted.
+            expect($sql)->toBe('SELECT id, title FROM client_group WHERE id in (?)')
                 ->and($params)->toBe([1]);
 
             return [['id' => 1, 'title' => 'VIP']];
