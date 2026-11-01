@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\cryptMock;
 
 function gatewayLogoPng(): string
 {
@@ -55,6 +56,7 @@ function gatewayLogoService(MockHttpClient $client, Filesystem $filesystem): Ser
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $em->shouldReceive('flush')->byDefault();
     $di['em'] = $em;
+    $di['crypt'] = cryptMock();
     $di['http_client'] = $client;
     $di['filesystem'] = $filesystem;
     $di['url'] = Mockery::mock(FOSSBilling\Url::class);
