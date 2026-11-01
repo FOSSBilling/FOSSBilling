@@ -112,13 +112,18 @@ class Module implements InjectionAwareInterface
         // the merged array or the directory default into the listing.
         if (isset($json['author']) && is_array($json['author'])) {
             $info['author'] = $json['author']['name'] ?? 'Unknown';
-            $info['author_url'] = $json['author']['url'] ?? '';
+            $authorUrl = $json['author']['url'] ?? '';
+            $info['author_url'] = is_string($authorUrl) && preg_match('#^https?://#', $authorUrl) === 1 ? $authorUrl : '';
         }
 
         // v1 dropped the legacy project_url field; fall back to the
         // module homepage so "Learn more" keeps pointing somewhere useful.
+        // Only http(s) URLs are accepted as link targets.
         if (!isset($json['project_url']) && isset($json['homepage_url'])) {
-            $info['project_url'] = $json['homepage_url'];
+            $homepageUrl = $json['homepage_url'];
+            if (is_string($homepageUrl) && preg_match('#^https?://#', $homepageUrl) === 1) {
+                $info['project_url'] = $homepageUrl;
+            }
         }
 
         $info['id'] = $this->module;

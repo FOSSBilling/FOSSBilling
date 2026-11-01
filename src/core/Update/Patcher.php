@@ -1304,46 +1304,43 @@ class Patcher implements InjectionAwareInterface
      * so directory-installed versions are never downgraded. Portable (plain
      * SELECT/UPDATE) and idempotent: a single probe SELECT finds nothing to
      * do once synced, so this is cheap enough to run outside versioned
-     * updates (see healSchemaDrift()).
+     * updates (see healSchemaDrift()). Never throws: a display-only version
+     * sync must not break requests or updates, it only logs and skips.
      */
     public function syncSeededModuleVersions(): void
     {
-        $legacy = [
-            ['news', '1.0.0', '0.8.9'],
-            ['branding', '0.0.1', '0.8.9'],
-            ['branding', '1.0.0', '0.8.9'],
-            ['redirect', '1.0.0', '0.8.9'],
-        ];
-
-        $conditions = [];
-        $params = ['type' => 'mod'];
-        foreach ($legacy as $i => [$name, $old]) {
-            $conditions[] = "(name = :name{$i} AND version = :old{$i})";
-            $params["name{$i}"] = $name;
-            $params["old{$i}"] = $old;
-        }
-
         try {
+            $legacy = [
+                ['news', '1.0.0', '0.8.9'],
+                ['branding', '0.0.1', '0.8.9'],
+                ['branding', '1.0.0', '0.8.9'],
+                ['redirect', '1.0.0', '0.8.9'],
+            ];
+
+            $conditions = [];
+            $params = ['type' => 'mod'];
+            foreach ($legacy as $i => [$name, $old]) {
+                $conditions[] = "(name = :name{$i} AND version = :old{$i})";
+                $params["name{$i}"] = $name;
+                $params["old{$i}"] = $old;
+            }
+
             $stale = $this->fetchOne(
                 'SELECT 1 FROM extension WHERE type = :type AND (' . implode(' OR ', $conditions) . ') LIMIT 1',
                 $params
             );
-        } catch (\Throwable) {
-            // The extension table (or its version column) does not exist yet
-            // on a partially migrated database: there is nothing to sync, and
-            // a display-only version sync must not block the rest of the update.
-            return;
-        }
+            if ($stale === false) {
+                return;
+            }
 
-        if ($stale === false) {
-            return;
-        }
-
-        foreach ($legacy as [$name, $old, $new]) {
-            $this->executeSql(
-                'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
-                ['new' => $new, 'type' => 'mod', 'name' => $name, 'old' => $old]
-            );
+            foreach ($legacy as [$name, $old, $new]) {
+                $this->executeSql(
+                    'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
+                    ['new' => $new, 'type' => 'mod', 'name' => $name, 'old' => $old]
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', 'Seeded module version sync failed: ' . $e->getMessage());
         }
     }
 

@@ -661,7 +661,7 @@ test('activate blocks a module whose requires value is not an object', function 
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid module requirements');
-})->with([null, '>=1.0', 42]);
+})->with(['null' => null, 'string' => '>=1.0', 'int' => 42]);
 
 test('activate parses the fossbilling requirement on preview builds', function (): void {
     // The comparison is skipped on previews, but an invalid constraint must

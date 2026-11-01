@@ -669,10 +669,10 @@ class Service implements InjectionAwareInterface
     /**
      * Enforce the v1 manifest `requires` constraints before a module installs.
      * Only a missing `requires` key skips the check; any other non-object
-     * value is invalid. The FOSSBilling version comparison is skipped on
-     * preview builds, where the running version is a placeholder or VCS hash
-     * that no constraint can meaningfully evaluate - but the constraint is
-     * still parsed there, so an invalid constraint fails everywhere.
+     * value is invalid. The FOSSBilling constraint is always parsed, but the
+     * version comparison is skipped on preview builds, where the running
+     * version is a placeholder or VCS hash that no constraint can
+     * meaningfully evaluate.
      *
      * @param array<string, mixed> $info
      */
@@ -710,7 +710,7 @@ class Service implements InjectionAwareInterface
             );
         }
 
-        $dependencies = $requires['modules'] ?? [];
+        $dependencies = array_key_exists('modules', $requires) ? $requires['modules'] : [];
         if (!is_array($dependencies)) {
             throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its manifest declares invalid module requirements.');
         }
@@ -723,6 +723,9 @@ class Service implements InjectionAwareInterface
 
             $installedVersion = $this->getInstalledModuleVersion($dependency);
             if ($installedVersion !== null) {
+                if (!(new \Composer\Semver\VersionParser())->isValid($installedVersion)) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => $installedVersion]);
+                }
                 $this->assertConstraintSatisfied(
                     $installedVersion,
                     (string) $constraint,
