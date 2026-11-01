@@ -704,7 +704,7 @@ class Service implements InjectionAwareInterface
 
         foreach ($dependencies as $dependency => $constraint) {
             $dependency = (string) $dependency;
-            if (!$this->isExtensionActive(\FOSSBilling\ExtensionManager::TYPE_MOD, $dependency)) {
+            if (!$this->isExtensionActive(ExtensionType::Module->value, $dependency)) {
                 throw new \FOSSBilling\InformationException('Module cannot be installed. It requires the :dependency module (:constraint), which is not installed or activated.', [':dependency' => $dependency, ':constraint' => (string) $constraint]);
             }
 
@@ -746,7 +746,7 @@ class Service implements InjectionAwareInterface
             return isset($manifest['version']) ? (string) $manifest['version'] : null;
         }
 
-        $ext = $this->getExtensionRepository()->findOneByTypeAndName(\FOSSBilling\ExtensionManager::TYPE_MOD, $module);
+        $ext = $this->getExtensionRepository()->findOneByTypeAndName(ExtensionType::Module->value, $module);
 
         return $ext?->getVersion();
     }
