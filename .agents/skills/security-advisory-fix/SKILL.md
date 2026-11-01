@@ -178,7 +178,7 @@ Once the design is settled:
 
    - The bootstrap requires `src/config.php` (gitignored); generate it from
    the sample the way the Dockerfile does:
-   `php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'`.
+   `php -r 'if (!file_exists("./src/config.php")) { $config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n"); }'` (guarded so existing local settings are never overwritten).
    - Pest derives eval'd test namespaces from the absolute checkout path,
    so a digit-leading path segment (every opencode session worktree:
    `.../worktree/736bea/<name>/`) kills the suite at load with "Unable to
