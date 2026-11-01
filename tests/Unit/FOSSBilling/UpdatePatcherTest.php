@@ -3698,6 +3698,40 @@ test('hosting recovery migration adds the pending step only when missing', funct
     (new ReflectionMethod($patcher, 'patch134'))->invoke($patcher);
 })->with([false, true]);
 
+test('seeded module versions sync to the backfilled manifest versions', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
+    $insert = $pdo->prepare('INSERT INTO extension (type, name, status, version) VALUES (?, ?, ?, ?)');
+    foreach ([
+        ['mod', 'news', 'installed', '1.0.0'],
+        ['mod', 'branding', 'installed', '0.0.1'],
+        ['mod', 'redirect', 'installed', '1.0.0'],
+        ['mod', 'custompages', 'installed', '1.0.0'],
+        ['mod', 'news', 'deactivated', '9.9.9'],
+    ] as $row) {
+        $insert->execute($row);
+    }
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+    $patches = (new ReflectionMethod($patcher, 'getPatches'))->invoke($patcher, 136);
+    expect($patches)->toHaveKey(137)->and($patches[137][1])->toBe('patch137');
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new ReflectionMethod($patcher, 'patch137'))->invoke($patcher);
+    }
+
+    $versions = $pdo->query('SELECT name, version FROM extension ORDER BY name, version')->fetchAll(PDO::FETCH_ASSOC);
+    expect($versions)->toBe([
+        ['name' => 'branding', 'version' => '0.8.9'],
+        ['name' => 'custompages', 'version' => '1.0.0'],
+        ['name' => 'news', 'version' => '0.8.9'],
+        ['name' => 'news', 'version' => '9.9.9'],
+        ['name' => 'redirect', 'version' => '0.8.9'],
+    ]);
+});
+
 test('activity retention migration adds each created_at index only when missing', function (bool $migrated): void {
     $tables = ['activity_admin_history', 'activity_client_email', 'activity_client_history', 'activity_system'];
     $pdo = Mockery::mock(PDO::class);

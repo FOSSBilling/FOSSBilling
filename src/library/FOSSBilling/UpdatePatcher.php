@@ -254,6 +254,10 @@ class UpdatePatcher implements InjectionAwareInterface
         // MySQL-only patch can run there.
         $this->seedInvoiceNoteSettings();
 
+        // Seeded module versions drifted when the manifests were aligned with
+        // the release version. Same treatment: plain UPDATE, idempotent.
+        $this->syncSeededModuleVersions();
+
         // Gateway and registrar secrets need encrypting on every database driver, but the
         // numbered patch loop above is MySQL-only. Like migrateThemePackageLayout(), this
         // runs here for all drivers and keeps a numbered patch for the MySQL bookkeeping.
@@ -1514,6 +1518,7 @@ class UpdatePatcher implements InjectionAwareInterface
             134 => 'patch134',
             135 => 'patch135',
             136 => 'patch136',
+            137 => 'patch137',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4983,6 +4988,36 @@ class UpdatePatcher implements InjectionAwareInterface
         // JSON. Encrypt the marked secret fields in place.
         $this->encryptStoredAdapterSecrets('pay_gateway', 'gateway');
         $this->encryptStoredAdapterSecrets('tld_registrar', 'registrar');
+    }
+
+    private function patch137(): void
+    {
+        $this->syncSeededModuleVersions();
+    }
+
+    /**
+     * The manifest backfill aligned every in-repo manifest version with the
+     * release version, but existing installs still carry whatever content.sql
+     * seeded when they were installed. Sync those seeded rows with the new
+     * seed value - but only rows still carrying a historically seeded version,
+     * so directory-installed versions are never downgraded. Portable (plain
+     * UPDATE) and idempotent: re-runs match zero rows.
+     */
+    private function syncSeededModuleVersions(): void
+    {
+        $legacy = [
+            ['news', '1.0.0', '0.8.9'],
+            ['branding', '0.0.1', '0.8.9'],
+            ['branding', '1.0.0', '0.8.9'],
+            ['redirect', '1.0.0', '0.8.9'],
+        ];
+
+        foreach ($legacy as [$name, $old, $new]) {
+            $this->executeSql(
+                'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
+                ['new' => $new, 'type' => 'mod', 'name' => $name, 'old' => $old]
+            );
+        }
     }
 
     /**
