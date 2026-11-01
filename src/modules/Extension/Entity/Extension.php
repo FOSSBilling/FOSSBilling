@@ -13,7 +13,6 @@ namespace Box\Mod\Extension\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Enums\ExtensionType;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 
 /**
@@ -33,26 +32,6 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 #[ORM\UniqueConstraint(name: 'type_name', columns: ['type', 'name'])]
 class Extension implements ApiArrayInterface
 {
-    /**
-     * @deprecated use {@see ExtensionType::Module} instead
-     */
-    final public const string TYPE_MOD = ExtensionType::Module->value;
-    /**
-     * @deprecated use {@see ExtensionType::Theme} instead
-     */
-    final public const string TYPE_THEME = ExtensionType::Theme->value;
-    /**
-     * @deprecated use {@see ExtensionType::PaymentGateway} instead
-     *
-     * Note: this constant previously held the value `'pg'`, which nothing in
-     * the codebase ever wrote or read. It now aliases the live value.
-     */
-    final public const string TYPE_PG = ExtensionType::PaymentGateway->value;
-    /**
-     * @deprecated use {@see ExtensionType::Translation} instead
-     */
-    final public const string TYPE_TRANSLATION = ExtensionType::Translation->value;
-
     final public const string STATUS_INSTALLED = 'installed';
     final public const string STATUS_DEACTIVATED = 'deactivated';
 

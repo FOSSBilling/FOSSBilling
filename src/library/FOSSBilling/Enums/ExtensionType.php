@@ -16,13 +16,13 @@ namespace FOSSBilling\Enums;
  *
  * The underlying string values must match the `extension.type` column values
  * and the extension directory API so the enum stays interchangeable with the
- * string-based code paths. This is the single source of truth; the `TYPE_*`
- * constants on {@see \FOSSBilling\ExtensionManager} and
- * {@see \Box\Mod\Extension\Entity\Extension} are deprecated aliases.
+ * string-based code paths. This is the single source of truth, replacing the
+ * former `TYPE_*` constant sets on {@see \FOSSBilling\ExtensionManager} and
+ * {@see \Box\Mod\Extension\Entity\Extension}.
  *
- * Note: the legacy `Extension::TYPE_PG` constant held the value `'pg'`, which
+ * Note: the old `Extension::TYPE_PG` constant held the value `'pg'`, which
  * nothing in the codebase ever wrote or read (payment gateways always used
- * `'payment-gateway'`). It is reconciled to the live value here.
+ * `'payment-gateway'`). The discrepancy died with the constants.
  */
 enum ExtensionType: string
 {
