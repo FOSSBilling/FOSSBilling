@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after an admin staff account is updated. */
 final class AfterAdminStaffUpdateEvent extends Event

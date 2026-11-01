@@ -14,8 +14,8 @@ use Box\Mod\Cron\Service;
 use Box\Mod\System\Entity\Setting;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Events\Event;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -251,7 +251,7 @@ test('runCrons restores the previous cron context when update finalization inter
 
     try {
         $service->runCrons();
-    } catch (FOSSBilling\InformationException) {
+    } catch (FOSSBilling\Core\Exception\InformationException) {
         // Expected: update finalization is pending, cron tasks are skipped.
     }
 

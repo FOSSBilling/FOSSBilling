@@ -81,7 +81,7 @@ test('before client profile update rejects a blocked IP', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->onBeforeClientProfileUpdate(new BeforeClientProfileUpdateEvent(42, [])))
-        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
 });
 
 test('before admin client update rejects a blocked IP', function (): void {
@@ -95,7 +95,7 @@ test('before admin client update rejects a blocked IP', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->onBeforeAdminClientUpdate(new BeforeAdminClientUpdateEvent(42, [])))
-        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
 });
 
 test('before guest ticket creation checks blocked IP, captcha, spam, and disposable email', function (): void {
@@ -180,7 +180,7 @@ test('before guest ticket creation propagates blocked IP exceptions', function (
         'open',
         'subject',
         'message',
-    )))->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
+    )))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
 });
 
 test('client login allows an IP absent from the block list', function (): void {
@@ -233,7 +233,7 @@ test('login listeners reject a blocked IP', function (string $listener, string $
     $service->setDi($di);
 
     expect(fn () => $service->{$listener}(new $eventClass('1.2.3.4')))
-        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
 })->with([
     ['onBeforeClientLogin', BeforeClientLoginEvent::class],
     ['onBeforeAdminLogin', BeforeAdminLoginEvent::class],
@@ -325,7 +325,7 @@ test('abuseipdb check blocks ips at or above the threshold', function (): void {
     );
 
     expect(fn () => $service->isInAbuseIPDBDatabase('8.8.8.8'))
-        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address is blacklisted in the AbuseIPDB database');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address is blacklisted in the AbuseIPDB database');
 });
 
 test('abuseipdb check fails open when the cached score is unavailable', function (): void {
@@ -344,7 +344,7 @@ test('abuseipdb check clamps an out of range threshold', function (): void {
     );
 
     expect(fn () => $service->isInAbuseIPDBDatabase('8.8.8.8'))
-        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address is blacklisted in the AbuseIPDB database');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address is blacklisted in the AbuseIPDB database');
 });
 
 test('abuseipdb check falls back to defaults for empty or invalid settings', function (mixed $threshold, mixed $maxAge): void {

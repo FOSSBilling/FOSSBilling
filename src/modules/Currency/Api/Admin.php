@@ -12,12 +12,11 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 use Symfony\Component\Intl\Currencies;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get a list of available currencies on the system.
@@ -38,7 +37,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
     }
 
     /**
@@ -66,7 +65,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Return currency details by cde.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function get($data): array
@@ -79,7 +78,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $repo->findOneByCode($data['code']);
 
         if (!$model instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Currency not found.');
         }
 
         return $model->toApiArray();
@@ -98,7 +97,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $default = $repo->findDefault();
 
         if (!$default instanceof Currency) {
-            throw new \FOSSBilling\Exception('Default currency not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Default currency not found');
         }
 
         return $default->toApiArray();
@@ -109,7 +108,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return string - currency code
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function create($data = []): string
@@ -122,15 +121,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $repo = $service->getCurrencyRepository();
 
         if ($repo->findOneByCode($data['code'] ?? null)) {
-            throw new \FOSSBilling\Exception('Currency already registered.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Currency already registered.');
         }
 
         if (!Currencies::exists($data['code'] ?? null)) {
-            throw new \FOSSBilling\Exception('Currency code is invalid.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Currency code is invalid.');
         }
 
         $conversionRate = $data['conversion_rate'] ?? null;
-        $isRateManual = Tools::normalizeBoolean($data['is_rate_manual'] ?? false);
+        $isRateManual = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['is_rate_manual'] ?? false);
 
         return $service->createCurrency($data['code'] ?? null, $conversionRate, $isRateManual);
     }
@@ -143,7 +142,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $format_pattern - plain-text display pattern containing one {amount} placeholder
      * @optional int $fraction_digits - fraction digit override from 0 to 6, blank to use the ISO default
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function update($data): bool
@@ -152,7 +151,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $conversionRate = $data['conversion_rate'] ?? null;
         $isRateManual = array_key_exists('is_rate_manual', $data)
-            ? Tools::normalizeBoolean($data['is_rate_manual'])
+            ? \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['is_rate_manual'])
             : null;
         $formatting = array_intersect_key($data, [
             'format_pattern' => true,
@@ -190,7 +189,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Remove a currency. Default currency cannot be removed.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function delete($data): bool
@@ -204,7 +203,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Set default currency. If you have active orders or invoices
      * not recalculation on profits and refunds are made.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function set_default($data): bool
@@ -218,7 +217,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->findOneByCode($data['code']);
         if (!$model instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Currency not found.');
         }
 
         return $service->setAsDefault($model);

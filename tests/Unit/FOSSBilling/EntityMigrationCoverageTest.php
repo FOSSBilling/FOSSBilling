@@ -8,8 +8,8 @@ declare(strict_types=1);
  * with "Unknown column ..." until the ambient schema sync happens to heal them.
  *
  * For any column added since the snapshot, the test requires a table-specific
- * CREATE TABLE or ADD COLUMN operation in UpdatePatcher (i.e. a hand-written
- * MySQL patch like patch119/patch120): the portable schema sync covers
+ * CREATE TABLE or ADD COLUMN operation in the update patches (i.e. a hand-written
+ * MySQL patch like Patch119/Patch120): the portable schema sync covers
  * PostgreSQL/SQLite on its own, but MySQL upgrades must not depend on sync timing.
  *
  * After adding the migration, regenerate the snapshot:
@@ -17,7 +17,7 @@ declare(strict_types=1);
  */
 
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use Symfony\Component\Filesystem\Path;
 
 function entityMigrationCoverageSnapshotPath(): string
@@ -108,7 +108,13 @@ test('new entity columns ship with a MySQL migration', function (): void {
 
     $added = array_values(array_diff($current, $previous));
     if ($added !== []) {
-        $patcher = (string) file_get_contents(Path::join(PATH_ROOT, 'library', 'FOSSBilling', 'UpdatePatcher.php'));
+        // Hand-written MySQL migrations live in Patcher.php and the PatchNNN
+        // classes now; concatenate them so the literal scan below sees both.
+        $patchSources = [Path::join(PATH_ROOT, 'core', 'Update', 'Patcher.php'), ...glob(Path::join(PATH_ROOT, 'core', 'Update', 'Patch', 'Patch*.php')) ?: []];
+        $patcher = '';
+        foreach ($patchSources as $patchSource) {
+            $patcher .= file_get_contents($patchSource) . "\n";
+        }
         $uncovered = array_values(array_filter(
             $added,
             static function (string $tableColumn) use ($patcher): bool {
@@ -120,8 +126,8 @@ test('new entity columns ship with a MySQL migration', function (): void {
 
         expect($uncovered)->toBe(
             [],
-            'New entity columns without a MySQL migration in UpdatePatcher: ' . implode(', ', $uncovered)
-            . ' - add a guarded patch (see patch119/patch120) and bump last_patch in content.sql, then regenerate the snapshot.'
+            'New entity columns without a MySQL migration in the update patches: ' . implode(', ', $uncovered)
+            . ' - add a guarded patch (see Patch119/Patch120) and bump last_patch in content.sql, then regenerate the snapshot.'
         );
     }
 

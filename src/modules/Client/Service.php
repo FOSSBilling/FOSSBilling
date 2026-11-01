@@ -28,12 +28,11 @@ use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\i18n;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\SortOptions;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\I18n\I18n;
+use FOSSBilling\Core\SortOptions;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -208,7 +207,7 @@ class Service implements InjectionAwareInterface
     {
         // The managed client also reflects a profile email change before its flush.
         $client = $this->clientRepository->find((int) $client_id) ?? throw new InformationException('Client not found');
-        $hash = strtolower((string) $this->di['tools']->generatePassword(50));
+        $hash = strtolower(\FOSSBilling\Core\Security\Credential::generatePassword(50));
         $dbal = $this->di['dbal'];
         $dbal->transactional(function () use ($dbal, $client, $client_id, $hash): void {
             $dbal->executeStatement('UPDATE client SET email_approved = email_approved WHERE id = :id', ['id' => $client_id]);
@@ -225,7 +224,7 @@ class Service implements InjectionAwareInterface
             ]);
         });
 
-        return $this->di['tools']->url('/client/confirm-email/' . $hash);
+        return $this->di['url']->link('/client/confirm-email/' . $hash);
     }
 
     #[AsEventListener]
@@ -654,7 +653,7 @@ class Service implements InjectionAwareInterface
     {
         $membership = $this->clientGroupMembershipRepository->findOneBy(['clientGroup' => $model]);
         if ($membership) {
-            throw new \FOSSBilling\Exception('Cannot remove groups with clients');
+            throw new \FOSSBilling\Core\Exception\BaseException('Cannot remove groups with clients');
         }
 
         $group = $this->clientGroupRepository->find((int) $model->getId());
@@ -705,7 +704,7 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data): Client
     {
-        $password = $data['password'] ?? $this->di['tools']->generatePassword(32, true);
+        $password = $data['password'] ?? \FOSSBilling\Core\Security\Credential::generatePassword(32, true);
 
         $client = new Client();
         $client->setAuthType($data['auth_type'] ?? null);
@@ -720,12 +719,12 @@ class Service implements InjectionAwareInterface
 
         $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
-            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCC));
+            $client->setPhoneCc((string) \FOSSBilling\Core\Validation\PhoneValidator::validatePhoneCC($phoneCC));
         }
 
         $phone = $data['phone'] ?? null;
         if (!empty($phone) && is_string($phone)) {
-            $client->setPhone(Tools::validatePhoneNumber($phone));
+            $client->setPhone(\FOSSBilling\Core\Validation\PhoneValidator::validatePhoneNumber($phone));
         }
 
         $client->setAid($data['aid'] ?? null);
@@ -756,7 +755,7 @@ class Service implements InjectionAwareInterface
         if ($client->getLang() !== null && $client->getLang() !== '' && !Locales::exists($client->getLang())) {
             throw new InformationException('Invalid locale code: :code', [':code' => $client->getLang()]);
         }
-        $client->setTimezone(i18n::validateTimezone($data['timezone'] ?? null));
+        $client->setTimezone(I18n::validateTimezone($data['timezone'] ?? null));
         $client->setCurrency($data['currency'] ?? null);
 
         $client->setCustom1($data['custom_1'] ?? null);
@@ -799,7 +798,7 @@ class Service implements InjectionAwareInterface
         unset($eventParams['password'], $eventParams['password_confirm']);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminClientCreateEvent($eventParams));
         $client = $this->createClient($data);
-        if (Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true)) {
+        if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['send_welcome_email'] ?? true, true)) {
             $this->sendAdminCreatedWelcomeEmailForClient($client);
         }
         $this->di['event_dispatcher']->dispatch(new AfterAdminClientCreateEvent((int) $client->getId()));
@@ -1157,7 +1156,7 @@ class Service implements InjectionAwareInterface
                 ->getQuery()
                 ->execute();
         } catch (\Exception $e) {
-            if (!\FOSSBilling\Environment::isTesting()) {
+            if (!\FOSSBilling\Core\System\Environment::isTesting()) {
                 $di['logger']->error($e->getMessage());
             }
         }

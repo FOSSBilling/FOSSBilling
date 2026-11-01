@@ -15,7 +15,7 @@ use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\KbSearch;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class KbArticleCategoryRepository extends EntityRepository
 {

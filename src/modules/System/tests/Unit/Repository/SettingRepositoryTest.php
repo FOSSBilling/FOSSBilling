@@ -6,7 +6,7 @@ use Box\Mod\System\Entity\Setting;
 use Box\Mod\System\Repository\SettingRepository;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 
 beforeEach(function (): void {
     $this->entityManager = EntityManagerFactory::create(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));

@@ -26,15 +26,14 @@ use Box\Mod\Client\Event\AfterAdminClientUpdateEvent;
 use Box\Mod\Client\Event\BeforeAdminClientDeleteEvent;
 use Box\Mod\Client\Event\BeforeAdminClientPasswordChangeEvent;
 use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get a list of clients.
@@ -55,7 +54,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $queryBuilder = $repository->getSearchQueryBuilder($data);
         $pager = $this->getDi()['pager']->paginateDoctrineQuery(
             $queryBuilder,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             $this->getIdentity(),
         );
 
@@ -133,7 +132,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $session->set('client_id', $client->getId());
         $this->getDi()['logger']->info('Logged in as client #{client_id}', ['client_id' => $client->getId()]);
 
-        if (Tools::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
+        if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
             $session->destroy('admin');
             $this->getDi()['logger']->info('Stripped admin identity from session after logging in as client #{client_id}', ['client_id' => $client->getId()]);
         }
@@ -198,13 +197,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('client', 'create');
 
         $validator = $this->getDi()['validator'];
-        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         if (array_key_exists('billing_email', $data)) {
             $data['billing_email'] = empty($data['billing_email'])
                 ? null
-                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
+                : \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['billing_email']);
         }
-        $data['send_welcome_email'] = Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true);
+        $data['send_welcome_email'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['send_welcome_email'] ?? true, true);
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
@@ -314,7 +313,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (!is_null($data['email'] ?? null)) {
             $email = $data['email'];
-            $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
+            $email = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
                 throw new InformationException('This email address is already registered.');
             }
@@ -323,7 +322,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (array_key_exists('billing_email', $data)) {
             $data['billing_email'] = empty($data['billing_email'])
                 ? null
-                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
+                : \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['billing_email']);
         }
 
         if (!empty($data['birthday'])) {
@@ -346,13 +345,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         // Special handling for the phone country codes
         $phoneCountryCode = $data['phone_cc'] ?? $client->getPhoneCc();
         if (!empty($phoneCountryCode)) {
-            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCountryCode));
+            $client->setPhoneCc((string) \FOSSBilling\Core\Validation\PhoneValidator::validatePhoneCC($phoneCountryCode));
         }
 
         // Special handling for the phone number itself
         $phone = $data['phone'] ?? $client->getPhone();
         if (!empty($phone) && is_string($phone)) {
-            $client->setPhone(Tools::validatePhoneNumber($phone));
+            $client->setPhone(\FOSSBilling\Core\Validation\PhoneValidator::validatePhoneNumber($phone));
         }
 
         $previousStatus = $client->getStatus();
@@ -445,7 +444,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (array_key_exists('merge_renewals', $data)) {
             $mergeRenewals = $data['merge_renewals'];
-            $client->setMergeRenewals($mergeRenewals === null || $mergeRenewals === '' ? null : Tools::normalizeBoolean($mergeRenewals));
+            $client->setMergeRenewals($mergeRenewals === null || $mergeRenewals === '' ? null : \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($mergeRenewals));
         }
 
         if (array_key_exists('birthday', $data) && $data['birthday'] !== null && $data['birthday'] !== '') {
@@ -525,7 +524,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getDi()['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -614,7 +613,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -707,7 +706,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $memberships = $this->getDi()['em']->getRepository(ClientGroupMembership::class)->findBy(['clientGroup' => $model]);
 
-        if (Tools::safeCount($memberships) > 0) {
+        if (\FOSSBilling\Core\Utils\Arr::safeCount($memberships) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 

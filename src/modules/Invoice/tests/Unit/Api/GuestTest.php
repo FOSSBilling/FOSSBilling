@@ -74,7 +74,7 @@ test('throws exception when invoice is not found', function (): void {
 
     $data['hash'] = md5('1');
     expect(fn () => $api->get($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invoice was not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invoice was not found');
 });
 
 test('gets active gateways', function (): void {
@@ -117,7 +117,7 @@ test('throws exception when payment hash is missing', function (): void {
     ];
 
     expect(fn () => $api->payment($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoice hash not passed. Missing param hash');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invoice hash not passed. Missing param hash');
 });
 
 test('throws exception when payment gateway id is missing', function (): void {
@@ -127,7 +127,7 @@ test('throws exception when payment gateway id is missing', function (): void {
     ];
 
     expect(fn () => $api->payment($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Payment method not found. Missing param gateway_id');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Payment method not found. Missing param gateway_id');
 });
 
 test('gets whether add funds is enabled', function (): void {
@@ -171,19 +171,19 @@ function invoiceRecordingLimiter(array &$log, array $exhausted = []): object
         {
         }
 
-        public function consume(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+        public function consume(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
         {
             $limited = in_array($policyName, $this->exhausted, true);
             $this->log[] = $tokens === 0 ? "probe:{$policyName}" : "consume:{$policyName}";
 
-            return new FOSSBilling\Security\RateLimitResult($policyName, $limited, null, null);
+            return new FOSSBilling\Core\Security\RateLimitResult($policyName, $limited, null, null);
         }
 
-        public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+        public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
         {
             $result = $this->consume($policyName, $subject, $tokens);
             if ($result->isLimited()) {
-                throw new FOSSBilling\Security\RateLimitException($result);
+                throw new FOSSBilling\Core\Security\RateLimitException($result);
             }
 
             return $result;
@@ -197,7 +197,7 @@ test('a rejected invoice read does not spend the invoice per-hash budget', funct
     $di['rate_limiter'] = invoiceRecordingLimiter($log);
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('checkInvoiceAuth')->andThrow(new FOSSBilling\InformationException('Not allowed'));
+    $serviceMock->shouldReceive('checkInvoiceAuth')->andThrow(new FOSSBilling\Core\Exception\InformationException('Not allowed'));
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('findByHash')->andReturn(createEntity(Invoice::class));
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
@@ -208,7 +208,7 @@ test('a rejected invoice read does not spend the invoice per-hash budget', funct
 
     // Whoever holds the link must not be able to lock the owner out by sending requests that are refused.
     // The probe spends nothing, so only the per-IP bucket is charged.
-    expect(fn () => $api->get(['hash' => md5('1')]))->toThrow(FOSSBilling\InformationException::class, 'Not allowed')
+    expect(fn () => $api->get(['hash' => md5('1')]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Not allowed')
         ->and($log)->toBe(['consume:invoice_get_ip', 'probe:invoice_get_hash']);
 });
 
@@ -253,7 +253,7 @@ test('an exhausted invoice read budget is refused before the database is touched
     $api->setDi($di);
     $api->setService($serviceMock);
 
-    expect(fn () => $api->get(['hash' => md5('1')]))->toThrow(FOSSBilling\Security\RateLimitException::class)
+    expect(fn () => $api->get(['hash' => md5('1')]))->toThrow(FOSSBilling\Core\Security\RateLimitException::class)
         ->and($log)->toBe(['consume:invoice_get_ip', 'probe:invoice_get_hash']);
 });
 
@@ -263,13 +263,13 @@ test('a refused PDF request does not spend the per-hash budget', function (): vo
     $di['rate_limiter'] = invoiceRecordingLimiter($log);
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('generatePDF')->andThrow(new FOSSBilling\InformationException('Not allowed'));
+    $serviceMock->shouldReceive('generatePDF')->andThrow(new FOSSBilling\Core\Exception\InformationException('Not allowed'));
 
     $api = apiEndpoint(new Guest());
     $api->setDi($di);
     $api->setService($serviceMock);
 
-    expect(fn () => $api->pdf(['hash' => str_repeat('a', 32)]))->toThrow(FOSSBilling\InformationException::class)
+    expect(fn () => $api->pdf(['hash' => str_repeat('a', 32)]))->toThrow(FOSSBilling\Core\Exception\InformationException::class)
         ->and($log)->toBe(['consume:invoice_pdf_ip', 'probe:invoice_pdf_hash']);
 });
 
@@ -284,7 +284,7 @@ test('an exhausted PDF budget is refused before the PDF is rendered', function (
     $api->setDi($di);
     $api->setService($serviceMock);
 
-    expect(fn () => $api->pdf(['hash' => str_repeat('a', 32)]))->toThrow(FOSSBilling\Security\RateLimitException::class)
+    expect(fn () => $api->pdf(['hash' => str_repeat('a', 32)]))->toThrow(FOSSBilling\Core\Security\RateLimitException::class)
         ->and($log)->toBe(['consume:invoice_pdf_ip', 'probe:invoice_pdf_hash']);
 });
 
@@ -293,12 +293,12 @@ test('a refused payment does not spend the per-hash budget', function (): void {
     $di = container();
     $di['rate_limiter'] = invoiceRecordingLimiter($log);
     $refused = Mockery::mock(Service::class);
-    $refused->shouldReceive('processInvoice')->andThrow(new FOSSBilling\InformationException('Not allowed'));
+    $refused->shouldReceive('processInvoice')->andThrow(new FOSSBilling\Core\Exception\InformationException('Not allowed'));
     $api = apiEndpoint(new Guest());
     $api->setDi($di);
     $api->setService($refused);
 
-    expect(fn () => $api->payment(['hash' => str_repeat('a', 32), 'gateway_id' => 1]))->toThrow(FOSSBilling\InformationException::class)
+    expect(fn () => $api->payment(['hash' => str_repeat('a', 32), 'gateway_id' => 1]))->toThrow(FOSSBilling\Core\Exception\InformationException::class)
         ->and($log)->toBe(['consume:invoice_payment_ip', 'probe:invoice_payment_hash']);
 });
 
@@ -331,5 +331,5 @@ test('an exhausted payment budget is refused before the gateway is contacted', f
     $api->setDi($di);
     $api->setService($service);
 
-    expect(fn () => $api->payment(['hash' => str_repeat('a', 32), 'gateway_id' => 1]))->toThrow(FOSSBilling\Security\RateLimitException::class);
+    expect(fn () => $api->payment(['hash' => str_repeat('a', 32), 'gateway_id' => 1]))->toThrow(FOSSBilling\Core\Security\RateLimitException::class);
 });

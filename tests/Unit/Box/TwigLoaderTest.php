@@ -10,8 +10,8 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Twig\Enum\AppArea;
-use FOSSBilling\Twig\TwigLoader;
+use FOSSBilling\Core\Twig\AppArea;
+use FOSSBilling\Core\Twig\TwigLoader;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Twig\Error\LoaderError;

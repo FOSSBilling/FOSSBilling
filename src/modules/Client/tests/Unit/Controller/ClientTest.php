@@ -30,7 +30,7 @@ test('password reset confirmation passes the validated hash to the template', fu
     $controller = new Client();
     $controller->setDi($di);
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('render')
         ->once()
         ->with('mod_client_set_new_password', ['hash' => $hash])
@@ -41,7 +41,7 @@ test('password reset confirmation passes the validated hash to the template', fu
 
 test('route constraints are keyed by parameters that exist in the route', function (): void {
     $routes = [];
-    $app = Mockery::mock('\Box_App');
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('get')->andReturnUsing(function (string $url, string $method, array $conditions, ?string $class = null) use (&$routes): void {
         $routes[$url] = $conditions;
     });

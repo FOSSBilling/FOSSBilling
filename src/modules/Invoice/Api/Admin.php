@@ -22,14 +22,13 @@ use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
 use Box\Mod\Order\Entity\Order;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Returns paginated list of invoices.
@@ -47,7 +46,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $qb = $service->getInvoiceRepository()->getSearchQueryBuilder($data);
         if (!empty($data['summary'])) {
-            $pager = $this->getDi()['pager']->paginateMappedQuery($qb, PaginationOptions::fromArray($data), static fn ($invoice) => $invoice);
+            $pager = $this->getDi()['pager']->paginateMappedQuery($qb, Options::fromArray($data), static fn ($invoice) => $invoice);
             $totals = $service->getInvoiceRepository()->getInvoiceTotals(array_map(static fn ($invoice): int => (int) $invoice->getId(), $pager['list']));
             $pager['list'] = array_map(
                 static fn ($invoice): array => $service->toApiSummaryFromEntity($invoice, $totals[$invoice->getId()] ?? []),
@@ -61,7 +60,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             static fn ($invoice): array => $service->toApiArray($invoice, true, $identity),
         );
     }
@@ -157,7 +156,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $client = $this->getDi()['em']->getRepository(Client::class)->find((int) $data['client_id']) ?? throw new \FOSSBilling\Exception('Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find((int) $data['client_id']) ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
 
         $invoice = $this->getService()->prepareInvoice($client, $data);
 
@@ -199,7 +198,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($items !== null && (!is_array($items) || $items === [])) {
             throw new InformationException('Refund lines are invalid');
         }
-        $gatewayRefund = !array_key_exists('gateway_refund', $data) || Tools::normalizeBoolean($data['gateway_refund'], true);
+        $gatewayRefund = !array_key_exists('gateway_refund', $data) || \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['gateway_refund'], true);
         $options = [];
         if (array_key_exists('gateway_refund', $data)) {
             $options['gateway_refund'] = $gatewayRefund;
@@ -431,7 +430,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return string - invoice id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Order ID was not passed'])]
     public function renewal_invoice($data)
@@ -440,7 +439,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['id']);
         if (!$model instanceof Order) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
         }
 
         return $this->getService()->renewInvoice($model, $data);
@@ -587,7 +586,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
         if (!$model instanceof Transaction) {
-            throw new \FOSSBilling\Exception('Transaction not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Transaction not found');
         }
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
@@ -620,7 +619,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
         if (!$model instanceof Transaction) {
-            throw new \FOSSBilling\Exception('Transaction not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Transaction not found');
         }
 
         $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminTransactionProcessEvent((int) $model->getId()));
@@ -652,7 +651,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
         if (!$model instanceof Transaction) {
-            throw new \FOSSBilling\Exception('Transaction not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Transaction not found');
         }
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
@@ -694,7 +693,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
         if (!$model instanceof Transaction) {
-            throw new \FOSSBilling\Exception('Transaction not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Transaction not found');
         }
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
@@ -714,7 +713,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
         if (!$model instanceof Transaction) {
-            throw new \FOSSBilling\Exception('Transaction not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Transaction not found');
         }
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
@@ -740,7 +739,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null, $row['gateway_code'] ?? null),
         );
     }
@@ -824,7 +823,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool True if the transaction was successfully claimed, false if already claimed/processed
      *
-     * @throws \FOSSBilling\Exception if transaction ID is missing
+     * @throws \FOSSBilling\Core\Exception\BaseException if transaction ID is missing
      */
     public function transaction_claim_for_processing($data)
     {
@@ -856,7 +855,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $qb = $gatewayService->getPayGatewayRepository()->getSearchQueryBuilder($data);
         $identity = $this->getIdentity();
 
-        return $this->getDi()['pager']->paginateMappedQuery($qb, PaginationOptions::fromArray($data), static fn ($entity): array => $gatewayService->toApiArray($entity, false, $identity));
+        return $this->getDi()['pager']->paginateMappedQuery($qb, Options::fromArray($data), static fn ($entity): array => $gatewayService->toApiArray($entity, false, $identity));
     }
 
     /**
@@ -908,7 +907,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_get($data)
@@ -917,7 +916,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
         if (!$model instanceof PayGateway) {
-            throw new \FOSSBilling\Exception('Gateway not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Gateway not found');
         }
 
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
@@ -928,7 +927,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Copy gateway from existing one.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_copy($data)
@@ -937,7 +936,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
         if (!$model instanceof PayGateway) {
-            throw new \FOSSBilling\Exception('Gateway not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Gateway not found');
         }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
@@ -960,7 +959,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_update($data)
@@ -969,13 +968,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
         if (!$model instanceof PayGateway) {
-            throw new \FOSSBilling\Exception('Gateway not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Gateway not found');
         }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         $file = $this->getDi()['request']->files->get('logo_file');
         if ($file !== null && !$file instanceof UploadedFile) {
-            throw new \FOSSBilling\Exception('Payment gateway image upload failed.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway image upload failed.');
         }
 
         return $gatewayService->update($model, $data, $file);
@@ -986,7 +985,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_delete($data)
@@ -995,7 +994,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
         if (!$model instanceof PayGateway) {
-            throw new \FOSSBilling\Exception('Gateway not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Gateway not found');
         }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
@@ -1018,7 +1017,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $qb = $subscriptionService->getSubscriptionRepository()->getSearchQueryBuilder($data);
         $identity = $this->getIdentity();
 
-        return $this->getDi()['pager']->paginateMappedQuery($qb, PaginationOptions::fromArray($data), static fn ($entity): array => $subscriptionService->toApiArray($entity, false, $identity));
+        return $this->getDi()['pager']->paginateMappedQuery($qb, Options::fromArray($data), static fn ($entity): array => $subscriptionService->toApiArray($entity, false, $identity));
     }
 
     /**
@@ -1044,10 +1043,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
-        $client = $this->getDi()['em']->getRepository(Client::class)->find((int) $data['client_id']) ?? throw new \FOSSBilling\Exception('Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find((int) $data['client_id']) ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
         $payGateway = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
         if (!$payGateway instanceof PayGateway) {
-            throw new \FOSSBilling\Exception('Payment gateway not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway not found');
         }
 
         if (strtoupper((string) $client->getCurrency()) !== strtoupper((string) $data['currency'])) {
@@ -1069,7 +1068,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_update($data)
@@ -1078,7 +1077,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Subscription::class)->find((int) $data['id']);
         if (!$model instanceof Subscription) {
-            throw new \FOSSBilling\Exception('Subscription not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
         }
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
@@ -1090,7 +1089,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function subscription_get($data)
     {
@@ -1114,7 +1113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$model instanceof Subscription) {
-            throw new \FOSSBilling\Exception('Subscription not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
         }
 
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
@@ -1127,7 +1126,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_delete($data)
@@ -1136,7 +1135,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Subscription::class)->find((int) $data['id']);
         if (!$model instanceof Subscription) {
-            throw new \FOSSBilling\Exception('Subscription not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
         }
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
@@ -1148,7 +1147,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Tax ID was not passed'])]
     public function tax_delete($data)
@@ -1239,7 +1238,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
         $qb = $taxService->getTaxRepository()->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
     }
 
     /**

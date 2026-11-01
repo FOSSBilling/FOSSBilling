@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after the batch job sends order suspension warnings. */
 final class AfterAdminBatchSendSuspensionWarningsEvent extends Event

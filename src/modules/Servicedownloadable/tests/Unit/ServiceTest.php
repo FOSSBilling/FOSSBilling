@@ -200,7 +200,7 @@ test('rejects duplicate file IDs in order configuration', function (): void {
     $data = ['files' => [$file, $file]];
 
     expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class, 'duplicate file IDs');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'duplicate file IDs');
 });
 
 test('save product config with no existing config', function (): void {
@@ -256,7 +256,7 @@ test('validate file upload rejects unknown extension', function (): void {
     $reflection = new ReflectionMethod(Service::class, 'validateFileUpload');
 
     expect(fn (): mixed => $reflection->invoke($service, $file))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('clientSettableConfigKeys returns the downloadable allowlist', function (): void {
@@ -331,5 +331,5 @@ test('product file upload rejects a request without the expected file field', fu
     $productModel = serviceDownloadableCreateProductEntity();
 
     expect(fn (): bool => $service->uploadProductFile($productModel))
-        ->toThrow(FOSSBilling\Exception::class, 'File upload failed: no files in request.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'File upload failed: no files in request.');
 });

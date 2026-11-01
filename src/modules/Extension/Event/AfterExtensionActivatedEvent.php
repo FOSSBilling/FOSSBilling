@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 final class AfterExtensionActivatedEvent extends Event
 {

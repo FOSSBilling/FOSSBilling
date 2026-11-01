@@ -13,7 +13,7 @@ namespace Box\Mod\Activity\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
+use FOSSBilling\Core\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Activity\Repository\ActivityClientHistoryRepository::class)]
 #[ORM\Table(name: 'activity_client_history')]
