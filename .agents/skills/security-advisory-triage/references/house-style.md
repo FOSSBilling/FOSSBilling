@@ -166,6 +166,17 @@ before computing, rather than guessing the vector wholesale:
 - `SC`/`SI`/`SA` (impact to a **Subsequent** System): only non-`N` when the
   impact genuinely extends to a separate downstream system, not just
   "an attacker could theoretically use this to attack something else later."
+- Control-weakening bugs (rate-limit bypasses, guard bypasses) tempt
+  all-`N` impact scoring, and an all-`N` vector collapses to base score
+  0.0/"None" regardless of the exploitability metrics (confirmed by
+  computation during a real triage). Give the vulnerability its direct
+  effect instead: a credential-guessing enabler gets `VC:L` (valid
+  credentials for weak-password accounts become obtainable at scale),
+  leaving `VI`/`VA` at `N` because takeover is a downstream possibility,
+  not an effect the bug delivers.
+- The PATCH response itself reports `cvss_vector_string: null` at the
+  top level regardless of success; confirm a write landed via a fresh
+  GET of `cvss_severities.cvss_v4`.
 
 ## CWEs
 
@@ -293,3 +304,8 @@ if you need the specifics):
   if a cross-reference is unavoidable, preferably omitted. Caught during
   review of a draft that cited "GHSA-xxxx" for the sibling global-counter
   fix.
+- v1.13: added the control-weakening/all-N CVSS collapse lesson (score
+  0.0 empirically confirmed) with the `VC:L` convention for
+  credential-guessing enablers, plus the note that the PATCH response
+  always shows `cvss_vector_string: null` so verification requires a
+  fresh GET (from the mixed-case rate-limit-bypass advisory triage).
