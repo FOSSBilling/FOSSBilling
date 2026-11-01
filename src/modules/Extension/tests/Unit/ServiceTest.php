@@ -574,43 +574,43 @@ test('activate blocks a module whose required module is not active', function ()
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
         'version' => '1.0.0',
-        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['somemod' => '>=1.0']],
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['missingModule' => '>=1.0']],
     ], $extensionRepository);
     $modMock->shouldReceive('install')->never();
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'somemod');
+        ->toThrow(FOSSBilling\InformationException::class, 'missingModule');
 });
 
 test('activate blocks a module whose required module version is unmet', function (): void {
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
     $extensionRepository->shouldReceive('findOneByTypeAndName')
-        ->andReturn(extensionCreateEntity(2, 'mod', 'depmod', 'installed', '1.0'));
+        ->andReturn(extensionCreateEntity(2, 'mod', 'requiredModule', 'installed', '1.0'));
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
         'version' => '1.0.0',
-        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['depmod' => '>=2.0']],
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['requiredModule' => '>=2.0']],
     ], $extensionRepository);
     $modMock->shouldReceive('install')->never();
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'depmod');
+        ->toThrow(FOSSBilling\InformationException::class, 'requiredModule');
 });
 
 test('activate installs a module whose required module version is satisfied', function (): void {
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
     $extensionRepository->shouldReceive('findOneByTypeAndName')
-        ->andReturn(extensionCreateEntity(2, 'mod', 'depmod', 'installed', '1.0'));
+        ->andReturn(extensionCreateEntity(2, 'mod', 'requiredModule', 'installed', '1.0'));
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
         'version' => '1.0.0',
-        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['depmod' => '>=1.0']],
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['requiredModule' => '>=1.0']],
     ], $extensionRepository);
     $modMock->shouldReceive('install')->once();
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');

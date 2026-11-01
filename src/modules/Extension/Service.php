@@ -715,7 +715,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws \FOSSBilling\InformationException when the constraint is unmet or unparseable
+     * @throws \FOSSBilling\InformationException when the constraint is unmet or invalid
      */
     private function assertConstraintSatisfied(string $version, string $constraint, string $message, array $placeholders): void
     {
