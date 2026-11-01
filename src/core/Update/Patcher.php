@@ -1300,29 +1300,35 @@ class Patcher implements InjectionAwareInterface
      * The manifest backfill aligned every in-repo manifest version with the
      * release version, but existing installs still carry whatever content.sql
      * seeded when they were installed. Sync those seeded rows with the new
-     * seed value - but only rows still carrying a historically seeded version,
-     * so directory-installed versions are never downgraded. Portable (plain
-     * SELECT/UPDATE) and idempotent: a single probe SELECT finds nothing to
-     * do once synced, so this is cheap enough to run outside versioned
-     * updates (see healSchemaDrift()). Never throws: a display-only version
-     * sync must not break requests or updates, it only logs and skips.
+     * seed value - but only when the on-disk manifest carries that same
+     * version, so a directory-installed module that happens to share a legacy
+     * version number is never rewritten. Portable (plain file reads and SQL)
+     * and idempotent: a single probe SELECT finds nothing to do once synced,
+     * so this is cheap enough to run outside versioned updates (see
+     * healSchemaDrift()). Never throws: a display-only version sync must not
+     * break requests or updates, it only logs and skips.
      */
     public function syncSeededModuleVersions(): void
     {
         try {
+            // Last entry per module is the version to sync to; the rest are
+            // historically seeded versions that may still be stored.
             $legacy = [
-                ['news', '1.0.0', '0.8.9'],
-                ['branding', '0.0.1', '0.8.9'],
-                ['branding', '1.0.0', '0.8.9'],
-                ['redirect', '1.0.0', '0.8.9'],
+                'news' => ['1.0.0', '0.8.9'],
+                'branding' => ['0.0.1', '1.0.0', '0.8.9'],
+                'redirect' => ['1.0.0', '0.8.9'],
             ];
 
             $conditions = [];
             $params = ['type' => 'mod'];
-            foreach ($legacy as $i => [$name, $old]) {
-                $conditions[] = "(name = :name{$i} AND version = :old{$i})";
-                $params["name{$i}"] = $name;
-                $params["old{$i}"] = $old;
+            $i = 0;
+            foreach ($legacy as $name => $versions) {
+                foreach (array_slice($versions, 0, -1) as $old) {
+                    $conditions[] = "(name = :name{$i} AND version = :old{$i})";
+                    $params["name{$i}"] = $name;
+                    $params["old{$i}"] = $old;
+                    ++$i;
+                }
             }
 
             $stale = $this->fetchOne(
@@ -1333,15 +1339,41 @@ class Patcher implements InjectionAwareInterface
                 return;
             }
 
-            foreach ($legacy as [$name, $old, $new]) {
-                $this->executeSql(
-                    'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
-                    ['new' => $new, 'type' => 'mod', 'name' => $name, 'old' => $old]
-                );
+            foreach ($legacy as $name => $versions) {
+                $new = end($versions);
+                if ($this->readModuleManifestVersion($name) !== $new) {
+                    continue;
+                }
+
+                foreach (array_slice($versions, 0, -1) as $old) {
+                    $this->executeSql(
+                        'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
+                        ['new' => $new, 'type' => 'mod', 'name' => $name, 'old' => $old]
+                    );
+                }
             }
         } catch (\Throwable $e) {
             $this->logUpdate('warning', 'Seeded module version sync failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * The on-disk manifest version for a module, or null when it cannot be
+     * read. Only used to confirm a seeded database row before rewriting it.
+     */
+    private function readModuleManifestVersion(string $module): ?string
+    {
+        $path = Path::join(PATH_MODS, ucfirst($module), 'manifest.json');
+        if (!$this->filesystem->exists($path)) {
+            return null;
+        }
+
+        $decoded = json_decode($this->filesystem->readFile($path), true);
+        if (!is_array($decoded) || !isset($decoded['version']) || !is_string($decoded['version'])) {
+            return null;
+        }
+
+        return $decoded['version'];
     }
 
     /**

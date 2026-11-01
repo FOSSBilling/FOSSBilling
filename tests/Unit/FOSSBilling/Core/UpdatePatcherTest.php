@@ -3715,6 +3715,27 @@ test('seeded module versions sync to the backfilled manifest versions', function
     ]);
 });
 
+test('seeded module version sync skips rows whose on-disk manifest differs', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
+    $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'news', 'installed', '1.0.0')");
+
+    // The on-disk manifest still reports the legacy version (e.g. a
+    // directory-installed module sharing the seeded name and version),
+    // so the seeded row must be left untouched.
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->andReturnTrue();
+    $filesystem->shouldReceive('readFile')->andReturn(json_encode(['version' => '1.0.0']));
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+    $patcher->filesystem = $filesystem;
+
+    (new Patch138())->apply($patcher);
+
+    expect($pdo->query("SELECT version FROM extension WHERE name = 'news'")->fetchColumn())->toBe('1.0.0');
+});
+
 test('seeded module versions sync during non-MySQL update finalization', function (): void {
     withNonMysqlDbDriver(function (): void {
         $pdo = new PDO('sqlite::memory:');
