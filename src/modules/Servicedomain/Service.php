@@ -22,6 +22,7 @@ use Box\Mod\Servicedomain\Repository\DomainRepository;
 use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SecretConfig;
 use FOSSBilling\SortOptions;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
@@ -1204,7 +1205,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetConfiguration(TldRegistrar $model): array
     {
-        return json_decode($model->getConfig() ?? '', true) ?? [];
+        $config = json_decode($model->getConfig() ?? '', true) ?? [];
+
+        return SecretConfig::decryptMarkedValues($config, $this->di['crypt']);
     }
 
     public function registrarGetRegistrarAdapterConfig(TldRegistrar $model)
@@ -1345,7 +1348,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 }
             }
 
-            $model->setConfig(json_encode($configuration, JSON_THROW_ON_ERROR));
+            $model->setConfig(json_encode(SecretConfig::encryptSecretFields($configuration, $secretFields, $this->di['crypt']), JSON_THROW_ON_ERROR));
             $this->registrarValidateConfiguration($model);
         }
 
@@ -1429,6 +1432,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'form' => $c['form'],
             'test_mode' => $model->isTestMode(),
         ];
+    }
+
+    /**
+     * Config field names for this registrar's adapter whose stored values are
+     * encrypted at rest. Public for the install-time data migration; runtime
+     * callers that already resolved the adapter config should keep using
+     * {@see resolveRegistrarSecretFields()} directly.
+     *
+     * @return string[]
+     */
+    public function registrarGetSecretFields(TldRegistrar $model): array
+    {
+        try {
+            $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
     }
 
     /**

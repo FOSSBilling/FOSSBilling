@@ -212,6 +212,65 @@ test('fresh installs start at the latest patch level', function (): void {
     expect((int) ($matches[1] ?? 0))->toBe((new UpdatePatcher())->latestPatchLevel());
 });
 
+test('secret encryption migration encrypts stored gateway and registrar secrets', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE pay_gateway (id INTEGER PRIMARY KEY, gateway TEXT, config TEXT)');
+    $pdo->exec('CREATE TABLE tld_registrar (id INTEGER PRIMARY KEY, registrar TEXT, config TEXT)');
+    $insertGateway = $pdo->prepare('INSERT INTO pay_gateway (gateway, config) VALUES (?, ?)');
+    $insertGateway->execute(['Stripe', json_encode(['api_key' => 'sk_live_secret', 'pub_key' => 'pk_live_visible'])]);
+    $insertGateway->execute(['Custom', json_encode(['label' => 'Manual approval'])]);
+    $insertGateway->execute(['MissingAdapter', json_encode(['api_key' => 'unmigrated-secret'])]);
+    $insertGateway->execute(['Unknown', null]);
+    $insertRegistrar = $pdo->prepare('INSERT INTO tld_registrar (registrar, config) VALUES (?, ?)');
+    $insertRegistrar->execute(['Namecheap', json_encode(['api-key' => 'registrar-secret', 'username' => 'reseller'])]);
+    $insertRegistrar->execute(['Custom', json_encode(['note' => 'nothing secret here'])]);
+
+    $crypt = new FOSSBilling\Crypt();
+    $payGatewayService = new Box\Mod\Invoice\ServicePayGateway();
+    $payGatewayDi = Tests\Helpers\container();
+    $payGatewayDi['crypt'] = $crypt;
+    $payGatewayService->setDi($payGatewayDi);
+    $registrarService = new Box\Mod\Servicedomain\Service();
+    $registrarDi = Tests\Helpers\container();
+    $registrarDi['crypt'] = $crypt;
+    $registrarService->setDi($registrarDi);
+
+    $di = new Pimple\Container(['pdo' => $pdo, 'crypt' => $crypt, 'filesystem' => new Filesystem()]);
+    $di['mod_service'] = $di->protect(
+        static fn (string $mod, string $sub = ''): object => match ([$mod, $sub]) {
+            ['invoice', 'PayGateway'] => $payGatewayService,
+            ['servicedomain', ''] => $registrarService,
+            default => throw new RuntimeException("Unexpected mod_service call: {$mod}/{$sub}"),
+        }
+    );
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new ReflectionMethod($patcher, 'patch136'))->invoke($patcher);
+    }
+
+    $gatewayRows = $pdo->query('SELECT gateway, config FROM pay_gateway ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    $stripe = json_decode($gatewayRows[0]['config'], true);
+    expect($stripe['api_key'])->toStartWith(FOSSBilling\Crypt::CURRENT_FORMAT_PREFIX)
+        ->and($gatewayRows[0]['config'])->not->toContain('sk_live_secret')
+        ->and($stripe['pub_key'])->toBe('pk_live_visible')
+        ->and($crypt->decrypt($stripe['api_key'], FOSSBilling\Config::getProperty('info.salt')))->toBe('sk_live_secret');
+
+    $custom = json_decode($gatewayRows[1]['config'], true);
+    expect($custom)->toBe(['label' => 'Manual approval']);
+    expect(json_decode($gatewayRows[2]['config'], true))->toBe(['api_key' => 'unmigrated-secret']);
+    expect($gatewayRows[3]['config'])->toBeNull();
+
+    $registrarRows = $pdo->query('SELECT registrar, config FROM tld_registrar ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    $namecheap = json_decode($registrarRows[0]['config'], true);
+    expect($namecheap['api-key'])->toStartWith(FOSSBilling\Crypt::CURRENT_FORMAT_PREFIX)
+        ->and($registrarRows[0]['config'])->not->toContain('registrar-secret')
+        ->and($namecheap['username'])->toBe('reseller');
+
+    expect(json_decode($registrarRows[1]['config'], true))->toBe(['note' => 'nothing secret here']);
+});
+
 test('fresh installs index order suspension candidates', function (): void {
     $indexes = updatePatcherEntityIndexes(Order::class);
 
