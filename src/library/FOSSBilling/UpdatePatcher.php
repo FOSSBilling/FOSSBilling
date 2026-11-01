@@ -5001,25 +5001,45 @@ class UpdatePatcher implements InjectionAwareInterface
      * seeded when they were installed. Sync those seeded rows with the new
      * seed value - but only rows still carrying a historically seeded version,
      * so directory-installed versions are never downgraded. Portable (plain
-     * UPDATE) and idempotent: re-runs match zero rows.
+     * SELECT/UPDATE) and idempotent: a single probe SELECT finds nothing to
+     * do once synced.
+     *
+     * Public because UpdateFinalization::healSchemaDrift() calls it outside
+     * versioned updates. It must stay cheap (one probe SELECT when clean) and
+     * never throw - partial schemas and unreachable databases simply skip.
      */
-    private function syncSeededModuleVersions(): void
+    public function syncSeededModuleVersions(): void
     {
-        // The extension table may not exist yet on a partially migrated
-        // database; there is nothing to sync then, and a display-only
-        // version sync must not block the rest of the update.
-        try {
-            $this->fetchOne('SELECT version FROM extension LIMIT 1');
-        } catch (\Throwable) {
-            return;
-        }
-
         $legacy = [
             ['news', '1.0.0', '0.8.9'],
             ['branding', '0.0.1', '0.8.9'],
             ['branding', '1.0.0', '0.8.9'],
             ['redirect', '1.0.0', '0.8.9'],
         ];
+
+        $conditions = [];
+        $params = ['type' => 'mod'];
+        foreach ($legacy as $i => [$name, $old]) {
+            $conditions[] = "(name = :name{$i} AND version = :old{$i})";
+            $params["name{$i}"] = $name;
+            $params["old{$i}"] = $old;
+        }
+
+        try {
+            $stale = $this->fetchOne(
+                'SELECT 1 FROM extension WHERE type = :type AND (' . implode(' OR ', $conditions) . ') LIMIT 1',
+                $params
+            );
+        } catch (\Throwable) {
+            // The extension table (or its version column) does not exist yet
+            // on a partially migrated database: there is nothing to sync, and
+            // a display-only version sync must not block the rest of the update.
+            return;
+        }
+
+        if ($stale === false) {
+            return;
+        }
 
         foreach ($legacy as [$name, $old, $new]) {
             $this->executeSql(

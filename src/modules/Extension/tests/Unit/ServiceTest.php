@@ -659,6 +659,109 @@ test('activate blocks a module with an invalid requirement constraint', function
         ->toThrow(FOSSBilling\InformationException::class, 'invalid version requirement');
 });
 
+test('activate blocks a module whose requires value is not an object', function (mixed $requires): void {
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => $requires,
+    ]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class, 'invalid module requirements');
+})->with([null, '>=1.0', 42]);
+
+test('activate parses the fossbilling requirement on preview builds', function (): void {
+    // The comparison is skipped on previews, but an invalid constraint must
+    // still fail - otherwise previews install what releases reject.
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => ['fossbilling' => '>>1.0', 'php' => '>=8.0', 'modules' => []],
+    ]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class, 'invalid version requirement');
+});
+
+test('activate reads dependency versions from the on-disk manifest', function (): void {
+    // The extension row version satisfies the constraint while the manifest
+    // does not: throwing proves the manifest was read, not the row.
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
+        ->andReturn(extensionCreateEntity(2, 'mod', 'manifestModule', 'installed', '9.9.9'));
+
+    $depMock = Mockery::mock(FOSSBilling\Module::class);
+    $depMock->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
+
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['manifestModule' => '>=2.0']],
+    ], $extensionRepository, ['manifestModule' => $depMock]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class, 'manifestModule');
+});
+
+test('activate blocks a module whose requires value is not an object', function (mixed $requires): void {
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => $requires,
+    ]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class, 'invalid module requirements');
+})->with([null, '>=1.0', 42]);
+
+test('activate parses the fossbilling requirement on preview builds', function (): void {
+    // The comparison is skipped on previews, but an invalid constraint must
+    // still fail - otherwise preview installs accept what releases reject.
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => ['fossbilling' => '>>1.0', 'php' => '>=8.0', 'modules' => []],
+    ]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class, 'invalid version requirement');
+});
+
+test('activate reads dependency versions from the on-disk manifest', function (): void {
+    // The extension row version satisfies the constraint while the manifest
+    // does not: throwing proves the manifest was read, not the row.
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
+        ->andReturn(extensionCreateEntity(2, 'mod', 'manifestModule', 'installed', '9.9.9'));
+
+    $depMock = Mockery::mock(FOSSBilling\Module::class);
+    $depMock->shouldReceive('isCore')->andReturnFalse();
+    $depMock->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
+
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['manifestModule' => '>=2.0']],
+    ], $extensionRepository, ['manifestModule' => $depMock]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class, 'manifestModule');
+});
+
 test('deactivate deactivates an extension', function (): void {
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'widgets', 'installed');

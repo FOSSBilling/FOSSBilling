@@ -665,27 +665,37 @@ class Service implements InjectionAwareInterface
 
     /**
      * Enforce the v1 manifest `requires` constraints before a module installs.
-     * Manifests without a `requires` object (legacy manifests and test fixtures)
-     * pass through unchanged. The FOSSBilling constraint is skipped on preview
-     * builds, where the running version is a placeholder or VCS hash that no
-     * constraint can meaningfully evaluate.
+     * Only a missing `requires` key skips the check; any other non-object
+     * value is invalid. The FOSSBilling version comparison is skipped on
+     * preview builds, where the running version is a placeholder or VCS hash
+     * that no constraint can meaningfully evaluate - but the constraint is
+     * still parsed there, so an invalid constraint fails everywhere.
      *
      * @param array<string, mixed> $info
      */
     private function assertRequiresSatisfied(array $info): void
     {
-        $requires = $info['requires'] ?? null;
-        if (!is_array($requires)) {
+        if (!array_key_exists('requires', $info)) {
             return;
         }
 
-        if (isset($requires['fossbilling']) && !\FOSSBilling\Version::isPreviewVersion()) {
-            $this->assertConstraintSatisfied(
-                \FOSSBilling\Version::VERSION,
-                (string) $requires['fossbilling'],
-                'Module cannot be installed. It requires FOSSBilling :constraint, you are using :v.',
-                [':constraint' => (string) $requires['fossbilling'], ':v' => \FOSSBilling\Version::VERSION]
-            );
+        $requires = $info['requires'];
+        if (!is_array($requires)) {
+            throw new \FOSSBilling\InformationException('Module cannot be installed. Its manifest declares invalid module requirements.');
+        }
+
+        if (isset($requires['fossbilling'])) {
+            $constraint = (string) $requires['fossbilling'];
+            $this->assertConstraintParses($constraint);
+
+            if (!\FOSSBilling\Version::isPreviewVersion()) {
+                $this->assertConstraintSatisfied(
+                    \FOSSBilling\Version::VERSION,
+                    $constraint,
+                    'Module cannot be installed. It requires FOSSBilling :constraint, you are using :v.',
+                    [':constraint' => $constraint, ':v' => \FOSSBilling\Version::VERSION]
+                );
+            }
         }
 
         if (isset($requires['php'])) {
@@ -721,34 +731,37 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws \FOSSBilling\InformationException when the constraint is unmet or invalid
+     * @throws \FOSSBilling\InformationException when the constraint is unmet
      */
     private function assertConstraintSatisfied(string $version, string $constraint, string $message, array $placeholders): void
     {
+        $this->assertConstraintParses($constraint);
+
+        if (!\Composer\Semver\Semver::satisfiedBy([$version], $constraint)) {
+            throw new \FOSSBilling\InformationException($message, $placeholders);
+        }
+    }
+
+    /**
+     * @throws \FOSSBilling\InformationException when the constraint is unparseable
+     */
+    private function assertConstraintParses(string $constraint): void
+    {
         try {
-            $satisfied = \Composer\Semver\Semver::satisfiedBy([$version], $constraint);
+            (new \Composer\Semver\VersionParser())->parseConstraints($constraint);
         } catch (\UnexpectedValueException) {
             throw new \FOSSBilling\InformationException('Module cannot be installed. Its manifest declares an invalid version requirement (:constraint).', [':constraint' => $constraint]);
-        }
-
-        if (!$satisfied) {
-            throw new \FOSSBilling\InformationException($message, $placeholders);
         }
     }
 
     private function getInstalledModuleVersion(string $module): ?string
     {
-        $mod = $this->di['mod']($module);
+        // The on-disk manifest is ground truth for what is actually installed:
+        // files replaced without reactivation leave a stale version behind in
+        // the extension row, which must not satisfy (or fail) the check.
+        $manifest = $this->di['mod']($module)->getManifest();
 
-        if ($mod->isCore()) {
-            $manifest = $mod->getManifest();
-
-            return isset($manifest['version']) ? (string) $manifest['version'] : null;
-        }
-
-        $ext = $this->getExtensionRepository()->findOneByTypeAndName(ExtensionType::Module->value, $module);
-
-        return $ext?->getVersion();
+        return isset($manifest['version']) ? (string) $manifest['version'] : null;
     }
 
     public function activateExistingExtension(array $data): array
