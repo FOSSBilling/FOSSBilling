@@ -1733,14 +1733,35 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')
             || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
+            || str_starts_with($sql, 'UPDATE extension SET version')
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
         ->andReturn($statement);
     $pdo->shouldReceive('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || $sql === 'SELECT version FROM extension LIMIT 1'))
         ->andReturn($statement);
 
     return $pdo;
+}
+
+/**
+ * Allow the seeded-module version sync statements in otherwise strict
+ * applyCorePatches() PDO mocks. The probe SELECT and the version UPDATEs are
+ * plain portable SQL, answered here as no-ops; the SQLite tests below cover
+ * the sync's behavior and SQL.
+ */
+function allowSeededModuleVersionSyncCalls(Mockery\MockInterface $pdo): void
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->andReturnTrue();
+    $statement->shouldReceive('fetchColumn')->andReturn(false);
+
+    $pdo->shouldReceive('prepare')
+        ->with('SELECT version FROM extension LIMIT 1')
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension SET version')))
+        ->andReturn($statement);
 }
 
 /**
@@ -2091,6 +2112,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
+        allowSeededModuleVersionSyncCalls($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -2141,6 +2163,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
+        allowSeededModuleVersionSyncCalls($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
