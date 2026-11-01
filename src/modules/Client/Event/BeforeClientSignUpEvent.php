@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Signup input excluding the password fields, with the request IP included. */
 final class BeforeClientSignUpEvent extends Event

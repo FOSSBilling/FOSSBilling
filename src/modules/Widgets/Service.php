@@ -13,9 +13,8 @@ namespace Box\Mod\Widgets;
 
 use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
 use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
-use FOSSBilling\Enums\ExtensionType;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Interfaces\WidgetProviderInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -172,11 +171,11 @@ class Service implements InjectionAwareInterface
      *
      * @param object $service the service class instance
      *
-     * @return bool true if the service implements WidgetProviderInterface
+     * @return bool true if the service implements ProviderInterface
      */
     private function serviceProvidesWidgets(object $service): bool
     {
-        return $service instanceof WidgetProviderInterface;
+        return $service instanceof ProviderInterface;
     }
 
     /**

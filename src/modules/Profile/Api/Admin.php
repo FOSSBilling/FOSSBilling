@@ -17,10 +17,10 @@ namespace Box\Mod\Profile\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin as AdminEntity;
-use FOSSBilling\InformationException;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Returns currently logged in staff member profile information.
@@ -69,12 +69,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function update($data)
     {
         if (!is_null($data['email'] ?? null)) {
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateAdmin($this->getAdminEntity(), $data);
@@ -95,7 +95,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams([
         'current_password' => 'Current password is required',
@@ -113,7 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $staff = $this->getAdminEntity();
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->getId());
 
         if (!$this->getDi()['password']->verify($data['current_password'], $staff->getPass())) {

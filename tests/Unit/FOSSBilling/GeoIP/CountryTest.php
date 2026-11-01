@@ -10,8 +10,8 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\GeoIP\Country;
-use FOSSBilling\GeoIP\IncompleteRecord;
+use FOSSBilling\Core\GeoIP\Country;
+use FOSSBilling\Core\GeoIP\IncompleteRecord;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
 
 test('unknown ISO codes surface as incomplete records', function (): void {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\ExtensionManager;
+use FOSSBilling\Core\Remote\ExtensionManager;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -16,7 +16,7 @@ use Twig\TwigFunction;
 
 function catalogCacheKey(string $endpoint, array $params = []): string
 {
-    $query = [...$params, 'fossbilling_version' => FOSSBilling\Version::VERSION];
+    $query = [...$params, 'fossbilling_version' => FOSSBilling\Core\System\Version::VERSION];
 
     return 'extension-manager-' . hash('xxh3', $endpoint . serialize($query));
 }
@@ -55,8 +55,8 @@ it('rejects unsafe directory metadata including cached responses', function (str
     } else {
         $entry[$field] = $value;
     }
-    expect(fn () => catalogManager([$entry], $cached)->getExtensionList())->toThrow(FOSSBilling\Exception::class);
-    expect(fn () => catalogManager($entry, $cached)->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => catalogManager([$entry], $cached)->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect(fn () => catalogManager($entry, $cached)->getExtension('Example'))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with([
     ['id', "Example');alert(1);//", false],
     ['id', '../Example', true],
@@ -119,7 +119,7 @@ it('rejects invalid requested identifiers before issuing a directory request', f
     });
     $manager = new ExtensionManager();
     $manager->setDi($di);
-    expect(fn () => $manager->getExtension($id))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn () => $manager->getExtension($id))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 })->with(['../Example', 'Example?query', 'Example#fragment', "Example\n", '']);
 
 it('preserves empty lists and metadata with no author URL', function (): void {
@@ -237,7 +237,7 @@ it('never serves stale data that fails validation', function (): void {
 
     // The validating reader still rejects it everywhere instead of serving it.
     $healthy = false;
-    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 it('throws without retrying while the directory is marked unavailable', function (): void {
@@ -252,8 +252,8 @@ it('throws without retrying while the directory is marked unavailable', function
     $manager = new ExtensionManager();
     $manager->setDi($di);
 
-    expect(fn () => $manager->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
-    expect(fn () => $manager->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $manager->getExtension('Example'))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect(fn () => $manager->getExtension('Example'))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($requests)->toBe(1);
 });
 

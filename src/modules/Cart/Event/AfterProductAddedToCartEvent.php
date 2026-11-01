@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cart\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after a product and its bundled cart items have been added. */
 final class AfterProductAddedToCartEvent extends Event

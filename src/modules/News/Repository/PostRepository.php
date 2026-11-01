@@ -14,7 +14,7 @@ namespace Box\Mod\News\Repository;
 use Box\Mod\News\Entity\Post;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class PostRepository extends EntityRepository
 {

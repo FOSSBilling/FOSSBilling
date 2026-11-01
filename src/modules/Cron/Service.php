@@ -14,8 +14,8 @@ namespace Box\Mod\Cron;
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\System\Entity\Setting;
-use FOSSBilling\Config;
-use FOSSBilling\Environment;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Path;
 
 class Service
@@ -69,7 +69,7 @@ class Service
             if ($this->di['update_finalization']->isRequired()) {
                 $this->di['logger']->withChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
 
-                throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
+                throw new \FOSSBilling\Core\Exception\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
             }
 
             // Same-version drift never triggers version-gated finalization, and the

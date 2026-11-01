@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before a guest confirms a staff password reset. */
 final class BeforeStaffPasswordResetConfirmationEvent extends Event

@@ -8,8 +8,8 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Doctrine\SqlExpr;
 
 class OrderRepository extends EntityRepository
 {
@@ -38,7 +38,7 @@ class OrderRepository extends EntityRepository
         $connection = $this->getEntityManager()->getConnection();
 
         if (!$connection->isTransactionActive()) {
-            throw new \FOSSBilling\Exception('Order link cannot be locked outside of a transaction.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order link cannot be locked outside of a transaction.');
         }
 
         $row = $connection->fetchAssociative(

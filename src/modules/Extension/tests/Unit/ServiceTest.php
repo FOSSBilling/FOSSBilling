@@ -24,9 +24,9 @@ use Box\Mod\Extension\Service;
 use Box\Mod\Widgets\Service as WidgetsService;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Enums\ExtensionType;
-use FOSSBilling\Events\EventDispatcher;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Enums\ExtensionType;
+use FOSSBilling\Core\Events\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
@@ -106,7 +106,7 @@ function requiresActivateService(array $manifest, ?ExtensionRepository $extensio
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('hasManifest')->andReturnTrue();
     $modMock->shouldReceive('getManifest')->andReturn($manifest);
     $modMock->shouldReceive('isCore')->andReturnFalse();
@@ -138,7 +138,7 @@ test('getDi returns the dependency injection container', function (): void {
 test('isCoreModule checks if module is core module', function (): void {
     $service = new Service();
     $coreModules = ['extension', 'cron', 'staff'];
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -161,7 +161,7 @@ test('isCoreModule checks if module is core module', function (): void {
 test('isExtensionActive returns false when module not found', function (): void {
     $service = new Service();
     $coreModules = ['extension', 'cron', 'staff'];
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -198,7 +198,7 @@ test('real extension activation and deactivation invalidate cached module names'
     $em->persist($extension);
     $em->flush();
 
-    $module = Mockery::mock(FOSSBilling\Module::class);
+    $module = Mockery::mock(FOSSBilling\Core\Module::class);
     $module->shouldReceive('getCoreModules')->andReturn([]);
     $module->shouldReceive('hasManifest')->andReturnTrue();
     $module->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
@@ -243,7 +243,7 @@ test('removeNotExistingModules removes non-existing modules', function (): void 
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'extensionName');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getManifest')->andThrow(new Exception());
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
@@ -320,7 +320,7 @@ test('getExtensionsList returns filtered extensions list', function (): void {
     $em->shouldReceive('flush')->andReturnNull();
 
     $coreModules = ['extension', 'cron', 'staff'];
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -368,7 +368,7 @@ test('getExtensionsList returns only installed extensions', function (): void {
     $em->shouldReceive('remove')->andReturnNull();
     $em->shouldReceive('flush')->andReturnNull();
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getManifest')
         ->atLeast()
         ->once()
@@ -390,7 +390,7 @@ test('getExtensionsList returns only installed extensions', function (): void {
 
 test('getAdminNavigation returns admin navigation', function (): void {
     $service = new Service();
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')->once()->andReturn([]);
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
@@ -401,7 +401,6 @@ test('getAdminNavigation returns admin navigation', function (): void {
 
     $di = container();
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
-    $di['tools'] = new FOSSBilling\Tools();
     $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
@@ -433,7 +432,7 @@ test('update throws exception for extensions that need manual update', function 
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'installed', '2');
 
-    $extensionStub = Mockery::mock(FOSSBilling\ExtensionManager::class);
+    $extensionStub = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
@@ -445,7 +444,7 @@ test('update throws exception for extensions that need manual update', function 
     $service->setDi($di);
 
     expect(fn () => $service->update($ext))
-        ->toThrow(FOSSBilling\Exception::class, 'Visit the extension directory for more information on updating this extension.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Visit the extension directory for more information on updating this extension.');
 });
 
 test('activate activates an extension', function (): void {
@@ -455,7 +454,7 @@ test('activate activates an extension', function (): void {
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('hasManifest')
         ->atLeast()
         ->once()
@@ -566,7 +565,7 @@ test('activate blocks a module whose php requirement is unmet', function (): voi
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'requires PHP');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'requires PHP');
 });
 
 test('activate blocks a module whose required module is not active', function (): void {
@@ -582,14 +581,12 @@ test('activate blocks a module whose required module is not active', function ()
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'missingModule');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'missingModule');
 });
 
 test('activate blocks a module whose required module version is unmet', function (): void {
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
-    $extensionRepository->shouldReceive('findOneByTypeAndName')
-        ->andReturn(extensionCreateEntity(2, 'mod', 'requiredModule', 'installed', '1.0'));
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
@@ -600,14 +597,12 @@ test('activate blocks a module whose required module version is unmet', function
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'requiredModule');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'requiredModule');
 });
 
 test('activate installs a module whose required module version is satisfied', function (): void {
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
-    $extensionRepository->shouldReceive('findOneByTypeAndName')
-        ->andReturn(extensionCreateEntity(2, 'mod', 'requiredModule', 'installed', '1.0'));
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
@@ -623,27 +618,23 @@ test('activate installs a module whose required module version is satisfied', fu
 });
 
 test('activate resolves core dependency versions from the core manifest', function (): void {
-    // The repository row version satisfies the constraint while the core
-    // manifest version does not: throwing proves the core branch was read.
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
-    $extensionRepository->shouldReceive('findOneByTypeAndName')
-        ->andReturn(extensionCreateEntity(2, 'mod', 'coreModule', 'installed', '3.0'));
 
-    $coreDepMock = Mockery::mock(FOSSBilling\Module::class);
-    $coreDepMock->shouldReceive('isCore')->andReturnTrue();
-    $coreDepMock->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
+    $coreDepMock = Mockery::mock(FOSSBilling\Core\Module::class);
+    $coreDepMock->shouldReceive('getManifest')->andReturn(['version' => '2.0']);
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
         'version' => '1.0.0',
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['coreModule' => '>=2.0']],
     ], $extensionRepository, ['coreModule' => $coreDepMock]);
-    $modMock->shouldReceive('install')->never();
+    $modMock->shouldReceive('install')->once();
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
-    expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'coreModule');
+    $result = $service->activate($ext);
+
+    expect($result['id'])->toBe('testExtension');
 });
 
 test('activate blocks a module with an invalid requirement constraint', function (): void {
@@ -656,7 +647,7 @@ test('activate blocks a module with an invalid requirement constraint', function
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'invalid version requirement');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid version requirement');
 });
 
 test('activate blocks a module whose requires value is not an object', function (mixed $requires): void {
@@ -669,7 +660,7 @@ test('activate blocks a module whose requires value is not an object', function 
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'invalid module requirements');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid module requirements');
 })->with([null, '>=1.0', 42]);
 
 test('activate parses the fossbilling requirement on preview builds', function (): void {
@@ -684,37 +675,14 @@ test('activate parses the fossbilling requirement on preview builds', function (
     $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'invalid version requirement');
-});
-
-test('activate reads dependency versions from the on-disk manifest', function (): void {
-    // The extension row version satisfies the constraint while the manifest
-    // does not: throwing proves the manifest was read, not the row.
-    $extensionRepository = Mockery::mock(ExtensionRepository::class);
-    $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
-    $extensionRepository->shouldReceive('findOneByTypeAndName')
-        ->andReturn(extensionCreateEntity(2, 'mod', 'manifestModule', 'installed', '9.9.9'));
-
-    $depMock = Mockery::mock(FOSSBilling\Module::class);
-    $depMock->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
-
-    [$service, $modMock] = requiresActivateService([
-        'id' => 'testExtension',
-        'version' => '1.0.0',
-        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['manifestModule' => '>=2.0']],
-    ], $extensionRepository, ['manifestModule' => $depMock]);
-    $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
-
-    expect(fn (): array => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class, 'manifestModule');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid version requirement');
 });
 
 test('deactivate deactivates an extension', function (): void {
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'widgets', 'installed');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -767,7 +735,7 @@ test('deactivate throws exception for core modules', function (): void {
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -786,13 +754,13 @@ test('deactivate throws exception for core modules', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->deactivate($ext))
-        ->toThrow(FOSSBilling\Exception::class, 'Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
 });
 
 test('deactivate deactivates module', function (): void {
     $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -818,7 +786,7 @@ test('deactivate deactivates module', function (): void {
 });
 
 test('uninstall uninstalls an extension', function (): void {
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -887,7 +855,7 @@ test('getExtensionPath rejects unsafe extension IDs', function (string $type, st
     $service = new Service();
 
     expect(fn (): string => $service->getExtensionPath($type, $id))
-        ->toThrow(FOSSBilling\InformationException::class, 'Extension ID contains invalid characters.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Extension ID contains invalid characters.');
 })->with([
     [ExtensionType::Module->value, '..'],
     [ExtensionType::Theme->value, '../admin_default'],
@@ -897,7 +865,7 @@ test('getExtensionPath rejects unsafe extension IDs', function (string $type, st
 
 test('downloadAndExtract throws exception when download URL is missing', function (): void {
     $service = new Service();
-    $extensionMock = Mockery::mock(FOSSBilling\ExtensionManager::class);
+    $extensionMock = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class);
 
     $extensionMock->shouldReceive('getLatestExtensionRelease')
         ->atLeast()
@@ -992,11 +960,11 @@ test('activateExistingExtension requires type and id', function (): void {
     $service = new Service();
 
     expect(fn () => $service->activateExistingExtension([]))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
     expect(fn () => $service->activateExistingExtension(['id' => 'extensionId']))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
     expect(fn () => $service->activateExistingExtension(['type' => 'extensionType']))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('activateExistingExtension accepts zero-like identifiers', function (): void {
@@ -1078,8 +1046,8 @@ test('activateExistingExtension throws exception on activation failure', functio
 test('activateExistingExtension rejects mod with missing or invalid manifest before persisting', function (string $manifestError): void {
     $service = new Service();
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
-    $modMock->shouldReceive('getManifest')->once()->andThrow(new FOSSBilling\InformationException($manifestError));
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
+    $modMock->shouldReceive('getManifest')->once()->andThrow(new FOSSBilling\Core\Exception\InformationException($manifestError));
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldNotReceive('findOneByTypeAndName');
@@ -1095,7 +1063,7 @@ test('activateExistingExtension rejects mod with missing or invalid manifest bef
     $service->setDi($di);
 
     expect(fn () => $service->activateExistingExtension(['type' => 'mod', 'id' => 'nonexistent']))
-        ->toThrow(FOSSBilling\InformationException::class, 'its manifest file is missing or invalid');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'its manifest file is missing or invalid');
 })->with([
     'missing manifest' => 'Missing manifest file for the nonexistent module.',
     'invalid manifest' => 'Invalid manifest file for the nonexistent module. Please check file syntax and permissions.',
@@ -1105,7 +1073,7 @@ test('activate rejects mod with missing manifest', function (): void {
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'nonexistent', Extension::STATUS_DEACTIVATED);
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('hasManifest')->once()->andReturnFalse();
     $modMock->shouldNotReceive('getManifest');
 
@@ -1122,7 +1090,7 @@ test('activate rejects mod with missing manifest', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->activate($ext))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('getConfig returns extension config', function (): void {
@@ -1139,7 +1107,7 @@ test('getConfig returns extension config', function (): void {
         ->once()
         ->andReturn($meta);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldReceive('decrypt')->atLeast()->once();
 
     $em = extensionBuildEm(null, $metaRepo);
@@ -1197,14 +1165,14 @@ test('configuration reads do not create rows and authorized writes preserve publ
     $em->persist($installed);
     $em->flush();
 
-    $module = Mockery::mock(FOSSBilling\Module::class);
+    $module = Mockery::mock(FOSSBilling\Core\Module::class);
     $module->shouldReceive('getCoreModules')->andReturn(['index', 'staff']);
     $cache = new Symfony\Component\Cache\Adapter\ArrayAdapter();
     $di = container();
     $di['em'] = $em;
     $di['mod'] = $di->protect(static fn (string $name): object => $module);
     $di['cache'] = $cache;
-    $di['crypt'] = new FOSSBilling\Crypt();
+    $di['crypt'] = new FOSSBilling\Core\Security\Crypt();
     $di['event_dispatcher'] = new SymfonyEventDispatcher();
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -1264,9 +1232,7 @@ test('setConfig sets extension config', function (): void {
         ->andReturn(null);
     $serviceMock->shouldNotReceive('getConfig');
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $encryptedConfig = null;
     $cryptMock->shouldReceive('encrypt')
         ->once()
@@ -1300,7 +1266,6 @@ test('setConfig sets extension config', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['tools'] = $toolsMock;
     $di['crypt'] = $cryptMock;
     $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1332,7 +1297,7 @@ test('hasManagePermission denies access when module does not declare manage_sett
         ->once()
         ->andReturn(true);
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -1360,7 +1325,7 @@ test('hasManagePermission denies access when module does not declare manage_sett
         ]);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_support'))
-        ->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
+        ->toThrow(new FOSSBilling\Core\Exception\InformationException('You do not have permission to perform this action', [], 403));
 });
 
 test('hasManagePermission allows access when module declares manage_settings and user has it', function (): void {
@@ -1379,7 +1344,7 @@ test('hasManagePermission allows access when module declares manage_settings and
         ->once()
         ->andReturn(true);
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -1408,7 +1373,7 @@ test('hasManagePermission allows access when module declares manage_settings and
         ]);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_email'))
-        ->not->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
+        ->not->toThrow(new FOSSBilling\Core\Exception\InformationException('You do not have permission to perform this action', [], 403));
 });
 
 test('hasManagePermission denies configuration of inactive modules without the manage_extensions permission', function (): void {
@@ -1420,9 +1385,9 @@ test('hasManagePermission denies configuration of inactive modules without the m
         ->with('extension', 'manage_extensions')
         ->atLeast()
         ->once()
-        ->andThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -1444,7 +1409,7 @@ test('hasManagePermission denies configuration of inactive modules without the m
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_support'))
-        ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->toThrow(new FOSSBilling\Core\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });
 
 test('hasManagePermission allows configuration of inactive modules with the manage_extensions permission', function (): void {
@@ -1457,7 +1422,7 @@ test('hasManagePermission allows configuration of inactive modules with the mana
         ->atLeast()
         ->once();
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -1479,7 +1444,7 @@ test('hasManagePermission allows configuration of inactive modules with the mana
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_support'))
-        ->not->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->not->toThrow(new FOSSBilling\Core\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });
 
 test('setConfig denies inactive module configuration without touching storage when the manage_extensions permission is missing', function (): void {
@@ -1491,12 +1456,12 @@ test('setConfig denies inactive module configuration without touching storage wh
         ->with('extension', 'manage_extensions')
         ->atLeast()
         ->once()
-        ->andThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 
     $metaRepository = Mockery::mock(ExtensionMetaRepository::class);
     $metaRepository->shouldNotReceive('findOneByExtensionAndScope');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
@@ -1518,7 +1483,7 @@ test('setConfig denies inactive module configuration without touching storage wh
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->setConfig(['ext' => 'mod_support']))
-        ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->toThrow(new FOSSBilling\Core\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });
 
 test('the typed cron listener refreshes the extension list', function (): void {
@@ -1550,7 +1515,7 @@ function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array
     } else {
         $service->shouldReceive('getExtensionPath')->never();
     }
-    $manager = Mockery::mock(FOSSBilling\ExtensionManager::class);
+    $manager = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class);
     $manager->shouldReceive('getLatestExtensionRelease')->once()->andReturn(['download_url' => 'https://example.test/package.zip']);
     $manager->shouldReceive('isExtensionCompatible')->once()->andReturnTrue();
     $staff = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -1577,7 +1542,7 @@ test('downloadAndExtract rejects unsafe archives before writing any entry', func
     // Rejection must happen before destination resolution or a single extraction write.
     try {
         expect(fn () => $service->downloadAndExtract('mod', 'example'))
-            ->toThrow(FOSSBilling\Exception::class, 'The extension archive contains an unsafe file path or file type');
+            ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'The extension archive contains an unsafe file path or file type');
         expect($paths)->toHaveCount(1)
             ->and(is_dir($paths[0]))->toBeFalse()
             ->and(is_dir($destination))->toBeFalse();

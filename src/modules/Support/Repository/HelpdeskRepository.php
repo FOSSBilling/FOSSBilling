@@ -14,7 +14,7 @@ namespace Box\Mod\Support\Repository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class HelpdeskRepository extends EntityRepository
 {

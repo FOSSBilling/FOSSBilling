@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Raised before an admin or client creates a ticket. */
 final class BeforeTicketCreateEvent extends Event

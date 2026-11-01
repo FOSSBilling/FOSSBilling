@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after an administrator's profile password is changed. */
 final class AfterAdminProfilePasswordChangeEvent extends Event
