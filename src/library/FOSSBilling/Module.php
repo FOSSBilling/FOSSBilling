@@ -107,7 +107,7 @@ class Module implements InjectionAwareInterface
         // object fields fall back to neutral defaults rather than leaking
         // the merged array or the directory default into the listing.
         if (isset($json['author']) && is_array($json['author'])) {
-            $info['author'] = $json['author']['name'] ?? 'FOSSBilling';
+            $info['author'] = $json['author']['name'] ?? 'Unknown';
             $info['author_url'] = $json['author']['url'] ?? '';
         }
 
