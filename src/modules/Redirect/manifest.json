@@ -1,10 +1,20 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "redirect",
-  "type": "mod",
   "name": "Redirect",
+  "version": "0.8.9",
   "description": "Creates and manages URL redirects within FOSSBilling.",
+  "author": {
+    "name": "FOSSBilling",
+    "url": "https://www.fossbilling.org"
+  },
+  "license": "Apache-2.0",
+  "homepage_url": "https://fossbilling.org",
   "icon_url": "icon.svg",
-  "author": "FOSSBilling",
-  "author_url": "https://www.fossbilling.org",
-  "version": "1.0.0"
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

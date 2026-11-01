@@ -1,8 +1,20 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "email",
-  "type": "mod",
   "name": "Email",
-  "icon_url": "icon.svg",
+  "version": "0.8.9",
   "description": "Configures outgoing mail delivery, email queue processing, and message logging for system notifications.",
-  "version": "1.0.0"
+  "author": {
+    "name": "FOSSBilling",
+    "url": "https://fossbilling.org"
+  },
+  "license": "Apache-2.0",
+  "homepage_url": "https://fossbilling.org",
+  "icon_url": "icon.svg",
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

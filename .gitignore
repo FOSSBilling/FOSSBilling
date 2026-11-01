@@ -14,6 +14,7 @@
 /src/public/assets
 /src/public/gateways/custom/
 /src/vendor/*
+/tools/manifest/vendor/
 build
 
 # Needed for some workflows

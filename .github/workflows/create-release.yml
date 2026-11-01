@@ -195,6 +195,19 @@ jobs:
           outputs: type=local,dest=./release-tree
           provenance: false
 
+      - name: 'Verify Manifest Versions'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        working-directory: ./release-tree
+        run: |
+          total=$(find src/modules -mindepth 2 -maxdepth 2 -name manifest.json | wc -l)
+          stamped=$(grep -rl "\"version\": \"${RELEASE_VERSION}\"" src/modules --include=manifest.json | wc -l)
+          if [ "${stamped}" -ne "${total}" ]; then
+            echo "Manifest version stamping failed: ${stamped}/${total} manifests carry ${RELEASE_VERSION}."
+            exit 1
+          fi
+          echo "Verified ${total} module manifests carry the release version."
+
       - name: 'Create Release Archive'
         id: archive
         env:
