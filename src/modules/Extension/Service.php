@@ -722,17 +722,20 @@ class Service implements InjectionAwareInterface
             }
 
             $installedVersion = $this->getInstalledModuleVersion($dependency);
-            if ($installedVersion !== null) {
-                if (!(new \Composer\Semver\VersionParser())->isValid($installedVersion)) {
-                    throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => $installedVersion]);
-                }
-                $this->assertConstraintSatisfied(
-                    $installedVersion,
-                    (string) $constraint,
-                    'Module cannot be installed. It requires :dependency :constraint, installed version is :v.',
-                    [':dependency' => $dependency, ':constraint' => (string) $constraint, ':v' => $installedVersion]
-                );
+            if ($installedVersion === null) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => 'null']);
             }
+
+            if (!(new \Composer\Semver\VersionParser())->isValid($installedVersion)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => $installedVersion]);
+            }
+
+            $this->assertConstraintSatisfied(
+                $installedVersion,
+                (string) $constraint,
+                'Module cannot be installed. It requires :dependency :constraint, installed version is :v.',
+                [':dependency' => $dependency, ':constraint' => (string) $constraint, ':v' => $installedVersion]
+            );
         }
     }
 
