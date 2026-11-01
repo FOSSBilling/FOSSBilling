@@ -221,9 +221,9 @@ jobs:
             --follow-symlinks \
             --no-progress
         env:
-          AWS_S3_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+          AWS_S3_BUCKET: ${{ vars.CLOUDFLARE_R2_DOWNLOAD_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
           AWS_REGION: 'auto'
           SOURCE_DIR: './dist'
 
