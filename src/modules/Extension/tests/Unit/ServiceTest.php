@@ -93,11 +93,12 @@ function extensionBuildEm(?ExtensionRepository $extensionRepository = null, ?Ext
 /**
  * Build an Extension service whose every `mod()` call resolves to a mocked
  * non-core module with the given manifest, for exercising installModule()'s
- * `requires` enforcement through activate().
+ * `requires` enforcement through activate(). Entries in `$byName` override
+ * the default mock for individual module names.
  *
  * @return array{0: Service, 1: Mockery\MockInterface}
  */
-function requiresActivateService(array $manifest, ?ExtensionRepository $extensionRepository = null): array
+function requiresActivateService(array $manifest, ?ExtensionRepository $extensionRepository = null, array $byName = []): array
 {
     $extensionRepository ??= Mockery::mock(ExtensionRepository::class)->shouldIgnoreMissing();
 
@@ -116,7 +117,7 @@ function requiresActivateService(array $manifest, ?ExtensionRepository $extensio
 
     $di = container();
     $di['em'] = $em;
-    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $byName[$name] ?? $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
 
     $service = new Service();
@@ -618,6 +619,30 @@ test('activate installs a module whose required module version is satisfied', fu
     $result = $service->activate($ext);
 
     expect($result['id'])->toBe('testExtension');
+});
+
+test('activate resolves core dependency versions from the core manifest', function (): void {
+    // The repository row version satisfies the constraint while the core
+    // manifest version does not: throwing proves the core branch was read.
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
+        ->andReturn(extensionCreateEntity(2, 'mod', 'coredep', 'installed', '3.0'));
+
+    $coreDepMock = Mockery::mock(FOSSBilling\Module::class);
+    $coreDepMock->shouldReceive('isCore')->andReturnTrue();
+    $coreDepMock->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
+
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['coredep' => '>=2.0']],
+    ], $extensionRepository, ['coredep' => $coreDepMock]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class, 'coredep');
 });
 
 test('activate blocks a module with an invalid requirement constraint', function (): void {

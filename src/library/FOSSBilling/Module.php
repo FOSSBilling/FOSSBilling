@@ -103,10 +103,11 @@ class Module implements InjectionAwareInterface
         $info = array_merge($info, $json);
 
         // v1 manifests declare author as an object; the admin templates
-        // expect the legacy scalar name plus a separate author URL. A v1
-        // author without a URL gets no link rather than the directory default.
+        // expect the legacy scalar name plus a separate author URL. Missing
+        // object fields fall back to neutral defaults rather than leaking
+        // the merged array or the directory default into the listing.
         if (isset($json['author']) && is_array($json['author'])) {
-            $info['author'] = $json['author']['name'] ?? $info['author'];
+            $info['author'] = $json['author']['name'] ?? 'FOSSBilling';
             $info['author_url'] = $json['author']['url'] ?? '';
         }
 
