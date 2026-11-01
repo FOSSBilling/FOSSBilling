@@ -25,6 +25,7 @@ use Box\Mod\Widgets\Service as WidgetsService;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Enums\ExtensionType;
 use FOSSBilling\Events\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
@@ -247,7 +248,7 @@ test('removeNotExistingModules removes non-existing modules', function (): void 
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('findByType')
-        ->with(Extension::TYPE_MOD)
+        ->with(ExtensionType::Module->value)
         ->atLeast()
         ->once()
         ->andReturn([$ext]);
@@ -395,7 +396,7 @@ test('getAdminNavigation returns admin navigation', function (): void {
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('findInstalledNamesByType')
         ->once()
-        ->with(Extension::TYPE_MOD)
+        ->with(ExtensionType::Module->value)
         ->andReturn([]);
 
     $di = container();
@@ -837,10 +838,10 @@ test('getExtensionPath rejects unsafe extension IDs', function (string $type, st
     expect(fn (): string => $service->getExtensionPath($type, $id))
         ->toThrow(FOSSBilling\InformationException::class, 'Extension ID contains invalid characters.');
 })->with([
-    [FOSSBilling\ExtensionManager::TYPE_MOD, '..'],
-    [FOSSBilling\ExtensionManager::TYPE_THEME, '../admin_default'],
-    [FOSSBilling\ExtensionManager::TYPE_TRANSLATION, '/tmp/language'],
-    [FOSSBilling\ExtensionManager::TYPE_PG, 'Paypal/../../Adapter'],
+    [ExtensionType::Module->value, '..'],
+    [ExtensionType::Theme->value, '../admin_default'],
+    [ExtensionType::Translation->value, '/tmp/language'],
+    [ExtensionType::PaymentGateway->value, 'Paypal/../../Adapter'],
 ]);
 
 test('downloadAndExtract throws exception when download URL is missing', function (): void {
@@ -871,7 +872,7 @@ test('getInstalledMods returns installed modules', function (): void {
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('findInstalledNamesByType')
         ->once()
-        ->with(Extension::TYPE_MOD)
+        ->with(ExtensionType::Module->value)
         ->andReturn([]);
 
     $di = new Pimple\Container();

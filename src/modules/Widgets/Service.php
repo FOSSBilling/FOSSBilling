@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Widgets;
 
-use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
 use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
+use FOSSBilling\Enums\ExtensionType;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Interfaces\WidgetProviderInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -209,7 +209,7 @@ class Service implements InjectionAwareInterface
     #[AsEventListener]
     public function onExtensionActivated(AfterExtensionActivatedEvent $event): void
     {
-        if ($event->type === Extension::TYPE_MOD) {
+        if ($event->type === ExtensionType::Module->value) {
             $this->invalidateCache();
         }
     }
@@ -220,7 +220,7 @@ class Service implements InjectionAwareInterface
     #[AsEventListener]
     public function onExtensionDeactivated(AfterExtensionDeactivatedEvent $event): void
     {
-        if ($event->type === Extension::TYPE_MOD) {
+        if ($event->type === ExtensionType::Module->value) {
             $this->invalidateCache();
         }
     }

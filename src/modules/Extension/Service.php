@@ -23,6 +23,7 @@ use Box\Mod\Extension\Event\BeforeAdminExtensionConfigSaveEvent;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Config;
+use FOSSBilling\Enums\ExtensionType;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -115,7 +116,7 @@ class Service implements InjectionAwareInterface
 
     public function removeNotExistingModules(): int
     {
-        $list = $this->getExtensionRepository()->findByType(Extension::TYPE_MOD);
+        $list = $this->getExtensionRepository()->findByType(ExtensionType::Module->value);
         $removedItems = 0;
         foreach ($list as $ext) {
             try {
@@ -176,7 +177,7 @@ class Service implements InjectionAwareInterface
 
             $manifest['version'] = $ext->getVersion();
             $manifest['status'] = $ext->getStatus();
-            if ($ext->getType() === Extension::TYPE_MOD && $ext->getStatus() === Extension::STATUS_INSTALLED) {
+            if ($ext->getType() === ExtensionType::Module->value && $ext->getStatus() === Extension::STATUS_INSTALLED) {
                 $manifest['has_settings'] = $m->hasSettingsPage();
             }
 
@@ -407,7 +408,7 @@ class Service implements InjectionAwareInterface
         ];
 
         switch ($ext->getType()) {
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
+            case ExtensionType::Module->value:
                 $mod = $this->di['mod']($ext->getName());
                 if (!$mod->hasManifest()) {
                     throw new \FOSSBilling\InformationException('Cannot activate the :mod module: its manifest file is missing. The extension files may be incomplete, please reinstall the extension.', [':mod' => $ext->getName()], 5897);
@@ -428,7 +429,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
 
         if ($this->di->offsetExists('event_dispatcher')) {
-            if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+            if ($ext->getType() === ExtensionType::Module->value) {
                 $this->di['event_dispatcher']->refresh();
             }
             $this->di['event_dispatcher']->dispatch(new AfterExtensionActivatedEvent($ext->getId(), $ext->getType(), $ext->getName()));
@@ -447,7 +448,7 @@ class Service implements InjectionAwareInterface
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
         switch ($ext->getType()) {
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
+            case ExtensionType::Module->value:
                 $mod = $ext->getName();
                 if ($this->isCoreModule($mod)) {
                     throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
@@ -463,7 +464,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
 
         if ($this->di->offsetExists('event_dispatcher')) {
-            if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+            if ($ext->getType() === ExtensionType::Module->value) {
                 $this->di['event_dispatcher']->refresh();
             }
             $this->di['event_dispatcher']->dispatch(new AfterExtensionDeactivatedEvent($ext->getId(), $ext->getType(), $ext->getName()));
@@ -496,7 +497,7 @@ class Service implements InjectionAwareInterface
         $path = $this->getExtensionPath($type, $id);
 
         // Try calling $module->uninstall() for modules to trigger database cleanup
-        if ($type === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+        if ($type === ExtensionType::Module->value) {
             $mod = $this->di['mod']($id);
 
             try {
@@ -626,7 +627,7 @@ class Service implements InjectionAwareInterface
 
     public function getInstalledMods()
     {
-        return $this->getExtensionRepository()->findInstalledNamesByType(Extension::TYPE_MOD);
+        return $this->getExtensionRepository()->findInstalledNamesByType(ExtensionType::Module->value);
     }
 
     private function installModule(Extension $ext): bool
@@ -756,7 +757,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Extension type and ID are required');
         }
 
-        if ($data['type'] === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+        if ($data['type'] === ExtensionType::Module->value) {
             try {
                 $this->di['mod']($data['id'])->getManifest();
             } catch (\Exception) {
@@ -867,10 +868,10 @@ class Service implements InjectionAwareInterface
 
         $basePath = $this->getExtensionBasePath($type);
         $path = match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD,
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join($basePath, ucfirst($id)),
-            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
-            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
+            ExtensionType::Module->value,
+            ExtensionType::PaymentGateway->value => Path::join($basePath, ucfirst($id)),
+            ExtensionType::Theme->value => Path::join($basePath, $id),
+            ExtensionType::Translation->value => $includeMessagesSubdir
                 ? Path::join($basePath, $id, 'LC_MESSAGES')
                 : Path::join($basePath, $id),
             default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
@@ -884,10 +885,10 @@ class Service implements InjectionAwareInterface
     private function getExtensionBasePath(string $type): string
     {
         return match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD => PATH_MODS,
-            \FOSSBilling\ExtensionManager::TYPE_THEME => PATH_THEMES,
-            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => PATH_LANGS,
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
+            ExtensionType::Module->value => PATH_MODS,
+            ExtensionType::Theme->value => PATH_THEMES,
+            ExtensionType::Translation->value => PATH_LANGS,
+            ExtensionType::PaymentGateway->value => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
             default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
     }
@@ -919,7 +920,7 @@ class Service implements InjectionAwareInterface
      */
     public function getCoreAndActiveModules(): array
     {
-        $list = $this->getExtensionRepository()->findInstalledNamesByType(Extension::TYPE_MOD);
+        $list = $this->getExtensionRepository()->findInstalledNamesByType(ExtensionType::Module->value);
 
         $extensionMod = $this->di['mod']('extension');
         $mods = $extensionMod->getCoreModules();
