@@ -682,8 +682,8 @@ class Service implements InjectionAwareInterface
             $this->assertConstraintSatisfied(
                 \FOSSBilling\Version::VERSION,
                 (string) $requires['fossbilling'],
-                "Module cannot be installed. It requires FOSSBilling {$requires['fossbilling']}, you are using :v.",
-                [':v' => \FOSSBilling\Version::VERSION]
+                'Module cannot be installed. It requires FOSSBilling :constraint, you are using :v.',
+                [':constraint' => (string) $requires['fossbilling'], ':v' => \FOSSBilling\Version::VERSION]
             );
         }
 
@@ -691,12 +691,17 @@ class Service implements InjectionAwareInterface
             $this->assertConstraintSatisfied(
                 PHP_VERSION,
                 (string) $requires['php'],
-                "Module cannot be installed. It requires PHP {$requires['php']}, the server runs :v.",
-                [':v' => PHP_VERSION]
+                'Module cannot be installed. It requires PHP :constraint, the server runs :v.',
+                [':constraint' => (string) $requires['php'], ':v' => PHP_VERSION]
             );
         }
 
-        foreach ($requires['modules'] ?? [] as $dependency => $constraint) {
+        $dependencies = $requires['modules'] ?? [];
+        if (!is_array($dependencies)) {
+            throw new \FOSSBilling\InformationException('Module cannot be installed. Its manifest declares invalid module requirements.');
+        }
+
+        foreach ($dependencies as $dependency => $constraint) {
             $dependency = (string) $dependency;
             if (!$this->isExtensionActive(\FOSSBilling\ExtensionManager::TYPE_MOD, $dependency)) {
                 throw new \FOSSBilling\InformationException('Module cannot be installed. It requires the :dependency module (:constraint), which is not installed or activated.', [':dependency' => $dependency, ':constraint' => (string) $constraint]);
