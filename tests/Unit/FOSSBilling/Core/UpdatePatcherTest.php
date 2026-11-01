@@ -3715,6 +3715,29 @@ test('seeded module versions sync to the backfilled manifest versions', function
     ]);
 });
 
+test('seeded module versions sync during non-MySQL update finalization', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+        $pdo->exec('CREATE TABLE extension_meta (extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT)');
+        $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
+        $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES
+            ('mod', 'news', 'installed', '1.0.0'),
+            ('mod', 'branding', 'installed', '0.0.1'),
+            ('mod', 'redirect', 'installed', '1.0.0'),
+            ('mod', 'custompages', 'installed', '1.0.0')");
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldReceive('exists')->andReturn(false);
+        $patcher = new Patcher();
+        $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+        $patcher->applyCorePatches(force: true);
+
+        $versions = $pdo->query('SELECT name, version FROM extension ORDER BY name')->fetchAll(PDO::FETCH_KEY_PAIR);
+        expect($versions)->toBe(['branding' => '0.8.9', 'custompages' => '1.0.0', 'news' => '0.8.9', 'redirect' => '0.8.9']);
+    });
+});
+
 test('activity retention migration adds each created_at index only when missing', function (bool $migrated): void {
     $tables = ['activity_admin_history', 'activity_client_email', 'activity_client_history', 'activity_system'];
     $patcher = Mockery::mock(Patcher::class)->makePartial();
