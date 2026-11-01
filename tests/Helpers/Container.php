@@ -426,8 +426,8 @@ function accessPrivate(object $instance, string $property, mixed $value = null):
 
 /**
  * Create a Crypt double that emulates the real encrypt/decrypt contract
- * (v2:-prefixed ciphertext, false for legacy plaintext) without needing the
- * application config passphrase, which is unavailable in unit tests.
+ * (v2:-prefixed ciphertext, false for legacy plaintext) without depending
+ * on the application config passphrase.
  */
 function cryptMock(): object
 {

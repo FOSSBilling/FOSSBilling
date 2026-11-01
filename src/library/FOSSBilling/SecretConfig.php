@@ -11,27 +11,11 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-/**
- * Per-field encryption for stored adapter configuration arrays.
- *
- * Only the values an adapter marks as secret are encrypted; everything else
- * stays readable JSON so stored configuration remains inspectable and
- * debuggable. Encrypted values carry {@see Crypt}'s own format prefix, so no
- * separate envelope is needed and legacy plaintext rows are detected for
- * free: anything without the prefix is passed through untouched.
- */
+/** Per-field encryption for stored adapter configuration. Only values an adapter marks as secret are encrypted; the rest stays readable JSON. Encrypted values carry {@see Crypt}'s own format prefix, so legacy plaintext needs no separate envelope to be detected. */
 final class SecretConfig
 {
-    private function __construct()
-    {
-    }
-
     /**
-     * Encrypt every listed secret field present in the config array.
-     *
-     * Values that are not strings, are empty, or already carry ciphertext are
-     * left alone, which keeps the operation idempotent and preserves the
-     * "is this secret set" semantics callers rely on.
+     * Encrypt the listed secret fields. Non-strings, empty values, and existing ciphertext are left alone, keeping this idempotent.
      *
      * @param array<string, mixed> $config
      * @param string[]             $secretFields
@@ -53,14 +37,7 @@ final class SecretConfig
     }
 
     /**
-     * Decrypt any config value carrying ciphertext, pass the rest through.
-     *
-     * Reads never need the adapter's secret-field list: the format prefix
-     * alone identifies ciphertext, so this stays correct even when the
-     * adapter that wrote the row is gone or its secret fields changed. A
-     * prefixed value that fails to decrypt (a legacy row, or a plaintext
-     * value that happens to start with the prefix) falls back to its raw
-     * form rather than breaking the caller.
+     * Decrypt any config value carrying ciphertext, pass the rest through. Reads need no field list, so this still works when the adapter is gone; values that fail to decrypt fall back to raw instead of breaking the caller.
      *
      * @param array<string, mixed> $config
      *
