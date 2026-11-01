@@ -2119,7 +2119,15 @@ class Service implements InjectionAwareInterface
     {
         $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
         $requiredProducts = !empty($result['requires_products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['requires_products'])) : null;
-        $clientGroups = !empty($result['client_groups']) ? (new \FOSSBilling\Core\Utils\Arr())->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
+        $clientGroups = null;
+        if (!empty($result['client_groups'])) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
+            }
+            $arr = new \FOSSBilling\Core\Utils\Arr();
+            $arr->setDi($this->di);
+            $clientGroups = $arr->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups']));
+        }
         $usageStats = $deep ? $this->getPromoUsageStatsByValues((int) $result['id'], (int) ($result['used'] ?? 0), isset($result['maxuses']) ? (int) $result['maxuses'] : null) : null;
         $redemptionCount = $usageStats['recorded_applications'] ?? $this->getPromoRedemptionCountById((int) $result['id']);
 

@@ -1637,6 +1637,57 @@ test('to promo api array', function (): void {
     expect($result)->toBeArray();
 });
 
+test('to promo api array resolves group-restricted client groups', function (): void {
+    $service = new Service();
+    $model = productTestCreatePromoEntity(1)
+        ->setProducts('{}')
+        ->setPeriods('{}')
+        ->setClientGroups('[1]');
+
+    $connection = new class {
+        public function fetchAllAssociative(string $sql, array $params = []): array
+        {
+            expect($sql)->toContain('client_group')
+                ->and($params)->toBe([1]);
+
+            return [['id' => 1, 'title' => 'VIP']];
+        }
+    };
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldReceive('countByPromoId')->once()->with(1)->andReturn(0);
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('countLinkedOrdersByPromoId')->once()->with(1)->andReturn(0);
+
+    $emMock = new readonly class($promoRepo, $repoMock, $connection) {
+        public function __construct(private object $promoRepo, private object $redemptionRepo, private object $connection)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $class === Promo::class ? $this->promoRepo : $this->redemptionRepo;
+        }
+
+        public function getConnection(): object
+        {
+            return $this->connection;
+        }
+    };
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+
+    // Regression test: resolving cgroups must use the service container rather
+    // than an uninitialized helper, or group-restricted promos fatal here.
+    $result = $service->toPromoApiArray($model);
+    expect($result['cgroups'])->toBe([1 => 'VIP'])
+        ->and($result['client_groups'])->toBe([1]);
+});
+
 test('to promo api array includes usage stats for deep requests', function (): void {
     $service = new Service();
     $model = productTestCreatePromoEntity(1)
