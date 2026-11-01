@@ -216,7 +216,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
-            --endpoint-url "${AWS_S3_ENDPOINT}" \
+            --endpoint-url https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com \
             --metadata="digest=${{ env.FOSSBILLING_PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
             --follow-symlinks \
             --no-progress
@@ -224,7 +224,6 @@ jobs:
           AWS_S3_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
-          AWS_S3_ENDPOINT: ${{ vars.CF_R2_ENDPOINT_URL }}
           AWS_REGION: 'auto'
           SOURCE_DIR: './dist'
 
