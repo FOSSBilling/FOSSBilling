@@ -457,6 +457,8 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\Core\Exception\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
                 }
 
+                $this->assertNoInstalledDependents($mod);
+
                 break;
 
             default:
@@ -760,6 +762,37 @@ class Service implements InjectionAwareInterface
             (new \Composer\Semver\VersionParser())->parseConstraints($constraint);
         } catch (\UnexpectedValueException) {
             throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its manifest declares an invalid version requirement (:constraint).', [':constraint' => $constraint]);
+        }
+    }
+
+    /**
+     * Block deactivating a module that installed modules still require.
+     * Only core and installed modules are consulted: core manifests ship
+     * with empty requirements, and manifests that cannot be read cannot
+     * declare a requirement, so both are safely skipped.
+     *
+     * @throws \FOSSBilling\Core\Exception\InformationException when a dependent is found
+     */
+    private function assertNoInstalledDependents(string $module): void
+    {
+        foreach ($this->getInstalledMods() as $installed) {
+            if (!is_string($installed) || strtolower($installed) === strtolower($module)) {
+                continue;
+            }
+
+            try {
+                $manifest = $this->di['mod']($installed)->getManifest();
+            } catch (\Throwable) {
+                continue;
+            }
+
+            $requires = is_array($manifest['requires'] ?? null) ? $manifest['requires'] : [];
+            $dependencies = is_array($requires['modules'] ?? null) ? array_keys($requires['modules']) : [];
+            foreach ($dependencies as $dependency) {
+                if (strtolower((string) $dependency) === strtolower($module)) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Cannot deactivate :module: the installed :dependent module requires it. Deactivate :dependent first.', [':module' => $module, ':dependent' => $installed]);
+                }
+            }
         }
     }
 

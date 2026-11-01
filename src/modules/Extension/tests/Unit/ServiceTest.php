@@ -699,6 +699,26 @@ test('activate blocks a dependency without an installed version', function (): v
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid installed version');
 });
 
+test('version requirements compare against release versions', function (string $version, string $constraint, bool $satisfied): void {
+    // Covers the comparison logic with release-style versions, which the
+    // activate() tests cannot reach (they run on preview builds where the
+    // fossbilling comparison is skipped).
+    $service = new Service();
+    $call = fn (): mixed => (new ReflectionMethod(Service::class, 'assertConstraintSatisfied'))
+        ->invoke($service, $version, $constraint, 'Mismatch', []);
+
+    if ($satisfied) {
+        expect($call())->toBeNull();
+    } else {
+        expect($call)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Mismatch');
+    }
+})->with([
+    'satisfied newer patch' => ['0.8.9', '>=0.8.0', true],
+    'satisfied exact' => ['0.8.9', '>=0.8.9', true],
+    'unsatisfied minor' => ['0.8.9', '>=0.9.0', false],
+    'unsatisfied caret major' => ['0.7.0', '^0.8.0', false],
+]);
+
 test('deactivate deactivates an extension', function (): void {
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'widgets', 'installed');
@@ -804,6 +824,39 @@ test('deactivate deactivates module', function (): void {
 
     $result = $service->deactivate($ext);
     expect($result)->toBeTrue();
+});
+
+test('deactivate blocks a module required by an installed module', function (): void {
+    $ext = extensionCreateEntity(1, 'mod', 'basemod', 'installed');
+
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
+    $modMock->shouldReceive('getCoreModules')->andReturn([]);
+
+    $depMock = Mockery::mock(FOSSBilling\Core\Module::class);
+    $depMock->shouldReceive('getManifest')->andReturn([
+        'id' => 'dependentmod',
+        'version' => '1.0.0',
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['basemod' => '>=1.0']],
+    ]);
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findInstalledNamesByType')->andReturn(['dependentmod']);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $em = extensionBuildEm($extensionRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $name === 'dependentmod' ? $depMock : $modMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->deactivate($ext))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'dependentmod');
 });
 
 test('uninstall uninstalls an extension', function (): void {
