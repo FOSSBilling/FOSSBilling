@@ -103,8 +103,20 @@ class Config
     {
         $filesystem = new Filesystem();
 
+        // The backup holds the database password and the instance salt, so it must not sit next to
+        // config.php in the web root, where a misconfigured server or a rename can expose it.
+        // Keep it in the data directory instead and remove the copy older versions left behind.
+        $legacyBackup = Path::changeExtension(PATH_CONFIG, 'old.php');
+        $backupDir = Path::join(defined('PATH_DATA') ? PATH_DATA : dirname(PATH_CONFIG), 'backup');
+        $backup = Path::join($backupDir, 'config.old.php');
+
         try {
-            $filesystem->copy(PATH_CONFIG, Path::changeExtension(PATH_CONFIG, 'old.php'));
+            $filesystem->mkdir($backupDir, 0o700);
+            $filesystem->copy(PATH_CONFIG, $backup, true);
+            $filesystem->chmod($backup, 0o600);
+            if ($filesystem->exists($legacyBackup)) {
+                $filesystem->remove($legacyBackup);
+            }
         } catch (FileNotFoundException|IOException) {
             throw new Exception('An error occurred when creating a backup of the configuration file.');
         }
