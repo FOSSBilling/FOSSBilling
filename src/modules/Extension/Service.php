@@ -643,6 +643,7 @@ class Service implements InjectionAwareInterface
         if (isset($info['minimum_fossbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_fossbilling_version']) > 0) {
             throw new \FOSSBilling\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_fossbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
         }
+        $this->assertRequiresSatisfied($info);
 
         // Allow install module even if no installer exists
         // as it can be simple module
@@ -659,6 +660,89 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
 
         return true;
+    }
+
+    /**
+     * Enforce the v1 manifest `requires` constraints before a module installs.
+     * Manifests without a `requires` object (legacy manifests and test fixtures)
+     * pass through unchanged. The FOSSBilling constraint is skipped on preview
+     * builds, where the running version is a placeholder or VCS hash that no
+     * constraint can meaningfully evaluate.
+     *
+     * @param array<string, mixed> $info
+     */
+    private function assertRequiresSatisfied(array $info): void
+    {
+        $requires = $info['requires'] ?? null;
+        if (!is_array($requires)) {
+            return;
+        }
+
+        if (isset($requires['fossbilling']) && !\FOSSBilling\Version::isPreviewVersion()) {
+            $this->assertConstraintSatisfied(
+                \FOSSBilling\Version::VERSION,
+                (string) $requires['fossbilling'],
+                "Module cannot be installed. It requires FOSSBilling {$requires['fossbilling']}, you are using :v.",
+                [':v' => \FOSSBilling\Version::VERSION]
+            );
+        }
+
+        if (isset($requires['php'])) {
+            $this->assertConstraintSatisfied(
+                PHP_VERSION,
+                (string) $requires['php'],
+                "Module cannot be installed. It requires PHP {$requires['php']}, the server runs :v.",
+                [':v' => PHP_VERSION]
+            );
+        }
+
+        foreach ($requires['modules'] ?? [] as $dependency => $constraint) {
+            $dependency = (string) $dependency;
+            if (!$this->isExtensionActive(\FOSSBilling\ExtensionManager::TYPE_MOD, $dependency)) {
+                throw new \FOSSBilling\InformationException('Module cannot be installed. It requires the :dependency module (:constraint), which is not installed or activated.', [':dependency' => $dependency, ':constraint' => (string) $constraint]);
+            }
+
+            $installedVersion = $this->getInstalledModuleVersion($dependency);
+            if ($installedVersion !== null) {
+                $this->assertConstraintSatisfied(
+                    $installedVersion,
+                    (string) $constraint,
+                    'Module cannot be installed. It requires :dependency :constraint, installed version is :v.',
+                    [':dependency' => $dependency, ':v' => $installedVersion]
+                );
+            }
+        }
+    }
+
+    /**
+     * @throws \FOSSBilling\InformationException when the constraint is unmet or unparseable
+     */
+    private function assertConstraintSatisfied(string $version, string $constraint, string $message, array $placeholders): void
+    {
+        try {
+            $satisfied = \Composer\Semver\Semver::satisfiedBy([$version], $constraint);
+        } catch (\UnexpectedValueException) {
+            throw new \FOSSBilling\InformationException('Module cannot be installed. Its manifest declares an invalid version requirement (:constraint).', [':constraint' => $constraint]);
+        }
+
+        if (!$satisfied) {
+            throw new \FOSSBilling\InformationException($message, $placeholders);
+        }
+    }
+
+    private function getInstalledModuleVersion(string $module): ?string
+    {
+        $mod = $this->di['mod']($module);
+
+        if ($mod->isCore()) {
+            $manifest = $mod->getManifest();
+
+            return isset($manifest['version']) ? (string) $manifest['version'] : null;
+        }
+
+        $ext = $this->getExtensionRepository()->findOneByTypeAndName(\FOSSBilling\ExtensionManager::TYPE_MOD, $module);
+
+        return $ext?->getVersion();
     }
 
     public function activateExistingExtension(array $data): array
