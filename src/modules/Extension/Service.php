@@ -743,7 +743,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws \FOSSBilling\InformationException when the constraint is unparseable
+     * @throws \FOSSBilling\InformationException when the constraint is invalid
      */
     private function assertConstraintParses(string $constraint): void
     {
