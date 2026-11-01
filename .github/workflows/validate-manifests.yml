@@ -10,7 +10,7 @@ on:
 
 jobs:
   validate:
-    name: 'Validate manifests'
+    name: 'Validate Manifests'
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout Repository'
