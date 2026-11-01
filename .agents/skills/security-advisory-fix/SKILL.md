@@ -174,10 +174,12 @@ Once the design is settled:
    surprised by it later.
 
    **Local-suite gotchas.** Two things block a naive `composer test` here,
-   both verified during a real fix. The bootstrap requires `src/config.php`
-   (gitignored); generate it from the sample the way the Dockerfile does:
+   both verified during a real fix:
+
+   - The bootstrap requires `src/config.php` (gitignored); generate it from
+   the sample the way the Dockerfile does:
    `php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'`.
-   And Pest derives eval'd test namespaces from the absolute checkout path,
+   - Pest derives eval'd test namespaces from the absolute checkout path,
    so a digit-leading path segment (every opencode session worktree:
    `.../worktree/736bea/<name>/`) kills the suite at load with "Unable to
    create test case" on files the diff never touched. The tree is fine; the
