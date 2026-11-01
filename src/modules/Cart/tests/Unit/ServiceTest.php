@@ -485,7 +485,7 @@ test('applyPromo returns true', function (): void {
     $promo = createPromoEntity(2);
 
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [0, 0])->andReturn([]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [0 => 2])->andReturn([]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -557,7 +557,7 @@ test('applyPromo rejects a code whose bundle condition is unmet', function (): v
     $promo = createPromoEntity(2);
 
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [5])->andReturn([9]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [5 => 1])->andReturn([['product' => 9]]);
     $productService->shouldReceive('getProductSnapshotMap')->once()->with([9])->andReturn([9 => ['id' => 9, 'title' => 'Addon Nine', 'type' => 'addon', 'plugin' => 'custom']]);
 
     $cart = new Cart();
@@ -573,6 +573,48 @@ test('applyPromo rejects a code whose bundle condition is unmet', function (): v
 
     expect(fn (): bool => $service->applyPromo($cart, $promo))
         ->toThrow(FOSSBilling\InformationException::class, 'This promo code requires the following products in the cart: Addon Nine');
+});
+
+test('applyPromo describes unmet groups and quantities', function (): void {
+    $cartProduct = new CartProduct();
+    $cartProduct->setProductId(16);
+    $cartProduct->setConfig('{"quantity":2}');
+
+    $cartProductRepo = Mockery::mock(CartProductRepository::class);
+    $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->with(1)->andReturn([$cartProduct]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
+    $emMock->shouldNotReceive('persist');
+
+    $promo = createPromoEntity(2);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [16 => 2])->andReturn([
+        ['product' => 12],
+        ['pick' => 1, 'from' => [['product' => 14], ['product' => 15]]],
+        ['product' => 16, 'min_qty' => 3],
+    ]);
+    $productService->shouldReceive('getProductSnapshotMap')->once()->with([12, 14, 15, 16])->andReturn([
+        12 => ['title' => 'Hosting'],
+        14 => ['title' => 'SSL Basic'],
+        15 => ['title' => 'SSL Pro'],
+        16 => ['title' => 'Backup'],
+    ]);
+
+    $cart = new Cart();
+    $cartReflection = new ReflectionProperty($cart, 'id');
+    $cartReflection->setValue($cart, 1);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService(['product' => $productService]));
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->applyPromo($cart, $promo))
+        ->toThrow(FOSSBilling\InformationException::class, 'This promo code requires the following products in the cart: Hosting, 1 of (SSL Basic, SSL Pro), at least 3 × Backup');
 });
 
 test('rm returns true', function (): void {
@@ -757,7 +799,7 @@ test('checkoutCart returns array with expected keys', function (): void {
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promo);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [])->andReturn([]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [])->andReturn([]);
 
     $di = container();
     $di['event_dispatcher'] = $dispatcher;
@@ -899,7 +941,7 @@ test('createFromCart with promo entity uses product promo service', function ():
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [0])->andReturn([]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [0 => 1])->andReturn([]);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
     $productService->shouldReceive('reservePromosForOrder')->once()->with([$promo], Mockery::type(Order::class));
     $productService->shouldReceive('createCheckoutPromoRedemptionsForPromos')->once()->with(
@@ -1451,7 +1493,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [0])->andReturn([]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [0 => 1])->andReturn([]);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
     $productService->shouldReceive('reservePromosForOrder')->once()->with([$promo], Mockery::type(Order::class));
     $productService->shouldReceive('createCheckoutPromoRedemptionsForPromos')
@@ -1555,7 +1597,7 @@ test('createFromCart releases reserved stock on transaction failure', function (
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [0])->andReturn([]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [0 => 1])->andReturn([]);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
     $productService->shouldReceive('reservePromosForOrder')->once()->with([$promo], Mockery::type(Order::class));
 
@@ -2248,8 +2290,8 @@ test('toApiArray reuses cart products when resolving a manual promo', function (
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->with(7)->andReturn($promo);
-    $productService->shouldReceive('findMissingRequiredProductIds')
-        ->with($promo, [5])
+    $productService->shouldReceive('findUnmetPromoConditions')
+        ->with($promo, [5 => 1])
         ->andReturn([]);
 
     $currency = Mockery::mock(Currency::class);
@@ -2679,7 +2721,7 @@ test('getEffectiveCartPromos returns the manual promo when a code is set', funct
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [])->andReturn([]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [])->andReturn([]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn () => $productService);
@@ -2702,7 +2744,7 @@ test('getEffectiveCartPromos drops a manual promo whose bundle condition is unme
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
-    $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [])->andReturn([5]);
+    $productService->shouldReceive('findUnmetPromoConditions')->once()->with($promo, [])->andReturn([['product' => 5]]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn () => $productService);

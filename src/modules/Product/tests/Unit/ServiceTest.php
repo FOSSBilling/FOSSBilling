@@ -3396,23 +3396,23 @@ test('findEligibleAutoPromos skips promos with no applicable lines', function ()
     expect($serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]]))->toBe([]);
 });
 
-test('getPromoRequiredProducts decodes and normalizes the bundle condition', function (): void {
+test('getPromoCondition reads plain id lists as all-required', function (): void {
     $service = new Service();
 
-    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(1)))->toBe([]);
-    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(2)->setRequiresProducts('[5,"7",0,-2,5]')))->toBe([5, 7]);
+    expect($service->getPromoCondition(productTestCreatePromoEntity(1))->isEmpty())->toBeTrue();
+    expect($service->getPromoCondition(productTestCreatePromoEntity(2)->setRequiresProducts('[5,"7",0,-2,5]'))->toArray())->toBe([5, 7]);
 });
 
-test('findMissingRequiredProductIds reports only the absent products', function (): void {
+test('findUnmetPromoConditions reports only the unmet entries', function (): void {
     $service = new Service();
     $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
 
-    expect($service->findMissingRequiredProductIds($promo, [5, 9, 12]))->toBe([]);
-    expect($service->findMissingRequiredProductIds($promo, [5]))->toBe([9]);
-    expect($service->findMissingRequiredProductIds(productTestCreatePromoEntity(8), [5]))->toBe([]);
+    expect($service->findUnmetPromoConditions($promo, [5 => 1, 9 => 1, 12 => 1]))->toBe([]);
+    expect($service->findUnmetPromoConditions($promo, [5 => 1]))->toBe([['product' => 9]]);
+    expect($service->findUnmetPromoConditions(productTestCreatePromoEntity(8), [5 => 1]))->toBe([]);
 });
 
-test('isPromoCartConditionMet checks line products against the bundle condition', function (): void {
+test('isPromoCartConditionMet checks line products against the cart condition', function (): void {
     $service = new Service();
     $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
 
@@ -3424,6 +3424,16 @@ test('isPromoCartConditionMet checks line products against the bundle condition'
     expect($service->isPromoCartConditionMet($promo, $lines))->toBeTrue();
     expect($service->isPromoCartConditionMet($promo, [$lines[0]]))->toBeFalse();
     expect($service->isPromoCartConditionMet(productTestCreatePromoEntity(8), []))->toBeTrue();
+});
+
+test('isPromoCartConditionMet sums line quantities per product', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7)->setRequiresProducts('{"all":[{"product":5,"min_qty":3}]}');
+
+    $line = static fn (int $quantity): array => ['product' => productTestCreateProductEntity(5), 'config' => ['quantity' => $quantity]];
+
+    expect($service->isPromoCartConditionMet($promo, [$line(2)]))->toBeFalse();
+    expect($service->isPromoCartConditionMet($promo, [$line(2), $line(1)]))->toBeTrue();
 });
 
 test('findEligibleAutoPromos skips promos whose bundle condition is unmet', function (): void {
