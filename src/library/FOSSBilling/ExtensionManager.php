@@ -17,12 +17,30 @@ class ExtensionManager implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    final public const string TYPE_MOD = 'mod';
-    final public const string TYPE_THEME = 'theme';
-    final public const string TYPE_PG = 'payment-gateway';
-    final public const string TYPE_SM = 'server-manager';
-    final public const string TYPE_DR = 'domain-registrar';
-    final public const string TYPE_TRANSLATION = 'translation';
+    /**
+     * @deprecated use {@see Enums\ExtensionType::Module} instead
+     */
+    final public const string TYPE_MOD = Enums\ExtensionType::Module->value;
+    /**
+     * @deprecated use {@see Enums\ExtensionType::Theme} instead
+     */
+    final public const string TYPE_THEME = Enums\ExtensionType::Theme->value;
+    /**
+     * @deprecated use {@see Enums\ExtensionType::PaymentGateway} instead
+     */
+    final public const string TYPE_PG = Enums\ExtensionType::PaymentGateway->value;
+    /**
+     * @deprecated use {@see Enums\ExtensionType::ServerManager} instead
+     */
+    final public const string TYPE_SM = Enums\ExtensionType::ServerManager->value;
+    /**
+     * @deprecated use {@see Enums\ExtensionType::DomainRegistrar} instead
+     */
+    final public const string TYPE_DR = Enums\ExtensionType::DomainRegistrar->value;
+    /**
+     * @deprecated use {@see Enums\ExtensionType::Translation} instead
+     */
+    final public const string TYPE_TRANSLATION = Enums\ExtensionType::Translation->value;
 
     private string $apiUrl = 'https://api.fossbilling.net/extensions/v1/';
 
