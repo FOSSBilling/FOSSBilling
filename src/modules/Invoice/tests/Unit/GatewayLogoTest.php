@@ -507,7 +507,7 @@ test('payment selectors keep custom image aspect ratio with width-only sizing', 
         'request' => new Tests\Support\PermissiveStub(['checkout' => true, 'show_custom_form_values' => false]),
     ]);
     expect($html)->toContain('style="width:65px; padding: 0;"')
-        ->and($html)->toContain('style="width: 100%; height: auto; object-fit: contain; display: block;"')
+        ->and($html)->toContain('style="max-width: 100%; max-height: 150px; width: auto; height: auto; display: block; margin: 0 auto;"')
         ->and($html)->not->toContain('style="height:30px; width:65px; padding: 0;"');
 })->with([
     ['Invoice/templates/client/mod_invoice_invoice.html.twig'],
