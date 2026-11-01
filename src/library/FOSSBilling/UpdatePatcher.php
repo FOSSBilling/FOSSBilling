@@ -5005,6 +5005,15 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function syncSeededModuleVersions(): void
     {
+        // The extension table may not exist yet on a partially migrated
+        // database; there is nothing to sync then, and a display-only
+        // version sync must not block the rest of the update.
+        try {
+            $this->fetchOne('SELECT version FROM extension LIMIT 1');
+        } catch (\Throwable) {
+            return;
+        }
+
         $legacy = [
             ['news', '1.0.0', '0.8.9'],
             ['branding', '0.0.1', '0.8.9'],
