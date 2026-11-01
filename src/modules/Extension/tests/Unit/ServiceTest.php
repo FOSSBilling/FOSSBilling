@@ -827,20 +827,20 @@ test('deactivate deactivates module', function (): void {
 });
 
 test('deactivate blocks a module required by an installed module', function (): void {
-    $ext = extensionCreateEntity(1, 'mod', 'basemod', 'installed');
+    $ext = extensionCreateEntity(1, 'mod', 'baseModule', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')->andReturn([]);
 
     $depMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $depMock->shouldReceive('getManifest')->andReturn([
-        'id' => 'dependentmod',
+        'id' => 'dependentModule',
         'version' => '1.0.0',
-        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['basemod' => '>=1.0']],
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['baseModule' => '>=1.0']],
     ]);
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
-    $extensionRepository->shouldReceive('findInstalledNamesByType')->andReturn(['dependentmod']);
+    $extensionRepository->shouldReceive('findInstalledNamesByType')->andReturn(['dependentModule']);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
@@ -849,14 +849,14 @@ test('deactivate blocks a module required by an installed module', function (): 
 
     $di = container();
     $di['em'] = $em;
-    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $name === 'dependentmod' ? $depMock : $modMock);
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $name === 'dependentModule' ? $depMock : $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
 
     $service = new Service();
     $service->setDi($di);
 
     expect(fn (): bool => $service->deactivate($ext))
-        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'dependentmod');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'dependentModule');
 });
 
 test('uninstall uninstalls an extension', function (): void {

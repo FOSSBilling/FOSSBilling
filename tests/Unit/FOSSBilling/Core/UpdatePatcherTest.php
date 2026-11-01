@@ -3724,7 +3724,8 @@ test('seeded module version sync skips rows whose on-disk manifest differs', fun
     // directory-installed module sharing the seeded name and version),
     // so the seeded row must be left untouched.
     $filesystem = Mockery::mock(Filesystem::class);
-    $filesystem->shouldReceive('exists')->andReturnTrue();
+    $filesystem->shouldReceive('exists')
+        ->andReturnUsing(static fn (string $path): bool => str_ends_with($path, 'manifest.json'));
     $filesystem->shouldReceive('readFile')->andReturn(json_encode(['version' => '1.0.0']));
 
     $patcher = new Patcher();
@@ -3739,7 +3740,7 @@ test('seeded module version sync skips rows whose on-disk manifest differs', fun
 test('seeded module versions sync during non-MySQL update finalization', function (): void {
     withNonMysqlDbDriver(function (): void {
         $pdo = new PDO('sqlite::memory:');
-        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
         $pdo->exec('CREATE TABLE extension_meta (extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT)');
         $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
         $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES
@@ -3747,8 +3748,12 @@ test('seeded module versions sync during non-MySQL update finalization', functio
             ('mod', 'branding', 'installed', '0.0.1'),
             ('mod', 'redirect', 'installed', '1.0.0'),
             ('mod', 'custompages', 'installed', '1.0.0')");
+        // Only manifest paths exist; everything else (old theme dirs, etc.)
+        // is reported missing so unrelated migrations stay dormant.
         $filesystem = Mockery::mock(Filesystem::class);
-        $filesystem->shouldReceive('exists')->andReturn(false);
+        $filesystem->shouldReceive('exists')
+            ->andReturnUsing(static fn (string $path): bool => str_ends_with($path, 'manifest.json'));
+        $filesystem->shouldReceive('readFile')->andReturn(json_encode(['version' => '0.8.9']));
         $patcher = new Patcher();
         $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
 
