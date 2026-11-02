@@ -730,7 +730,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return hash('sha256', (string) $norm);
     }
 
-    private function hasProcessedTransaction(\Model_Transaction $tx)
+    private function hasProcessedTransaction(\Model_Transaction $tx): bool
     {
         if (!$tx->txn_id) {
             return false;

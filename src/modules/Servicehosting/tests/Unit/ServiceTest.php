@@ -1650,7 +1650,7 @@ test('refreshes provisioning defaults while preserving order choices', function 
 test('rejects refreshing active hosting orders', function (): void {
     $service = new Service();
     $order = createEntity(Box\Mod\Order\Entity\Order::class, ['service_type' => 'hosting', 'status' => Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
-    expect(fn () => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): bool => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('rejects refreshing a failed order with a saved username', function (): void {
@@ -1662,7 +1662,7 @@ test('rejects refreshing a failed order with a saved username', function (): voi
     $di['mod_service'] = $di->protect(fn () => $orderService);
     $service = new Service();
     $service->setDi($di);
-    expect(fn () => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): bool => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('previews legacy hosting settings without writing', function (bool $hasUsername): void {
