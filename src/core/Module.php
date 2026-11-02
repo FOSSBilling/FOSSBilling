@@ -16,6 +16,7 @@ use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Exception\BaseException as Exception;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -134,6 +135,26 @@ class Module implements InjectionAwareInterface
         }
 
         return $info;
+    }
+
+    /**
+     * Whether the manifest file declares its own version, as opposed to
+     * falling back to the getManifest() default. Dependency checks must
+     * fail closed on an undeclared version rather than accept the default.
+     */
+    public function hasDeclaredVersion(): bool
+    {
+        if (!$this->hasManifest()) {
+            return false;
+        }
+
+        try {
+            $decoded = json_decode($this->filesystem->readFile(Path::join($this->getModulePath(), self::MANIFEST_FILENAME)), true);
+        } catch (IOException) {
+            return false;
+        }
+
+        return is_array($decoded) && isset($decoded['version']) && is_string($decoded['version']);
     }
 
     public function hasService(string $sub = ''): bool

@@ -109,6 +109,7 @@ function requiresActivateService(array $manifest, ?ExtensionRepository $extensio
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('hasManifest')->andReturnTrue();
     $modMock->shouldReceive('getManifest')->andReturn($manifest);
+    $modMock->shouldReceive('hasDeclaredVersion')->andReturn(isset($manifest['version']) && is_string($manifest['version']));
     $modMock->shouldReceive('isCore')->andReturnFalse();
     $modMock->shouldReceive('getCoreModules')->andReturn([]);
     $modMock->shouldReceive('hasAdminController')->andReturnFalse();
@@ -623,6 +624,7 @@ test('activate resolves core dependency versions from the core manifest', functi
 
     $coreDepMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $coreDepMock->shouldReceive('getManifest')->andReturn(['version' => '2.0']);
+    $coreDepMock->shouldReceive('hasDeclaredVersion')->andReturnTrue();
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
@@ -680,12 +682,15 @@ test('activate parses the fossbilling requirement on preview builds', function (
 
 test('activate blocks a dependency without an installed version', function (): void {
     // A manifest without a version cannot satisfy any constraint, so it
-    // must fail instead of skipping the version check.
+    // must fail instead of skipping the version check. The mocked manifest
+    // mirrors the real getManifest() output with its filled-in '1.0'
+    // default, proving the default alone never satisfies a constraint.
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
 
     $depMock = Mockery::mock(FOSSBilling\Core\Module::class);
-    $depMock->shouldReceive('getManifest')->andReturn(['id' => 'missingVersion']);
+    $depMock->shouldReceive('getManifest')->andReturn(['id' => 'missingVersion', 'version' => '1.0']);
+    $depMock->shouldReceive('hasDeclaredVersion')->andReturnFalse();
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
@@ -707,6 +712,7 @@ test('activate blocks a dependency with a non-string installed version', functio
 
     $depMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $depMock->shouldReceive('getManifest')->andReturn(['id' => 'intVersion', 'version' => 1]);
+    $depMock->shouldReceive('hasDeclaredVersion')->andReturnFalse();
 
     [$service, $modMock] = requiresActivateService([
         'id' => 'testExtension',
