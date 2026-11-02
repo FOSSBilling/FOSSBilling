@@ -244,7 +244,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isValidIp(ServiceLicense $model, $value)
+    public function isValidIp(ServiceLicense $model, $value): bool
     {
         $defined = $model->getAllowedIps();
         if (empty($defined)) {
@@ -262,7 +262,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidVersion(ServiceLicense $model, $value)
+    public function isValidVersion(ServiceLicense $model, $value): bool
     {
         $defined = $model->getAllowedVersions();
         if (empty($defined)) {
@@ -280,7 +280,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidPath(ServiceLicense $model, $value)
+    public function isValidPath(ServiceLicense $model, $value): bool
     {
         $defined = $model->getAllowedPaths();
         if (empty($defined)) {
@@ -298,7 +298,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidHost(ServiceLicense $model, $value)
+    public function isValidHost(ServiceLicense $model, $value): bool
     {
         $defined = $model->getAllowedHosts();
         if (empty($defined)) {

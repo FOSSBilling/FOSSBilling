@@ -23,8 +23,8 @@ test('API key settings render missing defaults and explicit overrides', function
         'mod_serviceapikey_manage.html.twig',
         [
             'request' => ['config' => $requestConfig],
-            'admin' => new class($config) {
-                public function __construct(private readonly array $config)
+            'admin' => new readonly class($config) {
+                public function __construct(private array $config)
                 {
                 }
 
