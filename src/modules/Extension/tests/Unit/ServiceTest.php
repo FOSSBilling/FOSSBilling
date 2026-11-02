@@ -681,10 +681,8 @@ test('activate parses the fossbilling requirement on preview builds', function (
 });
 
 test('activate blocks a dependency without an installed version', function (): void {
-    // A manifest without a version cannot satisfy any constraint, so it
-    // must fail instead of skipping the version check. The mocked manifest
-    // mirrors the real getManifest() output with its filled-in '1.0'
-    // default, proving the default alone never satisfies a constraint.
+    // The dependency reports no declared version, so activation must fail
+    // instead of skipping the version check.
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
 
