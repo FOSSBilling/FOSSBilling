@@ -709,7 +709,7 @@ class Service implements InjectionAwareInterface
             $from_currency = urlencode($from);
 
             $httpClient = $this->di['http_client'];
-            $response = $httpClient->request('GET', 'https://api.apilayer.com/currency_data/live', [
+            $response = $httpClient->request('GET', 'https://api.currencylayer.com/live', [
                 'query' => [
                     'access_key' => $key,
                     'source' => $from_currency,
