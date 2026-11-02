@@ -20,7 +20,7 @@ runs:
     # stale vendor/autoload.php that can't resolve moved/renamed PSR-4 prefixes (Rector
     # then fatals with "class/trait not found"). Re-dump it from the current composer.json.
     - name: Refresh Composer Autoloader
-      uses: php-actions/composer@v6
+      uses: php-actions/composer@8a65f0d3c6a1d17ca4800491a40b5756a4c164f3 # v6
       with:
         command: dump-autoload
         php_version: ${{ inputs.php-version }}
