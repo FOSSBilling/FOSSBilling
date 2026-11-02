@@ -60,7 +60,7 @@ test('hasDeclaredVersion reflects the on-disk manifest', function (string $manif
 
     // A real Module instance, so the JSON parsing and version checks run
     // for real; only the filesystem is faked to avoid touching src/modules.
-    $mod = new Module('testmod');
+    $mod = new Module('testModule');
     $mod->setDi($di);
 
     expect($mod->hasDeclaredVersion())->toBe($expected);
@@ -78,7 +78,7 @@ test('hasDeclaredVersion is false when no manifest file exists', function (): vo
     $di = container();
     $di['filesystem'] = $filesystem;
 
-    $mod = new Module('testmod');
+    $mod = new Module('testModule');
     $mod->setDi($di);
 
     expect($mod->hasDeclaredVersion())->toBeFalse();
@@ -92,7 +92,7 @@ test('hasDeclaredVersion is false when the manifest cannot be read', function ()
     $di = container();
     $di['filesystem'] = $filesystem;
 
-    $mod = new Module('testmod');
+    $mod = new Module('testModule');
     $mod->setDi($di);
 
     expect($mod->hasDeclaredVersion())->toBeFalse();
