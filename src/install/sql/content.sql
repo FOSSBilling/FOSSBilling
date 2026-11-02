@@ -128,9 +128,9 @@ LOCK TABLES `extension` WRITE;
 
 INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`)
 VALUES
-	(1,'mod','news','installed','1.0.0'),
-	(2,'mod','branding','installed','0.0.1'),
-	(3,'mod','redirect','installed','1.0.0');
+	(1,'mod','news','installed','0.8.9'),
+	(2,'mod','branding','installed','0.8.9'),
+	(3,'mod','redirect','installed','0.8.9');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -304,7 +304,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','137',0,NULL,NULL,NOW(),NOW()),
+	(1,'last_patch','138',0,NULL,NULL,NOW(),NOW()),
 	(2,'company_name','Company Name',0,NULL,NULL,NOW(),NOW()),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,NOW(),NOW()),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,NOW(),NOW()),

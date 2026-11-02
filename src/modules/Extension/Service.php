@@ -457,6 +457,8 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\Core\Exception\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
                 }
 
+                $this->assertNoInstalledDependents($mod);
+
                 break;
 
             default:
@@ -647,6 +649,7 @@ class Service implements InjectionAwareInterface
         if (isset($info['minimum_fossbilling_version']) && \FOSSBilling\Core\System\Version::compareVersion($info['minimum_fossbilling_version']) > 0) {
             throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_fossbilling_version'], ':v' => \FOSSBilling\Core\System\Version::VERSION]);
         }
+        $this->assertRequiresSatisfied($info);
 
         // Allow install module even if no installer exists
         // as it can be simple module
@@ -663,6 +666,149 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
 
         return true;
+    }
+
+    /**
+     * Enforce the v1 manifest `requires` constraints before a module installs.
+     * Only a missing `requires` key skips the check; any other non-object
+     * value is invalid. The FOSSBilling constraint is always parsed, but the
+     * version comparison is skipped on preview builds, where the running
+     * version is a placeholder or VCS hash that no constraint can
+     * meaningfully evaluate.
+     *
+     * @param array<string, mixed> $info
+     */
+    private function assertRequiresSatisfied(array $info): void
+    {
+        if (!array_key_exists('requires', $info)) {
+            return;
+        }
+
+        $requires = $info['requires'];
+        if (!is_array($requires)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its manifest declares invalid module requirements.');
+        }
+
+        if (isset($requires['fossbilling'])) {
+            $constraint = (string) $requires['fossbilling'];
+            $this->assertConstraintParses($constraint);
+
+            if (!\FOSSBilling\Core\System\Version::isPreviewVersion()) {
+                $this->assertConstraintSatisfied(
+                    \FOSSBilling\Core\System\Version::VERSION,
+                    $constraint,
+                    'Module cannot be installed. It requires FOSSBilling :constraint, you are using :v.',
+                    [':constraint' => $constraint, ':v' => \FOSSBilling\Core\System\Version::VERSION]
+                );
+            }
+        }
+
+        if (isset($requires['php'])) {
+            $this->assertConstraintSatisfied(
+                PHP_VERSION,
+                (string) $requires['php'],
+                'Module cannot be installed. It requires PHP :constraint, the server runs :v.',
+                [':constraint' => (string) $requires['php'], ':v' => PHP_VERSION]
+            );
+        }
+
+        $dependencies = array_key_exists('modules', $requires) ? $requires['modules'] : [];
+        if (!is_array($dependencies)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its manifest declares invalid module requirements.');
+        }
+
+        foreach ($dependencies as $dependency => $constraint) {
+            $dependency = (string) $dependency;
+            if (!$this->isExtensionActive(ExtensionType::Module->value, $dependency)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. It requires the :dependency module (:constraint), which is not installed or activated.', [':dependency' => $dependency, ':constraint' => (string) $constraint]);
+            }
+
+            $installedVersion = $this->getInstalledModuleVersion($dependency);
+            if (!is_string($installedVersion) || !(new \Composer\Semver\VersionParser())->isValid($installedVersion)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its requirement :dependency has an invalid installed version (:v).', [':dependency' => $dependency, ':v' => is_string($installedVersion) ? $installedVersion : 'null']);
+            }
+
+            $this->assertConstraintSatisfied(
+                $installedVersion,
+                (string) $constraint,
+                'Module cannot be installed. It requires :dependency :constraint, installed version is :v.',
+                [':dependency' => $dependency, ':constraint' => (string) $constraint, ':v' => $installedVersion]
+            );
+        }
+    }
+
+    /**
+     * @throws \FOSSBilling\Core\Exception\InformationException when the constraint is unmet
+     */
+    private function assertConstraintSatisfied(string $version, string $constraint, string $message, array $placeholders): void
+    {
+        $this->assertConstraintParses($constraint);
+
+        if (!\Composer\Semver\Semver::satisfiedBy([$version], $constraint)) {
+            throw new \FOSSBilling\Core\Exception\InformationException($message, $placeholders);
+        }
+    }
+
+    /**
+     * @throws \FOSSBilling\Core\Exception\InformationException when the constraint is invalid
+     */
+    private function assertConstraintParses(string $constraint): void
+    {
+        try {
+            (new \Composer\Semver\VersionParser())->parseConstraints($constraint);
+        } catch (\UnexpectedValueException) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. Its manifest declares an invalid version requirement (:constraint).', [':constraint' => $constraint]);
+        }
+    }
+
+    /**
+     * Block deactivating a module that installed modules still require.
+     * Only installed (non-core) modules are consulted: core modules cannot
+     * be uninstalled and ship without requirements, while manifests that
+     * cannot be read - or do not declare valid requirements - cannot name
+     * a dependent and are safely skipped.
+     *
+     * @throws \FOSSBilling\Core\Exception\InformationException when a dependent is found
+     */
+    private function assertNoInstalledDependents(string $module): void
+    {
+        foreach ($this->getInstalledMods() as $installed) {
+            if (!is_string($installed) || strtolower($installed) === strtolower($module)) {
+                continue;
+            }
+
+            try {
+                $manifest = $this->di['mod']($installed)->getManifest();
+            } catch (\Throwable) {
+                continue;
+            }
+
+            $requires = is_array($manifest['requires'] ?? null) ? $manifest['requires'] : [];
+            $dependencies = is_array($requires['modules'] ?? null) ? array_keys($requires['modules']) : [];
+            foreach ($dependencies as $dependency) {
+                if (strtolower((string) $dependency) === strtolower($module)) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Cannot deactivate :module: the installed :dependent module requires it. Deactivate :dependent first.', [':module' => $module, ':dependent' => $installed]);
+                }
+            }
+        }
+    }
+
+    private function getInstalledModuleVersion(string $module): ?string
+    {
+        // The on-disk manifest is ground truth for what is actually installed:
+        // files replaced without reactivation leave a stale version behind in
+        // the extension row, which must not satisfy (or fail) the check. But
+        // only a declared version counts: getManifest() fills a default for
+        // manifests that omit it, and a missing version must fail the check
+        // rather than ride on that default.
+        $mod = $this->di['mod']($module);
+        if (!$mod->hasDeclaredVersion()) {
+            return null;
+        }
+
+        $manifest = $mod->getManifest();
+
+        return is_string($manifest['version'] ?? null) ? $manifest['version'] : null;
     }
 
     public function activateExistingExtension(array $data): array

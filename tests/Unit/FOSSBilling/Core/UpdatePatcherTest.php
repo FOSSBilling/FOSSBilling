@@ -12,6 +12,7 @@ use FOSSBilling\Core\Update\Patch\Patch134;
 use FOSSBilling\Core\Update\Patch\Patch135;
 use FOSSBilling\Core\Update\Patch\Patch136;
 use FOSSBilling\Core\Update\Patch\Patch137;
+use FOSSBilling\Core\Update\Patch\Patch138;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -1692,14 +1693,35 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')
             || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
+            || str_starts_with($sql, 'UPDATE extension SET version')
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
         ->andReturn($statement);
     $pdo->shouldReceive('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || $sql === 'SELECT version FROM extension LIMIT 1'))
         ->andReturn($statement);
 
     return $pdo;
+}
+
+/**
+ * Allow the seeded-module version sync statements in otherwise strict
+ * applyCorePatches() PDO mocks. The probe SELECT and the version UPDATEs are
+ * plain portable SQL, answered here as no-ops; the SQLite tests below cover
+ * the sync's behavior and SQL.
+ */
+function allowSeededModuleVersionSyncCalls(Mockery\MockInterface $pdo): void
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->andReturnTrue();
+    $statement->shouldReceive('fetchColumn')->andReturn(false);
+
+    $pdo->shouldReceive('prepare')
+        ->with('SELECT version FROM extension LIMIT 1')
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension SET version')))
+        ->andReturn($statement);
 }
 
 /**
@@ -2050,6 +2072,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
+        allowSeededModuleVersionSyncCalls($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -2100,6 +2123,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
+        allowSeededModuleVersionSyncCalls($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -3584,10 +3608,10 @@ test('ensureSchemaInSync restores promo bundle and auto-apply columns missing fr
 });
 
 test('library cleanup follows the main migrations and preserves adapter directories', function (): void {
-    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 136);
-    expect($patches)->toHaveKey(137)
-        ->and($patches[137][1])->toBe('apply')
-        ->and($patches)->not->toHaveKey(138);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 137);
+    expect($patches)->toHaveKey(138)
+        ->and($patches[138][1])->toBe('apply')
+        ->and($patches)->not->toHaveKey(139);
 
     $patcher = new Patcher();
     $filesystem = Mockery::mock(Filesystem::class);
@@ -3655,6 +3679,110 @@ test('Unicode migration classifies every current text and JSON field', function 
     sort($reviewed);
     sort($textColumns);
     expect($reviewed)->toBe($textColumns);
+});
+
+test('seeded module versions sync to the backfilled manifest versions', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
+    $insert = $pdo->prepare('INSERT INTO extension (type, name, status, version) VALUES (?, ?, ?, ?)');
+    foreach ([
+        ['mod', 'news', 'installed', '1.0.0'],
+        ['mod', 'branding', 'installed', '0.0.1'],
+        ['mod', 'redirect', 'installed', '1.0.0'],
+        ['mod', 'custompages', 'installed', '1.0.0'],
+        ['mod', 'news', 'deactivated', '9.9.9'],
+    ] as $row) {
+        $insert->execute($row);
+    }
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke($patcher, 137);
+    expect($patches)->toHaveKey(138)->and($patches[138][1])->toBe('apply');
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new Patch138())->apply($patcher);
+    }
+
+    $versions = $pdo->query('SELECT name, version FROM extension ORDER BY name, version')->fetchAll(PDO::FETCH_ASSOC);
+    expect($versions)->toBe([
+        ['name' => 'branding', 'version' => '0.8.9'],
+        ['name' => 'custompages', 'version' => '1.0.0'],
+        ['name' => 'news', 'version' => '0.8.9'],
+        ['name' => 'news', 'version' => '9.9.9'],
+        ['name' => 'redirect', 'version' => '0.8.9'],
+    ]);
+});
+
+test('seeded module version sync skips rows whose on-disk manifest differs', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
+    $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'news', 'installed', '1.0.0')");
+
+    // The on-disk manifest still reports the legacy version (e.g. a
+    // directory-installed module sharing the seeded name and version),
+    // so the seeded row must be left untouched.
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')
+        ->andReturnUsing(static fn (string $path): bool => str_ends_with($path, 'manifest.json'));
+    $filesystem->shouldReceive('readFile')->andReturn(json_encode(['version' => '1.0.0']));
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+    $patcher->filesystem = $filesystem;
+
+    (new Patch138())->apply($patcher);
+
+    expect($pdo->query("SELECT version FROM extension WHERE name = 'news'")->fetchColumn())->toBe('1.0.0');
+});
+
+test('seeded module version sync targets the on-disk manifest version', function (): void {
+    // The sync target is whatever the installed files declare, not a
+    // hardcoded release number: a legacy row follows its manifest.
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
+    $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'news', 'installed', '1.0.0')");
+
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')
+        ->andReturnUsing(static fn (string $path): bool => str_ends_with($path, 'manifest.json'));
+    $filesystem->shouldReceive('readFile')->andReturn(json_encode(['version' => '9.9.9']));
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+    $patcher->filesystem = $filesystem;
+
+    (new Patch138())->apply($patcher);
+
+    expect($pdo->query("SELECT version FROM extension WHERE name = 'news'")->fetchColumn())->toBe('9.9.9');
+});
+
+test('seeded module versions sync during non-MySQL update finalization', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE extension_meta (extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT)');
+        $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT, status TEXT, version TEXT)');
+        $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES
+            ('mod', 'news', 'installed', '1.0.0'),
+            ('mod', 'branding', 'installed', '0.0.1'),
+            ('mod', 'redirect', 'installed', '1.0.0'),
+            ('mod', 'custompages', 'installed', '1.0.0')");
+        // Only manifest paths exist; everything else (old theme dirs, etc.)
+        // is reported missing so unrelated migrations stay dormant.
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldReceive('exists')
+            ->andReturnUsing(static fn (string $path): bool => str_ends_with($path, 'manifest.json'));
+        $filesystem->shouldReceive('readFile')->andReturn(json_encode(['version' => '0.8.9']));
+        $patcher = new Patcher();
+        $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+        $patcher->applyCorePatches(force: true);
+
+        $versions = $pdo->query('SELECT name, version FROM extension ORDER BY name')->fetchAll(PDO::FETCH_KEY_PAIR);
+        expect($versions)->toBe(['branding' => '0.8.9', 'custompages' => '1.0.0', 'news' => '0.8.9', 'redirect' => '0.8.9']);
+    });
 });
 
 test('activity retention migration adds each created_at index only when missing', function (bool $migrated): void {

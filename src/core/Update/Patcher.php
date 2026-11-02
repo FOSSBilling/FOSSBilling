@@ -230,6 +230,10 @@ class Patcher implements InjectionAwareInterface
         // MySQL-only patch can run there.
         $this->seedInvoiceNoteSettings();
 
+        // Same-version-deploys never run the numbered patches, so seeded module
+        // versions updated there would otherwise stay stale. Same treatment.
+        $this->syncSeededModuleVersions();
+
         // Portable invoice settings/rename steps, shared with the drift healer.
         $this->applyPortableInvoiceMigrations();
 
@@ -1290,6 +1294,96 @@ class Patcher implements InjectionAwareInterface
                 ]
             );
         }
+    }
+
+    /**
+     * The manifest backfill aligned every in-repo manifest version with the
+     * release version, but existing installs still carry whatever content.sql
+     * seeded when they were installed. Sync those seeded rows with the version
+     * stamped into the on-disk manifests: a row still carrying a historically
+     * seeded version gets the installed files' version, while a row that
+     * already matches its manifest (e.g. a directory install that happens to
+     * share a legacy version number) is left untouched by the update itself.
+     * Portable (plain file reads and SQL) and idempotent: a single probe
+     * SELECT finds nothing to do once synced, so this is cheap enough to run
+     * outside versioned updates (see healSchemaDrift()). Never throws: a
+     * display-only version sync must not break requests or updates, it only
+     * logs and skips.
+     */
+    public function syncSeededModuleVersions(): void
+    {
+        try {
+            // Historically seeded versions per module. Any row still carrying
+            // one of these gets the on-disk manifest version.
+            $legacy = [
+                'news' => ['1.0.0'],
+                'branding' => ['0.0.1', '1.0.0'],
+                'redirect' => ['1.0.0'],
+            ];
+
+            $conditions = [];
+            $params = ['type' => 'mod'];
+            $i = 0;
+            foreach ($legacy as $name => $olds) {
+                foreach ($olds as $old) {
+                    $conditions[] = "(name = :name{$i} AND version = :old{$i})";
+                    $params["name{$i}"] = $name;
+                    $params["old{$i}"] = $old;
+                    ++$i;
+                }
+            }
+
+            $stale = $this->fetchOne(
+                'SELECT 1 FROM extension WHERE type = :type AND (' . implode(' OR ', $conditions) . ') LIMIT 1',
+                $params
+            );
+            if ($stale === false) {
+                return;
+            }
+
+            foreach ($legacy as $name => $olds) {
+                $target = $this->readModuleManifestVersion($name);
+                if ($target === null) {
+                    continue;
+                }
+
+                foreach ($olds as $old) {
+                    // A target matching the row is already satisfied; issuing
+                    // the UPDATE would only rewrite the same value.
+                    if ($old === $target) {
+                        continue;
+                    }
+
+                    $this->executeSql(
+                        'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
+                        ['new' => $target, 'type' => 'mod', 'name' => $name, 'old' => $old]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', 'Seeded module version sync failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * The on-disk manifest version for a module, or null when it cannot be
+     * read. A missing or unreadable manifest means there is nothing safe to
+     * sync the database row to.
+     */
+    private function readModuleManifestVersion(string $module): ?string
+    {
+        $path = Path::join(PATH_MODS, ucfirst($module), 'manifest.json');
+        if (!$this->filesystem->exists($path)) {
+            return null;
+        }
+
+        try {
+            $decoded = json_decode($this->filesystem->readFile($path), true);
+        } catch (IOException) {
+            return null;
+        }
+
+        return is_array($decoded) && isset($decoded['version']) && is_string($decoded['version']) ? $decoded['version'] : null;
     }
 
     /**

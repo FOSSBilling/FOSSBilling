@@ -1,7 +1,19 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "servicedomain",
-  "type": "mod",
   "name": "Domain product type",
+  "version": "0.8.9",
   "description": "FOSSBilling core module",
-  "version": "1.0.0"
+  "author": {
+    "name": "FOSSBilling",
+    "url": "https://fossbilling.org"
+  },
+  "license": "Apache-2.0",
+  "homepage_url": "https://fossbilling.org",
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

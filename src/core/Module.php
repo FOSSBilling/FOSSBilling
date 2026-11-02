@@ -16,6 +16,7 @@ use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Exception\BaseException as Exception;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -105,6 +106,27 @@ class Module implements InjectionAwareInterface
         ];
 
         $info = array_merge($info, $json);
+
+        // v1 manifests declare author as an object; the admin templates
+        // expect the legacy scalar name plus a separate author URL. Missing
+        // object fields fall back to neutral defaults rather than leaking
+        // the merged array or the directory default into the listing.
+        if (isset($json['author']) && is_array($json['author'])) {
+            $info['author'] = $json['author']['name'] ?? 'Unknown';
+            $authorUrl = $json['author']['url'] ?? '';
+            $info['author_url'] = is_string($authorUrl) && preg_match('#^https?://#', $authorUrl) === 1 ? $authorUrl : '';
+        }
+
+        // v1 dropped the legacy project_url field; fall back to the
+        // module homepage so "Learn more" keeps pointing somewhere useful.
+        // Only http(s) URLs are accepted as link targets.
+        if (!isset($json['project_url']) && isset($json['homepage_url'])) {
+            $homepageUrl = $json['homepage_url'];
+            if (is_string($homepageUrl) && preg_match('#^https?://#', $homepageUrl) === 1) {
+                $info['project_url'] = $homepageUrl;
+            }
+        }
+
         $info['id'] = $this->module;
         $info['type'] = 'mod';
 
@@ -113,6 +135,26 @@ class Module implements InjectionAwareInterface
         }
 
         return $info;
+    }
+
+    /**
+     * Whether the manifest file declares its own version, as opposed to
+     * falling back to the getManifest() default. Dependency checks must
+     * fail closed on an undeclared version rather than accept the default.
+     */
+    public function hasDeclaredVersion(): bool
+    {
+        if (!$this->hasManifest()) {
+            return false;
+        }
+
+        try {
+            $decoded = json_decode($this->filesystem->readFile(Path::join($this->getModulePath(), self::MANIFEST_FILENAME)), true);
+        } catch (IOException) {
+            return false;
+        }
+
+        return is_array($decoded) && isset($decoded['version']) && is_string($decoded['version']);
     }
 
     public function hasService(string $sub = ''): bool

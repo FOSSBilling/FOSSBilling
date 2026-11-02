@@ -180,6 +180,13 @@ class Finalization implements InjectionAwareInterface
         // No version change (e.g. a code-only deploy with new entity columns), so no
         // finalization runs - check for schema drift outside the lock, sync inside it.
         $patcher = $this->createPatcher();
+
+        // Seeded module versions can drift without a version change or a schema
+        // change (e.g. a code-only deploy carrying a manifest backfill), which
+        // the drift check below would never notice. The sync no-ops on a
+        // single probe SELECT when there is nothing stale, and never throws.
+        $patcher->syncSeededModuleVersions();
+
         if ($patcher->isSchemaOutOfSync()) {
             $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());
         }
