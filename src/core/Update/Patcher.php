@@ -1348,6 +1348,12 @@ class Patcher implements InjectionAwareInterface
                 }
 
                 foreach ($olds as $old) {
+                    // A target matching the row is already satisfied; issuing
+                    // the UPDATE would only rewrite the same value.
+                    if ($old === $target) {
+                        continue;
+                    }
+
                     $this->executeSql(
                         'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
                         ['new' => $target, 'type' => 'mod', 'name' => $name, 'old' => $old]
