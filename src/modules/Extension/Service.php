@@ -798,9 +798,12 @@ class Service implements InjectionAwareInterface
         // The on-disk manifest is ground truth for what is actually installed:
         // files replaced without reactivation leave a stale version behind in
         // the extension row, which must not satisfy (or fail) the check.
+        // Only strings qualify: a non-string version (e.g. a YAML-style
+        // number parsed as int) fails validation downstream instead of being
+        // silently coerced into something the manifest never declared.
         $manifest = $this->di['mod']($module)->getManifest();
 
-        return isset($manifest['version']) ? (string) $manifest['version'] : null;
+        return isset($manifest['version']) && is_string($manifest['version']) ? $manifest['version'] : null;
     }
 
     public function activateExistingExtension(array $data): array

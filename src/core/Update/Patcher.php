@@ -1299,31 +1299,33 @@ class Patcher implements InjectionAwareInterface
     /**
      * The manifest backfill aligned every in-repo manifest version with the
      * release version, but existing installs still carry whatever content.sql
-     * seeded when they were installed. Sync those seeded rows with the new
-     * seed value - but only when the on-disk manifest carries that same
-     * version, so a directory-installed module that happens to share a legacy
-     * version number is never rewritten. Portable (plain file reads and SQL)
-     * and idempotent: a single probe SELECT finds nothing to do once synced,
-     * so this is cheap enough to run outside versioned updates (see
-     * healSchemaDrift()). Never throws: a display-only version sync must not
-     * break requests or updates, it only logs and skips.
+     * seeded when they were installed. Sync those seeded rows with the version
+     * stamped into the on-disk manifests: a row still carrying a historically
+     * seeded version gets the installed files' version, while a row that
+     * already matches its manifest (e.g. a directory install that happens to
+     * share a legacy version number) is left untouched by the update itself.
+     * Portable (plain file reads and SQL) and idempotent: a single probe
+     * SELECT finds nothing to do once synced, so this is cheap enough to run
+     * outside versioned updates (see healSchemaDrift()). Never throws: a
+     * display-only version sync must not break requests or updates, it only
+     * logs and skips.
      */
     public function syncSeededModuleVersions(): void
     {
         try {
-            // Last entry per module is the version to sync to; the rest are
-            // historically seeded versions that may still be stored.
+            // Historically seeded versions per module. Any row still carrying
+            // one of these gets the on-disk manifest version.
             $legacy = [
-                'news' => ['1.0.0', '0.8.9'],
-                'branding' => ['0.0.1', '1.0.0', '0.8.9'],
-                'redirect' => ['1.0.0', '0.8.9'],
+                'news' => ['1.0.0'],
+                'branding' => ['0.0.1', '1.0.0'],
+                'redirect' => ['1.0.0'],
             ];
 
             $conditions = [];
             $params = ['type' => 'mod'];
             $i = 0;
-            foreach ($legacy as $name => $versions) {
-                foreach (array_slice($versions, 0, -1) as $old) {
+            foreach ($legacy as $name => $olds) {
+                foreach ($olds as $old) {
                     $conditions[] = "(name = :name{$i} AND version = :old{$i})";
                     $params["name{$i}"] = $name;
                     $params["old{$i}"] = $old;
@@ -1339,16 +1341,16 @@ class Patcher implements InjectionAwareInterface
                 return;
             }
 
-            foreach ($legacy as $name => $versions) {
-                $new = end($versions);
-                if ($this->readModuleManifestVersion($name) !== $new) {
+            foreach ($legacy as $name => $olds) {
+                $target = $this->readModuleManifestVersion($name);
+                if ($target === null) {
                     continue;
                 }
 
-                foreach (array_slice($versions, 0, -1) as $old) {
+                foreach ($olds as $old) {
                     $this->executeSql(
                         'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
-                        ['new' => $new, 'type' => 'mod', 'name' => $name, 'old' => $old]
+                        ['new' => $target, 'type' => 'mod', 'name' => $name, 'old' => $old]
                     );
                 }
             }
@@ -1359,7 +1361,8 @@ class Patcher implements InjectionAwareInterface
 
     /**
      * The on-disk manifest version for a module, or null when it cannot be
-     * read. Only used to confirm a seeded database row before rewriting it.
+     * read. A missing or unreadable manifest means there is nothing safe to
+     * sync the database row to.
      */
     private function readModuleManifestVersion(string $module): ?string
     {
@@ -1368,12 +1371,13 @@ class Patcher implements InjectionAwareInterface
             return null;
         }
 
-        $decoded = json_decode($this->filesystem->readFile($path), true);
-        if (!is_array($decoded) || !isset($decoded['version']) || !is_string($decoded['version'])) {
+        try {
+            $decoded = json_decode($this->filesystem->readFile($path), true);
+        } catch (IOException) {
             return null;
         }
 
-        return $decoded['version'];
+        return is_array($decoded) && isset($decoded['version']) && is_string($decoded['version']) ? $decoded['version'] : null;
     }
 
     /**

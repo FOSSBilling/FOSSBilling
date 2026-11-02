@@ -699,6 +699,27 @@ test('activate blocks a dependency without an installed version', function (): v
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid installed version');
 });
 
+test('activate blocks a dependency with a non-string installed version', function (): void {
+    // A non-string version (e.g. a bare number) must fail validation instead
+    // of being coerced into a version the manifest never declared.
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturnTrue();
+
+    $depMock = Mockery::mock(FOSSBilling\Core\Module::class);
+    $depMock->shouldReceive('getManifest')->andReturn(['id' => 'intVersion', 'version' => 1]);
+
+    [$service, $modMock] = requiresActivateService([
+        'id' => 'testExtension',
+        'version' => '1.0.0',
+        'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['intVersion' => '>=1.0']],
+    ], $extensionRepository, ['intVersion' => $depMock]);
+    $modMock->shouldReceive('install')->never();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+
+    expect(fn (): array => $service->activate($ext))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid installed version');
+});
+
 test('version requirements compare against release versions', function (string $version, string $constraint, bool $satisfied): void {
     // Covers the comparison logic with release-style versions, which the
     // activate() tests cannot reach (they run on preview builds where the
