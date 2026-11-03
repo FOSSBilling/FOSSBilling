@@ -865,7 +865,11 @@ test('removeCurrency throws exception when currency not found by code', function
 
 test('currencylayer rates are requested from the currencylayer API with an access key', function (): void {
     $capturedRequests = [];
-    $httpClient = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$capturedRequests): Symfony\Component\HttpClient\Response\MockResponse {
+    $quotes = [];
+    foreach (['EUR' => 0.9, 'GBP' => 0.8] as $currency => $rate) {
+        $quotes['USD' . $currency] = $rate;
+    }
+    $httpClient = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$capturedRequests, $quotes): Symfony\Component\HttpClient\Response\MockResponse {
         $capturedRequests[] = ['url' => $url, 'options' => $options];
 
         return new Symfony\Component\HttpClient\Response\MockResponse(
@@ -873,7 +877,7 @@ test('currencylayer rates are requested from the currencylayer API with an acces
                 'success' => true,
                 'timestamp' => 1_760_000_000,
                 'source' => 'USD',
-                'quotes' => ['USD' . 'EUR' => 0.9, 'USD' . 'GBP' => 0.8],
+                'quotes' => $quotes,
             ], JSON_THROW_ON_ERROR),
             ['response_headers' => ['content-type: application/json']]
         );
@@ -906,7 +910,11 @@ test('currencylayer rates are requested from the currencylayer API with an acces
 
 test('Currency Data API rates keep using the APILayer marketplace endpoint and apikey header', function (): void {
     $capturedRequests = [];
-    $httpClient = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$capturedRequests): Symfony\Component\HttpClient\Response\MockResponse {
+    $quotes = [];
+    foreach (['EUR' => 0.9, 'GBP' => 0.8] as $currency => $rate) {
+        $quotes['USD' . $currency] = $rate;
+    }
+    $httpClient = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$capturedRequests, $quotes): Symfony\Component\HttpClient\Response\MockResponse {
         $capturedRequests[] = ['url' => $url, 'options' => $options];
 
         return new Symfony\Component\HttpClient\Response\MockResponse(
@@ -914,7 +922,7 @@ test('Currency Data API rates keep using the APILayer marketplace endpoint and a
                 'success' => true,
                 'timestamp' => 1_760_000_000,
                 'source' => 'USD',
-                'quotes' => ['USD' . 'EUR' => 0.9, 'USD' . 'GBP' => 0.8],
+                'quotes' => $quotes,
             ], JSON_THROW_ON_ERROR),
             ['response_headers' => ['content-type: application/json']]
         );
