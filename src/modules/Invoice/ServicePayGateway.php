@@ -571,7 +571,7 @@ class ServicePayGateway implements InjectionAwareInterface
         if ($gateway !== null && $gateway !== '') {
             $nestedPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, $filename);
             if ($this->filesystem->exists($nestedPath)) {
-                return $this->di['tools']->url("/library/Payment/Adapter/{$gateway}/{$filename}");
+                return $this->di['url']->link("/library/Payment/Adapter/{$gateway}/{$filename}");
             }
         }
 
