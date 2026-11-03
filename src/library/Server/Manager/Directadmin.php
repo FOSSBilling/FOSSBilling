@@ -559,7 +559,7 @@ class Server_Manager_Directadmin extends Server_Manager
 
         // Construct the URL for the request
         $url = $protocol . $host . ':' . $this->getPort() . '/CMD_' . $command;
-        if (!$post) {
+        if (!$post && $fields !== []) {
             $url .= '?' . http_build_query($fields);
         }
 
@@ -761,13 +761,14 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function getAccountInfo(Server_Account $account): array
     {
+        // CMD_API_SHOW_USER_CONFIG only accepts the `user` parameter.
         $fields = [
-            'action' => 'create',
-            'add' => 'Submit',
             'user' => $account->getUsername(),
         ];
 
-        return $this->request('API_SHOW_USER_CONFIG', $fields);
+        // CMD_API_SHOW_USER_CONFIG is documented as GET-only by DirectAdmin,
+        // so the user parameter must travel in the query string.
+        return $this->request('API_SHOW_USER_CONFIG', $fields, false);
     }
 
     /**
@@ -779,7 +780,8 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function getUserPackages(): array
     {
-        $results = $this->request('API_PACKAGES_USER');
+        // CMD_API_PACKAGES_USER is documented as GET-only by DirectAdmin.
+        $results = $this->request('API_PACKAGES_USER', [], false);
 
         if (isset($results['error']) && $results['error'] == 1) {
             throw new Server_Exception('Failed to retrieve user packages: ' . $results['text'] . ': ' . $results['details']);
