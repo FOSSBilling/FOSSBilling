@@ -2,8 +2,10 @@
 """Extract gettext msgids from FOSSBilling sources into a messages.pot file.
 
 Open-source replacement for the manual Poedit Pro step. Scans Twig
-``|trans`` literals and PHP ``__trans`` / ``__pluralTrans`` / exception
-keywords under ``src/`` (minus vendor, install, data, load.php, tests and
+``|trans`` literals and PHP ``__trans`` / ``__pluralTrans`` calls plus
+string literals passed to ``new`` constructions (exceptions and other
+message carriers, minus a small denylist of non-message constructors)
+under ``src/`` (minus vendor, install, data, load.php, tests and
 web-asset extensions); obsolete msgids are dropped.
 
 Usage:
@@ -21,6 +23,7 @@ import datetime
 import os
 import re
 import sys
+from collections import Counter
 from typing import NamedTuple
 
 # ---------------------------------------------------------------------------
@@ -32,16 +35,23 @@ EXCLUDED_FILES = {"load.php"}
 EXCLUDED_EXTENSIONS = {".js", ".html", ".css", ".scss", ".md"}
 SCANNED_EXTENSIONS = {".php", ".twig"}
 
-PHP_KEYWORDS_SINGLE = {
-    "__trans",
-    "Exception",
-    "BaseException",
-    "InformationException",
-    "Server_Exception",
-    "Registrar_Exception",
-    "Payment_Exception",
-}
+PHP_TRANS_SINGLE = {"__trans"}
 PHP_KEYWORDS_PLURAL = {"__pluralTrans"}
+
+# Constructors whose first string argument is never a user-facing message:
+# date/time and HTTP plumbing, plus exception types that take a sentinel
+# instead of a message (AuthenticationRequiredException takes an area
+# like 'admin' / 'client'; its real messages live in its constructor).
+NON_MESSAGE_CONSTRUCTORS = {
+    "DateTime",
+    "DateTimeImmutable",
+    "DateTimeZone",
+    "Response",
+    "RedirectResponse",
+    "DOMDocument",
+    "PDO",
+    "AuthenticationRequiredException",
+}
 
 HEADER_TEMPLATE = """\
 # en_US translation of FOSSBilling Application
@@ -187,14 +197,20 @@ _TWIG_TRANS = re.compile(
 
 _PHP_STR = r"""'(?P<sbody>(?:\\.|[^'\\])*)'|"(?P<dbody>(?:\\.|[^"\\])*)\""""
 
-_KEYWORD_ALTS = "|".join(
-    sorted(PHP_KEYWORDS_SINGLE | PHP_KEYWORDS_PLURAL, key=len, reverse=True)
+_TRANS_ALTS = "|".join(
+    sorted(PHP_TRANS_SINGLE | PHP_KEYWORDS_PLURAL, key=len, reverse=True)
 )
-# Matches bare calls AND `new [Namespace\]Keyword(`. The lookbehind rejects
-# method/static calls (->, ::), variables and longer identifiers
-# (e.g. the `Exception` in `InformationException`).
+_CLASS_NAME = r"(?:\\)?(?:[A-Za-z_][\w]*\\)*[A-Za-z_][\w]*"
+# Matches `__trans(...)` / `__pluralTrans(...)` calls (global or leading-
+# backslash form, e.g. `\__trans(...)`), any `new [Namespace\]Class(`
+# construction (thrown, returned, assigned, or used in a throw-expression
+# — all are message carriers unless denylisted below), and constructor-
+# chained exception messages (`parent::__construct('...')`, as used by
+# exception subclasses that build their own message). The lookbehinds
+# reject method/static calls (->, ::), variables and longer identifiers
+# (e.g. the `new` in `$renew`).
 _PHP_CALL = re.compile(
-    rf"(?:new\s+)?(?<![\w$>:\\])(?:\\)?(?:[A-Za-z_][\w]*\\)*(?P<kw>{_KEYWORD_ALTS})\s*\(\s*"
+    rf"(?:(?<![\w$])new\s+(?P<cls>{_CLASS_NAME})|(?<![\w$>:\\])(?:\\)?(?:[A-Za-z_][\w]*\\)*(?P<kw>{_TRANS_ALTS})|(?<![\w$>])(?P<chain>parent|self|static)::\s*__construct)\s*\(\s*"
     rf"(?P<arg>{_PHP_STR})?"
     rf"(?P<rest>\s*,)?",
     re.DOTALL,
@@ -232,6 +248,73 @@ def extract_twig(rel: str, text: str, occurrences: list[Occurrence], stats: dict
         stats["twig"] += 1
 
 
+def _read_ternary_literals(
+    masked: str, start: int, spans: list[tuple[int, int]], starts: list[int]
+) -> tuple[list[str], int] | None:
+    """Parse `cond ? 'a' : 'b'` at offset (strict: both branches literals).
+
+    The condition may hold balanced brackets and quoted strings; anything
+    else bails out with None. Returns ([branch_a, branch_b], end_offset).
+    """
+    depth = 0
+    i = start
+    cond_end: int | None = None
+    while i < len(masked):
+        char = masked[i]
+        if char in ("'", '"'):
+            parsed = _read_php_literal(masked, i)
+            if parsed is None:
+                return None
+            # The literal must not cross its containing string/heredoc
+            # span (a stray quote inside heredoc text parses garbage).
+            idx = bisect.bisect_right(starts, i) - 1
+            if (
+                idx >= 0
+                and spans[idx][0] <= i < spans[idx][1]
+                and parsed[1] > spans[idx][1]
+            ):
+                return None
+            i = parsed[1]
+            continue
+        if _in_spans(spans, starts, i):
+            return None
+        if char in "([":
+            depth += 1
+        elif char in ")]":
+            depth -= 1
+            if depth < 0:
+                return None
+        elif char == "?" and depth == 0:
+            nxt = masked[i + 1 : i + 3]
+            if nxt.startswith("?") or nxt.startswith("->"):
+                i += 1  # `??` / nullsafe `?->`, not the ternary.
+                continue
+            cond_end = i
+            break
+        i += 1
+    if cond_end is None:
+        return None
+    # Skip whitespace after `?`, read branch A.
+    j = cond_end + 1
+    while j < len(masked) and masked[j] in " \t\n\r":
+        j += 1
+    parsed_a = _read_php_literal(masked, j)
+    if parsed_a is None or parsed_a[2]:
+        return None
+    value_a, j = parsed_a[0], parsed_a[1]
+    while j < len(masked) and masked[j] in " \t\n\r":
+        j += 1
+    if j >= len(masked) or masked[j] != ":" or masked[j + 1 : j + 2] == ":":
+        return None
+    j += 1
+    while j < len(masked) and masked[j] in " \t\n\r":
+        j += 1
+    parsed_b = _read_php_literal(masked, j)
+    if parsed_b is None or parsed_b[2]:
+        return None
+    return [value_a, parsed_b[0]], parsed_b[1]
+
+
 def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
     """Read one quoted literal at offset.
 
@@ -261,15 +344,54 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
         if _in_spans(spans, starts, match.start()):
             continue
         keyword = match.group("kw")
+        short: str | None = None
+        if keyword is None:
+            if match.group("chain") is not None:
+                # Constructor-chained exception message.
+                short = "__construct"
+            else:
+                # Generic constructor branch: a message carrier (normally an
+                # exception) unless denylisted. The short name is what matters;
+                # a leading backslash leaves an empty first segment.
+                short = match.group("cls").split("\\")[-1]
+                if short in NON_MESSAGE_CONSTRUCTORS or short == "class":
+                    stats["skipped_ctor"] += 1
+                    continue
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
             stats["skipped_defs"] += 1
             continue
         if match.group("arg") is None:
+            # A ternary with two literal branches (`$a ? 'x' : 'y'`) carries
+            # two message variants; anything else non-literal is skipped.
+            # (Never applied to __pluralTrans: a plural entry needs two
+            # dedicated literals, not branch variants.)
+            tern = (
+                None
+                if keyword in PHP_KEYWORDS_PLURAL
+                else _read_ternary_literals(masked, match.end(), spans, starts)
+            )
+            if tern is not None and re.match(r"\s*[),]", masked[tern[1] :]) is not None:
+                ref = f"{rel}:{_line_no(masked, match.start())}"
+                for variant in tern[0]:
+                    occurrences.append(Occurrence(variant, None, ref))
+                stats["php"] += 1
+                if short is not None:
+                    stats["ctor_classes"][short] += 1
+                continue
             # Non-literal first argument (variable, constant, expression...).
+            # Only logged for plausible message carriers; `new Finder($x)`
+            # style noise would otherwise drown the audit trail.
             stats["skipped_dynamic"] += 1
-            snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
-            stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} {snippet}")
+            if keyword is not None or (
+                short is not None
+                and ("exception" in short.lower() or short in ("IncompleteRecord", "__construct"))
+            ):
+                snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
+                stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} {snippet}")
             continue
+        # Census of literal-carrying constructions, for drift review.
+        if short is not None:
+            stats["ctor_classes"][short] += 1
         if match.group("sbody") is not None:
             first = _decode_single(match.group("sbody"))
             first_dynamic = False
@@ -332,7 +454,7 @@ def iter_source_files(src_dir: str):
 
 def extract_all(src_dir: str) -> tuple[list[Occurrence], dict]:
     occurrences: list[Occurrence] = []
-    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped": [], "files": 0}
+    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped_ctor": 0, "ctor_classes": Counter(), "skipped": [], "files": 0}
     for full, rel in iter_source_files(src_dir):
         with open(full, encoding="utf-8", errors="replace") as handle:
             text = handle.read()
@@ -511,6 +633,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"twig hits: {stats['twig']}, php hits: {stats['php']}", file=sys.stderr)
     print(f"unique msgids written: {count}", file=sys.stderr)
     print(f"skipped non-literals: {stats['skipped_dynamic']}, skipped defs: {stats['skipped_defs']}", file=sys.stderr)
+    print(f"skipped non-message ctors: {stats['skipped_ctor']}", file=sys.stderr)
+    if stats["ctor_classes"]:
+        top = ", ".join(f"{name}x{count}" for name, count in stats["ctor_classes"].most_common(20))
+        print(f"constructed classes: {top}", file=sys.stderr)
     for item in stats["skipped"]:
         print(f"  skip: {item}", file=sys.stderr)
     return 0
