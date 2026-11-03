@@ -184,26 +184,34 @@ def _mask_twig_comments(text: str) -> str:
     return _TWIG_COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
 
-_SCRIPT_BLOCK = re.compile(
-    r"<(?P<tag>script|style)\b[^>]*>.*?</(?P=tag)\s*>",
-    re.IGNORECASE | re.DOTALL,
-)
+_SCRIPT_OPEN = re.compile(r"<(?P<tag>script|style)\b[^>]*>", re.IGNORECASE)
+_SCRIPT_CLOSE = re.compile(r"</(?P<tag>script|style)\s*>", re.IGNORECASE)
+_PHP_REGION = re.compile(r"<\?(?:php|=).*?\?>", re.IGNORECASE | re.DOTALL)
 
 
 def _mask_embedded_blocks(masked: str, spans: list[tuple[int, int]], starts: list[int]) -> str:
     """Blank out `<script>` / `<style>` regions (JS/CSS, never PHP messages).
 
-    Only blocks whose opener sits outside string/heredoc spans are masked,
-    so markup inside PHP strings is left alone. Newlines are preserved,
-    keeping offsets stable for callers.
+    Each block is masked from its own opener to its own closer. Openers
+    inside string/heredoc spans are skipped without consuming anything, so
+    markup inside PHP strings is left alone; `<?php` / `<?=` regions inside
+    a block are carved back out so inline template code still extracts.
+    Newlines are preserved, keeping offsets stable for callers.
     """
+    php_spans = [match.span() for match in _PHP_REGION.finditer(masked)]
+    php_starts = [start for start, _ in php_spans]
     chars = list(masked)
-    for match in _SCRIPT_BLOCK.finditer(masked):
-        if _in_spans(spans, starts, match.start()):
+    for opener in _SCRIPT_OPEN.finditer(masked):
+        if _in_spans(spans, starts, opener.start()):
             continue
-        for i in range(match.start(), match.end()):
-            if chars[i] != "\n":
-                chars[i] = " "
+        tag = opener.group("tag").lower()
+        for closer in _SCRIPT_CLOSE.finditer(masked, opener.end()):
+            if closer.group("tag").lower() != tag:
+                continue
+            for i in range(opener.start(), closer.end()):
+                if chars[i] != "\n" and not _in_spans(php_spans, php_starts, i):
+                    chars[i] = " "
+            break
     return "".join(chars)
 
 
@@ -303,9 +311,9 @@ def _read_ternary_literals(
             continue
         if _in_spans(spans, starts, i):
             return None
-        if char in "([":
+        if char in "([{":
             depth += 1
-        elif char in ")]":
+        elif char in ")]}":
             depth -= 1
             if depth < 0:
                 return None

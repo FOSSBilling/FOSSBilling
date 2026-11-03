@@ -192,6 +192,24 @@ def main() -> int:
         {"Kept"},
     )
     check(
+        "string-held opener does not swallow a later real block",
+        "$x = '<script>';\n<script>\nvar d = new Date('2026-01-01');\n</script>\n"
+        "throw new \\RuntimeException('Real message');",
+        {"Real message"},
+    )
+    check(
+        "inline php inside script blocks still extracts",
+        "<script>var l = <?= __trans('Save changes') ?>;\n"
+        "var d = new Date('2026-01-01');</script>\n"
+        "throw new \\RuntimeException('Real message');",
+        {"Save changes", "Real message"},
+    )
+    check(
+        "ternary over match expression",
+        "throw new \\RuntimeException(match ($code) { 1 => true, default => false } ? 'First error' : 'Other error');",
+        {"First error", "Other error"},
+    )
+    check(
         "catch/instanceof/class-const not matched",
         "} catch (\\Exception $e) {\n"
         "if ($e instanceof \\RuntimeException) {\n"
