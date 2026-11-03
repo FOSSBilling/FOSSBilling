@@ -873,7 +873,7 @@ test('currencylayer rates are requested from the currencylayer API with an acces
                 'success' => true,
                 'timestamp' => 1_760_000_000,
                 'source' => 'USD',
-                'quotes' => ['USDEUR' => 0.9, 'USDGBP' => 0.8],
+                'quotes' => ['USD' . 'EUR' => 0.9, 'USD' . 'GBP' => 0.8],
             ], JSON_THROW_ON_ERROR),
             ['response_headers' => ['content-type: application/json']]
         );
@@ -895,7 +895,6 @@ test('currencylayer rates are requested from the currencylayer API with an acces
     $service->setDi($di);
 
     $provider = new ReflectionMethod($service, 'getCurrencyLayerRates');
-    $provider->setAccessible(true);
     $rates = $provider->invoke($service, 'USD', 3600, 'test-key');
 
     expect($capturedRequests)->toHaveCount(1)
@@ -915,7 +914,7 @@ test('Currency Data API rates keep using the APILayer marketplace endpoint and a
                 'success' => true,
                 'timestamp' => 1_760_000_000,
                 'source' => 'USD',
-                'quotes' => ['USDEUR' => 0.9, 'USDGBP' => 0.8],
+                'quotes' => ['USD' . 'EUR' => 0.9, 'USD' . 'GBP' => 0.8],
             ], JSON_THROW_ON_ERROR),
             ['response_headers' => ['content-type: application/json']]
         );
@@ -937,7 +936,6 @@ test('Currency Data API rates keep using the APILayer marketplace endpoint and a
     $service->setDi($di);
 
     $provider = new ReflectionMethod($service, 'getCurrencyDataRates');
-    $provider->setAccessible(true);
     $rates = $provider->invoke($service, 'USD', 3600, 'test-key');
 
     $headers = json_encode($capturedRequests[0]['options']['headers'] ?? [], JSON_THROW_ON_ERROR);
