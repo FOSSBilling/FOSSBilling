@@ -385,12 +385,12 @@ class ServicePayGateway implements InjectionAwareInterface
 
                 if (!empty($config['logo'])) {
                     $gateway['logo'] = $config['logo'];
-                    $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo']);
+                    $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo'], $gtw->getGateway());
                 } else {
                     // Templates read gtw.logo.logo/height/width unconditionally,
                     // so always provide the key even when the adapter ships no logo.
                     $gateway['logo'] = [
-                        'logo' => $this->resolveGatewayLogo([]),
+                        'logo' => $this->resolveGatewayLogo([], $gtw->getGateway()),
                         'height' => '50px',
                         'width' => '50px',
                     ];
@@ -564,19 +564,27 @@ class ServicePayGateway implements InjectionAwareInterface
         }
     }
 
-    public function resolveGatewayLogo(array $logoConfig): string
+    public function resolveGatewayLogo(array $logoConfig, ?string $gateway = null): string
     {
         $filename = $logoConfig['logo'] ?? 'default.png';
+        $encodedFilename = implode('/', array_map(rawurlencode(...), explode('/', $filename)));
+
+        if ($gateway !== null && $gateway !== '') {
+            $nestedPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, $filename);
+            if ($this->filesystem->exists($nestedPath)) {
+                return $this->di['url']->link("/library/Payment/Adapter/{$gateway}/{$encodedFilename}");
+            }
+        }
 
         $libraryPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $filename);
         $publicPath = Path::join(PATH_ROOT, 'public', 'gateways', $filename);
 
         if ($this->filesystem->exists($libraryPath)) {
-            return $this->di['url']->link("/library/Payment/Adapter/{$filename}");
+            return $this->di['url']->link("/library/Payment/Adapter/{$encodedFilename}");
         }
 
         if ($this->filesystem->exists($publicPath)) {
-            return $this->di['url']->link("/public/gateways/{$filename}");
+            return $this->di['url']->link("/public/gateways/{$encodedFilename}");
         }
 
         return $this->di['url']->link('/public/gateways/default.png');
