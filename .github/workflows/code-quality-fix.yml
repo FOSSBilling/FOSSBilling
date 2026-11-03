@@ -1,0 +1,176 @@
+name: Code Quality & Styling Fix
+
+on:
+  schedule:
+    - cron: "0 12 * * 2,4" # Runs once every Tuesday and Thursday
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-chore-cs-fix
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Rector & PHP-CS-Fixer
+    runs-on: ubuntu-slim
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set Up PHP Quality Tools
+        uses: ./.github/actions/php-quality-setup
+        with:
+          php-version: 8.3
+
+      - name: Run Rector
+        id: rector
+        run: composer rector:fix
+
+      - name: Run PHP-CS-Fixer
+        id: php_cs_fixer
+        run: composer cs:fix
+
+      - name: Detect Changes
+        id: changes
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes to commit."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git add -A
+            mkdir -p /tmp/cs-fix-artifact
+            git diff --cached --binary > /tmp/cs-fix-artifact/cs-fix.diff
+            git diff --cached --name-only > /tmp/cs-fix-artifact/changed-files.txt
+            echo "Changed files:"
+            cat /tmp/cs-fix-artifact/changed-files.txt
+          fi
+
+      - name: Upload Fix Diff
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: cs-fix-diff
+          if-no-files-found: error
+          retention-days: 1
+          path: /tmp/cs-fix-artifact/
+
+      - name: Write Job Summary
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Code Quality and Styling (Validate)
+
+          | Item | Value |
+          | --- | --- |
+          | PHP version | `8.3` |
+          | Rector | `${{ steps.rector.outcome }}` |
+          | PHP-CS-Fixer | `${{ steps.php_cs_fixer.outcome }}` |
+          | Changes detected | `${{ steps.changes.outputs.changed || 'false' }}` |
+          EOF
+
+  publish:
+    name: Publish CS Fix PR
+    needs: validate
+    if: needs.validate.outputs.changed == 'true'
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Load Secrets from 1Password
+        id: load-secrets
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # GitHub - FOSSBilling Automation App secrets stored in 1Password.
+          AUTOMATION_APP_CLIENT_ID: op://mkqkefntgcmjlgyxzeaekzuuvq/ts64rykikbva7zplnf5woxx3bi/client-id
+          AUTOMATION_APP_PRIVATE_KEY: op://mkqkefntgcmjlgyxzeaekzuuvq/ts64rykikbva7zplnf5woxx3bi/private-key
+
+      - name: Generate Automation Token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ steps.load-secrets.outputs.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ steps.load-secrets.outputs.AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Get Automation App User ID
+        id: get-user-id
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Download Fix Diff
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: cs-fix-diff
+          path: /tmp/cs-fix-artifact
+
+      - name: Commit and Push Changes
+        id: push_changes
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          APP_USER_ID: ${{ steps.get-user-id.outputs.user-id }}
+        run: |
+          git apply --whitespace=fix /tmp/cs-fix-artifact/cs-fix.diff
+          git add -A
+          git -c user.name="${APP_SLUG}[bot]" -c user.email="${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com" \
+            commit -m "Apply PHP Code Styling & Quality Changes"
+
+          # chore/cs-fix is fully regenerated every run, so history isn't
+          # preserved between runs — --force-with-lease still guards
+          # against clobbering a remote branch that moved unexpectedly
+          # (e.g. a reviewer pushed changes to the open PR).
+          git fetch origin '+refs/heads/chore/cs-fix:refs/remotes/origin/chore/cs-fix' 2>/dev/null || true
+          git push --force-with-lease origin HEAD:refs/heads/chore/cs-fix
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create or Update Pull Request
+        id: create_pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head chore/cs-fix --base main --state open --json number -q '.[0].number')
+
+          if [ -n "$existing_pr" ]; then
+            gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url -q '"url=" + .url' >> "$GITHUB_OUTPUT"
+            echo "Pull request #$existing_pr already open; push updated it."
+          else
+            url=$(gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Apply PHP Code Styling & Quality Changes" \
+              --body "Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices." \
+              --base main \
+              --head chore/cs-fix \
+              --label skip-changelog)
+            echo "url=$url" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write Job Summary
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Code Quality and Styling (Publish)
+
+          | Item | Value |
+          | --- | --- |
+          | Changes pushed | `${{ steps.push_changes.outputs.changed || 'false' }}` |
+          | Pull request | `${{ steps.create_pr.outputs.url || 'No changes' }}` |
+          EOF
