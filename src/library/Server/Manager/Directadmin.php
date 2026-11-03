@@ -559,7 +559,7 @@ class Server_Manager_Directadmin extends Server_Manager
 
         // Construct the URL for the request
         $url = $protocol . $host . ':' . $this->getPort() . '/CMD_' . $command;
-        if (!$post) {
+        if (!$post && $fields !== []) {
             $url .= '?' . http_build_query($fields);
         }
 
@@ -761,9 +761,8 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function getAccountInfo(Server_Account $account): array
     {
+        // CMD_API_SHOW_USER_CONFIG only accepts the `user` parameter.
         $fields = [
-            'action' => 'create',
-            'add' => 'Submit',
             'user' => $account->getUsername(),
         ];
 
