@@ -326,7 +326,7 @@ test('addNew refuses locked invoices unless bypassed for internal flows', functi
     $service->setDi($di);
 
     expect(fn () => $service->addNew($invoiceModel, ['title' => 'Late fee', 'price' => 5]))
-        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
 
     $bypassEm = Mockery::mock(EntityManagerInterface::class);
     $bypassEm->shouldReceive('persist')->once();
@@ -351,7 +351,7 @@ test('addNew rejects deposit line types', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->addNew($invoiceModel, ['title' => 'Add funds', 'price' => 10, 'type' => InvoiceItem::TYPE_DEPOSIT]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Add Funds flow');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Add Funds flow');
 
     // Order lines stay allowed: cart checkout builds them through prepareInvoice.
     $orderEm = Mockery::mock(EntityManagerInterface::class);
@@ -389,9 +389,9 @@ test('update and remove refuse locked invoices', function (): void {
     $item->setInvoice($invoiceModel);
 
     expect(fn () => $service->update($item, ['title' => 'Changed']))
-        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
     expect(fn () => $service->remove($item))
-        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
 });
 
 test('generates invoice items from order with a recurring promo and casts rel_id to string', function (): void {
@@ -860,7 +860,7 @@ test('requeue throws when item is not found', function (): void {
 
     $service = invoiceItemService($repo);
 
-    expect(fn (): InvoiceItem => $service->requeueItem(99))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): InvoiceItem => $service->requeueItem(99))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('requeue throws when item is not in a failed state', function (): void {
@@ -875,5 +875,5 @@ test('requeue throws when item is not in a failed state', function (): void {
 
     $service = invoiceItemService($repo);
 
-    expect(fn (): InvoiceItem => $service->requeueItem(7))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): InvoiceItem => $service->requeueItem(7))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });

@@ -15,7 +15,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class ProductRepository extends EntityRepository
 {

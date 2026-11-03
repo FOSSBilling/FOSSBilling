@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before the order is updated. Input is observational; listeners cannot rewrite it. */
 final class BeforeAdminOrderUpdateEvent extends Event

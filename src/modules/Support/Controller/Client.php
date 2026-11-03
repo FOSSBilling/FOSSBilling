@@ -13,7 +13,7 @@ namespace Box\Mod\Support\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -27,7 +27,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/support', 'get_tickets', [], static::class);
         $app->get('/support/ticket/:id', 'get_ticket', [], static::class);
@@ -41,14 +41,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function get_tickets(\Box_App $app): string
+    public function get_tickets(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_support_tickets');
     }
 
-    public function get_ticket(\Box_App $app, $id): string
+    public function get_ticket(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $id = (string) $id;
         if (ctype_digit($id) && strlen($id) < 30) {
@@ -61,7 +61,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_ticket', ['ticket' => $ticket]);
     }
 
-    public function get_contact_us(\Box_App $app): string|Response
+    public function get_contact_us(\FOSSBilling\Core\Http\App $app): string|Response
     {
         if ($this->di['auth']->isClientLoggedIn()) {
             return $app->redirect('support');
@@ -75,7 +75,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
      *
      * /support/contact-us/conversation/:hash -> /support/ticket/:hash
      */
-    public function get_ticket_redirect(\Box_App $app, $hash): Response
+    public function get_ticket_redirect(\FOSSBilling\Core\Http\App $app, $hash): Response
     {
         return $app->redirect('support/ticket/' . $hash);
     }
@@ -83,12 +83,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     /*
     * Support Knowledge Base.
     */
-    public function get_kb_index(\Box_App $app): string
+    public function get_kb_index(\FOSSBilling\Core\Http\App $app): string
     {
         return $app->render('mod_support_kb_index');
     }
 
-    public function get_kb_category(\Box_App $app, $category): string
+    public function get_kb_category(\FOSSBilling\Core\Http\App $app, $category): string
     {
         $api = $this->di['api_guest'];
         $data = ['slug' => $category];
@@ -97,7 +97,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_kb_category', ['category' => $model]);
     }
 
-    public function get_kb_article(\Box_App $app, $category, $slug): string
+    public function get_kb_article(\FOSSBilling\Core\Http\App $app, $category, $slug): string
     {
         $api = $this->di['api_guest'];
         $data = ['slug' => $slug];

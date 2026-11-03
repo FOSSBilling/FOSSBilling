@@ -1,12 +1,20 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "custompages",
-  "type": "mod",
   "name": "Custom Pages",
+  "version": "0.8.9",
   "description": "This module allows you to create custom pages.",
+  "author": {
+    "name": "FOSSBilling",
+    "url": "https://fossbilling.org/"
+  },
+  "license": "Apache-2.0",
   "homepage_url": "https://fossbilling.org/",
-  "author": "FOSSBilling",
   "icon_url": "icon.svg",
-  "author_url": "https://fossbilling.org/",
-  "license": "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-  "version": "1.0.0"
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

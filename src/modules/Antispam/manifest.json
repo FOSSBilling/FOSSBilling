@@ -1,13 +1,20 @@
 {
-    "id": "antispam",
-    "type": "mod",
-    "name": "Anti-Spam",
-    "description": "Used to prevent spam using reCAPTCHA, StopForumSpam.com, AbuseIPDB, disposable email domain blocking, honeypot fields, and IP blocking.",
-    "icon_url": "icon.svg",
-    "project_url": "https://docs.fossbilling.org/admin-guide/anti-spam/",
-    "homepage_url": "https://fossbilling.org/",
-    "author": "FOSSBilling",
-    "author_url": "https://fossbilling.org/",
-    "license": "Free for commercial and non-commercial use (Apache License or GPL 2)",
-    "version": "4.23.0"
+  "manifest_version": 1,
+  "type": "module",
+  "id": "antispam",
+  "name": "Anti-Spam",
+  "version": "0.8.9",
+  "description": "Used to prevent spam using reCAPTCHA, StopForumSpam.com, AbuseIPDB, disposable email domain blocking, honeypot fields, and IP blocking.",
+  "author": {
+    "name": "FOSSBilling",
+    "url": "https://fossbilling.org/"
+  },
+  "license": "Apache-2.0",
+  "homepage_url": "https://docs.fossbilling.org/admin-guide/anti-spam/",
+  "icon_url": "icon.svg",
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

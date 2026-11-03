@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before unpaid orders are removed in a batch. */
 final class BeforeAdminBatchCancelUnpaidOrdersEvent extends Event

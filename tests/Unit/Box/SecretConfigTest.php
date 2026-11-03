@@ -10,8 +10,8 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Crypt;
-use FOSSBilling\SecretConfig;
+use FOSSBilling\Core\SecretConfig;
+use FOSSBilling\Core\Security\Crypt;
 
 test('encrypts only the listed secret fields and leaves the rest readable', function (): void {
     $crypt = new Crypt();

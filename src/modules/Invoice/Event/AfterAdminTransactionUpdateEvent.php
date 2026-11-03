@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after a transaction update has been flushed. */
 final class AfterAdminTransactionUpdateEvent extends Event

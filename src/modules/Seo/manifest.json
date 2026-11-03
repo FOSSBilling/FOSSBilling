@@ -1,9 +1,20 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "seo",
-  "type": "mod",
   "name": "SEO Tools",
+  "version": "0.8.9",
   "description": "Ping your sitemap to the search engines.",
-  "icon_url": "icon.svg",
+  "author": {
+    "name": "FOSSBilling",
+    "url": "https://fossbilling.org"
+  },
   "license": "Apache-2.0",
-  "version": "0.4.0"
+  "homepage_url": "https://fossbilling.org",
+  "icon_url": "icon.svg",
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

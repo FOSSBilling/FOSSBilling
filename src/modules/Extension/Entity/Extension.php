@@ -13,7 +13,7 @@ namespace Box\Mod\Extension\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
 
 /**
  * Installed extension record.
@@ -30,13 +30,8 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 // ExtensionRepository::findOneByTypeAndName() / Service::activateExistingExtension()'s existing
 // check-then-insert assumption that at most one row exists per (type, name) pair.
 #[ORM\UniqueConstraint(name: 'type_name', columns: ['type', 'name'])]
-class Extension implements ApiArrayInterface
+class Extension implements ArrayInterface
 {
-    final public const string TYPE_MOD = 'mod';
-    final public const string TYPE_THEME = 'theme';
-    final public const string TYPE_PG = 'pg';
-    final public const string TYPE_TRANSLATION = 'translation';
-
     final public const string STATUS_INSTALLED = 'installed';
     final public const string STATUS_DEACTIVATED = 'deactivated';
 

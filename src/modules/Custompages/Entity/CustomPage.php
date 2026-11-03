@@ -13,15 +13,15 @@ namespace Box\Mod\Custompages\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Custompages\Repository\CustomPageRepository::class)]
 #[ORM\Table(name: 'custom_pages')]
 #[ORM\UniqueConstraint(name: 'uniq_custom_pages_slug', columns: ['slug'])]
 #[ORM\HasLifecycleCallbacks]
-class CustomPage implements ApiArrayInterface, TimestampInterface
+class CustomPage implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

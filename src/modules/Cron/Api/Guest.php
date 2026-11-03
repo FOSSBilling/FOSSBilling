@@ -15,16 +15,16 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cron\Api;
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Runs cron if the guest API cron endpoint is enabled via the module's settings.
      */
     public function run(array $data = []): bool
     {
-        $config = $this->getMod()->getConfig();
+        $config = $this->getModule()->getConfig();
         $allowGuest = $config['guest_cron'] ?? false;
         if (!$allowGuest) {
             throw new InformationException('You do not have permission to perform this action', [], 403);

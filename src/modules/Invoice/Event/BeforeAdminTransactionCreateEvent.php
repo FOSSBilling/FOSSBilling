@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before a transaction is created with a filtered, observational input snapshot. */
 final class BeforeAdminTransactionCreateEvent extends Event

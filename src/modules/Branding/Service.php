@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Branding;
 
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Interfaces\WidgetProviderInterface;
+use Box\Mod\Widgets\ProviderInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
-class Service implements InjectionAwareInterface, WidgetProviderInterface
+class Service implements InjectionAwareInterface, ProviderInterface
 {
     protected ?\Pimple\Container $di = null;
 

@@ -13,7 +13,7 @@ namespace Box\Mod\Client\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -56,7 +56,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/client', 'get_index', [], static::class);
         $app->get('/client/', 'get_index', [], static::class);
@@ -68,14 +68,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/client/logins', 'get_history', [], static::class);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_client_index');
     }
 
-    public function get_manage(\Box_App $app, $id): string
+    public function get_manage(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $client = $api->client_get(['id' => $id]);
@@ -83,7 +83,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_manage', ['client' => $client]);
     }
 
-    public function get_group(\Box_App $app, $id): string
+    public function get_group(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $model = $api->client_group_get(['id' => $id]);
@@ -91,14 +91,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_group', ['group' => $model]);
     }
 
-    public function get_history(\Box_App $app): string
+    public function get_history(\FOSSBilling\Core\Http\App $app): string
     {
         $api = $this->di['api_admin'];
 
         return $app->render('mod_client_login_history');
     }
 
-    public function get_login(\Box_App $app, $id): Response
+    public function get_login(\FOSSBilling\Core\Http\App $app, $id): Response
     {
         $api = $this->di['api_admin'];
         $api->client_login(['id' => $id]);
@@ -111,6 +111,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $redirect_to = '/' . trim((string) $r, '/');
         }
 
-        return $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
+        return $app->redirectUrl($this->di['url']->link($redirect_to), 301);
     }
 }

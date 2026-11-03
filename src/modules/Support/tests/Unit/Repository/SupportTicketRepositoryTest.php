@@ -60,7 +60,7 @@ function supportTicketSortEntityManager(): Doctrine\ORM\EntityManager
 {
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([__DIR__ . '/../../../Entity'], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
 
     return new Doctrine\ORM\EntityManager(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 }

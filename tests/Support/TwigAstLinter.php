@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
-use FOSSBilling\Twig\Extension\ApiExtension;
-use FOSSBilling\Twig\Extension\FOSSBillingExtension;
-use FOSSBilling\Twig\Extension\LegacyExtension;
+use FOSSBilling\Core\Twig\Extension\ApiExtension;
+use FOSSBilling\Core\Twig\Extension\FOSSBillingExtension;
+use FOSSBilling\Core\Twig\Extension\LegacyExtension;
 use Symfony\Component\Finder\Finder;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;

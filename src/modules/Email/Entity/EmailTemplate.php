@@ -13,11 +13,11 @@ namespace Box\Mod\Email\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\EmailTemplateRepository::class)]
 #[ORM\Table(name: 'email_template')]
-class EmailTemplate implements ApiArrayInterface
+class EmailTemplate implements ArrayInterface
 {
     #[ORM\Column(type: Types::STRING, length: 30, nullable: true)]
     private ?string $category = null;

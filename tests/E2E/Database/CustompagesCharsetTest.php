@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\DriverManagerFactory;
-use FOSSBilling\UpdatePatcher;
+use FOSSBilling\Core\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 beforeEach(function (): void {
@@ -26,7 +26,7 @@ beforeEach(function (): void {
     $di = new Pimple\Container();
     $di['pdo'] = $this->pdo;
     $di['dbal'] = $this->connection;
-    $this->patcher = new UpdatePatcher();
+    $this->patcher = new Patcher();
     $this->patcher->setDi($di);
     $this->runPatch = (new ReflectionMethod($this->patcher, 'patch128'))->getClosure($this->patcher);
 });

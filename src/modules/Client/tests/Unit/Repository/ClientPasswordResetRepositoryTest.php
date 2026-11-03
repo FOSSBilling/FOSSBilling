@@ -15,7 +15,7 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\Filesystem\Path;
 
 use function Tests\Helpers\container;
@@ -24,7 +24,7 @@ function passwordResetEntityManager(): EntityManager
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
     (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, ClientPasswordReset::class]));
 
@@ -55,8 +55,8 @@ test('every password change revokes all old tokens and preserves another client'
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['password'] = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $di['validator'] = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $di['password'] = Mockery::mock(FOSSBilling\Core\Security\PasswordManager::class);
+    $di['validator'] = Mockery::mock(FOSSBilling\Core\Validation\Validator::class)->shouldIgnoreMissing();
     $di['event_dispatcher'] = Mockery::mock(Symfony\Component\EventDispatcher\EventDispatcherInterface::class)->shouldIgnoreMissing();
     $profile = Mockery::mock(Box\Mod\Profile\Service::class)->shouldIgnoreMissing();
     $email = Mockery::mock(Box\Mod\Email\Service::class)->shouldIgnoreMissing();

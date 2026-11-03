@@ -1,12 +1,13 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "branding",
-  "type": "mod",
   "name": "Branding",
+  "version": "0.8.9",
   "description": "Show your support by voluntarily displaying references to FOSSBilling.",
-  "icon_url": "icon.svg",
+  "author": {"name": "FOSSBilling", "url": "https://fossbilling.org"},
+  "license": "Apache-2.0",
   "homepage_url": "https://fossbilling.org",
-  "author": "FOSSBilling",
-  "author_url": "https://fossbilling.org",
-  "license": "https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE",
-  "version": "0.0.1"
+  "icon_url": "icon.svg",
+  "requires": {"fossbilling": ">=0.8.9", "php": ">=8.3", "modules": {}}
 }

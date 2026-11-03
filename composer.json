@@ -49,6 +49,7 @@
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
+        "composer/semver": "^3.5",
         "dicebear/core": "^10.0",
         "dicebear/styles": "^10.0",
         "doctrine/dbal": "^4.5",
@@ -108,7 +109,7 @@
             "Server_": "src/library/"
         },
         "psr-4": {
-            "FOSSBilling\\": "src/library/FOSSBilling/",
+            "FOSSBilling\\Core\\": "src/core/",
             "Box\\Mod\\": "src/modules/"
         },
         "classmap": [
