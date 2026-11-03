@@ -15,6 +15,10 @@ permissions:
 jobs:
   validate:
     name: Rector & PHP-CS-Fixer
+    # Tags can't be sweep bases (a PR base must be a branch); skipping here
+    # also skips publish via the needs dependency. Branch dispatches,
+    # including release branches, still run.
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -75,7 +79,7 @@ jobs:
           | PHP version | `8.3` |
           | Rector | `${{ steps.rector.outcome }}` |
           | PHP-CS-Fixer | `${{ steps.php_cs_fixer.outcome }}` |
-          | Changes detected | `${{ steps.changes.outputs.changed || 'false' }}` |
+          | Changes detected | `${{ steps.changes.outputs.changed || 'not run' }}` |
           EOF
 
   publish:
@@ -152,9 +156,10 @@ jobs:
           echo "SWEEP_TITLE=${title}" >> "$GITHUB_ENV"
 
           # The sweep branch is fully regenerated every run, so history isn't
-          # preserved between runs — --force-with-lease still guards
-          # against clobbering a remote branch that moved unexpectedly
-          # (e.g. a reviewer pushed changes to the open PR).
+          # preserved between runs. --force-with-lease (together with the
+          # concurrency group above) only guards against concurrent runs
+          # racing each other; the branch is automation-owned, so anything
+          # pushed to it directly is overwritten by design.
           git fetch origin "+refs/heads/${head}:refs/remotes/origin/${head}" 2>/dev/null || true
           git push --force-with-lease origin "HEAD:refs/heads/${head}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -189,5 +194,5 @@ jobs:
           | Item | Value |
           | --- | --- |
           | Changes pushed | `${{ steps.push_changes.outputs.changed || 'false' }}` |
-          | Pull request | `${{ steps.create_pr.outputs.url || 'No changes' }}` |
+          | Pull request | `${{ steps.create_pr.outputs.url || 'Pull request not created' }}` |
           EOF
