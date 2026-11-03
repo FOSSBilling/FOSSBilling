@@ -271,8 +271,10 @@ test('suspendAccount fetches account info with a GET request', function (): void
 
     expect($manager->suspendAccount($account))->toBeTrue()
         ->and($requests[0]['method'])->toBe('GET')
-        ->and($requests[0]['url'])->toContain('CMD_API_SHOW_USER_CONFIG')
-        ->and(parse_url($requests[0]['url'], PHP_URL_QUERY))->toContain('user=example');
+        ->and($requests[0]['url'])->toContain('CMD_API_SHOW_USER_CONFIG');
+
+    parse_str((string) parse_url($requests[0]['url'], PHP_URL_QUERY), $query);
+    expect($query)->toBe(['user' => 'example']);
 });
 
 test('user packages are fetched with a GET request', function (): void {
@@ -287,5 +289,6 @@ test('user packages are fetched with a GET request', function (): void {
 
     expect($method->invoke($manager))->toBe(['package1', 'package2'])
         ->and($requests[0]['method'])->toBe('GET')
-        ->and($requests[0]['url'])->toContain('CMD_API_PACKAGES_USER');
+        ->and(parse_url($requests[0]['url'], PHP_URL_PATH))->toBe('/CMD_API_PACKAGES_USER')
+        ->and($requests[0]['url'])->not->toContain('?');
 });
