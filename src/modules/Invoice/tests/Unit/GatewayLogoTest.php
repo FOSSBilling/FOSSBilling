@@ -567,6 +567,14 @@ test('nested adapter folder logo takes precedence over flat and public paths', f
         ->toBe(SYSTEM_URL . 'library/Payment/Adapter/PayHere/PayHereLogo.png');
 });
 
+test('gateway logo filenames are URL-encoded', function (): void {
+    $nested = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'PayHere', 'brand#2026.png');
+    $service = gatewayLogoResolverService([$nested]);
+
+    expect($service->resolveGatewayLogo(['logo' => 'brand#2026.png'], 'PayHere'))
+        ->toBe(SYSTEM_URL . 'library/Payment/Adapter/PayHere/brand%232026.png');
+});
+
 test('gateway logo falls back through flat, public and default paths', function (array $existingKinds, ?string $gateway, string $expectedPath): void {
     $paths = gatewayLogoCandidatePaths();
     $service = gatewayLogoResolverService(array_map(static fn (string $kind): string => $paths[$kind], $existingKinds));

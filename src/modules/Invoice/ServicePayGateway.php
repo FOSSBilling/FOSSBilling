@@ -567,11 +567,12 @@ class ServicePayGateway implements InjectionAwareInterface
     public function resolveGatewayLogo(array $logoConfig, ?string $gateway = null): string
     {
         $filename = $logoConfig['logo'] ?? 'default.png';
+        $encodedFilename = implode('/', array_map('rawurlencode', explode('/', $filename)));
 
         if ($gateway !== null && $gateway !== '') {
             $nestedPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, $filename);
             if ($this->filesystem->exists($nestedPath)) {
-                return $this->di['url']->link("/library/Payment/Adapter/{$gateway}/{$filename}");
+                return $this->di['url']->link("/library/Payment/Adapter/{$gateway}/{$encodedFilename}");
             }
         }
 
@@ -579,11 +580,11 @@ class ServicePayGateway implements InjectionAwareInterface
         $publicPath = Path::join(PATH_ROOT, 'public', 'gateways', $filename);
 
         if ($this->filesystem->exists($libraryPath)) {
-            return $this->di['url']->link("/library/Payment/Adapter/{$filename}");
+            return $this->di['url']->link("/library/Payment/Adapter/{$encodedFilename}");
         }
 
         if ($this->filesystem->exists($publicPath)) {
-            return $this->di['url']->link("/public/gateways/{$filename}");
+            return $this->di['url']->link("/public/gateways/{$encodedFilename}");
         }
 
         return $this->di['url']->link('/public/gateways/default.png');
