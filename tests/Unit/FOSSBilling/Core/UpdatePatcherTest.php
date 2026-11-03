@@ -3946,6 +3946,38 @@ test('applyCorePatches heals a product_category table missing priority', functio
     });
 });
 
+test('syncPortableSchema still backfills priorities when the membership migration fails', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+        $connection->executeStatement("INSERT INTO product_category (id, title, priority) VALUES (1, 'First', NULL), (2, 'Second', NULL)");
+        $connection->executeStatement('ALTER TABLE client ADD COLUMN client_group_id BIGINT DEFAULT NULL');
+        $connection->executeStatement("CREATE TRIGGER fail_migrate BEFORE INSERT ON setting WHEN NEW.param = 'client_group_memberships_migrated' BEGIN SELECT RAISE(ABORT, 'marker failure'); END");
+
+        $logger = new Tests\Helpers\TestLogger();
+        $di = new Pimple\Container();
+        $di['em'] = $entityManager;
+        $di['logger'] = $logger;
+
+        $patcher = new Patcher();
+        $patcher->setDi($di);
+
+        // The membership copy fails, so the sync still reports the error and
+        // stores no hash - but the priority backfill must have run first.
+        expect($patcher->syncPortableSchema())->toBeNull()
+            ->and($connection->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+                ['id' => 1, 'priority' => 10],
+                ['id' => 2, 'priority' => 20],
+            ])
+            ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'schema_metadata_hash'"))->toBeFalse();
+
+        $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
+        expect($errorCalls)->not->toBe([])
+            ->and($errorCalls[0]['params'][0])->toContain('Schema sync against the configured database failed');
+    });
+});
+
 test('syncPortableSchema heals and backfills a product_category table missing priority', function (): void {
     withNonMysqlDbDriver(function (): void {
         $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);

@@ -343,8 +343,21 @@ class Patcher implements InjectionAwareInterface
                 return null;
             }
 
-            $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
-            $this->migrateClientGroupMemberships($connection);
+            $result = null;
+
+            try {
+                $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
+                $this->migrateClientGroupMemberships($connection);
+            } catch (\Throwable $e) {
+                // The structural sync and the membership copy can fail for
+                // reasons unrelated to product categories. Remember the failure
+                // but still run the priority heal below, so a failed sync never
+                // leaves the column missing or newly added priorities NULL.
+                // The error is rethrown afterward, preserving the failure
+                // behavior: logged, cooled down, and no metadata hash stored.
+                $syncError = $e;
+            }
+
             // Re-assert the column even when the comparator skipped it, before
             // the backfill below (which no-ops when the column is absent) and
             // before the metadata hash is stored.
@@ -353,6 +366,11 @@ class Patcher implements InjectionAwareInterface
             // a throw here fails the sync (recorded with cooldown for retry) instead
             // of leaving NULL priorities behind a stored hash.
             $this->backfillProductCategoryPriorities($connection);
+
+            if (isset($syncError)) {
+                throw $syncError;
+            }
+
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with
@@ -372,7 +390,7 @@ class Patcher implements InjectionAwareInterface
             return null;
         }
 
-        if ($result['applied'] !== []) {
+        if ($result !== null && $result['applied'] !== []) {
             $this->logUpdate('info', 'Synced database schema with current entity metadata.', ['statements' => $result['applied']]);
         }
 
@@ -382,7 +400,7 @@ class Patcher implements InjectionAwareInterface
         // on every request this runs would be pure noise. A single rolled-up count, with the detail
         // attached as structured context rather than the message, keeps this useful without
         // flooding the log.
-        if ($result['skipped'] !== []) {
+        if ($result !== null && $result['skipped'] !== []) {
             $this->logUpdate(
                 'info',
                 sprintf('Schema sync left %d existing structural difference(s) from entity metadata untouched.', count($result['skipped'])),
