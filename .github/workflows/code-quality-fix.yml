@@ -147,7 +147,11 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head automation/cs-fix --base main --state open --json number -q '.[0].number')
+          # Base the sweep PR on the branch the workflow ran from: scheduled
+          # runs target main, manual dispatches from release branches (e.g.
+          # 0.8-next) target that branch.
+          base="${GITHUB_REF_NAME}"
+          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head automation/cs-fix --base "$base" --state open --json number -q '.[0].number')
 
           if [ -n "$existing_pr" ]; then
             gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url -q '"url=" + .url' >> "$GITHUB_OUTPUT"
@@ -157,7 +161,7 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --title "Apply PHP Code Styling & Quality Changes" \
               --body "Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices." \
-              --base main \
+              --base "$base" \
               --head automation/cs-fix \
               --label skip-changelog)
             echo "url=$url" >> "$GITHUB_OUTPUT"
