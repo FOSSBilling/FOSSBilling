@@ -125,11 +125,13 @@ def po_escape(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _PHP_TOKEN = re.compile(
-    r"(?P<heredoc><<<\s*['\"]?(?P<htag>[A-Za-z_][A-Za-z0-9_]*)['\"]?[^\n]*\n)"
+    r"(?P<php_open><\?(?:php|=))"
+    r"|(?P<heredoc><<<\s*['\"]?(?P<htag>[A-Za-z_][A-Za-z0-9_]*)['\"]?[^\n]*\n)"
     r"|(?P<dstr>\"(?:\\.|[^\"\\])*\")"
     r"|(?P<sstr>'(?:\\.|[^'\\])*')"
     r"|(?P<linec>//[^\n]*|#[^\n]*)"
-    r"|(?P<blockc>/\*.*?\*/)",
+    r"|(?P<blockc>/\*.*?\*/)"
+    r"|(?P<php_close>\?>)",
     re.DOTALL,
 )
 
@@ -140,15 +142,27 @@ def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]]]:
     Also returns the spans of ordinary string literals and heredoc bodies so
     callers can ignore keyword-like text inside string content (which real
     xgettext never extracts).
+
+    Raw HTML outside `<?php` / `<?=` regions is copied through verbatim:
+    its quotes and `//` sequences are markup, not PHP strings or comments,
+    and must not corrupt span tracking.
     """
     out: list[str] = []
     spans: list[tuple[int, int]] = []
     pos = 0
+    in_php = False
     for match in _PHP_TOKEN.finditer(text):
         kind = match.lastgroup
         if match.start() < pos:
             # Inside an already-consumed heredoc body; it was copied verbatim.
             continue
+        if kind in ("php_open", "php_close"):
+            out.append(text[pos : match.end()])
+            pos = match.end()
+            in_php = kind == "php_open"
+            continue
+        if not in_php:
+            continue  # Markup text; copied verbatim by the trailing append.
         if kind == "heredoc":
             tag = match.group("htag")
             # Flexible heredoc (PHP 7.3+): indented marker optionally

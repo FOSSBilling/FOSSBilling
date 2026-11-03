@@ -245,6 +245,13 @@ def main() -> int:
         "// renew the thing\n$renew = 1;",
         set(),
     )
+    check(
+        "html after closed php tag does not corrupt spans",
+        "<?php $a = 1; ?>\n<p>don't</p>\n"
+        "<script>var d = new Date('2026-01-01');</script>\n"
+        "<?php throw new \\RuntimeException('Real message');",
+        {"Real message"},
+    )
     occurrences, stats = extract_for("throw new \\RuntimeException('Kept');")
     assert {occ.msgid for occ in occurrences} == {"Kept"}
     assert stats["php"] == 1
