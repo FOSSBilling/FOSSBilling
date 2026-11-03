@@ -237,6 +237,12 @@ class Patcher implements InjectionAwareInterface
         // Portable invoice settings/rename steps, shared with the drift healer.
         $this->applyPortableInvoiceMigrations();
 
+        // Heal installs missing product_category.priority independent of patch
+        // level (see ensureProductCategoryPriorityColumn()): runs on every
+        // driver before the sync below so the storefront query never hits a
+        // missing column after finalization.
+        $this->ensureProductCategoryPriorityColumn();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -339,6 +345,10 @@ class Patcher implements InjectionAwareInterface
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
             $this->migrateClientGroupMemberships($connection);
+            // Re-assert the column even when the comparator skipped it, before
+            // the backfill below (which no-ops when the column is absent) and
+            // before the metadata hash is stored.
+            $this->ensureProductCategoryPriorityColumn($connection);
             // Data backfill gated on the hash below: like the membership copy above,
             // a throw here fails the sync (recorded with cooldown for retry) instead
             // of leaving NULL priorities behind a stored hash.
@@ -2094,6 +2104,42 @@ class Patcher implements InjectionAwareInterface
         }
 
         $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
+    }
+
+    /**
+     * Re-asserts the product_category.priority column when it is missing
+     * (#4569 follow-up). Idempotent and portable: runs unconditionally from
+     * applyCorePatches() on every driver and from syncPortableSchema() before
+     * the backfill below, while Patch139 keeps the MySQL bookkeeping so
+     * already-finalized installs re-run finalization.
+     */
+    public function ensureProductCategoryPriorityColumn(?\Doctrine\DBAL\Connection $connection = null): void
+    {
+        if ($connection !== null) {
+            $schemaManager = $connection->createSchemaManager();
+            if (!$schemaManager->tablesExist(['product_category'])
+                || $schemaManager->introspectTableByUnquotedName('product_category')->hasColumn('priority')) {
+                return;
+            }
+
+            $connection->executeStatement(
+                $this->isLegacyPatchDriver()
+                    ? 'ALTER TABLE `product_category` ADD COLUMN `priority` BIGINT DEFAULT NULL'
+                    : 'ALTER TABLE product_category ADD COLUMN priority BIGINT DEFAULT NULL'
+            );
+
+            return;
+        }
+
+        if (!$this->tableExists('product_category') || $this->tableHasColumn('product_category', 'priority')) {
+            return;
+        }
+
+        $this->executeSql(
+            $this->isLegacyPatchDriver()
+                ? 'ALTER TABLE `product_category` ADD COLUMN `priority` BIGINT DEFAULT NULL'
+                : 'ALTER TABLE product_category ADD COLUMN priority BIGINT DEFAULT NULL'
+        );
     }
 
     /**

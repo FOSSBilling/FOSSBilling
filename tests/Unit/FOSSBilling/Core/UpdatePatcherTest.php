@@ -1700,6 +1700,13 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
     $pdo->shouldReceive('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || $sql === 'SELECT version FROM extension LIMIT 1'))
         ->andReturn($statement);
+    // Portable product_category.priority heal probes the table before adding
+    // the column; the minimal harness has no such table, so report it missing
+    // and let the heal no-op. Anything else (backticks, ALTER, SHOW COLUMNS)
+    // still means a legacy MySQL-only patch ran.
+    $pdo->shouldReceive('prepare')
+        ->with("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1")
+        ->andReturn($statement);
 
     return $pdo;
 }
@@ -1738,6 +1745,22 @@ function allowRetiredHookCleanupCalls(Mockery\MockInterface $pdo): void
         ->andReturn($statement);
     $pdo->shouldReceive('prepare')
         ->with("DELETE FROM extension WHERE type = 'hook'")
+        ->andReturn($statement);
+}
+
+/**
+ * Allow the portable product_category.priority heal probe in otherwise strict
+ * applyCorePatches() PDO mocks. The heal checks table existence first and
+ * no-ops when the table is absent; report it missing here.
+ */
+function allowProductCategoryPriorityHealProbe(Mockery\MockInterface $pdo): void
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->andReturnTrue();
+    $statement->shouldReceive('fetchColumn')->andReturn(false);
+
+    $pdo->shouldReceive('prepare')
+        ->with("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1")
         ->andReturn($statement);
 }
 
@@ -2073,6 +2096,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
         allowSeededModuleVersionSyncCalls($pdo);
+        allowProductCategoryPriorityHealProbe($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -2124,6 +2148,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
         allowSeededModuleVersionSyncCalls($pdo);
+        allowProductCategoryPriorityHealProbe($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -2240,6 +2265,10 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         $statement = Mockery::mock(PDOStatement::class);
         $statement->shouldReceive('execute')->andReturn(true);
         $statement->shouldReceive('fetchColumn')->andReturn((string) $latestPatchLevel);
+        // The portable category priority heal probes SHOW COLUMNS on the MySQL
+        // path; the em schema above already has the column, so report it here
+        // too and let the heal no-op.
+        $statement->shouldReceive('fetchAll')->andReturn([['Field' => 'priority']]);
 
         $pdo = Mockery::mock(PDO::class);
         $pdo->shouldReceive('prepare')->andReturn($statement);
@@ -3611,7 +3640,7 @@ test('library cleanup follows the main migrations and preserves adapter director
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 137);
     expect($patches)->toHaveKey(138)
         ->and($patches[138][1])->toBe('apply')
-        ->and($patches)->not->toHaveKey(139);
+        ->and($patches)->toHaveKey(139);
 
     $patcher = new Patcher();
     $filesystem = Mockery::mock(Filesystem::class);
@@ -3818,3 +3847,72 @@ test('hosting recovery migration adds the pending step only when missing', funct
 
     (new Patch134())->apply($patcher);
 })->with([false, true]);
+
+test('category priority heal patch follows the seeded module version sync', function (): void {
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 138);
+
+    expect($patches)->toHaveKey(139)
+        ->and($patches[139][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch139::class);
+});
+
+test('category priority heal patch delegates to the portable heal', function (): void {
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    $patcher->shouldReceive('ensureProductCategoryPriorityColumn')->once()->withNoArgs();
+
+    (new FOSSBilling\Core\Update\Patch\Patch139())->apply($patcher);
+});
+
+test('category priority heal is a no-op when the table is absent', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+
+        $patcher = new Patcher();
+        $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+        $patcher->ensureProductCategoryPriorityColumn();
+
+        expect((int) $pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'product_category'")->fetchColumn())->toBe(0);
+    });
+});
+
+test('category priority heal adds the column and backfills NULLs portably', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE product_category (id INTEGER PRIMARY KEY, title TEXT)');
+        $pdo->exec("INSERT INTO product_category (id, title) VALUES (1, 'First'), (2, 'Second')");
+
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $connection->executeStatement('CREATE TABLE product_category (id INTEGER PRIMARY KEY, title TEXT)');
+        $connection->executeStatement("INSERT INTO product_category (id, title) VALUES (1, 'First'), (2, 'Second')");
+
+        $patcher = new Patcher();
+        $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+        // PDO path adds the column when the table exists without it, and a
+        // second run is a no-op.
+        $patcher->ensureProductCategoryPriorityColumn();
+        expect((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('product_category') WHERE name = 'priority'")->fetchColumn())->toBe(1);
+
+        $patcher->ensureProductCategoryPriorityColumn();
+        expect((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('product_category') WHERE name = 'priority'")->fetchColumn())->toBe(1);
+
+        // DBAL path adds the column on the same portable SQL, then the
+        // existing backfill assigns id * 10 without touching set values.
+        $patcher->ensureProductCategoryPriorityColumn($connection);
+        expect($connection->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue();
+
+        $patcher->backfillProductCategoryPriorities($connection);
+        expect($connection->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+            ['id' => 1, 'priority' => 10],
+            ['id' => 2, 'priority' => 20],
+        ]);
+
+        $connection->executeStatement('UPDATE product_category SET priority = 99 WHERE id = 2');
+        $patcher->backfillProductCategoryPriorities($connection);
+        expect($connection->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+            ['id' => 1, 'priority' => 10],
+            ['id' => 2, 'priority' => 99],
+        ]);
+    });
+});
