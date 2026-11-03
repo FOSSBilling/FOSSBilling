@@ -35,6 +35,7 @@ SCANNED_EXTENSIONS = {".php", ".twig"}
 PHP_KEYWORDS_SINGLE = {
     "__trans",
     "Exception",
+    "BaseException",
     "InformationException",
     "Server_Exception",
     "Registrar_Exception",
