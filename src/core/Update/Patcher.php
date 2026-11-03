@@ -343,7 +343,7 @@ class Patcher implements InjectionAwareInterface
                 return null;
             }
 
-            $result = null;
+            $syncError = null;
 
             try {
                 $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
@@ -367,7 +367,7 @@ class Patcher implements InjectionAwareInterface
             // of leaving NULL priorities behind a stored hash.
             $this->backfillProductCategoryPriorities($connection);
 
-            if (isset($syncError)) {
+            if ($syncError !== null) {
                 throw $syncError;
             }
 
@@ -390,7 +390,7 @@ class Patcher implements InjectionAwareInterface
             return null;
         }
 
-        if ($result !== null && $result['applied'] !== []) {
+        if ($result['applied'] !== []) {
             $this->logUpdate('info', 'Synced database schema with current entity metadata.', ['statements' => $result['applied']]);
         }
 
@@ -400,7 +400,7 @@ class Patcher implements InjectionAwareInterface
         // on every request this runs would be pure noise. A single rolled-up count, with the detail
         // attached as structured context rather than the message, keeps this useful without
         // flooding the log.
-        if ($result !== null && $result['skipped'] !== []) {
+        if ($result['skipped'] !== []) {
             $this->logUpdate(
                 'info',
                 sprintf('Schema sync left %d existing structural difference(s) from entity metadata untouched.', count($result['skipped'])),
