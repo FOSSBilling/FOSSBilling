@@ -169,7 +169,9 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${SWEEP_HEAD}" --base "${SWEEP_BASE}" --state open --json number -q '.[0].number')
+          # --head also matches fork PRs using the same branch name, so exclude
+          # cross-repository PRs: only this repo's own sweep PR may be reused.
+          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${SWEEP_HEAD}" --base "${SWEEP_BASE}" --state open --json number,isCrossRepository -q '[.[] | select(.isCrossRepository == false)][0].number')
 
           if [ -n "$existing_pr" ]; then
             gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url -q '"url=" + .url' >> "$GITHUB_OUTPUT"
