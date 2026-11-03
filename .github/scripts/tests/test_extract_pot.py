@@ -12,16 +12,24 @@ import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from extract_pot import extract_all  # noqa: E402
+from extract_pot import Occurrence, extract_all  # noqa: E402
 
 
-def msgids_for(php: str) -> set[str]:
+def occurrences_for(php: str) -> list[Occurrence]:
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "Case.php")
         with open(path, "w", encoding="utf-8") as handle:
             handle.write("<?php\n" + php + "\n")
         occurrences, _ = extract_all(tmp)
-    return {occ.msgid for occ in occurrences}
+    return occurrences
+
+
+def msgids_for(php: str) -> set[str]:
+    return {occ.msgid for occ in occurrences_for(php)}
+
+
+def plurals_for(php: str) -> dict[str, str | None]:
+    return {occ.msgid: occ.plural for occ in occurrences_for(php)}
 
 
 def check(name: str, php: str, expected: set[str]) -> None:
@@ -118,6 +126,16 @@ def main() -> int:
         "throw new \\RuntimeException($ok ? getMessage() : 'Fallback');",
         set(),
     )
+    check(
+        "ternary in later argument ignored",
+        "throw new \\RuntimeException($code, $on ? 'Enabled' : 'Disabled');",
+        set(),
+    )
+    check(
+        "coalescing before ternary",
+        "throw new \\RuntimeException(($a ?? $b) ? 'Available' : 'Unavailable');",
+        {"Available", "Unavailable"},
+    )
     # Non-message constructors stay out.
     check("DateTime", "$d = new \\DateTime('now');", set())
     check("DateTimeImmutable", "$d = new \\DateTimeImmutable('2026-01-01');", set())
@@ -148,6 +166,30 @@ def main() -> int:
         "trans helpers intact",
         "__trans('Visible string');\n__pluralTrans('One apple', 'Many apples', $n);",
         {"Visible string", "One apple"},
+    )
+    got_plurals = plurals_for(
+        "__trans('Visible string');\n__pluralTrans('One apple', 'Many apples', $n);"
+    )
+    assert got_plurals == {"Visible string": None, "One apple": "Many apples"}, (
+        f"plural forms: {got_plurals}"
+    )
+    print("ok: plural forms recorded")
+    check(
+        "script block constructors ignored",
+        "<script>\nvar d = new Date('2026-01-01');\n</script>\n"
+        "throw new \\RuntimeException('Real message');",
+        {"Real message"},
+    )
+    check(
+        "style block ignored",
+        "<style>\n.a { content: 'x'; }\n</style>\n"
+        "throw new \\RuntimeException('Real message');",
+        {"Real message"},
+    )
+    check(
+        "script tags inside strings left alone",
+        "$x = '<script>';\nthrow new \\RuntimeException('Kept');\n$y = '</script>';",
+        {"Kept"},
     )
     check(
         "catch/instanceof/class-const not matched",

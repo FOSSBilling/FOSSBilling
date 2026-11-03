@@ -184,6 +184,29 @@ def _mask_twig_comments(text: str) -> str:
     return _TWIG_COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
 
+_SCRIPT_BLOCK = re.compile(
+    r"<(?P<tag>script|style)\b[^>]*>.*?</(?P=tag)\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _mask_embedded_blocks(masked: str, spans: list[tuple[int, int]], starts: list[int]) -> str:
+    """Blank out `<script>` / `<style>` regions (JS/CSS, never PHP messages).
+
+    Only blocks whose opener sits outside string/heredoc spans are masked,
+    so markup inside PHP strings is left alone. Newlines are preserved,
+    keeping offsets stable for callers.
+    """
+    chars = list(masked)
+    for match in _SCRIPT_BLOCK.finditer(masked):
+        if _in_spans(spans, starts, match.start()):
+            continue
+        for i in range(match.start(), match.end()):
+            if chars[i] != "\n":
+                chars[i] = " "
+    return "".join(chars)
+
+
 # ---------------------------------------------------------------------------
 # Extraction
 # ---------------------------------------------------------------------------
@@ -286,10 +309,12 @@ def _read_ternary_literals(
             depth -= 1
             if depth < 0:
                 return None
+        elif char == "," and depth == 0:
+            return None  # Next argument reached before any ternary.
         elif char == "?" and depth == 0:
             nxt = masked[i + 1 : i + 3]
             if nxt.startswith("?") or nxt.startswith("->"):
-                i += 1  # `??` / nullsafe `?->`, not the ternary.
+                i += 2  # `??` / nullsafe `?->`, not the ternary.
                 continue
             cond_end = i
             break
@@ -342,6 +367,7 @@ def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
 def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
     masked, spans = _mask_php_comments(text)
     starts = [start for start, _ in spans]
+    masked = _mask_embedded_blocks(masked, spans, starts)
     for match in _PHP_CALL.finditer(masked):
         if _in_spans(spans, starts, match.start()):
             continue
