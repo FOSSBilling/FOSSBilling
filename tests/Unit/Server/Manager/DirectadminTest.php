@@ -258,3 +258,34 @@ test('suspendAccount omits an empty suspension reason and details', function (?s
     expect($fields)->not->toHaveKey('reason')
         ->not->toHaveKey('details');
 })->with([null, '']);
+
+test('suspendAccount fetches account info with a GET request', function (): void {
+    $requests = [];
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {
+        $requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
+
+        return new MockResponse(str_contains($url, 'CMD_API_SHOW_USER_CONFIG') ? 'suspended=no' : '');
+    });
+    $manager = createDirectadminManager($httpClient);
+    $account = (new Server_Account())->setUsername('example');
+
+    expect($manager->suspendAccount($account))->toBeTrue()
+        ->and($requests[0]['method'])->toBe('GET')
+        ->and($requests[0]['url'])->toContain('CMD_API_SHOW_USER_CONFIG')
+        ->and(parse_url($requests[0]['url'], PHP_URL_QUERY))->toContain('user=example');
+});
+
+test('user packages are fetched with a GET request', function (): void {
+    $requests = [];
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {
+        $requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
+
+        return new MockResponse('error=0&list%5B%5D=package1&list%5B%5D=package2');
+    });
+    $manager = createDirectadminManager($httpClient);
+    $method = (new ReflectionClass($manager))->getMethod('getUserPackages');
+
+    expect($method->invoke($manager))->toBe(['package1', 'package2'])
+        ->and($requests[0]['method'])->toBe('GET')
+        ->and($requests[0]['url'])->toContain('CMD_API_PACKAGES_USER');
+});
