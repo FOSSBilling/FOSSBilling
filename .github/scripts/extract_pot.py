@@ -39,19 +39,23 @@ PHP_TRANS_SINGLE = {"__trans"}
 PHP_KEYWORDS_PLURAL = {"__pluralTrans"}
 
 # Constructors whose first string argument is never a user-facing message:
-# date/time and HTTP plumbing, plus exception types that take a sentinel
-# instead of a message (AuthenticationRequiredException takes an area
-# like 'admin' / 'client'; its real messages live in its constructor).
+# date/time plumbing and HTTP plumbing, plus exception types that take a
+# sentinel instead of a message (AuthenticationRequiredException takes an
+# area like 'admin' / 'client'; its real messages live in its constructor).
 NON_MESSAGE_CONSTRUCTORS = {
     "DateTime",
     "DateTimeImmutable",
     "DateTimeZone",
+    "DateInterval",
+    "DatePeriod",
     "Response",
     "RedirectResponse",
     "DOMDocument",
     "PDO",
     "AuthenticationRequiredException",
 }
+# PHP class names are case-insensitive (`new \datetime('now')` is legal).
+_NON_MESSAGE_LOWER = frozenset(name.lower() for name in NON_MESSAGE_CONSTRUCTORS)
 
 HEADER_TEMPLATE = """\
 # en_US translation of FOSSBilling Application
@@ -186,7 +190,12 @@ def _mask_twig_comments(text: str) -> str:
 
 _SCRIPT_OPEN = re.compile(r"<(?P<tag>script|style)\b[^>]*>", re.IGNORECASE)
 _SCRIPT_CLOSE = re.compile(r"</(?P<tag>script|style)\s*>", re.IGNORECASE)
-_PHP_REGION = re.compile(r"<\?(?:php|=).*?\?>", re.IGNORECASE | re.DOTALL)
+# Inline `<?php` / `<?=` regions; quoted strings are skipped while seeking
+# the closer so a `?>` inside a string doesn't end the region early.
+_PHP_REGION = re.compile(
+    r"<\?(?:php|=)(?:[^'\"]|'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\")*?\?>",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def _mask_embedded_blocks(masked: str, spans: list[tuple[int, int]], starts: list[int]) -> str:
@@ -208,6 +217,10 @@ def _mask_embedded_blocks(masked: str, spans: list[tuple[int, int]], starts: lis
         for closer in _SCRIPT_CLOSE.finditer(masked, opener.end()):
             if closer.group("tag").lower() != tag:
                 continue
+            if _in_spans(spans, starts, closer.start()) and _in_spans(
+                php_spans, php_starts, closer.start()
+            ):
+                continue  # Closer inside a PHP string, e.g. $m = '</script>'.
             for i in range(opener.start(), closer.end()):
                 if chars[i] != "\n" and not _in_spans(php_spans, php_starts, i):
                     chars[i] = " "
@@ -350,6 +363,20 @@ def _read_ternary_literals(
     return [value_a, parsed_b[0]], parsed_b[1]
 
 
+def _record_ternary(
+    occurrences: list[Occurrence],
+    stats: dict,
+    ref: str,
+    short: str | None,
+    variants: list[str],
+) -> None:
+    for variant in variants:
+        occurrences.append(Occurrence(variant, None, ref))
+    stats["php"] += 1
+    if short is not None:
+        stats["ctor_classes"][short] += 1
+
+
 def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
     """Read one quoted literal at offset.
 
@@ -390,7 +417,7 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
                 # exception) unless denylisted. The short name is what matters;
                 # a leading backslash leaves an empty first segment.
                 short = match.group("cls").split("\\")[-1]
-                if short in NON_MESSAGE_CONSTRUCTORS or short == "class":
+                if short.lower() in _NON_MESSAGE_LOWER or short == "class":
                     stats["skipped_ctor"] += 1
                     continue
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
@@ -407,12 +434,13 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
                 else _read_ternary_literals(masked, match.end(), spans, starts)
             )
             if tern is not None and re.match(r"\s*[),]", masked[tern[1] :]) is not None:
-                ref = f"{rel}:{_line_no(masked, match.start())}"
-                for variant in tern[0]:
-                    occurrences.append(Occurrence(variant, None, ref))
-                stats["php"] += 1
-                if short is not None:
-                    stats["ctor_classes"][short] += 1
+                _record_ternary(
+                    occurrences,
+                    stats,
+                    f"{rel}:{_line_no(masked, match.start())}",
+                    short,
+                    tern[0],
+                )
                 continue
             # Non-literal first argument (variable, constant, expression...).
             # Only logged for plausible message carriers; `new Finder($x)`
@@ -445,8 +473,24 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
         parsed = _read_php_literal(masked, arg_start)
         end = parsed[1] if parsed else match.end()
         # A concatenated first argument ('a ' . $b) never matches at runtime
-        # as a msgid, so skip it instead of recording the literal prefix.
+        # as a msgid, so skip it instead of recording the literal prefix —
+        # unless it opens a literal ternary ('a' === $b ? 'x' : 'y'), whose
+        # branches are message variants.
         if re.match(r"\s*[),]", masked[end:]) is None:
+            tern = (
+                None
+                if keyword in PHP_KEYWORDS_PLURAL
+                else _read_ternary_literals(masked, arg_start, spans, starts)
+            )
+            if tern is not None and re.match(r"\s*[),]", masked[tern[1] :]) is not None:
+                _record_ternary(
+                    occurrences,
+                    stats,
+                    f"{rel}:{_line_no(masked, match.start())}",
+                    short,
+                    tern[0],
+                )
+                continue
             stats["skipped_dynamic"] += 1
             snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
             stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} concat {snippet}")

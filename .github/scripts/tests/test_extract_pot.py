@@ -127,6 +127,11 @@ def main() -> int:
         set(),
     )
     check(
+        "yoda literal-first ternary",
+        "throw new \\RuntimeException('admin' === $area ? 'Admin area' : 'Client area');",
+        {"Admin area", "Client area"},
+    )
+    check(
         "ternary in later argument ignored",
         "throw new \\RuntimeException($code, $on ? 'Enabled' : 'Disabled');",
         set(),
@@ -139,6 +144,8 @@ def main() -> int:
     # Non-message constructors stay out.
     check("DateTime", "$d = new \\DateTime('now');", set())
     check("DateTimeImmutable", "$d = new \\DateTimeImmutable('2026-01-01');", set())
+    check("DateInterval", "$i = new \\DateInterval('P1D');", set())
+    check("lowercase datetime", "$d = new \\datetime('now');", set())
     check(
         "Response",
         "$r = new Response('<html>hi</html>');",
@@ -203,6 +210,17 @@ def main() -> int:
         "var d = new Date('2026-01-01');</script>\n"
         "throw new \\RuntimeException('Real message');",
         {"Save changes", "Real message"},
+    )
+    check(
+        "php region survives a closer inside its strings",
+        "<script><?php $x = 'a ?> b'; $y = __trans('Real'); ?></script>\n"
+        "throw new \\RuntimeException('Kept');",
+        {"Real", "Kept"},
+    )
+    check(
+        "closer inside a php string does not end masking",
+        "<script><?php $m = '</script>'; ?>var w = new Widget('JS-only');</script>",
+        set(),
     )
     check(
         "ternary over match expression",
