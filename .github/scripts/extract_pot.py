@@ -210,7 +210,9 @@ _CLASS_NAME = r"(?:\\)?(?:[A-Za-z_][\w]*\\)*[A-Za-z_][\w]*"
 # reject method/static calls (->, ::), variables and longer identifiers
 # (e.g. the `new` in `$renew`).
 _PHP_CALL = re.compile(
-    rf"(?:(?<![\w$])new\s+(?P<cls>{_CLASS_NAME})|(?<![\w$>:\\])(?:\\)?(?:[A-Za-z_][\w]*\\)*(?P<kw>{_TRANS_ALTS})|(?<![\w$>])(?P<chain>parent|self|static)::\s*__construct)\s*\(\s*"
+    rf"(?:(?<![\w$])new\s+(?P<cls>{_CLASS_NAME})"
+    rf"|(?<![\w$>:\\])(?:\\)?(?:[A-Za-z_][\w]*\\)*(?P<kw>{_TRANS_ALTS})"
+    rf"|(?<![\w$>])(?P<chain>parent|self|static)::\s*__construct)\s*\(\s*"
     rf"(?P<arg>{_PHP_STR})?"
     rf"(?P<rest>\s*,)?",
     re.DOTALL,
@@ -635,7 +637,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"skipped non-literals: {stats['skipped_dynamic']}, skipped defs: {stats['skipped_defs']}", file=sys.stderr)
     print(f"skipped non-message ctors: {stats['skipped_ctor']}", file=sys.stderr)
     if stats["ctor_classes"]:
-        top = ", ".join(f"{name}x{count}" for name, count in stats["ctor_classes"].most_common(20))
+        top = ", ".join(f"{name}x{hits}" for name, hits in stats["ctor_classes"].most_common(20))
         print(f"constructed classes: {top}", file=sys.stderr)
     for item in stats["skipped"]:
         print(f"  skip: {item}", file=sys.stderr)
