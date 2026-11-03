@@ -171,8 +171,10 @@ jobs:
         run: |
           # The REST head filter takes owner:branch, so the query returns at most
           # the repo's own sweep PR — fork PRs reusing the branch name, and
-          # gh pr list's default page size, can't hide it.
-          existing_pr=$(gh api "repos/${GITHUB_REPOSITORY}/pulls?state=open&base=${SWEEP_BASE}&head=${GITHUB_REPOSITORY%%/*}:${SWEEP_HEAD}" --jq '.[0].number // empty')
+          # gh pr list's default page size, can't hide it. Fields go through
+          # -f so branch names with URL-significant characters (e.g. &) are
+          # encoded; --method GET is required because -f implies POST.
+          existing_pr=$(gh api --method GET "repos/${GITHUB_REPOSITORY}/pulls" -f state=open -f "base=${SWEEP_BASE}" -f "head=${GITHUB_REPOSITORY%%/*}:${SWEEP_HEAD}" --jq '.[0].number // empty')
 
           if [ -n "$existing_pr" ]; then
             gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url -q '"url=" + .url' >> "$GITHUB_OUTPUT"
