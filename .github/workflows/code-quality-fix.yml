@@ -134,12 +134,29 @@ jobs:
           git -c user.name="${APP_SLUG}[bot]" -c user.email="${APP_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com" \
             commit -m "Apply PHP Code Styling & Quality Changes"
 
-          # automation/cs-fix is fully regenerated every run, so history isn't
+          # One sweep branch per base branch: scheduled runs on the default
+          # branch use automation/cs-fix, dispatches from release branches
+          # (e.g. 0.8-next) get automation/cs-fix-0.8-next, so sweeps from
+          # different branches can't clobber each other.
+          base="${GITHUB_REF_NAME}"
+          if [ "$base" = "${{ github.event.repository.default_branch }}" ]; then
+            head="automation/cs-fix"
+            title="Apply PHP Code Styling & Quality Changes"
+          else
+            safe_base=$(printf '%s' "$base" | tr '/' '-')
+            head="automation/cs-fix-${safe_base}"
+            title="Apply PHP Code Styling & Quality Changes (${base})"
+          fi
+          echo "SWEEP_BASE=${base}" >> "$GITHUB_ENV"
+          echo "SWEEP_HEAD=${head}" >> "$GITHUB_ENV"
+          echo "SWEEP_TITLE=${title}" >> "$GITHUB_ENV"
+
+          # The sweep branch is fully regenerated every run, so history isn't
           # preserved between runs — --force-with-lease still guards
           # against clobbering a remote branch that moved unexpectedly
           # (e.g. a reviewer pushed changes to the open PR).
-          git fetch origin '+refs/heads/automation/cs-fix:refs/remotes/origin/automation/cs-fix' 2>/dev/null || true
-          git push --force-with-lease origin HEAD:refs/heads/automation/cs-fix
+          git fetch origin "+refs/heads/${head}:refs/remotes/origin/${head}" 2>/dev/null || true
+          git push --force-with-lease origin "HEAD:refs/heads/${head}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Create or Update Pull Request
@@ -147,11 +164,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          # Base the sweep PR on the branch the workflow ran from: scheduled
-          # runs target main, manual dispatches from release branches (e.g.
-          # 0.8-next) target that branch.
-          base="${GITHUB_REF_NAME}"
-          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head automation/cs-fix --base "$base" --state open --json number -q '.[0].number')
+          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${SWEEP_HEAD}" --base "${SWEEP_BASE}" --state open --json number -q '.[0].number')
 
           if [ -n "$existing_pr" ]; then
             gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url -q '"url=" + .url' >> "$GITHUB_OUTPUT"
@@ -159,10 +172,10 @@ jobs:
           else
             url=$(gh pr create \
               --repo "$GITHUB_REPOSITORY" \
-              --title "Apply PHP Code Styling & Quality Changes" \
+              --title "${SWEEP_TITLE}" \
               --body "Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices." \
-              --base "$base" \
-              --head automation/cs-fix \
+              --base "${SWEEP_BASE}" \
+              --head "${SWEEP_HEAD}" \
               --label skip-changelog)
             echo "url=$url" >> "$GITHUB_OUTPUT"
           fi
