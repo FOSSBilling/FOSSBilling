@@ -174,6 +174,7 @@ test('active gateways use the imported local image and fall back if it is missin
     $service->getPayGatewayRepository()->shouldReceive('findEnabledOrderedByIdDesc')->andReturn([$gateway]);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'default.png'))->andReturn(false);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'default.png'))->andReturn(true);
+    $filesystem->shouldReceive('exists')->with(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'Custom', 'custom.png'))->andReturn(false);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'custom.png'))->andReturn(false);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'custom.png'))->andReturn(false);
 
@@ -534,3 +535,61 @@ test('gateway images above four million pixels are rejected before decoding or c
         ->toThrow(FOSSBilling\Exception::class, 'no more than 4 million pixels');
     expect($gateway->getName())->toBe('Original')->and($gateway->getCustomLogo())->toBe('original.png');
 });
+
+function gatewayLogoResolverService(array $existingPaths): ServicePayGateway
+{
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')
+        ->andReturnUsing(static fn (string $path): bool => in_array($path, $existingPaths, true));
+    $service = new ServicePayGateway($filesystem);
+    $di = container();
+    // setDi() prefers $di['filesystem'] over the constructor value.
+    $di['filesystem'] = $filesystem;
+    $tools = Mockery::mock(FOSSBilling\Tools::class);
+    $tools->shouldReceive('url')
+        ->andReturnUsing(static fn (string $path): string => 'https://billing.example/' . ltrim($path, '/'));
+    $di['tools'] = $tools;
+    $service->setDi($di);
+
+    return $service;
+}
+
+function gatewayLogoCandidatePaths(): array
+{
+    return [
+        'nested' => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'PayHere', 'PayHereLogo.png'),
+        'flat' => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'PayHereLogo.png'),
+        'public' => Path::join(PATH_ROOT, 'public', 'gateways', 'PayHereLogo.png'),
+    ];
+}
+
+test('nested adapter folder logo takes precedence over flat and public paths', function (): void {
+    $paths = gatewayLogoCandidatePaths();
+    $service = gatewayLogoResolverService(array_values($paths));
+
+    expect($service->resolveGatewayLogo(['logo' => 'PayHereLogo.png'], 'PayHere'))
+        ->toBe('https://billing.example/library/Payment/Adapter/PayHere/PayHereLogo.png');
+});
+
+test('gateway logo falls back through flat, public and default paths', function (array $existingKinds, ?string $gateway, string $expected): void {
+    $paths = gatewayLogoCandidatePaths();
+    $service = gatewayLogoResolverService(array_map(static fn (string $kind): string => $paths[$kind], $existingKinds));
+
+    expect($service->resolveGatewayLogo(['logo' => 'PayHereLogo.png'], $gateway))->toBe($expected);
+})->with([
+    'flat wins when nested is missing' => [
+        ['flat', 'public'], 'PayHere', 'https://billing.example/library/Payment/Adapter/PayHereLogo.png',
+    ],
+    'public wins when adapter paths are missing' => [
+        ['public'], 'PayHere', 'https://billing.example/public/gateways/PayHereLogo.png',
+    ],
+    'defaults when nothing exists' => [
+        [], 'PayHere', 'https://billing.example/public/gateways/default.png',
+    ],
+    'keeps legacy behavior without a gateway code' => [
+        ['flat', 'public'], null, 'https://billing.example/library/Payment/Adapter/PayHereLogo.png',
+    ],
+    'defaults without a gateway code when nothing exists' => [
+        [], null, 'https://billing.example/public/gateways/default.png',
+    ],
+]);

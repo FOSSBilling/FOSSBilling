@@ -386,12 +386,12 @@ class ServicePayGateway implements InjectionAwareInterface
 
                 if (!empty($config['logo'])) {
                     $gateway['logo'] = $config['logo'];
-                    $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo']);
+                    $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo'], $gtw->getGateway());
                 } else {
                     // Templates read gtw.logo.logo/height/width unconditionally,
                     // so always provide the key even when the adapter ships no logo.
                     $gateway['logo'] = [
-                        'logo' => $this->resolveGatewayLogo([]),
+                        'logo' => $this->resolveGatewayLogo([], $gtw->getGateway()),
                         'height' => '50px',
                         'width' => '50px',
                     ];
@@ -565,9 +565,16 @@ class ServicePayGateway implements InjectionAwareInterface
         }
     }
 
-    public function resolveGatewayLogo(array $logoConfig): string
+    public function resolveGatewayLogo(array $logoConfig, ?string $gateway = null): string
     {
         $filename = $logoConfig['logo'] ?? 'default.png';
+
+        if ($gateway !== null && $gateway !== '') {
+            $nestedPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, $filename);
+            if ($this->filesystem->exists($nestedPath)) {
+                return $this->di['tools']->url("/library/Payment/Adapter/{$gateway}/{$filename}");
+            }
+        }
 
         $libraryPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $filename);
         $publicPath = Path::join(PATH_ROOT, 'public', 'gateways', $filename);
