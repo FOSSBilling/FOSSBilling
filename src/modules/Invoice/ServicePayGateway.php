@@ -567,7 +567,7 @@ class ServicePayGateway implements InjectionAwareInterface
     public function resolveGatewayLogo(array $logoConfig, ?string $gateway = null): string
     {
         $filename = $logoConfig['logo'] ?? 'default.png';
-        $encodedFilename = implode('/', array_map('rawurlencode', explode('/', $filename)));
+        $encodedFilename = implode('/', array_map(rawurlencode(...), explode('/', $filename)));
 
         if ($gateway !== null && $gateway !== '') {
             $nestedPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, $filename);
