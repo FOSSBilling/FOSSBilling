@@ -15,21 +15,22 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from extract_pot import Occurrence, extract_all  # noqa: E402
 
 
-def occurrences_for(php: str) -> list[Occurrence]:
+def extract_for(php: str) -> tuple[list[Occurrence], dict]:
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "Case.php")
         with open(path, "w", encoding="utf-8") as handle:
             handle.write("<?php\n" + php + "\n")
-        occurrences, _ = extract_all(tmp)
-    return occurrences
+        return extract_all(tmp)
 
 
 def msgids_for(php: str) -> set[str]:
-    return {occ.msgid for occ in occurrences_for(php)}
+    occurrences, _ = extract_for(php)
+    return {occ.msgid for occ in occurrences}
 
 
 def plurals_for(php: str) -> dict[str, str | None]:
-    return {occ.msgid: occ.plural for occ in occurrences_for(php)}
+    occurrences, _ = extract_for(php)
+    return {occ.msgid: occ.plural for occ in occurrences}
 
 
 def check(name: str, php: str, expected: set[str]) -> None:
@@ -244,6 +245,17 @@ def main() -> int:
         "// renew the thing\n$renew = 1;",
         set(),
     )
+    occurrences, stats = extract_for("throw new \\RuntimeException('Kept');")
+    assert {occ.msgid for occ in occurrences} == {"Kept"}
+    assert stats["php"] == 1
+    assert stats["ctor_classes"]["RuntimeException"] == 1
+    assert stats["skipped_ctor"] == 0
+    print("ok: extract stats recorded")
+    occurrences, stats = extract_for("$d = new \\DateTime('now');")
+    assert [occ.msgid for occ in occurrences] == []
+    assert stats["php"] == 0
+    assert stats["skipped_ctor"] == 1
+    print("ok: denylist skip stats recorded")
     print("all fixture tests passed")
     return 0
 
