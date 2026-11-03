@@ -378,7 +378,7 @@ class Service implements InjectionAwareInterface
         \Box\Mod\Servicedomain\Entity\ServiceDomain::class => \Box\Mod\Product\Service::DOMAIN,
     ];
 
-    public function getServiceOrder($service)
+    public function getServiceOrder($service): ?object
     {
         foreach (self::SERVICE_ENTITY_TYPE_MAP as $entityClass => $serviceType) {
             if ($service instanceof $entityClass) {
