@@ -361,11 +361,19 @@ class Patcher implements InjectionAwareInterface
             // Re-assert the column even when the comparator skipped it, before
             // the backfill below (which no-ops when the column is absent) and
             // before the metadata hash is stored.
-            $this->ensureProductCategoryPriorityColumn($connection);
-            // Data backfill gated on the hash below: like the membership copy above,
-            // a throw here fails the sync (recorded with cooldown for retry) instead
-            // of leaving NULL priorities behind a stored hash.
-            $this->backfillProductCategoryPriorities($connection);
+            try {
+                $this->ensureProductCategoryPriorityColumn($connection);
+                // Data backfill gated on the hash below: like the membership copy above,
+                // a throw here fails the sync (recorded with cooldown for retry) instead
+                // of leaving NULL priorities behind a stored hash.
+                $this->backfillProductCategoryPriorities($connection);
+            } catch (\Throwable $repairError) {
+                if ($syncError !== null) {
+                    $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $syncError->getMessage());
+                }
+
+                throw $repairError;
+            }
 
             if ($syncError !== null) {
                 throw $syncError;

@@ -3952,6 +3952,9 @@ test('syncPortableSchema still backfills priorities when the membership migratio
         $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
         FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
         $connection->executeStatement("INSERT INTO product_category (id, title, priority) VALUES (1, 'First', NULL), (2, 'Second', NULL)");
+        // Start with the column missing so the test also proves the heal runs
+        // on the failure path, not just the backfill.
+        $connection->executeStatement('ALTER TABLE product_category DROP COLUMN priority');
         $connection->executeStatement('ALTER TABLE client ADD COLUMN client_group_id BIGINT DEFAULT NULL');
         $connection->executeStatement("CREATE TRIGGER fail_migrate BEFORE INSERT ON setting WHEN NEW.param = 'client_group_memberships_migrated' BEGIN SELECT RAISE(ABORT, 'marker failure'); END");
 
@@ -3964,8 +3967,10 @@ test('syncPortableSchema still backfills priorities when the membership migratio
         $patcher->setDi($di);
 
         // The membership copy fails, so the sync still reports the error and
-        // stores no hash - but the priority backfill must have run first.
+        // stores no hash - but the priority heal and backfill must have run
+        // first, even with the column initially missing.
         expect($patcher->syncPortableSchema())->toBeNull()
+            ->and($connection->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue()
             ->and($connection->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
                 ['id' => 1, 'priority' => 10],
                 ['id' => 2, 'priority' => 20],
@@ -3975,6 +3980,36 @@ test('syncPortableSchema still backfills priorities when the membership migratio
         $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
         expect($errorCalls)->not->toBe([])
             ->and($errorCalls[0]['params'][0])->toContain('Schema sync against the configured database failed');
+    });
+});
+
+test('syncPortableSchema logs the saved sync error when the heal also fails', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+        $connection->executeStatement("INSERT INTO product_category (id, title, priority) VALUES (1, 'First', NULL)");
+        $connection->executeStatement('ALTER TABLE client ADD COLUMN client_group_id BIGINT DEFAULT NULL');
+        $connection->executeStatement("CREATE TRIGGER fail_migrate BEFORE INSERT ON setting WHEN NEW.param = 'client_group_memberships_migrated' BEGIN SELECT RAISE(ABORT, 'marker failure'); END");
+        $connection->executeStatement('CREATE TRIGGER fail_heal BEFORE UPDATE ON product_category BEGIN SELECT RAISE(ABORT, \'heal failure\'); END');
+
+        $logger = new Tests\Helpers\TestLogger();
+        $di = new Pimple\Container();
+        $di['em'] = $entityManager;
+        $di['logger'] = $logger;
+
+        $patcher = new Patcher();
+        $patcher->setDi($di);
+
+        // Both failures are reported: the saved sync error first, then the
+        // repair error that replaced it - and no hash is stored.
+        expect($patcher->syncPortableSchema())->toBeNull()
+            ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'schema_metadata_hash'"))->toBeFalse();
+
+        $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
+        expect($errorCalls)->toHaveCount(2)
+            ->and($errorCalls[0]['params'][0])->toContain('marker failure')
+            ->and($errorCalls[1]['params'][0])->toContain('heal failure');
     });
 });
 
