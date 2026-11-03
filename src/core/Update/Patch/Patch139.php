@@ -24,5 +24,13 @@ class Patch139 implements PatchInterface
         // finalization for already-finalized installs. Guarded rerun no-op;
         // non-MySQL drivers get the column from the portable sync.
         $patcher->ensureProductCategoryPriorityColumn();
+
+        // Backfill in the same patch so a healed column never stays NULL when
+        // the portable sync does not run afterward. Idempotent: only NULL
+        // priorities are touched, administrator-set values are preserved.
+        $di = $patcher->getDi();
+        if ($di instanceof \Pimple\Container && $di->offsetExists('dbal')) {
+            $patcher->backfillProductCategoryPriorities($di['dbal']);
+        }
     }
 }

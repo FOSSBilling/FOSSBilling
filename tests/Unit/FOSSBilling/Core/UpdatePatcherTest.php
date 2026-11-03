@@ -3858,6 +3858,8 @@ test('category priority heal patch follows the seeded module version sync', func
 test('category priority heal patch delegates to the portable heal', function (): void {
     $patcher = Mockery::mock(Patcher::class)->makePartial();
     $patcher->shouldReceive('ensureProductCategoryPriorityColumn')->once()->withNoArgs();
+    // No dbal service: the backfill has nothing to run against.
+    $patcher->setDi(new Pimple\Container());
 
     (new FOSSBilling\Core\Update\Patch\Patch139())->apply($patcher);
 });
@@ -3876,43 +3878,94 @@ test('category priority heal is a no-op when the table is absent', function (): 
     });
 });
 
-test('category priority heal adds the column and backfills NULLs portably', function (): void {
+test('category priority heal adds the column on a DBAL connection', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE product_category (id INTEGER PRIMARY KEY, title TEXT)');
+    expect($connection->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeFalse();
+
+    (new Patcher())->ensureProductCategoryPriorityColumn($connection);
+
+    expect($connection->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue();
+});
+
+test('category priority heal patch adds the column and backfills NULLs', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $path = Path::join(sys_get_temp_dir(), 'fossbilling-priority-heal-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $pdo = new PDO('sqlite:' . $path);
+            $pdo->exec('CREATE TABLE product_category (id INTEGER PRIMARY KEY, title TEXT)');
+            $pdo->exec("INSERT INTO product_category (id, title) VALUES (1, 'First'), (2, 'Second')");
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['dbal'] = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+
+            $patcher = new Patcher();
+            $patcher->setDi($di);
+            (new FOSSBilling\Core\Update\Patch\Patch139())->apply($patcher);
+
+            expect($di['dbal']->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue()
+                ->and($di['dbal']->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+                    ['id' => 1, 'priority' => 10],
+                    ['id' => 2, 'priority' => 20],
+                ]);
+
+            // Idempotent rerun preserves administrator-set values.
+            $pdo->exec('UPDATE product_category SET priority = 99 WHERE id = 2');
+            (new FOSSBilling\Core\Update\Patch\Patch139())->apply($patcher);
+            expect($di['dbal']->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+                ['id' => 1, 'priority' => 10],
+                ['id' => 2, 'priority' => 99],
+            ]);
+        } finally {
+            (new Filesystem())->remove($path);
+        }
+    });
+});
+
+test('applyCorePatches heals a product_category table missing priority', function (): void {
     withNonMysqlDbDriver(function (): void {
         $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT, meta_value TEXT)');
+        $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT, version TEXT)');
         $pdo->exec('CREATE TABLE product_category (id INTEGER PRIMARY KEY, title TEXT)');
-        $pdo->exec("INSERT INTO product_category (id, title) VALUES (1, 'First'), (2, 'Second')");
+        $pdo->exec("INSERT INTO product_category (id, title) VALUES (1, 'First')");
+        expect((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('product_category') WHERE name = 'priority'")->fetchColumn())->toBe(0);
 
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new Patcher();
+        $patcher->setDi($di);
+        $patcher->applyCorePatches(force: true);
+
+        expect((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('product_category') WHERE name = 'priority'")->fetchColumn())->toBe(1);
+    });
+});
+
+test('syncPortableSchema heals and backfills a product_category table missing priority', function (): void {
+    withNonMysqlDbDriver(function (): void {
         $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+        $connection->executeStatement('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
         $connection->executeStatement('CREATE TABLE product_category (id INTEGER PRIMARY KEY, title TEXT)');
         $connection->executeStatement("INSERT INTO product_category (id, title) VALUES (1, 'First'), (2, 'Second')");
 
+        $di = new Pimple\Container();
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
         $patcher = new Patcher();
-        $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+        $patcher->setDi($di);
+        $patcher->syncPortableSchema();
 
-        // PDO path adds the column when the table exists without it, and a
-        // second run is a no-op.
-        $patcher->ensureProductCategoryPriorityColumn();
-        expect((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('product_category') WHERE name = 'priority'")->fetchColumn())->toBe(1);
-
-        $patcher->ensureProductCategoryPriorityColumn();
-        expect((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('product_category') WHERE name = 'priority'")->fetchColumn())->toBe(1);
-
-        // DBAL path adds the column on the same portable SQL, then the
-        // existing backfill assigns id * 10 without touching set values.
-        $patcher->ensureProductCategoryPriorityColumn($connection);
-        expect($connection->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue();
-
-        $patcher->backfillProductCategoryPriorities($connection);
-        expect($connection->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
-            ['id' => 1, 'priority' => 10],
-            ['id' => 2, 'priority' => 20],
-        ]);
-
-        $connection->executeStatement('UPDATE product_category SET priority = 99 WHERE id = 2');
-        $patcher->backfillProductCategoryPriorities($connection);
-        expect($connection->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
-            ['id' => 1, 'priority' => 10],
-            ['id' => 2, 'priority' => 99],
-        ]);
+        expect($connection->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue()
+            ->and($connection->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+                ['id' => 1, 'priority' => 10],
+                ['id' => 2, 'priority' => 20],
+            ]);
     });
 });
