@@ -2013,6 +2013,7 @@ test('retired hook cleanup uses both portable delete statements without paramete
 test('migrateExtensionTypeValues drops a legacy duplicate that shadows a module row', function (): void {
     $pdo = new PDO('sqlite::memory:');
     $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT, version TEXT)');
+    $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, meta_key TEXT)');
     $pdo->exec('CREATE UNIQUE INDEX type_name ON extension (type, name)');
     $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES
         ('mod', 'news', 'installed', '1.0.0'),

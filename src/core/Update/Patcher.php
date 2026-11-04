@@ -1352,27 +1352,34 @@ class Patcher implements InjectionAwareInterface
      */
     public function migrateExtensionTypeValues(): void
     {
-        $module = ExtensionType::Module->value;
+        try {
+            $module = ExtensionType::Module->value;
 
-        $stale = $this->fetchOne(
-            'SELECT 1 FROM extension WHERE type = :old UNION ALL SELECT 1 FROM extension_meta WHERE rel_type = :old LIMIT 1',
-            ['old' => 'mod']
-        );
-        if ($stale === false) {
-            return;
+            $stale = $this->fetchOne(
+                'SELECT 1 FROM extension WHERE type = :old UNION ALL SELECT 1 FROM extension_meta WHERE rel_type = :old LIMIT 1',
+                ['old' => 'mod']
+            );
+            if ($stale === false) {
+                return;
+            }
+
+            // A post-migration 'module' row can share a name with a legacy 'mod'
+            // row (e.g. the module was reinstalled from the directory before this
+            // ran). Renaming would violate the type_name unique key, so the stale
+            // legacy duplicate is dropped and the canonical row retained.
+            $this->executeSql(
+                'DELETE FROM extension WHERE type = :old AND name IN (SELECT name FROM (SELECT name FROM extension WHERE type = :new) AS canonical)',
+                ['old' => 'mod', 'new' => $module]
+            );
+
+            $this->executeSql('UPDATE extension SET type = :new WHERE type = :old', ['new' => $module, 'old' => 'mod']);
+            $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
+        } catch (\Throwable $e) {
+            // Runs from healSchemaDrift() on every request, which must not throw
+            // (an unreachable database simply reports "nothing to do"). The next
+            // request retries; the migration is idempotent.
+            $this->logUpdate('warning', 'Extension type migration skipped: ' . $e->getMessage());
         }
-
-        // A post-migration 'module' row can share a name with a legacy 'mod'
-        // row (e.g. the module was reinstalled from the directory before this
-        // ran). Renaming would violate the type_name unique key, so the stale
-        // legacy duplicate is dropped and the canonical row retained.
-        $this->executeSql(
-            'DELETE FROM extension WHERE type = :old AND name IN (SELECT name FROM (SELECT name FROM extension WHERE type = :new) AS canonical)',
-            ['old' => 'mod', 'new' => $module]
-        );
-
-        $this->executeSql('UPDATE extension SET type = :new WHERE type = :old', ['new' => $module, 'old' => 'mod']);
-        $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
     }
 
     /**
