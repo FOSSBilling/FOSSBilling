@@ -129,7 +129,13 @@ def main() -> int:
     )
     check(
         "comment close tag ends php mode",
-        "<?php $a = 1; // note ?>\n<button onclick=\"new Widget('Preview')\">x</button>\n"
+        "<?php $a = 1; // note ?>\n<p>new Widget('Preview')</p>\n"
+        "<?php throw new \\RuntimeException('Real message');",
+        {"Real message"},
+    )
+    check(
+        "hash comment close tag ends php mode",
+        "<?php $a = 1; # note ?>\n<p>new Widget('Preview')</p>\n"
         "<?php throw new \\RuntimeException('Real message');",
         {"Real message"},
     )
@@ -137,6 +143,16 @@ def main() -> int:
         "ternary with dynamic branch skipped",
         "throw new \\RuntimeException($ok ? getMessage() : 'Fallback');",
         set(),
+    )
+    check(
+        "arrow function body ternary ignored",
+        "throw new \\RuntimeException(fn($x) => $x ? 'Enabled' : 'Disabled');",
+        set(),
+    )
+    check(
+        "ternary with heredoc condition",
+        "throw new \\RuntimeException(($t = <<<HTML\napples, oranges? no\nHTML) ? 'Present' : 'Absent');",
+        {"Present", "Absent"},
     )
     check(
         "yoda literal-first ternary",

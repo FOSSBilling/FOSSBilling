@@ -188,10 +188,11 @@ def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]], list[tupl
             continue
         if kind == "heredoc":
             tag = match.group("htag")
-            # Flexible heredoc (PHP 7.3+): indented marker optionally
-            # followed by `;` or `,` when used inside an expression.
+            # Flexible heredoc (PHP 7.3+): the indented marker ends at the
+            # identifier boundary and the expression may continue on the
+            # same line (`)`, `,`, `.`, ...), e.g. `foo(<<<HTML ... HTML)`.
             end = re.search(
-                rf"^[ \t]*{re.escape(tag)}[ \t]*[;,]?[ \t]*$",
+                rf"^[ \t]*{re.escape(tag)}(?![A-Za-z0-9_])",
                 text[match.end():],
                 re.MULTILINE,
             )
@@ -218,6 +219,14 @@ def _in_spans(spans: list[tuple[int, int]], starts: list[int], offset: int) -> b
     """Whether offset falls inside a string/heredoc span (spans are sorted)."""
     idx = bisect.bisect_right(starts, offset) - 1
     return idx >= 0 and spans[idx][0] <= offset < spans[idx][1]
+
+
+def _span_end(spans: list[tuple[int, int]], starts: list[int], offset: int) -> int | None:
+    """End of the span containing offset, or None when outside spans."""
+    idx = bisect.bisect_right(starts, offset) - 1
+    if idx >= 0 and spans[idx][0] <= offset < spans[idx][1]:
+        return spans[idx][1]
+    return None
 
 
 _TWIG_COMMENT = re.compile(r"\{#.*?#\}", re.DOTALL)
@@ -300,22 +309,13 @@ def _balanced_close(
     depth = 0
     i = start
     while i < len(masked):
+        end = _span_end(spans, starts, i)
+        if end is not None:
+            i = end  # String/heredoc content is inert text; skip over it.
+            continue
         char = masked[i]
         if char in ("'", '"'):
-            parsed = _read_php_literal(masked, i)
-            if parsed is None:
-                return None
-            idx = bisect.bisect_right(starts, i) - 1
-            if (
-                idx >= 0
-                and spans[idx][0] <= i < spans[idx][1]
-                and parsed[1] > spans[idx][1]
-            ):
-                return None
-            i = parsed[1]
-            continue
-        if _in_spans(spans, starts, i):
-            return None
+            return None  # Unbalanced quote outside any span: invalid PHP.
         if char in "([{":
             depth += 1
         elif char in ")]}":
@@ -333,7 +333,7 @@ def _read_ternary_literals(
 ) -> tuple[list[str], int] | None:
     """Parse `cond ? 'a' : 'b'` at offset (strict: both branches literals).
 
-    The condition may hold balanced brackets and quoted strings; anything
+    The condition may hold balanced brackets, strings and heredocs; anything
     else bails out with None. Returns ([branch_a, branch_b], end_offset).
     """
     # A fully parenthesized argument (`($c ? 'x' : 'y')`) nests the ternary
@@ -351,24 +351,13 @@ def _read_ternary_literals(
     depth = 0
     cond_end: int | None = None
     while i < len(masked):
+        end = _span_end(spans, starts, i)
+        if end is not None:
+            i = end  # String/heredoc content is inert text; skip over it.
+            continue
         char = masked[i]
         if char in ("'", '"'):
-            parsed = _read_php_literal(masked, i)
-            if parsed is None:
-                return None
-            # The literal must not cross its containing string/heredoc
-            # span (a stray quote inside heredoc text parses garbage).
-            idx = bisect.bisect_right(starts, i) - 1
-            if (
-                idx >= 0
-                and spans[idx][0] <= i < spans[idx][1]
-                and parsed[1] > spans[idx][1]
-            ):
-                return None
-            i = parsed[1]
-            continue
-        if _in_spans(spans, starts, i):
-            return None
+            return None  # Unbalanced quote outside any span: invalid PHP.
         if char in "([{":
             depth += 1
         elif char in ")]}":
@@ -377,6 +366,8 @@ def _read_ternary_literals(
                 return None
         elif char == "," and depth == 0:
             return None  # Next argument reached before any ternary.
+        elif char == "=" and depth == 0 and masked[i + 1 : i + 2] == ">":
+            return None  # Arrow function: its body is code, not our message.
         elif char == "?" and depth == 0:
             nxt = masked[i + 1 : i + 3]
             if nxt.startswith("?") or nxt.startswith("->"):
