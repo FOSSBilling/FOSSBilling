@@ -1342,15 +1342,35 @@ class Patcher implements InjectionAwareInterface
     /**
      * Rename the extension type discriminator from 'mod' to 'module'.
      *
-     * Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and
-     * idempotent, so it runs on every platform rather than as a numbered
-     * MySQL-only patch, and may safely rerun. Must run before anything reads
-     * the extension table. The 'mod' literals are pre-migration stored
+     * Portable (plain UPDATE/DELETE ... WHERE, no MySQL-specific syntax) and
+     * idempotent. Runs from applyCorePatches() on every platform rather than
+     * as a numbered MySQL-only patch, and again from
+     * {@see Finalization::healSchemaDrift()} so code-only (same-version)
+     * deploys convert too. A probe SELECT makes both call sites a no-op once
+     * every row is canonical. The 'mod' literals are pre-migration stored
      * values, not references to the current type.
      */
     public function migrateExtensionTypeValues(): void
     {
         $module = ExtensionType::Module->value;
+
+        $stale = $this->fetchOne(
+            'SELECT 1 FROM extension WHERE type = :old UNION ALL SELECT 1 FROM extension_meta WHERE rel_type = :old LIMIT 1',
+            ['old' => 'mod']
+        );
+        if ($stale === false) {
+            return;
+        }
+
+        // A post-migration 'module' row can share a name with a legacy 'mod'
+        // row (e.g. the module was reinstalled from the directory before this
+        // ran). Renaming would violate the type_name unique key, so the stale
+        // legacy duplicate is dropped and the canonical row retained.
+        $this->executeSql(
+            'DELETE FROM extension WHERE type = :old AND name IN (SELECT name FROM (SELECT name FROM extension WHERE type = :new) AS canonical)',
+            ['old' => 'mod', 'new' => $module]
+        );
+
         $this->executeSql('UPDATE extension SET type = :new WHERE type = :old', ['new' => $module, 'old' => 'mod']);
         $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
     }

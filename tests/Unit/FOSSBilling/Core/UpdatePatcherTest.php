@@ -1694,6 +1694,8 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
             || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
             || str_starts_with($sql, 'UPDATE extension SET version')
+            || str_starts_with($sql, 'SELECT 1 FROM extension WHERE type')
+            || str_starts_with($sql, 'DELETE FROM extension WHERE type = :old')
             || $sql === 'UPDATE extension SET type = :new WHERE type = :old'
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
@@ -1741,7 +1743,14 @@ function allowExtensionTypeMigrationCalls(Mockery\MockInterface $pdo): void
 {
     $statement = Mockery::mock(PDOStatement::class);
     $statement->shouldReceive('execute')->andReturnTrue();
+    $statement->shouldReceive('fetchColumn')->andReturn(false);
 
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT 1 FROM extension WHERE type')))
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'DELETE FROM extension WHERE type = :old')))
+        ->andReturn($statement);
     $pdo->shouldReceive('prepare')
         ->with('UPDATE extension SET type = :new WHERE type = :old')
         ->andReturn($statement);
@@ -1999,6 +2008,49 @@ test('retired hook cleanup uses both portable delete statements without paramete
         $patcher->setDi($di);
         (new ReflectionMethod($patcher, 'removeRetiredHookData'))->invoke($patcher);
     });
+});
+
+test('migrateExtensionTypeValues drops a legacy duplicate that shadows a module row', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT, version TEXT)');
+    $pdo->exec('CREATE UNIQUE INDEX type_name ON extension (type, name)');
+    $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES
+        ('mod', 'news', 'installed', '1.0.0'),
+        ('module', 'news', 'installed', '0.8.9'),
+        ('mod', 'custom', 'installed', '2.0.0')");
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+    (new ReflectionMethod($patcher, 'migrateExtensionTypeValues'))->invoke($patcher);
+
+    // The canonical row survives untouched; the legacy shadow is dropped; the
+    // rest of the legacy rows are renamed rather than deleted.
+    expect($pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod'")->fetchColumn())->toBe(0)
+        ->and($pdo->query("SELECT version FROM extension WHERE type = 'module' AND name = 'news'")->fetchColumn())->toBe('0.8.9')
+        ->and($pdo->query("SELECT COUNT(*) FROM extension WHERE name = 'news'")->fetchColumn())->toBe(1)
+        ->and($pdo->query("SELECT type FROM extension WHERE name = 'custom'")->fetchColumn())->toBe('module');
+});
+
+test('healSchemaDrift converts legacy type rows on a same-version deploy', function (): void {
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    $patcher->shouldReceive('migrateExtensionTypeValues')->once();
+    $patcher->shouldReceive('syncSeededModuleVersions')->once();
+    $patcher->shouldReceive('isSchemaOutOfSync')->once()->andReturnFalse();
+
+    $finalization = new class($patcher) extends FOSSBilling\Core\Update\Finalization {
+        public function __construct(private readonly Patcher $stubPatcher)
+        {
+            parent::__construct();
+        }
+
+        protected function createPatcher(): Patcher
+        {
+            return $this->stubPatcher;
+        }
+    };
+
+    $finalization->healSchemaDrift();
 });
 
 test('migrateExtensionTypeValues converts legacy mod rows to module and is idempotent', function (): void {
