@@ -37,15 +37,10 @@ enum ExtensionType: string
      * Map a legacy type discriminator to its canonical value.
      *
      * Pre-migration callers, stored rows and third-party integrations may
-     * still use 'mod'; everything else passes through unchanged, including
-     * already-canonical values and unknown strings (which fail validation
-     * downstream where applicable).
+     * still use 'mod'; every other value passes through unchanged.
      */
     public static function normalize(string $type): string
     {
-        return match ($type) {
-            'mod' => self::Module->value,
-            default => $type,
-        };
+        return $type === 'mod' ? self::Module->value : $type;
     }
 }

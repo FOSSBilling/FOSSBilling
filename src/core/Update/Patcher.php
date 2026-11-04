@@ -1340,20 +1340,6 @@ class Patcher implements InjectionAwareInterface
     }
 
     /**
-     * The manifest backfill aligned every in-repo manifest version with the
-     * release version, but existing installs still carry whatever content.sql
-     * seeded when they were installed. Sync those seeded rows with the version
-     * stamped into the on-disk manifests: a row still carrying a historically
-     * seeded version gets the installed files' version, while a row that
-     * already matches its manifest (e.g. a directory install that happens to
-     * share a legacy version number) is left untouched by the update itself.
-     * Portable (plain file reads and SQL) and idempotent: a single probe
-     * SELECT finds nothing to do once synced, so this is cheap enough to run
-     * outside versioned updates (see healSchemaDrift()). Never throws: a
-     * display-only version sync must not break requests or updates, it only
-     * logs and skips.
-     */
-    /**
      * Rename the extension type discriminator from 'mod' to 'module'.
      *
      * Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and
@@ -1369,6 +1355,20 @@ class Patcher implements InjectionAwareInterface
         $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
     }
 
+    /**
+     * The manifest backfill aligned every in-repo manifest version with the
+     * release version, but existing installs still carry whatever content.sql
+     * seeded when they were installed. Sync those seeded rows with the version
+     * stamped into the on-disk manifests: a row still carrying a historically
+     * seeded version gets the installed files' version, while a row that
+     * already matches its manifest (e.g. a directory install that happens to
+     * share a legacy version number) is left untouched by the update itself.
+     * Portable (plain file reads and SQL) and idempotent: a single probe
+     * SELECT finds nothing to do once synced, so this is cheap enough to run
+     * outside versioned updates (see healSchemaDrift()). Never throws: a
+     * display-only version sync must not break requests or updates, it only
+     * logs and skips.
+     */
     public function syncSeededModuleVersions(string $type = ExtensionType::Module->value): void
     {
         try {
