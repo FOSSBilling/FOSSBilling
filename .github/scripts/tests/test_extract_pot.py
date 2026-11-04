@@ -23,6 +23,15 @@ def extract_for(php: str) -> tuple[list[Occurrence], dict]:
         return extract_all(tmp)
 
 
+def extract_raw(content: str) -> tuple[list[Occurrence], dict]:
+    """extract_for without the prepended PHP tag: markup-first files."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "Case.php")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(content)
+        return extract_all(tmp)
+
+
 def msgids_for(php: str) -> set[str]:
     occurrences, _ = extract_for(php)
     return {occ.msgid for occ in occurrences}
@@ -180,6 +189,7 @@ def main() -> int:
         set(),
     )
     check("DOMDocument", "$d = new \\DOMDocument('1.0', 'UTF-8');", set())
+    check("ReflectionClass", "$r = new \\ReflectionClass('Acme\\\\User');", set())
     check("anonymous class", "$o = new class('not a message') extends Foo {};", set())
     check("uppercase anonymous class", "$o = new CLASS('not a message');", set())
     # Existing guards are preserved.
@@ -269,6 +279,12 @@ def main() -> int:
         "$y = __trans('Real'); ?></script>",
         {"Real"},
     )
+    occurrences, _ = extract_raw(
+        "<button onclick=\"new Widget('Preview')\">\n"
+        "<?php throw new \\RuntimeException('Kept');"
+    )
+    assert {occ.msgid for occ in occurrences} == {"Kept"}
+    print("ok: markup before first php tag never records")
     occurrences, stats = extract_for("throw new \\RuntimeException('Kept');")
     assert {occ.msgid for occ in occurrences} == {"Kept"}
     assert stats["php"] == 1

@@ -52,6 +52,8 @@ NON_MESSAGE_CONSTRUCTORS = {
     "RedirectResponse",
     "DOMDocument",
     "PDO",
+    # Reflection by name takes identifiers, never messages.
+    "ReflectionClass",
     "AuthenticationRequiredException",
 }
 # PHP class names are case-insensitive (`new \datetime('now')` is legal).
