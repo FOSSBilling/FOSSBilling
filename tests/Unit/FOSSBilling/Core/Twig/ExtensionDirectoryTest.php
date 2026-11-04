@@ -21,11 +21,11 @@ function extensionDirectoryAdmin(array $extension): object
 test('extension directory renders optional icons under strict variables', function (array $iconFields): void {
     $extension = array_replace([
         'id' => 'example',
-        'type' => 'mod',
+        'type' => 'module',
         'name' => 'Example Extension',
         'description' => 'An extension without a required icon.',
-        'author' => ['id' => 'Example Author'],
-        'releases' => [['tag' => '1.0.0']],
+        'author' => ['name' => 'Example Author'],
+        'version' => '1.0.0',
     ], $iconFields);
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/admin/html/partial_extensions.html.twig',
@@ -33,7 +33,7 @@ test('extension directory renders optional icons under strict variables', functi
     );
 
     expect($html)->toContain('Example Extension')->toContain('1.0.0');
-    if (!empty($iconFields['icon_url'])) {
+    if (($iconFields['icon_url'] ?? '') === 'https://example.com/icon.svg') {
         expect($html)->toContain('src="https://example.com/icon.svg"')->not->toContain('href="#settings"');
     } else {
         expect($html)->toContain('href="#settings"')->not->toContain('<img');
@@ -42,6 +42,7 @@ test('extension directory renders optional icons under strict variables', functi
     'omitted icon' => [[]],
     'null icon' => [['icon_url' => null]],
     'empty icon' => [['icon_url' => '']],
+    'package-relative icon' => [['icon_url' => 'icon.svg']],
     'provided icon' => [['icon_url' => 'https://example.com/icon.svg']],
 ]);
 
@@ -58,14 +59,14 @@ test('extension directory degrades gracefully with sparse directory metadata', f
         expect($html)->not->toContain($needle);
     }
 })->with([
-    'registrar author shape without URL' => [
+    'package author without URL' => [
         [
             'id' => 'example-registrar',
             'type' => 'domain-registrar',
             'name' => 'Example Registrar Add-on',
             'description' => 'Registrar add-on.',
             'author' => ['type' => 'registrar', 'name' => 'Example Registrar', 'id' => 'Example Registrar'],
-            'releases' => [['tag' => '1.0.0']],
+            'version' => '1.0.0',
         ],
         ['Example Registrar Add-on', 'by Example Registrar', '1.0.0', 'href="#settings"'],
         ['<img'],
@@ -73,10 +74,10 @@ test('extension directory degrades gracefully with sparse directory metadata', f
     'missing author falls back to unknown' => [
         [
             'id' => 'example',
-            'type' => 'mod',
+            'type' => 'module',
             'name' => 'Example Extension',
             'description' => 'An extension.',
-            'releases' => [['tag' => '1.0.0']],
+            'version' => '1.0.0',
         ],
         ['Example Extension', 'by Unknown', 'href="#settings"'],
         ['<img'],
@@ -84,31 +85,31 @@ test('extension directory degrades gracefully with sparse directory metadata', f
     'author name used when id is missing' => [
         [
             'id' => 'example',
-            'type' => 'mod',
+            'type' => 'module',
             'name' => 'Example Extension',
             'description' => 'An extension.',
             'author' => ['name' => 'Example Author'],
-            'releases' => [['tag' => '1.0.0']],
+            'version' => '1.0.0',
         ],
         ['by Example Author', 'href="#settings"'],
         ['<img'],
     ],
-    'empty releases and missing description' => [
+    'empty version and missing description' => [
         [
             'id' => 'example',
-            'type' => 'mod',
+            'type' => 'module',
             'name' => 'Example Extension',
-            'author' => ['id' => 'Example Author'],
-            'releases' => [],
+            'author' => ['name' => 'Example Author'],
+            'version' => '',
         ],
         ['Example Extension', 'by Example Author', 'href="#settings"'],
         ['<img'],
     ],
-    'missing releases, id, and type' => [
+    'missing version, id, and type' => [
         [
             'name' => 'Example Extension',
             'description' => 'An extension.',
-            'author' => ['id' => 'Example Author'],
+            'author' => ['name' => 'Example Author'],
         ],
         ['Example Extension', 'by Example Author', 'href="#settings"'],
         ['<img'],

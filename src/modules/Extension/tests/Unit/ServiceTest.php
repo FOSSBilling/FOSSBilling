@@ -1696,3 +1696,36 @@ test('downloadAndExtract preserves ordinary package files and directories', func
         (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
     }
 });
+
+test('downloadAndExtract rejects an excluded FOSSBilling version before downloading', function (): void {
+    $branch = FOSSBilling\Core\System\Config::getProperty('update_branch', 'release');
+    FOSSBilling\Core\System\Config::setProperty('update_branch', 'release', false);
+
+    try {
+        $requests = [];
+        $di = container();
+        $di['cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
+        $di['http_client'] = new Symfony\Component\HttpClient\MockHttpClient(function ($method, $url) use (&$requests) {
+            $requests[] = $url;
+            expect($url)->toBe('https://api.fossbilling.net/extensions/v2/extensions/example');
+
+            return new Symfony\Component\HttpClient\Response\MockResponse(json_encode(['result' => [
+                'id' => 'example', 'name' => 'Example', 'author' => ['name' => 'Author'],
+                'releases' => [['tag' => '1.0.0', 'download_url' => 'https://example.test/archive.zip', 'requires' => ['fossbilling' => '>=0.0.0 !=0.0.1']]],
+            ]], JSON_THROW_ON_ERROR));
+        });
+        $manager = new FOSSBilling\Core\Remote\ExtensionManager();
+        $manager->setDi($di);
+        $di['extension_manager'] = $manager;
+        $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+        $staff->shouldReceive('checkPermissionsAndThrowException')->once();
+        $di['mod_service'] = $di->protect(fn () => $staff);
+        $service = new Service();
+        $service->setDi($di);
+        expect(fn () => $service->downloadAndExtract('module', 'example'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This extension is not compatible with your version of FOSSBilling.');
+        expect($requests)->toHaveCount(1);
+    } finally {
+        FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
+    }
+});
