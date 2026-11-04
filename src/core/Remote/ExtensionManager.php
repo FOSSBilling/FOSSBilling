@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Core\Remote;
 
+use Composer\Semver\Semver;
+use Composer\Semver\VersionParser;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\BaseException as Exception;
@@ -23,12 +25,16 @@ class ExtensionManager implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    private string $apiUrl = 'https://api.fossbilling.net/extensions/v1/';
+    private string $apiUrl = 'https://api.fossbilling.net/extensions/v2/';
 
     /**
      * How long a fetched directory response is served as-is.
      */
     private const int DIRECTORY_CACHE_TTL = 3600;
+
+    private const int DIRECTORY_MAX_PAGES = 100;
+    private const int DIRECTORY_MAX_ITEMS = 10_000;
+    private const float DIRECTORY_REQUEST_BUDGET = 10.0;
 
     /**
      * How long the last-known-good response is kept as a fallback for directory outages.
@@ -57,7 +63,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The extension details
      *
-     * @example https://api.fossbilling.net/extensions/v1/Example An example of the API response
+     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response
      *
      * @throws Exception
      */
@@ -65,7 +71,7 @@ class ExtensionManager implements InjectionAwareInterface
     {
         $this->assertValidIdentifier($id);
 
-        return $this->makeRequest($id, [], function (array $manifest): void {
+        return $this->makeRequest('extensions/' . strtolower($id), [], function (array $manifest): void {
             if (empty($manifest)) {
                 throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
             }
@@ -81,7 +87,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of releases of the extension
      *
-     * @example https://api.fossbilling.net/extensions/v1/Example An example of the API response (the "releases" array)
+     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response (the "releases" array)
      *
      * @throws Exception
      */
@@ -103,7 +109,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The latest release of the extension
      *
-     * @example https://api.fossbilling.net/extensions/v1/Example An example of the API response (the first element in the "releases" array)
+     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response (the first element in the "releases" array)
      *
      * @throws Exception
      */
@@ -122,22 +128,23 @@ class ExtensionManager implements InjectionAwareInterface
     /**
      * Fetch the list of extensions from the FOSSBilling extension directory.
      *
-     * @param string $type The extension type (e.g. mod) - optional
+     * @param string $type The extension type (e.g. module) - optional
      *
      * @return array The list of extensions
      *
-     * @example https://api.fossbilling.net/extensions/v1/list An example of the API response
+     * @example https://api.fossbilling.net/extensions/v2/extensions An example of the API response
      */
     public function getExtensionList(?string $type = null): array
     {
         $params = [];
 
         if (!empty($type)) {
-            // The v1 directory still filters on the legacy 'mod' value.
-            $params['type'] = $type === ExtensionType::Module->value ? 'mod' : $type;
+            $params['type'] = ExtensionType::normalize($type);
         }
 
-        return $this->makeRequest('list', $params, function (array $extensions): void {
+        $params['limit'] = 100;
+
+        return $this->makeRequest('extensions', $params, function (array $extensions): void {
             foreach ($extensions as $extension) {
                 $this->validateMetadata($extension);
             }
@@ -165,7 +172,7 @@ class ExtensionManager implements InjectionAwareInterface
             throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
         }
 
-        $url = $author['URL'] ?? null;
+        $url = $author['url'] ?? null;
         if ($url === null || $url === '') {
             return;
         }
@@ -186,15 +193,25 @@ class ExtensionManager implements InjectionAwareInterface
      */
     public function isExtensionCompatible(string $extension): bool
     {
-        $latest = $this->getLatestExtensionRelease($extension);
+        return $this->isReleaseCompatible($this->getLatestExtensionRelease($extension));
+    }
 
-        if (Config::getProperty('update_branch', 'release') === 'release') {
-            if (version_compare(Version::VERSION, $latest['min_fossbilling_version'], '<')) {
-                return false;
-            }
+    /** Check the exact release selected for download without fetching it again. */
+    public function isReleaseCompatible(array $release): bool
+    {
+        $constraint = $release['requires']['fossbilling'] ?? null;
+        if (!is_string($constraint) || trim($constraint) === '') {
+            return false;
         }
 
-        return true;
+        try {
+            (new VersionParser())->parseConstraints($constraint);
+
+            return Config::getProperty('update_branch', 'release') !== 'release'
+                || Semver::satisfies(Version::VERSION, $constraint);
+        } catch (\UnexpectedValueException) {
+            return false;
+        }
     }
 
     /**
@@ -219,10 +236,9 @@ class ExtensionManager implements InjectionAwareInterface
     public function makeRequest(string $endpoint, array $params = [], ?callable $validateResult = null): array
     {
         $url = $this->apiUrl . $endpoint;
-        $query = [...$params, 'fossbilling_version' => Version::VERSION];
-        // The installed version is part of the key: the directory filters results by it,
-        // so a response cached before an upgrade must not be served afterwards.
-        $key = 'extension-manager-' . hash('xxh3', $endpoint . serialize($query));
+        $query = $params;
+        // Keep v2 metadata separate from cached v1 projections.
+        $key = 'extension-manager-v2-' . hash('xxh3', $endpoint . serialize($query));
         $cache = $this->di['cache'];
 
         $fresh = $cache->getItem($key);
@@ -246,7 +262,7 @@ class ExtensionManager implements InjectionAwareInterface
         }
 
         try {
-            $result = $this->fetchDirectoryResult($url, $query);
+            $result = $this->fetchDirectoryResult($url, $query, $endpoint === 'extensions');
             if ($validateResult !== null) {
                 $validateResult($result);
             }
@@ -283,24 +299,63 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @throws \Exception when the request fails or the response is unusable
      */
-    private function fetchDirectoryResult(string $url, array $query): array
+    private function fetchDirectoryResult(string $url, array $query, bool $paginate): array
     {
-        $response = $this->di['http_client']->request('GET', $url, [
-            'timeout' => 5,
-            'query' => $query,
-        ]);
-
-        $json = $response->toArray();
-
-        if (isset($json['error']) && is_array($json['error'])) {
-            throw new Exception((string) ($json['error']['message'] ?? 'Unknown error'), null, 746);
+        $items = [];
+        $seenCursors = [];
+        $deadline = $this->getMonotonicTime() + self::DIRECTORY_REQUEST_BUDGET;
+        $pages = 0;
+        while (true) {
+            $remaining = $deadline - $this->getMonotonicTime();
+            // cURL truncates durations to milliseconds; zero would disable its timeout.
+            if ($remaining < 0.001 || ($paginate && $pages >= self::DIRECTORY_MAX_PAGES)) {
+                throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
+            }
+            ++$pages;
+            $response = $this->di['http_client']->request('GET', $url, [
+                'timeout' => min(5, $remaining),
+                'max_duration' => $remaining,
+                'query' => $query,
+            ]);
+            $json = $response->toArray();
+            if ($this->getMonotonicTime() >= $deadline) {
+                throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
+            }
+            if (isset($json['error']) && is_array($json['error'])) {
+                throw new Exception((string) ($json['error']['message'] ?? 'Unknown error'), null, 746);
+            }
+            if (!isset($json['result']) || !is_array($json['result'])) {
+                throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+            }
+            if (!$paginate) {
+                return $json['result'];
+            }
+            $pagination = $json['pagination'] ?? null;
+            if (!array_is_list($json['result']) || !is_array($pagination)
+                || !is_bool($pagination['has_more'] ?? null)
+                || !array_key_exists('next_cursor', $pagination)) {
+                throw new Exception('Invalid pagination from the FOSSBilling extension directory.', null, 746);
+            }
+            if (count($json['result']) > self::DIRECTORY_MAX_ITEMS - count($items)) {
+                throw new Exception('Extension directory refresh exceeded its item limit.', null, 746);
+            }
+            $items = [...$items, ...$json['result']];
+            if (!$pagination['has_more']) {
+                return $items;
+            }
+            $cursor = $pagination['next_cursor'];
+            if (!is_string($cursor) || $cursor === '' || isset($seenCursors[$cursor])) {
+                throw new Exception('Invalid pagination from the FOSSBilling extension directory.', null, 746);
+            }
+            $seenCursors[$cursor] = true;
+            $query['cursor'] = $cursor;
         }
+    }
 
-        if (!isset($json['result']) || !is_array($json['result'])) {
-            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
-        }
-
-        return $json['result'];
+    /** Monotonic seconds, kept overridable for deterministic deadline tests. */
+    protected function getMonotonicTime(): float
+    {
+        return hrtime(true) / 1e9;
     }
 
     /**

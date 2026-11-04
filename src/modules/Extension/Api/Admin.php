@@ -46,8 +46,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
-     * Get list of extensions from extensions.fossbilling.org
-     * which can be installed on current version of FOSSBilling.
+     * Get the available extensions from extensions.fossbilling.org.
+     * Release compatibility is checked before download.
      *
      * @return array - list of extensions
      */

@@ -543,8 +543,8 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('Couldn\'t find a valid download URL for the extension.');
         }
 
-        if (!$this->di['extension_manager']->isExtensionCompatible($id)) {
-            throw new \FOSSBilling\Core\Exception\InformationException('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
+        if (!$this->di['extension_manager']->isReleaseCompatible($latest)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('This extension is not compatible with your version of FOSSBilling.');
         }
 
         $extractedPath = Path::join(PATH_CACHE, bin2hex(random_bytes(16)));

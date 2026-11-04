@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use FOSSBilling\Core\Remote\ExtensionManager;
+use FOSSBilling\Core\System\Version;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -16,9 +17,9 @@ use Twig\TwigFunction;
 
 function catalogCacheKey(string $endpoint, array $params = []): string
 {
-    $query = [...$params, 'fossbilling_version' => FOSSBilling\Core\System\Version::VERSION];
+    $query = $params;
 
-    return 'extension-manager-' . hash('xxh3', $endpoint . serialize($query));
+    return 'extension-manager-v2-' . hash('xxh3', $endpoint . serialize($query));
 }
 
 function catalogManager(array $result, bool $cached = false): ExtensionManager
@@ -26,12 +27,12 @@ function catalogManager(array $result, bool $cached = false): ExtensionManager
     $di = new Pimple\Container();
     $cache = new ArrayAdapter();
     if ($cached) {
-        foreach (['list', 'Example'] as $endpoint) {
-            $cache->get(catalogCacheKey($endpoint), static fn () => $result);
+        foreach (['extensions', 'extensions/example'] as $endpoint) {
+            $cache->get(catalogCacheKey($endpoint, $endpoint === 'extensions' ? ['limit' => 100] : []), static fn () => $result);
         }
     }
     $di['cache'] = $cache;
-    $di['http_client'] = new MockHttpClient(new MockResponse(json_encode(['result' => $result], JSON_THROW_ON_ERROR)));
+    $di['http_client'] = new MockHttpClient(new MockResponse(json_encode(['result' => $result, 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR)));
     $manager = new ExtensionManager();
     $manager->setDi($di);
 
@@ -41,8 +42,8 @@ function catalogManager(array $result, bool $cached = false): ExtensionManager
 function catalogEntry(): array
 {
     return [
-        'id' => 'Example', 'name' => 'Example', 'type' => 'mod',
-        'author' => ['id' => 'Publisher', 'URL' => 'https://example.com/author'],
+        'id' => 'Example', 'name' => 'Example', 'type' => 'module',
+        'author' => ['name' => 'Publisher', 'url' => 'https://example.com/author'],
         'description' => 'Description', 'icon_url' => null,
         'releases' => [['tag' => '1.0.0']],
     ];
@@ -51,7 +52,7 @@ function catalogEntry(): array
 it('rejects unsafe directory metadata including cached responses', function (string $field, mixed $value, bool $cached): void {
     $entry = catalogEntry();
     if ($field === 'URL') {
-        $entry['author']['URL'] = $value;
+        $entry['author']['url'] = $value;
     } else {
         $entry[$field] = $value;
     }
@@ -75,7 +76,7 @@ it('preserves valid catalog metadata and optional author links', function (?stri
     $entry = catalogEntry();
     $entry['id'] = 'Example_2-en';
     $entry['name'] = "Publisher's \"Example\" <module>";
-    $entry['author']['URL'] = $url;
+    $entry['author']['url'] = $url;
     expect(catalogManager([$entry])->getExtensionList())->toBe([$entry]);
     expect(catalogManager($entry)->getExtension('Example'))->toBe($entry);
 })->with(['https://example.com/author?a=1&b=2', 'http://example.com/author', 'HTTPS://example.com/author', '', null]);
@@ -124,7 +125,7 @@ it('rejects invalid requested identifiers before issuing a directory request', f
 
 it('preserves empty lists and metadata with no author URL', function (): void {
     $entry = catalogEntry();
-    unset($entry['author']['URL']);
+    unset($entry['author']['url']);
     expect(catalogManager([$entry])->getExtensionList())->toBe([$entry]);
     expect(catalogManager([])->getExtensionList())->toBe([]);
 });
@@ -142,7 +143,7 @@ it('serves stale directory data when a refresh fails', function (): void {
             throw new TransportException('Could not resolve host.');
         }
 
-        return new MockResponse(json_encode(['result' => [$entry]], JSON_THROW_ON_ERROR));
+        return new MockResponse(json_encode(['result' => [$entry], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
     });
     $handler = new TestHandler();
     $di['logger'] = new Logger('test', [$handler]);
@@ -152,7 +153,7 @@ it('serves stale directory data when a refresh fails', function (): void {
     expect($manager->getExtensionList())->toBe([$entry]);
 
     // The fresh entry expires, then the directory goes down.
-    $cache->deleteItem(catalogCacheKey('list'));
+    $cache->deleteItem(catalogCacheKey('extensions', ['limit' => 100]));
     $healthy = false;
 
     expect($manager->getExtensionList())->toBe([$entry]);
@@ -168,8 +169,8 @@ it('serves stale directory data when a refresh fails', function (): void {
 it('treats a corrupted fresh entry as a miss and falls back to stale data', function (): void {
     $entry = catalogEntry();
     $cache = new ArrayAdapter();
-    $cache->get(catalogCacheKey('list'), static fn () => 'corrupted');
-    $stale = $cache->getItem(catalogCacheKey('list') . '-stale');
+    $cache->get(catalogCacheKey('extensions', ['limit' => 100]), static fn () => 'corrupted');
+    $stale = $cache->getItem(catalogCacheKey('extensions', ['limit' => 100]) . '-stale');
     $stale->set([$entry]);
     $stale->expiresAfter(3600);
     $cache->save($stale);
@@ -188,7 +189,7 @@ it('treats a corrupted fresh entry as a miss and falls back to stale data', func
 it('keeps serving the last-known-good copy when a refresh returns invalid metadata', function (): void {
     $entry = catalogEntry();
     $cache = new ArrayAdapter();
-    $stale = $cache->getItem(catalogCacheKey('list') . '-stale');
+    $stale = $cache->getItem(catalogCacheKey('extensions', ['limit' => 100]) . '-stale');
     $stale->set([$entry]);
     $stale->expiresAfter(3600);
     $cache->save($stale);
@@ -201,7 +202,7 @@ it('keeps serving the last-known-good copy when a refresh returns invalid metada
     $di['http_client'] = new MockHttpClient(function () use (&$requests, $invalid) {
         ++$requests;
 
-        return new MockResponse(json_encode(['result' => [$invalid]], JSON_THROW_ON_ERROR));
+        return new MockResponse(json_encode(['result' => [$invalid], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
     });
     $manager = new ExtensionManager();
     $manager->setDi($di);
@@ -227,13 +228,13 @@ it('never serves stale data that fails validation', function (): void {
             throw new TransportException('Connection refused.');
         }
 
-        return new MockResponse(json_encode(['result' => [$invalid]], JSON_THROW_ON_ERROR));
+        return new MockResponse(json_encode(['result' => [$invalid], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
     });
     $manager = new ExtensionManager();
     $manager->setDi($di);
 
     // A direct call without validation caches the invalid payload in both slots.
-    expect($manager->makeRequest('list'))->toBe([$invalid]);
+    expect($manager->makeRequest('extensions', ['limit' => 100]))->toBe([$invalid]);
 
     // The validating reader still rejects it everywhere instead of serving it.
     $healthy = false;
@@ -257,7 +258,7 @@ it('throws without retrying while the directory is marked unavailable', function
     expect($requests)->toBe(1);
 });
 
-it('ignores directory cache entries stored without a version scope', function (): void {
+it('ignores cached v1 projections', function (): void {
     $staleEntry = catalogEntry();
     $staleEntry['name'] = 'Stale Name';
     $cache = new ArrayAdapter();
@@ -270,7 +271,7 @@ it('ignores directory cache entries stored without a version scope', function ()
     $di['http_client'] = new MockHttpClient(function () use (&$requests, $entry) {
         ++$requests;
 
-        return new MockResponse(json_encode(['result' => [$entry]], JSON_THROW_ON_ERROR));
+        return new MockResponse(json_encode(['result' => [$entry], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
     });
     $manager = new ExtensionManager();
     $manager->setDi($di);
@@ -278,3 +279,197 @@ it('ignores directory cache entries stored without a version scope', function ()
     expect($manager->getExtensionList())->toBe([$entry]);
     expect($requests)->toBe(1);
 });
+
+it('evaluates complete release constraints before installation', function (?string $constraint, bool $expected): void {
+    $branch = FOSSBilling\Core\System\Config::getProperty('update_branch', 'release');
+    FOSSBilling\Core\System\Config::setProperty('update_branch', 'release', false);
+
+    try {
+        $entry = catalogEntry();
+        $entry['releases'][0]['requires'] = $constraint === null ? [] : ['fossbilling' => $constraint];
+        expect(catalogManager($entry)->isExtensionCompatible('Example'))->toBe($expected);
+    } finally {
+        FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
+    }
+})->with([
+    ['>=' . Version::VERSION . ' <=' . Version::VERSION, true],
+    ['^' . Version::VERSION, true],
+    ['~' . Version::VERSION, true],
+    ['<' . Version::VERSION, false],
+    ['>=0.0.0 !=' . Version::VERSION, false],
+    ['<' . Version::VERSION . ' || >' . Version::VERSION, false],
+    ['>' . Version::VERSION . ' || =' . Version::VERSION, true],
+    ['not a constraint', false],
+    ['', false],
+    [null, false],
+]);
+
+it('preserves preview-branch behavior but rejects malformed ranges', function (): void {
+    $branch = FOSSBilling\Core\System\Config::getProperty('update_branch', 'release');
+    FOSSBilling\Core\System\Config::setProperty('update_branch', 'preview', false);
+
+    try {
+        $entry = catalogEntry();
+        $entry['releases'][0]['requires'] = ['fossbilling' => '>=99.0'];
+        expect(catalogManager($entry)->isExtensionCompatible('Example'))->toBeTrue();
+        $entry['releases'][0]['requires']['fossbilling'] = 'invalid';
+        expect(catalogManager($entry)->isExtensionCompatible('Example'))->toBeFalse();
+        $entry['releases'][0]['requires']['fossbilling'] = 1;
+        expect(catalogManager($entry)->isExtensionCompatible('Example'))->toBeFalse();
+    } finally {
+        FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
+    }
+});
+
+it('uses v2 detail and follows opaque list cursors without a v1 version filter', function (): void {
+    $entry = catalogEntry();
+    unset($entry['releases']);
+    $entry['version'] = '1.2.3';
+    $requests = [];
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(function ($method, $url) use (&$requests, $entry) {
+        $requests[] = $url;
+        if (str_contains($url, '/extensions/example')) {
+            return new MockResponse(json_encode(['result' => [...$entry, 'releases' => [['tag' => '1.2.3', 'requires' => ['fossbilling' => '^1.0']]]]], JSON_THROW_ON_ERROR));
+        }
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        expect($query['type'])->toBe('module');
+        expect($query)->not->toHaveKey('fossbilling_version');
+        $later = isset($query['cursor']);
+        if ($later) {
+            expect($query['cursor'])->toBe('opaque/?+cursor');
+        }
+
+        return new MockResponse(json_encode(['result' => [$entry], 'pagination' => ['has_more' => !$later, 'next_cursor' => $later ? null : 'opaque/?+cursor']], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect($manager->getExtensionList('module'))->toBe([$entry, $entry]);
+    expect($manager->getExtension('Example')['releases'][0]['requires']['fossbilling'])->toBe('^1.0');
+    expect($requests[0])->toStartWith('https://api.fossbilling.net/extensions/v2/extensions?');
+    expect($requests[2])->toBe('https://api.fossbilling.net/extensions/v2/extensions/example');
+});
+
+it('rejects repeating cursors and never caches a partial list', function (): void {
+    $entry = catalogEntry();
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(new MockResponse(json_encode(['result' => [$entry], 'pagination' => ['has_more' => true, 'next_cursor' => 'repeat']], JSON_THROW_ON_ERROR)));
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
+});
+
+it('normalizes legacy module filters before sending them to v2', function (string $type, string $expected): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(function ($method, $url) use ($expected) {
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        expect($query['type'])->toBe($expected);
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect($manager->getExtensionList($type))->toBe([]);
+})->with([['mod', 'module'], ['module', 'module'], ['theme', 'theme']]);
+
+it('bounds unique pagination cursors and preserves the stale list', function (): void {
+    $entry = catalogEntry();
+    $di = new Pimple\Container();
+    $cache = new ArrayAdapter();
+    $key = catalogCacheKey('extensions', ['limit' => 100]);
+    $cache->get($key . '-stale', static fn () => [$entry]);
+    $di['cache'] = $cache;
+    $requests = 0;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests) {
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => true, 'next_cursor' => 'cursor-' . $requests]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect($manager->getExtensionList())->toBe([$entry]);
+    expect($requests)->toBe(100);
+    expect($cache->getItem($key)->isHit())->toBeFalse();
+    expect($cache->getItem($key . '-unavailable')->isHit())->toBeTrue();
+});
+
+it('rejects an oversized result before caching or accepting a terminal page', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(new MockResponse(json_encode(['result' => array_fill(0, 10_001, catalogEntry()), 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR)));
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
+});
+
+it('shares one total HTTP budget across pages', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $requests = 0;
+    $budgets = [];
+    $di['http_client'] = new MockHttpClient(function ($method, $url, $options) use (&$requests, &$budgets) {
+        $budgets[] = $options['max_duration'];
+        expect($options['timeout'])->toBeLessThanOrEqual(5);
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => $requests < 2, 'next_cursor' => $requests < 2 ? 'next' : null]], JSON_THROW_ON_ERROR));
+    });
+    $manager = Mockery::mock(ExtensionManager::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $manager->shouldReceive('getMonotonicTime')->andReturn(0.0, 0.0, 2.0, 2.0, 3.0);
+    $manager->setDi($di);
+    expect($manager->getExtensionList())->toBe([]);
+    expect($budgets)->toBe([10.0, 8.0]);
+});
+
+it('rejects a response that arrives after the overall deadline', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(new MockResponse(json_encode(['result' => [catalogEntry()], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR)));
+    $manager = Mockery::mock(ExtensionManager::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $manager->shouldReceive('getMonotonicTime')->andReturn(0.0, 0.0, 10.05);
+    $manager->setDi($di);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
+});
+
+it('does not request the next page with a sub-millisecond budget', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $requests = 0;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests) {
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => true, 'next_cursor' => 'next']], JSON_THROW_ON_ERROR));
+    });
+    $manager = Mockery::mock(ExtensionManager::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $manager->shouldReceive('getMonotonicTime')->andReturn(0.0, 0.0, 9.9995, 9.9995);
+    $manager->setDi($di);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($requests)->toBe(1);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
+});
+
+it('enforces the cumulative item limit across pages', function (int $lastPageSize, bool $accepted): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $requests = 0;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests, $lastPageSize) {
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => array_fill(0, $requests === 1 ? 5_000 : $lastPageSize, catalogEntry()), 'pagination' => ['has_more' => $requests === 1, 'next_cursor' => $requests === 1 ? 'next' : null]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    if ($accepted) {
+        expect($manager->getExtensionList())->toHaveCount(10_000);
+    } else {
+        expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    }
+    expect($requests)->toBe(2);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBe($accepted);
+})->with([[5_000, true], [5_001, false]]);
