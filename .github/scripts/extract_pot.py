@@ -2,8 +2,10 @@
 """Extract gettext msgids from FOSSBilling sources into a messages.pot file.
 
 Open-source replacement for the manual Poedit Pro step. Scans Twig
-``|trans`` literals and PHP ``__trans`` / ``__pluralTrans`` / exception
-keywords under ``src/`` (minus vendor, install, data, load.php, tests and
+``|trans`` literals and PHP ``__trans`` / ``__pluralTrans`` calls plus
+string literals passed to ``new`` constructions (exceptions and other
+message carriers, minus a small denylist of non-message constructors)
+under ``src/`` (minus vendor, install, data, load.php, tests and
 web-asset extensions); obsolete msgids are dropped.
 
 Usage:
@@ -21,6 +23,7 @@ import datetime
 import os
 import re
 import sys
+from collections import Counter
 from typing import NamedTuple
 
 # ---------------------------------------------------------------------------
@@ -32,16 +35,29 @@ EXCLUDED_FILES = {"load.php"}
 EXCLUDED_EXTENSIONS = {".js", ".html", ".css", ".scss", ".md"}
 SCANNED_EXTENSIONS = {".php", ".twig"}
 
-PHP_KEYWORDS_SINGLE = {
-    "__trans",
-    "Exception",
-    "BaseException",
-    "InformationException",
-    "Server_Exception",
-    "Registrar_Exception",
-    "Payment_Exception",
-}
+PHP_TRANS_SINGLE = {"__trans"}
 PHP_KEYWORDS_PLURAL = {"__pluralTrans"}
+
+# Constructors whose first string argument is never a user-facing message:
+# date/time plumbing and HTTP plumbing, plus exception types that take a
+# sentinel instead of a message (AuthenticationRequiredException takes an
+# area like 'admin' / 'client'; its real messages live in its constructor).
+NON_MESSAGE_CONSTRUCTORS = {
+    "DateTime",
+    "DateTimeImmutable",
+    "DateTimeZone",
+    "DateInterval",
+    "DatePeriod",
+    "Response",
+    "RedirectResponse",
+    "DOMDocument",
+    "PDO",
+    # Reflection by name takes identifiers, never messages.
+    "ReflectionClass",
+    "AuthenticationRequiredException",
+}
+# PHP class names are case-insensitive (`new \datetime('now')` is legal).
+_NON_MESSAGE_LOWER = frozenset(name.lower() for name in NON_MESSAGE_CONSTRUCTORS)
 
 HEADER_TEMPLATE = """\
 # en_US translation of FOSSBilling Application
@@ -111,36 +127,74 @@ def po_escape(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _PHP_TOKEN = re.compile(
-    r"(?P<heredoc><<<\s*['\"]?(?P<htag>[A-Za-z_][A-Za-z0-9_]*)['\"]?[^\n]*\n)"
+    r"(?P<php_open><\?(?:php|=))"
+    r"|(?P<heredoc><<<\s*['\"]?(?P<htag>[A-Za-z_][A-Za-z0-9_]*)['\"]?[^\n]*\n)"
     r"|(?P<dstr>\"(?:\\.|[^\"\\])*\")"
     r"|(?P<sstr>'(?:\\.|[^'\\])*')"
-    r"|(?P<linec>//[^\n]*|#[^\n]*)"
-    r"|(?P<blockc>/\*.*?\*/)",
+    # A `?>` ends PHP mode even inside a `//` or `#` comment (verified on
+    # PHP 8.5; `/* */` is unaffected), so line comments stop before it.
+    r"|(?P<linec>//(?:(?!\?>)[^\n])*|#(?:(?!\?>)[^\n])*)"
+    r"|(?P<blockc>/\*.*?\*/)"
+    r"|(?P<php_close>\?>)",
     re.DOTALL,
 )
 
 
-def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]]]:
+# Standalone open-tag matcher for markup regions, where string and comment
+# alternatives must not apply (a stray quote there is text, not code).
+_PHP_OPEN = re.compile(r"<\?(?:php|=)")
+
+
+def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]], list[tuple[int, int]]]:
     """Blank out PHP comments, honouring strings and heredocs (offsets stable).
 
-    Also returns the spans of ordinary string literals and heredoc bodies so
-    callers can ignore keyword-like text inside string content (which real
-    xgettext never extracts).
+    Returns (masked, spans, php_spans): spans holds ordinary string literals
+    and heredoc bodies so callers can ignore keyword-like text inside string
+    content (which real xgettext never extracts); php_spans holds the
+    `<?php` / `<?=` regions so callers can ignore markup outside PHP.
+
+    Raw HTML outside PHP regions is copied through verbatim: its quotes and
+    `//` sequences are markup, not PHP strings or comments, and must not
+    corrupt span tracking.
     """
     out: list[str] = []
     spans: list[tuple[int, int]] = []
+    php_spans: list[tuple[int, int]] = []
     pos = 0
-    for match in _PHP_TOKEN.finditer(text):
+    in_php = False
+    region_start = 0
+    while True:
+        if not in_php:
+            # Markup text is copied verbatim: only an open tag can end it,
+            # so stray quotes here can never start a bogus string span.
+            match = _PHP_OPEN.search(text, pos)
+            if match is None:
+                out.append(text[pos:])
+                pos = len(text)
+                break
+            out.append(text[pos : match.end()])
+            pos = match.end()
+            in_php = True
+            region_start = match.start()
+            continue
+        match = _PHP_TOKEN.search(text, pos)
+        if match is None:
+            break
         kind = match.lastgroup
-        if match.start() < pos:
-            # Inside an already-consumed heredoc body; it was copied verbatim.
+        if kind in ("php_open", "php_close"):
+            out.append(text[pos : match.end()])
+            pos = match.end()
+            if kind == "php_close":
+                php_spans.append((region_start, match.end()))
+                in_php = False
             continue
         if kind == "heredoc":
             tag = match.group("htag")
-            # Flexible heredoc (PHP 7.3+): indented marker optionally
-            # followed by `;` or `,` when used inside an expression.
+            # Flexible heredoc (PHP 7.3+): the indented marker ends at the
+            # identifier boundary and the expression may continue on the
+            # same line (`)`, `,`, `.`, ...), e.g. `foo(<<<HTML ... HTML)`.
             end = re.search(
-                rf"^[ \t]*{re.escape(tag)}[ \t]*[;,]?[ \t]*$",
+                rf"^[ \t]*{re.escape(tag)}(?![A-Za-z0-9_])",
                 text[match.end():],
                 re.MULTILINE,
             )
@@ -158,13 +212,23 @@ def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]]]:
             out.append(token)
         pos = match.end()
     out.append(text[pos:])
-    return "".join(out), spans
+    if in_php:
+        php_spans.append((region_start, len(text)))
+    return "".join(out), spans, php_spans
 
 
 def _in_spans(spans: list[tuple[int, int]], starts: list[int], offset: int) -> bool:
     """Whether offset falls inside a string/heredoc span (spans are sorted)."""
     idx = bisect.bisect_right(starts, offset) - 1
     return idx >= 0 and spans[idx][0] <= offset < spans[idx][1]
+
+
+def _span_end(spans: list[tuple[int, int]], starts: list[int], offset: int) -> int | None:
+    """End of the span containing offset, or None when outside spans."""
+    idx = bisect.bisect_right(starts, offset) - 1
+    if idx >= 0 and spans[idx][0] <= offset < spans[idx][1]:
+        return spans[idx][1]
+    return None
 
 
 _TWIG_COMMENT = re.compile(r"\{#.*?#\}", re.DOTALL)
@@ -187,14 +251,22 @@ _TWIG_TRANS = re.compile(
 
 _PHP_STR = r"""'(?P<sbody>(?:\\.|[^'\\])*)'|"(?P<dbody>(?:\\.|[^"\\])*)\""""
 
-_KEYWORD_ALTS = "|".join(
-    sorted(PHP_KEYWORDS_SINGLE | PHP_KEYWORDS_PLURAL, key=len, reverse=True)
+_TRANS_ALTS = "|".join(
+    sorted(PHP_TRANS_SINGLE | PHP_KEYWORDS_PLURAL, key=len, reverse=True)
 )
-# Matches bare calls AND `new [Namespace\]Keyword(`. The lookbehind rejects
-# method/static calls (->, ::), variables and longer identifiers
-# (e.g. the `Exception` in `InformationException`).
+_CLASS_NAME = r"(?:\\)?(?:[A-Za-z_][\w]*\\)*[A-Za-z_][\w]*"
+# Matches `__trans(...)` / `__pluralTrans(...)` calls (global or leading-
+# backslash form, e.g. `\__trans(...)`), any `new [Namespace\]Class(`
+# construction (thrown, returned, assigned, or used in a throw-expression
+# — all are message carriers unless denylisted below), and constructor-
+# chained exception messages (`parent::__construct('...')`, as used by
+# exception subclasses that build their own message). The lookbehinds
+# reject method/static calls (->, ::), variables and longer identifiers
+# (e.g. the `new` in `$renew`).
 _PHP_CALL = re.compile(
-    rf"(?:new\s+)?(?<![\w$>:\\])(?:\\)?(?:[A-Za-z_][\w]*\\)*(?P<kw>{_KEYWORD_ALTS})\s*\(\s*"
+    rf"(?:(?<![\w$])new\s+(?P<cls>{_CLASS_NAME})"
+    rf"|(?<![\w$>:\\])(?:\\)?(?:[A-Za-z_][\w]*\\)*(?P<kw>{_TRANS_ALTS})"
+    rf"|(?<![\w$>])(?P<chain>parent|self|static)::\s*__construct)\s*\(\s*"
     rf"(?P<arg>{_PHP_STR})?"
     rf"(?P<rest>\s*,)?",
     re.DOTALL,
@@ -232,6 +304,115 @@ def extract_twig(rel: str, text: str, occurrences: list[Occurrence], stats: dict
         stats["twig"] += 1
 
 
+def _balanced_close(
+    masked: str, start: int, spans: list[tuple[int, int]], starts: list[int]
+) -> int | None:
+    """End offset just past the bracket matching the opener at offset."""
+    depth = 0
+    i = start
+    while i < len(masked):
+        end = _span_end(spans, starts, i)
+        if end is not None:
+            i = end  # String/heredoc content is inert text; skip over it.
+            continue
+        char = masked[i]
+        if char in ("'", '"'):
+            return None  # Unbalanced quote outside any span: invalid PHP.
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+            if depth < 0:
+                return None
+        i += 1
+    return None
+
+
+def _read_ternary_literals(
+    masked: str, start: int, spans: list[tuple[int, int]], starts: list[int]
+) -> tuple[list[str], int] | None:
+    """Parse `cond ? 'a' : 'b'` at offset (strict: both branches literals).
+
+    The condition may hold balanced brackets, strings and heredocs; anything
+    else bails out with None. Returns ([branch_a, branch_b], end_offset).
+    """
+    # A fully parenthesized argument (`($c ? 'x' : 'y')`) nests the ternary
+    # one level deep; unwrap such layers so the scan below sees it top-level.
+    i = start
+    while True:
+        while i < len(masked) and masked[i] in " \t\n\r":
+            i += 1
+        if i >= len(masked) or masked[i] != "(":
+            break
+        end = _balanced_close(masked, i, spans, starts)
+        if end is None or re.match(r"\s*[),]", masked[end:]) is None:
+            break
+        i += 1
+    depth = 0
+    cond_end: int | None = None
+    while i < len(masked):
+        end = _span_end(spans, starts, i)
+        if end is not None:
+            i = end  # String/heredoc content is inert text; skip over it.
+            continue
+        char = masked[i]
+        if char in ("'", '"'):
+            return None  # Unbalanced quote outside any span: invalid PHP.
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+            if depth < 0:
+                return None
+        elif char == "," and depth == 0:
+            return None  # Next argument reached before any ternary.
+        elif char == "=" and depth == 0 and masked[i + 1 : i + 2] == ">":
+            return None  # Arrow function: its body is code, not our message.
+        elif char == "?" and depth == 0:
+            nxt = masked[i + 1 : i + 3]
+            if nxt.startswith("?") or nxt.startswith("->"):
+                i += 2  # `??` / nullsafe `?->`, not the ternary.
+                continue
+            cond_end = i
+            break
+        i += 1
+    if cond_end is None:
+        return None
+    # Skip whitespace after `?`, read branch A.
+    j = cond_end + 1
+    while j < len(masked) and masked[j] in " \t\n\r":
+        j += 1
+    parsed_a = _read_php_literal(masked, j)
+    if parsed_a is None or parsed_a[2]:
+        return None
+    value_a, j = parsed_a[0], parsed_a[1]
+    while j < len(masked) and masked[j] in " \t\n\r":
+        j += 1
+    if j >= len(masked) or masked[j] != ":" or masked[j + 1 : j + 2] == ":":
+        return None
+    j += 1
+    while j < len(masked) and masked[j] in " \t\n\r":
+        j += 1
+    parsed_b = _read_php_literal(masked, j)
+    if parsed_b is None or parsed_b[2]:
+        return None
+    return [value_a, parsed_b[0]], parsed_b[1]
+
+
+def _record_ternary(
+    occurrences: list[Occurrence],
+    stats: dict,
+    ref: str,
+    variants: list[str],
+) -> None:
+    """Record ternary branch variants as msgids sharing one reference."""
+    for variant in variants:
+        occurrences.append(Occurrence(variant, None, ref))
+    stats["php"] += 1
+
+
 def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
     """Read one quoted literal at offset.
 
@@ -255,21 +436,70 @@ def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
 
 
 def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
-    masked, spans = _mask_php_comments(text)
+    masked, spans, php_spans = _mask_php_comments(text)
     starts = [start for start, _ in spans]
+    php_starts = [start for start, _ in php_spans]
     for match in _PHP_CALL.finditer(masked):
         if _in_spans(spans, starts, match.start()):
             continue
+        if not _in_spans(php_spans, php_starts, match.start()):
+            # Markup outside PHP tags (inline handlers, text nodes): not code.
+            stats["skipped_markup"] += 1
+            continue
         keyword = match.group("kw")
+        short: str | None = None
+        if keyword is None:
+            if match.group("chain") is not None:
+                # Constructor-chained exception message.
+                short = "__construct"
+            else:
+                # Generic constructor branch: a message carrier (normally an
+                # exception) unless denylisted. The short name is what matters;
+                # a leading backslash leaves an empty first segment.
+                short = match.group("cls").split("\\")[-1]
+                # `class` can never name a real class, so any casing of it is
+                # the anonymous-class keyword (PHP names are case-insensitive).
+                low = short.lower()
+                if low in _NON_MESSAGE_LOWER or low == "class":
+                    stats["skipped_ctor"] += 1
+                    continue
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
             stats["skipped_defs"] += 1
             continue
         if match.group("arg") is None:
+            # A ternary with two literal branches (`$a ? 'x' : 'y'`) carries
+            # two message variants; anything else non-literal is skipped.
+            # (Never applied to __pluralTrans: a plural entry needs two
+            # dedicated literals, not branch variants.)
+            tern = (
+                None
+                if keyword in PHP_KEYWORDS_PLURAL
+                else _read_ternary_literals(masked, match.end(), spans, starts)
+            )
+            if tern is not None and re.match(r"\s*[),]", masked[tern[1] :]) is not None:
+                _record_ternary(
+                    occurrences,
+                    stats,
+                    f"{rel}:{_line_no(masked, match.start())}",
+                    tern[0],
+                )
+                if short is not None:
+                    stats["ctor_classes"][short] += 1
+                continue
             # Non-literal first argument (variable, constant, expression...).
+            # Only logged for plausible message carriers; `new Finder($x)`
+            # style noise would otherwise drown the audit trail.
             stats["skipped_dynamic"] += 1
-            snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
-            stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} {snippet}")
+            if keyword is not None or (
+                short is not None
+                and ("exception" in short.lower() or short in ("IncompleteRecord", "__construct"))
+            ):
+                snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
+                stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} {snippet}")
             continue
+        # Census of literal-carrying constructions, for drift review.
+        if short is not None:
+            stats["ctor_classes"][short] += 1
         if match.group("sbody") is not None:
             first = _decode_single(match.group("sbody"))
             first_dynamic = False
@@ -287,8 +517,23 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
         parsed = _read_php_literal(masked, arg_start)
         end = parsed[1] if parsed else match.end()
         # A concatenated first argument ('a ' . $b) never matches at runtime
-        # as a msgid, so skip it instead of recording the literal prefix.
+        # as a msgid, so skip it instead of recording the literal prefix —
+        # unless it opens a literal ternary ('a' === $b ? 'x' : 'y'), whose
+        # branches are message variants.
         if re.match(r"\s*[),]", masked[end:]) is None:
+            tern = (
+                None
+                if keyword in PHP_KEYWORDS_PLURAL
+                else _read_ternary_literals(masked, arg_start, spans, starts)
+            )
+            if tern is not None and re.match(r"\s*[),]", masked[tern[1] :]) is not None:
+                _record_ternary(
+                    occurrences,
+                    stats,
+                    f"{rel}:{_line_no(masked, match.start())}",
+                    tern[0],
+                )
+                continue
             stats["skipped_dynamic"] += 1
             snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
             stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} concat {snippet}")
@@ -332,7 +577,7 @@ def iter_source_files(src_dir: str):
 
 def extract_all(src_dir: str) -> tuple[list[Occurrence], dict]:
     occurrences: list[Occurrence] = []
-    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped": [], "files": 0}
+    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped_ctor": 0, "skipped_markup": 0, "ctor_classes": Counter(), "skipped": [], "files": 0}
     for full, rel in iter_source_files(src_dir):
         with open(full, encoding="utf-8", errors="replace") as handle:
             text = handle.read()
@@ -511,6 +756,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"twig hits: {stats['twig']}, php hits: {stats['php']}", file=sys.stderr)
     print(f"unique msgids written: {count}", file=sys.stderr)
     print(f"skipped non-literals: {stats['skipped_dynamic']}, skipped defs: {stats['skipped_defs']}", file=sys.stderr)
+    print(f"skipped non-message ctors: {stats['skipped_ctor']}, skipped markup: {stats['skipped_markup']}", file=sys.stderr)
+    if stats["ctor_classes"]:
+        top = ", ".join(f"{name}x{hits}" for name, hits in stats["ctor_classes"].most_common(20))
+        print(f"constructed classes: {top}", file=sys.stderr)
     for item in stats["skipped"]:
         print(f"  skip: {item}", file=sys.stderr)
     return 0

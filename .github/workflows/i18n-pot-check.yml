@@ -6,6 +6,7 @@ on:
       - 'src/**/*.php'
       - 'src/**/*.twig'
       - '.github/scripts/extract_pot.py'
+      - '.github/scripts/tests/**'
       - '.github/workflows/i18n-pot-check.yml'
 
 permissions:
@@ -31,6 +32,9 @@ jobs:
           git worktree add /tmp/base "${{ github.event.pull_request.base.sha }}"
           python3 .github/scripts/extract_pot.py /tmp/base/src /tmp/base.pot
           git worktree remove --force /tmp/base
+
+      - name: 'Run extractor fixtures'
+        run: python3 .github/scripts/tests/test_extract_pot.py
 
       - name: 'Compare'
         id: diff
