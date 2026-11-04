@@ -1008,21 +1008,6 @@ class Patcher implements InjectionAwareInterface
      * running it twice on a MySQL/MariaDB install (once via Patch115, once via
      * the unconditional call) is a harmless no-op the second time.
      */
-    /**
-     * Rename the extension type discriminator from 'mod' to 'module'.
-     *
-     * Portable (plain UPDATE ... WHERE) and idempotent, so it runs on every
-     * platform rather than as a numbered MySQL-only patch. Must run before
-     * anything below reads the extension table. The 'mod' literals are
-     * pre-migration stored values, not references to the current type.
-     */
-    public function migrateExtensionTypeValues(): void
-    {
-        $module = ExtensionType::Module->value;
-        $this->executeSql('UPDATE extension SET type = :new WHERE type = :old', ['new' => $module, 'old' => 'mod']);
-        $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
-    }
-
     public function migrateThemePackageLayout(): void
     {
         $filesystem = $this->filesystem;
@@ -1368,6 +1353,22 @@ class Patcher implements InjectionAwareInterface
      * display-only version sync must not break requests or updates, it only
      * logs and skips.
      */
+    /**
+     * Rename the extension type discriminator from 'mod' to 'module'.
+     *
+     * Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and
+     * idempotent, so it runs on every platform rather than as a numbered
+     * MySQL-only patch, and may safely rerun. Must run before anything reads
+     * the extension table. The 'mod' literals are pre-migration stored
+     * values, not references to the current type.
+     */
+    public function migrateExtensionTypeValues(): void
+    {
+        $module = ExtensionType::Module->value;
+        $this->executeSql('UPDATE extension SET type = :new WHERE type = :old', ['new' => $module, 'old' => 'mod']);
+        $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
+    }
+
     public function syncSeededModuleVersions(): void
     {
         try {
