@@ -17,6 +17,7 @@ use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Box\Mod\Order\Enum\Status as OrderStatus;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Environment;
 
@@ -256,7 +257,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         ];
 
         $extensionService = $this->di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
+        if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
             throw new InformationException('Disabled for security reasons (Demo mode enabled)');
         }
 

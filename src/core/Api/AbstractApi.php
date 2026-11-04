@@ -14,6 +14,7 @@ namespace FOSSBilling\Core\Api;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\BaseException;
 use FOSSBilling\Core\Identity\Guest;
 use FOSSBilling\Core\Module;
@@ -100,7 +101,7 @@ abstract class AbstractApi implements InjectionAwareInterface
     protected function checkCaptchaIfEnabled(array $data): void
     {
         $extensionService = $this->getDi()['mod_service']('extension');
-        if (!$extensionService->isExtensionActive('mod', 'antispam')) {
+        if (!$extensionService->isExtensionActive(ExtensionType::Module->value, 'antispam')) {
             return;
         }
 

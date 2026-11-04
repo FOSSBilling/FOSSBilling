@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Core\Remote;
 
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\BaseException as Exception;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Config;
@@ -132,7 +133,8 @@ class ExtensionManager implements InjectionAwareInterface
         $params = [];
 
         if (!empty($type)) {
-            $params['type'] = $type;
+            // The v1 directory still filters on the legacy 'mod' value.
+            $params['type'] = $type === ExtensionType::Module->value ? 'mod' : $type;
         }
 
         return $this->makeRequest('list', $params, function (array $extensions): void {

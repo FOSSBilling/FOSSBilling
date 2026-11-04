@@ -67,7 +67,7 @@
                                         </td>
                                         <td class="text-end">
                                             <div class="d-inline-flex align-items-center gap-2">
-                                                {% if ext.type == 'mod' %}
+                                                {% if ext.type == 'module' %}
                                                     {% if ext.status == 'installed' %}
                                                         <a class="btn btn-icon" href="{{ 'extension/deactivate'|api_url(query: { 'type': ext.type, 'id': ext.id }) }}"
                                                             data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}"
@@ -87,7 +87,7 @@
                                                         </a>
                                                     {% endif %}
                                                 {% endif %}
-                                                {% if ext.type == 'mod' and ext.status != 'installed' %}
+                                                {% if ext.type == 'module' and ext.status != 'installed' %}
                                                     <a class="btn btn-icon"
                                                         href="{{ 'extension/activate'|api_url(query:{ 'type': ext.type, 'id': ext.id }) }}"
                                                         {{ fb_api_link({modal: { type: 'confirm', title: 'Are you sure?'|trans, button: 'Activate'|trans}, callback: 'onAfterModuleActivated'}) }}
@@ -178,7 +178,7 @@
     <script>
         function onAfterUpdate(result) {}
         function onAfterModuleActivated(result) {
-            if (result.redirect && result.type === 'mod') {
+            if (result.redirect && result.type === 'module') {
                 window.location = "{{ ''|url }}/" + result.id;
             } else if (result.has_settings) {
                 window.location = "{{ 'extension/settings'|url }}/" + result.id;

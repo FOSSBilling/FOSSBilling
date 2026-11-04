@@ -26,7 +26,7 @@ namespace FOSSBilling\Core\Enums;
  */
 enum ExtensionType: string
 {
-    case Module = 'mod';
+    case Module = 'module';
     case Theme = 'theme';
     case PaymentGateway = 'payment-gateway';
     case ServerManager = 'server-manager';

@@ -17,6 +17,7 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Logging\Middleware;
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Enums\ExtensionType;
 use Psr\Log\AbstractLogger;
 
 test('page lookups reuse queries across separately created module services', function (): void {
@@ -39,7 +40,7 @@ test('page lookups reuse queries across separately created module services', fun
     $em->persist((new Setting())->setParam('hide_company_public')->setValue('0'));
     $em->persist((new Currency('GBP'))->setIsDefault(true));
     foreach (['redirect', 'news', 'cookieconsent'] as $name) {
-        $em->persist((new Extension())->setType('mod')->setName($name)->setStatus(Extension::STATUS_INSTALLED));
+        $em->persist((new Extension())->setType(ExtensionType::Module->value)->setName($name)->setStatus(Extension::STATUS_INSTALLED));
     }
     $em->flush();
     $em->clear();

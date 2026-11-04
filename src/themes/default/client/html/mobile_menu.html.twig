@@ -63,7 +63,7 @@
     </li>
 {% endif %}
 
-{% if (guest.extension_is_on({"mod":"news"}) and settings.side_menu_news) %}
+{% if (guest.extension_is_on({"module":"news"}) and settings.side_menu_news) %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'news' %} active{% endif %}" href="{{ 'news'|url }}"{% if current_active_menu == 'news' %} aria-current="page"{% endif %}>
             <svg class="icon"><use href="#news" /></svg>

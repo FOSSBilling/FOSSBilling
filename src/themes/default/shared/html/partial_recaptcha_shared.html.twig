@@ -8,7 +8,7 @@
     context (and Twig globals like `guest`), regardless of how the macro
     wrapping it was called.
 #}
-{% if guest.extension_is_on({"mod":"antispam"}) %}
+{% if guest.extension_is_on({"module":"antispam"}) %}
     {% set config = guest.antispam_recaptcha %}
 {% endif %}
 

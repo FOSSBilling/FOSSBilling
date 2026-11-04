@@ -14,6 +14,7 @@ namespace FOSSBilling\Core\Twig\Extension;
 use Composer\InstalledVersions;
 use DiceBear\Avatar;
 use DiceBear\Style;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\System\Environment as AppEnvironment;
 use FOSSBilling\Core\Twig\AppArea;
@@ -160,7 +161,7 @@ class FOSSBillingExtension
     #[AsTwigFunction('antispam_honeypot')]
     public function antispamHoneypot(): array
     {
-        if ($this->di['mod_service']('extension')->isExtensionActive('mod', 'antispam')) {
+        if ($this->di['mod_service']('extension')->isExtensionActive(ExtensionType::Module->value, 'antispam')) {
             $config = $this->di['mod_config']('Antispam');
 
             return [

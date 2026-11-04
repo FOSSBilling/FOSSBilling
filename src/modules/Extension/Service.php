@@ -97,11 +97,25 @@ class Service implements InjectionAwareInterface
 
     public function isExtensionActive(string $type, string $id): bool
     {
-        if ($type == 'mod' && $this->isCoreModule($id)) {
+        $type = self::normalizeExtensionType($type);
+        if ($type === ExtensionType::Module->value && $this->isCoreModule($id)) {
             return true;
         }
 
         return $this->getExtensionRepository()->existsActiveByTypeAndName($type, $id);
+    }
+
+    /**
+     * Map legacy extension type values to their canonical {@see ExtensionType}
+     * equivalents. Third-party callers, stored API payloads, and pre-migration
+     * database rows may still use 'mod'; everything else passes through.
+     */
+    private static function normalizeExtensionType(string $type): string
+    {
+        return match ($type) {
+            'mod' => ExtensionType::Module->value,
+            default => $type,
+        };
     }
 
     #[AsEventListener]
@@ -481,13 +495,14 @@ class Service implements InjectionAwareInterface
     /**
      * Uninstall a deactivated extension, remove its files from the disk and call $extension->uninstall() to trigger database cleanup.
      *
-     * @param string $type Type of the extension (mod, theme, ...)
+     * @param string $type Type of the extension (module, theme, ...)
      * @param string $id   ID of the extension
      *
      * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function uninstall(string $type, string $id): bool
     {
+        $type = self::normalizeExtensionType($type);
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'uninstall_extensions');
 
         if ($this->isCoreModule($id)) {
@@ -816,6 +831,7 @@ class Service implements InjectionAwareInterface
         if (!isset($data['type'], $data['id']) || $data['type'] === '' || $data['id'] === '') {
             throw new \FOSSBilling\Core\Exception\InformationException('Extension type and ID are required');
         }
+        $data['type'] = self::normalizeExtensionType((string) $data['type']);
 
         if ($data['type'] === ExtensionType::Module->value) {
             try {
@@ -924,6 +940,7 @@ class Service implements InjectionAwareInterface
      */
     public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
     {
+        $type = self::normalizeExtensionType($type);
         $this->assertValidExtensionIdentifier($id);
 
         $basePath = $this->getExtensionBasePath($type);
@@ -1045,7 +1062,7 @@ class Service implements InjectionAwareInterface
 
         // Inactive modules can only be managed by staff allowed to manage extensions,
         // for example to write default configuration during module installation
-        if (!$this->isExtensionActive('mod', $permission_module)) {
+        if (!$this->isExtensionActive(ExtensionType::Module->value, $permission_module)) {
             $staff_service->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
             return;

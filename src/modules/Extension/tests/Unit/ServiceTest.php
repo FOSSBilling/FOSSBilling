@@ -28,6 +28,7 @@ use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Events\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
+use Symfony\Component\Filesystem\Path;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\setEntityId;
@@ -46,7 +47,7 @@ class ExtensionPdoStatementsMock extends PDOStatement
     }
 }
 
-function extensionCreateEntity(int $id, string $type = 'mod', string $name = 'extensionName', string $status = 'installed', ?string $version = '1'): Extension
+function extensionCreateEntity(int $id, string $type = ExtensionType::Module->value, string $name = 'extensionName', string $status = 'installed', ?string $version = '1'): Extension
 {
     $entity = new Extension();
     setEntityId($entity, $id);
@@ -193,7 +194,7 @@ test('real extension activation and deactivation invalidate cached module names'
     (new SchemaTool($em))->createSchema([$em->getClassMetadata(Extension::class)]);
 
     $extension = (new Extension())
-        ->setType('mod')
+        ->setType(ExtensionType::Module->value)
         ->setName('cookieconsent')
         ->setStatus(Extension::STATUS_DEACTIVATED);
     $em->persist($extension);
@@ -231,7 +232,7 @@ test('real extension activation and deactivation invalidate cached module names'
     expect($service->isExtensionActive('mod', 'cookieconsent'))->toBeFalse();
 
     $connection->insert('extension', [
-        'type' => 'mod',
+        'type' => ExtensionType::Module->value,
         'name' => 'cookieconsent',
         'status' => Extension::STATUS_INSTALLED,
     ]);
@@ -242,7 +243,7 @@ test('real extension activation and deactivation invalidate cached module names'
 
 test('removeNotExistingModules removes non-existing modules', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'extensionName');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'extensionName');
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getManifest')->andThrow(new Exception());
@@ -302,7 +303,7 @@ test('getExtensionsList returns filtered extensions list', function (): void {
         'active' => true,
     ];
 
-    $ext = extensionCreateEntity(1, 'mod', 'extensionName', 'installed', '1');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'extensionName', 'installed', '1');
 
     $query = Mockery::mock(Doctrine\ORM\Query::class);
     $query->shouldReceive('getResult')->andReturn([$ext]);
@@ -351,7 +352,7 @@ test('getExtensionsList returns only installed extensions', function (): void {
         'installed' => true,
     ];
 
-    $ext = extensionCreateEntity(1, 'mod', 'extensionName', 'installed', '1');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'extensionName', 'installed', '1');
 
     $query = Mockery::mock(Doctrine\ORM\Query::class);
     $query->shouldReceive('getResult')->andReturn([$ext]);
@@ -425,13 +426,13 @@ test('findExtension finds an extension', function (): void {
     $di['em'] = $em;
 
     $service->setDi($di);
-    $result = $service->getExtensionRepository()->findOneByTypeAndName('mod', 'id');
+    $result = $service->getExtensionRepository()->findOneByTypeAndName(ExtensionType::Module->value, 'id');
     expect($result)->toBeInstanceOf(Extension::class);
 });
 
 test('update throws exception for extensions that need manual update', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'installed', '2');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'installed', '2');
 
     $extensionStub = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class);
 
@@ -450,7 +451,7 @@ test('update throws exception for extensions that need manual update', function 
 
 test('activate activates an extension', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
@@ -520,7 +521,7 @@ test('activate activates an extension', function (): void {
     $result = $service->activate($ext);
     expect($result)->toBeArray();
     expect($result['id'])->toBe('testExtension');
-    expect($result['type'])->toBe('mod');
+    expect($result['type'])->toBe(ExtensionType::Module->value);
     expect($result['redirect'])->toBeTrue();
     expect($result['has_settings'])->toBeTrue();
     expect($cache->deleted)->toBe([WidgetsService::CACHE_KEY]);
@@ -533,7 +534,7 @@ test('activate installs a module whose requirements are satisfied', function ():
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => []],
     ]);
     $modMock->shouldReceive('install')->once();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     $result = $service->activate($ext);
 
@@ -549,7 +550,7 @@ test('activate skips the fossbilling requirement on preview builds', function ()
         'requires' => ['fossbilling' => '>=99.0', 'php' => '>=8.0', 'modules' => []],
     ]);
     $modMock->shouldReceive('install')->once();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     $result = $service->activate($ext);
 
@@ -563,7 +564,7 @@ test('activate blocks a module whose php requirement is unmet', function (): voi
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=99.0', 'modules' => []],
     ]);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'requires PHP');
@@ -579,7 +580,7 @@ test('activate blocks a module whose required module is not active', function ()
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['missingModule' => '>=1.0']],
     ], $extensionRepository);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'missingModule');
@@ -595,7 +596,7 @@ test('activate blocks a module whose required module version is unmet', function
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['requiredModule' => '>=2.0']],
     ], $extensionRepository);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'requiredModule');
@@ -611,7 +612,7 @@ test('activate installs a module whose required module version is satisfied', fu
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['requiredModule' => '>=1.0']],
     ], $extensionRepository);
     $modMock->shouldReceive('install')->once();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     $result = $service->activate($ext);
 
@@ -632,7 +633,7 @@ test('activate resolves core dependency versions from the core manifest', functi
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['coreModule' => '>=2.0']],
     ], $extensionRepository, ['coreModule' => $coreDepMock]);
     $modMock->shouldReceive('install')->once();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     $result = $service->activate($ext);
 
@@ -646,7 +647,7 @@ test('activate blocks a module with an invalid requirement constraint', function
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>>1.0', 'modules' => []],
     ]);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid version requirement');
@@ -659,7 +660,7 @@ test('activate blocks a module whose requires value is not an object', function 
         'requires' => $requires,
     ]);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid module requirements');
@@ -674,7 +675,7 @@ test('activate parses the fossbilling requirement on preview builds', function (
         'requires' => ['fossbilling' => '>>1.0', 'php' => '>=8.0', 'modules' => []],
     ]);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid version requirement');
@@ -696,7 +697,7 @@ test('activate blocks a dependency without an installed version', function (): v
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['missingVersion' => '>=1.0']],
     ], $extensionRepository, ['missingVersion' => $depMock]);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid installed version');
@@ -718,7 +719,7 @@ test('activate blocks a dependency with a non-string installed version', functio
         'requires' => ['fossbilling' => '>=0.1.0', 'php' => '>=8.0', 'modules' => ['intVersion' => '>=1.0']],
     ], $extensionRepository, ['intVersion' => $depMock]);
     $modMock->shouldReceive('install')->never();
-    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'deactivated');
 
     expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid installed version');
@@ -746,7 +747,7 @@ test('version requirements compare against release versions', function (string $
 
 test('deactivate deactivates an extension', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'widgets', 'installed');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'widgets', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -799,7 +800,7 @@ test('deactivate deactivates an extension', function (): void {
 
 test('deactivate throws exception for core modules', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'extensionTest', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -824,7 +825,7 @@ test('deactivate throws exception for core modules', function (): void {
 });
 
 test('deactivate deactivates module', function (): void {
-    $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'extensionTest', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -852,7 +853,7 @@ test('deactivate deactivates module', function (): void {
 });
 
 test('deactivate blocks a module required by an installed module', function (): void {
-    $ext = extensionCreateEntity(1, 'mod', 'baseModule', 'installed');
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'baseModule', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getCoreModules')->andReturn([]);
@@ -939,15 +940,23 @@ test('uninstall uninstalls an extension', function (): void {
 
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->uninstall('mod', 'TestExtension');
+    $result = $serviceMock->uninstall(ExtensionType::Module->value, 'TestExtension');
     expect($result)->toBeTrue();
 
     if (is_dir($tmpDir)) {
         rmdir($tmpDir);
     }
 
-    $result = $serviceMock->uninstall('mod', 'Branding');
+    $result = $serviceMock->uninstall(ExtensionType::Module->value, 'Branding');
     expect($result)->toBeTrue();
+});
+
+test('getExtensionPath accepts the legacy mod type', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    expect($service->getExtensionPath('mod', 'Cookieconsent'))
+        ->toBe(Path::join(PATH_MODS, 'Cookieconsent'));
 });
 
 test('getExtensionPath rejects unsafe extension IDs', function (string $type, string $id): void {
@@ -1019,7 +1028,7 @@ test('activateExistingExtension activates existing extension', function (): void
             return [];
         });
 
-    $extension = extensionCreateEntity(42, 'mod', 'extensionId', Extension::STATUS_DEACTIVATED);
+    $extension = extensionCreateEntity(42, ExtensionType::Module->value, 'extensionId', Extension::STATUS_DEACTIVATED);
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('findOneByTypeAndName')
         ->once()
@@ -1048,7 +1057,7 @@ test('activateExistingExtension activates existing extension', function (): void
         ->and($steps)->toHaveCount(3)
         ->and($steps[0])->toBeInstanceOf(BeforeAdminActivateExtensionEvent::class)
         ->and($steps[0]->extensionRecordId)->toBe(42)
-        ->and($steps[0]->extensionType)->toBe('mod')
+        ->and($steps[0]->extensionType)->toBe(ExtensionType::Module->value)
         ->and($steps[0]->extensionName)->toBe('extensionId')
         ->and($steps[1])->toBe('activate')
         ->and($steps[2])->toBeInstanceOf(AfterAdminActivateExtensionEvent::class)
@@ -1142,7 +1151,7 @@ test('activateExistingExtension throws exception on activation failure', functio
         ->and($events[0]->extensionRecordId)->toBe(1);
 });
 
-test('activateExistingExtension rejects mod with missing or invalid manifest before persisting', function (string $manifestError): void {
+test('activateExistingExtension rejects module with missing or invalid manifest before persisting', function (string $manifestError): void {
     $service = new Service();
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
@@ -1168,9 +1177,9 @@ test('activateExistingExtension rejects mod with missing or invalid manifest bef
     'invalid manifest' => 'Invalid manifest file for the nonexistent module. Please check file syntax and permissions.',
 ]);
 
-test('activate rejects mod with missing manifest', function (): void {
+test('activate rejects module with missing manifest', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'nonexistent', Extension::STATUS_DEACTIVATED);
+    $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'nonexistent', Extension::STATUS_DEACTIVATED);
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('hasManifest')->once()->andReturnFalse();
@@ -1258,7 +1267,7 @@ test('configuration reads do not create rows and authorized writes preserve publ
     ]);
 
     $installed = (new Extension())
-        ->setType('mod')
+        ->setType(ExtensionType::Module->value)
         ->setName('cookieconsent')
         ->setStatus(Extension::STATUS_INSTALLED);
     $em->persist($installed);
@@ -1635,7 +1644,7 @@ test('downloadAndExtract rejects unsafe archives before writing any entry', func
     $zip->addFromString($name, 'malicious');
     $zip->getEntry($name)->setUnixMode($mode);
     $paths = [];
-    $destination = Symfony\Component\Filesystem\Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
+    $destination = Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
     $service = extensionArchiveService($zip, $destination, $paths, false);
 
     // Rejection must happen before destination resolution or a single extraction write.
@@ -1670,13 +1679,13 @@ test('downloadAndExtract preserves ordinary package files and directories', func
         $zip->addFromString((string) $name, $content);
     }
     $paths = [];
-    $destination = Symfony\Component\Filesystem\Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
+    $destination = Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
     $service = extensionArchiveService($zip, $destination, $paths);
 
     try {
         expect($service->downloadAndExtract('mod', 'example'))->toBeTrue();
         foreach ($files as $name => $content) {
-            expect(file_get_contents(Symfony\Component\Filesystem\Path::join($destination, (string) $name)))->toBe($content);
+            expect(file_get_contents(Path::join($destination, (string) $name)))->toBe($content);
         }
         expect(is_dir($destination . '/nested'))->toBeTrue();
         if (DIRECTORY_SEPARATOR !== '\\') {

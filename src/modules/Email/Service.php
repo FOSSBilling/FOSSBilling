@@ -22,6 +22,7 @@ use Box\Mod\Email\Repository\EmailTemplateGroupRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Box\Mod\Email\Repository\QueuedEmailRepository;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\System\Config;
 use FOSSBilling\Core\System\Environment;
@@ -745,7 +746,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     public function resend(ActivityClientEmail $email): bool
     {
         $extensionService = $this->di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
+        if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
             return false;
         }
 
@@ -1033,7 +1034,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory(Path::getDirectory($file->getPath()))));
 
             // Skip if module is not active.
-            if (!$extensionService->isExtensionActive('mod', $module)) {
+            if (!$extensionService->isExtensionActive(ExtensionType::Module->value, $module)) {
                 continue;
             }
 
@@ -1232,7 +1233,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
+        if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
             return false;
         }
         $queue->setStatus('sending');

@@ -1,4 +1,4 @@
-{% if guest.extension_is_on({"mod":"antispam"}) %}
+{% if guest.extension_is_on({"module":"antispam"}) %}
 {% set rc = guest.antispam_recaptcha %}
 {% if rc.enabled|default(false) %}
 {% set provider = rc.captcha_provider|default('recaptcha_v2') %}

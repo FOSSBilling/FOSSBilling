@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use FOSSBilling\Core\Api\AbstractApi;
+use FOSSBilling\Core\Enums\ExtensionType;
 
 // Minimal concrete subclass to expose the protected method.
 class ConcreteApi extends AbstractApi
@@ -88,7 +89,7 @@ test('checkPermissions forwards constraint to Staff service', function (): void 
 
 test('checkCaptchaIfEnabled skips an inactive antispam extension', function (): void {
     $extensionService = Mockery::mock();
-    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'antispam')->andReturnFalse();
+    $extensionService->shouldReceive('isExtensionActive')->once()->with(ExtensionType::Module->value, 'antispam')->andReturnFalse();
 
     $di = new Pimple\Container();
     $di['mod_service'] = $di->protect(fn (string $name): object => match (strtolower($name)) {
@@ -104,7 +105,7 @@ test('checkCaptchaIfEnabled skips an inactive antispam extension', function (): 
 test('checkCaptchaIfEnabled delegates to the antispam extension', function (): void {
     $data = ['g-recaptcha-response' => 'token'];
     $extensionService = Mockery::mock();
-    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'antispam')->andReturnTrue();
+    $extensionService->shouldReceive('isExtensionActive')->once()->with(ExtensionType::Module->value, 'antispam')->andReturnTrue();
 
     $antispamService = Mockery::mock();
     $antispamService->shouldReceive('checkCaptcha')->once()->with($data);

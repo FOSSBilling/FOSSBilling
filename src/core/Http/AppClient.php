@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Core\Http;
 
+use FOSSBilling\Core\Enums\ExtensionType;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\Response;
 use Twig\Environment;
@@ -36,7 +37,7 @@ class AppClient extends App
             ini_set('display_startup_errors', '0');
         } else {
             $extensionService = $this->di['mod_service']('extension');
-            if ($extensionService->isExtensionActive('mod', 'redirect')) {
+            if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'redirect')) {
                 $m = $this->di['mod']('redirect');
                 $m->registerClientRoutes($this);
             }

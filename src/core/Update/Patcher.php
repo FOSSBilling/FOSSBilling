@@ -17,6 +17,7 @@ use FOSSBilling\Core\Doctrine\DriverManagerFactory;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\ModuleEntityScope;
 use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\BaseException;
 use FOSSBilling\Core\Security\Crypt;
 use FOSSBilling\Core\System\Config;
@@ -212,6 +213,12 @@ class Patcher implements InjectionAwareInterface
         // would otherwise be left with a theme that never got renamed and orphaned saved settings
         // forever.
         $this->migrateThemePackageLayout();
+
+        // Extension type values were renamed ('mod' to 'module'). This must run
+        // before anything below reads the extension table: the legacy
+        // MySQL-only patch loop above still expects the old values, while
+        // everything from here on reads the new ones.
+        $this->migrateExtensionTypeValues();
 
         // Branding paths and obsolete files need migrating on every database driver.
         $this->migrateDefaultBrandingAssetsToPublicDirectory();
@@ -1001,6 +1008,21 @@ class Patcher implements InjectionAwareInterface
      * running it twice on a MySQL/MariaDB install (once via Patch115, once via
      * the unconditional call) is a harmless no-op the second time.
      */
+    /**
+     * Rename the extension type discriminator from 'mod' to 'module'.
+     *
+     * Portable (plain UPDATE ... WHERE) and idempotent, so it runs on every
+     * platform rather than as a numbered MySQL-only patch. Must run before
+     * anything below reads the extension table. The 'mod' literals are
+     * pre-migration stored values, not references to the current type.
+     */
+    public function migrateExtensionTypeValues(): void
+    {
+        $module = ExtensionType::Module->value;
+        $this->executeSql('UPDATE extension SET type = :new WHERE type = :old', ['new' => $module, 'old' => 'mod']);
+        $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
+    }
+
     public function migrateThemePackageLayout(): void
     {
         $filesystem = $this->filesystem;
@@ -1358,7 +1380,7 @@ class Patcher implements InjectionAwareInterface
             ];
 
             $conditions = [];
-            $params = ['type' => 'mod'];
+            $params = ['type' => ExtensionType::Module->value];
             $i = 0;
             foreach ($legacy as $name => $olds) {
                 foreach ($olds as $old) {
@@ -1392,7 +1414,7 @@ class Patcher implements InjectionAwareInterface
 
                     $this->executeSql(
                         'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
-                        ['new' => $target, 'type' => 'mod', 'name' => $name, 'old' => $old]
+                        ['new' => $target, 'type' => ExtensionType::Module->value, 'name' => $name, 'old' => $old]
                     );
                 }
             }

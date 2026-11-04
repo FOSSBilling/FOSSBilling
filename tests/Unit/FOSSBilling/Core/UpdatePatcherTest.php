@@ -1982,6 +1982,28 @@ test('retired hook cleanup uses both portable delete statements without paramete
     });
 });
 
+test('migrateExtensionTypeValues converts legacy mod rows to module and is idempotent', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT)');
+    $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, meta_key TEXT)');
+    $pdo->exec("INSERT INTO extension (type, name, status) VALUES ('mod', 'news', 'installed'), ('mod', 'custom', 'deactivated'), ('theme', 'huraga', 'installed')");
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, meta_key) VALUES ('mod_hook', 'mod', 'listener'), ('mod_theme', 'settings', 'x')");
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new ReflectionMethod($patcher, 'migrateExtensionTypeValues'))->invoke($patcher);
+    }
+
+    expect($pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod'")->fetchColumn())->toBe(0)
+        ->and($pdo->query("SELECT name FROM extension WHERE type = 'module' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN))->toBe(['custom', 'news'])
+        ->and($pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'theme'")->fetchColumn())->toBe(1)
+        ->and($pdo->query("SELECT COUNT(*) FROM extension_meta WHERE rel_type = 'mod'")->fetchColumn())->toBe(0)
+        ->and($pdo->query("SELECT COUNT(*) FROM extension_meta WHERE rel_type = 'module'")->fetchColumn())->toBe(1)
+        ->and($pdo->query("SELECT COUNT(*) FROM extension_meta WHERE rel_type = 'settings'")->fetchColumn())->toBe(1);
+});
+
 test('migrateThemePackageLayout renames admin_default/huraga when only the old directory exists', function (): void {
     $adminDefault = Path::join(PATH_THEMES, 'admin_default');
     $huraga = Path::join(PATH_THEMES, 'huraga');
