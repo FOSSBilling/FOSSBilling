@@ -1694,6 +1694,8 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
             || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
             || str_starts_with($sql, 'UPDATE extension SET version')
+            || $sql === "UPDATE extension SET type = :new WHERE type = :old"
+            || $sql === 'UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old'
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
         ->andReturn($statement);
@@ -1818,7 +1820,7 @@ test('applyCorePatches removes retired hook data on non-MySQL drivers and remain
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'hook'")->fetchColumn())->toBe(0)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'config'")->fetchColumn())->toBe(1)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_invoice' AND meta_key = 'listener'")->fetchColumn())->toBe(1)
-            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod' AND name = 'invoice'")->fetchColumn())->toBe(1);
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'module' AND name = 'invoice'")->fetchColumn())->toBe(1);
     });
 });
 
