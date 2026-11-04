@@ -124,8 +124,7 @@ def po_escape(text: str) -> str:
 # Comment masking (replaced with spaces, newlines preserved -> offsets stable)
 # ---------------------------------------------------------------------------
 
-_PHP_TOKEN = re.compile(
-    r"(?P<php_open><\?(?:php|=))"
+_PHP_TOKEN = re.compile(    r"(?P<php_open><\?(?:php|=))"
     r"|(?P<heredoc><<<\s*['\"]?(?P<htag>[A-Za-z_][A-Za-z0-9_]*)['\"]?[^\n]*\n)"
     r"|(?P<dstr>\"(?:\\.|[^\"\\])*\")"
     r"|(?P<sstr>'(?:\\.|[^'\\])*')"
@@ -136,33 +135,54 @@ _PHP_TOKEN = re.compile(
 )
 
 
-def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]]]:
+# Standalone open-tag matcher for markup regions, where string and comment
+# alternatives must not apply (a stray quote there is text, not code).
+_PHP_OPEN = re.compile(r"<\?(?:php|=)")
+
+
+def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]], list[tuple[int, int]]]:
     """Blank out PHP comments, honouring strings and heredocs (offsets stable).
 
-    Also returns the spans of ordinary string literals and heredoc bodies so
-    callers can ignore keyword-like text inside string content (which real
-    xgettext never extracts).
+    Returns (masked, spans, php_spans): spans holds ordinary string literals
+    and heredoc bodies so callers can ignore keyword-like text inside string
+    content (which real xgettext never extracts); php_spans holds the
+    `<?php` / `<?=` regions so callers can ignore markup outside PHP.
 
-    Raw HTML outside `<?php` / `<?=` regions is copied through verbatim:
-    its quotes and `//` sequences are markup, not PHP strings or comments,
-    and must not corrupt span tracking.
+    Raw HTML outside PHP regions is copied through verbatim: its quotes and
+    `//` sequences are markup, not PHP strings or comments, and must not
+    corrupt span tracking.
     """
     out: list[str] = []
     spans: list[tuple[int, int]] = []
+    php_spans: list[tuple[int, int]] = []
     pos = 0
     in_php = False
-    for match in _PHP_TOKEN.finditer(text):
-        kind = match.lastgroup
-        if match.start() < pos:
-            # Inside an already-consumed heredoc body; it was copied verbatim.
+    region_start = 0
+    while True:
+        if not in_php:
+            # Markup text is copied verbatim: only an open tag can end it,
+            # so stray quotes here can never start a bogus string span.
+            match = _PHP_OPEN.search(text, pos)
+            if match is None:
+                out.append(text[pos:])
+                pos = len(text)
+                break
+            out.append(text[pos : match.end()])
+            pos = match.end()
+            in_php = True
+            region_start = match.start()
             continue
+        match = _PHP_TOKEN.search(text, pos)
+        if match is None:
+            break
+        kind = match.lastgroup
         if kind in ("php_open", "php_close"):
             out.append(text[pos : match.end()])
             pos = match.end()
-            in_php = kind == "php_open"
+            if kind == "php_close":
+                php_spans.append((region_start, match.end()))
+                in_php = False
             continue
-        if not in_php:
-            continue  # Markup text; copied verbatim by the trailing append.
         if kind == "heredoc":
             tag = match.group("htag")
             # Flexible heredoc (PHP 7.3+): indented marker optionally
@@ -186,7 +206,9 @@ def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]]]:
             out.append(token)
         pos = match.end()
     out.append(text[pos:])
-    return "".join(out), spans
+    if in_php:
+        php_spans.append((region_start, len(text)))
+    return "".join(out), spans, php_spans
 
 
 def _in_spans(spans: list[tuple[int, int]], starts: list[int], offset: int) -> bool:
@@ -200,46 +222,6 @@ _TWIG_COMMENT = re.compile(r"\{#.*?#\}", re.DOTALL)
 
 def _mask_twig_comments(text: str) -> str:
     return _TWIG_COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
-
-
-_SCRIPT_OPEN = re.compile(r"<(?P<tag>script|style)\b[^>]*>", re.IGNORECASE)
-_SCRIPT_CLOSE = re.compile(r"</(?P<tag>script|style)\s*>", re.IGNORECASE)
-# Inline `<?php` / `<?=` regions; quoted strings are skipped while seeking
-# the closer so a `?>` inside a string doesn't end the region early.
-_PHP_REGION = re.compile(
-    r"<\?(?:php|=)(?:[^'\"]|'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\")*?\?>",
-    re.IGNORECASE | re.DOTALL,
-)
-
-
-def _mask_embedded_blocks(masked: str, spans: list[tuple[int, int]], starts: list[int]) -> str:
-    """Blank out `<script>` / `<style>` regions (JS/CSS, never PHP messages).
-
-    Each block is masked from its own opener to its own closer. Openers
-    inside string/heredoc spans are skipped without consuming anything, so
-    markup inside PHP strings is left alone; `<?php` / `<?=` regions inside
-    a block are carved back out so inline template code still extracts.
-    Newlines are preserved, keeping offsets stable for callers.
-    """
-    php_spans = [match.span() for match in _PHP_REGION.finditer(masked)]
-    php_starts = [start for start, _ in php_spans]
-    chars = list(masked)
-    for opener in _SCRIPT_OPEN.finditer(masked):
-        if _in_spans(spans, starts, opener.start()):
-            continue
-        tag = opener.group("tag").lower()
-        for closer in _SCRIPT_CLOSE.finditer(masked, opener.end()):
-            if closer.group("tag").lower() != tag:
-                continue
-            if _in_spans(spans, starts, closer.start()) and _in_spans(
-                php_spans, php_starts, closer.start()
-            ):
-                continue  # Closer inside a PHP string, e.g. $m = '</script>'.
-            for i in range(opener.start(), closer.end()):
-                if chars[i] != "\n" and not _in_spans(php_spans, php_starts, i):
-                    chars[i] = " "
-            break
-    return "".join(chars)
 
 
 # ---------------------------------------------------------------------------
@@ -381,14 +363,12 @@ def _record_ternary(
     occurrences: list[Occurrence],
     stats: dict,
     ref: str,
-    short: str | None,
     variants: list[str],
 ) -> None:
+    """Record ternary branch variants as msgids sharing one reference."""
     for variant in variants:
         occurrences.append(Occurrence(variant, None, ref))
     stats["php"] += 1
-    if short is not None:
-        stats["ctor_classes"][short] += 1
 
 
 def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
@@ -414,11 +394,15 @@ def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
 
 
 def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
-    masked, spans = _mask_php_comments(text)
+    masked, spans, php_spans = _mask_php_comments(text)
     starts = [start for start, _ in spans]
-    masked = _mask_embedded_blocks(masked, spans, starts)
+    php_starts = [start for start, _ in php_spans]
     for match in _PHP_CALL.finditer(masked):
         if _in_spans(spans, starts, match.start()):
+            continue
+        if not _in_spans(php_spans, php_starts, match.start()):
+            # Markup outside PHP tags (inline handlers, text nodes): not code.
+            stats["skipped_markup"] += 1
             continue
         keyword = match.group("kw")
         short: str | None = None
@@ -431,7 +415,10 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
                 # exception) unless denylisted. The short name is what matters;
                 # a leading backslash leaves an empty first segment.
                 short = match.group("cls").split("\\")[-1]
-                if short.lower() in _NON_MESSAGE_LOWER or short == "class":
+                # `class` can never name a real class, so any casing of it is
+                # the anonymous-class keyword (PHP names are case-insensitive).
+                low = short.lower()
+                if low in _NON_MESSAGE_LOWER or low == "class":
                     stats["skipped_ctor"] += 1
                     continue
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
@@ -452,9 +439,10 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
                     occurrences,
                     stats,
                     f"{rel}:{_line_no(masked, match.start())}",
-                    short,
                     tern[0],
                 )
+                if short is not None:
+                    stats["ctor_classes"][short] += 1
                 continue
             # Non-literal first argument (variable, constant, expression...).
             # Only logged for plausible message carriers; `new Finder($x)`
@@ -501,7 +489,6 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
                     occurrences,
                     stats,
                     f"{rel}:{_line_no(masked, match.start())}",
-                    short,
                     tern[0],
                 )
                 continue
@@ -548,7 +535,7 @@ def iter_source_files(src_dir: str):
 
 def extract_all(src_dir: str) -> tuple[list[Occurrence], dict]:
     occurrences: list[Occurrence] = []
-    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped_ctor": 0, "ctor_classes": Counter(), "skipped": [], "files": 0}
+    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped_ctor": 0, "skipped_markup": 0, "ctor_classes": Counter(), "skipped": [], "files": 0}
     for full, rel in iter_source_files(src_dir):
         with open(full, encoding="utf-8", errors="replace") as handle:
             text = handle.read()
@@ -727,7 +714,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"twig hits: {stats['twig']}, php hits: {stats['php']}", file=sys.stderr)
     print(f"unique msgids written: {count}", file=sys.stderr)
     print(f"skipped non-literals: {stats['skipped_dynamic']}, skipped defs: {stats['skipped_defs']}", file=sys.stderr)
-    print(f"skipped non-message ctors: {stats['skipped_ctor']}", file=sys.stderr)
+    print(f"skipped non-message ctors: {stats['skipped_ctor']}, skipped markup: {stats['skipped_markup']}", file=sys.stderr)
     if stats["ctor_classes"]:
         top = ", ".join(f"{name}x{hits}" for name, hits in stats["ctor_classes"].most_common(20))
         print(f"constructed classes: {top}", file=sys.stderr)

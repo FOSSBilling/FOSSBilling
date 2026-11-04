@@ -154,6 +154,7 @@ def main() -> int:
     )
     check("DOMDocument", "$d = new \\DOMDocument('1.0', 'UTF-8');", set())
     check("anonymous class", "$o = new class('not a message') extends Foo {};", set())
+    check("uppercase anonymous class", "$o = new CLASS('not a message');", set())
     # Existing guards are preserved.
     check(
         "concatenated first arg skipped",
@@ -183,45 +184,22 @@ def main() -> int:
     )
     print("ok: plural forms recorded")
     check(
-        "script block constructors ignored",
-        "<script>\nvar d = new Date('2026-01-01');\n</script>\n"
-        "throw new \\RuntimeException('Real message');",
-        {"Real message"},
-    )
-    check(
-        "style block ignored",
-        "<style>\n.a { content: 'x'; }\n</style>\n"
-        "throw new \\RuntimeException('Real message');",
-        {"Real message"},
-    )
-    check(
         "script tags inside strings left alone",
         "$x = '<script>';\nthrow new \\RuntimeException('Kept');\n$y = '</script>';",
         {"Kept"},
     )
     check(
-        "string-held opener does not swallow a later real block",
-        "$x = '<script>';\n<script>\nvar d = new Date('2026-01-01');\n</script>\n"
-        "throw new \\RuntimeException('Real message');",
-        {"Real message"},
-    )
-    check(
         "inline php inside script blocks still extracts",
         "<script>var l = <?= __trans('Save changes') ?>;\n"
         "var d = new Date('2026-01-01');</script>\n"
-        "throw new \\RuntimeException('Real message');",
+        "<?php throw new \\RuntimeException('Real message');",
         {"Save changes", "Real message"},
     )
     check(
         "php region survives a closer inside its strings",
         "<script><?php $x = 'a ?> b'; $y = __trans('Real'); ?></script>\n"
-        "throw new \\RuntimeException('Kept');",
+        "<?php throw new \\RuntimeException('Kept');",
         {"Real", "Kept"},
-    )
-    check(
-        "closer inside a php string does not end masking",
-        "<script><?php $m = '</script>'; ?>var w = new Widget('JS-only');</script>",
-        set(),
     )
     check(
         "ternary over match expression",
@@ -252,6 +230,18 @@ def main() -> int:
         "<?php throw new \\RuntimeException('Real message');",
         {"Real message"},
     )
+    check(
+        "markup outside php tags never records",
+        "<?php $a = 1; ?>\n<button onclick=\"new Widget('Preview')\">x</button>\n"
+        "<?php throw new \\RuntimeException('Real message');",
+        {"Real message"},
+    )
+    check(
+        "heredoc body does not end the php region",
+        "<script><?php $t = <<<HTML\n<p>a ?> b</p>\nHTML;\n"
+        "$y = __trans('Real'); ?></script>",
+        {"Real"},
+    )
     occurrences, stats = extract_for("throw new \\RuntimeException('Kept');")
     assert {occ.msgid for occ in occurrences} == {"Kept"}
     assert stats["php"] == 1
@@ -263,6 +253,12 @@ def main() -> int:
     assert stats["php"] == 0
     assert stats["skipped_ctor"] == 1
     print("ok: denylist skip stats recorded")
+    occurrences, stats = extract_for(
+        "throw new \\RuntimeException('admin' === $area ? 'Admin area' : 'Client area');"
+    )
+    assert {occ.msgid for occ in occurrences} == {"Admin area", "Client area"}
+    assert stats["ctor_classes"]["RuntimeException"] == 1
+    print("ok: ternary construction counted once")
     print("all fixture tests passed")
     return 0
 
