@@ -1625,7 +1625,7 @@ function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array
     }
     $manager = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class);
     $manager->shouldReceive('getLatestExtensionRelease')->once()->andReturn(['download_url' => 'https://example.test/package.zip']);
-    $manager->shouldReceive('isExtensionCompatible')->once()->andReturnTrue();
+    $manager->shouldReceive('isReleaseCompatible')->once()->with(['download_url' => 'https://example.test/package.zip'])->andReturnTrue();
     $staff = Mockery::mock(Box\Mod\Staff\Service::class);
     $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('extension', 'manage_extensions');
     $di = container();
@@ -1711,7 +1711,7 @@ test('downloadAndExtract rejects an excluded FOSSBilling version before download
 
             return new Symfony\Component\HttpClient\Response\MockResponse(json_encode(['result' => [
                 'id' => 'example', 'name' => 'Example', 'author' => ['name' => 'Author'],
-                'releases' => [['tag' => '1.0.0', 'download_url' => 'https://example.test/archive.zip', 'requires' => ['fossbilling' => '>=0.0.0 !=0.0.1']]],
+                'releases' => [['tag' => '1.0.0', 'download_url' => 'https://example.test/archive.zip', 'requires' => ['fossbilling' => '>=0.0.0 !=' . FOSSBilling\Core\System\Version::VERSION]]],
             ]], JSON_THROW_ON_ERROR));
         });
         $manager = new FOSSBilling\Core\Remote\ExtensionManager();
@@ -1725,6 +1725,32 @@ test('downloadAndExtract rejects an excluded FOSSBilling version before download
         expect(fn () => $service->downloadAndExtract('module', 'example'))
             ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This extension is not compatible with your version of FOSSBilling.');
         expect($requests)->toHaveCount(1);
+    } finally {
+        FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
+    }
+});
+
+test('downloadAndExtract checks the selected release without fetching latest twice', function (): void {
+    $branch = FOSSBilling\Core\System\Config::getProperty('update_branch', 'release');
+    FOSSBilling\Core\System\Config::setProperty('update_branch', 'release', false);
+
+    try {
+        $selected = ['download_url' => 'https://example.test/selected.zip', 'requires' => ['fossbilling' => '!=' . FOSSBilling\Core\System\Version::VERSION]];
+        $replacement = ['download_url' => 'https://example.test/replacement.zip', 'requires' => ['fossbilling' => '*']];
+        $manager = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class)->makePartial();
+        $manager->shouldReceive('getLatestExtensionRelease')->once()->with('example')->andReturn($selected, $replacement);
+        $manager->shouldReceive('isExtensionCompatible')->never();
+        $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+        $staff->shouldReceive('checkPermissionsAndThrowException')->once();
+        $filesystem = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
+        $filesystem->shouldReceive('mkdir')->never();
+        $di = container();
+        $di['extension_manager'] = $manager;
+        $di['mod_service'] = $di->protect(fn () => $staff);
+        $service = new Service($filesystem);
+        $service->setDi($di);
+        expect(fn () => $service->downloadAndExtract('module', 'example'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This extension is not compatible with your version of FOSSBilling.');
     } finally {
         FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
     }

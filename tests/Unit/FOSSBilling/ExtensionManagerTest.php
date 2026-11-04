@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use FOSSBilling\Core\Remote\ExtensionManager;
+use FOSSBilling\Core\System\Version;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -291,13 +292,13 @@ it('evaluates complete release constraints before installation', function (?stri
         FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
     }
 })->with([
-    ['>=0.0.0 <1.0', true],
-    ['^0.0.1', true],
-    ['~0.0.1', true],
-    ['<0.0.1', false],
-    ['>=0.0.0 !=0.0.1', false],
-    ['>=0.0.0 <0.0.1 || >=1.0', false],
-    ['>=1.0 || =0.0.1', true],
+    ['>=' . Version::VERSION . ' <=' . Version::VERSION, true],
+    ['^' . Version::VERSION, true],
+    ['~' . Version::VERSION, true],
+    ['<' . Version::VERSION, false],
+    ['>=0.0.0 !=' . Version::VERSION, false],
+    ['<' . Version::VERSION . ' || >' . Version::VERSION, false],
+    ['>' . Version::VERSION . ' || =' . Version::VERSION, true],
     ['not a constraint', false],
     ['', false],
     [null, false],
@@ -312,6 +313,8 @@ it('preserves preview-branch behavior but rejects malformed ranges', function ()
         $entry['releases'][0]['requires'] = ['fossbilling' => '>=99.0'];
         expect(catalogManager($entry)->isExtensionCompatible('Example'))->toBeTrue();
         $entry['releases'][0]['requires']['fossbilling'] = 'invalid';
+        expect(catalogManager($entry)->isExtensionCompatible('Example'))->toBeFalse();
+        $entry['releases'][0]['requires']['fossbilling'] = 1;
         expect(catalogManager($entry)->isExtensionCompatible('Example'))->toBeFalse();
     } finally {
         FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
@@ -412,30 +415,42 @@ it('shares one total HTTP budget across pages', function (): void {
     $di['http_client'] = new MockHttpClient(function ($method, $url, $options) use (&$requests, &$budgets) {
         $budgets[] = $options['max_duration'];
         expect($options['timeout'])->toBeLessThanOrEqual(5);
-        usleep(20_000);
         ++$requests;
 
         return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => $requests < 2, 'next_cursor' => $requests < 2 ? 'next' : null]], JSON_THROW_ON_ERROR));
     });
-    $manager = new ExtensionManager();
+    $manager = Mockery::mock(ExtensionManager::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $manager->shouldReceive('getMonotonicTime')->andReturn(0.0, 0.0, 2.0, 2.0, 3.0);
     $manager->setDi($di);
     expect($manager->getExtensionList())->toBe([]);
-    expect($budgets[0])->toBeGreaterThan(0)->toBeLessThanOrEqual(10);
-    expect($budgets[1])->toBeGreaterThan(0)->toBeLessThan($budgets[0]);
+    expect($budgets)->toBe([10.0, 8.0]);
 });
 
 it('rejects a response that arrives after the overall deadline', function (): void {
     $di = new Pimple\Container();
     $di['cache'] = new ArrayAdapter();
-    $di['http_client'] = new MockHttpClient(function () {
-        // MockHttpClient does not enforce max_duration itself.
-        usleep(10_050_000);
-
-        return new MockResponse(json_encode(['result' => [catalogEntry()], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
-    });
-    $manager = new ExtensionManager();
+    $di['http_client'] = new MockHttpClient(new MockResponse(json_encode(['result' => [catalogEntry()], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR)));
+    $manager = Mockery::mock(ExtensionManager::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $manager->shouldReceive('getMonotonicTime')->andReturn(0.0, 0.0, 10.05);
     $manager->setDi($di);
     expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
+});
+
+it('does not request the next page with a sub-millisecond budget', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $requests = 0;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests) {
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => true, 'next_cursor' => 'next']], JSON_THROW_ON_ERROR));
+    });
+    $manager = Mockery::mock(ExtensionManager::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $manager->shouldReceive('getMonotonicTime')->andReturn(0.0, 0.0, 9.9995, 9.9995);
+    $manager->setDi($di);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($requests)->toBe(1);
     expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
 });
 

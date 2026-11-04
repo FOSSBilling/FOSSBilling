@@ -33,8 +33,9 @@ test('extension directory renders optional icons under strict variables', functi
     );
 
     expect($html)->toContain('Example Extension')->toContain('1.0.0');
-    if (($iconFields['icon_url'] ?? '') === 'https://example.com/icon.svg') {
-        expect($html)->toContain('src="https://example.com/icon.svg"')->not->toContain('href="#settings"');
+    $iconUrl = $iconFields['icon_url'] ?? '';
+    if (str_starts_with($iconUrl, 'https://') || str_starts_with($iconUrl, 'http://')) {
+        expect($html)->toContain('src="' . $iconUrl . '"')->not->toContain('href="#settings"');
     } else {
         expect($html)->toContain('href="#settings"')->not->toContain('<img');
     }
@@ -44,6 +45,7 @@ test('extension directory renders optional icons under strict variables', functi
     'empty icon' => [['icon_url' => '']],
     'package-relative icon' => [['icon_url' => 'icon.svg']],
     'provided icon' => [['icon_url' => 'https://example.com/icon.svg']],
+    'provided http icon' => [['icon_url' => 'http://cdn.example.net/icon.png']],
 ]);
 
 test('extension directory degrades gracefully with sparse directory metadata', function (array $extension, array $present, array $absent): void {

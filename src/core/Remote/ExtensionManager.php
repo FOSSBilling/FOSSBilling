@@ -193,9 +193,13 @@ class ExtensionManager implements InjectionAwareInterface
      */
     public function isExtensionCompatible(string $extension): bool
     {
-        $latest = $this->getLatestExtensionRelease($extension);
+        return $this->isReleaseCompatible($this->getLatestExtensionRelease($extension));
+    }
 
-        $constraint = $latest['requires']['fossbilling'] ?? null;
+    /** Check the exact release selected for download without fetching it again. */
+    public function isReleaseCompatible(array $release): bool
+    {
+        $constraint = $release['requires']['fossbilling'] ?? null;
         if (!is_string($constraint) || trim($constraint) === '') {
             return false;
         }
@@ -299,10 +303,10 @@ class ExtensionManager implements InjectionAwareInterface
     {
         $items = [];
         $seenCursors = [];
-        $deadline = hrtime(true) / 1e9 + self::DIRECTORY_REQUEST_BUDGET;
+        $deadline = $this->getMonotonicTime() + self::DIRECTORY_REQUEST_BUDGET;
         $pages = 0;
         while (true) {
-            $remaining = $deadline - hrtime(true) / 1e9;
+            $remaining = $deadline - $this->getMonotonicTime();
             // cURL truncates durations to milliseconds; zero would disable its timeout.
             if ($remaining < 0.001 || ($paginate && $pages >= self::DIRECTORY_MAX_PAGES)) {
                 throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
@@ -314,7 +318,7 @@ class ExtensionManager implements InjectionAwareInterface
                 'query' => $query,
             ]);
             $json = $response->toArray();
-            if (hrtime(true) / 1e9 >= $deadline) {
+            if ($this->getMonotonicTime() >= $deadline) {
                 throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
             }
             if (isset($json['error']) && is_array($json['error'])) {
@@ -346,6 +350,12 @@ class ExtensionManager implements InjectionAwareInterface
             $seenCursors[$cursor] = true;
             $query['cursor'] = $cursor;
         }
+    }
+
+    /** Monotonic seconds, kept overridable for deterministic deadline tests. */
+    protected function getMonotonicTime(): float
+    {
+        return hrtime(true) / 1e9;
     }
 
     /**
