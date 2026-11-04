@@ -1365,8 +1365,17 @@ class Patcher implements InjectionAwareInterface
 
             // A post-migration 'module' row can share a name with a legacy 'mod'
             // row (e.g. the module was reinstalled from the directory before this
-            // ran). Renaming would violate the type_name unique key, so the stale
-            // legacy duplicate is dropped and the canonical row retained.
+            // ran). Renaming would violate the type_name unique key, so one side
+            // is dropped first. Installed-ness wins over type, because only an
+            // installed row keeps the extension active: a non-installed canonical
+            // row must not shadow an installed legacy one. When both (or neither)
+            // are installed, the canonical 'module' row is retained as the newer
+            // record.
+            $this->executeSql(
+                "DELETE FROM extension WHERE type = :new AND (status IS NULL OR status <> 'installed') AND name IN (SELECT name FROM (SELECT name FROM extension WHERE type = :old AND status = 'installed') AS legacy)",
+                ['new' => $module, 'old' => 'mod']
+            );
+
             $this->executeSql(
                 'DELETE FROM extension WHERE type = :old AND name IN (SELECT name FROM (SELECT name FROM extension WHERE type = :new) AS canonical)',
                 ['old' => 'mod', 'new' => $module]

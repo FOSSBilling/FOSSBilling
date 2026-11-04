@@ -1695,7 +1695,7 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
             || str_starts_with($sql, 'UPDATE extension_meta')
             || str_starts_with($sql, 'UPDATE extension SET version')
             || str_starts_with($sql, 'SELECT 1 FROM extension WHERE type')
-            || str_starts_with($sql, 'DELETE FROM extension WHERE type = :old')
+            || str_starts_with($sql, 'DELETE FROM extension WHERE type = :')
             || $sql === 'UPDATE extension SET type = :new WHERE type = :old'
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
@@ -1749,7 +1749,7 @@ function allowExtensionTypeMigrationCalls(Mockery\MockInterface $pdo): void
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT 1 FROM extension WHERE type')))
         ->andReturn($statement);
     $pdo->shouldReceive('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'DELETE FROM extension WHERE type = :old')))
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'DELETE FROM extension WHERE type = :')))
         ->andReturn($statement);
     $pdo->shouldReceive('prepare')
         ->with('UPDATE extension SET type = :new WHERE type = :old')
@@ -2010,28 +2010,34 @@ test('retired hook cleanup uses both portable delete statements without paramete
     });
 });
 
-test('migrateExtensionTypeValues drops a legacy duplicate that shadows a module row', function (): void {
+test('migrateExtensionTypeValues drops a legacy duplicate that shadows a module row', function (string $modStatus, string $moduleStatus, string $expectedStatus, string $expectedVersion): void {
     $pdo = new PDO('sqlite::memory:');
     $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT, version TEXT)');
     $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, meta_key TEXT)');
     $pdo->exec('CREATE UNIQUE INDEX type_name ON extension (type, name)');
-    $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES
-        ('mod', 'news', 'installed', '1.0.0'),
-        ('module', 'news', 'installed', '0.8.9'),
-        ('mod', 'custom', 'installed', '2.0.0')");
+    $insert = $pdo->prepare('INSERT INTO extension (type, name, status, version) VALUES (?, ?, ?, ?)');
+    $insert->execute(['mod', 'news', $modStatus, '1.0.0']);
+    $insert->execute(['module', 'news', $moduleStatus, '0.8.9']);
+    $insert->execute(['mod', 'custom', 'installed', '2.0.0']);
 
     $patcher = new Patcher();
     $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
 
     (new ReflectionMethod($patcher, 'migrateExtensionTypeValues'))->invoke($patcher);
 
-    // The canonical row survives untouched; the legacy shadow is dropped; the
-    // rest of the legacy rows are renamed rather than deleted.
+    // Exactly one row per name survives, with the status that keeps the
+    // extension active (installed wins over type; otherwise the canonical row).
     expect($pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod'")->fetchColumn())->toBe(0)
-        ->and($pdo->query("SELECT version FROM extension WHERE type = 'module' AND name = 'news'")->fetchColumn())->toBe('0.8.9')
         ->and($pdo->query("SELECT COUNT(*) FROM extension WHERE name = 'news'")->fetchColumn())->toBe(1)
+        ->and($pdo->query("SELECT status FROM extension WHERE name = 'news'")->fetchColumn())->toBe($expectedStatus)
+        ->and($pdo->query("SELECT version FROM extension WHERE name = 'news'")->fetchColumn())->toBe($expectedVersion)
         ->and($pdo->query("SELECT type FROM extension WHERE name = 'custom'")->fetchColumn())->toBe('module');
-});
+})->with([
+    'both installed keeps canonical' => ['installed', 'installed', 'installed', '0.8.9'],
+    'installed legacy beats non-installed canonical' => ['installed', 'deactivated', 'installed', '1.0.0'],
+    'canonical installed beats non-installed legacy' => ['deactivated', 'installed', 'installed', '0.8.9'],
+    'neither installed keeps canonical' => ['deactivated', 'deactivated', 'deactivated', '0.8.9'],
+]);
 
 test('healSchemaDrift converts legacy type rows on a same-version deploy', function (): void {
     $patcher = Mockery::mock(Patcher::class)->makePartial();
