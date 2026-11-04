@@ -124,11 +124,14 @@ def po_escape(text: str) -> str:
 # Comment masking (replaced with spaces, newlines preserved -> offsets stable)
 # ---------------------------------------------------------------------------
 
-_PHP_TOKEN = re.compile(    r"(?P<php_open><\?(?:php|=))"
+_PHP_TOKEN = re.compile(
+    r"(?P<php_open><\?(?:php|=))"
     r"|(?P<heredoc><<<\s*['\"]?(?P<htag>[A-Za-z_][A-Za-z0-9_]*)['\"]?[^\n]*\n)"
     r"|(?P<dstr>\"(?:\\.|[^\"\\])*\")"
     r"|(?P<sstr>'(?:\\.|[^'\\])*')"
-    r"|(?P<linec>//[^\n]*|#[^\n]*)"
+    # A `?>` ends PHP mode even inside a `//` or `#` comment (verified on
+    # PHP 8.5; `/* */` is unaffected), so line comments stop before it.
+    r"|(?P<linec>//(?:(?!\?>)[^\n])*|#(?:(?!\?>)[^\n])*)"
     r"|(?P<blockc>/\*.*?\*/)"
     r"|(?P<php_close>\?>)",
     re.DOTALL,
@@ -290,6 +293,41 @@ def extract_twig(rel: str, text: str, occurrences: list[Occurrence], stats: dict
         stats["twig"] += 1
 
 
+def _balanced_close(
+    masked: str, start: int, spans: list[tuple[int, int]], starts: list[int]
+) -> int | None:
+    """End offset just past the bracket matching the opener at offset."""
+    depth = 0
+    i = start
+    while i < len(masked):
+        char = masked[i]
+        if char in ("'", '"'):
+            parsed = _read_php_literal(masked, i)
+            if parsed is None:
+                return None
+            idx = bisect.bisect_right(starts, i) - 1
+            if (
+                idx >= 0
+                and spans[idx][0] <= i < spans[idx][1]
+                and parsed[1] > spans[idx][1]
+            ):
+                return None
+            i = parsed[1]
+            continue
+        if _in_spans(spans, starts, i):
+            return None
+        if char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+            if depth < 0:
+                return None
+        i += 1
+    return None
+
+
 def _read_ternary_literals(
     masked: str, start: int, spans: list[tuple[int, int]], starts: list[int]
 ) -> tuple[list[str], int] | None:
@@ -298,8 +336,19 @@ def _read_ternary_literals(
     The condition may hold balanced brackets and quoted strings; anything
     else bails out with None. Returns ([branch_a, branch_b], end_offset).
     """
-    depth = 0
+    # A fully parenthesized argument (`($c ? 'x' : 'y')`) nests the ternary
+    # one level deep; unwrap such layers so the scan below sees it top-level.
     i = start
+    while True:
+        while i < len(masked) and masked[i] in " \t\n\r":
+            i += 1
+        if i >= len(masked) or masked[i] != "(":
+            break
+        end = _balanced_close(masked, i, spans, starts)
+        if end is None or re.match(r"\s*[),]", masked[end:]) is None:
+            break
+        i += 1
+    depth = 0
     cond_end: int | None = None
     while i < len(masked):
         char = masked[i]

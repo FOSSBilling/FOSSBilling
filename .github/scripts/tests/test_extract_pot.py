@@ -123,6 +123,17 @@ def main() -> int:
         set(),
     )
     check(
+        "parenthesized ternary argument",
+        "throw new \\RuntimeException(($failed ? 'Failure' : 'Success'));",
+        {"Failure", "Success"},
+    )
+    check(
+        "comment close tag ends php mode",
+        "<?php $a = 1; // note ?>\n<button onclick=\"new Widget('Preview')\">x</button>\n"
+        "<?php throw new \\RuntimeException('Real message');",
+        {"Real message"},
+    )
+    check(
         "ternary with dynamic branch skipped",
         "throw new \\RuntimeException($ok ? getMessage() : 'Fallback');",
         set(),
@@ -258,6 +269,7 @@ def main() -> int:
     )
     assert {occ.msgid for occ in occurrences} == {"Admin area", "Client area"}
     assert stats["ctor_classes"]["RuntimeException"] == 1
+    assert stats["php"] == 1
     print("ok: ternary construction counted once")
     print("all fixture tests passed")
     return 0
