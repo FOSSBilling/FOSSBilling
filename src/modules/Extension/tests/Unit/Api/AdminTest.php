@@ -172,12 +172,12 @@ test('update dispatches the typed before event before the current unsupported up
     $api = apiEndpoint(new Box\Mod\Extension\Api\Admin());
     $extension = new Extension();
     setEntityId($extension, 53);
-    $extension->setType('mod');
+    $extension->setType(ExtensionType::Module->value);
     $extension->setName('example');
     $repository = Mockery::mock(ExtensionRepository::class);
     $repository->shouldReceive('findOneByTypeAndName')
         ->once()
-        ->with('mod', 'example')
+        ->with(ExtensionType::Module->value, 'example')
         ->andReturn($extension);
 
     $steps = [];
