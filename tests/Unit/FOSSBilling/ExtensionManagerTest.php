@@ -358,3 +358,103 @@ it('rejects repeating cursors and never caches a partial list', function (): voi
     expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
 });
+
+it('normalizes legacy module filters before sending them to v2', function (string $type, string $expected): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(function ($method, $url) use ($expected) {
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        expect($query['type'])->toBe($expected);
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect($manager->getExtensionList($type))->toBe([]);
+})->with([['mod', 'module'], ['module', 'module'], ['theme', 'theme']]);
+
+it('bounds unique pagination cursors and preserves the stale list', function (): void {
+    $entry = catalogEntry();
+    $di = new Pimple\Container();
+    $cache = new ArrayAdapter();
+    $key = catalogCacheKey('extensions', ['limit' => 100]);
+    $cache->get($key . '-stale', static fn () => [$entry]);
+    $di['cache'] = $cache;
+    $requests = 0;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests) {
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => true, 'next_cursor' => 'cursor-' . $requests]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect($manager->getExtensionList())->toBe([$entry]);
+    expect($requests)->toBe(100);
+    expect($cache->getItem($key)->isHit())->toBeFalse();
+    expect($cache->getItem($key . '-unavailable')->isHit())->toBeTrue();
+});
+
+it('rejects an oversized result before caching or accepting a terminal page', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(new MockResponse(json_encode(['result' => array_fill(0, 10_001, catalogEntry()), 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR)));
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
+});
+
+it('shares one total HTTP budget across pages', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $requests = 0;
+    $budgets = [];
+    $di['http_client'] = new MockHttpClient(function ($method, $url, $options) use (&$requests, &$budgets) {
+        $budgets[] = $options['max_duration'];
+        expect($options['timeout'])->toBeLessThanOrEqual(5);
+        usleep(20_000);
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => [], 'pagination' => ['has_more' => $requests < 2, 'next_cursor' => $requests < 2 ? 'next' : null]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect($manager->getExtensionList())->toBe([]);
+    expect($budgets[0])->toBeGreaterThan(0)->toBeLessThanOrEqual(10);
+    expect($budgets[1])->toBeGreaterThan(0)->toBeLessThan($budgets[0]);
+});
+
+it('rejects a response that arrives after the overall deadline', function (): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $di['http_client'] = new MockHttpClient(function () {
+        // MockHttpClient does not enforce max_duration itself.
+        usleep(10_050_000);
+
+        return new MockResponse(json_encode(['result' => [catalogEntry()], 'pagination' => ['has_more' => false, 'next_cursor' => null]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBeFalse();
+});
+
+it('enforces the cumulative item limit across pages', function (int $lastPageSize, bool $accepted): void {
+    $di = new Pimple\Container();
+    $di['cache'] = new ArrayAdapter();
+    $requests = 0;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests, $lastPageSize) {
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => array_fill(0, $requests === 1 ? 5_000 : $lastPageSize, catalogEntry()), 'pagination' => ['has_more' => $requests === 1, 'next_cursor' => $requests === 1 ? 'next' : null]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+    if ($accepted) {
+        expect($manager->getExtensionList())->toHaveCount(10_000);
+    } else {
+        expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    }
+    expect($requests)->toBe(2);
+    expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBe($accepted);
+})->with([[5_000, true], [5_001, false]]);

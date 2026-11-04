@@ -14,6 +14,7 @@ namespace FOSSBilling\Core\Remote;
 use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\BaseException as Exception;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Config;
@@ -30,6 +31,10 @@ class ExtensionManager implements InjectionAwareInterface
      * How long a fetched directory response is served as-is.
      */
     private const int DIRECTORY_CACHE_TTL = 3600;
+
+    private const int DIRECTORY_MAX_PAGES = 100;
+    private const int DIRECTORY_MAX_ITEMS = 10_000;
+    private const float DIRECTORY_REQUEST_BUDGET = 10.0;
 
     /**
      * How long the last-known-good response is kept as a fallback for directory outages.
@@ -134,7 +139,7 @@ class ExtensionManager implements InjectionAwareInterface
         $params = [];
 
         if (!empty($type)) {
-            $params['type'] = $type;
+            $params['type'] = ExtensionType::normalize($type);
         }
 
         $params['limit'] = 100;
@@ -294,12 +299,24 @@ class ExtensionManager implements InjectionAwareInterface
     {
         $items = [];
         $seenCursors = [];
+        $deadline = hrtime(true) / 1e9 + self::DIRECTORY_REQUEST_BUDGET;
+        $pages = 0;
         while (true) {
+            $remaining = $deadline - hrtime(true) / 1e9;
+            // cURL truncates durations to milliseconds; zero would disable its timeout.
+            if ($remaining < 0.001 || ($paginate && $pages >= self::DIRECTORY_MAX_PAGES)) {
+                throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
+            }
+            ++$pages;
             $response = $this->di['http_client']->request('GET', $url, [
-                'timeout' => 5,
+                'timeout' => min(5, $remaining),
+                'max_duration' => $remaining,
                 'query' => $query,
             ]);
             $json = $response->toArray();
+            if (hrtime(true) / 1e9 >= $deadline) {
+                throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
+            }
             if (isset($json['error']) && is_array($json['error'])) {
                 throw new Exception((string) ($json['error']['message'] ?? 'Unknown error'), null, 746);
             }
@@ -314,6 +331,9 @@ class ExtensionManager implements InjectionAwareInterface
                 || !is_bool($pagination['has_more'] ?? null)
                 || !array_key_exists('next_cursor', $pagination)) {
                 throw new Exception('Invalid pagination from the FOSSBilling extension directory.', null, 746);
+            }
+            if (count($json['result']) > self::DIRECTORY_MAX_ITEMS - count($items)) {
+                throw new Exception('Extension directory refresh exceeded its item limit.', null, 746);
             }
             $items = [...$items, ...$json['result']];
             if (!$pagination['has_more']) {
