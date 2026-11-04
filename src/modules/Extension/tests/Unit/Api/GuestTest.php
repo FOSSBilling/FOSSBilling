@@ -13,17 +13,20 @@ declare(strict_types=1);
 use Box\Mod\Extension\Service;
 use FOSSBilling\Core\Enums\ExtensionType;
 
-test('is_on accepts the module key', function (): void {
+test('is_on returns the module key lookup result', function (bool $active): void {
     $api = apiEndpoint(new Box\Mod\Extension\Api\Guest());
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('isExtensionActive')
         ->once()
         ->with(ExtensionType::Module->value, 'cookieconsent')
-        ->andReturnTrue();
+        ->andReturn($active);
     $api->setService($service);
 
-    expect($api->is_on(['module' => 'cookieconsent']))->toBeTrue();
-});
+    expect($api->is_on(['module' => 'cookieconsent']))->toBe($active);
+})->with([
+    'active' => [true],
+    'inactive' => [false],
+]);
 
 test('is_on accepts the legacy mod key', function (): void {
     $api = apiEndpoint(new Box\Mod\Extension\Api\Guest());
