@@ -1369,7 +1369,7 @@ class Patcher implements InjectionAwareInterface
         $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
     }
 
-    public function syncSeededModuleVersions(): void
+    public function syncSeededModuleVersions(string $type = ExtensionType::Module->value): void
     {
         try {
             // Historically seeded versions per module. Any row still carrying
@@ -1381,7 +1381,7 @@ class Patcher implements InjectionAwareInterface
             ];
 
             $conditions = [];
-            $params = ['type' => ExtensionType::Module->value];
+            $params = ['type' => $type];
             $i = 0;
             foreach ($legacy as $name => $olds) {
                 foreach ($olds as $old) {
@@ -1415,7 +1415,7 @@ class Patcher implements InjectionAwareInterface
 
                     $this->executeSql(
                         'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
-                        ['new' => $target, 'type' => ExtensionType::Module->value, 'name' => $name, 'old' => $old]
+                        ['new' => $target, 'type' => $type, 'name' => $name, 'old' => $old]
                     );
                 }
             }

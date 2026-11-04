@@ -1734,6 +1734,24 @@ function allowSeededModuleVersionSyncCalls(Mockery\MockInterface $pdo): void
 }
 
 /**
+ * Allow the portable extension type migration statements in otherwise strict
+ * applyCorePatches() PDO mocks. The SQLite and strict-mock tests above cover
+ * the migration's behavior and SQL.
+ */
+function allowExtensionTypeMigrationCalls(Mockery\MockInterface $pdo): void
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->andReturnTrue();
+
+    $pdo->shouldReceive('prepare')
+        ->with('UPDATE extension SET type = :new WHERE type = :old')
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old')
+        ->andReturn($statement);
+}
+
+/**
  * Allow the portable retired-hook cleanup statements in otherwise strict applyCorePatches()
  * PDO mocks. The SQLite and strict-mock tests below cover the cleanup's behavior and SQL.
  */
@@ -2120,6 +2138,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
         allowSeededModuleVersionSyncCalls($pdo);
+        allowExtensionTypeMigrationCalls($pdo);
         allowProductCategoryPriorityHealProbe($pdo);
 
         $di = new Pimple\Container();
@@ -2172,6 +2191,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
         allowSeededModuleVersionSyncCalls($pdo);
+        allowExtensionTypeMigrationCalls($pdo);
         allowProductCategoryPriorityHealProbe($pdo);
 
         $di = new Pimple\Container();
@@ -2353,7 +2373,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
         // creating its table) and then predating a later metadata change - the same situation
         // a currently-installed extension's table missing a new column would hit.
         FOSSBilling\Core\Doctrine\SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
-        $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'custompages', 'installed', '1.0.0')");
+        $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('module', 'custompages', 'installed', '1.0.0')");
         $connection->executeStatement('DROP TABLE custom_pages');
 
         $pdo = mockPdoAllowingThemeMigrationCalls();

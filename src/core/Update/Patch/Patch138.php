@@ -17,6 +17,9 @@ class Patch138 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        $patcher->syncSeededModuleVersions();
+        // Patch138 runs in the legacy MySQL-only patch loop, i.e. before the
+        // portable migrateExtensionTypeValues() step, so it still sees the
+        // pre-migration 'mod' rows.
+        $patcher->syncSeededModuleVersions('mod');
     }
 }
