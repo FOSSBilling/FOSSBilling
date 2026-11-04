@@ -90,7 +90,7 @@ class Module implements InjectionAwareInterface
 
         $info = [
             'id' => $this->module,
-            'type' => 'mod',
+            'type' => Enums\ExtensionType::Module->value,
             'name' => $this->module,
             'description' => null,
             'homepage_url' => 'https://fossbilling.org/',
@@ -128,7 +128,7 @@ class Module implements InjectionAwareInterface
         }
 
         $info['id'] = $this->module;
-        $info['type'] = 'mod';
+        $info['type'] = Enums\ExtensionType::Module->value;
 
         if (!empty($info['icon_url'])) {
             $info['icon_url'] = '/modules/' . ucfirst($this->module) . '/' . $info['icon_url'];

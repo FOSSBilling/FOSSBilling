@@ -14,6 +14,7 @@ use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\InstallSeeder;
 use FOSSBilling\Core\Doctrine\ModuleEntityScope;
 use FOSSBilling\Core\Doctrine\SchemaInstaller;
+use FOSSBilling\Core\Enums\ExtensionType;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -45,14 +46,14 @@ test('installedExtensionModules returns an empty list when the extension table d
     expect(ModuleEntityScope::installedExtensionModules($connection))->toBe([]);
 });
 
-test('installedExtensionModules lists only mod-type rows currently marked installed', function (): void {
+test('installedExtensionModules lists only module-type rows currently marked installed', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $entityManager = EntityManagerFactory::create($connection);
     SchemaInstaller::createSchema($entityManager);
 
-    $connection->insert('extension', ['type' => 'mod', 'name' => 'custompages', 'status' => 'installed', 'version' => '1.0.0']);
-    // A deactivated mod-type row must not count, nor a non-mod (theme) type row even if installed.
-    $connection->insert('extension', ['type' => 'mod', 'name' => 'massmailer', 'status' => 'deactivated', 'version' => '1.0.0']);
+    $connection->insert('extension', ['type' => ExtensionType::Module->value, 'name' => 'custompages', 'status' => 'installed', 'version' => '1.0.0']);
+    // A deactivated module-type row must not count, nor a non-module (theme) type row even if installed.
+    $connection->insert('extension', ['type' => ExtensionType::Module->value, 'name' => 'massmailer', 'status' => 'deactivated', 'version' => '1.0.0']);
     $connection->insert('extension', ['type' => 'theme', 'name' => 'huraga', 'status' => 'installed', 'version' => '1.0.0']);
 
     expect(ModuleEntityScope::installedExtensionModules($connection))->toBe(['custompages']);
@@ -77,10 +78,10 @@ test('isEagerNow is false for a non-core module absent from the installed list',
  * content.sql actually seeds, which can silently drift out of sync with the real file. This test
  * is what keeps that copy honest: seed the real content.sql into a real database and compare what
  * it actually installs against the constant, so a future content.sql change that adds, removes, or
- * renames a default-installed mod extension without updating this constant fails loudly here,
+ * renames a default-installed module extension without updating this constant fails loudly here,
  * rather than silently gating (or failing to gate) the wrong module at fresh-install time.
  */
-test('DEFAULT_ACTIVE_EXTENSIONS matches exactly the mod extensions the real content.sql seeds as installed', function (): void {
+test('DEFAULT_ACTIVE_EXTENSIONS matches exactly the module extensions the real content.sql seeds as installed', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $entityManager = EntityManagerFactory::create($connection);
     SchemaInstaller::createSchema($entityManager);
@@ -89,7 +90,7 @@ test('DEFAULT_ACTIVE_EXTENSIONS matches exactly the mod extensions the real cont
     InstallSeeder::seedContent($connection, $entityManager, $contentSql, new DateTimeImmutable());
 
     $seededDefaultExtensions = $connection->fetchFirstColumn(
-        "SELECT name FROM extension WHERE type = 'mod' AND status = 'installed' ORDER BY name",
+        "SELECT name FROM extension WHERE type = 'module' AND status = 'installed' ORDER BY name",
     );
 
     $declaredDefaultExtensions = (new ReflectionClass(ModuleEntityScope::class))->getConstant('DEFAULT_ACTIVE_EXTENSIONS');

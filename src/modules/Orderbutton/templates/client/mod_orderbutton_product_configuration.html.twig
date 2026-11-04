@@ -76,7 +76,7 @@
                     {% set tpl = "mod_service"~product.type~"_order_form.html.twig" %}
                     {% if guest.system_template_exists({"file":tpl}) %}
                         {{ include(tpl, product) }}
-                    {% elseif product.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+                    {% elseif product.form_id and guest.extension_is_on({"module":"formbuilder"}) %}
                         {{ product_details }}
                         {% set form = guest.formbuilder_get({"id":product.form_id}) %}
                         {{ include('mod_formbuilder_build.html.twig', product) }}

@@ -20,6 +20,7 @@ use Box\Mod\Extension\Event\BeforeAdminDeactivateExtensionEvent;
 use Box\Mod\Extension\Event\BeforeAdminInstallExtensionEvent;
 use Box\Mod\Extension\Event\BeforeAdminUninstallExtensionEvent;
 use Box\Mod\Extension\Event\BeforeAdminUpdateExtensionEvent;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Core\Api\AbstractApi
@@ -295,7 +296,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     private function _getExtension($data)
     {
         $service = $this->getService();
-        $ext = $service->getExtensionRepository()->findOneByTypeAndName($data['type'], $data['id']);
+        $ext = $service->getExtensionRepository()->findOneByTypeAndName(ExtensionType::normalize((string) $data['type']), $data['id']);
         if (!$ext instanceof Extension) {
             throw new \FOSSBilling\Core\Exception\InformationException('Extension not found');
         }

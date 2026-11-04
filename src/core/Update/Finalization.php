@@ -181,10 +181,11 @@ class Finalization implements InjectionAwareInterface
         // finalization runs - check for schema drift outside the lock, sync inside it.
         $patcher = $this->createPatcher();
 
-        // Seeded module versions can drift without a version change or a schema
-        // change (e.g. a code-only deploy carrying a manifest backfill), which
-        // the drift check below would never notice. The sync no-ops on a
-        // single probe SELECT when there is nothing stale, and never throws.
+        // Extension type values and seeded module versions can drift without a
+        // version change (e.g. a code-only deploy), which neither the pending
+        // finalization nor the schema drift check below would notice. Both
+        // no-op on a probe SELECT when there is nothing stale, and never throw.
+        $patcher->migrateExtensionTypeValues();
         $patcher->syncSeededModuleVersions();
 
         if ($patcher->isSchemaOutOfSync()) {

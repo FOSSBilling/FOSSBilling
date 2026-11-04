@@ -17,6 +17,7 @@ use FOSSBilling\Core\Doctrine\DriverManagerFactory;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\ModuleEntityScope;
 use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\BaseException;
 use FOSSBilling\Core\Security\Crypt;
 use FOSSBilling\Core\System\Config;
@@ -212,6 +213,12 @@ class Patcher implements InjectionAwareInterface
         // would otherwise be left with a theme that never got renamed and orphaned saved settings
         // forever.
         $this->migrateThemePackageLayout();
+
+        // Extension type values were renamed ('mod' to 'module'). This must run
+        // before anything below reads the extension table: the legacy
+        // MySQL-only patch loop above still expects the old values, while
+        // everything from here on reads the new ones.
+        $this->migrateExtensionTypeValues();
 
         // Branding paths and obsolete files need migrating on every database driver.
         $this->migrateDefaultBrandingAssetsToPublicDirectory();
@@ -1333,6 +1340,58 @@ class Patcher implements InjectionAwareInterface
     }
 
     /**
+     * Rename the extension type discriminator from 'mod' to 'module'.
+     *
+     * Portable (plain UPDATE/DELETE ... WHERE, no MySQL-specific syntax) and
+     * idempotent. Runs from applyCorePatches() on every platform rather than
+     * as a numbered MySQL-only patch, and again from
+     * {@see Finalization::healSchemaDrift()} so code-only (same-version)
+     * deploys convert too. A probe SELECT makes both call sites a no-op once
+     * every row is canonical. The 'mod' literals are pre-migration stored
+     * values, not references to the current type.
+     */
+    public function migrateExtensionTypeValues(): void
+    {
+        try {
+            $module = ExtensionType::Module->value;
+
+            $stale = $this->fetchOne(
+                'SELECT 1 FROM extension WHERE type = :old UNION ALL SELECT 1 FROM extension_meta WHERE rel_type = :old LIMIT 1',
+                ['old' => 'mod']
+            );
+            if ($stale === false) {
+                return;
+            }
+
+            // A post-migration 'module' row can share a name with a legacy 'mod'
+            // row (e.g. the module was reinstalled from the directory before this
+            // ran). Renaming would violate the type_name unique key, so one side
+            // is dropped first. Installed-ness wins over type, because only an
+            // installed row keeps the extension active: a non-installed canonical
+            // row must not shadow an installed legacy one. When both (or neither)
+            // are installed, the canonical 'module' row is retained as the newer
+            // record.
+            $this->executeSql(
+                "DELETE FROM extension WHERE type = :new AND (status IS NULL OR status <> 'installed') AND name IN (SELECT name FROM (SELECT name FROM extension WHERE type = :old AND status = 'installed') AS legacy)",
+                ['new' => $module, 'old' => 'mod']
+            );
+
+            $this->executeSql(
+                'DELETE FROM extension WHERE type = :old AND name IN (SELECT name FROM (SELECT name FROM extension WHERE type = :new) AS canonical)',
+                ['old' => 'mod', 'new' => $module]
+            );
+
+            $this->executeSql('UPDATE extension SET type = :new WHERE type = :old', ['new' => $module, 'old' => 'mod']);
+            $this->executeSql('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old', ['new' => $module, 'old' => 'mod']);
+        } catch (\Throwable $e) {
+            // Runs from healSchemaDrift() on every request, which must not throw
+            // (an unreachable database simply reports "nothing to do"). The next
+            // request retries; the migration is idempotent.
+            $this->logUpdate('warning', 'Extension type migration skipped: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * The manifest backfill aligned every in-repo manifest version with the
      * release version, but existing installs still carry whatever content.sql
      * seeded when they were installed. Sync those seeded rows with the version
@@ -1346,7 +1405,7 @@ class Patcher implements InjectionAwareInterface
      * display-only version sync must not break requests or updates, it only
      * logs and skips.
      */
-    public function syncSeededModuleVersions(): void
+    public function syncSeededModuleVersions(string $type = ExtensionType::Module->value): void
     {
         try {
             // Historically seeded versions per module. Any row still carrying
@@ -1358,7 +1417,7 @@ class Patcher implements InjectionAwareInterface
             ];
 
             $conditions = [];
-            $params = ['type' => 'mod'];
+            $params = ['type' => $type];
             $i = 0;
             foreach ($legacy as $name => $olds) {
                 foreach ($olds as $old) {
@@ -1392,7 +1451,7 @@ class Patcher implements InjectionAwareInterface
 
                     $this->executeSql(
                         'UPDATE extension SET version = :new WHERE type = :type AND name = :name AND version = :old',
-                        ['new' => $target, 'type' => 'mod', 'name' => $name, 'old' => $old]
+                        ['new' => $target, 'type' => $type, 'name' => $name, 'old' => $old]
                     );
                 }
             }

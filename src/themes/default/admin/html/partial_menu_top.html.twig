@@ -23,7 +23,7 @@
     <li><a href="{{ 'extension/settings/staff'|url }}#tab-new">{{ 'Staff member'|trans }}</a></li>
     {% endif %}
 
-    {% if guest.extension_is_on({ 'mod': 'news' }) and admin.system_is_allowed({ 'mod': 'news'}) %}
+    {% if guest.extension_is_on({"module": 'news' }) and admin.system_is_allowed({ 'mod': 'news'}) %}
     <li><a href="{{ 'news'|url }}#tab-new">{{ 'Announcement'|trans }}</a></li>
     {% endif %}
 </ul>

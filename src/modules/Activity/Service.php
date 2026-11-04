@@ -24,6 +24,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\SortOptions;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
@@ -82,7 +83,7 @@ class Service implements InjectionAwareInterface
     public function logEvent($data): void
     {
         $extensionService = $this->di['mod_service']('extension');
-        $ip = $extensionService->isExtensionActive('mod', 'demo')
+        $ip = $extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')
             ? null
             : $this->di['request']->getClientIp();
 
@@ -101,7 +102,7 @@ class Service implements InjectionAwareInterface
     public function recordClientLogin(AfterClientLoginEvent $event): void
     {
         $extensionService = $this->di['mod_service']('extension');
-        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $event->ip;
+        $ip = $extensionService->isExtensionActive(ExtensionType::Module->value, 'demo') ? null : $event->ip;
 
         $history = (new ActivityClientHistory())
             ->setClientId($event->clientId)
@@ -115,7 +116,7 @@ class Service implements InjectionAwareInterface
     public function recordAdminLogin(AfterAdminLoginEvent $event): void
     {
         $extensionService = $this->di['mod_service']('extension');
-        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $event->ip;
+        $ip = $extensionService->isExtensionActive(ExtensionType::Module->value, 'demo') ? null : $event->ip;
 
         $history = (new ActivityAdminHistory())
             ->setAdminId($event->adminId)

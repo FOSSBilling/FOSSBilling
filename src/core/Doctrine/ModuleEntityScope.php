@@ -13,6 +13,7 @@ namespace FOSSBilling\Core\Doctrine;
 
 use Box\Mod\Extension\Entity\Extension;
 use Doctrine\DBAL\Connection;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Module;
 
 /**
@@ -84,7 +85,7 @@ final class ModuleEntityScope
 
         return $connection->fetchFirstColumn(
             'SELECT name FROM extension WHERE type = :type AND status = :status',
-            ['type' => 'mod', 'status' => Extension::STATUS_INSTALLED],
+            ['type' => ExtensionType::Module->value, 'status' => Extension::STATUS_INSTALLED],
         );
     }
 

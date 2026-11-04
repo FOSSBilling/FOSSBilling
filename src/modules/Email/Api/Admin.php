@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Box\Mod\Email\Api;
 
 use Box\Mod\Staff\Entity\AdminGroup;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -415,7 +416,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('email', 'send_emails');
 
         $extensionService = $this->getDi()['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
+        if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
             return false;
         }
 

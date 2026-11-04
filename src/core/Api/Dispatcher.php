@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Core\Api;
 
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\BaseException;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -56,7 +57,7 @@ final class Dispatcher implements InjectionAwareInterface
         }
 
         $extensionService = $this->getDi()['mod']('extension')->getService();
-        if (!$extensionService->isExtensionActive('mod', $mod)) {
+        if (!$extensionService->isExtensionActive(ExtensionType::Module->value, $mod)) {
             throw new BaseException('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
         }
 

@@ -128,9 +128,9 @@ LOCK TABLES `extension` WRITE;
 
 INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`)
 VALUES
-	(1,'mod','news','installed','0.8.9'),
-	(2,'mod','branding','installed','0.8.9'),
-	(3,'mod','redirect','installed','0.8.9');
+	(1,'module','news','installed','0.8.9'),
+	(2,'module','branding','installed','0.8.9'),
+	(3,'module','redirect','installed','0.8.9');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;

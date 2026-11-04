@@ -1694,6 +1694,9 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
             || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
             || str_starts_with($sql, 'UPDATE extension SET version')
+            || str_starts_with($sql, 'SELECT 1 FROM extension WHERE type')
+            || str_starts_with($sql, 'DELETE FROM extension WHERE type = :')
+            || $sql === 'UPDATE extension SET type = :new WHERE type = :old'
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
         ->andReturn($statement);
@@ -1728,6 +1731,31 @@ function allowSeededModuleVersionSyncCalls(Mockery\MockInterface $pdo): void
         ->andReturn($statement);
     $pdo->shouldReceive('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension SET version')))
+        ->andReturn($statement);
+}
+
+/**
+ * Allow the portable extension type migration statements in otherwise strict
+ * applyCorePatches() PDO mocks. The SQLite and strict-mock tests above cover
+ * the migration's behavior and SQL.
+ */
+function allowExtensionTypeMigrationCalls(Mockery\MockInterface $pdo): void
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->andReturnTrue();
+    $statement->shouldReceive('fetchColumn')->andReturn(false);
+
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT 1 FROM extension WHERE type')))
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'DELETE FROM extension WHERE type = :')))
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with('UPDATE extension SET type = :new WHERE type = :old')
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with('UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old')
         ->andReturn($statement);
 }
 
@@ -1818,7 +1846,7 @@ test('applyCorePatches removes retired hook data on non-MySQL drivers and remain
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'hook'")->fetchColumn())->toBe(0)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'config'")->fetchColumn())->toBe(1)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_invoice' AND meta_key = 'listener'")->fetchColumn())->toBe(1)
-            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod' AND name = 'invoice'")->fetchColumn())->toBe(1);
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'module' AND name = 'invoice'")->fetchColumn())->toBe(1);
     });
 });
 
@@ -1982,6 +2010,78 @@ test('retired hook cleanup uses both portable delete statements without paramete
     });
 });
 
+test('migrateExtensionTypeValues drops a legacy duplicate that shadows a module row', function (string $modStatus, string $moduleStatus, string $expectedStatus, string $expectedVersion): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT, version TEXT)');
+    $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, meta_key TEXT)');
+    $pdo->exec('CREATE UNIQUE INDEX type_name ON extension (type, name)');
+    $insert = $pdo->prepare('INSERT INTO extension (type, name, status, version) VALUES (?, ?, ?, ?)');
+    $insert->execute(['mod', 'news', $modStatus, '1.0.0']);
+    $insert->execute(['module', 'news', $moduleStatus, '0.8.9']);
+    $insert->execute(['mod', 'custom', 'installed', '2.0.0']);
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+    (new ReflectionMethod($patcher, 'migrateExtensionTypeValues'))->invoke($patcher);
+
+    // Exactly one row per name survives, with the status that keeps the
+    // extension active (installed wins over type; otherwise the canonical row).
+    expect($pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod'")->fetchColumn())->toBe(0)
+        ->and($pdo->query("SELECT COUNT(*) FROM extension WHERE name = 'news'")->fetchColumn())->toBe(1)
+        ->and($pdo->query("SELECT status FROM extension WHERE name = 'news'")->fetchColumn())->toBe($expectedStatus)
+        ->and($pdo->query("SELECT version FROM extension WHERE name = 'news'")->fetchColumn())->toBe($expectedVersion)
+        ->and($pdo->query("SELECT type FROM extension WHERE name = 'custom'")->fetchColumn())->toBe('module');
+})->with([
+    'both installed keeps canonical' => ['installed', 'installed', 'installed', '0.8.9'],
+    'installed legacy beats non-installed canonical' => ['installed', 'deactivated', 'installed', '1.0.0'],
+    'canonical installed beats non-installed legacy' => ['deactivated', 'installed', 'installed', '0.8.9'],
+    'neither installed keeps canonical' => ['deactivated', 'deactivated', 'deactivated', '0.8.9'],
+]);
+
+test('healSchemaDrift converts legacy type rows on a same-version deploy', function (): void {
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    $patcher->shouldReceive('migrateExtensionTypeValues')->once();
+    $patcher->shouldReceive('syncSeededModuleVersions')->once();
+    $patcher->shouldReceive('isSchemaOutOfSync')->once()->andReturnFalse();
+
+    $finalization = new class($patcher) extends FOSSBilling\Core\Update\Finalization {
+        public function __construct(private readonly Patcher $stubPatcher)
+        {
+            parent::__construct();
+        }
+
+        protected function createPatcher(): Patcher
+        {
+            return $this->stubPatcher;
+        }
+    };
+
+    $finalization->healSchemaDrift();
+});
+
+test('migrateExtensionTypeValues converts legacy mod rows to module and is idempotent', function (): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT)');
+    $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, meta_key TEXT)');
+    $pdo->exec("INSERT INTO extension (type, name, status) VALUES ('mod', 'news', 'installed'), ('mod', 'custom', 'deactivated'), ('theme', 'huraga', 'installed')");
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, meta_key) VALUES ('mod_hook', 'mod', 'listener'), ('mod_theme', 'settings', 'x')");
+
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo]));
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new ReflectionMethod($patcher, 'migrateExtensionTypeValues'))->invoke($patcher);
+    }
+
+    expect($pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod'")->fetchColumn())->toBe(0)
+        ->and($pdo->query("SELECT name FROM extension WHERE type = 'module' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN))->toBe(['custom', 'news'])
+        ->and($pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'theme'")->fetchColumn())->toBe(1)
+        ->and($pdo->query("SELECT COUNT(*) FROM extension_meta WHERE rel_type = 'mod'")->fetchColumn())->toBe(0)
+        ->and($pdo->query("SELECT COUNT(*) FROM extension_meta WHERE rel_type = 'module'")->fetchColumn())->toBe(1)
+        ->and($pdo->query("SELECT COUNT(*) FROM extension_meta WHERE rel_type = 'settings'")->fetchColumn())->toBe(1);
+});
+
 test('migrateThemePackageLayout renames admin_default/huraga when only the old directory exists', function (): void {
     $adminDefault = Path::join(PATH_THEMES, 'admin_default');
     $huraga = Path::join(PATH_THEMES, 'huraga');
@@ -2096,6 +2196,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
         allowSeededModuleVersionSyncCalls($pdo);
+        allowExtensionTypeMigrationCalls($pdo);
         allowProductCategoryPriorityHealProbe($pdo);
 
         $di = new Pimple\Container();
@@ -2148,6 +2249,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
         allowSeededModuleVersionSyncCalls($pdo);
+        allowExtensionTypeMigrationCalls($pdo);
         allowProductCategoryPriorityHealProbe($pdo);
 
         $di = new Pimple\Container();
@@ -2329,7 +2431,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
         // creating its table) and then predating a later metadata change - the same situation
         // a currently-installed extension's table missing a new column would hit.
         FOSSBilling\Core\Doctrine\SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
-        $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'custompages', 'installed', '1.0.0')");
+        $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('module', 'custompages', 'installed', '1.0.0')");
         $connection->executeStatement('DROP TABLE custom_pages');
 
         $pdo = mockPdoAllowingThemeMigrationCalls();

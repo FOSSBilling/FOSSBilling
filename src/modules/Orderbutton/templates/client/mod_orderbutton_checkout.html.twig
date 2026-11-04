@@ -51,7 +51,7 @@
                         {% if request.show_custom_form_values %}
                             <tr>
                                 <td>
-                                    {% if item.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+                                    {% if item.form_id and guest.extension_is_on({"module":"formbuilder"}) %}
                                         {% set form = guest.formbuilder_get({"id": item.form_id}) %}
                                         {# debug form #}
                                         <div class="well">

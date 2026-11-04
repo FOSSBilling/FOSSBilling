@@ -26,10 +26,21 @@ namespace FOSSBilling\Core\Enums;
  */
 enum ExtensionType: string
 {
-    case Module = 'mod';
+    case Module = 'module';
     case Theme = 'theme';
     case PaymentGateway = 'payment-gateway';
     case ServerManager = 'server-manager';
     case DomainRegistrar = 'domain-registrar';
     case Translation = 'translation';
+
+    /**
+     * Map a legacy type discriminator to its canonical value.
+     *
+     * Pre-migration callers, stored rows and third-party integrations may
+     * still use 'mod'; every other value passes through unchanged.
+     */
+    public static function normalize(string $type): string
+    {
+        return $type === 'mod' ? self::Module->value : $type;
+    }
 }
