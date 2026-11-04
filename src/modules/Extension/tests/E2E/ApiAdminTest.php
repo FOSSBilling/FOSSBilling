@@ -21,7 +21,7 @@ test('can activate extension', function (): void {
 });
 
 test('can deactivate extension', function (): void {
-    $result = Tests\Helpers\ApiClient::request('admin/extension/deactivate', ['type' => 'mod', 'id' => 'massmailer']);
+    $result = Tests\Helpers\ApiClient::request('admin/extension/deactivate', ['type' => 'module', 'id' => 'massmailer']);
     expect($result->wasSuccessful())->toBeTrue();
 });
 
