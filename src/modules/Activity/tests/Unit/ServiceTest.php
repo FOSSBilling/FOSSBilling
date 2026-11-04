@@ -20,6 +20,7 @@ use Box\Mod\Client\Event\AfterClientLoginEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\setEntityId;
@@ -86,7 +87,7 @@ test('log event persists a system activity entity', function (): void {
     $entityManager->shouldReceive('flush')->once();
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'demo')->andReturnFalse();
+    $extensionService->shouldReceive('isExtensionActive')->once()->with(ExtensionType::Module->value, 'demo')->andReturnFalse();
 
     $di = container();
     $di['em'] = $entityManager;
@@ -119,7 +120,7 @@ test('typed client login event persists history', function (): void {
     $entityManager->shouldReceive('flush')->once();
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'demo')->andReturnFalse();
+    $extensionService->shouldReceive('isExtensionActive')->once()->with(ExtensionType::Module->value, 'demo')->andReturnFalse();
 
     $di = container();
     $di['em'] = $entityManager;
@@ -145,7 +146,7 @@ test('typed admin login event persists history', function (): void {
     $entityManager->shouldReceive('flush')->once();
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'demo')->andReturnFalse();
+    $extensionService->shouldReceive('isExtensionActive')->once()->with(ExtensionType::Module->value, 'demo')->andReturnFalse();
 
     $di = container();
     $di['em'] = $entityManager;

@@ -1694,7 +1694,7 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
             || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
             || str_starts_with($sql, 'UPDATE extension SET version')
-            || $sql === "UPDATE extension SET type = :new WHERE type = :old"
+            || $sql === 'UPDATE extension SET type = :new WHERE type = :old'
             || $sql === 'UPDATE extension_meta SET rel_type = :new WHERE rel_type = :old'
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))

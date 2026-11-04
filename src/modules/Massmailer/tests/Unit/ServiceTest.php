@@ -6,6 +6,7 @@ use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\Exception\InformationException;
 
 function createMassmailerDi(?Connection $dbal = null): Pimple\Container
@@ -63,7 +64,7 @@ function createSendMessageDi(Box\Mod\Client\Entity\Client $client): Pimple\Conta
     $systemService->shouldReceive('renderEmailTplString')->andReturn('Content');
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')->with('mod', 'demo')->andReturn(false);
+    $extensionService->shouldReceive('isExtensionActive')->with(ExtensionType::Module->value, 'demo')->andReturn(false);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendMail')->zeroOrMoreTimes();
