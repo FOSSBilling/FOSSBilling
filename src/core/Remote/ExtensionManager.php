@@ -25,7 +25,7 @@ class ExtensionManager implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    private string $apiUrl = 'https://api.fossbilling.net/extensions/v2/';
+    private string $apiUrl = 'https://api.fossbilling.net/v2/';
 
     /**
      * How long a fetched directory response is served as-is.
@@ -63,7 +63,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The extension details
      *
-     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response
+     * @example https://api.fossbilling.net/v2/extensions/example An example of the API response
      *
      * @throws Exception
      */
@@ -87,7 +87,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of releases of the extension
      *
-     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response (the "releases" array)
+     * @example https://api.fossbilling.net/v2/extensions/example An example of the API response (the "releases" array)
      *
      * @throws Exception
      */
@@ -109,7 +109,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The latest release of the extension
      *
-     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response (the first element in the "releases" array)
+     * @example https://api.fossbilling.net/v2/extensions/example An example of the API response (the first element in the "releases" array)
      *
      * @throws Exception
      */
@@ -132,7 +132,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of extensions
      *
-     * @example https://api.fossbilling.net/extensions/v2/extensions An example of the API response
+     * @example https://api.fossbilling.net/v2/extensions An example of the API response
      */
     public function getExtensionList(?string $type = null): array
     {

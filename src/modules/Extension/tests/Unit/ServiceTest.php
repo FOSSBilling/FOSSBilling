@@ -1707,7 +1707,7 @@ test('downloadAndExtract rejects an excluded FOSSBilling version before download
         $di['cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
         $di['http_client'] = new Symfony\Component\HttpClient\MockHttpClient(function ($method, $url) use (&$requests) {
             $requests[] = $url;
-            expect($url)->toBe('https://api.fossbilling.net/extensions/v2/extensions/example');
+            expect($url)->toBe('https://api.fossbilling.net/v2/extensions/example');
 
             return new Symfony\Component\HttpClient\Response\MockResponse(json_encode(['result' => [
                 'id' => 'example', 'name' => 'Example', 'author' => ['name' => 'Author'],

@@ -347,8 +347,8 @@ it('uses v2 detail and follows opaque list cursors without a v1 version filter',
     $manager->setDi($di);
     expect($manager->getExtensionList('module'))->toBe([$entry, $entry]);
     expect($manager->getExtension('Example')['releases'][0]['requires']['fossbilling'])->toBe('^1.0');
-    expect($requests[0])->toStartWith('https://api.fossbilling.net/extensions/v2/extensions?');
-    expect($requests[2])->toBe('https://api.fossbilling.net/extensions/v2/extensions/example');
+    expect($requests[0])->toStartWith('https://api.fossbilling.net/v2/extensions?');
+    expect($requests[2])->toBe('https://api.fossbilling.net/v2/extensions/example');
 });
 
 it('rejects repeating cursors and never caches a partial list', function (): void {
