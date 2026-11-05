@@ -36,13 +36,13 @@ if (!defined('DEBUG')) {
 // Pre-declare translation functions before the application bootstrap loads them.
 // These stubs will be used if the full translation system isn't initialized
 if (!function_exists('__trans')) {
-    function __trans(string $msgid, ?array $values = null): string
+    function __trans(string $msgid, ?array $values = null, ?string $from = null): string
     {
         return $values ? strtr($msgid, $values) : $msgid;
     }
 }
 if (!function_exists('__pluralTrans')) {
-    function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
+    function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null, ?string $from = null): string
     {
         return $values ? strtr($msgid, $values) : $msgid;
     }

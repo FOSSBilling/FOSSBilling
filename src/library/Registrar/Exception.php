@@ -20,13 +20,13 @@ class Registrar_Exception extends FOSSBilling\Core\Exception\BaseException
      *                                  rather than fataling and hiding the error)
      * @param int            $code      the exception code
      */
-    public function __construct(string $message, array|int|null $variables = null, int $code = 0)
+    public function __construct(string $message, array|int|null $variables = null, int $code = 0, ?string $from = null)
     {
         if (is_int($variables)) {
             $code = $variables;
             $variables = null;
         }
 
-        parent::__construct($message, $variables, $code, true);
+        parent::__construct($message, $variables, $code, true, $from);
     }
 }

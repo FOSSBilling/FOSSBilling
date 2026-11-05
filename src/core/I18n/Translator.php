@@ -51,6 +51,7 @@ class Translator
 
         \_setlocale(LC_MESSAGES, $this->locale . '.' . $codeset);
         \_setlocale(LC_TIME, $this->locale . '.' . $codeset);
+        \_bindtextdomain('messages', PATH_LANGS);
         \_bindtextdomain($this->domain, PATH_LANGS);
         \_bind_textdomain_codeset($this->domain, $codeset);
         \_textdomain($this->domain);
