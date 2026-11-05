@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3935f00f3ca5ac989aeeb68be662c0c8",
+    "content-hash": "78487ee702577766c9ef2bc362b0ca3c",
     "packages": [
         {
             "name": "composer/semver",
@@ -2927,21 +2927,21 @@
         },
         {
             "name": "phpmyadmin/motranslator",
-            "version": "6.0.1",
+            "version": "6.0.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpmyadmin/motranslator.git",
-                "reference": "325812bd30c868751c76a38692ddfcd5129b3186"
+                "reference": "1ba5f5579f0f1ba5befd9c975610b304d5494a87"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/325812bd30c868751c76a38692ddfcd5129b3186",
-                "reference": "325812bd30c868751c76a38692ddfcd5129b3186",
+                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/1ba5f5579f0f1ba5befd9c975610b304d5494a87",
+                "reference": "1ba5f5579f0f1ba5befd9c975610b304d5494a87",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.2",
-                "symfony/expression-language": "^6.4 || ^7.0"
+                "symfony/expression-language": "^6.4.48 || ^7.4.21"
             },
             "require-dev": {
                 "phpmyadmin/coding-standard": "^4.0",
@@ -2994,7 +2994,8 @@
                 "issues": "https://github.com/phpmyadmin/motranslator/issues",
                 "source": "https://github.com/phpmyadmin/motranslator"
             },
-            "time": "2026-08-14T19:26:37+00:00"
+            "time": "2026-10-23T12:20:19+00:00",
+            "published-time": "2026-10-23T12:22:43+00:00"
         },
         {
             "name": "pimple/pimple",
@@ -11231,7 +11232,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "phpmyadmin/motranslator": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

@@ -398,9 +398,9 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('trans')]
-    public function trans(?string $text, ?array $values = null): string
+    public function trans(?string $text, ?array $values = null, ?string $from = null): string
     {
-        return __trans($text, $values);
+        return __trans($text, $values, $from);
     }
 
     #[AsTwigFilter('truncate')]

@@ -22,19 +22,20 @@ class BaseException extends \Exception
     /**
      * Creates a new translated exception.
      *
-     * @param string     $message   error message
-     * @param array|null $variables translation variables
-     * @param int        $code      the exception code
-     * @param bool       $protected if the variables in this should be considered protect, if so, hide them from the stack trace
+     * @param string      $message   error message
+     * @param array|null  $variables translation variables
+     * @param int         $code      the exception code
+     * @param bool        $protected if the variables in this should be considered protect, if so, hide them from the stack trace
+     * @param string|null $from      module translation source, falling back to core when untranslated
      */
-    public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
+    public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false, ?string $from = null)
     {
         $logStack = Config::getProperty('debug_and_monitoring.log_stacktrace', true);
         $stackLength = Config::getProperty('debug_and_monitoring.stacktrace_length', 25);
 
         // Translate the exception
         if (function_exists('__trans')) {
-            $message = __trans($message, $variables);
+            $message = __trans($message, $variables, $from);
         } elseif (is_array($variables)) {
             $message = strtr($message, $variables);
         }

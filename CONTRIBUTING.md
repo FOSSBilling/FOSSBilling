@@ -200,6 +200,33 @@ The software is primarily written in English. If you are a native or fluent spea
 
 We use Crowdin to manage translations. You can take a look at the [getting started guide](https://support.crowdin.com/crowdin-intro/), and then get involved in translating at [https://translate.fossbilling.org](https://translate.fossbilling.org).
 
+#### Translation lookup in code
+
+Use `|trans` in Twig. Templates stored under `src/modules/<Module>/` automatically look for that module's translations, then core translations, then the original English text. Shared layouts, includes, and macros use their own source file's module. Templates outside the modules directory, including database-stored templates, use core translations by default.
+
+Use `from` to override the detected source, or `from: 'core'` to explicitly select core:
+
+```twig
+{{ 'Save'|trans }}
+{{ 'Save'|trans(from: 'core') }}
+{{ 'Cookie Consent Settings'|trans(from: 'cookieconsent') }}
+{{ 'Hello :name'|trans({':name': client.first_name}, from: 'cookieconsent') }}
+```
+
+PHP helpers and translated exceptions take an optional `from` argument. PHP calls without it keep their existing translation source; their module is not inferred from the call stack.
+
+```php
+__trans('Cookie Consent Settings', from: 'cookieconsent');
+__pluralTrans(':count cookie', ':count cookies', $count, [':count' => $count], from: 'cookieconsent');
+throw new InformationException('Unable to save settings.', from: 'cookieconsent');
+```
+
+Module sources use lowercase module IDs and load compiled translations from `src/modules/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo`. Missing files, missing entries, and empty translations fall back to core in the active language before returning English. Module lookups do not change the global translation source. Administrator-written content is not automatically translated.
+
+MoTranslator selects plural forms using the translation file's language rules. Empty selected forms fall back individually. Validate translation files with `msgfmt --check --check-format` before distributing them; runtime lookup relies on valid plural definitions.
+
+MoTranslator is temporarily pinned to [upstream commit `1ba5f557`](https://github.com/phpmyadmin/motranslator/commit/1ba5f5579f0f1ba5befd9c975610b304d5494a87), which fixes boolean plural rules such as `n != 1`. Project-wide Composer stability remains stable. Once a stable 6.x release includes the fix, replace the pin with a stable constraint whose minimum is that fixed release and update the lockfile. Composer validation warns about the intentional temporary commit pin.
+
 ### Sponsoring the project
 
 If you do not have the time or necessary skills to actively take part in the development or documentation of the project then you can still play a part by making a financial contribution to the project. This could be a one-time contribution or a recurring monthly donation.

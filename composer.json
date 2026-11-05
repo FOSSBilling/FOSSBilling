@@ -66,7 +66,7 @@
         "nelexa/zip": "^4.0.2",
         "php-debugbar/php-debugbar": "^3.0.0",
         "php-debugbar/twig-bridge": "^2.0.0",
-        "phpmyadmin/motranslator": "^6.0.0",
+        "phpmyadmin/motranslator": "6.0.x-dev#1ba5f5579f0f1ba5befd9c975610b304d5494a87",
         "pimple/pimple": "^3.6",
         "plesk/api-php-lib": "^2.2.1",
         "prinsfrank/standards": "^3.15",
