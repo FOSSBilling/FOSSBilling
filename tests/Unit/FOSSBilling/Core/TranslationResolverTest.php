@@ -7,6 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: Apache-2.0.
  */
 
+// cspell:words Commun élément éléments Enregistrer Gemeinsam jeton jetons littéral noyau objets Plusieurs Repli
+// cspell:words Salut Sauvegarder Sichern Singulier Speichern Texte traduit traduits unité Zéro englishonly mple
+
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -31,7 +34,7 @@ function writeTranslationMo(string $path, array $entries, string $plurals = 'npl
 }
 
 /**
- * Pest.php predeclares English-only __trans stubs. Exercise the real production
+ * Pest.php defines English-only __trans stubs. Exercise the real production
  * helpers in a clean process, also isolating MoTranslator's static locale/cache.
  */
 function runTranslationRuntime(string $root, string $script, bool $debug = false): mixed

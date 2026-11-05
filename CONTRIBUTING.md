@@ -202,6 +202,8 @@ We use Crowdin to manage translations. You can take a look at the [getting start
 
 #### Translation lookup in code
 
+<!-- cspell:words msgfmt -->
+
 Use `|trans` in Twig. Templates stored under `src/modules/<Module>/` automatically look for that module's translations, then core translations, then the original English text. Shared layouts, includes, and macros use their own source file's module. Templates outside the modules directory, including database-stored templates, use core translations by default.
 
 Use `from` to override the detected source, or `from: 'core'` to explicitly select core:
