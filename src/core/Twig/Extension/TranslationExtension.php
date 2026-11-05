@@ -18,7 +18,7 @@ use Twig\Node\Node;
 use Twig\Node\Nodes;
 use Twig\NodeVisitor\NodeVisitorInterface;
 
-/** Infers translation sources once during compilation, never from the call stack. */
+/** Infers module translation sources from template paths during compilation. */
 final class TranslationExtension extends AbstractExtension implements NodeVisitorInterface
 {
     /** @return list<NodeVisitorInterface> */

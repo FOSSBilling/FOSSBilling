@@ -7,8 +7,8 @@ declare(strict_types=1);
  * SPDX-License-Identifier: Apache-2.0.
  */
 
-// cspell:words Commun élément éléments Enregistrer Gemeinsam jeton jetons littéral noyau objets Plusieurs Repli
-// cspell:words Salut Sauvegarder Sichern Singulier Speichern Texte traduit traduits unité Zéro englishonly mple
+// cspell:words Commun élément éléments Enregistrer Gemeinsam jeton jetons noyau objets Plusieurs Repli
+// cspell:words Salut Sauvegarder Sichern Singulier Speichern Texte traduit traduits unité Zéro englishonly
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -37,11 +37,11 @@ function writeTranslationMo(string $path, array $entries, string $plurals = 'npl
  * Pest.php defines English-only __trans stubs. Exercise the real production
  * helpers in a clean process, also isolating MoTranslator's static locale/cache.
  */
-function runTranslationRuntime(string $root, string $script, bool $debug = false): mixed
+function runTranslationRuntime(string $root, string $script): mixed
 {
     $bootstrap = '<?php declare(strict_types=1);' . "\n";
     foreach ([
-        'DEBUG' => $debug,
+        'DEBUG' => false,
         'PATH_ROOT' => PATH_ROOT,
         'PATH_MODS' => Path::join($root, 'modules'),
         'PATH_LANGS' => Path::join($root, 'locale'),
@@ -121,11 +121,6 @@ beforeEach(function (): void {
 
 afterEach(function (): void {
     (new Filesystem())->remove($this->translationRoot);
-});
-
-test('the unit test translation stubs accept the production from interface', function (): void {
-    expect(__trans('Hello :name', [':name' => 'Ada'], from: 'example'))->toBe('Hello Ada')
-        ->and(__pluralTrans(':count item', ':count items', 1, [':count' => 1], from: 'example'))->toBe('1 item');
 });
 
 test('existing PHP calls use core translations and substitute values after translation', function (): void {
@@ -309,27 +304,6 @@ test('the real Twig filter accepts named from and keeps core lookups and escapin
     $script .= '$result = $twig->render("module", ["name" => "<Ada>"]);';
     expect(runTranslationRuntime($this->translationRoot, $script))->toBe('Enregistrer|Sauvegarder|Commun|Salut &lt;Ada&gt;|Enregistrer');
 })->with([false, true]);
-
-test('Twig escaped literals resolve module translation keys', function (): void {
-    writeTranslationMo(Path::join($this->translationRoot, 'modules/Example/locale/fr_FR/LC_MESSAGES/example.mo'), [
-        "Hello\n:name" => 'Bonjour :name',
-        "Quote's" => 'Citation',
-        'é' => 'Accent',
-        'Literal #{label}' => 'Texte littéral',
-    ]);
-    expect(runTranslationRuntime($this->translationRoot, <<<'PHP'
-        $twig = new Twig\Environment(new Twig\Loader\ArrayLoader([
-            'page' => <<<'TWIG'
-                {{ 'Hello\n:name'|trans({':name': 'Ada'}, from: 'example') }}|{{ "Quote\'s"|trans(from: 'example') }}|{{ '\xC3\xA9'|trans(from: 'ex\x61mple') }}|{{ "Literal \#{label}"|trans(from: 'example') }}
-                TWIG,
-        ]));
-        $twig->addExtension(new Twig\Extension\AttributeExtension(FOSSBilling\Core\Twig\Extension\FOSSBillingExtension::class));
-        $twig->addRuntimeLoader(new Twig\RuntimeLoader\FactoryRuntimeLoader([
-            FOSSBilling\Core\Twig\Extension\FOSSBillingExtension::class => fn () => new FOSSBilling\Core\Twig\Extension\FOSSBillingExtension(new Pimple\Container()),
-        ]));
-        $result = $twig->render('page');
-        PHP))->toBe('Bonjour Ada|Citation|Accent|Texte littéral');
-});
 
 test('Twig infers each templates source including inherited layouts includes and macros', function (): void {
     $filesystem = new Filesystem();

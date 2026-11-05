@@ -14,9 +14,7 @@ use PhpMyAdmin\MoTranslator\Translator as MoTranslator;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-/**
- * Resolves an explicit module source, then core, then the original English text.
- */
+/** Module translations fall back to core, then English. */
 final class TranslationResolver
 {
     private static ?Loader $moduleLoader = null;
@@ -76,20 +74,9 @@ final class TranslationResolver
                 $modules->bindtextdomain($from, Path::join($modulePath, 'locale'));
 
                 yield $modules->getTranslator($from);
-            } else {
-                self::reportUnknownSource($from);
             }
-        } else {
-            self::reportUnknownSource($from);
         }
 
         yield $core->getTranslator('messages');
-    }
-
-    private static function reportUnknownSource(string $from): void
-    {
-        if (defined('DEBUG') && DEBUG) {
-            error_log('Unknown translation source: ' . json_encode($from));
-        }
     }
 }

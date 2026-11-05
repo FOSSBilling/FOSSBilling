@@ -204,18 +204,16 @@ We use Crowdin to manage translations. You can take a look at the [getting start
 
 <!-- cspell:words msgfmt -->
 
-Use `|trans` in Twig. Templates stored under `src/modules/<Module>/` automatically look for that module's translations, then core translations, then the original English text. Shared layouts, includes, and macros use their own source file's module. Templates outside the modules directory, including database-stored templates, use core translations by default.
+Twig templates under `src/modules/<Module>/` look up translations in that module, then core, then return the original English. Layouts, includes, and macros use their own file's module. Templates elsewhere, including database-stored templates, use core by default.
 
-Use `from` to override the detected source, or `from: 'core'` to explicitly select core:
+Use `from` to override the detected source:
 
 ```twig
-{{ 'Save'|trans }}
 {{ 'Save'|trans(from: 'core') }}
-{{ 'Cookie Consent Settings'|trans(from: 'cookieconsent') }}
 {{ 'Hello :name'|trans({':name': client.first_name}, from: 'cookieconsent') }}
 ```
 
-PHP helpers and translated exceptions take an optional `from` argument. PHP calls without it keep their existing translation source; their module is not inferred from the call stack.
+PHP helpers and translated exceptions accept `from`. Without it, they keep the current translation source:
 
 ```php
 __trans('Cookie Consent Settings', from: 'cookieconsent');
@@ -223,11 +221,11 @@ __pluralTrans(':count cookie', ':count cookies', $count, [':count' => $count], f
 throw new InformationException('Unable to save settings.', from: 'cookieconsent');
 ```
 
-Module sources use lowercase module IDs and load compiled translations from `src/modules/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo`. Missing files, missing entries, and empty translations fall back to core in the active language before returning English. Module lookups do not change the global translation source. Administrator-written content is not automatically translated.
+Sources use lowercase module IDs. Module translations load from `src/modules/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo`. Missing files and missing or empty entries fall back; intentional translations identical to English are preserved. Lookups keep the current language and global translation source unchanged.
 
-MoTranslator selects plural forms using the translation file's language rules. Empty selected forms fall back individually. Validate translation files with `msgfmt --check --check-format` before distributing them; runtime lookup relies on valid plural definitions.
+MoTranslator selects plural forms; empty forms fall back individually. Validate translation files with `msgfmt --check --check-format` before distributing them.
 
-MoTranslator is temporarily pinned to [upstream commit `1ba5f557`](https://github.com/phpmyadmin/motranslator/commit/1ba5f5579f0f1ba5befd9c975610b304d5494a87), which fixes boolean plural rules such as `n != 1`. Project-wide Composer stability remains stable. Once a stable 6.x release includes the fix, replace the pin with a stable constraint whose minimum is that fixed release and update the lockfile. Composer validation warns about the intentional temporary commit pin.
+MoTranslator is temporarily pinned to [upstream fix `1ba5f557`](https://github.com/phpmyadmin/motranslator/commit/1ba5f5579f0f1ba5befd9c975610b304d5494a87) for boolean plural rules such as `n != 1`. When a stable 6.x release includes it, require that release or newer and update the lockfile.
 
 ### Sponsoring the project
 
