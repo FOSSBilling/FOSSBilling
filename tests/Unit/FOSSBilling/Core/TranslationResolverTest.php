@@ -37,7 +37,7 @@ function writeTranslationMo(string $path, array $entries, string $plurals = 'npl
  * Pest.php defines English-only __trans stubs. Exercise the real production
  * helpers in a clean process, also isolating MoTranslator's static locale/cache.
  */
-function runTranslationRuntime(string $root, string $script): mixed
+function runTranslationRuntime(string $root, string $script, string $domain = 'messages'): mixed
 {
     $bootstrap = '<?php declare(strict_types=1);' . "\n";
     foreach ([
@@ -51,7 +51,7 @@ function runTranslationRuntime(string $root, string $script): mixed
     }
     $bootstrap .= 'require ' . var_export(Path::join(PATH_VENDOR, 'autoload.php'), true) . ";\n";
     $bootstrap .= 'require ' . var_export(Path::join(PATH_LIBRARY, 'TranslationFunctions.php'), true) . ";\n";
-    $bootstrap .= '(new FOSSBilling\Core\I18n\Translator())->setLocale("fr_FR")->setup();' . "\n";
+    $bootstrap .= '(new FOSSBilling\Core\I18n\Translator())->setLocale("fr_FR")->setDomain(' . var_export($domain, true) . ')->setup();' . "\n";
 
     $process = proc_open([PHP_BINARY, '-d', 'display_errors=stderr'], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
     if (!is_resource($process)) {
@@ -225,12 +225,25 @@ test('translation caches keep locales separate when switching languages in one p
     ]);
 });
 
-test('legacy default domains remain supported while module fallback explicitly uses core', function (): void {
+test('core fallback works when a custom domain is initialized first', function (): void {
     writeTranslationMo(Path::join($this->translationRoot, 'locale/fr_FR/LC_MESSAGES/custom.mo'), ['Save' => 'Custom save', 'Shared' => 'Custom shared']);
     expect(runTranslationRuntime($this->translationRoot, <<<'PHP'
-        (new FOSSBilling\Core\I18n\Translator())->setLocale('fr_FR')->setDomain('custom')->setup();
         $result = [__trans('Save'), __trans('Shared', from: 'example'), __trans('Save', from: 'core'), __trans('Save')];
-        PHP))->toBe(['Custom save', 'Commun', 'Enregistrer', 'Custom save']);
+        PHP, 'custom'))->toBe(['Custom save', 'Commun', 'Enregistrer', 'Custom save']);
+});
+
+test('non-module Twig lookups use core while PHP retains its custom default', function (): void {
+    writeTranslationMo(Path::join($this->translationRoot, 'locale/fr_FR/LC_MESSAGES/custom.mo'), ['Save' => 'Custom save']);
+    expect(runTranslationRuntime($this->translationRoot, <<<'PHP'
+        $di = new Pimple\Container();
+        $di['request'] = Symfony\Component\HttpFoundation\Request::create('/');
+        $di['cookie_queue'] = new FOSSBilling\Core\Http\CookieQueue();
+        $twig = (new FOSSBilling\Core\Twig\TwigFactory($di))->createThemeSettingsEnvironment();
+        $result = [
+            $twig->createTemplate('{{ "Save"|trans }}|{{ "Save"|trans(from: null) }}|{{ "Save"|trans(from: "core") }}|{{ "Save"|trans(from: "example") }}')->render(),
+            __trans('Save'),
+        ];
+        PHP, 'custom'))->toBe(['Enregistrer|Enregistrer|Enregistrer|Sauvegarder', 'Custom save']);
 });
 
 test('translated exceptions support from without changing variables codes or existing arguments', function (): void {
@@ -344,7 +357,9 @@ test('Twig infers each templates source including inherited layouts includes and
 });
 
 test('Twig inference is registered in every factory environment', function (string $method): void {
-    (new Filesystem())->dumpFile(Path::join($this->translationRoot, 'modules/Example/templates/page.twig'), '{{ "Save"|trans }}|{{ "Save"|trans(from: "core") }}');
+    foreach (['admin', 'client'] as $area) {
+        (new Filesystem())->dumpFile(Path::join($this->translationRoot, 'modules/Example/templates', $area, 'page.twig'), '{{ "Save"|trans }}|{{ "Save"|trans(from: "core") }}');
+    }
     $script = <<<'PHP'
         $di = new Pimple\Container();
         $di['request'] = Symfony\Component\HttpFoundation\Request::create('/');
@@ -362,11 +377,14 @@ test('Twig inference is registered in every factory environment', function (stri
         PHP;
     $script .= '$twig = $factory->' . $method . '();';
     $script .= <<<'PHP'
-        $twig->setLoader(new Twig\Loader\FilesystemLoader(PATH_MODS . '/Example/templates'));
-        $result = $twig->render('page.twig');
+        $result = [];
+        foreach ([FOSSBilling\Core\Twig\AppArea::ADMIN, FOSSBilling\Core\Twig\AppArea::CLIENT] as $area) {
+            $twig->setLoader(new FOSSBilling\Core\Twig\TwigLoader($area, dirname(PATH_MODS) . '/theme'));
+            $result[] = $twig->render('page.twig');
+        }
         PHP;
 
-    expect(runTranslationRuntime($this->translationRoot, $script))->toBe('Sauvegarder|Enregistrer');
+    expect(runTranslationRuntime($this->translationRoot, $script))->toBe(['Sauvegarder|Enregistrer', 'Sauvegarder|Enregistrer']);
 })->with(['createBaseEnvironment', 'createAdapterEnvironment', 'createThemeSettingsEnvironment', 'createEmailEnvironment']);
 
 test('Twig does not infer module ownership from logical names or paths outside the modules directory', function (): void {
