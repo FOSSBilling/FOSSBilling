@@ -19,6 +19,7 @@ use Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent;
 use Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Product\Entity\PromoRedemption;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
@@ -371,11 +372,14 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         $subscriptionPeriod = null;
+        $discountTotal = 0.0;
         foreach ($items as $item) {
             $lineTotal = (float) ($item['price'] ?? 0) * (float) ($item['quantity'] ?? 0);
             $period = $item['period'] ?? null;
 
             if ($lineTotal <= 0) {
+                $discountTotal -= $lineTotal;
+
                 continue;
             }
 
@@ -394,6 +398,29 @@ class ServiceSubscription implements InjectionAwareInterface
             }
         }
 
+        // The gateway bills this invoice's total on every cycle, but renewal
+        // invoices only repeat discounts from recurring promos. Keep one-time
+        // discounts out of subscriptions so renewals charge the renewal total.
+        if ($subscriptionPeriod !== null && $discountTotal > 0 && !$this->isDiscountRecurring($invoiceId, $discountTotal)) {
+            return null;
+        }
+
         return $subscriptionPeriod;
+    }
+
+    private function isDiscountRecurring(int $invoiceId, float $discountTotal): bool
+    {
+        $query = 'SELECT COALESCE(SUM(pr.discount_amount), 0)
+            FROM promo_redemption pr
+            INNER JOIN promo p ON p.id = pr.promo_id
+            WHERE pr.invoice_id = :id
+                AND pr.status <> :released
+                AND p.recurring = 1';
+        $recurringDiscount = (float) $this->di['em']->getConnection()->fetchOne($query, [
+            'id' => $invoiceId,
+            'released' => PromoRedemption::STATUS_RELEASED,
+        ]);
+
+        return round($discountTotal - $recurringDiscount, 2) <= 0.0;
     }
 }
