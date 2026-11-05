@@ -23,6 +23,7 @@ use FOSSBilling\Core\Twig\Extension\ApiExtension;
 use FOSSBilling\Core\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Core\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Core\Twig\Extension\LegacyExtension;
+use FOSSBilling\Core\Twig\Extension\TranslationExtension;
 use FOSSBilling\Core\Twig\Markdown\FOSSBillingMarkdown;
 use FOSSBilling\Core\Url;
 use Symfony\Component\Filesystem\Path;
@@ -427,6 +428,7 @@ class TwigFactory
 
     private function configureRendering(Environment $twig, string $timezone, ?string $locale = null): void
     {
+        $twig->addExtension(new TranslationExtension());
         $twig->getExtension(CoreExtension::class)->setNumberFormat($this->getDefaultCurrencyFractionDigits(), '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
 
