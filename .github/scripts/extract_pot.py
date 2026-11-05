@@ -10,6 +10,8 @@ web-asset extensions); obsolete msgids are dropped.
 
 Usage:
     extract_pot.py <src_dir> <out.pot>
+    extract_pot.py <module_dir> <out.pot> --module-id example --source example
+    extract_pot.py <src_dir> <out.pot> --check
     extract_pot.py --diff <old.pot> <new.pot>   # msgid-set comparison,
         # flagging casing-only changes (gettext matches case-sensitively,
         # so those silently invalidate existing translations)
@@ -23,6 +25,7 @@ import datetime
 import os
 import re
 import sys
+import tempfile
 from collections import Counter
 from typing import NamedTuple
 
@@ -30,7 +33,7 @@ from typing import NamedTuple
 # Configuration (mirrors the historical Poedit runs + project decisions)
 # ---------------------------------------------------------------------------
 
-EXCLUDED_DIR_NAMES = {"vendor", "install", "data", "tests"}
+EXCLUDED_DIR_NAMES = {"vendor", "install", "data", "tests", "locale", "node_modules", ".git"}
 EXCLUDED_FILES = {"load.php"}
 EXCLUDED_EXTENSIONS = {".js", ".html", ".css", ".scss", ".md"}
 SCANNED_EXTENSIONS = {".php", ".twig"}
@@ -66,7 +69,7 @@ HEADER_TEMPLATE = """\
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 4\\n"
+"Project-Id-Version: {project_id}\\n"
 "POT-Creation-Date: {date}\\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\\n"
 "Last-Translator: FOSSBilling TM <info@fossbilling.org>\\n"
@@ -112,8 +115,33 @@ def _decode_php_double(body: str) -> str:
 
 
 def _decode_single(body: str) -> str:
-    """Decode a PHP/Twig single-quoted string body (only \\\\ and \\' are special)."""
+    """Decode a PHP single-quoted string body (only \\\\ and \\' are special)."""
     return body.replace("\\\\", "\x00").replace("\\'", "'").replace("\x00", "\\")
+
+
+def _read_twig_literal(text: str, start: int) -> tuple[str, int, bool] | None:
+    """Twig 3 decodes C-style escapes in both quote styles, unlike PHP."""
+    match = _QUOTED.match(text, start)
+    if match is None:
+        return None
+    literal = match.group()
+    body = literal[1:-1].replace("\r\n", "\n").replace("\r", "\n")
+    dynamic = literal[0] == '"' and re.search(r"(?<!\\)(?:\\\\)*#\{", body) is not None
+    escapes = {"n": "\n", "r": "\r", "t": "\t", "v": "\v", "f": "\f"}
+    decoded = bytearray()
+    position = 0
+    for escape in re.finditer(r"\\(x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|.)", body, re.DOTALL):
+        decoded.extend(body[position:escape.start()].encode("utf-8"))
+        value = escape.group(1)
+        if value.startswith("x") and len(value) > 1:
+            decoded.append(int(value[1:], 16))
+        elif value[0] in "01234567":
+            decoded.append(int(value, 8) % 256)
+        else:
+            decoded.extend(escapes.get(value, value).encode("utf-8"))
+        position = escape.end()
+    decoded.extend(body[position:].encode("utf-8"))
+    return decoded.decode("utf-8"), match.end(), dynamic
 
 
 def po_escape(text: str) -> str:
@@ -249,8 +277,6 @@ _TWIG_TRANS = re.compile(
     r"""|"(?P<dbody>(?:\\.|[^"\\])*)"\s*\|\s*trans(?![A-Za-z0-9_])"""
 )
 
-_PHP_STR = r"""'(?P<sbody>(?:\\.|[^'\\])*)'|"(?P<dbody>(?:\\.|[^"\\])*)\""""
-
 _TRANS_ALTS = "|".join(
     sorted(PHP_TRANS_SINGLE | PHP_KEYWORDS_PLURAL, key=len, reverse=True)
 )
@@ -266,9 +292,7 @@ _CLASS_NAME = r"(?:\\)?(?:[A-Za-z_][\w]*\\)*[A-Za-z_][\w]*"
 _PHP_CALL = re.compile(
     rf"(?:(?<![\w$])new\s+(?P<cls>{_CLASS_NAME})"
     rf"|(?<![\w$>:\\])(?:\\)?(?:[A-Za-z_][\w]*\\)*(?P<kw>{_TRANS_ALTS})"
-    rf"|(?<![\w$>])(?P<chain>parent|self|static)::\s*__construct)\s*\(\s*"
-    rf"(?P<arg>{_PHP_STR})?"
-    rf"(?P<rest>\s*,)?",
+    rf"|(?<![\w$>])(?P<chain>parent|self|static)::\s*__construct)\s*\(",
     re.DOTALL,
 )
 
@@ -282,25 +306,142 @@ class Occurrence(NamedTuple):
     msgid: str
     plural: str | None
     ref: str
+    source: str = "core"
 
 
 def _line_no(text: str, offset: int) -> int:
     return text.count("\n", 0, offset) + 1
 
 
-def extract_twig(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
-    masked = _mask_twig_comments(text)
-    for match in _TWIG_TRANS.finditer(masked):
-        if match.group("sbody") is not None:
-            msgid = _decode_single(match.group("sbody"))
+_SOURCE_ID = re.compile(r"[a-z][a-z0-9_-]*\Z")
+_QUOTED = re.compile(r"'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"", re.DOTALL)
+_TWIG_OPEN = re.compile(r"\{\{|\{%")
+
+
+def _twig_string_spans(text: str) -> list[tuple[int, int]]:
+    """HTML attribute quotes must not hide the Twig literals inside them."""
+    spans: list[tuple[int, int]] = []
+    position = 0
+    while opening := _TWIG_OPEN.search(text, position):
+        start = opening.end()
+        closing = "}}" if opening.group() == "{{" else "%}"
+        token = re.compile(_QUOTED.pattern + "|" + re.escape(closing), re.DOTALL)
+        position = len(text)
+        for match in token.finditer(text, start):
+            if match.group() == closing:
+                position = match.end()
+                break
+            spans.append((match.start(), match.end()))
+    return spans
+
+
+def _call_arguments(
+    text: str, opening: int, spans: list[tuple[int, int]], starts: list[int]
+) -> list[tuple[int, int]] | None:
+    """Split a call at top-level commas, leaving nested calls and literals inert."""
+    stack = ["("]
+    arguments: list[tuple[int, int]] = []
+    start = i = opening + 1
+    closing = {")": "(", "]": "[", "}": "{"}
+    while i < len(text):
+        end = _span_end(spans, starts, i)
+        if end is not None:
+            i = end
+            continue
+        char = text[i]
+        if char in "([{":
+            stack.append(char)
+        elif char in ")]}":
+            if not stack or stack.pop() != closing[char]:
+                return None
+            if not stack:
+                if text[start:i].strip():
+                    arguments.append((start, i))
+                return arguments
+        elif char == "," and len(stack) == 1:
+            arguments.append((start, i))
+            start = i + 1
+        i += 1
+    return None
+
+
+def _bind_arguments(
+    text: str, arguments: list[tuple[int, int]], names: tuple[str, ...], twig: bool = False
+) -> dict[str, tuple[int, int]]:
+    bound: dict[str, tuple[int, int]] = {}
+    named = False
+    separator = r"(?::(?!:)|=(?!=|>))" if twig else r":(?!:)"
+    for index, (start, end) in enumerate(arguments):
+        match = re.match(rf"\s*([A-Za-z_][A-Za-z0-9_]*)\s*{separator}\s*", text[start:end])
+        if match:
+            named = True
+            name = match.group(1)
+            start += match.end()
         else:
-            body = match.group("dbody")
-            if "#{" in body:
-                stats["skipped_dynamic"] += 1
-                stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} interpolated Twig string")
+            if named:
+                raise ValueError("positional argument after named argument")
+            name = names[index] if index < len(names) else str(index)
+        if name in bound:
+            raise ValueError(f"duplicate argument {name!r}")
+        bound[name] = (start, end)
+    return bound
+
+
+def _translation_source(
+    text: str, argument: tuple[int, int] | None, default: str, ref: str, stats: dict, twig: bool = False
+) -> str | None:
+    if argument is None:
+        return default
+    start, end = argument
+    start += len(text[start:end]) - len(text[start:end].lstrip())
+    value = text[start:end].strip()
+    if value.lower() == "null" or (twig and value == "none"):
+        # Explicit null suppresses Twig's inferred source at runtime.
+        return "core"
+    parsed = _read_twig_literal(text, start) if twig else _read_php_literal(text, start)
+    if parsed is not None and not text[parsed[1]:end].strip():
+        source = parsed[0]
+        dynamic = parsed[2]
+        if not dynamic and _SOURCE_ID.fullmatch(source):
+            return source
+    stats["source_errors"].append(f"{ref}: from must be a literal lowercase source ID or null")
+    return None
+
+
+def extract_twig(rel: str, text: str, occurrences: list[Occurrence], stats: dict, module_id: str | None = None) -> None:
+    masked = _mask_twig_comments(text)
+    spans = _twig_string_spans(masked)
+    starts = [start for start, _ in spans]
+    for match in _TWIG_TRANS.finditer(masked):
+        span_end = _span_end(spans, starts, match.start())
+        if span_end is not None and spans[bisect.bisect_right(starts, match.start()) - 1][0] != match.start():
+            continue
+        ref = f"{rel}:{_line_no(masked, match.start())}"
+        parsed = _read_twig_literal(masked, match.start())
+        if parsed[2]:
+            stats["skipped_dynamic"] += 1
+            stats["skipped"].append(f"{ref} interpolated Twig string")
+            continue
+        msgid = parsed[0]
+        arguments: dict[str, tuple[int, int]] = {}
+        opening = match.end()
+        while opening < len(masked) and masked[opening].isspace():
+            opening += 1
+        if masked[opening:opening + 1] == "(":
+            call = _call_arguments(masked, opening, spans, starts)
+            try:
+                if call is None:
+                    raise ValueError("unbalanced trans arguments")
+                arguments = _bind_arguments(masked, call, ("values", "from"), twig=True)
+                if any(masked[start:end].lstrip().startswith("...") for start, end in call):
+                    raise ValueError("argument unpacking prevents resolving the translation source")
+            except ValueError as error:
+                stats["source_errors"].append(f"{ref}: {error}")
                 continue
-            msgid = _decode_php_double(body)
-        occurrences.append(Occurrence(msgid, None, f"{rel}:{_line_no(masked, match.start())}"))
+        source = _translation_source(masked, arguments.get("from"), module_id or "core", ref, stats, twig=True)
+        if source is None:
+            continue
+        occurrences.append(Occurrence(msgid, None, ref, source))
         stats["twig"] += 1
 
 
@@ -401,18 +542,6 @@ def _read_ternary_literals(
     return [value_a, parsed_b[0]], parsed_b[1]
 
 
-def _record_ternary(
-    occurrences: list[Occurrence],
-    stats: dict,
-    ref: str,
-    variants: list[str],
-) -> None:
-    """Record ternary branch variants as msgids sharing one reference."""
-    for variant in variants:
-        occurrences.append(Occurrence(variant, None, ref))
-    stats["php"] += 1
-
-
 def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
     """Read one quoted literal at offset.
 
@@ -433,6 +562,21 @@ def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
     if quote == "'":
         return _decode_single(body), match.end(), False
     return _decode_php_double(body), match.end(), bool(_PHP_DYNAMIC_DQOUTE.search(body))
+
+
+def _php_messages(
+    text: str, argument: tuple[int, int], spans: list[tuple[int, int]], starts: list[int], allow_ternary: bool
+) -> list[str] | None:
+    start, end = argument
+    start += len(text[start:end]) - len(text[start:end].lstrip())
+    literal = _read_php_literal(text, start)
+    if literal is not None and not literal[2] and not text[literal[1]:end].strip():
+        return [literal[0]]
+    if allow_ternary:
+        ternary = _read_ternary_literals(text, start, spans, starts)
+        if ternary is not None and re.fullmatch(r"\s*(?:\)\s*)*", text[ternary[1]:end]):
+            return ternary[0]
+    return None
 
 
 def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
@@ -466,100 +610,61 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
             stats["skipped_defs"] += 1
             continue
-        if match.group("arg") is None:
-            # A ternary with two literal branches (`$a ? 'x' : 'y'`) carries
-            # two message variants; anything else non-literal is skipped.
-            # (Never applied to __pluralTrans: a plural entry needs two
-            # dedicated literals, not branch variants.)
-            tern = (
-                None
-                if keyword in PHP_KEYWORDS_PLURAL
-                else _read_ternary_literals(masked, match.end(), spans, starts)
-            )
-            if tern is not None and re.match(r"\s*[),]", masked[tern[1] :]) is not None:
-                _record_ternary(
-                    occurrences,
-                    stats,
-                    f"{rel}:{_line_no(masked, match.start())}",
-                    tern[0],
-                )
-                if short is not None:
-                    stats["ctor_classes"][short] += 1
-                continue
-            # Non-literal first argument (variable, constant, expression...).
-            # Only logged for plausible message carriers; `new Finder($x)`
-            # style noise would otherwise drown the audit trail.
+        if keyword == "__trans":
+            names = ("msgid", "values", "from")
+        elif keyword == "__pluralTrans":
+            names = ("msgid", "msgidPlural", "number", "values", "from")
+        elif short is not None and short.lower() in ("payment_exception", "registrar_exception", "server_exception"):
+            names = ("message", "variables", "code", "from")
+        elif short is not None and short.lower() in ("baseexception", "informationexception", "exception", "__construct"):
+            names = ("message", "variables", "code", "protected", "from")
+        else:
+            # Unknown constructors retain the historical first-message policy,
+            # but their later positional parameters are not our exception API.
+            names = ("message",)
+        ref = f"{rel}:{_line_no(masked, match.start())}"
+        call = _call_arguments(masked, match.end() - 1, spans, starts)
+        if call is None:
+            stats["source_errors"].append(f"{ref}: unbalanced translation arguments")
+            continue
+        try:
+            arguments = _bind_arguments(masked, call, names)
+        except ValueError as error:
+            stats["source_errors"].append(f"{ref}: {error}")
+            continue
+        message = arguments.get(names[0])
+        variants = (
+            _php_messages(masked, message, spans, starts, keyword not in PHP_KEYWORDS_PLURAL)
+            if message else None
+        )
+        if variants is None:
             stats["skipped_dynamic"] += 1
             if keyword is not None or (
-                short is not None
-                and ("exception" in short.lower() or short in ("IncompleteRecord", "__construct"))
+                short is not None and ("exception" in short.lower() or short in ("IncompleteRecord", "__construct"))
             ):
                 snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
-                stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} {snippet}")
+                stats["skipped"].append(f"{ref} {snippet}")
             continue
-        # Census of literal-carrying constructions, for drift review.
+        if "from" in names and any(masked[start:end].lstrip().startswith("...") for start, end in call):
+            stats["source_errors"].append(f"{ref}: argument unpacking prevents resolving the translation source")
+            continue
         if short is not None:
             stats["ctor_classes"][short] += 1
-        if match.group("sbody") is not None:
-            first = _decode_single(match.group("sbody"))
-            first_dynamic = False
-        else:
-            body = match.group("dbody")
-            first_dynamic = bool(_PHP_DYNAMIC_DQOUTE.search(body))
-            first = _decode_php_double(body)
-        if first_dynamic:
-            stats["skipped_dynamic"] += 1
-            snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
-            stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} interpolated {snippet}")
-            continue
-        # Rescan the first literal to find where it ends (for the plural arg).
-        arg_start = match.start("arg")
-        parsed = _read_php_literal(masked, arg_start)
-        end = parsed[1] if parsed else match.end()
-        # A concatenated first argument ('a ' . $b) never matches at runtime
-        # as a msgid, so skip it instead of recording the literal prefix —
-        # unless it opens a literal ternary ('a' === $b ? 'x' : 'y'), whose
-        # branches are message variants.
-        if re.match(r"\s*[),]", masked[end:]) is None:
-            tern = (
-                None
-                if keyword in PHP_KEYWORDS_PLURAL
-                else _read_ternary_literals(masked, arg_start, spans, starts)
-            )
-            if tern is not None and re.match(r"\s*[),]", masked[tern[1] :]) is not None:
-                _record_ternary(
-                    occurrences,
-                    stats,
-                    f"{rel}:{_line_no(masked, match.start())}",
-                    tern[0],
-                )
-                continue
-            stats["skipped_dynamic"] += 1
-            snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
-            stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} concat {snippet}")
-            continue
         plural: str | None = None
         if keyword in PHP_KEYWORDS_PLURAL:
-            rest = re.match(r"\s*,\s*", masked[end:])
-            second = (
-                _read_php_literal(masked, end + rest.end())
-                if rest
-                else None
-            )
-            # A plural entry is only valid with a complete static second
-            # literal; anything else (missing, dynamic, concatenated)
-            # would mistranslate, so skip the whole call.
-            if (
-                second is None
-                or second[2]
-                or not re.match(r"\s*(?:,|\))", masked[second[1]:])
-            ):
+            argument = arguments.get("msgidPlural")
+            second = _php_messages(masked, argument, spans, starts, False) if argument else None
+            if second is None:
                 stats["skipped_dynamic"] += 1
                 snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
-                stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} {snippet}")
+                stats["skipped"].append(f"{ref} {snippet}")
                 continue
             plural = second[0]
-        occurrences.append(Occurrence(first, plural, f"{rel}:{_line_no(masked, match.start())}"))
+        source = _translation_source(masked, arguments.get("from"), "core", ref, stats)
+        if source is None:
+            continue
+        for variant in variants:
+            occurrences.append(Occurrence(variant, plural, ref, source))
         stats["php"] += 1
 
 
@@ -575,15 +680,25 @@ def iter_source_files(src_dir: str):
             yield full, os.path.relpath(full, src_dir).replace(os.sep, "/")
 
 
-def extract_all(src_dir: str) -> tuple[list[Occurrence], dict]:
+def extract_all(src_dir: str, module_id: str | None = None) -> tuple[list[Occurrence], dict]:
+    if not os.path.isdir(src_dir):
+        raise ValueError(f"source directory does not exist: {src_dir}")
+    if module_id is not None and (not _SOURCE_ID.fullmatch(module_id) or module_id == "core"):
+        raise ValueError(f"invalid module ID: {module_id!r}")
     occurrences: list[Occurrence] = []
-    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped_ctor": 0, "skipped_markup": 0, "ctor_classes": Counter(), "skipped": [], "files": 0}
+    stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped_ctor": 0, "skipped_markup": 0, "ctor_classes": Counter(), "skipped": [], "files": 0, "source_errors": []}
     for full, rel in iter_source_files(src_dir):
         with open(full, encoding="utf-8", errors="replace") as handle:
             text = handle.read()
         stats["files"] += 1
         if full.endswith(".twig"):
-            extract_twig(rel, text, occurrences, stats)
+            inferred = module_id
+            parts = rel.split("/")
+            if inferred is None and len(parts) >= 3 and parts[0] == "modules":
+                candidate = parts[1].lower()
+                if parts[1] == candidate[0].upper() + candidate[1:] and _SOURCE_ID.fullmatch(candidate):
+                    inferred = candidate
+            extract_twig(rel, text, occurrences, stats, inferred)
         else:
             extract_php(rel, text, occurrences, stats)
     return occurrences, stats
@@ -601,7 +716,7 @@ def _ref_sort_key(ref: str) -> tuple[str, int]:
         return (ref, 0)
 
 
-def write_pot(occurrences: list[Occurrence], out_path: str) -> int:
+def write_pot(occurrences: list[Occurrence], out_path: str, project_id: str = "4", strict: bool = False) -> int:
     merged: dict[str, dict] = {}
     for occ in occurrences:
         entry = merged.setdefault(occ.msgid, {"refs": [], "plural": None, "plurals_seen": set()})
@@ -611,6 +726,8 @@ def write_pot(occurrences: list[Occurrence], out_path: str) -> int:
             if entry["plural"] is None:
                 entry["plural"] = occ.plural
             elif entry["plural"] != occ.plural:
+                if strict:
+                    raise ValueError(f"conflicting plurals for {occ.msgid!r}: {entry['plural']!r} vs {occ.plural!r}")
                 print(
                     f"warning: conflicting plurals for {occ.msgid!r}: "
                     f"{entry['plural']!r} vs {occ.plural!r} (keeping first)",
@@ -618,7 +735,7 @@ def write_pot(occurrences: list[Occurrence], out_path: str) -> int:
                 )
     date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M+0000")
     with open(out_path, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write(HEADER_TEMPLATE.format(date=date))
+        handle.write(HEADER_TEMPLATE.format(date=date, project_id=po_escape(project_id)))
         for msgid in sorted(merged):
             entry = merged[msgid]
             refs = sorted(set(entry["refs"]), key=_ref_sort_key)
@@ -630,6 +747,12 @@ def write_pot(occurrences: list[Occurrence], out_path: str) -> int:
             else:
                 handle.write('msgstr ""\n')
     return len(merged)
+
+
+def normalized_pot(path: str) -> str:
+    """Compare content and references without timestamp-only template churn."""
+    with open(path, encoding="utf-8") as handle:
+        return "\n".join(line for line in handle.read().splitlines() if not line.startswith('"POT-Creation-Date:'))
 
 
 # ---------------------------------------------------------------------------
@@ -744,14 +867,41 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("src_dir", nargs="?", help="FOSSBilling src/ directory")
     parser.add_argument("out_pot", nargs="?", help="Output .pot path")
     parser.add_argument("--diff", nargs=2, metavar=("OLD_POT", "NEW_POT"), help="Compare two .pot files")
+    parser.add_argument("--module-id", help="Infer Twig sources when src_dir is a standalone module directory")
+    parser.add_argument("--source", help="Write only entries whose first translation source matches this ID (or core)")
+    parser.add_argument("--check", action="store_true", help="Check an existing template without modifying it")
     args = parser.parse_args(argv)
 
     if args.diff:
         return cmd_diff(args.diff[0], args.diff[1])
     if not args.src_dir or not args.out_pot:
         parser.error("src_dir and out_pot are required (or use --diff)")
-    occurrences, stats = extract_all(args.src_dir)
-    count = write_pot(occurrences, args.out_pot)
+    if args.source is not None and not _SOURCE_ID.fullmatch(args.source):
+        parser.error("--source must be a literal lowercase source ID")
+    try:
+        occurrences, stats = extract_all(args.src_dir, args.module_id)
+    except ValueError as error:
+        parser.error(str(error))
+    if stats["source_errors"]:
+        for error in stats["source_errors"]:
+            print(f"error: {error}", file=sys.stderr)
+        return 1
+    if args.source is not None:
+        occurrences = [occ for occ in occurrences if occ.source == args.source]
+    project = f"FOSSBilling module {args.module_id}" if args.module_id else "4"
+    if args.check:
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = os.path.join(temporary, "messages.pot")
+            count = write_pot(occurrences, generated, project)
+            if not os.path.isfile(args.out_pot):
+                print(f"missing template: {args.out_pot}", file=sys.stderr)
+                return 1
+            if normalized_pot(generated) != normalized_pot(args.out_pot):
+                cmd_diff(args.out_pot, generated)
+                print(f"template needs regeneration: {args.out_pot}", file=sys.stderr)
+                return 1
+    else:
+        count = write_pot(occurrences, args.out_pot, project)
     print(f"files scanned: {stats['files']}", file=sys.stderr)
     print(f"twig hits: {stats['twig']}, php hits: {stats['php']}", file=sys.stderr)
     print(f"unique msgids written: {count}", file=sys.stderr)
