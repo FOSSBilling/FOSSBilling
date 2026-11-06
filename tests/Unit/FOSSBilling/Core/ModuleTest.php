@@ -120,3 +120,39 @@ test('module configuration rejects unreadable or non-document ciphertext consist
     $mod->setDi($di);
     expect(fn () => $mod->getConfig())->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Encrypted extension configuration could not be read');
 })->with(['tampered', '{invalid', 'null', '"scalar"']);
+
+test('module icons are discovered by filename without manifest metadata', function (string $format): void {
+    $di = container();
+    $name = 'Test' . bin2hex(random_bytes(8));
+    $directory = PATH_MODS . '/' . $name;
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $filesystem->dumpFile($directory . '/manifest.json', json_encode(['name' => 'Icon Test', 'version' => '1.0.0', 'icon_url' => 'ignored.svg'], JSON_THROW_ON_ERROR));
+        $filesystem->dumpFile($directory . '/icon.' . $format, 'icon fixture');
+        $module = new Module($name);
+        $module->setDi($di);
+        expect($module->getManifest()['icon_url'])->toBe('/modules/' . $name . '/icon.' . $format);
+    } finally {
+        $filesystem->remove($directory);
+    }
+})->with(['svg', 'png', 'webp', 'avif']);
+
+test('modules without convention icons use the generic fallback', function (): void {
+    $di = container();
+    $name = 'Test' . bin2hex(random_bytes(8));
+    $directory = PATH_MODS . '/' . $name;
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $filesystem->dumpFile($directory . '/manifest.json', '{"name":"Icon Test","icon_url":"other.svg"}');
+        $filesystem->dumpFile($directory . '/other.svg', 'ignored');
+        $module = new Module($name);
+        $module->setDi($di);
+        expect($module->getManifest()['icon_url'])->toBeNull();
+    } finally {
+        $filesystem->remove($directory);
+    }
+});
