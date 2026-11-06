@@ -108,3 +108,37 @@ test('get service sub', function (): void {
     $subService = $mod->getService($subServiceName);
     expect($subService)->toBeInstanceOf(Box\Mod\Invoice\ServiceTransaction::class);
 });
+
+test('module icons are discovered by filename without manifest metadata', function (string $format): void {
+    $di = container();
+    $directory = PATH_MODS . '/Icontest';
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $filesystem->dumpFile($directory . '/manifest.json', json_encode(['name' => 'Icon Test', 'version' => '1.0.0', 'icon_url' => 'ignored.svg'], JSON_THROW_ON_ERROR));
+        $filesystem->dumpFile($directory . '/icon.' . $format, 'icon fixture');
+        $module = new Module('Icontest');
+        $module->setDi($di);
+        expect($module->getManifest()['icon_url'])->toBe('/modules/Icontest/icon.' . $format);
+    } finally {
+        $filesystem->remove($directory);
+    }
+})->with(['svg', 'png', 'webp', 'avif']);
+
+test('modules without convention icons use the generic fallback', function (): void {
+    $di = container();
+    $directory = PATH_MODS . '/Icontest';
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $filesystem->dumpFile($directory . '/manifest.json', '{"name":"Icon Test","icon_url":"other.svg"}');
+        $filesystem->dumpFile($directory . '/other.svg', 'ignored');
+        $module = new Module('Icontest');
+        $module->setDi($di);
+        expect($module->getManifest()['icon_url'])->toBeNull();
+    } finally {
+        $filesystem->remove($directory);
+    }
+});

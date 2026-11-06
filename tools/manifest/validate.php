@@ -57,12 +57,13 @@ foreach ($packages as $dir) {
             $errors[] = $field . ' must be an http(s) URL';
         }
     }
-    if (isset($m['icon_url'])) {
-        $icon = $m['icon_url'];
-        $resolved = realpath($dir . '/' . $icon) ?: $dir . '/' . $icon;
-        $base = realpath($dir);
-        if (!is_file($dir . '/' . $icon) || $base === false || !str_starts_with($resolved, $base . DIRECTORY_SEPARATOR)) {
-            $errors[] = 'icon_url target missing or escapes module dir';
+    $icons = array_filter(['icon.svg', 'icon.png', 'icon.webp', 'icon.avif'], static fn ($icon) => is_file($dir . '/' . $icon));
+    if (count($icons) > 1) {
+        $errors[] = 'include only one package icon: icon.svg, icon.png, icon.webp or icon.avif';
+    }
+    foreach ($icons as $icon) {
+        if (is_link($dir . '/' . $icon)) {
+            $errors[] = 'package icons must not be symbolic links';
         }
     }
 
