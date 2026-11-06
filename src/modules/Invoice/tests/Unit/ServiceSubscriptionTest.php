@@ -518,3 +518,50 @@ test('unsubscribes', function (): void {
 
     $service->unsubscribe($subscriptionModel);
 });
+
+/**
+ * @param list<float> $discountLines
+ * @param list<float> $redemptions
+ */
+function createDiscountedInvoiceDbal(?bool $promoRecurring, array $discountLines = [-2.50], array $redemptions = [2.50]): Connection
+{
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, period TEXT, price NUMERIC, quantity INTEGER)');
+    $connection->executeStatement('CREATE TABLE promo (id INTEGER PRIMARY KEY, recurring INTEGER)');
+    $connection->executeStatement('CREATE TABLE promo_redemption (id INTEGER PRIMARY KEY, promo_id INTEGER, invoice_id INTEGER, status TEXT, discount_amount NUMERIC)');
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, period, price, quantity) VALUES (30, '1M', 10.00, 1)");
+    foreach ($discountLines as $line) {
+        $connection->executeStatement('INSERT INTO invoice_item (invoice_id, period, price, quantity) VALUES (30, NULL, ?, 1)', [$line]);
+    }
+    if ($promoRecurring !== null) {
+        foreach ($redemptions as $index => $amount) {
+            $promoId = $index + 4;
+            $connection->executeStatement('INSERT INTO promo (id, recurring) VALUES (?, ?)', [$promoId, (int) $promoRecurring]);
+            $connection->executeStatement("INSERT INTO promo_redemption (promo_id, invoice_id, status, discount_amount) VALUES (?, 30, 'reserved', ?)", [$promoId, $amount]);
+        }
+    }
+
+    return $connection;
+}
+
+test('does not subscribe an invoice whose discount only applies to the first payment', function (?bool $promoRecurring, array $discountLines, array $redemptions): void {
+    $service = subscriptionService();
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn(createDiscountedInvoiceDbal($promoRecurring, $discountLines, $redemptions));
+
+    expect($service->isSubscribable(30))->toBeFalse();
+})->with([
+    'one-time promo' => [false, [-2.50], [2.50]],
+    'discount without a promo' => [null, [-2.50], []],
+    'recurring promo covers part of the discount' => [true, [-2.50, -1.00], [2.50]],
+    'recurring promo shares 0.01 short of the discount' => [true, [-2.50], [1.24, 1.25]],
+]);
+
+test('subscribes an invoice whose discount comes from a recurring promo', function (array $discountLines, array $redemptions): void {
+    $service = subscriptionService();
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn(createDiscountedInvoiceDbal(true, $discountLines, $redemptions));
+
+    expect($service->getSubscriptionPeriod(createEntity(Invoice::class, ['id' => 30])))->toBe('1M');
+})->with([
+    'one recurring promo' => [[-2.50], [2.50]],
+    'recurring promo shares 0.01 above the discount' => [[-2.50], [1.25, 1.26]],
+]);
