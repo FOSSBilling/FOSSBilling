@@ -1207,7 +1207,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return new \FOSSBilling\Core\Security\SecretFields($this->di['crypt']);
     }
 
-    public function migrateConfigSecrets(): void
+    public function migrateConfigSecrets(bool $onlyPlaintext = false): void
     {
         foreach ($this->getTldRegistrarRepository()->findAll() as $model) {
             $stored = $model->getConfig() ?? [];
@@ -1219,12 +1219,20 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
                 continue;
             }
-            $protected = $this->secretCodec()->store($stored, $fields);
+            $protected = $onlyPlaintext
+                ? array_replace($stored, $this->secretCodec()->store(array_filter($stored, is_string(...)), $fields))
+                : $this->secretCodec()->store($stored, $fields);
             if ($protected !== $stored) {
                 $model->setConfig($protected);
             }
         }
         $this->di['em']->flush();
+    }
+
+    #[AsEventListener(priority: 100)]
+    public function retryDeferredConfigSecrets(BeforeAdminCronRunEvent $event): void
+    {
+        $this->migrateConfigSecrets(onlyPlaintext: true);
     }
 
     public function registrarGetConfiguration(TldRegistrar $model): array
@@ -1353,7 +1361,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $model->setName($data['title'] ?? $model->getName());
         $model->setTestMode(array_key_exists('test_mode', $data) ? (bool) $data['test_mode'] : $model->isTestMode());
         if (isset($data['config']) && is_array($data['config'])) {
-            $existingConfiguration = $this->registrarGetConfiguration($model);
+            $existingConfiguration = $model->getConfig() ?? [];
             $configuration = $existingConfiguration;
             $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
             $secretFields = $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
@@ -1437,7 +1445,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $c = $this->registrarGetRegistrarAdapterConfig($model);
 
-        $config = $this->registrarGetConfiguration($model);
+        $config = $model->getConfig() ?? [];
         $secretFields = $this->resolveRegistrarSecretFields($model, $c);
         foreach ($secretFields as $field) {
             $value = $config[$field] ?? null;

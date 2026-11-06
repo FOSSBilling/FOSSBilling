@@ -866,3 +866,48 @@ test('credential migration defers missing adapters but propagates programming er
         expect(fn () => $service->migrateConfigSecrets())->toThrow(TypeError::class, 'Broken adapter contract');
     }
 })->with([true, false]);
+
+test('an unreadable gateway credential can be masked and explicitly replaced', function (): void {
+    $model = createEntity(PayGateway::class, ['id' => 1, 'gateway' => 'Stripe', 'enabled' => false, 'acceptedCurrencies' => ['USD'], 'config' => ['api_key' => ['_fossbilling_encrypted' => 'v3:broken'], 'pub_key' => 'public-key']]);
+    $service = payGatewayService();
+    $di = $service->getDi();
+    $di['em']->shouldReceive('flush')->once();
+    $di['loggedin_admin'] = Tests\Helpers\admin(['id' => 7]);
+    $masked = $service->toApiArray($model, false, Tests\Helpers\admin());
+    expect($masked['config']['api_key'])->toBeNull()->and($masked['config']['api_key_set'])->toBeTrue();
+    $service->update($model, ['config' => ['api_key' => 'replacement-secret']]);
+    expect((new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($model->getConfig())['api_key'])->toBe('replacement-secret');
+});
+
+test('cron retries deferred gateway encryption when its adapter becomes available', function (): void {
+    $first = createEntity(PayGateway::class, ['id' => 1, 'gateway' => 'Fixture', 'config' => ['api_key' => 'first-secret']]);
+    $second = createEntity(PayGateway::class, ['id' => 2, 'gateway' => 'Fixture', 'config' => ['api_key' => 'second-secret']]);
+    $available = false;
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findAll')->times(3)->andReturn([$first, $second]);
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $service->shouldReceive('getPayGatewayRepository')->andReturn($repo);
+    $service->shouldReceive('getSecretFields')->andReturnUsing(function (PayGateway $model) use (&$available): array {
+        if (!$available && $model->getId() === 1) {
+            throw new FOSSBilling\Core\Exception\InformationException('Missing adapter');
+        }
+
+        return ['api_key'];
+    });
+    $di = container();
+    $di['em']->shouldReceive('flush')->times(3);
+    $di['mod_service'] = $di->protect(fn ($name, $sub) => $service);
+    $service->setDi($di);
+    $service->migrateConfigSecrets();
+    $preserved = $second->getConfig();
+    expect($first->getConfig()['api_key'])->toBe('first-secret')->and($preserved['api_key'])->toBeArray();
+    $available = true;
+    $invoice = new Box\Mod\Invoice\Service();
+    $invoice->setDi($di);
+    $event = new Box\Mod\Cron\Event\BeforeAdminCronRunEvent();
+    $invoice->retryDeferredGatewaySecrets($event);
+    $upgraded = $first->getConfig();
+    $invoice->retryDeferredGatewaySecrets($event);
+    expect($first->getConfig())->toBe($upgraded)->and($second->getConfig())->toBe($preserved)
+        ->and((new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($upgraded)['api_key'])->toBe('first-secret');
+});

@@ -229,7 +229,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return new \FOSSBilling\Core\Security\SecretFields($this->di['crypt']);
     }
 
-    public function migrateConfigSecrets(): void
+    public function migrateConfigSecrets(bool $onlyPlaintext = false): void
     {
         foreach ($this->getPayGatewayRepository()->findAll() as $model) {
             $stored = $model->getConfig() ?? [];
@@ -241,7 +241,10 @@ class ServicePayGateway implements InjectionAwareInterface
 
                 continue;
             }
-            $protected = $this->secretCodec()->store($stored, $fields);
+            // Plaintext rows are the durable deferred work. Cron retries them after an adapter returns.
+            $protected = $onlyPlaintext
+                ? array_replace($stored, $this->secretCodec()->store(array_filter($stored, is_string(...)), $fields))
+                : $this->secretCodec()->store($stored, $fields);
             if ($protected !== $stored) {
                 $model->setConfig($protected);
             }
@@ -271,7 +274,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
-        $existingConfig = $this->secretCodec()->reveal($model->getConfig() ?? []);
+        $existingConfig = $model->getConfig() ?? [];
         $mergedConfig = $existingConfig;
         $secretFields = [];
         if (isset($data['config']) && is_array($data['config'])) {
@@ -284,7 +287,7 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         if ($newEnabled) {
-            $this->validateGatewayConfig($model, $mergedConfig, $newTestMode);
+            $this->validateGatewayConfig($model, $this->secretCodec()->reveal($mergedConfig), $newTestMode);
         }
 
         $customLogo = $model->getCustomLogo();

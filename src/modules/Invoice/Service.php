@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceEvent;
@@ -70,6 +71,12 @@ use Twig\Loader\FilesystemLoader;
 
 class Service implements InjectionAwareInterface
 {
+    #[AsEventListener(priority: 100)]
+    public function retryDeferredGatewaySecrets(BeforeAdminCronRunEvent $event): void
+    {
+        $this->di['mod_service']('Invoice', 'PayGateway')->migrateConfigSecrets(onlyPlaintext: true);
+    }
+
     /**
      * Columns on the `invoice` table permitted in CSV exports.
      * The `hash` column (bearer token for public invoice access) is excluded.

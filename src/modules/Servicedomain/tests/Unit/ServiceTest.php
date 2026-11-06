@@ -1351,6 +1351,7 @@ test('syncs domain expiration dates before admin cron through a typed event list
     $serviceMock->shouldReceive('batchSyncExpirationDates')
         ->once()
         ->andReturn(true);
+    $serviceMock->shouldReceive('migrateConfigSecrets')->with(true)->once();
     $dispatcher = new FOSSBilling\Core\Events\EventDispatcher(
         static fn (): array => ['servicedomain'],
         static fn (string $module): object => $serviceMock,
@@ -2161,14 +2162,13 @@ test('converts registrar to api array', function (): void {
     $serviceMock->shouldReceive('registrarGetRegistrarAdapterConfig')
         ->atLeast()->once()
         ->andReturn($config);
-    $serviceMock->shouldReceive('registrarGetConfiguration')
-        ->atLeast()->once()
-        ->andReturn(['param1' => 'value1']);
+    $serviceMock->shouldNotReceive('registrarGetConfiguration');
 
     $model = new TldRegistrar();
     setEntityId($model, 1);
     $model->setName('ResellerClub');
     $model->setTestMode(true);
+    $model->setConfig(['param1' => 'value1']);
 
     $serviceMock->setDi(container());
     $serviceMock->registrarToApiArray($model);
@@ -2674,4 +2674,54 @@ test('updates domain', function (): void {
     $result = $service->updateDomain($model, $data);
 
     expect($result)->toBeTrue();
+});
+
+test('an unreadable registrar credential can be edited without revealing the old value', function (): void {
+    $service = new Service();
+    $di = container();
+    $di['crypt'] = cryptMock();
+    $di['em']->shouldReceive('flush')->once();
+    $di['loggedin_admin'] = Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+    $model = (new TldRegistrar())->setRegistrar('Namecheap')->setConfig([
+        'api-key' => ['_fossbilling_encrypted' => 'v3:broken'],
+        'api-user-id' => 'reseller', 'username' => 'example', 'ip' => '127.0.0.1',
+    ]);
+    setEntityId($model, 1);
+    $masked = $service->registrarToApiArray($model);
+    expect($masked['config']['api-key'])->toBeNull()->and($masked['config']['api-key_set'])->toBeTrue();
+    $service->registrarUpdate($model, ['config' => ['api-key' => 'replacement-secret']]);
+    expect($service->registrarGetConfiguration($model)['api-key'])->toBe('replacement-secret');
+});
+
+test('cron retries deferred registrar encryption without changing another registrar', function (): void {
+    $first = (new TldRegistrar())->setRegistrar('Namecheap')->setConfig(['api-key' => 'first-secret']);
+    $second = (new TldRegistrar())->setRegistrar('Namecheap')->setConfig(['api-key' => 'second-secret']);
+    setEntityId($first, 1);
+    setEntityId($second, 2);
+    $available = false;
+    $repo = Mockery::mock(TldRegistrarRepository::class);
+    $repo->shouldReceive('findAll')->times(3)->andReturn([$first, $second]);
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarGetRegistrarAdapterConfig')->andReturnUsing(function (TldRegistrar $model) use (&$available): array {
+        if (!$available && $model->getId() === 1) {
+            throw new FOSSBilling\Core\Exception\InformationException('Missing adapter');
+        }
+
+        return ['form' => ['api-key' => ['password', ['secret' => true]]]];
+    });
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($repo);
+    $di['em']->shouldReceive('flush')->times(3);
+    $service->setDi($di);
+    $service->migrateConfigSecrets();
+    $preserved = $second->getConfig();
+    expect($first->getConfig()['api-key'])->toBe('first-secret')->and($preserved['api-key'])->toBeArray();
+    $available = true;
+    $event = new Box\Mod\Cron\Event\BeforeAdminCronRunEvent();
+    $service->retryDeferredConfigSecrets($event);
+    $upgraded = $first->getConfig();
+    $service->retryDeferredConfigSecrets($event);
+    expect($first->getConfig())->toBe($upgraded)->and($second->getConfig())->toBe($preserved)
+        ->and($service->registrarGetConfiguration($first)['api-key'])->toBe('first-secret');
 });
