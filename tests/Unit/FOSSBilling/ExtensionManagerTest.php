@@ -473,3 +473,39 @@ it('enforces the cumulative item limit across pages', function (int $lastPageSiz
     expect($requests)->toBe(2);
     expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBe($accepted);
 })->with([[5_000, true], [5_001, false]]);
+
+it('honors the selected release and otherwise prefers the newest stable package', function (): void {
+    $entry = catalogEntry();
+    $entry['releases'] = [
+        ['tag' => '1.0.0', 'requires' => ['fossbilling' => '*']],
+        ['tag' => '3.0.0-beta.1', 'requires' => ['fossbilling' => '*']],
+        ['tag' => '2.0.0', 'requires' => ['fossbilling' => '*']],
+    ];
+    expect(catalogManager($entry)->getLatestExtensionRelease('example')['tag'])->toBe('2.0.0');
+    $entry['releases'][0]['is_latest'] = true;
+    expect(catalogManager($entry)->getLatestExtensionRelease('example')['tag'])->toBe('1.0.0');
+});
+
+it('checks an extension PHP requirement independently of the FOSSBilling constraint', function (): void {
+    $manager = new ExtensionManager();
+    expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => '>=' . PHP_VERSION]]))->toBeTrue();
+    expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => '>' . PHP_VERSION]]))->toBeFalse();
+    expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => 'invalid constraint']]))->toBeFalse();
+});
+
+it('ignores invalid tags and compact prereleases when choosing a stable release', function (array $tags, ?string $expected): void {
+    $entry = catalogEntry();
+    $entry['releases'] = array_map(static fn (string $tag): array => ['tag' => $tag, 'requires' => ['fossbilling' => '*']], $tags);
+    if ($expected === null) {
+        expect(fn () => catalogManager($entry)->getLatestExtensionRelease('example'))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Unable to fetch the latest');
+    } else {
+        expect(catalogManager($entry)->getLatestExtensionRelease('example')['tag'])->toBe($expected);
+    }
+})->with([
+    [['1.0.0', '2.0.0RC1'], '1.0.0'],
+    [['1.0.0', '2.0.0beta1'], '1.0.0'],
+    [['2.0.0', 'latest'], '2.0.0'],
+    [['latest', '2.0.0-beta.1', '2.0.0RC1'], '2.0.0RC1'],
+    [['1.0.0-beta.1', '3.0.0-beta.1', '2.0.0-beta.1'], '3.0.0-beta.1'],
+    [['latest', 'invalid'], null],
+]);
