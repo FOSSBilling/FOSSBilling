@@ -227,16 +227,16 @@ test('converts to api array masks secrets for an admin', function (): void {
         'id' => 1,
         'name' => 'Stripe',
         'gateway' => 'Stripe',
-        'acceptedCurrencies' => json_encode(['USD']),
+        'acceptedCurrencies' => ['USD'],
         'enabled' => true,
         'allowSingle' => true,
         'allowRecurrent' => true,
         'testMode' => false,
-        'config' => json_encode([
+        'config' => [
             'pub_key' => 'pk_live_visible',
             'api_key' => 'sk_live_secret',
             'webhook_secret' => 'whsec_secret',
-        ]),
+        ],
     ]);
 
     $service = payGatewayService();
@@ -262,7 +262,7 @@ test('update keeps the existing secret gateway value when the incoming value is 
         'name' => 'Stripe',
         'gateway' => 'Stripe',
         'enabled' => false,
-        'config' => json_encode(['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing']),
+        'config' => ['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing'],
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -285,8 +285,8 @@ test('update keeps the existing secret gateway value when the incoming value is 
     ]);
 
     expect($result)->toBeTrue();
-    $stored = json_decode((string) $payGateway->getConfig(), true);
-    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    $stored = $payGateway->getConfig();
+    $config = (new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($stored);
     expect($config['api_key'])->toBe('sk_live_existing');
     expect($config['pub_key'])->toBe('pk_live_new');
     expect($stored['pub_key'])->toBe('pk_live_new');
@@ -298,7 +298,7 @@ test('update rotates a secret gateway value when a new value is submitted', func
         'name' => 'Stripe',
         'gateway' => 'Stripe',
         'enabled' => false,
-        'config' => json_encode(['api_key' => 'sk_live_old']),
+        'config' => ['api_key' => 'sk_live_old'],
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -316,8 +316,8 @@ test('update rotates a secret gateway value when a new value is submitted', func
     $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new']]);
 
     expect($result)->toBeTrue();
-    $stored = json_decode((string) $payGateway->getConfig(), true);
-    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    $stored = $payGateway->getConfig();
+    $config = (new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($stored);
     expect($config['api_key'])->toBe('sk_live_new');
 });
 
@@ -327,7 +327,7 @@ test('update stores gateway secrets encrypted at rest', function (): void {
         'name' => 'Stripe',
         'gateway' => 'Stripe',
         'enabled' => false,
-        'config' => json_encode(['api_key' => 'sk_live_old']),
+        'config' => ['api_key' => 'sk_live_old'],
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -346,14 +346,14 @@ test('update stores gateway secrets encrypted at rest', function (): void {
 
     expect($result)->toBeTrue();
 
-    $raw = (string) $payGateway->getConfig();
+    $raw = json_encode($payGateway->getConfig(), JSON_THROW_ON_ERROR);
     expect($raw)->not->toContain('sk_live_new')
         ->and($raw)->toContain('pk_live_new');
 
-    $stored = json_decode($raw, true);
-    expect($stored['api_key'])->toStartWith(FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX);
+    $stored = $payGateway->getConfig();
+    expect($stored['api_key']['_fossbilling_encrypted'])->toStartWith(FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX);
 
-    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    $config = (new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($stored);
     expect($config['api_key'])->toBe('sk_live_new');
 });
 
@@ -362,9 +362,9 @@ test('reads a legacy plaintext gateway config', function (): void {
         'id' => 1,
         'name' => 'Stripe',
         'gateway' => 'Stripe',
-        'acceptedCurrencies' => json_encode(['USD']),
+        'acceptedCurrencies' => ['USD'],
         'enabled' => false,
-        'config' => json_encode(['api_key' => 'sk_live_legacy']),
+        'config' => ['api_key' => 'sk_live_legacy'],
     ]);
 
     $service = payGatewayService();
@@ -391,7 +391,7 @@ test('payment adapter receives decrypted secrets from encrypted storage', functi
         'id' => 1,
         'gateway' => 'Stripe',
         'testMode' => false,
-        'config' => json_encode($stored),
+        'config' => $stored,
     ]);
 
     $adapter = $service->getPaymentAdapter($payGateway);
@@ -513,7 +513,7 @@ test('active gateways without an adapter logo get a default logo', function (): 
         'id' => 9,
         'gateway' => 'Custom',
         'name' => 'Custom',
-        'acceptedCurrencies' => json_encode(['USD']),
+        'acceptedCurrencies' => ['USD'],
     ]);
 
     $repo = Mockery::mock(PayGatewayRepository::class);
@@ -721,7 +721,7 @@ test('gets adapter class name', function (): void {
 test('gets accepted currencies', function (): void {
     $service = new ServicePayGateway();
     $service->setDi(payGatewayService()->getDi());
-    $payGateway = createEntity(PayGateway::class, ['acceptedCurrencies' => '{}']);
+    $payGateway = createEntity(PayGateway::class, ['acceptedCurrencies' => []]);
 
     $result = $service->getAcceptedCurrencies($payGateway);
     expect($result)->toBeArray();
@@ -806,7 +806,7 @@ test('PayPal handoffs contain no session capability and retain invoice and callb
         'id' => 2,
         'gateway' => 'PayPalEmail',
         'testMode' => false,
-        'config' => json_encode(['email' => 'merchant@example.com']),
+        'config' => ['email' => 'merchant@example.com'],
     ]);
     $invoice = $withInvoice ? createEntity(Invoice::class, ['id' => 16, 'hash' => 'abc123']) : null;
     $service = payGatewayService();
@@ -844,3 +844,85 @@ test('PayPal handoffs contain no session capability and retain invoice and callb
         expect(FOSSBilling\Core\Security\Credential::verifyCallbackSignature(2, 16, $callback['sig'] ?? null))->toBeTrue();
     }
 })->with([true, false]);
+
+test('credential migration defers missing adapters but propagates programming errors', function (bool $missing): void {
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findAll')->once()->andReturn([(new PayGateway())->setConfig(['api_key' => 'secret'])]);
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $service->shouldReceive('getPayGatewayRepository')->andReturn($repo);
+    $error = $missing ? new FOSSBilling\Core\Exception\InformationException('Missing adapter') : new TypeError('Broken adapter contract');
+    $service->shouldReceive('getSecretFields')->once()->andThrow($error);
+    $di = container();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $di['em'] = $em;
+    $service->setDi($di);
+    if ($missing) {
+        $em->shouldReceive('flush')->once();
+        $service->migrateConfigSecrets();
+        expect($di['logger']->calls[0]['params'][0])->toContain('deferred');
+    } else {
+        $em->shouldNotReceive('flush');
+        expect(fn () => $service->migrateConfigSecrets())->toThrow(TypeError::class, 'Broken adapter contract');
+    }
+})->with([true, false]);
+
+test('an unreadable gateway credential can be masked and explicitly replaced', function (): void {
+    $model = createEntity(PayGateway::class, ['id' => 1, 'gateway' => 'Stripe', 'enabled' => false, 'acceptedCurrencies' => ['USD'], 'config' => ['api_key' => ['_fossbilling_encrypted' => 'v3:broken'], 'pub_key' => 'public-key']]);
+    $service = payGatewayService();
+    $di = $service->getDi();
+    $di['em']->shouldReceive('flush')->once();
+    $di['loggedin_admin'] = Tests\Helpers\admin(['id' => 7]);
+    $masked = $service->toApiArray($model, false, Tests\Helpers\admin());
+    expect($masked['config']['api_key'])->toBeNull()->and($masked['config']['api_key_set'])->toBeTrue();
+    $service->update($model, ['config' => ['api_key' => 'replacement-secret']]);
+    expect((new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($model->getConfig())['api_key'])->toBe('replacement-secret');
+});
+
+test('cron retries deferred gateway encryption when its adapter becomes available', function (): void {
+    $first = createEntity(PayGateway::class, ['id' => 1, 'gateway' => 'Fixture', 'config' => ['api_key' => 'first-secret']]);
+    $second = createEntity(PayGateway::class, ['id' => 2, 'gateway' => 'Fixture', 'config' => ['api_key' => 'second-secret']]);
+    $available = false;
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findAll')->times(3)->andReturn([$first, $second]);
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $service->shouldReceive('getPayGatewayRepository')->andReturn($repo);
+    $service->shouldReceive('getSecretFields')->andReturnUsing(function (PayGateway $model) use (&$available): array {
+        if (!$available && $model->getId() === 1) {
+            throw new FOSSBilling\Core\Exception\InformationException('Missing adapter');
+        }
+
+        return ['api_key'];
+    });
+    $di = container();
+    $di['em']->shouldReceive('flush')->times(3);
+    $di['mod_service'] = $di->protect(fn ($name, $sub) => $service);
+    $service->setDi($di);
+    $service->migrateConfigSecrets();
+    $preserved = $second->getConfig();
+    expect($first->getConfig()['api_key'])->toBe('first-secret')->and($preserved['api_key'])->toBeArray();
+    $available = true;
+    $invoice = new Box\Mod\Invoice\Service();
+    $invoice->setDi($di);
+    $event = new Box\Mod\Cron\Event\BeforeAdminCronRunEvent();
+    $invoice->retryDeferredGatewaySecrets($event);
+    $upgraded = $first->getConfig();
+    $invoice->retryDeferredGatewaySecrets($event);
+    expect($first->getConfig())->toBe($upgraded)->and($second->getConfig())->toBe($preserved)
+        ->and((new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($upgraded)['api_key'])->toBe('first-secret');
+});
+
+test('deferred gateway retry stops cron after unexpected persistence or adapter errors', function (Throwable $failure): void {
+    $gateway = Mockery::mock(ServicePayGateway::class);
+    $gateway->shouldReceive('migrateConfigSecrets')->with(true)->once()->andThrow($failure);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $gateway);
+    $invoice = new Box\Mod\Invoice\Service();
+    $invoice->setDi($di);
+
+    expect(fn () => $invoice->retryDeferredGatewaySecrets(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent()))
+        ->toThrow($failure::class, $failure->getMessage());
+})->with([
+    'adapter contract' => [new TypeError('Broken adapter contract')],
+    'closed entity manager' => [Doctrine\ORM\Exception\EntityManagerClosed::create()],
+]);

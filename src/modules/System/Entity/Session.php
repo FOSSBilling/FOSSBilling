@@ -42,8 +42,8 @@ class Session
     #[ORM\Column(type: Types::INTEGER)]
     private int $lifetime;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $fingerprint = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $fingerprint = null;
 
     public function getId(): string
     {
@@ -105,12 +105,12 @@ class Session
         return $this;
     }
 
-    public function getFingerprint(): ?string
+    public function getFingerprint(): ?array
     {
         return $this->fingerprint;
     }
 
-    public function setFingerprint(?string $fingerprint): self
+    public function setFingerprint(?array $fingerprint): self
     {
         $this->fingerprint = $fingerprint;
 

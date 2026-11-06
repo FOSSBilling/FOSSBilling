@@ -257,6 +257,8 @@ class Patcher implements InjectionAwareInterface
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
 
+        $this->applyJsonMigrations();
+
         // Baseline the invoice journal on every driver, after the sync above: on non-MySQL
         // installs the invoice_event table only comes into existence there, and backfilling
         // first would find no table and leave existing invoices without baseline entries.
@@ -264,6 +266,41 @@ class Patcher implements InjectionAwareInterface
         $this->backfillInvoiceJournal();
 
         $this->checkInvoiceNumberCounter();
+    }
+
+    public function applyJsonMigrations(): void
+    {
+        $em = $this->di['em'];
+        $crypt = $this->di['crypt'];
+        (new \FOSSBilling\Core\Doctrine\JsonMigration())->automatic($em, $crypt);
+        $connection = $em->getConnection();
+        (new \FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration())->run($connection, $crypt, $this->di['cache']);
+        if ($connection->createSchemaManager()->tablesExist(['email_template']) && $connection->createSchemaManager()->introspectTableByUnquotedName('email_template')->hasColumn('vars')) {
+            $connection->executeStatement('UPDATE email_template SET vars = NULL WHERE vars IS NOT NULL');
+        }
+        if ($connection->createSchemaManager()->tablesExist(['pay_gateway'])) {
+            $this->di['mod_service']('Invoice', 'PayGateway')->migrateConfigSecrets();
+        }
+        if ($connection->createSchemaManager()->tablesExist(['tld_registrar'])) {
+            $this->di['mod_service']('Servicedomain')->migrateConfigSecrets();
+        }
+    }
+
+    public function isJsonMigrationPending(): bool
+    {
+        if ($this->di === null || !isset($this->di['em'])) {
+            return false;
+        }
+
+        try {
+            $connection = $this->di['em']->getConnection();
+
+            return !$connection->createSchemaManager()->tablesExist(['json_migration_record'])
+                || !\FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($connection, \FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE);
+        } catch (\Doctrine\DBAL\Exception) {
+            // Bootstrap probes must tolerate an unavailable database; the next request retries.
+            return false;
+        }
     }
 
     public function checkInvoiceNumberCounter(): void
@@ -2284,7 +2321,16 @@ class Patcher implements InjectionAwareInterface
             // Only write when the row still holds what was read: an admin save
             // racing the migration keeps its newer values instead of being
             // overwritten, and the row is picked up by a later run.
-            $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+            $driver = $this->getPdo()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if (in_array($driver, ['pgsql', 'mysql'], true)) {
+                $quote = $driver === 'mysql' ? '`' : '"';
+                $comparison = $driver === 'mysql' ? 'CAST(config AS BINARY) = CAST(:previous AS BINARY)' : 'CAST(config AS TEXT) = :previous';
+                $this->executeSql(sprintf('UPDATE %s%s%s SET config = :config WHERE id = :id AND %s', $quote, $this->quoteIdentifier($table), $quote, $comparison), [
+                    'config' => json_encode($encrypted, JSON_THROW_ON_ERROR), 'id' => $row['id'], 'previous' => $row['config'],
+                ]);
+            } else {
+                $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+            }
         }
     }
 

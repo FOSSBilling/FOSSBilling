@@ -17,6 +17,15 @@ use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
+function patcherWithoutJsonMigration(): Patcher
+{
+    return new class extends Patcher {
+        public function applyJsonMigrations(): void
+        {
+        }
+    };
+}
+
 test('currency formatting patch follows the client balance gateway repair', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 89);
 
@@ -85,7 +94,7 @@ test('branding migration runs during non-MySQL update finalization', function ()
         $pdo->exec("INSERT INTO setting (param, value) VALUES ('company_logo', 'public/branding/logo.svg'), ('company_favicon', 'public/branding/favicon.ico')");
         $filesystem = Mockery::mock(Filesystem::class);
         $filesystem->shouldReceive('exists')->andReturn(false);
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
 
         $patcher->applyCorePatches(force: true);
@@ -1804,7 +1813,7 @@ test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, ev
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         // force: true is exactly the path finalizeUpdateLocked() calls unconditionally on every
@@ -1834,7 +1843,7 @@ test('applyCorePatches removes retired hook data on non-MySQL drivers and remain
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         // The portable cleanup runs from applyCorePatches on every driver. Running the
@@ -2203,7 +2212,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2256,7 +2265,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2282,7 +2291,7 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2305,7 +2314,7 @@ test('non-MySQL upgrades copy legacy groups after creating the membership table'
         $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
         $patcher->applyCorePatches(force: true);
 
@@ -2380,7 +2389,7 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2412,7 +2421,7 @@ test('applyCorePatches never recreates an inactive extension\'s table via the am
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2442,7 +2451,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2460,7 +2469,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
  * during installedExtensionModules()'s own tablesExist() call, before SchemaSynchronizer::
  * syncEntities() is ever reached.
  */
-test('applyCorePatches logs, rather than throws, when scope discovery itself fails to reach the database', function (): void {
+test('applyCorePatches logs schema discovery failures and blocks the data migration when the database is unavailable', function (): void {
     withNonMysqlDbDriver(function (): void {
         $brokenConnection = Doctrine\DBAL\DriverManager::getConnection([
             'driver' => 'pdo_sqlite',
@@ -2475,14 +2484,13 @@ test('applyCorePatches logs, rather than throws, when scope discovery itself fai
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
         $di['em'] = $entityManager;
+        $di['crypt'] = new FOSSBilling\Core\Security\Crypt();
         $di['logger'] = $logger;
 
         $patcher = new Patcher();
         $patcher->setDi($di);
 
-        // Must not throw - the whole point of the try/catch this scope discovery has to live
-        // inside.
-        $patcher->applyCorePatches(force: true);
+        expect(fn () => $patcher->applyCorePatches(force: true))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
 
         $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
         expect($errorCalls)->not->toBe([])
@@ -3906,7 +3914,7 @@ test('seeded module versions sync during non-MySQL update finalization', functio
         $filesystem->shouldReceive('exists')
             ->andReturnUsing(static fn (string $path): bool => str_ends_with($path, 'manifest.json'));
         $filesystem->shouldReceive('readFile')->andReturn(json_encode(['version' => '0.8.9']));
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
 
         $patcher->applyCorePatches(force: true);
@@ -4040,7 +4048,7 @@ test('applyCorePatches heals a product_category table missing priority', functio
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new Patcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
         $patcher->applyCorePatches(force: true);
 
@@ -4137,4 +4145,40 @@ test('syncPortableSchema heals and backfills a product_category table missing pr
                 ['id' => 2, 'priority' => 20],
             ]);
     });
+});
+
+test('JSON migration bootstrap probe retries after database errors', function (string $stage): void {
+    $failure = new class('Database unavailable') extends RuntimeException implements Doctrine\DBAL\Exception {};
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schema = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    if ($stage === 'connection') {
+        $em->shouldReceive('getConnection')->once()->andThrow($failure);
+    } else {
+        $em->shouldReceive('getConnection')->once()->andReturn($connection);
+        $connection->shouldReceive('createSchemaManager')->once()->andReturn($schema);
+        if ($stage === 'schema') {
+            $schema->shouldReceive('tablesExist')->once()->andThrow($failure);
+        } else {
+            $schema->shouldReceive('tablesExist')->once()->andReturnTrue();
+            $connection->shouldReceive('fetchOne')->once()->andThrow($failure);
+        }
+    }
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $connection->shouldReceive('createSchemaManager')->once()->andReturn($schema);
+    $schema->shouldReceive('tablesExist')->once()->andReturnFalse();
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em]));
+
+    expect($patcher->isJsonMigrationPending())->toBeFalse()
+        ->and($patcher->isJsonMigrationPending())->toBeTrue();
+})->with(['connection', 'schema', 'journal']);
+
+test('JSON migration bootstrap probe does not suppress programming errors', function (): void {
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andThrow(new LogicException('Broken connection factory'));
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em]));
+
+    expect(fn () => $patcher->isJsonMigrationPending())->toThrow(LogicException::class, 'Broken connection factory');
 });

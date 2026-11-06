@@ -120,7 +120,7 @@ test('batch order serialization does not expose admin-only client details', func
             'id' => 11,
             'client_id' => 7,
             'product_id' => 3,
-            'config' => '{}',
+            'config' => '{"enabled":false,"code":"001"}',
             'price' => 10,
             'quantity' => 1,
             'title' => 'Example order',
@@ -149,7 +149,8 @@ test('batch order serialization does not expose admin-only client details', func
     // The batch boundary forwards no identity, so the embedded client must be
     // the general (non-admin) representation: UI fields present, admin-only
     // fields absent.
-    expect($result[0]['client'])->toBe($generalClient);
+    expect($result[0]['client'])->toBe($generalClient)
+        ->and($result[0]['config'])->toBe(['enabled' => false, 'code' => '001']);
     foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_groups', 'api_token'] as $adminOnlyKey) {
         expect($result[0]['client'])->not->toHaveKey($adminOnlyKey);
     }
@@ -1495,7 +1496,7 @@ test('getLogger returns logger with event items', function (): void {
 test('toApiArray returns expected keys', function (): void {
     $model = createEntity(Order::class, [
         'id' => 1,
-        'config' => '{}',
+        'config' => [],
         'price' => 10,
         'quantity' => 1,
         'client_id' => 1,
@@ -1594,7 +1595,7 @@ test('toApiArray reads meta through the repository', function (): void {
 
     $order = createEntity(Order::class, [
         'id' => 7,
-        'config' => '{}',
+        'config' => [],
         'price' => 10,
         'quantity' => 1,
         'client_id' => 1,
@@ -3745,14 +3746,14 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
 
     $order = createEntity(Order::class);
     $order->form_id = 11;
-    $order->setConfig(json_encode([
+    $order->setConfig([
         'period' => '1M',
         'price' => 12.5,
         'quantity' => 2,
         'service_options' => ['region' => 'eu'],
         'hostname' => 'old.example.com',
         'addons' => ['backup', 'ssl'],
-    ]));
+    ]);
 
     $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro']);
 

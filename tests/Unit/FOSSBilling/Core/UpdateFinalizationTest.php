@@ -277,3 +277,154 @@ test('reports schema drift state alongside the finalization status', function ()
         'last_sync_failure' => null,
     ]);
 });
+
+test('application readers share a lock that blocks an updater until active work drains', function (): void {
+    $service = new Finalization();
+    $service->acquireRuntimeLock();
+    $probe = fopen(Path::join(PATH_DATA, 'update-finalization.lock'), 'c');
+
+    try {
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
+        expect((new ReflectionMethod($service, 'withFinalizationLock'))->invoke($service, function () use ($probe): string {
+            expect(flock($probe, LOCK_SH | LOCK_NB))->toBeFalse();
+
+            return 'exclusive';
+        }))->toBe('exclusive');
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
+        $service->releaseRuntimeLock();
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeTrue();
+    } finally {
+        $service->releaseRuntimeLock();
+        flock($probe, LOCK_UN);
+        fclose($probe);
+    }
+});
+
+test('normal finalization migrates JSON and clears retired previews before restoring maintenance mode', function (): void {
+    $config = Config::getConfig();
+    $config['maintenance_mode']['enabled'] = false;
+    Config::setConfig($config, false);
+    $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
+    $c->executeStatement('CREATE TABLE email_template (id INTEGER PRIMARY KEY, vars TEXT)');
+    $c->insert('product', ['id' => 1, 'config' => '{broken']);
+    $c->insert('email_template', ['id' => 1, 'vars' => 'old-live-reset-token']);
+    $di = new Pimple\Container([
+        'em' => FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c),
+        'crypt' => new FOSSBilling\Core\Security\Crypt(),
+        'cache' => new Symfony\Component\Cache\Adapter\ArrayAdapter(),
+    ]);
+    $patcher = new class extends Patcher {
+        public function applyConfigPatches(bool $force = false): void
+        {
+        }
+
+        public function applyCorePatches(bool $force = false): void
+        {
+            $this->applyJsonMigrations();
+        }
+
+        public function patchStatus(): array
+        {
+            return ['current' => 133, 'latest' => 133, 'pending' => 0];
+        }
+
+        public function availablePatches(): int
+        {
+            return 0;
+        }
+    };
+    $patcher->setDi($di);
+    $finalization = finalizationWithStubPatcher($patcher);
+    $finalization->setDi($di);
+    expect(fn () => $finalization->finalizeAndComplete())->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class)
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
+        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('pending')
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('old-live-reset-token');
+    $c->update('product', ['config' => ''], ['id' => 1]);
+    $finalization->finalizeAndComplete();
+    expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBeNull()
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeFalse()
+        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete')
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+});
+
+test('manual update entry point delegates to the same locked finalization flow', function (): void {
+    $finalization = Mockery::mock(Finalization::class);
+    $finalization->shouldReceive('finalizeAndComplete')->once();
+    $updater = new FOSSBilling\Core\Update\Updater();
+    $updater->setDi(new Pimple\Container(['update_finalization' => $finalization]));
+    $updater->performManualUpdate();
+});
+
+test('finalization preserves the configured PHP execution limit', function (int $limit): void {
+    $original = ini_get('max_execution_time');
+
+    try {
+        ini_set('max_execution_time', (string) $limit);
+        finalizationWithStubPatcher(stubUpdatePatcherWithPendingPatches())->finalizeUpdate();
+        expect((int) ini_get('max_execution_time'))->toBe($limit);
+    } finally {
+        ini_set('max_execution_time', $original);
+    }
+})->with([0, 30, 600]);
+
+test('same-version deployments finalize pending JSON before serving application work', function (): void {
+    $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $c->executeStatement('CREATE TABLE form_field (id INTEGER PRIMARY KEY, type TEXT, default_value TEXT)');
+    $c->insert('form_field', ['id' => 1, 'type' => 'text', 'default_value' => 'example.test']);
+    $di = new Pimple\Container([
+        'em' => FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c),
+        'crypt' => new FOSSBilling\Core\Security\Crypt(),
+        'cache' => new Symfony\Component\Cache\Adapter\ArrayAdapter(),
+    ]);
+    $patcher = new class extends Patcher {
+        public int $runs = 0;
+
+        public function applyConfigPatches(bool $force = false): void
+        {
+        }
+
+        public function applyCorePatches(bool $force = false): void
+        {
+            ++$this->runs;
+            $this->applyJsonMigrations();
+        }
+
+        public function availablePatches(): int
+        {
+            return 0;
+        }
+
+        public function patchStatus(): array
+        {
+            return ['current' => 138, 'latest' => 138, 'pending' => 0];
+        }
+    };
+    $patcher->setDi($di);
+    $service = finalizationWithStubPatcher($patcher);
+    $service->setDi($di);
+    $service->writeCompleteState();
+    $service->finalizePendingUpdate();
+    expect(json_decode($c->fetchOne('SELECT default_value FROM form_field'), true, 512, JSON_THROW_ON_ERROR))->toBe('example.test')
+        ->and($patcher->runs)->toBe(1);
+    $service->completeFinalization();
+    $service->finalizePendingUpdate();
+    expect($patcher->runs)->toBe(1);
+});
+
+test('finalization releases the active session before waiting for another runtime reader', function (): void {
+    $directory = sys_get_temp_dir() . '/fb-session-lock-' . bin2hex(random_bytes(6));
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/finalization-session-lock.php', $directory]);
+        $process->setTimeout(10);
+        $process->mustRun();
+        expect($process->getOutput())->toBe('complete');
+    } finally {
+        $filesystem->remove($directory);
+    }
+});

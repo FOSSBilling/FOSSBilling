@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceEvent;
@@ -70,6 +71,12 @@ use Twig\Loader\FilesystemLoader;
 
 class Service implements InjectionAwareInterface
 {
+    #[AsEventListener(priority: 100)]
+    public function retryDeferredGatewaySecrets(BeforeAdminCronRunEvent $event): void
+    {
+        $this->di['mod_service']('Invoice', 'PayGateway')->migrateConfigSecrets(onlyPlaintext: true);
+    }
+
     /**
      * Columns on the `invoice` table permitted in CSV exports.
      * The `hash` column (bearer token for public invoice access) is excluded.
@@ -3349,7 +3356,7 @@ class Service implements InjectionAwareInterface
         }
 
         $product = $productService->findProductById((int) $order->getProductId());
-        $promoConfig = json_decode($order->getConfig() ?? '', true) ?? [];
+        $promoConfig = $order->getConfig() ?? [];
         if ($product->getType() !== \Box\Mod\Product\Service::DOMAIN && !isset($promoConfig['period']) && $order->getPeriod()) {
             $promoConfig['period'] = $order->getPeriod();
         }
@@ -3829,7 +3836,7 @@ class Service implements InjectionAwareInterface
             $product = $productService->findProductById((int) $order->getProductId());
 
             if ($productService instanceof \Box\Mod\Product\Service && $product->getType() === \Box\Mod\Product\Service::DOMAIN) {
-                $config = json_decode($order->getConfig() ?? '', true) ?? [];
+                $config = $order->getConfig() ?? [];
                 $currencyService = $this->di['mod_service']('Currency');
                 $currencyRepository = $currencyService->getCurrencyRepository();
                 $rate = $currencyRepository->getRateByCode($order->getCurrency());

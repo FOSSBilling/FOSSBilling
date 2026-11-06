@@ -49,10 +49,10 @@ test('service license getters and setters round-trip values', function (): void 
         ->setValidateHost(false)
         ->setValidatePath(true)
         ->setValidateVersion(false)
-        ->setIps('["127.0.0.1"]')
-        ->setHosts('["example.com"]')
-        ->setPaths('["/var/www"]')
-        ->setVersions('["1.0"]')
+        ->setIps(['127.0.0.1'])
+        ->setHosts(['example.com'])
+        ->setPaths(['/var/www'])
+        ->setVersions(['1.0'])
         ->setConfig('{"key":"val"}')
         ->setPlugin('Simple');
 
@@ -62,14 +62,14 @@ test('service license getters and setters round-trip values', function (): void 
         ->and($entity->isValidateHost())->toBeFalse()
         ->and($entity->isValidatePath())->toBeTrue()
         ->and($entity->isValidateVersion())->toBeFalse()
-        ->and($entity->getIps())->toBe('["127.0.0.1"]')
+        ->and($entity->getIps())->toBe(['127.0.0.1'])
         ->and($entity->getPlugin())->toBe('Simple')
         ->and($entity->getId())->toBeNull();
 });
 
 test('getAllowedIps returns decoded json array', function (): void {
     $entity = new ServiceLicense();
-    $entity->setIps('["127.0.0.1","192.168.1.1"]');
+    $entity->setIps(['127.0.0.1', '192.168.1.1']);
 
     expect($entity->getAllowedIps())->toBe(['127.0.0.1', '192.168.1.1']);
 });
@@ -82,21 +82,21 @@ test('getAllowedIps returns empty array for null ips', function (): void {
 
 test('getAllowedHosts returns decoded json array', function (): void {
     $entity = new ServiceLicense();
-    $entity->setHosts('["example.com","test.com"]');
+    $entity->setHosts(['example.com', 'test.com']);
 
     expect($entity->getAllowedHosts())->toBe(['example.com', 'test.com']);
 });
 
 test('getAllowedPaths returns decoded json array', function (): void {
     $entity = new ServiceLicense();
-    $entity->setPaths('["/path/a","/path/b"]');
+    $entity->setPaths(['/path/a', '/path/b']);
 
     expect($entity->getAllowedPaths())->toBe(['/path/a', '/path/b']);
 });
 
 test('getAllowedVersions returns decoded json array', function (): void {
     $entity = new ServiceLicense();
-    $entity->setVersions('["1.0","2.0"]');
+    $entity->setVersions(['1.0', '2.0']);
 
     expect($entity->getAllowedVersions())->toBe(['1.0', '2.0']);
 });
