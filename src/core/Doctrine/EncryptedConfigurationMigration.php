@@ -32,7 +32,7 @@ final class EncryptedConfigurationMigration
                 if (isset($row['extension'])) {
                     $cache?->deleteItem('config_' . $row['extension']);
                 }
-                if ($stored === null || $stored === '' || str_starts_with($stored, Crypt::CURRENT_FORMAT_PREFIX)) {
+                if ($stored === null || $stored === '') {
                     continue;
                 }
                 $plain = $crypt->decrypt($stored);
@@ -41,6 +41,9 @@ final class EncryptedConfigurationMigration
                 }
                 if (!is_array(json_decode($plain, true))) {
                     throw new JsonMigrationException('Encrypted extension configuration id=' . $cursor . ' is not a configuration document; existing data was retained.');
+                }
+                if (str_starts_with($stored, Crypt::CURRENT_FORMAT_PREFIX)) {
+                    continue;
                 }
                 $changed = $connection->executeStatement('UPDATE extension_meta SET meta_value = ? WHERE id = ? AND meta_value = ?', [$crypt->encrypt($plain), $cursor, $stored]);
                 if (isset($row['extension'])) {

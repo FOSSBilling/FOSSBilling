@@ -106,7 +106,7 @@ class Finalization implements InjectionAwareInterface
     public function ensureCurrentVersionFinalization(): ?array
     {
         $state = $this->readState();
-        if ($this->isCompleteForCurrentVersion($state)) {
+        if ($this->isCompleteForCurrentVersion($state) && !$this->createPatcher()->isJsonMigrationPending()) {
             return null;
         }
 
@@ -138,7 +138,7 @@ class Finalization implements InjectionAwareInterface
      */
     public function finalizePendingUpdate(): void
     {
-        if ($this->isCompleteForCurrentVersion($this->readState())) {
+        if ($this->isCompleteForCurrentVersion($this->readState()) && !$this->createPatcher()->isJsonMigrationPending()) {
             $this->healSchemaDrift();
 
             return;
@@ -274,6 +274,11 @@ class Finalization implements InjectionAwareInterface
 
     private function withFinalizationLock(\Closure $callback): mixed
     {
+        // Another reader can be waiting for this session while holding a shared runtime lock.
+        // Save it before waiting for exclusivity, so that reader can finish and release its lock.
+        if (session_status() === PHP_SESSION_ACTIVE && $this->di !== null && isset($this->di['session'])) {
+            $this->di['session']->save();
+        }
         $this->filesystem->mkdir(PATH_DATA, 0o755);
         $shared = is_resource($this->runtimeLock);
         $handle = $shared ? $this->runtimeLock : fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');

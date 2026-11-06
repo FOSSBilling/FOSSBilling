@@ -76,6 +76,13 @@ class Session implements InjectionAwareInterface
         return $this->session->getId();
     }
 
+    public function save(): void
+    {
+        if ($this->session->isStarted()) {
+            $this->session->save();
+        }
+    }
+
     public function delete(string $key): void
     {
         $this->session->remove($key);

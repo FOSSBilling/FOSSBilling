@@ -39,7 +39,7 @@ final class JsonMigration
                 return ['columns' => 0, 'empty_values' => 0];
             }
             $result = $this->convert($em->getConnection(), $journal);
-            $this->assertReady($em->getConnection());
+            $this->assertReady($em->getConnection(), $journal);
             $journal->complete();
 
             return $result;
@@ -179,7 +179,7 @@ final class JsonMigration
     }
 
     /** Prevent update completion from reopening an installation with unconverted JSON fields. */
-    public function assertReady(Connection $connection): void
+    public function assertReady(Connection $connection, ?JsonMigrationJournal $journal = null): void
     {
         $schema = $connection->createSchemaManager();
         foreach (JsonFields::FIELDS as $table => $definition) {
@@ -195,22 +195,48 @@ final class JsonMigration
                     && !in_array($actual->getColumn($column)->getTypeName(), [Types::JSON, Types::JSONB], true)) {
                     throw new JsonMigrationException("JSON conversion has not completed; retry update finalization ($table.$column is not JSON).");
                 }
+                $batch = [];
+                $bytes = 0;
                 foreach (JsonFields::rows($connection, $table, $column) as $row) {
-                    if ($row['value'] === null) {
-                        continue;
-                    }
-
-                    try {
-                        if (trim($row['value']) === '') {
-                            throw new \JsonException('Empty JSON sentinel.');
-                        }
-                        JsonMigrationValidation::assertCompatible($row['value'], $table === 'form_field' && $column === 'default_value');
-                    } catch (\JsonException) {
-                        throw new JsonMigrationException("Review $table.$column id=" . JsonFields::displayId($table, $row['id']) . ' before retrying update finalization.');
+                    $batch[] = $row;
+                    $bytes += strlen($row['value'] ?? '');
+                    if (count($batch) >= 500 || $bytes >= 262144) {
+                        $this->validateReadyBatch($batch, $table, $column, $journal);
+                        $batch = [];
+                        $bytes = 0;
                     }
                 }
+                $this->validateReadyBatch($batch, $table, $column, $journal);
             }
         }
+    }
+
+    /** Re-read source bytes on retries; only unchanged batches can reuse validation. */
+    private function validateReadyBatch(array $batch, string $table, string $column, ?JsonMigrationJournal $journal): void
+    {
+        if ($batch === []) {
+            return;
+        }
+        $key = 'ready:' . $table . '.' . $column . ':' . hash('sha256', (string) $batch[0]['id']);
+        $digest = hash('sha256', serialize($batch));
+        if ($journal !== null && ($journal->find($key)['hash'] ?? null) === $digest) {
+            return;
+        }
+        foreach ($batch as $row) {
+            if ($row['value'] === null) {
+                continue;
+            }
+
+            try {
+                if (trim($row['value']) === '') {
+                    throw new \JsonException('Empty JSON sentinel.');
+                }
+                JsonMigrationValidation::assertCompatible($row['value'], $table === 'form_field' && $column === 'default_value');
+            } catch (\JsonException) {
+                throw new JsonMigrationException("Review $table.$column id=" . JsonFields::displayId($table, $row['id']) . ' before retrying update finalization.');
+            }
+        }
+        $journal?->checkpoint($key, ['hash' => $digest]);
     }
 
     /** Native validation is batched and byte-bounded; isolate a failing row only on errors. */

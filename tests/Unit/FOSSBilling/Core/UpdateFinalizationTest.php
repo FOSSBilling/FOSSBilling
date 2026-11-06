@@ -285,7 +285,11 @@ test('application readers share a lock that blocks an updater until active work 
 
     try {
         expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
-        expect((new ReflectionMethod($service, 'withFinalizationLock'))->invoke($service, fn () => 'exclusive'))->toBe('exclusive');
+        expect((new ReflectionMethod($service, 'withFinalizationLock'))->invoke($service, function () use ($probe): string {
+            expect(flock($probe, LOCK_SH | LOCK_NB))->toBeFalse();
+
+            return 'exclusive';
+        }))->toBe('exclusive');
         expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
         $service->releaseRuntimeLock();
         expect(flock($probe, LOCK_EX | LOCK_NB))->toBeTrue();
@@ -365,3 +369,62 @@ test('finalization preserves the configured PHP execution limit', function (int 
         ini_set('max_execution_time', $original);
     }
 })->with([0, 30, 600]);
+
+test('same-version deployments finalize pending JSON before serving application work', function (): void {
+    $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $c->executeStatement('CREATE TABLE form_field (id INTEGER PRIMARY KEY, type TEXT, default_value TEXT)');
+    $c->insert('form_field', ['id' => 1, 'type' => 'text', 'default_value' => 'example.test']);
+    $di = new Pimple\Container([
+        'em' => FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c),
+        'crypt' => new FOSSBilling\Core\Security\Crypt(),
+        'cache' => new Symfony\Component\Cache\Adapter\ArrayAdapter(),
+    ]);
+    $patcher = new class extends Patcher {
+        public int $runs = 0;
+
+        public function applyConfigPatches(bool $force = false): void
+        {
+        }
+
+        public function applyCorePatches(bool $force = false): void
+        {
+            ++$this->runs;
+            $this->applyJsonMigrations();
+        }
+
+        public function availablePatches(): int
+        {
+            return 0;
+        }
+
+        public function patchStatus(): array
+        {
+            return ['current' => 138, 'latest' => 138, 'pending' => 0];
+        }
+    };
+    $patcher->setDi($di);
+    $service = finalizationWithStubPatcher($patcher);
+    $service->setDi($di);
+    $service->writeCompleteState();
+    $service->finalizePendingUpdate();
+    expect(json_decode($c->fetchOne('SELECT default_value FROM form_field'), true, 512, JSON_THROW_ON_ERROR))->toBe('example.test')
+        ->and($patcher->runs)->toBe(1);
+    $service->completeFinalization();
+    $service->finalizePendingUpdate();
+    expect($patcher->runs)->toBe(1);
+});
+
+test('finalization releases the active session before waiting for another runtime reader', function (): void {
+    $directory = sys_get_temp_dir() . '/fb-session-lock-' . bin2hex(random_bytes(6));
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/finalization-session-lock.php', $directory]);
+        $process->setTimeout(10);
+        $process->mustRun();
+        expect($process->getOutput())->toBe('complete');
+    } finally {
+        $filesystem->remove($directory);
+    }
+});

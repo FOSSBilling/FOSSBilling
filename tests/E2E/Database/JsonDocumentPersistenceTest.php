@@ -459,3 +459,36 @@ test('interruption after native conversion keeps column progress and resumes rem
         ->and(json_decode($c->fetchOne('SELECT ' . $c->quoteSingleIdentifier('filter') . ' FROM mod_massmailer'), true, 512, JSON_THROW_ON_ERROR))->toBe(['code' => '001'])
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
 });
+
+test('historical credential encryption compares native JSON without losing the old-value guard', function (bool $raced): void {
+    $c = $this->connection;
+    $declaration = $c->getDatabasePlatform()->getJsonTypeDeclarationSQL([]);
+    $c->executeStatement('CREATE TABLE pay_gateway (id BIGINT PRIMARY KEY, gateway VARCHAR(30), config ' . $declaration . ')');
+    $raw = '{ "api_key": "private-secret", "enabled": false }';
+    $c->insert('pay_gateway', ['id' => 1, 'gateway' => 'Fixture', 'config' => $raw]);
+    $patcher = new class extends FOSSBilling\Core\Update\Patcher {
+        public ?Closure $beforeEncrypt = null;
+
+        public function storedAdapterSecretFields(string $table, string $adapter): array
+        {
+            $callback = $this->beforeEncrypt;
+            $this->beforeEncrypt = null;
+            $callback?->__invoke();
+
+            return ['api_key'];
+        }
+    };
+    $crypt = new FOSSBilling\Core\Security\Crypt();
+    $patcher->setDi(new Pimple\Container(['pdo' => $c->getNativeConnection(), 'crypt' => $crypt]));
+    if ($raced) {
+        $patcher->beforeEncrypt = fn () => $c->update('pay_gateway', ['config' => '{"api_key":"new-secret","enabled":false}'], ['id' => 1]);
+        $patcher->encryptStoredAdapterSecrets('pay_gateway', 'gateway');
+        expect(json_decode($c->fetchOne('SELECT config FROM pay_gateway WHERE id = 1'), true, 512, JSON_THROW_ON_ERROR)['api_key'])->toBe('new-secret');
+    }
+    $patcher->encryptStoredAdapterSecrets('pay_gateway', 'gateway');
+    $stored = json_decode($c->fetchOne('SELECT config FROM pay_gateway WHERE id = 1'), true, 512, JSON_THROW_ON_ERROR);
+    expect($crypt->decrypt($stored['api_key']))->toBe($raced ? 'new-secret' : 'private-secret')->and($stored['enabled'])->toBeFalse();
+    $unchanged = $c->fetchOne('SELECT config FROM pay_gateway WHERE id = 1');
+    $patcher->encryptStoredAdapterSecrets('pay_gateway', 'gateway');
+    expect($c->fetchOne('SELECT config FROM pay_gateway WHERE id = 1'))->toBe($unchanged);
+})->with([false, true]);

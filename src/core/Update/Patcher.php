@@ -286,6 +286,17 @@ class Patcher implements InjectionAwareInterface
         }
     }
 
+    public function isJsonMigrationPending(): bool
+    {
+        if ($this->di === null || !isset($this->di['em'])) {
+            return false;
+        }
+        $connection = $this->di['em']->getConnection();
+
+        return !$connection->createSchemaManager()->tablesExist(['json_migration_record'])
+            || !\FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($connection, \FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE);
+    }
+
     public function checkInvoiceNumberCounter(): void
     {
         $counter = $this->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => 'invoice_starting_number']);
@@ -2304,7 +2315,16 @@ class Patcher implements InjectionAwareInterface
             // Only write when the row still holds what was read: an admin save
             // racing the migration keeps its newer values instead of being
             // overwritten, and the row is picked up by a later run.
-            $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+            $driver = $this->getPdo()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if (in_array($driver, ['pgsql', 'mysql'], true)) {
+                $quote = $driver === 'mysql' ? '`' : '"';
+                $comparison = $driver === 'mysql' ? 'CAST(config AS BINARY) = CAST(:previous AS BINARY)' : 'CAST(config AS TEXT) = :previous';
+                $this->executeSql(sprintf('UPDATE %s%s%s SET config = :config WHERE id = :id AND %s', $quote, $this->quoteIdentifier($table), $quote, $comparison), [
+                    'config' => json_encode($encrypted, JSON_THROW_ON_ERROR), 'id' => $row['id'], 'previous' => $row['config'],
+                ]);
+            } else {
+                $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+            }
         }
     }
 

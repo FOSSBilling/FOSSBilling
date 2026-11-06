@@ -142,3 +142,60 @@ test('a no-op default update still rejects a missing source row and rolls back p
         ->and($c->fetchOne('SELECT default_value FROM form_field WHERE id = 1'))->toBe('{"1":"selected"}')
         ->and((new FOSSBilling\Core\Doctrine\JsonMigrationJournal($em, $crypt))->has('prepared:form_field.default_value:1'))->toBeFalse();
 });
+
+test('current-format extension configuration is validated without re-encrypting valid documents', function (string $plain): void {
+    $c = automaticJsonConnection();
+    $c->executeStatement('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, meta_key TEXT, meta_value TEXT, rel_type TEXT, rel_id TEXT, client_id BIGINT)');
+    $crypt = new Crypt();
+    $stored = $plain === 'truncated' ? 'v3:invalid' : $crypt->encrypt($plain);
+    $c->insert('extension_meta', ['id' => 1, 'meta_key' => 'config', 'meta_value' => $stored]);
+    $migration = new FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration();
+    if (in_array($plain, ['{}', '[]'], true)) {
+        $migration->run($c, $crypt);
+    } else {
+        expect(fn () => $migration->run($c, $crypt))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
+    }
+    expect($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 1'))->toBe($stored);
+})->with(['{}', '[]', 'null', '"private-secret"', '{broken', 'truncated']);
+
+test('readiness retries retain validated batches but revalidate changed or inserted rows', function (string $change): void {
+    $logger = new class extends Psr\Log\AbstractLogger {
+        public bool $interrupt = true;
+
+        public function log($level, string|Stringable $message, array $context = []): void
+        {
+            if ($this->interrupt && str_contains($context['sql'] ?? '', 'AS value') && str_contains($context['sql'], 'FROM "product"') && ($context['params'][1] ?? null) === 500) {
+                $this->interrupt = false;
+
+                throw new RuntimeException('Interrupted readiness validation');
+            }
+        }
+    };
+    $config = new Doctrine\DBAL\Configuration();
+    $config->setMiddlewares([new Doctrine\DBAL\Logging\Middleware($logger)]);
+    $c = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
+    $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
+    for ($id = 1; $id <= 600; ++$id) {
+        $c->insert('product', ['id' => $id, 'config' => '{"valid":true}']);
+    }
+    $journal = new FOSSBilling\Core\Doctrine\JsonMigrationJournal(EntityManagerFactory::create($c), new Crypt());
+    $migration = new JsonMigration();
+    expect(fn () => $migration->assertReady($c, $journal))->toThrow(RuntimeException::class, 'Interrupted readiness');
+    $key = 'ready:product.config:' . hash('sha256', '1');
+    expect($journal->has($key))->toBeTrue();
+    $record = $c->fetchOne('SELECT payload FROM json_migration_record WHERE record_key = ?', [hash('sha256', $key)], [Doctrine\DBAL\Types\Types::BINARY]);
+    if ($change === 'updated') {
+        $c->update('product', ['config' => 'false'], ['id' => 1]);
+    } elseif ($change === 'inserted') {
+        $c->insert('product', ['id' => 0, 'config' => 'false']);
+    }
+    if ($change !== 'unchanged') {
+        expect(fn () => $migration->assertReady($c, $journal))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
+    } else {
+        $migration->assertReady($c, $journal);
+        expect($c->fetchOne('SELECT payload FROM json_migration_record WHERE record_key = ?', [hash('sha256', $key)], [Doctrine\DBAL\Types\Types::BINARY]))->toBe($record);
+        $migration->automatic(EntityManagerFactory::create($c), new Crypt());
+        expect((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1)
+            ->and($journal->has(FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE))->toBeTrue();
+    }
+})->with(['unchanged', 'updated', 'inserted']);
