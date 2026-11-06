@@ -25,6 +25,7 @@ use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Enums\ExtensionType;
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -37,6 +38,7 @@ class Service implements InjectionAwareInterface
     protected ?\Pimple\Container $di = null;
     protected ExtensionRepository $extensionRepository;
     protected ExtensionMetaRepository $extensionMetaRepository;
+    private ArrayAdapter $moduleConfigCache;
 
     public function __construct(private ?Filesystem $filesystem = null)
     {
@@ -45,6 +47,7 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->moduleConfigCache = $di['request_module_config_cache'] ??= new ArrayAdapter();
         if (isset($di['filesystem'])) {
             $this->filesystem ??= $di['filesystem'];
         }
@@ -1010,9 +1013,11 @@ class Service implements InjectionAwareInterface
         }
         $this->di['em']->flush();
 
+        // Invalidate both read paths before after-save listeners can read the configuration.
+        $this->moduleConfigCache->delete(strtolower($ext));
+        $this->di['cache']->delete("config_{$ext}");
         $this->di['event_dispatcher']->dispatch(new AfterAdminExtensionConfigSaveEvent($ext, $configurationKeys));
         $this->di['logger']->info("Updated extension {$ext} configuration.");
-        $this->di['cache']->delete("config_{$ext}");
 
         return true;
     }

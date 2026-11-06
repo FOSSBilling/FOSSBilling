@@ -155,7 +155,7 @@
                         </td>
                         <td>
                             <a href='{{ "client/manage/#{subscription.client.id}"|url }}'>
-                                {{ avatar(subscription.client.email, 24, 'avatar avatar-xs') }}
+                                {{ avatar(subscription.client.email, 24, 'avatar avatar-xs', name: subscription.client.first_name|default('') ~ ' ' ~ subscription.client.last_name|default('')) }}
                             </a>
                         </td>
                         <td>

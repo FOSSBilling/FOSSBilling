@@ -1,0 +1,36 @@
+// Deliberate theme choices: branding, readable type, and plain panels.
+// Keep component colours, radii, spacing, and states supplied by Tabler.
+.admin-workspace {
+    --admin-brand-blue: #0785bc;
+    --tblr-primary: color-mix(in srgb, var(--admin-brand-blue) 85%, black);
+    --tblr-primary-rgb: 6, 113, 160;
+    --tblr-primary-fg: #ffffff;
+    --tblr-primary-darken: color-mix(in srgb, var(--admin-brand-blue) 72%, black);
+    --tblr-primary-lt: color-mix(in srgb, var(--admin-brand-blue) 10%, var(--tblr-bg-surface));
+    --tblr-link-color: var(--tblr-primary);
+    --tblr-link-hover-color: var(--tblr-primary-darken);
+    --tblr-body-font-size: 0.9375rem;
+    --tblr-body-line-height: 1.5;
+    --tblr-btn-input-font-size: var(--tblr-body-font-size);
+    --tblr-shadow-card: none;
+    font-size: var(--tblr-body-font-size);
+    line-height: var(--tblr-body-line-height);
+
+    .page-title { font-size: 1.75rem; }
+    .btn:not(.btn-sm):not(.btn-lg) { --tblr-btn-font-size: 1rem; }
+    .form-label, .form-text, .breadcrumb, .footer { font-size: 0.875rem; }
+    .dropdown-menu { --tblr-dropdown-font-size: 1rem; }
+    .table > thead > tr > th {
+        font-size: 0.875rem;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+    .badge { --tblr-badge-font-size: 0.875rem; }
+}
+
+[data-bs-theme="dark"] .admin-workspace {
+    --tblr-primary: color-mix(in srgb, var(--admin-brand-blue) 55%, white);
+    --tblr-primary-rgb: 119, 188, 218;
+    --tblr-primary-fg: var(--tblr-body-bg);
+    --tblr-primary-darken: color-mix(in srgb, var(--admin-brand-blue) 65%, white);
+}

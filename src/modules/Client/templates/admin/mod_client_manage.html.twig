@@ -31,10 +31,15 @@
 </ul>
 {% endblock %}
 
+
+{% block top_content %}
+{{ include('partial_admin_page_heading.html.twig', { title: client.first_name ~ ' ' ~ client.last_name, description: client.email }) }}
+{% endblock %}
+
 {% block content %}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
     title: client.first_name ~ ' ' ~ client.last_name,
-    subtitle: 'Manage the client profile, billing records, support history, and account activity.'|trans
+    show_header: false,
 } %}
     {% block detail_tabs %}
                     <li class="nav-item" role="presentation">
@@ -80,21 +85,21 @@
             <div class="card-body position-relative">
                 {% embed 'partial_admin_summary_card.html.twig' with {
                     title: 'Client Summary'|trans,
-                    subtitle: 'Review the account identity, status, billing profile, and core contact details for this client.'|trans,
-                    centered_actions: true,
+                    subtitle: '',
+                    centered_actions: false,
                     body_class: 'position-relative'
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_header_aside %}
-                        {{ avatar(client.email, 112, 'avatar avatar-xl avatar-rounded shadow') }}
+                        {{ avatar(client.email, 48, 'avatar avatar-rounded', name: client.first_name|default('') ~ ' ' ~ client.last_name|default('')) }}
                     {% endblock %}
 
                     {% block summary_content %}
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <table class="table card-table table-vcenter admin-record-facts">
                                 <tbody>
                                     <tr>
-                                        <td class="w-50 text-end">{{ 'Client ID'|trans }}:</td>
+                                        <td class="text-end">{{ 'Client ID'|trans }}:</td>
                                         <td>{{ client.id }}</td>
                                     </tr>
                                     {% if client.aid %}
@@ -117,7 +122,7 @@
                                     </tr>
                                     <tr>
                                         <td class="text-end">{{ 'Status'|trans }}:</td>
-                                        <td>{{ mf.status_badge(client.status, 'client') }}</td>
+                                        <td>{{ mf.status_badge(client.status, 'client', true) }}</td>
                                     </tr>
                                     <tr>
                                         <td class="text-end">{{ 'Group'|trans }}:</td>
@@ -188,7 +193,7 @@
                             <span>{{ 'Login to Client Area'|trans }}</span>
                         </a>
                         {% if can_delete_client %}
-                        <a class="btn btn-danger"
+                        <a class="btn btn-outline-danger"
                             {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#trash" />
@@ -557,7 +562,7 @@
                                     </td>
                                     <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
                                     <td>{{ order.period|period_title }}</td>
-                                    <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                    <td>{{ mf.status_badge(order.status, 'order', true) }}</td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                             <svg class="icon">
@@ -625,7 +630,7 @@
                                     <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                                     <td>{{ invoice.created_at|format_date }}</td>
                                     <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
-                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice', true) }}</td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                             <svg class="icon">
@@ -691,7 +696,7 @@
                                     <td>
                                         <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                                     </td>
-                                    <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                                    <td>{{ mf.status_badge(ticket.status, 'ticket', true) }}</td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                             <svg class="icon">
@@ -954,7 +959,7 @@
                                         {% else %}
                                             -
                                         {% endif %}</td>
-                                    <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
+                                    <td>{{ mf.status_badge(tx.status, 'transaction', true) }}</td>
                                     <td>{{ tx.created_at|format_datetime }}</td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>

@@ -25,144 +25,137 @@
 
 {% set active_menu = 'support' %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: ticket.subject, description: '#' ~ ticket.id ~ ' · ' ~ ticket.author.name}) }}
+{% endblock %}
+
 {% block content %}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
-    title: ticket.subject,
-    subtitle: 'Review the ticket, manage its status, track internal notes, and inspect related client conversations.'|trans,
+    show_header: false,
     outer_card_class: 'mb-3'
 } %}
     {% block detail_tabs %}
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Ticket'|trans }}</a>
+                        <button class="nav-link active" id="index-tab" data-bs-target="#tab-index" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-index" aria-selected="true">{{ 'Ticket'|trans }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Manage'|trans }}</a>
+                        <button class="nav-link" id="manage-tab" data-bs-target="#tab-manage" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-manage" aria-selected="false">{{ 'Manage'|trans }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-notes" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }} {% if ticket.notes is defined and ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
+                        <button class="nav-link" id="notes-tab" data-bs-target="#tab-notes" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-notes" aria-selected="false">{{ 'Notes'|trans }} {% if ticket.notes is defined and ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</button>
                     </li>
                     {% if ticket.author.role|default('') == 'client' %}
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Client Tickets'|trans }}</a>
+                        <button class="nav-link" id="support-tab" data-bs-target="#tab-support" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-support" aria-selected="false">{{ 'Client Tickets'|trans }}</button>
                     </li>
                     {% endif %}
     {% endblock %}
 
     {% block detail_tab_content %}
         {% import 'macro_functions.html.twig' as mf %}
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
             <div class="p-3 d-flex flex-column gap-3">
                 {% set task = ticket.rel %}
-                {% embed 'partial_admin_summary_card.html.twig' with {
-                    title: 'Ticket Summary'|trans,
-                    subtitle: 'Review the client, helpdesk, status, and any linked task or order context for this ticket.'|trans,
-                    centered_actions: true,
-                    card_class: 'mb-0'
-                } %}
-                    {% import 'macro_functions.html.twig' as mf %}
-                    {% block summary_content %}
-                        <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap">
-                                <tbody>
-                                    <tr><td class="w-25">{{ 'Ticket ID'|trans }}</td><td>#{{ ticket.id }}</td></tr>
-                                    {% if ticket.author.role|default('') == 'client' %}
-                                        <tr><td>{{ 'Client'|trans }}</td><td><a href='{{ "client/manage/#{ticket.author.id }"|url }}'>{{ ticket.author.name }}</a> (#{{ ticket.author.id }})</td></tr>
-                                    {% else %}
-                                        <tr>
-                                            <td>{{ 'Author'|trans }}</td>
-                                            <td>
-                                                {{ ticket.author.name }} ({{ ticket.author.email }})
-                                                <span class="badge bg-orange-lt ms-1">{{ 'Guest' |trans }}</span>
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                    <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
-                                    <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>
-                                    <tr><td>{{ 'Time Opened'|trans }}</td><td>{{ ticket.created_at|format_date }}</td></tr>
-                                    {% if task.task %}<tr><td>{{ 'Task'|trans }}</td><td>{{ mf.status_name(task.task) }}</td></tr>{% endif %}
-                                    {% if task.type == 'order' %}<tr><td>{{ 'Related To'|trans }}</td><td><a href='{{ "order/manage/#{task.id}"|url }}'>Order #{{ task.id }}</a></td></tr>{% endif %}
-                                    {% if task.task == 'upgrade' %}<tr><td>{{ 'Upgrade To'|trans }}</td><td><a href='{{ "product/manage/#{task.new_value}"|url }}'>{{ admin.product_get_pairs[task.new_value] }}</a></td></tr>{% endif %}
-                                </tbody>
-                            </table>
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3">
+                        {{ include('partial_support_ticket_status.html.twig', {status: ticket.status}) }}
+                        <span class="text-secondary small">{{ 'Updated'|trans }} {{ '%time% ago'|trans({'%time%': ticket.updated_at|timeago}) }}</span>
+                        <div class="d-flex flex-wrap gap-2 ms-auto">
+                            {% if ticket.status != 'closed' %}
+                                <a class="btn btn-outline-secondary" href="{{ 'support/ticket_close'|api_url(query: {id: ticket.id}) }}"
+                                    {{ fb_api_link({message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: {status: 'open'})}) }}>{{ 'Close Ticket'|trans }}</a>
+                            {% endif %}
+                            {% if ticket.author.role|default('') == 'guest' and ticket.hash is defined %}
+                                <a class="btn btn-outline-secondary" href='{{ "support/ticket/#{ticket.hash}"|url(area: 'client') }}' target="_blank">{{ 'View as Author'|trans }}</a>
+                            {% endif %}
+                            <a class="btn btn-primary" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>{{ 'Reply'|trans }}</a>
                         </div>
-                    {% endblock %}
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-sm-6 col-xl-4">
+                                <div class="form-label">{{ 'Author'|trans }}</div>
+                                {% if ticket.author.role|default('') == 'client' %}
+                                    <a class="fw-medium" href='{{ "client/manage/#{ticket.author.id}"|url }}'>{{ ticket.author.name }}</a>
+                                {% else %}
+                                    <span class="fw-medium">{{ ticket.author.name }}</span>
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis ms-1">{{ 'Guest'|trans }}</span>
+                                {% endif %}
+                                <div class="text-secondary small text-break">{{ ticket.author.email }}</div>
+                            </div>
+                            <div class="col-sm-6 col-xl-3">
+                                <div class="form-label">{{ 'Helpdesk'|trans }}</div>
+                                {{ ticket.helpdesk.name|default('–') }}
+                            </div>
+                            <div class="col-6 col-xl-3">
+                                <div class="form-label">{{ 'Opened'|trans }}</div>
+                                {{ ticket.created_at|format_datetime }}
+                            </div>
+                            <div class="col-6 col-xl-2">
+                                <div class="form-label">{{ 'Priority'|trans }}</div>
+                                {{ ticket.priority }}
+                            </div>
+                        </div>
+                        {% if task.task or task.type == 'order' or task.status == 'pending' %}
+                        <div class="d-flex flex-wrap align-items-center gap-3 border-top pt-3 mt-3">
+                            {% if task.task %}<span>{{ 'Task'|trans }}: {{ mf.status_name(task.task) }}</span>{% endif %}
+                            {% if task.type == 'order' %}<a href='{{ "order/manage/#{task.id}"|url }}'>{{ 'Order'|trans }} #{{ task.id }}</a>{% endif %}
+                            {% if task.task == 'upgrade' %}<span>{{ 'Upgrade To'|trans }}: <a href='{{ "product/manage/#{task.new_value}"|url }}'>{{ admin.product_get_pairs[task.new_value] }}</a></span>{% endif %}
+                            {% if task.status == 'pending' %}
+                                <a class="btn btn-primary" href="{{ 'support/task_complete'|api_url(query: {id: ticket.id}) }}" {{ fb_api_link({reload: true}) }}>{{ 'Set Task Complete'|trans }}</a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
 
-                    {% block summary_actions %}
-                        {% if ticket.status != 'closed' %}
-                        <a class="btn btn-primary" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
-                            {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: { status: 'open' }) }) }}>
-                            <svg class="icon"><use href="#x" /></svg>
-                            {{ 'Close'|trans }}
-                        </a>
-                        {% endif %}
-                        <a class="btn btn-danger" href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id }) }}"
-                            {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url }) }}>
-                            <svg class="icon"><use href="#trash" /></svg>
-                            {{ 'Delete'|trans }}
-                        </a>
-                        {% if task.status == 'pending' %}
-                        <a class="btn btn-primary" href="{{ 'support/task_complete'|api_url(query: { 'id': ticket.id }) }}" {{ fb_api_link({ reload: true }) }}>
-                            <svg class="icon"><use href="#check" /></svg>
-                            {{ 'Set Task Complete'|trans }}
-                        </a>
-                        {% endif %}
-                        {% if ticket.author.role|default('') == 'guest' and ticket.hash is defined %}
-                        <a class="btn btn-secondary" href='{{ "support/ticket/#{ticket.hash}"|url(area: 'client') }}' target="_blank">
-                            <svg class="icon"><use href="#eye" /></svg>
-                            {{ 'View as Author'|trans }}
-                        </a>
-                        {% endif %}
-                    {% endblock %}
-                {% endembed %}
+                </div>
 
                 <div class="card">
                     <div class="card-body pb-3">
                         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
                             <div class="d-flex flex-column gap-1">
                                 <h5 class="card-title mb-0">{{ 'Conversation'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Review the full message history and expand older replies when needed.'|trans }}</p>
+                                <p class="text-secondary small mb-0">{{ (ticket.messages|length == 1 ? '%count% message' : '%count% messages')|trans({'%count%': ticket.messages|length}) }}</p>
                             </div>
-                            <a href="#" class="btn btn-secondary" id="toggleMessages">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="toggleMessages">
                                 <svg class="icon">
                                     <use href="#eye" />
                                 </svg>
-                                {{ 'Show/Hide Messages'|trans }}
-                            </a>
+                                <span>{{ (ticket.messages|length <= 2 ? 'Collapse messages' : 'Show all messages')|trans }}</span>
+                            </button>
                         </div>
                     </div>
                     <div class="card-body pt-0">
                         <div class="conversation">
                             {% for i, message in ticket.messages %}
-                            <div class="card {% if loop.first %}mt-2 {% endif %}mb-3 col-md-10 {% if ticket.first.author.email|default('') != message.author.email|default('') %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
-                                <div class="card-header" style="cursor: pointer;">
-                                    {{ avatar(message.author.email|default(''), 24, 'avatar avatar-xs me-2') }}
-                                    {{ message.author.name|default('') }}
-                                    <a class="ms-2" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
-                                        <svg class="icon">
-                                            <use href="#link" />
-                                        </svg>
+                            {% set message_expanded = loop.last or loop.index + 1 == ticket.messages|length or message.id == request_message %}
+                            <div class="card mb-3"{% if message.id == request_message %} id="direct-msg"{% endif %}>
+                                <div class="card-header flex-wrap gap-2">
+                                    {{ avatar(message.author.email|default(''), 24, 'avatar avatar-xs', name: message.author.name|default('')) }}
+                                    <button class="btn btn-link p-0 text-body text-start fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#message-body-{{ message.id }}" aria-controls="message-body-{{ message.id }}" aria-expanded="{{ message_expanded ? 'true' : 'false' }}">
+                                        <svg class="icon icon-sm me-1" aria-hidden="true"><use href="#chevron-down" /></svg>
+                                        {{ message.author.name|default('') }}
+                                    </button>
+                                    {% if message.author.role|default('') == 'admin' %}
+                                        <span class="badge bg-info-subtle text-info-emphasis">{{ 'Staff'|trans }}</span>
+                                    {% endif %}
+                                    <time class="text-secondary small ms-auto" datetime="{{ message.created_at|date('c') }}">{{ message.created_at|format_datetime }}</time>
+                                    <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Link to message'|trans }}" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
+                                        <svg class="icon"><use href="#link" /></svg>
                                     </a>
                                     {% if message.author.role|default('') == 'admin' %}
-                                    <a class="ms-2" href="#" title="{{ 'Edit'|trans }}" data-bs-toggle="modal" data-bs-target="#editMessage{{ message.id }}" onclick="event.stopPropagation()">
-                                        <svg class="icon">
-                                            <use href="#edit" />
-                                        </svg>
-                                    </a>
+                                        <button type="button" class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit Reply'|trans }}" data-bs-toggle="modal" data-bs-target="#editMessage{{ message.id }}">
+                                            <svg class="icon"><use href="#edit" /></svg>
+                                        </button>
                                     {% endif %}
                                     {% if message.updated_at != message.created_at %}
-                                    <a class="ms-2 text-muted" href="#" title="{{ 'View edit history'|trans }}" data-bs-toggle="modal" data-bs-target="#messageHistory{{ message.id }}" onclick="event.stopPropagation()">
-                                        <svg class="icon">
-                                            <use href="#info-circle" />
-                                        </svg>
-                                        {{ 'Edited'|trans }}
-                                    </a>
+                                        <button type="button" class="btn btn-ghost-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#messageHistory{{ message.id }}">{{ 'Edited'|trans }}</button>
                                     {% endif %}
-                                    <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
                                 </div>
-                                <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
-                                    <article class="markdown-body bg-transparent text-reset">
-                                        {{ (message.content ?? '')|markdown_to_html }}
-                                    </article>
+                                <div class="collapse{% if message_expanded %} show{% endif %}" id="message-body-{{ message.id }}" data-ticket-message>
+                                    <div class="card-body">
+                                        <article class="markdown-body bg-transparent text-reset">{{ (message.content ?? '')|markdown_to_html }}</article>
+                                    </div>
                                 </div>
                             </div>
 
@@ -213,7 +206,7 @@
                             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
                                 <div class="d-flex flex-column gap-1">
                                     <h5 class="card-title mb-0">{{ 'Respond as'|trans }} {{ profile.name }}</h5>
-                                    <p class="text-secondary mb-0">{{ 'Compose a reply, insert a canned response, and close the ticket when appropriate.'|trans }}</p>
+                                    <p class="text-secondary small mb-0">{{ 'Replies are sent to the ticket author.'|trans }}</p>
                                 </div>
                                 <div>{{ include('mod_support_canned_selector.html.twig') }}</div>
                             </div>
@@ -226,10 +219,10 @@
                         </div>
                         <div class="card-footer d-flex flex-wrap align-items-center gap-2">
                             <input type="hidden" name="id" value="{{ ticket.id }}">
-                            <input type="submit" value="{{ 'Post'|trans }}" class="btn btn-primary ms-auto">
+                            <input type="submit" value="{{ 'Send Reply'|trans }}" class="btn btn-primary ms-auto">
 
                             {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
-                            <a class="btn btn-warning" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
+                            <a class="btn btn-outline-secondary" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: { status: 'open' }) }) }}>
                                 <svg class="icon">
                                     <use href="#check" />
@@ -243,11 +236,12 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel" aria-labelledby="manage-tab">
             <div class="card-body">
                 <form method="post" action="{{ 'support/ticket_update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Ticket Settings'|trans,
+                        card_class: 'border-0 shadow-none rounded-0',
                         subtitle: 'Update the subject, helpdesk assignment, workflow status, and priority for this ticket.'|trans
                     } %}
                         {% import 'macro_functions.html.twig' as mf %}
@@ -263,7 +257,7 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Status'|trans }}</label>
-                                    {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), ticket.status, 1) }}
+                                    {{ mf.selectbox('status', {'open': 'Awaiting Staff'|trans, 'on_hold': 'Awaiting Client'|trans, 'closed': 'Closed'|trans}, ticket.status, 1) }}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Priority'|trans }}</label>
@@ -274,6 +268,8 @@
                         {% endblock %}
 
                         {% block form_actions %}
+                            <a class="btn btn-outline-danger me-auto" href="{{ 'support/ticket_delete'|api_url(query: {id: ticket.id}) }}"
+                            {{ fb_api_link({message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url}) }}>{{ 'Delete'|trans }}</a>
                             <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
                         {% endblock %}
                     {% endembed %}
@@ -281,7 +277,7 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-notes" role="tabpanel">
+        <div class="tab-pane fade" id="tab-notes" role="tabpanel" aria-labelledby="notes-tab">
             <div class="p-3 d-flex flex-column gap-3">
                 {% embed 'partial_admin_related_section.html.twig' with {
                     title: 'Internal Notes'|trans,
@@ -296,7 +292,7 @@
                                     <td class="w-1"><a href='{{ "staff/manage/#{note.admin_id}"|url }}'>{{ note.author.name }}</a></td>
                                     <td>{{ note.note }}</td>
                                     <td class="w-1">
-                                        <a class="btn btn-icon" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
+                                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete'|trans }}" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
                                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                                             <svg class="icon"><use href="#trash" /></svg>
                                         </a>
@@ -336,7 +332,7 @@
         </div>
 
         {% if ticket.author.role == 'client' %}
-        <div class="tab-pane fade" id="tab-support" role="tabpanel">
+        <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Tickets'|trans,
                 subtitle: 'Review other tickets for this client and open a new ticket without leaving the current conversation.'|trans,
@@ -368,10 +364,10 @@
                                 <tr>
                                     <td>{{ related_ticket.id }}</td>
                                     <td>{{ related_ticket.helpdesk.name }}</td>
-                                    <td><a href='{{ "support/ticket/#{related_ticket.id}"|url }}'>{{ related_ticket.subject|truncate(30) }}</a></td>
-                                    <td>{{ mf.status_badge(related_ticket.status, 'ticket') }}</td>
+                                    <td><a class="fw-semibold" href='{{ "support/ticket/#{related_ticket.id}"|url }}'>{{ related_ticket.subject|truncate(30) }}</a></td>
+                                    <td>{{ include('partial_support_ticket_status.html.twig', {status: related_ticket.status}) }}</td>
                                     <td>
-                                        <a class="btn btn-icon" href='{{ "support/ticket/#{related_ticket.id}"|url }}'>
+                                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "support/ticket/#{related_ticket.id}"|url }}'>
                                             <svg class="icon"><use href="#edit" /></svg>
                                         </a>
                                     </td>
@@ -392,71 +388,22 @@
 
 {% block js%}
 <script>
-    function setSelRange(inputEl, selStart, selEnd) {
-        if (inputEl.setSelectionRange) {
-            inputEl.focus();
-            inputEl.setSelectionRange(selStart, selEnd);
-        } else if (inputEl.createTextRange) {
-            var range = inputEl.createTextRange();
-
-            range.collapse(true);
-            range.moveEnd('character', selEnd);
-            range.moveStart('character', selStart);
-            range.select();
-        }
-    }
-
     document.addEventListener("DOMContentLoaded", function() {
-        document.querySelector('#reply-box textarea').focus();
-
-        var ta = document.getElementById('rt');
-        var pos = ta.innerHTML.indexOf('\n') + 2;
-
-        setSelRange(ta, pos, pos);
-
-        document.querySelectorAll('.shd select').forEach(function(select) {
-            select.addEventListener('change', function() {
-                FOSSBilling.api.admin.get('support/ticket_update', { id: {{ ticket.id }}, support_helpdesk_id: this.value });
-            });
-        });
-
-        document.querySelectorAll('input.tst').forEach(function(element) {
-            element.addEventListener('click', function() {
-                FOSSBilling.api.admin.get('support/ticket_update', {id: {{ ticket.id }}, status: this.value });
-            });
-        });
-
-        document.querySelector('.conversation').addEventListener('click', function(event) {
-            const cardHeader = event.target.closest('.card-header');
-            if (cardHeader) {
-                const cardBody = cardHeader.nextElementSibling;
-                if (cardBody && cardBody.classList.contains('card-body')) {
-                    cardBody.style.display = (cardBody.style.display === 'none') ? 'block' : 'none';
-                }
-            }
-        });
-
         const directMsg = document.getElementById('direct-msg');
         if (directMsg) {
-            const msgBody = directMsg.querySelector('.card-body');
-            if (msgBody) msgBody.style.display = 'block';
-
-            window.scrollTo({
-                top: directMsg.offsetTop - 50,
-                behavior: 'smooth'
-            });
-
-            directMsg.style.backgroundColor = 'rgb(235, 235, 235)';
+            window.scrollTo({top: directMsg.getBoundingClientRect().top + window.scrollY - 64});
         }
 
-        var showAllMessages = false;
-        document.getElementById('toggleMessages').addEventListener('click', function(event) {
-            event.preventDefault();
-
+        let showAllMessages = {{ ticket.messages|length <= 2 ? 'true' : 'false' }};
+        document.getElementById('toggleMessages').addEventListener('click', function() {
             showAllMessages = !showAllMessages;
-            document.querySelectorAll('.conversation .card-body').forEach(function(element) {
-                element.style.display = showAllMessages ? 'block' : 'none';
+            document.querySelectorAll('.conversation [data-ticket-message]').forEach(function(element) {
+                const collapse = tabler.Collapse.getOrCreateInstance(element, {toggle: false});
+                showAllMessages ? collapse.show() : collapse.hide();
             });
+            this.querySelector('span').textContent = showAllMessages
+                ? '{{ 'Collapse messages'|trans|e('js') }}'
+                : '{{ 'Show all messages'|trans|e('js') }}';
         });
 
         document.querySelectorAll('.message-history-modal').forEach(function(modalEl) {

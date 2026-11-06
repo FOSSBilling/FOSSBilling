@@ -292,3 +292,26 @@ test('avatar clamps non-positive sizes to 1', function (): void {
     expect($extension->avatar('user@example.com', 0))->toContain('width: 1px; height: 1px;');
     expect($extension->avatar('user@example.com', -5))->toContain('width: 1px; height: 1px;');
 });
+
+test('avatar renders name initials and falls back to the email when no name is available', function (?string $name, string $initials): void {
+    $extension = makeFossBillingTwigExtension();
+    $html = html_entity_decode($extension->avatar('jane.doe@example.com', name: $name), ENT_QUOTES, 'UTF-8');
+    preg_match('/data:image\/svg\+xml;charset=utf-8,([^"\s]+)/', $html, $matches);
+    $svg = rawurldecode($matches[1]);
+
+    expect($svg)->toContain('>' . $initials . '</text>');
+})->with([
+    'display name' => ['Alex Morgan', 'AM'],
+    'unicode name' => ['Élodie Müller', 'ÉM'], // cspell:ignore Élodie Müller
+    'missing name' => [null, 'JD'],
+    'blank name' => ['  ', 'JD'],
+]);
+
+test('avatar cache reflects changed display names for the same email', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $original = $extension->avatar('person@example.com', name: 'Alex Morgan');
+    $renamed = $extension->avatar('person@example.com', name: 'Jamie Olsen');
+
+    expect($renamed)->not->toBe($original)
+        ->and($extension->avatar('person@example.com', name: 'Alex Morgan'))->toBe($original);
+});

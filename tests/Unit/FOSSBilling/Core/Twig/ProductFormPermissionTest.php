@@ -47,6 +47,7 @@ test('product settings only load forms when staff can view them', function (bool
             'partial_admin_detail_tabs.html.twig' => '{% block detail_tab_content %}{% endblock %}',
             'partial_admin_form_card.html.twig' => '{% block form_content %}{% endblock %}',
             'partial_admin_related_section.html.twig' => '',
+            'partial_product_overview.html.twig' => '',
             'partial_pricing.html.twig' => '',
             'macro_functions.html.twig' => '{% macro selectbox(name, pairs, selected, empty, label) %}<select name="{{ name }}">{% for id, title in pairs %}<option value="{{ id }}">{{ title }}</option>{% endfor %}</select>{% endmacro %}',
         ]),

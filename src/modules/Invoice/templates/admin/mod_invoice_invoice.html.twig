@@ -24,10 +24,15 @@
     </ol>
 {% endblock %}
 
+
+{% block top_content %}
+{{ include('partial_admin_page_heading.html.twig', { title: 'Invoice'|trans ~ ' ' ~ number_label, description: invoice.client ? invoice.client.first_name ~ ' ' ~ invoice.client.last_name : 'Deleted client'|trans }) }}
+{% endblock %}
+
 {% block content %}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
     title: 'Invoice'|trans ~ ' ' ~ number_label,
-    subtitle: 'Review billing details, update invoice content, and adjust stored purchase records.'|trans,
+    show_header: false,
     outer_card_class: 'mb-3'
 } %}
     {% block detail_tabs %}
@@ -51,20 +56,20 @@
             <div class="px-3 py-3 d-flex flex-column gap-3">
                 {% embed 'partial_admin_summary_card.html.twig' with {
                     title: 'Invoice Summary'|trans,
-                    subtitle: 'Review billing totals, client attribution, due dates, and the current invoice state.'|trans,
-                    centered_actions: true
+                    subtitle: '',
+                    centered_actions: false
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_content %}
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <table class="table card-table table-vcenter admin-record-facts">
                             <tbody>
                                 <tr>
-                                    <td class="w-50 text-end">{{ 'ID'|trans }}:</td>
+                                    <td class="text-end">{{ 'ID'|trans }}:</td>
                                     <td>#{{ invoice.id }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Number'|trans }}:</td>
-                                    <td>{{ number_label }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
+                                    <td>{{ number_label }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'bg-secondary-subtle text-secondary-emphasis') }}{% endif %}</td>
                                 </tr>
                                     <tr>
                                         <td class="text-end">{{ 'Client'|trans }}:</td>
@@ -78,7 +83,7 @@
                                     </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Status'|trans }}:</td>
-                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice', true) }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'bg-secondary-subtle text-secondary-emphasis') }}{% endif %}</td>
                                 </tr>
                                 {% if invoice.credit_note_for_invoice_id %}
                                 <tr>
@@ -173,14 +178,14 @@
                             <a href='{{ "invoice/manage/#{invoice.replaces_invoice_id}"|url }}'>{{ 'View original'|trans }}</a>
                         </div>
                         {% endif %}
-                        <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
+                        <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-outline-secondary" target="_blank">
                             <svg class="icon" width="24" height="24">
                                 <use href="#eye" />
                             </svg>
                             <span>{{ 'View as Client'|trans }}</span>
                         </a>
                         {% if invoice.deletable %}
-                        <a class="btn btn-danger"
+                        <a class="btn btn-outline-danger"
                             {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#trash" />
@@ -189,7 +194,7 @@
                         </a>
                         {% endif %}
                         {% if invoice.cancellable %}
-                        <a class="btn btn-warning"
+                        <a class="btn btn-outline-warning"
                             {{ fb_api_link({href: 'invoice/cancel'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Cancel this invoice without a replacement?'|trans}, reload: true}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#x" />
@@ -198,7 +203,7 @@
                         </a>
                         {% endif %}
                         {% if invoice.status == 'unpaid' %}
-                        <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/send_reminder'|api_url(query: {id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
+                        <a class="btn btn-outline-secondary" {{ fb_api_link({href: 'invoice/send_reminder'|api_url(query: {id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#mail" />
                             </svg>
@@ -269,7 +274,7 @@
                         {% endif %}
 
                         {% if invoice.status == 'paid' %}
-                        <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#fullRefundModal">
+                        <a class="btn btn-outline-secondary" href="#" data-bs-toggle="modal" data-bs-target="#fullRefundModal">
                             <svg class="icon" width="24" height="24">
                                 <use href="#receipt-refund" />
                             </svg>
@@ -307,7 +312,7 @@
                             </form>
                         </div>
                         </div>
-                        <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#refundModal">
+                        <a href="#" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#refundModal">
                             <span>{{ 'Partial refund'|trans }}</span>
                         </a>
                         <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
@@ -352,7 +357,7 @@
                         </div>
                         {% endif %}
                         {% if invoice.issued and (invoice.status == 'unpaid' or invoice.status == 'paid') and not invoice.credit_note_for_invoice_id %}
-                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#debitModal">
+                        <a href="#" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#debitModal">
                             <svg class="icon" width="24" height="24">
                                 <use href="#receipt" />
                             </svg>
@@ -400,7 +405,7 @@
                         </div>
                         {% endif %}
                         {% if invoice.issued and invoice.status == 'unpaid' and not invoice.credit_note_for_invoice_id and not invoice.debit_note_for_invoice_id and not invoice.replaced_by_invoice_id %}
-                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reissueModal">
+                        <a href="#" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#reissueModal">
                             <svg class="icon" width="24" height="24">
                                 <use href="#refresh" />
                             </svg>
@@ -459,7 +464,7 @@
                             }
                         </script>
                         {% endif %}
-                        <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
+                        <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-outline-secondary" target="_blank">
                             <svg class="icon" width="24" height="24">
                                 <use href="#download" />
                             </svg>
@@ -798,7 +803,7 @@
                             <td>{{ tx.type }}</td>
                             <td>{{ tx.gateway }}</td>
                             <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
-                            <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
+                            <td>{{ mf.status_badge(tx.status, 'transaction', true) }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
@@ -1206,7 +1211,7 @@
         <div class="d-grid gap-2">
             <button class="btn btn-primary" type="button" onclick="window.print()">{{ 'Print'|trans }}</button>
             {% if invoice.deletable %}
-                <a class="btn btn-danger" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
+                <a class="btn btn-outline-danger" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                     {{ 'Delete'|trans }}
                 </a>

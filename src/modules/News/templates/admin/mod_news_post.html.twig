@@ -2,6 +2,8 @@
 
 {% block meta_title %}{{ post.title }}{% endblock %}
 
+{% import 'macro_functions.html.twig' as mf %}
+
 {% set active_menu = 'support' %}
 
 {% block breadcrumbs %}
@@ -20,13 +22,17 @@
     </ol>
 {% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: post.title, description: 'Announcement'|trans}) }}
+{% endblock %}
+
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'news/update'|api_url }}" {{ fb_api_form({message: 'Post Updated'|trans}) }}>
+    <form method="post" action="{{ 'news/update'|api_url }}" {{ fb_api_form({message: 'Post Updated'|trans, reload: true}) }}>
         <div class="card-body">
-            <div class="mb-3">
-                <h3 class="card-title mb-1">{{ 'Edit Post'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ post.title }}</p>
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <h3 class="card-title mb-0">{{ 'Edit Post'|trans }}</h3>
+                {{ mf.status_badge(post.status, 'post', true) }}
             </div>
 
             <div class="row g-3">
@@ -118,7 +124,7 @@
         <input type="hidden" name="id" value="{{ post.id }}">
 
         <div class="card-footer d-flex gap-2">
-            <a href="{{ 'news'|url }}" class="btn btn-secondary">
+            <a href="{{ 'news'|url }}" class="btn btn-outline-secondary">
                 <svg class="icon">
                     <use href="#arrow-left" />
                 </svg>

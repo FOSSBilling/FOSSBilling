@@ -14,89 +14,153 @@
 
 {% block meta_title %}{{ 'Products'|trans }}{% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: 'Products'|trans}) }}
+{% endblock %}
+
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Products'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage products, prepare new offerings, and organize product categories.'|trans }}</p>
-            </div>
+            <ul class="nav nav-pills card-header-pills flex-nowrap text-nowrap overflow-x-auto" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="tab-index" aria-selected="true">{{ 'Products'|trans }}</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab" aria-controls="tab-categories" aria-selected="false">{{ 'Categories'|trans }}</button>
+                </li>
+            </ul>
         </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Products'|trans }}</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Categories'|trans }}</button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab" data-list-ns="">
-            {{ include('partial_search.html.twig', { search_toolbar_actions: product_toolbar_actions }) }}
-            <div class="table-responsive">
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab" data-list-ns="">
+                {{ include('partial_search.html.twig', { search_toolbar_actions: product_toolbar_actions, search_max_width: 'none' }) }}
                 <form method="post" action="{{ 'product/update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
-                        <thead>
-                            <tr>
-                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
-                                <th>{{ 'Category'|trans }}</th>
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Priority'|trans, 'sort_key': 'priority', 'url': 'product', 'hash': '#tab-index', 'th_class': 'w-1 text-center', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
-                                <th class="w-1"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% set products = admin.product_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
-                            {% for product in products.list %}
-                            <tr>
-                                <td>{{ product.id }}</td>
-                                <td>{{ mf.status_name(product.type) }}</td>
-                                <td>
-                                    {% if product.category is defined %}
-                                    <a href='{{ "product/category/#{product.category.id}"|url }}'>{{ product.category.title }}</a>
-                                    {% else %}
-                                    –
-                                    {% endif %}
-                                </td>
-                                <td><a href='{{ "product/manage/#{product.id}"|url }}'>{{ product.title }}</a></td>
-                                <td>{{ mf.status_badge(product.status, 'product') }}</td>
-                                <td class="text-center">
-                                    <input type="text" class="form-control form-control-sm" name="priority[{{ product.id }}]" value="{{ product.priority }}" size="2">
-                                </td>
-                                <td>
-                                    <a class="btn btn-icon" href='{{ "product/manage/#{product.id}"|url }}'>
-                                        <svg class="icon">
-                                            <use href="#edit" />
-                                        </svg>
-                                    </a>
-                                    <a class="btn btn-icon" href="{{ 'product/delete'|api_url({'id' : product.id }) }}"
-                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
-                                        <svg class="icon">
-                                            <use href="#trash" />
-                                        </svg>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Product'|trans, 'sort_key': 'title', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                    <th class="text-end">{{ 'Pricing'|trans }}</th>
+                                    <th>{{ 'Stock'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Priority'|trans, 'sort_key': 'priority', 'url': 'product', 'hash': '#tab-index', 'th_class': 'w-1 text-center', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set products = admin.product_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                                {% set currency_code = admin.currency_get_default.code %}
+                                {% for product in products.list %}
+                                <tr>
+                                    <td class="text-secondary">{{ product.id }}</td>
+                                    <td>
+                                        <a class="fw-semibold" href='{{ "product/manage/#{product.id}"|url }}'>{{ product.title }}</a>
+                                        <div class="text-secondary small">
+                                            {{ mf.status_name(product.type) }}
+                                            {% if product.category is defined %}
+                                                · <a class="text-secondary" href='{{ "product/category/#{product.category.id}"|url }}'>{{ product.category.title }}</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{ mf.status_badge(product.status, 'product', true) }}
+                                        {% if product.hidden %}
+                                            <div class="mt-1"><span class="badge bg-warning-subtle text-warning-emphasis">{{ 'Hidden'|trans }}</span></div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">{{ include('partial_product_price.html.twig') }}</td>
+                                    <td>{{ include('partial_product_stock.html.twig') }}</td>
+                                    <td class="text-center">
+                                        <input type="text" class="form-control form-control-sm" aria-label="{{ 'Priority for %product%'|trans({'%product%': product.title}) }}" name="priority[{{ product.id }}]" value="{{ product.priority }}" size="2">
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit Product'|trans }}" href='{{ "product/manage/#{product.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use href="#edit" />
+                                            </svg>
+                                        </a>
+                                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete Product'|trans }}" href="{{ 'product/delete'|api_url({'id' : product.id }) }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
+                                            <svg class="icon">
+                                                <use href="#trash" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
 
-                    <div class="card-footer d-flex align-items-center">
+                    </div>
+                    <div class="card-footer d-flex flex-wrap align-items-center justify-content-end gap-3">
                         {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product', 'split_footer_controls': true }) }}
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <svg class="icon"><use href="#refresh" /></svg>
+                            {{ 'Update Priority'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="tab-categories" role="tabpanel" aria-labelledby="categories-tab">
+                <div class="p-3 border-bottom d-flex justify-content-end">
+                    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCategoryModal">
+                        <svg class="icon">
+                            <use href="#plus" />
+                        </svg>
+                        {{ 'New Category'|trans }}
+                    </button>
+                </div>
+                <form method="post" action="{{ 'product/category_update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Title'|trans }}</th>
+                                    <th class="w-1 text-center">{{ 'Priority'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in admin.product_category_get_list %}
+                                <tr>
+                                    <td>{{ category.id }}</td>
+                                    <td>
+                                        <a class="fw-semibold" href='{{ "product/category/#{category.id}"|url }}'>{{ category.title }}</a>
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="text" class="form-control form-control-sm" aria-label="{{ 'Priority for %category%'|trans({'%category%': category.title}) }}" name="priority[{{ category.id }}]" value="{{ category.priority }}" size="2">
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit Category'|trans }}" href='{{ "product/category/#{category.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use href="#edit" />
+                                            </svg>
+                                        </a>
+                                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete Category'|trans }}" href="{{ 'product/category_delete'|api_url(query: { 'id': category.id }) }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product#tab-categories'|url}) }}>
+                                            <svg class="icon">
+                                                <use href="#trash" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
 
                     <div class="card-footer text-end">
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-outline-secondary">
                             <svg class="icon">
                                 <use href="#refresh" />
                             </svg>
@@ -104,73 +168,6 @@
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-categories" role="tabpanel" aria-labelledby="categories-tab">
-            <div class="p-3 border-bottom d-flex justify-content-end">
-                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCategoryModal">
-                    <svg class="icon">
-                        <use href="#plus" />
-                    </svg>
-                    {{ 'New Category'|trans }}
-                </button>
-            </div>
-            <div class="table-responsive">
-            <form method="post" action="{{ 'product/category_update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th class="w-1">#</th>
-                        <th>{{ 'Title'|trans }}</th>
-                        <th class="w-1 text-center">{{ 'Priority'|trans }}</th>
-                        <th class="w-1"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for category in admin.product_category_get_list %}
-                    <tr>
-                        <td>{{ category.id }}</td>
-                        <td>
-                            <a href='{{ "product/category/#{category.id}"|url }}'>{{ category.title }}</a>
-                        </td>
-                        <td class="text-center">
-                            <input type="text" class="form-control form-control-sm" name="priority[{{ category.id }}]" value="{{ category.priority }}" size="2">
-                        </td>
-                        <td>
-                            <a class="btn btn-icon" href='{{ "product/category/#{category.id}"|url }}'>
-                                <svg class="icon">
-                                    <use href="#edit" />
-                                </svg>
-                            </a>
-                            <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': category.id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product#tab-categories'|url}) }}>
-                                <svg class="icon">
-                                    <use href="#trash" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <div class="card-footer text-end">
-                <button type="submit" class="btn btn-primary">
-                    <svg class="icon">
-                        <use href="#refresh" />
-                    </svg>
-                    {{ 'Update Priority'|trans }}
-                </button>
-            </div>
-            </form>
-            </div>
-        </div>
-                </div>
             </div>
         </div>
 

@@ -25,12 +25,14 @@
     </ol>
 {% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: response.title, description: 'Canned Response'|trans}) }}
+{% endblock %}
+
 {% block content %}
-<div class="card">
     <form method="post" action="{{ 'support/canned_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses'|url }) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
-            title: 'Canned Response'|trans,
-            subtitle: response.title,
+            title: 'Edit Response'|trans,
             body_class: 'pt-4'
         } %}
             {% import 'macro_functions.html.twig' as mf %}
@@ -57,7 +59,6 @@
             {% endblock %}
         {% endembed %}
     </form>
-</div>
 {% endblock %}
 
 {% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

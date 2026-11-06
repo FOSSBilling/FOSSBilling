@@ -28,10 +28,17 @@
     {% set can_cancel_at_period_end = admin.order_can_cancel_at_period_end({ 'id': order.id }) %}
 {% endif %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {
+        title: order.title,
+        description: '#' ~ order.id ~ ' · ' ~ order.client.first_name ~ ' ' ~ order.client.last_name
+    }) }}
+{% endblock %}
+
 {% block content %}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
     title: order.title,
-    subtitle: 'Review order details, manage billing configuration, and inspect related service activity.'|trans
+    show_header: false
 } %}
     {% block detail_tabs %}
                     <li class="nav-item" role="presentation">
@@ -70,89 +77,68 @@
             <div class="card-body">
                 {% embed 'partial_admin_summary_card.html.twig' with {
                     title: 'Order Summary'|trans,
-                    subtitle: 'Review core order, billing, and lifecycle details before taking action on this order.'|trans,
-                    centered_actions: true,
+                    centered_actions: false,
                     card_class: 'mb-0'
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
+                    {% block summary_header_aside %}
+                        {{ mf.status_badge(order.status, 'order', true) }}
+                    {% endblock %}
                     {% block summary_content %}
+                        {% if order.unpaid_invoice_id %}
+                        <div class="alert alert-warning mx-3 mb-3" role="status">
+                            <a class="alert-link" href='{{ "invoice/manage/#{order.unpaid_invoice_id}"|url }}'>{{ 'Unpaid Invoice'|trans }} #{{ order.unpaid_invoice_id }}</a>
+                        </div>
+                        {% endif %}
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <table class="table card-table table-vcenter admin-record-facts">
                                 <tbody>
                                     <tr>
-                                        <td class="w-50 text-end">{{ 'Order'|trans }}</td>
-                                        <td>#{{ order.id }} ({{ order.service_type }})</td>
+                                        <td>{{ 'Client'|trans }}</td>
+                                        <td><a class="fw-medium" href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Client'|trans }}</td>
-                                        <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                                        <td>{{ 'Payment Amount'|trans }}</td>
+                                        <td><strong>{{ order.total|format_currency(order.currency ?? default_currency) }}</strong> {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %} ({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
+                                    </tr>
+                                    {% if order.discount and order.discount > 0 %}
+                                    <tr>
+                                        <td>{{ 'Order Discount'|trans }}</td>
+                                        <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Title'|trans }}</td>
-                                        <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-end">{{ 'Payment Amount'|trans }}</td>
-                                        <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
-                                    </tr>
-                                    {% if order.discount and order.discount > 0%}
-                                    <tr>
-                                        <td class="text-end">{{ 'Order Discount'|trans }}</td>
-                                        <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }} </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
-                                        <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency)}} </td>
+                                        <td>{{ 'Payment Amount After Discount'|trans }}</td>
+                                        <td class="fw-semibold">{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency) }}</td>
                                     </tr>
                                     {% endif %}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Status'|trans }}</td>
-                                        <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                        <td>{{ 'Renewal Date'|trans }}</td>
+                                        <td>{% if order.expires_at %}{{ order.expires_at|format_date }} <span class="text-secondary">({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }})</span>{% else %}-{% endif %}</td>
                                     </tr>
                                     {% if order.notes %}
-                                    <tr>
-                                        <td class="text-end">{{ 'Order Notes'|trans }}</td>
-                                        <td>
-                                            <svg class="icon">
-                                                <use href="#notes" />
-                                            </svg>
-                                            <a>{{ order.notes }}</a>
-                                        </td>
-                                    </tr>
+                                    <tr><td>{{ 'Order Notes'|trans }}</td><td>{{ order.notes }}</td></tr>
                                     {% endif %}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Date'|trans }}</td>
-                                        <td>{{ order.created_at|format_date }}</td>
+                                        <td>{{ 'Title'|trans }}</td>
+                                        <td><a href='{{ "product/manage/#{order.product_id}"|url }}'>{{ order.title }}</a></td>
                                     </tr>
+                                    <tr><td>{{ 'Order'|trans }}</td><td>#{{ order.id }} <span class="text-secondary">({{ order.service_type }})</span></td></tr>
+                                    <tr><td>{{ 'Order Date'|trans }}</td><td>{{ order.created_at|format_date }}</td></tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Activation Date'|trans }}</td>
-                                        <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
+                                        <td>{{ 'Activation Date'|trans }}</td>
+                                        <td>{% if order.activated_at %}{{ order.activated_at|format_date }} <span class="text-secondary">({{ order.activated_at|timeago }} {{ 'ago'|trans }})</span>{% else %}-{% endif %}</td>
                                     </tr>
-                                    <tr>
-                                        <td class="text-end">{{ 'Renewal Date'|trans }}</td>
-                                        <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-end">{{ 'Order Group ID'|trans }}</td>
-                                        <td>{{ order.group_id|default('-') }}</td>
-                                    </tr>
+                                    <tr><td>{{ 'Order Group ID'|trans }}</td><td>{{ order.group_id|default('-') }}</td></tr>
                                     {% if order.promo_id %}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
-                                        <td>
-                                            {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
-                                            {{ promo.code }}
-                                        </td>
+                                        <td>{{ 'Order Promo Code'|trans }}</td>
+                                        <td>{% set promo = admin.product_promo_get({ id: order.promo_id }) %}{{ promo.code }}</td>
                                     </tr>
                                     {% endif %}
                                     {% if order.active_tickets > 0 %}
                                     <tr>
-                                        <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
-                                        <td>
-                                            <div class="num">
-                                                <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
-                                            </div>
-                                        </td>
+                                        <td>{{ 'Active Support Tickets'|trans }}</td>
+                                        <td><a class="badge bg-warning-subtle text-warning-emphasis" href="{{ 'support'|url(query: { status: 'open', order_id: order.id }) }}">{{ order.active_tickets }}</a></td>
                                     </tr>
                                     {% endif %}
                                 </tbody>
@@ -162,6 +148,7 @@
 
                     {% block summary_actions %}
                         {% set order_actions %}
+                        <div class="btn-list">
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/activate'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
@@ -183,7 +170,7 @@
                     </a>
 
                     {% if params.suspend_reason_list|default('')|trim == null %}
-                    <a class="btn btn-primary"
+                    <a class="btn btn-outline-warning"
                         {{ fb_api_link({href: 'order/suspend'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use href="#player-pause" />
@@ -191,14 +178,14 @@
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% else %}
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#suspendModal">
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#suspendModal">
                         <svg class="icon" width="24" height="24">
                             <use href="#x" />
                         </svg>
                         <span>{{ 'Suspend'|trans }}</span>
                     </button>
                     {% endif %}
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#cancelModal">
                         <svg class="icon" width="24" height="24">
                             <use href="#x" />
                         </svg>
@@ -226,15 +213,8 @@
                     </a>
                     {% endif %}
 
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                        <svg class="icon" width="24" height="24">
-                            <use href="#trash" />
-                        </svg>
-                        <span>{{ 'Delete'|trans }}</span>
-                    </button>
-
                     {% if not order.unpaid_invoice_id %}
-                    <a class="btn btn-primary"
+                    <a class="btn btn-outline-secondary"
                         {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
                             <use href="#plus" />
@@ -242,6 +222,13 @@
                         <span>{{ 'Issue Invoice'|trans }}</span>
                     </a>
                     {% endif %}
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <svg class="icon" width="24" height="24">
+                            <use href="#trash" />
+                        </svg>
+                        <span>{{ 'Delete'|trans }}</span>
+                    </button>
+                        </div>
                 {% endset %}
                         {{ order_actions }}
                     {% endblock %}
@@ -587,9 +574,9 @@
                                     <td>{{ addon.period|period_title }}</td>
                                     <td>{{ addon.total|format_currency(addon.currency ?? default_currency) }}</td>
                                     <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
-                                    <td>{{ mf.status_badge(addon.status, 'order') }}</td>
+                                    <td>{{ mf.status_badge(addon.status, 'order', true) }}</td>
                                     <td>
-                                        <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
+                                        <a class="btn btn-icon btn-ghost-secondary btn-sm" href='{{ "order/manage/#{addon.id}"|url }}'>
                                             <svg class="icon">
                                                 <use href="#edit" />
                                             </svg>
@@ -651,9 +638,9 @@
                                     <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                                     <td>{{ invoice.created_at|format_date }}</td>
                                     <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
-                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice', true) }}</td>
                                     <td>
-                                        <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
+                                        <a class="btn btn-icon btn-ghost-secondary btn-sm" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                             <svg class="icon">
                                                 <use href="#edit" />
                                             </svg>
@@ -696,10 +683,10 @@
                                 <tr>
                                     <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
                                     <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/dd/yy HH:mm") }}</td>
-                                    <td>{{ mf.status_badge(sh.status, 'order') }}</td>
+                                    <td>{{ mf.status_badge(sh.status, 'order', true) }}</td>
                                     <td class="text-wrap">{{ sh.notes }}</td>
                                     <td>
-                                        <a class="btn btn-icon"
+                                        <a class="btn btn-icon btn-ghost-secondary btn-sm"
                                             {{ fb_api_link({href: 'order/status_history_delete'|api_url(query: {'id': sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
                                             <svg class="icon">
                                                 <use href="#trash" />
@@ -747,9 +734,9 @@
                                     <td>
                                         <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                                     </td>
-                                    <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                                    <td>{{ mf.status_badge(ticket.status, 'ticket', true) }}</td>
                                     <td>
-                                        <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
+                                        <a class="btn btn-icon btn-ghost-secondary btn-sm" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                             <svg class="icon">
                                                 <use href="#edit" />
                                             </svg>

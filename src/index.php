@@ -36,19 +36,10 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
         throw new RuntimeException('Time collector not found in debug bar.');
     }
 
-    // PDO collector
+    // DBAL and legacy PDO share one proxy installed by DebugMiddleware before
+    // the first query. Register it once, including statements made during load.php.
     $pdoCollector = new DebugBar\DataCollector\PDO\PDOCollector();
-
-    // PDO
-    $pdoCollector->addConnection($di['pdo'], 'PDO');
-
-    // Doctrine
-    $connection = $di['em']->getConnection();
-    $native = $connection->getNativeConnection();
-
-    if ($native instanceof PDO) {
-        $pdoCollector->addConnection(new DebugBar\DataCollector\PDO\TraceablePDO($native), 'Doctrine');
-    }
+    $pdoCollector->addConnection($di['pdo'], 'PDO / Doctrine');
 
     $debugBar->addCollector($pdoCollector);
 

@@ -17,82 +17,31 @@
     </button>
 {% endset %}
 
+
 {% block top_content %}
-{% if not filter_panel_open %}
+{{ include('partial_admin_page_heading.html.twig', { title: 'Invoices'|trans }) }}
     {% set statuses = admin.invoice_get_statuses %}
-    <section class="row row-cards mb-3 filter-panel-summary">
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|url(query: { 'status': 'unpaid' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-danger text-white avatar">{{ statuses.unpaid }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Unpaid'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|url(query: { 'status': 'paid' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-green text-white avatar">{{ statuses.paid }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Paid'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|url(query: { 'status': 'refunded' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-secondary text-white avatar">{{ statuses.refunded }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Refunded'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'invoice'|url }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-blue text-white avatar">{{ statuses.paid + statuses.unpaid + statuses.refunded }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </section>
-    {% endif %}
-{% endblock %}
+    {{ include('partial_admin_record_summary.html.twig', {
+        label: 'Invoices'|trans,
+        path: 'invoice',
+        current_status: request.status,
+        items: [
+            { status: 'unpaid', label: 'Unpaid'|trans, count: statuses.unpaid, count_class: 'bg-warning-subtle text-warning-emphasis' },
+            { status: 'paid', label: 'Paid'|trans, count: statuses.paid, count_class: 'bg-success-subtle text-success-emphasis' },
+            { status: 'refunded', label: 'Refunded'|trans, count: statuses.refunded, count_class: 'bg-info-subtle text-info-emphasis' },
+            { status: 'canceled', label: 'Canceled'|trans, count: statuses.canceled, count_class: 'bg-secondary-subtle text-secondary-emphasis' },
+            { status: '', label: 'All invoices'|trans, count: statuses.total, count_class: 'bg-primary-subtle text-primary-emphasis' }
+        ]
+    }) }}
+    {% endblock %}
 
 {% block content %}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage invoices, review billing records, and prepare new invoices for clients.'|trans }}</p>
-            </div>
-        </div>
         <div class="card-body pt-0 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
                 {{ include('partial_search.html.twig', {
                     search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                    search_max_width: 'none',
                     search_toolbar_actions: new_invoice_action
                 }) }}
                 <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -166,16 +115,19 @@
                                 <label class="form-label text-muted small mb-1">{{ 'Status'|trans }}</label>
                                 <div class="d-flex flex-wrap gap-2">
                                     <input class="btn-check" id="invoiceStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="invoiceStatusAll">{{ 'All'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="invoiceStatusAll">{{ 'All'|trans }}</label>
 
                                     <input class="btn-check" id="invoiceStatusPaid" type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="invoiceStatusPaid">{{ 'Paid'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="invoiceStatusPaid">{{ 'Paid'|trans }}</label>
 
                                     <input class="btn-check" id="invoiceStatusUnpaid" type="radio" name="status" value="unpaid"{% if request.status == 'unpaid' %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="invoiceStatusUnpaid">{{ 'Unpaid'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="invoiceStatusUnpaid">{{ 'Unpaid'|trans }}</label>
 
                                     <input class="btn-check" id="invoiceStatusRefunded" type="radio" name="status" value="refunded"{% if request.status == 'refunded' %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="invoiceStatusRefunded">{{ 'Refunded'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="invoiceStatusRefunded">{{ 'Refunded'|trans }}</label>
+
+                                    <input class="btn-check" id="invoiceStatusCanceled" type="radio" name="status" value="canceled"{% if request.status == 'canceled' %} checked{% endif %}>
+                                    <label class="btn btn-outline-secondary" for="invoiceStatusCanceled">{{ 'Canceled'|trans }}</label>
                                 </div>
                             </div>
                         </div>
@@ -191,16 +143,15 @@
                     </form>
                 </section>
               <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
+                <table class="table card-table table-vcenter table-hover table-nowrap">
                     <thead>
                         <tr>
                             <th class="w-1">
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
                             </th>
                             {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'invoice', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                            <th class="w-1"></th>
                             <th>{{ 'Name'|trans }}</th>
-                            <th class="text-center">{{ 'Amount'|trans }}</th>
+                            <th class="text-end">{{ 'Amount'|trans }}</th>
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Issued at'|trans, 'sort_key': 'created_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Due Date'|trans, 'sort_key': 'due_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Paid at'|trans, 'sort_key': 'paid_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
@@ -213,33 +164,31 @@
                         {% set params = admin.system_get_params %}
                         {% for invoice in invoices.list %}
                         <tr>
-                            <td>
+                            <td class="py-2">
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ invoice.id }}">
                             </td>
-                            <td>
-                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}">{% if invoice.issued %}{{ invoice.serie_nr }}{% else %}{{ 'Draft'|trans }} #{{ invoice.id }}{% endif %}</a>
+                            <td class="py-2">
+                                <a class="fw-medium" href="{{ 'invoice/manage'|url }}/{{ invoice.id }}">{% if invoice.issued %}{{ invoice.serie_nr }}{% else %}{{ 'Draft'|trans }} #{{ invoice.id }}{% endif %}</a>
                             </td>
-                            <td>
-                                <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
-                                    {{ avatar(invoice.buyer.email, 24, 'avatar avatar-xs') }}
+                            <td class="py-2">
+                                <a class="d-inline-flex align-items-center gap-2 text-reset" href='{{ "client/manage/#{invoice.client.id}"|url }}'>
+                                    {{ avatar(invoice.buyer.email, 24, 'avatar avatar-xs', name: invoice.buyer.first_name|default('') ~ ' ' ~ invoice.buyer.last_name|default('')) }}
+                                    <span>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</span>
                                 </a>
                             </td>
-                            <td>
-                                <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
-                            </td>
-                            <td class="text-center">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                            <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
-                            <td class="text-center">{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
-                            <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
-                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
+                            <td class="text-end py-2 fw-medium">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                            <td class="text-center py-2">{{ invoice.created_at|date('Y-m-d') }}</td>
+                            <td class="text-center py-2">{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
+                            <td class="text-center py-2">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
+                            <td class="py-2">{{ mf.status_badge(invoice.status, 'invoice', true) }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'bg-secondary-subtle text-secondary-emphasis') }}{% endif %}</td>
+                            <td class="py-2">
+                                <a class="btn btn-icon btn-ghost-secondary btn-sm" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
                                         <use href="#edit" />
                                     </svg>
                                 </a>
                                 {% if invoice.cancellable %}
-                                <a class="btn btn-icon" href="{{ 'invoice/cancel'|api_url(query: { 'id': invoice.id }) }}"
+                                <a class="btn btn-icon btn-ghost-secondary btn-sm" href="{{ 'invoice/cancel'|api_url(query: { 'id': invoice.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Cancel this invoice without a replacement?'|trans}, reload: true}) }}>
                                     <svg class="icon">
                                         <use href="#x" />
@@ -247,7 +196,7 @@
                                 </a>
                                 {% endif %}
                                 {% if (invoice.status == 'unpaid' and not invoice.issued) or (params.invoice_immutability|default('strict') == 'relaxed' and invoice.status == 'canceled') %}
-                                <a class="btn btn-icon" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
+                                <a class="btn btn-icon btn-ghost-secondary btn-sm" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
                                         <use href="#trash" />
@@ -258,7 +207,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td class="text-muted" colspan="10">{{ 'The list is empty'|trans }}</td>
+                            <td class="text-muted py-2" colspan="9">{{ 'The list is empty'|trans }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

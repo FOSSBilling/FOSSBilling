@@ -41,30 +41,30 @@
 
 {% block meta_title %}{{ 'Canned Responses'|trans }}{% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: 'Canned Responses'|trans}) }}
+{% endblock %}
+
 {% block content %}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Canned Responses'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage reusable support responses and organize them into categories.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
+        <div class="card-body pt-0 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
+                <div class="card-header">
+                    <ul class="nav nav-pills card-header-pills flex-nowrap text-nowrap overflow-x-auto" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned Responses'|trans }}</a>
+                            <button class="nav-link active" id="index-tab" data-bs-target="#tab-index" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-index" aria-selected="true">{{ 'Canned Responses'|trans }}</button>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
+                            <button class="nav-link" id="categories-tab" data-bs-target="#tab-categories" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-categories" aria-selected="false">{{ 'Manage Categories'|trans }}</button>
                         </li>
                     </ul>
                 </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" data-list-ns="">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab" data-list-ns="">
             {{ include('partial_search.html.twig', {
                 search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                search_max_width: 'none',
+                search_hidden_fields: {category_id: request.category_id|default(''), id: request.id|default('')},
                 search_toolbar_actions: new_canned_response_action
             }) }}
             <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -113,20 +113,20 @@
                 {% for i, response in responses.list %}
                 <tr>
                     <td>
-                        <a href='{{ "support/canned/#{response.id}"|url }}'>{{ response.title }}</a>
+                        <a class="fw-semibold" href='{{ "support/canned/#{response.id}"|url }}'>{{ response.title }}</a>
                     </td>
                     <td class="text-center">
-                        <a href='{{ "support/canned-category/#{response.category.id}"|url }}'>{{ response.category.title }}</a>
+                        <a class="fw-semibold" href='{{ "support/canned-category/#{response.category.id}"|url }}'>{{ response.category.title }}</a>
                     </td>
                     <td class="text-muted">{% if response.created_at %}{{ '%time% ago'|trans({ '%time%': response.created_at|timeago }) }}{% else %}-{% endif %}</td>
                     <td class="text-muted">{% if response.updated_at %}{{ '%time% ago'|trans({ '%time%': response.updated_at|timeago }) }}{% else %}-{% endif %}</td>
-                    <td>
-                        <a class="btn btn-icon" href='{{ "support/canned/#{response.id}"|url }}'>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "support/canned/#{response.id}"|url }}'>
                             <svg class="icon">
                                 <use href="#edit" />
                             </svg>
                         </a>
-                        <a class="btn btn-icon" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
+                        <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete'|trans }}" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
                             {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses'|url}) }}>
                             <svg class="icon">
                                 <use href="#trash" />
@@ -147,7 +147,7 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-categories" role="tabpanel">
+        <div class="tab-pane fade" id="tab-categories" role="tabpanel" aria-labelledby="categories-tab">
             <div class="card-body border-bottom py-3">
                 <div class="d-flex justify-content-end">
                     {{ new_canned_category_action|raw }}
@@ -165,15 +165,15 @@
                     {% for cat_id, cat_title in admin.support_canned_category_pairs %}
                     <tr>
                         <td>
-                            <a href='{{ "support/canned-category/#{cat_id}"|url }}'>{{ cat_title }}</a>
+                            <a class="fw-semibold" href='{{ "support/canned-category/#{cat_id}"|url }}'>{{ cat_title }}</a>
                         </td>
-                        <td>
-                            <a class="btn btn-icon" href='{{ "support/canned-category/#{cat_id}"|url }}'>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "support/canned-category/#{cat_id}"|url }}'>
                                 <svg class="icon">
                                     <use href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'support/canned_category_delete'|api_url(query: { 'id': cat_id }) }}"
+                            <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete'|trans }}" href="{{ 'support/canned_category_delete'|api_url(query: { 'id': cat_id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses#tab-categories'|url}) }}>
                                 <svg class="icon">
                                     <use href="#trash" />

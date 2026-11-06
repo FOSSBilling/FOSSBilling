@@ -138,7 +138,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro status_badge(status, type) %}
+{% macro status_badge(status, type, subtle = false) %}
     {% set status_key = status|default('')|lower %}
     {% set status_classes = {
         'order': {
@@ -248,6 +248,20 @@
         {% set badge_class = type_classes[status_key]|default('text-bg-primary') %}
     {% else %}
         {% set badge_class = fallback_classes[status_key]|default('text-bg-primary') %}
+    {% endif %}
+    {% if subtle %}
+        {% set subtle_classes = {
+            'text-bg-success': 'bg-success-subtle text-success-emphasis',
+            'text-bg-warning': 'bg-warning-subtle text-warning-emphasis',
+            'text-bg-danger': 'bg-danger-subtle text-danger-emphasis',
+            'text-bg-info': 'bg-info-subtle text-info-emphasis',
+            'text-bg-secondary': 'bg-secondary-subtle text-secondary-emphasis',
+            'text-bg-primary': 'bg-primary-subtle text-primary-emphasis',
+            'bg-green text-green-fg': 'bg-success-subtle text-success-emphasis',
+            'bg-red text-red-fg': 'bg-danger-subtle text-danger-emphasis',
+            'bg-secondary text-secondary-fg': 'bg-secondary-subtle text-secondary-emphasis'
+        } %}
+        {% set badge_class = subtle_classes[badge_class]|default(badge_class) %}
     {% endif %}
     {{ _self.text_badge(_self.status_name(status), badge_class) }}
 {% endmacro %}

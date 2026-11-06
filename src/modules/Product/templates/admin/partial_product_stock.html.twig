@@ -1,0 +1,10 @@
+{% if product.stock_control %}
+    {% if product.quantity_in_stock <= 0 %}
+        <span class="badge bg-danger-subtle text-danger-emphasis">{{ 'Out of Stock'|trans }}</span>
+    {% else %}
+        <span class="fw-medium">{{ product.quantity_in_stock }}</span>
+        <span class="text-secondary">{{ 'available'|trans }}</span>
+    {% endif %}
+{% else %}
+    <span class="text-secondary">{{ 'Not tracked'|trans }}</span>
+{% endif %}

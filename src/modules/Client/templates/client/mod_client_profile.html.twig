@@ -40,7 +40,7 @@
                         <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
-                                    {{ avatar(profile.email, 100, 'img-thumbnail', null, 'div') }}
+                                    {{ avatar(profile.email, 100, 'img-thumbnail', null, 'div', name: profile.name|default(profile.first_name|default('') ~ ' ' ~ profile.last_name|default(''))) }}
                                 </div>
                                 <div class="col-md-10 d-flex align-items-center">
                                     {{ 'Avatar is derived deterministically from your email address.'|trans }}

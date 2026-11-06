@@ -21,6 +21,7 @@ use FOSSBilling\Core\System\Config;
 use FOSSBilling\Core\System\Environment;
 use FOSSBilling\Core\System\Version;
 use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
@@ -31,6 +32,10 @@ use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 $di = new Pimple\Container();
+
+// These pools live only as long as this request's container. They are never persisted.
+$di['request_authorization_cache'] = fn (): ArrayAdapter => new ArrayAdapter();
+$di['request_module_config_cache'] = fn (): ArrayAdapter => new ArrayAdapter();
 
 global $request;
 
@@ -114,8 +119,6 @@ $di['dbal'] = (fn (): Connection => DriverManagerFactory::getSharedConnection())
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $debug = (bool) Config::getProperty('debug_and_monitoring.debug', false);
-
     $pdo = DriverManagerFactory::getSharedConnection()->getNativeConnection();
     if (!$pdo instanceof PDO) {
         throw new RuntimeException('PDO service must resolve to a PDO instance');
@@ -123,7 +126,7 @@ $di['pdo'] = function () {
 
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-    return $debug ? new DebugBar\DataCollector\PDO\TraceablePDO($pdo) : $pdo;
+    return $pdo;
 };
 
 /*

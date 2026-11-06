@@ -34,82 +34,29 @@
 
 {% block meta_title %}{{ 'Clients'|trans }}{% endblock %}
 
+
 {% block top_content %}
-{% if not filter_panel_open %}
+{{ include('partial_admin_page_heading.html.twig', { title: 'Clients'|trans }) }}
     {% set count_clients = admin.client_get_statuses %}
-    <section class="row row-cards mb-3 filter-panel-summary">
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|url(query: { 'status': 'active' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-success text-white avatar">{{ count_clients.active }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Active'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|url(query: { 'status': 'suspended' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-danger text-white avatar">{{ count_clients.suspended }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Suspended'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|url(query: { 'status': 'canceled' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-secondary text-white avatar">{{ count_clients.canceled }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Canceled'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'client'|url }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-blue text-white avatar">{{ count_clients.active + count_clients.canceled + count_clients.suspended }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </section>
-{% endif %}
+    {{ include('partial_admin_record_summary.html.twig', {
+        label: 'Clients'|trans,
+        path: 'client',
+        current_status: request.status,
+        items: [
+            { status: 'active', label: 'Active'|trans, count: count_clients.active, count_class: 'bg-success-subtle text-success-emphasis' },
+            { status: 'suspended', label: 'Suspended'|trans, count: count_clients.suspended, count_class: 'bg-danger-subtle text-danger-emphasis' },
+            { status: 'canceled', label: 'Canceled'|trans, count: count_clients.canceled, count_class: 'bg-secondary-subtle text-secondary-emphasis' },
+            { status: '', label: 'All clients'|trans, count: count_clients.total, count_class: 'bg-primary-subtle text-primary-emphasis' }
+        ]
+    }) }}
 {% endblock %}
 
 {% block content %}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Clients'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage client accounts, review registrations, and organize clients into groups.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
+        <div class="card-body pt-0 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
+                <div class="card-header">
+                    <ul class="nav nav-pills card-header-pills flex-nowrap overflow-x-auto" role="tablist">
                         <li class="nav-item" role="presentation">
                             <a class="nav-link active" id="client-index-tab" href="#tab-index" data-bs-toggle="tab" role="tab" aria-controls="tab-index" aria-selected="true">{{ 'Clients'|trans }}</a>
                         </li>
@@ -120,10 +67,11 @@
                         {% endif %}
                     </ul>
                 </div>
-        <div class="tab-content border-top">
+        <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel" data-list-ns="">
                 {{ include('partial_search.html.twig', {
                     search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                    search_max_width: 'none',
                     search_toolbar_actions: new_client_action|default('')
                 }) }}
                 <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -193,16 +141,16 @@
                                 <label class="form-label text-muted small mb-1">{{ 'Status'|trans }}</label>
                                 <div class="d-flex flex-wrap gap-2">
                                     <input class="btn-check" type="radio" id="statusAll" name="status" value=""{% if not request.status %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="statusAll">{{ 'All'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="statusAll">{{ 'All'|trans }}</label>
 
                                     <input class="btn-check" type="radio" id="statusActive" name="status" value="active"{% if request.status == 'active' %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="statusActive">{{ 'Active'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="statusActive">{{ 'Active'|trans }}</label>
 
                                     <input class="btn-check" type="radio" id="statusSuspended" name="status" value="suspended"{% if request.status == 'suspended' %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="statusSuspended">{{ 'Suspended'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="statusSuspended">{{ 'Suspended'|trans }}</label>
 
                                     <input class="btn-check" type="radio" id="statusCanceled" name="status" value="canceled"{% if request.status == 'canceled' %} checked{% endif %}>
-                                    <label class="btn btn-outline-primary" for="statusCanceled">{{ 'Canceled'|trans }}</label>
+                                    <label class="btn btn-outline-secondary" for="statusCanceled">{{ 'Canceled'|trans }}</label>
                                 </div>
                             </div>
                         </div>
@@ -246,34 +194,34 @@
                                 <td>
                                     <div class="d-flex py-1 align-items-center">
                                         <a href='{{ "client/manage/#{client.id}"|url }}'>
-                                            {{ avatar(client.email, 40, 'avatar me-2') }}
+                                            {{ avatar(client.email, 28, 'avatar me-2', name: client.first_name|default('') ~ ' ' ~ client.last_name|default('')) }}
                                         </a>
                                         <div class="flex-fill">
-                                            <div class="font-weight-medium">
+                                            <div class="fw-semibold">
                                                 <a href='{{ "client/manage/#{client.id }"|url }}'>{{ client.first_name }} {{ client.last_name }}</a>
                                                 {% if client.country is not empty %}
                                                     <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
                                                 {% endif %}
                                             </div>
-                                            <div class="text-muted">{{ client.email }}</div>
+                                            <div class="text-secondary fs-4">{{ client.email }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <a href='{{ "client/manage/#{client.id}"|url }}' title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
+                                    <a class="text-reset" href='{{ "client/manage/#{client.id}"|url }}' title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
                                 </td>
                                 <td>
-                                    {{ mf.status_badge(client.status, 'client') }}
+                                    {{ mf.status_badge(client.status, 'client', true) }}
                                 </td>
-                                <td>{{ client.created_at|format_date }}</td>
-                                <td>
-                                    <a class="btn btn-icon" href='{{ "client/manage/#{client.id}"|url }}'>
+                                <td class="text-secondary">{{ client.created_at|format_date }}</td>
+                                <td class="text-nowrap">
+                                    <a class="btn btn-icon btn-ghost-secondary btn-sm" href='{{ "client/manage/#{client.id}"|url }}' aria-label="{{ 'Edit'|trans }}">
                                         <svg class="icon">
                                             <use href="#edit" />
                                         </svg>
                                     </a>
                                     {% if can_delete_client %}
-                                    <a class="btn btn-icon"
+                                    <a class="btn btn-icon btn-ghost-secondary btn-sm" aria-label="{{ 'Delete'|trans }}"
                                         {{ fb_api_link({href: 'client/delete'|api_url(query: { 'id': client.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
                                             <use href="#trash" />
@@ -291,13 +239,13 @@
                     </table>
                 </div>
 
-                <div class="card-footer d-flex align-items-center justify-content-between">
+                <div class="card-footer d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div>
                         {% if can_bulk_delete_clients %}
                             {% include 'partial_batch_delete.html.twig' with { 'action': 'client/batch_delete' } %}
                         {% endif %}
                     </div>
-                    <div class="d-flex align-items-center gap-2 ms-auto">
+                    <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
                         {% include 'partial_pagination.html.twig' with { 'list': clients, 'url': 'client' } %}
                         <a class="btn btn-secondary" href="{{ 'client/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Clients'|trans }}">
                             <svg class="icon">

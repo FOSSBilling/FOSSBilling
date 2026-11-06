@@ -23,12 +23,15 @@
     </ol>
 {% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: product.title, description: 'Addon'|trans ~ ' · #' ~ product.id}) }}
+{% endblock %}
+
 {% block content %}
-<div class="p-3">
-    <form method="post" action="{{ 'product/addon_update'|api_url }}" {{ fb_api_form({message: 'Addon Updated'|trans}) }}>
+{{ include('partial_product_overview.html.twig', {is_addon: true}) }}
+    <form method="post" action="{{ 'product/addon_update'|api_url }}" {{ fb_api_form({message: 'Addon Updated'|trans, reload: true}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
             title: 'Edit Product Addon'|trans,
-            subtitle: 'Update the addon title, availability, activation timing, and pricing.'|trans,
             card_class: 'mb-0'
         } %}
             {% block form_content %}
@@ -97,5 +100,4 @@
             {% endblock %}
         {% endembed %}
     </form>
-</div>
 {% endblock %}

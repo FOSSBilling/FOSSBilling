@@ -22,13 +22,14 @@
 
 {% block meta_title %}{{ 'New Basket Order'|trans }}{% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', { title: 'New Basket Order'|trans, description: 'Build up several products for one client and check them out onto a single invoice.'|trans }) }}
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <div class="d-flex flex-column gap-1 mb-4">
-            <h3 class="mb-0">{{ 'New Basket Order'|trans }}</h3>
-            <p class="text-secondary mb-0">{{ 'Build up several products for one client and check them out onto a single invoice.'|trans }}</p>
-        </div>
+
 
         <div class="card mb-4">
             <div class="card-body">

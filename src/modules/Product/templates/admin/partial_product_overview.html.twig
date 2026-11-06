@@ -1,0 +1,29 @@
+{% import 'macro_functions.html.twig' as mf %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-6 {{ is_addon|default(false) ? 'col-lg-4' : 'col-lg-3' }}">
+                <div class="form-label">{{ 'Status'|trans }}</div>
+                {{ mf.status_badge(product.status, 'product', true) }}
+            </div>
+            <div class="col-6 {{ is_addon|default(false) ? 'col-lg-4' : 'col-lg-3' }}">
+                <div class="form-label">{{ 'Pricing'|trans }}</div>
+                {{ include('partial_product_price.html.twig', {currency_code: admin.currency_get_default.code}) }}
+            </div>
+            <div class="col-6 {{ is_addon|default(false) ? 'col-lg-4' : 'col-lg-3' }}">
+                <div class="form-label">{{ 'Stock'|trans }}</div>
+                {{ include('partial_product_stock.html.twig') }}
+            </div>
+            {% if not is_addon|default(false) %}
+            <div class="col-6 {{ is_addon|default(false) ? 'col-lg-4' : 'col-lg-3' }}">
+                <div class="form-label">{{ 'Storefront Visibility'|trans }}</div>
+                {% if product.hidden %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis">{{ 'Hidden'|trans }}</span>
+                {% else %}
+                    {{ 'Public'|trans }}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

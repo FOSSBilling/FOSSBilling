@@ -41,30 +41,30 @@
 
 {% block meta_title %}{{ 'Knowledge Base'|trans }}{% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: 'Knowledge Base'|trans}) }}
+{% endblock %}
+
 {% block content %}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Knowledge Base'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage knowledge base articles and organize content into categories.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
+        <div class="card-body pt-0 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
+                <div class="card-header">
+                    <ul class="nav nav-pills card-header-pills flex-nowrap text-nowrap overflow-x-auto" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Articles'|trans }}</a>
+                            <button class="nav-link active" id="index-tab" data-bs-target="#tab-index" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-index" aria-selected="true">{{ 'Articles'|trans }}</button>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
+                            <button class="nav-link" id="categories-tab" data-bs-target="#tab-categories" data-bs-toggle="tab" type="button" role="tab" aria-controls="tab-categories" aria-selected="false">{{ 'Manage Categories'|trans }}</button>
                         </li>
                     </ul>
                 </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" data-list-ns="">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab" data-list-ns="">
                         {{ include('partial_search.html.twig', {
                             search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                            search_max_width: 'none',
+                            search_hidden_fields: {status: request.status|default(''), kb_article_category_id: request.kb_article_category_id|default('')},
                             search_toolbar_actions: new_article_action
                         }) }}
                         <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -120,30 +120,30 @@
                                        {% for i, post in posts.list %}
                                        <tr>
                                             <td>
-                                                <a href='{{ "support/kb/article/#{post.id}"|url }}'>{{ post.title }}</a>
+                                                <a class="fw-semibold" href='{{ "support/kb/article/#{post.id}"|url }}'>{{ post.title }}</a>
                                             </td>
                                             <td>
-                                                <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
+                                                <a class="fw-semibold" href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
                                             </td>
-                                            <td>{{ mf.status_badge(post.status, 'post') }}</td>
+                                            <td>{{ mf.status_badge(post.status, 'post', true) }}</td>
                                             <td class="text-center">{{ post.views }}</td>
                                             <td class="text-muted">{% if post.updated_at %}{{ '%time% ago'|trans({ '%time%': post.updated_at|timeago }) }}{% else %}-{% endif %}</td>
-                                            <td>
+                                            <td class="text-end text-nowrap">
                                                 {% if post.status == 'active' %}
-                                                <a class="btn btn-icon" href='{{ "support/kb/#{post.category.slug}/#{post.slug}"|url(area: 'client') }}' target="_blank"
+                                                <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'View'|trans }}" href='{{ "support/kb/#{post.category.slug}/#{post.slug}"|url(area: 'client') }}' target="_blank"
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
                                                     <svg class="icon">
                                                         <use href="#eye"/>
                                                     </svg>
                                                 </a>
                                                 {% endif %}
-                                                <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'
+                                                <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "support/kb/article/#{post.id}"|url }}'
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                                     <svg class="icon">
                                                         <use href="#edit" />
                                                    </svg>
                                                 </a>
-                                                <a class="btn btn-icon" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id }) }}"
+                                                <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete'|trans }}" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id }) }}"
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                                     {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: 'support/kb'|url }) }}>
                                                     <svg class="icon">
@@ -171,7 +171,7 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="tab-categories" role="tabpanel" data-list-ns="category">
+                    <div class="tab-pane fade" id="tab-categories" role="tabpanel" aria-labelledby="categories-tab" data-list-ns="category">
                         <div class="card-body border-bottom py-3">
                             <div class="d-flex justify-content-end">
                                 {{ new_kb_category_action|raw }}
@@ -194,16 +194,16 @@
                                         {% set draft_count = category.articles|filter(article => article.status == 'draft')|length %}
                                      <tr>
                                          <td>
-                                             <a href='{{ "support/kb/category/#{category.id}"|url }}'>{{ category.title }}</a>
+                                             <a class="fw-semibold" href='{{ "support/kb/category/#{category.id}"|url }}'>{{ category.title }}</a>
                                              <div class="text-muted small">{{ '%active% active, %draft% draft'|trans({ '%active%': active_count, '%draft%': draft_count }) }}</div>
                                          </td>
-                                         <td class="w-1">
-                                             <a class="btn btn-icon" href='{{ "support/kb/category/#{category.id}"|url }}'>
+                                         <td class="text-end text-nowrap">
+                                             <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "support/kb/category/#{category.id}"|url }}'>
                                                  <svg class="icon">
                                                      <use href="#edit" />
                                                  </svg>
                                              </a>
-                                             <a class="btn btn-icon" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': category.id }) }}"
+                                             <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete'|trans }}" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': category.id }) }}"
                                                  {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb#tab-categories'|url }) }}>
                                                 <svg class="icon">
                                                     <use href="#trash" />

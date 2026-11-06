@@ -9,17 +9,27 @@
                 company: company,
                 logo_url: company.logo_url,
                 dark_logo_url: company.logo_url_dark,
+                link_class: 'admin-brand-full',
                 image_class: 'navbar-brand-image'
             }) }}
-            <button type="button" class="btn btn-icon btn-ghost-secondary btn-sm d-none d-lg-inline-flex" data-bs-toggle="sidebar-folded" aria-label="{{ 'Fold sidebar'|trans }}" aria-pressed="false" title="{{ 'Fold or pin sidebar'|trans }}">
-                <svg class="icon" aria-hidden="true"><use href="#layout-sidebar-left-collapse" /></svg>
+            <a class="admin-brand-mark" href="{{ '/'|url }}" aria-label="{{ company.name }}" title="{{ company.name }}">
+                {% if company.favicon_url %}
+                    <img src="{{ company.favicon_url }}" width="28" height="28" alt="">
+                {% else %}
+                    <span aria-hidden="true">{{ company.name|default('F')|first|upper }}</span>
+                {% endif %}
+            </a>
+            <button type="button" class="btn btn-icon btn-ghost-secondary admin-sidebar-toggle d-none d-lg-inline-flex" data-bs-toggle="sidebar-folded" data-sidebar-label-expanded="{{ 'Unpin sidebar'|trans }}" data-sidebar-label-collapsed="{{ 'Pin sidebar open'|trans }}" aria-label="{{ 'Unpin sidebar'|trans }}" aria-pressed="true" title="{{ 'Unpin sidebar'|trans }}">
+                <svg class="icon admin-sidebar-unpin" aria-hidden="true"><use href="#layout-sidebar-left-collapse" /></svg>
+                <svg class="icon admin-sidebar-pin" aria-hidden="true"><use href="#layout-sidebar-left-expand" /></svg>
             </button>
         </div>
+
         <div class="navbar-footer">
             <ul class="navbar-nav">
                 <li class="nav-item dropup flex-row align-items-center">
                     <a class="nav-link text-reset flex-grow-1 overflow-hidden" href="{{ 'staff/profile'|url }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="{{ 'Open user menu'|trans }}" aria-expanded="false">
-                        {{ avatar(profile.email, 32, 'avatar avatar-sm') }}
+                        {{ avatar(profile.email, 32, 'avatar avatar-sm', name: profile.name|default(profile.first_name|default('') ~ ' ' ~ profile.last_name|default(''))) }}
                         <span class="nav-link-title overflow-hidden">
                             <span class="d-block text-truncate">{{ profile.name }}</span>
                             <span class="d-block small text-secondary text-truncate">{{ profile.email }}</span>

@@ -26,11 +26,14 @@
     </ol>
 {% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: category.title, description: 'Response Category'|trans}) }}
+{% endblock %}
+
 {% block content %}
-<div class="card">
     <form method="post" action="{{ 'support/canned_category_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses#tab-categories'|url }) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
-            title: category.title,
+            title: 'Category Settings'|trans,
             subtitle: 'Update the category used to organize reusable support responses.'|trans,
             body_class: 'pt-4',
             footer_align: 'between'
@@ -46,7 +49,7 @@
             {% endblock %}
 
             {% block form_actions %}
-                <a href="{{ 'support/canned-responses'|url }}#tab-categories" class="btn btn-secondary">
+                <a href="{{ 'support/canned-responses'|url }}#tab-categories" class="btn btn-outline-secondary">
                     <svg class="icon">
                         <use href="#arrow-left" />
                     </svg>
@@ -56,7 +59,6 @@
             {% endblock %}
         {% endembed %}
     </form>
-</div>
 
 <div class="card mt-3">
     <div class="card-header">
@@ -79,17 +81,17 @@
                 {% for response in category.responses %}
                     <tr>
                         <td>
-                            <a href='{{ "support/canned/#{response.id}"|url }}'>{{ response.title }}</a>
+                            <a class="fw-semibold" href='{{ "support/canned/#{response.id}"|url }}'>{{ response.title }}</a>
                         </td>
                         <td class="text-muted">{% if response.created_at %}{{ '%time% ago'|trans({ '%time%': response.created_at|timeago }) }}{% else %}-{% endif %}</td>
                         <td class="text-muted">{% if response.updated_at %}{{ '%time% ago'|trans({ '%time%': response.updated_at|timeago }) }}{% else %}-{% endif %}</td>
-                        <td>
-                            <a class="btn btn-icon" href='{{ "support/canned/#{response.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "support/canned/#{response.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                 <svg class="icon">
                                     <use href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
+                            <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete'|trans }}" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                 {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: "support/canned-category/#{category.id}"|url }) }}>
                                 <svg class="icon">

@@ -1,0 +1,27 @@
+{% if product.type == 'domain' %}
+    <span class="text-secondary">{{ 'Per domain extension'|trans }}</span>
+{% elseif product.pricing.type == 'free' %}
+    <span class="fw-medium">{{ 'Free'|trans }}</span>
+{% elseif product.pricing.type == 'once' %}
+    <div class="fw-medium">{{ product.pricing.once.price|format_currency(currency_code) }}</div>
+    <div class="text-secondary small">{{ 'One Time'|trans }}</div>
+    {% if product.pricing.once.setup > 0 %}
+        <div class="text-secondary small">+ {{ product.pricing.once.setup|format_currency(currency_code) }} {{ 'setup'|trans }}</div>
+    {% endif %}
+{% elseif product.pricing.type == 'recurrent' %}
+    {% set lowest_period = null %}
+    {% for period in product.pricing.recurrent %}
+        {% if period.enabled and (lowest_period is null or period.price < lowest_period.price) %}
+            {% set lowest_period = period %}
+        {% endif %}
+    {% endfor %}
+    {% if lowest_period is not null %}
+        <div class="fw-medium">{{ 'From'|trans }} {{ lowest_period.price|format_currency(currency_code) }}</div>
+        <div class="text-secondary small">{{ lowest_period.title }}</div>
+        {% if lowest_period.setup > 0 %}
+            <div class="text-secondary small">+ {{ lowest_period.setup|format_currency(currency_code) }} {{ 'setup'|trans }}</div>
+        {% endif %}
+    {% else %}
+        <span class="badge bg-warning-subtle text-warning-emphasis">{{ 'No billing periods enabled'|trans }}</span>
+    {% endif %}
+{% endif %}

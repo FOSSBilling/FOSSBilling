@@ -7,7 +7,7 @@
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
 {% set new_order_action %}
-    <a class="btn btn-outline-primary" href="{{ 'order/basket'|url }}">
+    <a class="btn btn-outline-secondary" href="{{ 'order/basket'|url }}">
         <svg class="icon">
             <use href="#package" />
         </svg>
@@ -24,81 +24,33 @@
 {% block meta_title %}{{ 'Orders'|trans }}{% endblock %}
 
 {% block top_content %}
-{% if not filter_panel_open %}
+    {{ include('partial_admin_page_heading.html.twig', { title: 'Orders'|trans }) }}
     {% set count_orders = admin.order_get_statuses %}
-    <div class="row row-cards mb-3 filter-panel-summary">
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'order'|url(query: { 'status': 'pending_setup' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-warning text-white avatar">{{ count_orders.pending_setup }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Pending Setup'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'order'|url(query: { 'status': 'active' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-success text-white avatar">{{ count_orders.active }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Active'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'order'|url(query: { 'status': 'suspended' }) }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-secondary text-white avatar">{{ count_orders.suspended }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Suspended'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-sm-6 col-lg-3">
-            <a class="card card-sm card-link" href="{{ 'order'|url }}">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <span class="bg-blue text-white avatar">{{ count_orders.total }}</span>
-                        </div>
-                        <div class="col">
-                            <div class="font-weight-medium">{{ 'Total'|trans }}</div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-{% endif %}
+    {% set attention_count = count_orders.pending_setup + count_orders.failed_setup + count_orders.failed_renew %}
+    {{ include('partial_admin_record_summary.html.twig', {
+        label: 'Orders'|trans,
+        path: 'order',
+        current_status: request.show_action_required ? 'action_required' : request.status,
+        items: [
+            { status: 'action_required', query: { show_action_required: 1 }, label: 'Needs attention'|trans, count: attention_count, count_class: (count_orders.failed_setup + count_orders.failed_renew) > 0 ? 'bg-danger-subtle text-danger-emphasis' : 'bg-warning-subtle text-warning-emphasis' },
+            { status: 'active', label: 'Active'|trans, count: count_orders.active, count_class: 'bg-success-subtle text-success-emphasis' },
+            { status: 'suspended', label: 'Suspended'|trans, count: count_orders.suspended, count_class: 'bg-danger-subtle text-danger-emphasis' },
+            { status: 'canceled', label: 'Canceled'|trans, count: count_orders.canceled, count_class: 'bg-secondary-subtle text-secondary-emphasis' },
+            { status: '', label: 'All orders'|trans, count: count_orders.total, count_class: 'bg-primary-subtle text-primary-emphasis' }
+        ]
+    }) }}
+    {% if request.show_action_required %}
+    <p class="text-secondary mb-3">{{ 'Orders awaiting setup, or with failed setup or renewal.'|trans }}</p>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Orders'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage orders, filter order records, and create new orders for clients.'|trans }}</p>
-            </div>
-        </div>
         <div class="card-body pt-0 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
                 {{ include('partial_search.html.twig', {
                     search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                    search_max_width: 'none',
                     search_toolbar_actions: new_order_action
                 }) }}
                 <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -195,72 +147,60 @@
                     </form>
                 </section>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <table class="table card-table table-vcenter table-hover">
                         <thead>
                             <tr>
-                                <th class="w-1">
-                                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
-                                </th>
-                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'order', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                                <th class="w-1"></th>
-                                <th>{{ 'Name'|trans }}</th>
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'order', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                                <th class="text-center">{{ 'Period'|trans }}</th>
-                                <th class="text-center">{{ 'Amount'|trans }}</th>
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'order', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                <th class="w-1"><input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox"></th>
+                                {{ include('partial_sortable_th.html.twig', { label: '#', sort_key: 'id', url: 'order', th_class: 'w-1 text-nowrap', default_sort: 'id', default_direction: 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { label: 'Order'|trans, sort_key: 'title', url: 'order', default_sort: 'id', default_direction: 'DESC' }) }}
+                                <th>{{ 'Client'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { label: 'Status'|trans, sort_key: 'status', url: 'order', default_sort: 'id', default_direction: 'DESC' }) }}
+                                <th class="text-end">{{ 'Amount'|trans }}</th>
+                                <th>{{ 'Renewal Date'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% set orders = admin.order_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
-                            {% for i, order in orders.list %}
+                            {% set orders = admin.order_get_list({ per_page: 25, page: request.page }|merge(request)) %}
+                            {% for order in orders.list %}
                             <tr>
-                                <td>
-                                    <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ order.id }}">
-                                </td>
-                                <td><a href='{{ "order/manage/#{order.id}"|url }}'>#{{ order.id }}</a></td>
-                                <td>
-                                    <a href='{{ "client/manage/#{order.client_id}"|url }}'>
-                                        {{ avatar(order.client.email, 24, 'avatar avatar-xs') }}
+                                <td class="py-2"><input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ order.id }}"></td>
+                                <td class="py-2 text-nowrap"><a href='{{ "order/manage/#{order.id}"|url }}'>#{{ order.id }}</a></td>
+                                <td class="py-2"><a class="fw-semibold" href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a></td>
+                                <td class="py-2 text-nowrap">
+                                    <a class="d-inline-flex align-items-center gap-2 text-reset" href='{{ "client/manage/#{order.client_id}"|url }}'>
+                                        {{ avatar(order.client.email, 24, 'avatar avatar-xs', name: order.client.first_name|default('') ~ ' ' ~ order.client.last_name|default('')) }}
+                                        <span>{{ order.client.first_name }} {{ order.client.last_name }}</span>
                                     </a>
                                 </td>
-                                <td>
-                                    <a href='{{ "client/manage/#{order.client_id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a>
+                                <td class="py-2 text-nowrap">{{ mf.status_badge(order.status, 'order', true) }}</td>
+                                <td class="py-2 text-end text-nowrap">
+                                    <div class="fw-medium">{{ order.total|format_currency(order.currency ?? default_currency) }}</div>
+                                    {% if order.period %}<div class="text-secondary fs-4">{{ order.period|period_title }}</div>{% endif %}
                                 </td>
-                                <td>
-                                    <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
-                                </td>
-                                <td class="text-center">{{ order.period|period_title }}</td>
-                                <td class="text-center">{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
-                                <td>{{ mf.status_badge(order.status, 'order') }}</td>
-                                <td>
-                                    <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
-                                        <svg class="icon">
-                                            <use href="#edit" />
-                                        </svg>
+                                <td class="py-2 text-nowrap text-secondary">{{ order.expires_at ? order.expires_at|format_date : '-' }}</td>
+                                <td class="py-2 text-nowrap">
+                                    <a class="btn btn-icon btn-ghost-secondary btn-sm" href='{{ "order/manage/#{order.id}"|url }}' aria-label="{{ 'Edit'|trans }}">
+                                        <svg class="icon"><use href="#edit" /></svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'order/delete'|api_url(query: { 'id': order.id }) }}"
+                                    <a class="btn btn-icon btn-ghost-secondary btn-sm" href="{{ 'order/delete'|api_url(query: { id: order.id }) }}" aria-label="{{ 'Delete'|trans }}"
                                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
-                                        <svg class="icon">
-                                            <use href="#trash" />
-                                        </svg>
+                                        <svg class="icon"><use href="#trash" /></svg>
                                     </a>
                                 </td>
                             </tr>
                             {% else %}
-                            <tr>
-                                <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
-                            </tr>
+                            <tr><td class="text-secondary" colspan="8">{{ 'The list is empty'|trans }}</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
 
-                <div class="card-footer d-flex align-items-center justify-content-between">
+                <div class="card-footer d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div>
                         {% include 'partial_batch_delete.html.twig' with { 'action': 'order/batch_delete' } %}
                     </div>
-                    <div class="d-flex align-items-center gap-2 ms-auto">
+                    <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
                         {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
                         <a class="btn btn-secondary" href="{{ 'order/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Orders'|trans }}">
                             <svg class="icon">
