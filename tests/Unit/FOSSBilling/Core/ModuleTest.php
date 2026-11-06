@@ -111,7 +111,7 @@ test('get service sub', function (): void {
 
 test('module icons are discovered by filename without manifest metadata', function (string $format): void {
     $di = container();
-    $name = 'Icontest' . bin2hex(random_bytes(8));
+    $name = 'Test' . bin2hex(random_bytes(8));
     $directory = PATH_MODS . '/' . $name;
     $filesystem = new Filesystem();
     $filesystem->mkdir($directory);
@@ -129,7 +129,7 @@ test('module icons are discovered by filename without manifest metadata', functi
 
 test('modules without convention icons use the generic fallback', function (): void {
     $di = container();
-    $name = 'Icontest' . bin2hex(random_bytes(8));
+    $name = 'Test' . bin2hex(random_bytes(8));
     $directory = PATH_MODS . '/' . $name;
     $filesystem = new Filesystem();
     $filesystem->mkdir($directory);
