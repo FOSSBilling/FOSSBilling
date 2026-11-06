@@ -67,11 +67,51 @@ class TranslationSourcesTest(unittest.TestCase):
             new server_exception('Server', [], 42, 'example');
             new CustomException(from: 'other', message: 'Custom');
             new Unrelated('Unrelated', [], 0, true, 'not-a-source-parameter');
-            parent::__construct('Parent', null, 42, true, 'example');
+            class Child extends BaseException {
+                public function __construct() { parent::__construct('Parent', null, 42, true, 'example'); }
+            }
             new InformationException($failed ? 'Failed' : 'Success', from: 'example');
             new InformationException('admin' === $area ? 'Admin' : 'Client', from: 'example');
         """)
         self.assertEqual(self.entries(), {(message, None, 'example') for message in ['Named', 'Positional', 'Payment', 'Registrar', 'Server', 'Parent', 'Failed', 'Success', 'Admin', 'Client']} | {('Custom', None, 'other'), ('Unrelated', None, 'core')})
+
+    def test_constructor_aliases_inheritance_and_parent_signatures(self) -> None:
+        self.write('Inherited.php', r'''<?php
+            namespace Example;
+            use FOSSBilling\Core\Exception\InformationException as Information;
+            class Inherited extends Information {}
+        ''')
+        self.write('Case.php', r'''<?php
+            namespace Example;
+            use FOSSBilling\Core\Exception\{InformationException as Notice, BaseException as Base};
+            new Notice('Alias', null, 0, false, 'example');
+            new Inherited('Inherited', null, 0, false, 'example');
+            class PaymentFailure extends \Payment_Exception {
+                public function __construct() { parent::__construct('Payment parent', null, 0, 'example'); }
+            }
+            class ServerFailure extends \Server_Exception {
+                public function __construct() { parent::__construct('Server parent', null, 0, 'example'); }
+            }
+            class BaseFailure extends Base {
+                public function __construct() { parent::__construct('Base parent', null, 0, false, 'example'); }
+            }
+            new PaymentFailure();
+            class Renamed extends Notice {
+                public function __construct($text, $from = null) { parent::__construct($text, from: $from); }
+            }
+            new Renamed('Own signature', 'example');
+        ''')
+        self.assertEqual(self.entries(), {(message, None, 'example') for message in (
+            'Alias', 'Inherited', 'Payment parent', 'Server parent', 'Base parent', 'Own signature',
+        )})
+
+    def test_unrelated_constructor_from_arguments_are_not_translation_sources(self) -> None:
+        self.write('Case.php', r'''<?php
+            class Sender { public function __construct($message, $from) {} }
+            new Sender('Variable address', from: $address);
+            new Sender('Literal address', from: 'other');
+        ''')
+        self.assertEqual(self.entries(), {('Variable address', None, 'core'), ('Literal address', None, 'core')})
 
     def test_twig_inference_and_overrides(self) -> None:
         self.write("modules/Example/templates/client/page.twig", """
@@ -83,6 +123,7 @@ class TranslationSourcesTest(unittest.TestCase):
             {{ 'Core'|trans(from: 'core') }}
             {{ 'Null'|trans(from: null) }}
             {{ 'None'|trans(from: none) }}
+            {{ 'Uppercase none'|trans(from: NONE) }}
             {{ 'Dollar $literal'|trans }}
             <input placeholder="{{ 'HTML quotes'|trans }}">
             {{ "Text containing 'Fake'|trans(from: 'other')" }}
@@ -93,7 +134,22 @@ class TranslationSourcesTest(unittest.TestCase):
             ('Inferred', None, 'example'), ('Placeholders', None, 'example'), ('Override', None, 'other'),
             ('Equals syntax', None, 'other'), ('Positional', None, 'other'), ('Core', None, 'core'),
             ('Null', None, 'core'), ('None', None, 'core'), ('Dollar $literal', None, 'example'),
+            ('Uppercase none', None, 'core'),
             ('HTML quotes', None, 'example'), ('Layout', None, 'core'),
+        })
+
+    def test_only_executable_twig_filters_are_extracted(self) -> None:
+        self.write('modules/Example/page.twig', '''
+            <p>'Plain text'|trans(from: source)</p>
+            {% verbatim %}{{ 'Example'|trans(from: source) }}{% endverbatim %}
+            {{ "Status: #{'Ready'|trans}" }}
+            {{ "Nested: #{'Hello'|trans(from: 'other')}" }}
+            {{ "Escaped \\#{'Inert'|trans(from: source)}" }}
+            {{ "Text containing 'Fake'|trans(from: source)" }}
+            {{ 'Visible'|trans }}
+        ''')
+        self.assertEqual(self.entries(), {
+            ('Ready', None, 'example'), ('Hello', None, 'other'), ('Visible', None, 'example'),
         })
 
     def test_standalone_module_context_only_changes_twig_defaults(self) -> None:
@@ -165,7 +221,8 @@ class TranslationSourcesTest(unittest.TestCase):
         self.assertEqual(parse_pot_entries(str(target)), {'Core': None, 'Module': None})
 
     def test_check_is_read_only_ignores_dates_and_detects_reference_changes(self) -> None:
-        self.write('Service.php', "<?php __trans('Original');")
+        source = "<?php __trans('Original'); __pluralTrans('One', 'Many', $n);"
+        self.write('Service.php', source)
         target = self.root / 'messages.pot'
         self.assertEqual(self.cli(self.src, target).returncode, 0)
         original = target.read_text()
@@ -173,7 +230,12 @@ class TranslationSourcesTest(unittest.TestCase):
         before = target.read_bytes()
         self.assertEqual(self.cli(self.src, target, '--check').returncode, 0)
         self.assertEqual(target.read_bytes(), before)
-        self.write('Service.php', "<?php\n\n__trans('Original');")
+        for code in [source.replace('Original', 'Changed'), source.replace('Many', 'Changed plurals')]:
+            with self.subTest(code=code):
+                self.write('Service.php', code)
+                self.assertEqual(self.cli(self.src, target, '--check').returncode, 1)
+                self.assertEqual(target.read_bytes(), before)
+        self.write('Service.php', source.replace('<?php ', '<?php\n\n'))
         result = self.cli(self.src, target, '--check')
         self.assertEqual(result.returncode, 1)
         self.assertIn('needs regeneration', result.stderr)

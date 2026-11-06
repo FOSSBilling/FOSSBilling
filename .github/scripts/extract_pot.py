@@ -258,13 +258,6 @@ def _span_end(spans: list[tuple[int, int]], starts: list[int], offset: int) -> i
     return None
 
 
-_TWIG_COMMENT = re.compile(r"\{#.*?#\}", re.DOTALL)
-
-
-def _mask_twig_comments(text: str) -> str:
-    return _TWIG_COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
-
-
 # ---------------------------------------------------------------------------
 # Extraction
 # ---------------------------------------------------------------------------
@@ -314,24 +307,59 @@ def _line_no(text: str, offset: int) -> int:
 
 _SOURCE_ID = re.compile(r"[a-z][a-z0-9_-]*\Z")
 _QUOTED = re.compile(r"'(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"", re.DOTALL)
-_TWIG_OPEN = re.compile(r"\{\{|\{%")
+_TWIG_OPEN = re.compile(r"\{[\{%#]")
 
 
-def _twig_string_spans(text: str) -> list[tuple[int, int]]:
-    """HTML attribute quotes must not hide the Twig literals inside them."""
-    spans: list[tuple[int, int]] = []
+def _twig_expressions(text: str) -> list[tuple[int, int, list[tuple[int, int]]]]:
+    """Locate executable Twig, including interpolation, with its string tokens."""
+    expressions: list[tuple[int, int, list[tuple[int, int]]]] = []
+
+    def string(start: int) -> int:
+        quote = text[start]
+        i = start + 1
+        while i < len(text):
+            if text[i] == "\\":
+                i += 2
+            elif quote == '"' and text.startswith("#{", i):
+                i = expression(i + 2, "}")
+            elif text[i] == quote:
+                return i + 1
+            else:
+                i += 1
+        return i
+
+    def expression(start: int, closing: str) -> int:
+        strings: list[tuple[int, int]] = []
+        brackets: list[str] = []
+        i = start
+        while i < len(text):
+            if not brackets and text.startswith(closing, i):
+                expressions.append((start, i, strings))
+                return i + len(closing)
+            if text[i] in ("'", '"'):
+                end = string(i)
+                strings.append((i, end))
+                i = end
+                continue
+            if text[i] in "([{":
+                brackets.append(text[i])
+            elif text[i] in ")]}":
+                if brackets:
+                    brackets.pop()
+            i += 1
+        return i
+
     position = 0
     while opening := _TWIG_OPEN.search(text, position):
-        start = opening.end()
-        closing = "}}" if opening.group() == "{{" else "%}"
-        token = re.compile(_QUOTED.pattern + "|" + re.escape(closing), re.DOTALL)
-        position = len(text)
-        for match in token.finditer(text, start):
-            if match.group() == closing:
-                position = match.end()
-                break
-            spans.append((match.start(), match.end()))
-    return spans
+        if opening.group() == "{#":
+            closing = text.find("#}", opening.end())
+            position = len(text) if closing < 0 else closing + 2
+        elif re.match(r"\{%[-~]?\s*verbatim\s*[-~]?%\}", text[opening.start():]):
+            closing = re.search(r"\{%[-~]?\s*endverbatim\s*[-~]?%\}", text[opening.end():])
+            position = len(text) if closing is None else opening.end() + closing.end()
+        else:
+            position = expression(opening.end(), "}}" if opening.group() == "{{" else "%}")
+    return expressions
 
 
 def _call_arguments(
@@ -394,7 +422,7 @@ def _translation_source(
     start, end = argument
     start += len(text[start:end]) - len(text[start:end].lstrip())
     value = text[start:end].strip()
-    if value.lower() == "null" or (twig and value == "none"):
+    if (twig and value in ("null", "NULL", "none", "NONE")) or (not twig and value.lower() == "null"):
         # Explicit null suppresses Twig's inferred source at runtime.
         return "core"
     parsed = _read_twig_literal(text, start) if twig else _read_php_literal(text, start)
@@ -408,40 +436,39 @@ def _translation_source(
 
 
 def extract_twig(rel: str, text: str, occurrences: list[Occurrence], stats: dict, module_id: str | None = None) -> None:
-    masked = _mask_twig_comments(text)
-    spans = _twig_string_spans(masked)
-    starts = [start for start, _ in spans]
-    for match in _TWIG_TRANS.finditer(masked):
-        span_end = _span_end(spans, starts, match.start())
-        if span_end is not None and spans[bisect.bisect_right(starts, match.start()) - 1][0] != match.start():
-            continue
-        ref = f"{rel}:{_line_no(masked, match.start())}"
-        parsed = _read_twig_literal(masked, match.start())
-        if parsed[2]:
-            stats["skipped_dynamic"] += 1
-            stats["skipped"].append(f"{ref} interpolated Twig string")
-            continue
-        msgid = parsed[0]
-        arguments: dict[str, tuple[int, int]] = {}
-        opening = match.end()
-        while opening < len(masked) and masked[opening].isspace():
-            opening += 1
-        if masked[opening:opening + 1] == "(":
-            call = _call_arguments(masked, opening, spans, starts)
-            try:
-                if call is None:
-                    raise ValueError("unbalanced trans arguments")
-                arguments = _bind_arguments(masked, call, ("values", "from"), twig=True)
-                if any(masked[start:end].lstrip().startswith("...") for start, end in call):
-                    raise ValueError("argument unpacking prevents resolving the translation source")
-            except ValueError as error:
-                stats["source_errors"].append(f"{ref}: {error}")
+    for _, end, spans in _twig_expressions(text):
+        starts = [start for start, _ in spans]
+        for literal_start, literal_end in spans:
+            match = _TWIG_TRANS.match(text, literal_start)
+            if match is None or match.end() > end:
                 continue
-        source = _translation_source(masked, arguments.get("from"), module_id or "core", ref, stats, twig=True)
-        if source is None:
-            continue
-        occurrences.append(Occurrence(msgid, None, ref, source))
-        stats["twig"] += 1
+            ref = f"{rel}:{_line_no(text, match.start())}"
+            parsed = _read_twig_literal(text, match.start())
+            if parsed is None or parsed[1] != literal_end or parsed[2]:
+                stats["skipped_dynamic"] += 1
+                stats["skipped"].append(f"{ref} interpolated Twig string")
+                continue
+            msgid = parsed[0]
+            arguments: dict[str, tuple[int, int]] = {}
+            opening = match.end()
+            while opening < len(text) and text[opening].isspace():
+                opening += 1
+            if text[opening:opening + 1] == "(":
+                call = _call_arguments(text, opening, spans, starts)
+                try:
+                    if call is None:
+                        raise ValueError("unbalanced trans arguments")
+                    arguments = _bind_arguments(text, call, ("values", "from"), twig=True)
+                    if any(text[start:end].lstrip().startswith("...") for start, end in call):
+                        raise ValueError("argument unpacking prevents resolving the translation source")
+                except ValueError as error:
+                    stats["source_errors"].append(f"{ref}: {error}")
+                    continue
+            source = _translation_source(text, arguments.get("from"), module_id or "core", ref, stats, twig=True)
+            if source is None:
+                continue
+            occurrences.append(Occurrence(msgid, None, ref, source))
+            stats["twig"] += 1
 
 
 def _balanced_close(
@@ -578,7 +605,94 @@ def _php_messages(
     return None
 
 
-def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
+class PhpClass(NamedTuple):
+    name: str
+    parent: str
+    parameters: tuple[str, ...] | None
+    start: int
+    end: int
+
+
+class PhpContext(NamedTuple):
+    namespace: str
+    aliases: dict[str, str]
+    classes: list[PhpClass]
+
+
+def _php_name(name: str, context: PhpContext) -> str:
+    if name.startswith("\\"):
+        return name[1:].lower()
+    first, separator, rest = name.partition("\\")
+    if first.lower() in context.aliases:
+        return context.aliases[first.lower()] + (separator + rest.lower() if separator else "")
+    return (context.namespace + "\\" + name if context.namespace else name).lower()
+
+
+def _php_context(text: str) -> PhpContext:
+    """Read imports and declared constructor parameters without executing PHP."""
+    masked, strings, regions = _mask_php_comments(text)
+    code = list(re.sub(r"[^\n]", " ", text))
+    for start, end in regions:
+        code[start:end] = masked[start:end]
+    for start, end in strings:
+        code[start:end] = re.sub(r"[^\n]", " ", masked[start:end])
+    code = "".join(code)
+    namespace = re.search(r"\bnamespace\s+([\w\\]+)\s*[;{]", code)
+    context = PhpContext(namespace.group(1).lower() if namespace else "", {}, [])
+    headers = []
+    for match in re.finditer(rf"\bclass\s+(?!extends\b)(\w+)(?:\s+extends\s+({_CLASS_NAME}))?[^{{;]*\{{", code, re.IGNORECASE):
+        end = _balanced_close(code, match.end() - 1, [], [])
+        if end is not None:
+            headers.append((match, end))
+    for match in re.finditer(r"\buse\s+(?!function\b|const\b)([^;]+);", code, re.IGNORECASE):
+        if any(header.start() < match.start() < end for header, end in headers):
+            continue
+        group = re.fullmatch(r"([\w\\]+)\s*\{(.*)\}\s*", match.group(1), re.DOTALL)
+        prefix, names = (group.group(1), group.group(2)) if group else ("", match.group(1))
+        for item in names.split(","):
+            imported = re.fullmatch(r"\s*([\w\\]+)(?:\s+as\s+(\w+))?\s*", item, re.IGNORECASE)
+            if imported:
+                name = (prefix + imported.group(1)).lstrip("\\")
+                alias = imported.group(2) or name.split("\\")[-1]
+                context.aliases[alias.lower()] = name.lower()
+    for header, end in headers:
+        parameters = None
+        constructor = re.search(r"\bfunction\s+__construct\s*\(", code[header.end():end], re.IGNORECASE)
+        if constructor:
+            opening = header.end() + constructor.end() - 1
+            arguments = _call_arguments(code, opening, [], []) or []
+            parameters = tuple(
+                variable.group(1)
+                for start, stop in arguments
+                if (variable := re.search(r"\$(\w+)", code[start:stop]))
+            )
+        name = (context.namespace + "\\" if context.namespace else "") + header.group(1).lower()
+        parent = _php_name(header.group(2), context) if header.group(2) else ""
+        context.classes.append(PhpClass(name, parent, parameters, header.start(), end))
+    return context
+
+
+def _php_constructors(contexts: dict[str, PhpContext]) -> dict[str, tuple[str, ...] | None]:
+    base = ("message", "variables", "code", "protected", "from")
+    adapter = ("message", "variables", "code", "from")
+    signatures = dict.fromkeys(("baseexception", "informationexception", "fossbilling\\core\\exception\\baseexception", "fossbilling\\core\\exception\\informationexception"), base)
+    signatures.update(dict.fromkeys(("payment_exception", "registrar_exception", "server_exception"), adapter))
+    pending = [declaration for context in contexts.values() for declaration in context.classes if declaration.name not in signatures]
+    while pending:
+        remaining = []
+        for declaration in pending:
+            if declaration.parent in signatures:
+                signatures[declaration.name] = declaration.parameters if declaration.parameters is not None else signatures[declaration.parent]
+            else:
+                remaining.append(declaration)
+        if len(remaining) == len(pending):
+            break
+        pending = remaining
+    signatures.update({declaration.name: None for declaration in pending})
+    return signatures
+
+
+def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict, context: PhpContext, constructors: dict[str, tuple[str, ...] | None]) -> None:
     masked, spans, php_spans = _mask_php_comments(text)
     starts = [start for start, _ in spans]
     php_starts = [start for start, _ in php_spans]
@@ -596,9 +710,7 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
                 # Constructor-chained exception message.
                 short = "__construct"
             else:
-                # Generic constructor branch: a message carrier (normally an
-                # exception) unless denylisted. The short name is what matters;
-                # a leading backslash leaves an empty first segment.
+                # Keep the short name for the denylist and construction stats.
                 short = match.group("cls").split("\\")[-1]
                 # `class` can never name a real class, so any casing of it is
                 # the anonymous-class keyword (PHP names are case-insensitive).
@@ -609,18 +721,23 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
             stats["skipped_defs"] += 1
             continue
+        accepts_source = True
         if keyword == "__trans":
             names = ("msgid", "values", "from")
         elif keyword == "__pluralTrans":
             names = ("msgid", "msgidPlural", "number", "values", "from")
-        elif short is not None and short.lower() in ("payment_exception", "registrar_exception", "server_exception"):
-            names = ("message", "variables", "code", "from")
-        elif short is not None and short.lower() in ("baseexception", "informationexception", "exception", "__construct"):
-            names = ("message", "variables", "code", "protected", "from")
         else:
-            # Unknown constructors retain the historical first-message policy,
-            # but their later positional parameters are not our exception API.
-            names = ("message",)
+            constructor = _php_name(match.group("cls"), context) if match.group("cls") else ""
+            if match.group("chain"):
+                owner = next((entry for entry in reversed(context.classes) if entry.start < match.start() < entry.end), None)
+                if owner:
+                    constructor = owner.parent if match.group("chain") == "parent" else owner.name
+            signature = constructors.get(constructor)
+            names = signature or ("message",)
+            accepts_source = signature is not None or (
+                short is not None and short.lower().endswith("exception") and short.lower() != "exception"
+                and constructor not in constructors
+            )
         ref = f"{rel}:{_line_no(masked, match.start())}"
         call = _call_arguments(masked, match.end() - 1, spans, starts)
         if call is None:
@@ -659,7 +776,7 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
                 stats["skipped"].append(f"{ref} {snippet}")
                 continue
             plural = second[0]
-        source = _translation_source(masked, arguments.get("from"), "core", ref, stats)
+        source = _translation_source(masked, arguments.get("from") if accepts_source else None, "core", ref, stats)
         if source is None:
             continue
         for variant in variants:
@@ -684,6 +801,12 @@ def extract_all(src_dir: str, module_id: str | None = None) -> tuple[list[Occurr
         raise ValueError(f"source directory does not exist: {src_dir}")
     if module_id is not None and (not _SOURCE_ID.fullmatch(module_id) or module_id == "core"):
         raise ValueError(f"invalid module ID: {module_id!r}")
+    contexts = {}
+    for full, rel in iter_source_files(src_dir):
+        if full.endswith(".php"):
+            with open(full, encoding="utf-8", errors="replace") as handle:
+                contexts[rel] = _php_context(handle.read())
+    constructors = _php_constructors(contexts)
     occurrences: list[Occurrence] = []
     stats: dict = {"twig": 0, "php": 0, "skipped_dynamic": 0, "skipped_defs": 0, "skipped_ctor": 0, "skipped_markup": 0, "ctor_classes": Counter(), "skipped": [], "files": 0, "source_errors": []}
     for full, rel in iter_source_files(src_dir):
@@ -699,7 +822,7 @@ def extract_all(src_dir: str, module_id: str | None = None) -> tuple[list[Occurr
                     inferred = candidate
             extract_twig(rel, text, occurrences, stats, inferred)
         else:
-            extract_php(rel, text, occurrences, stats)
+            extract_php(rel, text, occurrences, stats, contexts[rel], constructors)
     return occurrences, stats
 
 

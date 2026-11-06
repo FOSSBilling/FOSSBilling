@@ -42,7 +42,7 @@ def discover_modules(root: Path) -> list[Module]:
         if not directory.is_dir():
             continue
         if not manifest.is_file():
-            if (directory / "Service.php").is_file() or (directory / "templates").is_dir():
+            if (directory / "Service.php").is_file() or any((directory / name).is_dir() for name in ("templates", "Api", "Controller")):
                 raise ValueError(f"missing module manifest: {manifest}")
             continue
         data = json.loads(manifest.read_text(encoding="utf-8"))
@@ -83,7 +83,7 @@ def template_path(root: Path, module: Module) -> Path:
     return root / module.path.name / "locale" / f"{module.id}.pot"
 
 
-def extract_templates(modules: list[Module], core_pot: Path, output: Path, check: bool) -> int:
+def extract_templates(modules: list[Module], core_pot: Path, output: Path, check: bool, single_module: bool = False) -> int:
     by_source, core = module_occurrences(modules)
     core_entries = parse_pot_entries(str(core_pot))
     errors = [
@@ -95,7 +95,7 @@ def extract_templates(modules: list[Module], core_pot: Path, output: Path, check
     if output.is_dir():
         errors.extend(
             f"{path}: template has no corresponding module; review its removal manually"
-            for path in sorted(output.glob("*/locale/*.pot"))
+            for path in sorted(output.glob(f"{modules[0].path.name if single_module else '*'}/locale/*.pot"))
             if path not in known_templates
         )
     if errors:
@@ -123,8 +123,10 @@ def extract_templates(modules: list[Module], core_pot: Path, output: Path, check
     return 0
 
 
-def placeholder_set(text: str) -> set[str]:
-    return set(re.findall(r"(?<!:):[A-Za-z_][A-Za-z0-9_]*", text))
+def placeholder_set(text: str, expected: set[str] | None = None) -> set[str]:
+    # strtr matches known placeholders before any attached word suffix.
+    choices = [re.escape(value) for value in sorted(expected or (), key=len, reverse=True)]
+    return set(re.findall("|".join([*choices, r"(?<!:):[A-Za-z_][A-Za-z0-9_]*"]), text))
 
 
 def validate_entries(po: Path, expected: dict[str, str | None]) -> polib.MOFile:
@@ -154,7 +156,7 @@ def validate_entries(po: Path, expected: dict[str, str | None]) -> polib.MOFile:
         ):
             raise ValueError(f"{po}: missing plural forms for {entry.msgid!r}; expected {plural_count} slots")
         for translation in forms:
-            if translation and placeholder_set(translation) not in allowed:
+            if translation and not any(placeholder_set(translation, source) == source for source in allowed):
                 raise ValueError(f"{po}: placeholders do not match {entry.msgid!r}")
         if any(forms):
             compiled.append(polib.MOEntry(
@@ -225,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         modules = discover_modules(args.root)
         if args.command == "extract":
-            return extract_templates(modules, args.core_pot, args.output, args.check)
+            return extract_templates(modules, args.core_pot, args.output, args.check, (args.root / "manifest.json").is_file())
         return compile_translations(modules, args.templates, getattr(args, "output", None))
     except (ValueError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)

@@ -58,6 +58,8 @@ python3 "$CORE_TOOLS/module_translations.py" compile "$MODULES_ROOT" \
 
 Validation runs `msgfmt --check --check-format` and checks template membership, plural slots, filenames, and `:name` placeholders. Missing entries are allowed for core fallback; stale entries and message contexts are rejected.
 
+For printf-style validation, retain the appropriate gettext format flag in each PO entry.
+
 Compilation writes `compiled/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo` after every input passes validation. The output directory must be new or empty. Fuzzy and empty translations are omitted; translations identical to English remain valid.
 
 polib writes the MO files because `msgfmt` omits a whole plural entry when its first form is empty. This preserves usable later forms for runtime fallback. The tool also checks plural slot counts, which `msgfmt` skips in that case. Plural expressions are validated by gettext and evaluated by MoTranslator.

@@ -162,6 +162,25 @@ class ModuleTranslationsTest(unittest.TestCase):
         self.assertIn('missing module manifest', result.stderr)
         self.assertFalse(self.templates.exists())
 
+    def test_api_and_controller_modules_require_manifests(self) -> None:
+        for layout in ('Api', 'Controller'):
+            with self.subTest(layout=layout):
+                path = self.write(f'Undeclared/{layout}/Client.php', "<?php __trans('Save');")
+                result = self.extract()
+                self.assertEqual(result.returncode, 1)
+                self.assertIn('missing module manifest', result.stderr)
+                self.assertFalse(self.templates.exists())
+                path.unlink()
+                path.parent.rmdir()
+
+    def test_single_module_check_leaves_other_templates_alone(self) -> None:
+        self.assertEqual(self.extract().returncode, 0)
+        other = self.template('Other').read_bytes()
+        for options in ([], ['--check']):
+            result = self.cli('extract', self.modules / 'Example', '--core-pot', self.core, '--output', self.templates, *options)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(self.template('Other').read_bytes(), other)
+
     def test_orphaned_templates_require_review_instead_of_silent_deletion(self) -> None:
         self.assertEqual(self.extract().returncode, 0)
         shutil.rmtree(self.modules / 'Other')
@@ -205,21 +224,25 @@ class ModuleTranslationsTest(unittest.TestCase):
         self.assertEqual(self.extract().returncode, 0)
         self.po([('Hello :name', None, ['你好:name'], False)])
         self.po([('Hello :name', None, ['Hello :name'], False)], locale='de_DE')
+        self.po([('Hello :name', None, [':names Profil'], False)], locale='de_AT')
         result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
         self.assertEqual(result.returncode, 0, result.stderr)
-        for locale, expected in [('fr_FR', '你好:name'), ('de_DE', 'Hello :name')]:
+        for locale, expected in [('fr_FR', '你好:name'), ('de_DE', 'Hello :name'), ('de_AT', ':names Profil')]:
             with (self.build / f'Example/locale/{locale}/LC_MESSAGES/example.mo').open('rb') as handle:
                 self.assertEqual(gettext.GNUTranslations(handle).gettext('Hello :name'), expected)
 
     def test_placeholder_mismatch_rejects_the_entire_compile_without_partial_outputs(self) -> None:
         self.require_gettext()
+        self.write('Example/Pair.php', "<?php __trans('Pair :name :names', from: 'example');")
         self.assertEqual(self.extract().returncode, 0)
         self.po([('Hello :name', None, ['Hallo :name'], False)], locale='de_DE')
-        self.po([('Hello :name', None, ['Bonjour :person'], False)])
-        result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
-        self.assertEqual(result.returncode, 1)
-        self.assertIn('placeholders do not match', result.stderr)
-        self.assertFalse(self.build.exists())
+        for message, translation in [('Hello :name', 'Bonjour :person'), ('Pair :name :names', ':names')]:
+            with self.subTest(message=message):
+                self.po([(message, None, [translation], False)])
+                result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn('placeholders do not match', result.stderr)
+                self.assertFalse(self.build.exists())
 
     def test_wrapped_po_entries_validate_and_obsolete_entries_are_ignored(self) -> None:
         self.require_gettext()
@@ -268,6 +291,7 @@ class ModuleTranslationsTest(unittest.TestCase):
             ('nplurals=2; plural=(n > 1);', [':n objet']),
             ('nplurals=2; plural=(n >);', [':n objet', ':n objets']),
             ('nplurals=2; plural=(n / 0);', [':n objet', ':n objets']),
+            ('nplurals=2; plural=(n / 0);', ['', ':n objets']),
             ('nplurals=2; plural=5;', [':n objet', ':n objets']),
         ]:
             with self.subTest(rule=rule, forms=forms):
