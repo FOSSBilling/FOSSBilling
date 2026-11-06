@@ -261,9 +261,20 @@ class Patcher implements InjectionAwareInterface
         // installs the invoice_event table only comes into existence there, and backfilling
         // first would find no table and leave existing invoices without baseline entries.
         // Deliberately outside the drift healer: a large backlog must not stall page loads.
-        $this->backfillInvoiceJournal();
+        // Best-effort like the probes above: an unreachable database is already recorded by
+        // syncPortableSchema's boundary, and a missed backfill converges via the cron healer
+        // (Invoice Service healMissingJournalEntries) instead of failing finalization.
+        try {
+            $this->backfillInvoiceJournal();
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', 'Invoice journal backfill failed: {message}', ['message' => $e->getMessage()]);
+        }
 
-        $this->checkInvoiceNumberCounter();
+        try {
+            $this->checkInvoiceNumberCounter();
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', 'Invoice number counter check failed: {message}', ['message' => $e->getMessage()]);
+        }
     }
 
     public function checkInvoiceNumberCounter(): void
@@ -1603,7 +1614,12 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
+        try {
+            $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
+        } catch (\Throwable) {
+            // Unreachable database: syncPortableSchema's boundary downstream logs it.
+            return;
+        }
         if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
             return;
         }
@@ -1630,14 +1646,21 @@ class Patcher implements InjectionAwareInterface
         $old = 'invoice_status_approved_due_at_idx';
         $new = 'invoice_status_issued_due_at_idx';
 
-        $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
-        if ($schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old)) {
+        try {
+            $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+            $dropOld = $schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old);
+            $missingNew = !$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new);
+        } catch (\Throwable) {
+            // Unreachable database: syncPortableSchema's boundary downstream logs it.
+            return;
+        }
+        if ($dropOld) {
             $this->executeSql($this->isLegacyPatchDriver()
                 ? "DROP INDEX `$old` ON `invoice`"
                 : "DROP INDEX $old");
         }
 
-        if (!$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new)) {
+        if ($missingNew) {
             $this->executeSql('CREATE INDEX ' . $new . ' ON invoice (status, issued, due_at)');
         }
     }
@@ -1654,7 +1677,12 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
+        try {
+            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
+                return;
+            }
+        } catch (\Throwable) {
+            // Unreachable database: syncPortableSchema's boundary downstream logs it.
             return;
         }
 
@@ -1676,7 +1704,12 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+        try {
+            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+                return;
+            }
+        } catch (\Throwable) {
+            // Unreachable database: syncPortableSchema's boundary downstream logs it.
             return;
         }
 
