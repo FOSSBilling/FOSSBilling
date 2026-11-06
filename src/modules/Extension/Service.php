@@ -24,6 +24,7 @@ use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Enums\ExtensionType;
+use FOSSBilling\Core\Filesystem\ZipExtractor;
 use FOSSBilling\Core\System\Config;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -690,30 +691,23 @@ class Service implements InjectionAwareInterface
         }
 
         // Extract the archive
-        $zip = new \PhpZip\ZipFile();
         $extracted = false;
 
         try {
-            $zip->openFile($zipPath);
             // Validate the complete archive before allowing any entry to be written.
-            foreach ($zip->getListFiles() as $entryName) {
-                $entry = $zip->getEntry($entryName);
-                $fileType = $entry->getUnixMode() & 0o170000;
+            (new ZipExtractor())->extract($zipPath, $extractedPath, static function (string $entryName, int $mode): void {
+                $fileType = $mode & 0o170000;
                 if (!\FOSSBilling\Core\Update\Updater::isSafeArchiveEntry($entryName)
-                    || str_contains($entryName, "\0")
-                    || str_contains($entryName, ':')
                     || !in_array($fileType, [0, 0o040000, 0o100000], true)) {
                     throw new \FOSSBilling\Core\Exception\BaseException('The extension archive contains an unsafe file path or file type and cannot be extracted.');
                 }
-            }
-            $zip->extractTo($extractedPath);
+            });
             $extracted = true;
-        } catch (\PhpZip\Exception\ZipException $e) {
+        } catch (\RuntimeException $e) {
             $this->di['logger']->error($e->getMessage());
 
             throw new \FOSSBilling\Core\Exception\BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         } finally {
-            $zip->close();
             if (!$extracted) {
                 $this->filesystem->remove([$zipPath, $extractedPath]);
             }

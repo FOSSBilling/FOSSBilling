@@ -1605,7 +1605,7 @@ test('the typed cron listener refreshes the extension list', function (): void {
 });
 
 /** Run the real download/extraction boundary with a local archive response. */
-function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array &$stagingPaths, bool $safe = true, ?array $release = null, bool $emptyOnFailure = true): Service
+function extensionArchiveService(string $zip, string $destination, array &$stagingPaths, bool $safe = true, ?array $release = null, bool $emptyOnFailure = true): Service
 {
     $filesystem = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class)->makePartial();
     $filesystem->shouldReceive('mkdir')->andReturnUsing(function (string $path, int $mode) use (&$stagingPaths): void {
@@ -1636,17 +1636,14 @@ function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array
     $di['em'] = extensionBuildEm();
     $di['extension_manager'] = $manager;
     $di['mod_service'] = $di->protect(fn () => $staff);
-    $di['http_client'] = new Symfony\Component\HttpClient\MockHttpClient(new Symfony\Component\HttpClient\Response\MockResponse($zip->outputAsString()));
+    $di['http_client'] = new Symfony\Component\HttpClient\MockHttpClient(new Symfony\Component\HttpClient\Response\MockResponse($zip));
     $service->setDi($di);
 
     return $service;
 }
 
 test('downloadAndExtract rejects unsafe archives before writing any entry', function (string $name, int $mode): void {
-    $zip = new PhpZip\ZipFile();
-    $zip->addFromString('valid.php', 'legitimate');
-    $zip->addFromString($name, 'malicious');
-    $zip->getEntry($name)->setUnixMode($mode);
+    $zip = Tests\Helpers\zipArchive(['valid.php' => 'legitimate', $name => 'malicious'], [$name => $mode]);
     $paths = [];
     $destination = Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
     $service = extensionArchiveService($zip, $destination, $paths, false);
@@ -1654,12 +1651,11 @@ test('downloadAndExtract rejects unsafe archives before writing any entry', func
     // Rejection must happen before destination resolution or a single extraction write.
     try {
         expect(fn () => $service->downloadAndExtract('mod', 'example'))
-            ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'The extension archive contains an unsafe file path or file type');
+            ->toThrow(FOSSBilling\Core\Exception\BaseException::class, str_contains($name, "\0") ? 'Failed to extract file' : 'The extension archive contains an unsafe file path or file type');
         expect($paths)->toHaveCount(1)
             ->and(is_dir($paths[0]))->toBeFalse()
             ->and(is_dir($destination))->toBeFalse();
     } finally {
-        $zip->close();
         (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
     }
 })->with([
@@ -1676,12 +1672,8 @@ test('downloadAndExtract rejects unsafe archives before writing any entry', func
 ]);
 
 test('downloadAndExtract preserves ordinary package files and directories', function (): void {
-    $zip = new PhpZip\ZipFile();
-    $zip->addEmptyDir('nested');
     $files = ['manifest.json' => '{}', 'nested/my file v1.2.txt' => 'content', '.hidden' => 'dotfile', 'nested/123' => 'numeric', 'nested/é.txt' => 'unicode'];
-    foreach ($files as $name => $content) {
-        $zip->addFromString((string) $name, $content);
-    }
+    $zip = Tests\Helpers\zipArchive(['nested/' => null, ...$files]);
     $paths = [];
     $destination = Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
     $service = extensionArchiveService($zip, $destination, $paths);
@@ -1696,7 +1688,6 @@ test('downloadAndExtract preserves ordinary package files and directories', func
             expect(fileperms($destination) & 0o777)->toBe(0o755);
         }
     } finally {
-        $zip->close();
         (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
     }
 });
@@ -1763,10 +1754,8 @@ test('downloadAndExtract checks the selected release without fetching latest twi
 function managedExtensionTestPackage(): array
 {
     $manifest = ['manifest_version' => 1, 'id' => 'example', 'type' => 'module', 'version' => '1.0.0', 'name' => 'Example', 'description' => 'Corrected metadata', 'author' => ['name' => 'Author'], 'license' => 'MIT', 'requires' => ['fossbilling' => '*', 'php' => '>=8.3']];
-    $zip = new PhpZip\ZipFile();
-    $zip->addFromString('manifest.json', json_encode($manifest, JSON_THROW_ON_ERROR));
-    $zip->addFromString('Service.php', '<?php // same source');
-    $release = ['tag' => '1.0.0', 'download_url' => 'https://example.test/package.zip', 'artifact_id' => '134cf413-b5ab-4f57-b2ad-520020af880d', 'sha256' => hash('sha256', $zip->outputAsString()), 'requires' => $manifest['requires']];
+    $zip = Tests\Helpers\zipArchive(['manifest.json' => json_encode($manifest, JSON_THROW_ON_ERROR), 'Service.php' => '<?php // same source']);
+    $release = ['tag' => '1.0.0', 'download_url' => 'https://example.test/package.zip', 'artifact_id' => '134cf413-b5ab-4f57-b2ad-520020af880d', 'sha256' => hash('sha256', $zip), 'requires' => $manifest['requires']];
 
     return [$zip, $manifest, $release];
 }
@@ -1783,7 +1772,6 @@ test('managed downloads verify SHA-256 before extracting any file', function ():
         expect(is_dir($destination))->toBeFalse();
         expect(is_dir($paths[0]))->toBeFalse();
     } finally {
-        $zip->close();
         (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
     }
 });
@@ -1803,7 +1791,6 @@ test('managed downloads install the matching manifest and reject a different ext
             expect(is_dir($destination))->toBeFalse();
         }
     } finally {
-        $zip->close();
         (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
     }
 })->with([['example', true], ['different', false]]);
@@ -1835,7 +1822,6 @@ test('same-version corrections change only the manifest and preserve installed c
         expect(file_get_contents($destination . '/config.local.php'))->toBe('<?php // preserve configuration');
         expect(is_dir($paths[0]))->toBeFalse();
     } finally {
-        $zip->close();
         $filesystem->remove([...$paths, $destination]);
     }
 })->with([

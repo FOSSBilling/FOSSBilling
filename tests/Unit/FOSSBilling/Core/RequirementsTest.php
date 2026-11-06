@@ -12,6 +12,14 @@ declare(strict_types=1);
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
 use FOSSBilling\Core\System\Requirements;
 
+test('installation requires the native PHP ZIP extension', function (): void {
+    $requirements = new Requirements();
+    $requirements->writable = ['folders' => [], 'files' => []];
+
+    expect($requirements->php_reqs['required_extensions'])->toContain('zip')
+        ->and($requirements->checkCompat()['required_extensions']['zip'])->toBe(extension_loaded('zip'));
+});
+
 test('required_extensions no longer hardcodes a single PDO driver', function (): void {
     $requirements = new Requirements();
 

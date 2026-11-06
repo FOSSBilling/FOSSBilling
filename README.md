@@ -46,6 +46,8 @@
 
 FOSSBilling runs on standard LAMP/LEMP stacks. For the latest system requirements (PHP version, extensions, database, etc.), see the official [requirements](https://docs.fossbilling.org/getting-started/requirements/).
 
+Install and enable PHP's ZIP extension (`ext-zip`) for the web server and CLI before installing or upgrading FOSSBilling.
+
 ### Installation
 
 Follow the step-by-step [Getting Started guide](https://docs.fossbilling.org/getting-started/).
