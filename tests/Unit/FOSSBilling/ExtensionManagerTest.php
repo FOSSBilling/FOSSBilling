@@ -492,3 +492,20 @@ it('checks an extension PHP requirement independently of the FOSSBilling constra
     expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => '>' . PHP_VERSION]]))->toBeFalse();
     expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => 'invalid constraint']]))->toBeFalse();
 });
+
+it('ignores invalid tags and compact prereleases when choosing a stable release', function (array $tags, ?string $expected): void {
+    $entry = catalogEntry();
+    $entry['releases'] = array_map(static fn (string $tag): array => ['tag' => $tag, 'requires' => ['fossbilling' => '*']], $tags);
+    if ($expected === null) {
+        expect(fn () => catalogManager($entry)->getLatestExtensionRelease('example'))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Unable to fetch the latest');
+    } else {
+        expect(catalogManager($entry)->getLatestExtensionRelease('example')['tag'])->toBe($expected);
+    }
+})->with([
+    [['1.0.0', '2.0.0RC1'], '1.0.0'],
+    [['1.0.0', '2.0.0beta1'], '1.0.0'],
+    [['2.0.0', 'latest'], '2.0.0'],
+    [['latest', '2.0.0-beta.1', '2.0.0RC1'], '2.0.0RC1'],
+    [['1.0.0-beta.1', '3.0.0-beta.1', '2.0.0-beta.1'], '3.0.0-beta.1'],
+    [['latest', 'invalid'], null],
+]);

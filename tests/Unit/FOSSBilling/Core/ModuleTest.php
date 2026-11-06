@@ -111,16 +111,17 @@ test('get service sub', function (): void {
 
 test('module icons are discovered by filename without manifest metadata', function (string $format): void {
     $di = container();
-    $directory = PATH_MODS . '/Icontest';
+    $name = 'Icontest' . bin2hex(random_bytes(8));
+    $directory = PATH_MODS . '/' . $name;
     $filesystem = new Filesystem();
     $filesystem->mkdir($directory);
 
     try {
         $filesystem->dumpFile($directory . '/manifest.json', json_encode(['name' => 'Icon Test', 'version' => '1.0.0', 'icon_url' => 'ignored.svg'], JSON_THROW_ON_ERROR));
         $filesystem->dumpFile($directory . '/icon.' . $format, 'icon fixture');
-        $module = new Module('Icontest');
+        $module = new Module($name);
         $module->setDi($di);
-        expect($module->getManifest()['icon_url'])->toBe('/modules/Icontest/icon.' . $format);
+        expect($module->getManifest()['icon_url'])->toBe('/modules/' . $name . '/icon.' . $format);
     } finally {
         $filesystem->remove($directory);
     }
@@ -128,14 +129,15 @@ test('module icons are discovered by filename without manifest metadata', functi
 
 test('modules without convention icons use the generic fallback', function (): void {
     $di = container();
-    $directory = PATH_MODS . '/Icontest';
+    $name = 'Icontest' . bin2hex(random_bytes(8));
+    $directory = PATH_MODS . '/' . $name;
     $filesystem = new Filesystem();
     $filesystem->mkdir($directory);
 
     try {
         $filesystem->dumpFile($directory . '/manifest.json', '{"name":"Icon Test","icon_url":"other.svg"}');
         $filesystem->dumpFile($directory . '/other.svg', 'ignored');
-        $module = new Module('Icontest');
+        $module = new Module($name);
         $module->setDi($di);
         expect($module->getManifest()['icon_url'])->toBeNull();
     } finally {

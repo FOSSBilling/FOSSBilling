@@ -61,7 +61,7 @@ foreach ($packages as $dir) {
     if (count($icons) > 1) {
         $errors[] = 'include only one package icon: icon.svg, icon.png, icon.webp or icon.avif';
     }
-    foreach ($icons as $icon) {
+    foreach (['icon.svg', 'icon.png', 'icon.webp', 'icon.avif'] as $icon) {
         if (is_link($dir . '/' . $icon)) {
             $errors[] = 'package icons must not be symbolic links';
         }

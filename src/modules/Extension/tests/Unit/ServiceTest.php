@@ -1806,12 +1806,12 @@ test('managed downloads install the matching manifest and reject a different ext
     }
 })->with([['example', true], ['different', false]]);
 
-test('same-version corrections change only the manifest and preserve installed code and configuration', function (bool $changedSource): void {
+test('same-version corrections change only the manifest and preserve installed code and configuration', function (bool $changedSource, array $identity, bool $validIdentity = true): void {
     [$zip, $manifest, $release] = managedExtensionTestPackage();
     $paths = [];
     $destination = Path::join(PATH_CACHE, 'correction-test-' . bin2hex(random_bytes(8)));
     $filesystem = new Symfony\Component\Filesystem\Filesystem();
-    $old = [...$manifest, 'description' => 'Original metadata'];
+    $old = array_replace(array_diff_key($manifest, ['id' => true, 'type' => true]), $identity, ['description' => 'Original metadata']);
     $filesystem->dumpFile($destination . '/manifest.json', json_encode($old, JSON_THROW_ON_ERROR));
     $source = $changedSource ? '<?php // local edits' : '<?php // same source';
     $filesystem->dumpFile($destination . '/Service.php', $source);
@@ -1821,12 +1821,14 @@ test('same-version corrections change only the manifest and preserve installed c
     $model = extensionCreateEntity(1, 'module', 'example', 'installed', '1.0.0');
 
     try {
-        if ($changedSource) {
+        if (!$validIdentity) {
+            expect(fn () => $service->update($model))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'version differs from its registration');
+        } elseif ($changedSource) {
             expect(fn () => $service->update($model))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'extension files differ');
         } else {
             expect($service->update($model))->toBe($model);
         }
-        expect(json_decode(file_get_contents($destination . '/manifest.json'), true))->toBe($changedSource ? $old : $manifest);
+        expect(json_decode(file_get_contents($destination . '/manifest.json'), true))->toBe($changedSource || !$validIdentity ? $old : $manifest);
         expect(file_get_contents($destination . '/Service.php'))->toBe($source);
         expect(file_get_contents($destination . '/config.local.php'))->toBe('<?php // preserve configuration');
         expect(is_dir($paths[0]))->toBeFalse();
@@ -1834,4 +1836,12 @@ test('same-version corrections change only the manifest and preserve installed c
         $zip->close();
         $filesystem->remove([...$paths, $destination]);
     }
-})->with([false, true]);
+})->with([
+    [false, ['id' => 'example', 'type' => 'module']],
+    [true, ['id' => 'example', 'type' => 'module']],
+    [false, []],
+    [false, ['id' => 'example']],
+    [false, ['type' => 'module']],
+    [false, ['id' => 'different'], false],
+    [false, ['type' => 'theme'], false],
+]);

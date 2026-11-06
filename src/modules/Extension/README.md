@@ -20,7 +20,7 @@ Temporary downloads and extraction directories are removed on failure.
 
 ## Same-version manifest corrections
 
-The existing administrator update action can apply a reviewed manifest correction
+The **Apply manifest correction** action in the installed extensions list can apply a reviewed manifest correction
 for a managed package with the same installed version. It verifies the new ZIP
 and manifest, then compares every packaged file except `manifest.json` with the
 installed copy. Missing or changed files stop the correction. Only the manifest

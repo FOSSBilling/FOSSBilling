@@ -412,7 +412,7 @@ class Service implements InjectionAwareInterface
             }
             $installed = filesize($installedManifest) <= 256 * 1024 ? json_decode(file_get_contents($installedManifest), true) : null;
             if (!is_array($installed) || ($installed['version'] ?? null) !== $model->getVersion()
-                || ($installed['id'] ?? null) !== strtolower($model->getName()) || ($installed['type'] ?? null) !== $type) {
+                || ($installed['id'] ?? strtolower($model->getName())) !== strtolower($model->getName()) || ($installed['type'] ?? ExtensionType::Module->value) !== $type) {
                 throw new \FOSSBilling\Core\Exception\InformationException('The installed extension version differs from its registration; update it manually.');
             }
             // A same-version correction can replace metadata only. Preserve local

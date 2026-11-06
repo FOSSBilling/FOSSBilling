@@ -117,21 +117,27 @@ class ExtensionManager implements InjectionAwareInterface
     {
         $releases = $this->getExtensionReleases($id);
         $selected = array_filter($releases, static fn (array $release): bool => ($release['is_latest'] ?? false) === true);
-        $stable = array_filter($releases, static fn (array $release): bool => !str_contains(explode('+', (string) ($release['tag'] ?? ''), 2)[0], '-'));
-        $candidates = $selected ?: ($stable ?: $releases);
-        $latest = reset($candidates);
+        $latest = reset($selected);
         if (!$selected) {
-            try {
-                $tags = Semver::rsort(array_column($candidates, 'tag'));
-                foreach ($candidates as $release) {
-                    if (($release['tag'] ?? null) === ($tags[0] ?? null)) {
-                        $latest = $release;
+            $parser = new VersionParser();
+            $versioned = array_filter($releases, static function (array $release) use ($parser): bool {
+                try {
+                    $parser->normalize((string) ($release['tag'] ?? ''));
 
-                        break;
-                    }
+                    return true;
+                } catch (\UnexpectedValueException) {
+                    return false;
                 }
-            } catch (\UnexpectedValueException) {
-                throw new Exception('Unable to compare extension release versions.');
+            });
+            $stable = array_filter($versioned, static fn (array $release): bool => !str_contains(explode('+', $release['tag'], 2)[0], '-') && VersionParser::parseStability($release['tag']) === 'stable');
+            $candidates = $stable ?: $versioned;
+            $tags = Semver::rsort(array_column($candidates, 'tag'));
+            foreach ($candidates as $release) {
+                if ($release['tag'] === ($tags[0] ?? null)) {
+                    $latest = $release;
+
+                    break;
+                }
             }
         }
 
