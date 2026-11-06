@@ -302,7 +302,7 @@ test('avatar renders name initials and falls back to the email when no name is a
     expect($svg)->toContain('>' . $initials . '</text>');
 })->with([
     'display name' => ['Alex Morgan', 'AM'],
-    'unicode name' => ['Élodie Müller', 'ÉM'],
+    'unicode name' => ['Élodie Müller', 'ÉM'], // cspell:ignore Élodie Müller
     'missing name' => [null, 'JD'],
     'blank name' => ['  ', 'JD'],
 ]);

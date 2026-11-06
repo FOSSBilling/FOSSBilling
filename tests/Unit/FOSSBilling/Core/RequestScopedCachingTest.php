@@ -35,6 +35,8 @@ function requestCachingContainer(?EntityManager $em = null): Pimple\Container
             PATH_MODS . '/Extension/Entity',
         ], true, cache: new ArrayAdapter());
         $configuration->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER));
+        $configuration->setProxyDir(sys_get_temp_dir() . '/fossbilling-request-cache-proxies');
+        $configuration->setProxyNamespace('FOSSBilling\\Tests\\RequestScopedCaching\\Proxies');
         if (PHP_VERSION_ID >= 80400) {
             $configuration->enableNativeLazyObjects(true);
         }
