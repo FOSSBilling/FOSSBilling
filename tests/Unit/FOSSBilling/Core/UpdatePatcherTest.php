@@ -4146,3 +4146,39 @@ test('syncPortableSchema heals and backfills a product_category table missing pr
             ]);
     });
 });
+
+test('JSON migration bootstrap probe retries after database errors', function (string $stage): void {
+    $failure = new class('Database unavailable') extends RuntimeException implements Doctrine\DBAL\Exception {};
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schema = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    if ($stage === 'connection') {
+        $em->shouldReceive('getConnection')->once()->andThrow($failure);
+    } else {
+        $em->shouldReceive('getConnection')->once()->andReturn($connection);
+        $connection->shouldReceive('createSchemaManager')->once()->andReturn($schema);
+        if ($stage === 'schema') {
+            $schema->shouldReceive('tablesExist')->once()->andThrow($failure);
+        } else {
+            $schema->shouldReceive('tablesExist')->once()->andReturnTrue();
+            $connection->shouldReceive('fetchOne')->once()->andThrow($failure);
+        }
+    }
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $connection->shouldReceive('createSchemaManager')->once()->andReturn($schema);
+    $schema->shouldReceive('tablesExist')->once()->andReturnFalse();
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em]));
+
+    expect($patcher->isJsonMigrationPending())->toBeFalse()
+        ->and($patcher->isJsonMigrationPending())->toBeTrue();
+})->with(['connection', 'schema', 'journal']);
+
+test('JSON migration bootstrap probe does not suppress programming errors', function (): void {
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andThrow(new LogicException('Broken connection factory'));
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em]));
+
+    expect(fn () => $patcher->isJsonMigrationPending())->toThrow(LogicException::class, 'Broken connection factory');
+});

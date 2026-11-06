@@ -291,10 +291,16 @@ class Patcher implements InjectionAwareInterface
         if ($this->di === null || !isset($this->di['em'])) {
             return false;
         }
-        $connection = $this->di['em']->getConnection();
 
-        return !$connection->createSchemaManager()->tablesExist(['json_migration_record'])
-            || !\FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($connection, \FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE);
+        try {
+            $connection = $this->di['em']->getConnection();
+
+            return !$connection->createSchemaManager()->tablesExist(['json_migration_record'])
+                || !\FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($connection, \FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE);
+        } catch (\Doctrine\DBAL\Exception) {
+            // Bootstrap probes must tolerate an unavailable database; the next request retries.
+            return false;
+        }
     }
 
     public function checkInvoiceNumberCounter(): void
