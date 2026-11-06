@@ -13,9 +13,9 @@ namespace Box\Mod\Extension\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionMetaRepository::class)]
 #[ORM\Table(name: 'extension_meta')]
@@ -23,7 +23,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 // unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
 #[ORM\Index(name: 'extension_meta_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
-class ExtensionMeta implements ApiArrayInterface, TimestampInterface
+class ExtensionMeta implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

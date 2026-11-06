@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Seo;
 
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;

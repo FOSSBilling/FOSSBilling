@@ -18,13 +18,12 @@ namespace Box\Mod\Order\Api;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     private ?OrderRepository $orderRepository = null;
 
@@ -68,7 +67,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $resultSet = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $resultSet = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         $resultSet['list'] = $this->getService()->getBatchForApi(
             array_column($resultSet['list'], 'id'),
@@ -111,7 +110,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $this->checkPermissions('product', 'manage_promos');
         }
 
-        $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $markInvoicePaid = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         $data['mark_invoice_paid'] = $markInvoicePaid;
 
         if ($markInvoicePaid) {
@@ -204,7 +203,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
+        $skip_event = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -241,8 +240,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
-        $cancelAtPeriodEnd = Tools::normalizeBoolean($data['cancel_at_period_end'] ?? false);
+        $skip_event = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
+        $cancelAtPeriodEnd = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['cancel_at_period_end'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -296,8 +295,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
-        $forceDelete = Tools::normalizeBoolean($data['force_delete'] ?? false);
+        $delete_addons = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
+        $forceDelete = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['force_delete'] ?? false);
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
@@ -373,7 +372,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $config = $data['config'] ?? null;
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception('Order config not passed');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order config not passed');
         }
 
         return $this->getService()->updateOrderConfig($order, $config);
@@ -411,7 +410,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
 
-        return $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, Options::fromArray($data));
     }
 
     /**
@@ -527,7 +526,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('order', 'manage');
 
-        $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
+        $delete_addons = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id, 'delete_addons' => $delete_addons]);

@@ -164,7 +164,7 @@ test('action activate license collision max iterations exception', function (): 
     $service->setDi($di);
 
     expect(fn (): bool => $service->action_activate($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('action activate plugin not found', function (): void {
@@ -179,13 +179,13 @@ test('action activate plugin not found', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
 
     expect(fn (): bool => $service->action_activate($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class, 'License plugin TestPlugin was not found.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'License plugin TestPlugin was not found.');
 });
 
 test('action activate order activation exception', function (): void {
@@ -202,7 +202,7 @@ test('action activate order activation exception', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->action_activate($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Could not find associated service license');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Could not find associated service license');
 });
 
 test('action delete', function (): void {
@@ -253,7 +253,7 @@ test('reset', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['event_dispatcher'] = $eventDispatcher;
 
     $service->setDi($di);
@@ -669,7 +669,7 @@ test('server process rejects expired license', function (): void {
     $em->shouldReceive('getRepository')->with(ServiceLicense::class)->andReturn($repo);
     $em->shouldReceive('flush')->once();
 
-    $requestMock = Mockery::mock(FOSSBilling\Request::class);
+    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
     $requestMock->shouldReceive('getClientIp')->once()->andReturn('127.0.0.1');
 
     $di = container();

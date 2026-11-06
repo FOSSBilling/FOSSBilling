@@ -12,9 +12,9 @@ if (!function_exists('__trans')) {
     /**
      * Translate a message with optional value substitution.
      */
-    function __trans(string $msgid, ?array $values = null): string
+    function __trans(string $msgid, ?array $values = null, ?string $from = null): string
     {
-        $translated = _gettext($msgid);
+        $translated = FOSSBilling\Core\I18n\TranslationResolver::translate($msgid, $from);
 
         return is_array($values) ? strtr($translated, $values) : $translated;
     }
@@ -24,9 +24,9 @@ if (!function_exists('__pluralTrans')) {
     /**
      * Translate a plural message with optional value substitution.
      */
-    function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null): string
+    function __pluralTrans(string $msgid, string $msgidPlural, int $number, ?array $values = null, ?string $from = null): string
     {
-        $translated = _ngettext($msgid, $msgidPlural, $number);
+        $translated = FOSSBilling\Core\I18n\TranslationResolver::translatePlural($msgid, $msgidPlural, $number, $from);
 
         return is_array($values) ? strtr($translated, $values) : $translated;
     }

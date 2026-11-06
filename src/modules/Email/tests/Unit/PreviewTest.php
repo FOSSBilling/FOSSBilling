@@ -36,12 +36,12 @@ test('bundled email previews render using only synthetic contexts in the real sa
             return ['name' => 'Example Company', 'signature' => 'Example signature', 'email' => 'billing@example.com', 'url' => 'https://example.com'];
         }
     };
-    $url = new FOSSBilling\Url();
+    $url = new FOSSBilling\Core\Url();
     $url->setDi($di);
     $di['url'] = $url;
     $email = new Box\Mod\Email\Service();
     $email->setDi($di);
-    $twig = (new FOSSBilling\Twig\TwigFactory($di))->createEmailEnvironment('UTC', 'en_US');
+    $twig = (new FOSSBilling\Core\Twig\TwigFactory($di))->createEmailEnvironment('UTC', 'en_US');
     $twig->enableStrictVariables();
     $files = (new Symfony\Component\Finder\Finder())->files()->in(PATH_MODS)->path('templates/email')->name('mod_*.html.twig');
     $errors = [];

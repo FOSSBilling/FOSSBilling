@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.fossbilling.net/manifest/v1.json",
+  "title": "FOSSBilling extension manifest v1",
+  "type": "object",
+  "required": ["manifest_version", "type", "id", "name", "version", "description", "author", "license", "requires"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {"const": 1},
+    "type": {"type": "string", "enum": ["module", "theme", "payment-gateway", "server-manager", "domain-registrar", "translation"]},
+    "id": {"type": "string", "pattern": "^[a-z0-9_-]+$", "minLength": 1, "maxLength": 64},
+    "name": {"type": "string", "minLength": 1, "maxLength": 100},
+    "version": {"type": "string", "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"},
+    "description": {"type": "string", "minLength": 1, "maxLength": 500},
+    "author": {
+      "type": "object", "required": ["name"], "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "pattern": "^https?://", "minLength": 1}
+      }
+    },
+    "license": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9.\\-+_:() |]+$"},
+    "homepage_url": {"type": "string", "pattern": "^https?://"},
+    "icon_url": {"type": "string", "pattern": "^(?!/)(?![a-zA-Z][a-zA-Z0-9+.-]*:)(?!.*\\.\\.)[^\\\\]+$"},
+    "requires": {
+      "type": "object", "required": ["fossbilling", "php"], "additionalProperties": false,
+      "properties": {
+        "fossbilling": {"type": "string", "minLength": 1},
+        "php": {"type": "string", "minLength": 1},
+        "modules": {
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z0-9_-]+$"},
+          "additionalProperties": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

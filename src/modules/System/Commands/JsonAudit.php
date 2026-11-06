@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Commands;
 
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Pimple\Container;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -52,7 +52,7 @@ final class JsonAudit extends Command implements InjectionAwareInterface
         $count = 0;
 
         try {
-            foreach ((new \FOSSBilling\Doctrine\JsonAudit())->inspect($this->di['dbal'], $input->getOption('table'), $batch) as $issue) {
+            foreach ((new \FOSSBilling\Core\Doctrine\JsonAudit())->inspect($this->di['dbal'], $input->getOption('table'), $batch) as $issue) {
                 $output->writeln(sprintf('%s.%s id=%s %s', $issue['table'], $issue['column'], $issue['id'], $issue['issue']));
                 ++$count;
             }

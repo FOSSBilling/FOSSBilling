@@ -33,6 +33,12 @@ test('extension is active', function (): void {
     expect($result->getResult())->toBeTrue();
 });
 
+test('extension is active with the module key', function (): void {
+    $result = Tests\Helpers\ApiClient::request('guest/extension/is_on', ['module' => 'index']);
+    expect($result->wasSuccessful())->toBeTrue();
+    expect($result->getResult())->toBeTrue();
+});
+
 test('extension is not active', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/extension/is_on', ['mod' => 'serviceapikey']);
     expect($result->wasSuccessful())->toBeTrue();

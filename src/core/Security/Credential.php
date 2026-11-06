@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace FOSSBilling\Core\Security;
+
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Config;
+
+final class Credential
+{
+    public static function generatePassword(int $length = 8, bool $includeSpecial = false): string
+    {
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        $specialCharacters = '!@#$%&?()+-_';
+
+        $charSet = $characters . strtoupper($characters) . $numbers;
+        if ($includeSpecial) {
+            $charSet .= $specialCharacters;
+        }
+
+        $charSetLength = strlen($charSet);
+
+        $minRequiredLength = $includeSpecial ? 4 : 3;
+        if ($length < $minRequiredLength) {
+            throw new InformationException('Password length must be at least ' . $minRequiredLength . ' characters to meet complexity requirements');
+        }
+
+        $password = '';
+        $password .= $characters[random_int(0, strlen($characters) - 1)];
+        $password .= strtoupper($characters)[random_int(0, strlen($characters) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        if ($includeSpecial) {
+            $password .= $specialCharacters[random_int(0, strlen($specialCharacters) - 1)];
+        }
+
+        for ($i = strlen($password); $i < $length; ++$i) {
+            $password .= $charSet[random_int(0, $charSetLength - 1)];
+        }
+
+        return str_shuffle($password);
+    }
+
+    public static function signCallbackParams(string|int $gatewayId, string|int $invoiceId): string
+    {
+        return hash_hmac('sha256', $gatewayId . '|' . $invoiceId, (string) Config::getProperty('info.salt'));
+    }
+
+    /**
+     * Verify a signature produced by signCallbackParams().
+     */
+    public static function verifyCallbackSignature(string|int $gatewayId, string|int $invoiceId, mixed $signature): bool
+    {
+        if (!is_string($signature) || $signature === '') {
+            return false;
+        }
+
+        $expectedSignature = self::signCallbackParams($gatewayId, $invoiceId);
+
+        return hash_equals($expectedSignature, $signature);
+    }
+}

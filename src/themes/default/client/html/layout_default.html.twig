@@ -278,7 +278,7 @@
         {{ settings.inject_javascript|raw }}
     {% endif %}
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
-    {% if guest.extension_is_on({ "mod": "cookieconsent" }) %}
+    {% if guest.extension_is_on({"module": "cookieconsent" }) %}
         {{ include('mod_cookieconsent_index.html.twig', ignore_missing: true) }}
     {% endif %}
 </div>

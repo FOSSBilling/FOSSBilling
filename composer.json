@@ -18,7 +18,11 @@
     "homepage": "https://fossbilling.org",
     "scripts": {
         "post-install-cmd": [
-            "php src/vendor/symfony/intl/Resources/bin/compress || true"
+            "php src/vendor/symfony/intl/Resources/bin/compress || true",
+            "php tools/composer/sync-rector-phpdoc-parser.php || true"
+        ],
+        "post-update-cmd": [
+            "php tools/composer/sync-rector-phpdoc-parser.php || true"
         ],
         "test": "pest --test-directory ../tests",
         "phpstan": "phpstan analyze --memory-limit=512M",
@@ -45,6 +49,7 @@
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
+        "composer/semver": "^3.5",
         "dicebear/core": "^10.0",
         "dicebear/styles": "^10.0",
         "doctrine/dbal": "^4.5",
@@ -61,7 +66,7 @@
         "nelexa/zip": "^4.0.2",
         "php-debugbar/php-debugbar": "^3.0.0",
         "php-debugbar/twig-bridge": "^2.0.0",
-        "phpmyadmin/motranslator": "^6.0.0",
+        "phpmyadmin/motranslator": "6.0.x-dev#1ba5f5579f0f1ba5befd9c975610b304d5494a87",
         "pimple/pimple": "^3.6",
         "plesk/api-php-lib": "^2.2.1",
         "prinsfrank/standards": "^3.15",
@@ -92,6 +97,7 @@
         "mockery/mockery": "^1.6",
         "pestphp/pest": "^4.0",
         "phpstan/extension-installer": "^1.4.3",
+        "phpstan/phpdoc-parser": "^2.4",
         "phpstan/phpstan": "^2.1.33",
         "phpstan/phpstan-deprecation-rules": "^2.0.3",
         "rector/rector": "^2.3"
@@ -103,7 +109,7 @@
             "Server_": "src/library/"
         },
         "psr-4": {
-            "FOSSBilling\\": "src/library/FOSSBilling/",
+            "FOSSBilling\\Core\\": "src/core/",
             "Box\\Mod\\": "src/modules/"
         },
         "classmap": [

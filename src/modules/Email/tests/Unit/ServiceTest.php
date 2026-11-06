@@ -155,7 +155,7 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
         'sender' => $sender,
         'recipients' => $recipients,
         'subject' => $subject,
-        'content_html' => FOSSBilling\Tools::sanitizeContent($content_html),
+        'content_html' => FOSSBilling\Core\HtmlSanitizerFactory::sanitize($content_html, 'content'),
         'content_text' => $content_text,
         'has_attachment' => false,
         'created_at' => $created->format('Y-m-d H:i:s'),
@@ -169,7 +169,7 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
 
 test('preview variables use synthetic data without decrypting recipient secrets', function (): void {
     $service = new Box\Mod\Email\Service();
-    $crypt = Mockery::mock(FOSSBilling\Crypt::class);
+    $crypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $crypt->shouldNotReceive('decrypt');
     $di = container();
     $di['crypt'] = $crypt;
@@ -224,7 +224,7 @@ test('getVars supplies preview variables for support and staff templates before 
 test('getVars supplies synthetic support examples', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('decrypt');
 
     $di = container();
@@ -258,19 +258,19 @@ test('sendTemplate returns false when template does not exist', function (): voi
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
     $di['em'] = $em;
     $di['crypt'] = $cryptMock;
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
     $service->setDi($di);
@@ -312,19 +312,19 @@ test('sendTemplate sends email when template exists', function (): void {
     $twigStub = Mockery::mock(Twig\Environment::class);
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
@@ -337,7 +337,6 @@ test('sendTemplate sends email when template exists', function (): void {
     $di['twig'] = $twigStub;
     $di['mod'] = $di->protect(fn () => $modMock);
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -391,19 +390,19 @@ test('sendTemplate forwards the attachment without retaining live template varia
         ->andReturn('rendered content');
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
@@ -416,7 +415,6 @@ test('sendTemplate forwards the attachment without retaining live template varia
     $di['twig'] = Mockery::mock(Twig\Environment::class);
     $di['mod'] = $di->protect(fn () => $modMock);
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -474,19 +472,19 @@ test('sendTemplate renders the subject as plaintext, not HTML', function (): voi
         ->andReturn('[A & B Ltd] Invoice created');
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
@@ -499,7 +497,6 @@ test('sendTemplate renders the subject as plaintext, not HTML', function (): voi
     $di['twig'] = Mockery::mock(Twig\Environment::class);
     $di['mod'] = $di->protect(fn () => $modMock);
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -621,21 +618,21 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     $twigStub = Mockery::mock(Twig\Environment::class);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
@@ -652,7 +649,6 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -699,22 +695,22 @@ test('sendTemplate renders client-bound email in the client language', function 
     ]);
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
         'from_name' => 'Test',
         'from_email' => 'test@test.com',
     ]);
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -726,7 +722,6 @@ test('sendTemplate renders client-bound email in the client language', function 
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -774,22 +769,22 @@ test('sendTemplate falls back to the default locale when the client has no langu
     ]);
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
         'from_name' => 'Test',
         'from_email' => 'test@test.com',
     ]);
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -801,7 +796,6 @@ test('sendTemplate falls back to the default locale when the client has no langu
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -856,22 +850,22 @@ test('sendTemplate renders staff broadcast emails in each recipient language', f
     $staffServiceMock->shouldReceive('getAdminGroupMemberRepository')->atLeast()->once()->andReturn($groupMemberRepo);
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
         'from_name' => 'Test',
         'from_email' => 'test@test.com',
     ]);
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
         $api->setDi($di);
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -883,7 +877,6 @@ test('sendTemplate renders staff broadcast emails in each recipient language', f
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -951,14 +944,14 @@ test('sendTemplate only routes client-bound email to a validated billing address
         'last_name' => 'Smith',
     ]);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
         'from_name' => 'Test',
         'from_email' => 'test@test.com',
@@ -1039,14 +1032,14 @@ test('sendTemplate sends to a specific admin via to_admin using the Admin entity
     $clientServiceMock->shouldReceive('get')->never();
     $clientServiceMock->shouldReceive('toApiArray')->never();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
@@ -1095,7 +1088,7 @@ test('sendTemplate throws when to_admin does not resolve to an admin', function 
 
     $di['em'] = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo, $adminRepo);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -1108,7 +1101,7 @@ test('sendTemplate throws when to_admin does not resolve to an admin', function 
         'default_template' => 'TEMPLATE',
         'default_description' => 'DESCRIPTION',
     ]);
-})->throws(FOSSBilling\InformationException::class, 'Admin not found');
+})->throws(FOSSBilling\Core\Exception\InformationException::class, 'Admin not found');
 
 test('sendTemplate does not send to staff when template has no assigned groups', function (): void {
     $service = new Box\Mod\Email\Service();
@@ -1132,16 +1125,16 @@ test('sendTemplate does not send to staff when template has no assigned groups',
     $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn('value');
     $systemService->shouldReceive('renderEmailTplString', 'renderEmailSubjectString')->atLeast()->once()->andReturn('rendered');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
         'from_name' => 'Test',
         'from_email' => 'test@test.com',
     ]);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('encrypt');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
 
     $twigStub = Mockery::mock(Twig\Environment::class);
@@ -1255,7 +1248,7 @@ test('addTemplateToGroup throws when the staff group does not exist', function (
     $service->setDi($di);
 
     $service->addTemplateToGroup($template, 3);
-})->throws(FOSSBilling\InformationException::class, 'Staff group not found');
+})->throws(FOSSBilling\Core\Exception\InformationException::class, 'Staff group not found');
 
 test('removeTemplateFromGroup removes an existing association', function (): void {
     $service = new Box\Mod\Email\Service();
@@ -1492,7 +1485,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $loggerStub = new Tests\Helpers\TestLogger();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->never();
     $configMock = ['salt' => md5(random_bytes(13))];
@@ -1641,7 +1634,7 @@ test('batchSend processes email queue', function (): void {
     $em = emailBuildEm(null, null, $queueRepo);
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([
@@ -1783,7 +1776,7 @@ test('validateAllTemplates reports invalid templates', function (): void {
             expect($vars)->toHaveKeys(['c', 'invoice', 'order', 'hash']);
 
             if ($template === 'Broken') {
-                throw new FOSSBilling\InformationException('Email template syntax error: Unknown "filter" filter');
+                throw new FOSSBilling\Core\Exception\InformationException('Email template syntax error: Unknown "filter" filter');
             }
 
             return $template;
@@ -1917,14 +1910,14 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
         ->once()
         ->andReturn([$template]);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $cryptMock->shouldNotReceive('decrypt');
 
     $systemMock = Mockery::mock();
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
         ->with('{{ content|disallowed_filter }}', Mockery::type('array'))
-        ->andThrow(new FOSSBilling\InformationException('Email template contains disallowed Twig syntax: Filter "disallowed_filter" is not allowed'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Email template contains disallowed Twig syntax: Filter "disallowed_filter" is not allowed'));
     $systemMock->shouldReceive('renderEmailTplString')
         ->with('Hello {{ name }}', Mockery::any())
         ->never();
@@ -1996,7 +1989,7 @@ test('templateCreate throws on invalid content', function (): void {
         ->andReturn('rendered');
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
-        ->andThrow(new FOSSBilling\InformationException('Email template syntax error: Unknown "bad_filter" filter'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Email template syntax error: Unknown "bad_filter" filter'));
 
     $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
         if ($name === 'System' || $name === 'system') {
@@ -2007,7 +2000,7 @@ test('templateCreate throws on invalid content', function (): void {
     $service->setDi($di);
 
     $service->templateCreate('mod_test_broken', 'subject', '{{ x|bad_filter }}', 1);
-})->throws(FOSSBilling\InformationException::class, 'Email template syntax error');
+})->throws(FOSSBilling\Core\Exception\InformationException::class, 'Email template syntax error');
 
 test('EmailTemplate hasError returns true when lastError is set', function (): void {
     $template = new EmailTemplate('test_code', 1);
@@ -2143,7 +2136,7 @@ test('_sendFromQueue only logs an invalid Bcc address once per service instance'
     $em = emailBuildEm();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([

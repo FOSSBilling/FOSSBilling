@@ -11,10 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Theme\Api;
 
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get list of available client area themes.
@@ -48,10 +47,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('theme', 'view');
 
         if ($this->isInvalidClientParameter($data['client'] ?? null)) {
-            throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid "client" parameter.');
         }
 
-        $client = Tools::normalizeBoolean($data['client'] ?? true, true);
+        $client = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['client'] ?? true, true);
 
         return $this->getService()->getThemeConfig($client, null);
     }
@@ -97,12 +96,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('theme', 'manage');
 
         if (!array_key_exists('client', $data)) {
-            throw new \FOSSBilling\InformationException('The "client" parameter is required.');
+            throw new \FOSSBilling\Core\Exception\InformationException('The "client" parameter is required.');
         }
         if ($this->isInvalidClientParameter($data['client'])) {
-            throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid "client" parameter.');
         }
-        $client = Tools::normalizeBoolean($data['client'], true);
+        $client = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['client'], true);
 
         // Confirm the code is actually available for the target area before
         // persisting it. Merely existing on disk isn't enough - a package's
@@ -118,7 +117,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             }
         }
         if (!$isAvailableForArea) {
-            throw new \FOSSBilling\InformationException('Theme ":code" is not available for the selected area.', [':code' => $data['code']]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Theme ":code" is not available for the selected area.', [':code' => $data['code']]);
         }
 
         $systemService = $this->getDi()['mod_service']('system');

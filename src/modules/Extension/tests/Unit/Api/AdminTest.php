@@ -21,6 +21,7 @@ use Box\Mod\Extension\Event\BeforeAdminUninstallExtensionEvent;
 use Box\Mod\Extension\Event\BeforeAdminUpdateExtensionEvent;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use Box\Mod\Extension\Service;
+use FOSSBilling\Core\Enums\ExtensionType;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
@@ -118,16 +119,18 @@ test('uninstall dispatches typed lifecycle events around service cleanup', funct
         ->and($steps[2])->toBeInstanceOf(AfterAdminUninstallExtensionEvent::class);
 });
 
-test('deactivate dispatches typed events around service deactivation', function (): void {
+test('deactivate resolves a legacy mod type to the stored module type', function (): void {
     $api = apiEndpoint(new Box\Mod\Extension\Api\Admin());
     $extension = new Extension();
     setEntityId($extension, 52);
-    $extension->setType('mod');
+    $extension->setType(ExtensionType::Module->value);
     $extension->setName('example');
     $repository = Mockery::mock(ExtensionRepository::class);
+    // The API is still called with the legacy 'mod' discriminator here, as
+    // pre-migration clients and in-flight template payloads do.
     $repository->shouldReceive('findOneByTypeAndName')
         ->once()
-        ->with('mod', 'example')
+        ->with(ExtensionType::Module->value, 'example')
         ->andReturn($extension);
 
     $steps = [];
@@ -158,7 +161,7 @@ test('deactivate dispatches typed events around service deactivation', function 
         ->and($steps)->toHaveCount(3)
         ->and($steps[0])->toBeInstanceOf(BeforeAdminDeactivateExtensionEvent::class)
         ->and($steps[0]->extensionRecordId)->toBe(52)
-        ->and($steps[0]->extensionType)->toBe('mod')
+        ->and($steps[0]->extensionType)->toBe(ExtensionType::Module->value)
         ->and($steps[0]->extensionName)->toBe('example')
         ->and($steps[1])->toBe('deactivate')
         ->and($steps[2])->toBeInstanceOf(AfterAdminDeactivateExtensionEvent::class)
@@ -169,12 +172,12 @@ test('update dispatches the typed before event before the current unsupported up
     $api = apiEndpoint(new Box\Mod\Extension\Api\Admin());
     $extension = new Extension();
     setEntityId($extension, 53);
-    $extension->setType('mod');
+    $extension->setType(ExtensionType::Module->value);
     $extension->setName('example');
     $repository = Mockery::mock(ExtensionRepository::class);
     $repository->shouldReceive('findOneByTypeAndName')
         ->once()
-        ->with('mod', 'example')
+        ->with(ExtensionType::Module->value, 'example')
         ->andReturn($extension);
 
     $steps = [];
@@ -183,7 +186,7 @@ test('update dispatches the typed before event before the current unsupported up
     $service->shouldReceive('update')
         ->once()
         ->with($extension)
-        ->andThrow(new FOSSBilling\InformationException('Update is unavailable'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Update is unavailable'));
     $dispatcher = new SymfonyEventDispatcher();
     $dispatcher->addListener(BeforeAdminUpdateExtensionEvent::class, static function (BeforeAdminUpdateExtensionEvent $event) use (&$steps): void {
         $steps[] = $event;
@@ -198,7 +201,7 @@ test('update dispatches the typed before event before the current unsupported up
     $api->setService($service);
 
     expect(fn () => $api->update(['id' => 'example', 'type' => 'mod']))
-        ->toThrow(FOSSBilling\InformationException::class)
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class)
         ->and($steps)->toHaveCount(1)
         ->and($steps[0])->toBeInstanceOf(BeforeAdminUpdateExtensionEvent::class)
         ->and($steps[0]->extensionRecordId)->toBe(53)

@@ -50,7 +50,7 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
           TARGET_REF: ${{ inputs.target_ref }}
         run: |
-          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+          if [[ ! "${RELEASE_VERSION}" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
             echo "Release version must be valid SemVer without a leading v."
             exit 1
           fi
@@ -121,7 +121,7 @@ jobs:
         if: ${{ inputs.release_notes == 'copilot' }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: 24
+          node-version: 26
           cache: 'npm'
       - name: 'Install Copilot CLI'
         if: ${{ inputs.release_notes == 'copilot' }}
@@ -195,6 +195,19 @@ jobs:
           outputs: type=local,dest=./release-tree
           provenance: false
 
+      - name: 'Verify Manifest Versions'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        working-directory: ./release-tree
+        run: |
+          total=$(find src/modules -mindepth 2 -maxdepth 2 -name manifest.json | wc -l)
+          stamped=$(grep -rl "\"version\": \"${RELEASE_VERSION}\"" src/modules --include=manifest.json | wc -l)
+          if [ "${stamped}" -ne "${total}" ]; then
+            echo "Manifest version stamping failed: ${stamped}/${total} manifests carry ${RELEASE_VERSION}."
+            exit 1
+          fi
+          echo "Verified ${total} module manifests carry the release version."
+
       - name: 'Create Release Archive'
         id: archive
         env:
@@ -228,17 +241,22 @@ jobs:
         # what api.fossbilling.net's `download_url` should point update clients to.
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
-          AWS_S3_ENDPOINT: ${{ vars.CF_R2_ENDPOINT_URL }}
-          AWS_S3_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_S3_BUCKET: ${{ vars.CLOUDFLARE_R2_DOWNLOAD_BUCKET }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           AWS_REGION: 'auto'
         run: |
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID repository variable is not set. Set it under repository Settings > Variables > Actions."
+            exit 1
+          fi
+
           asset="./dist/FOSSBilling-${RELEASE_VERSION}.zip"
           key="releases/${RELEASE_VERSION}/FOSSBilling-${RELEASE_VERSION}.zip"
 
           aws s3 cp "${asset}" "s3://${AWS_S3_BUCKET}/${key}" \
-            --endpoint-url "${AWS_S3_ENDPOINT}" \
+            --endpoint-url "https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" \
             --metadata="digest=${FOSSBILLING_RELEASE_DIGEST},version=${RELEASE_VERSION}" \
             --no-progress
 

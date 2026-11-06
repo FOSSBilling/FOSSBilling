@@ -37,7 +37,7 @@ class AdminGroupRepository extends EntityRepository
     {
         $group = $this->findOneBy(['systemName' => AdminGroup::SYSTEM_SUPER_ADMIN]);
         if (!$group instanceof AdminGroup) {
-            throw new \FOSSBilling\InformationException('Super Administrator group not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Super Administrator group not found');
         }
 
         return $group;

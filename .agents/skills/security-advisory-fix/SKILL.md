@@ -173,6 +173,20 @@ Once the design is settled:
    that territory won't surface until CI actually runs it, so don't be
    surprised by it later.
 
+   **Local-suite gotchas.** Two things block a naive `composer test` here,
+   both verified during a real fix:
+
+   - The bootstrap requires `src/config.php` (gitignored); generate it from
+   the sample the way the Dockerfile does:
+   `php -r 'if (!file_exists("./src/config.php")) { $config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n"); }'` (guarded so existing local settings are never overwritten).
+   - Pest derives eval'd test namespaces from the absolute checkout path,
+   so a digit-leading path segment (every opencode session worktree:
+   `.../worktree/736bea/<name>/`) kills the suite at load with "Unable to
+   create test case" on files the diff never touched. The tree is fine; the
+   path isn't. Run the suite from a clean-path checkout:
+   `git worktree add --detach /private/tmp/<name>`, then composer install
+   and generate the config there.
+
    All of the above is PHP-side. If the fix (or its regression test) touches
    browser/theme code instead, run the frontend equivalent too:
    `npm run test:js` for the JS unit suite and `npm run build` (which
@@ -246,6 +260,19 @@ Confirm CI is actually green on the merge commit on the base branch, not
 just on the PR branch before merging. A squash-merge or a concurrent change
 to the base branch can still surface something new. Clean up the now-merged
 branch and worktree once confirmed.
+
+### Backports to maintenance branches
+
+Before naming a patched version, check for a maintenance branch of the
+current minor line (here `0.8-next`, which takes explicit backports). If it's
+affected, the fixed version users actually get is its next patch release,
+not the next release from `main`, and the fix should be backported there.
+The cheap applicability check: `git merge-tree --write-tree
+--merge-base=<fix-commit-parent> <branch-tip> <fix-commit>` (exit 0 = clean
+apply), then confirm the footprint by diffing the returned tree against the
+branch tip. Cherry-pick in a detached worktree, run the suite, and follow
+the branch's commit-message convention ("Backport X to 0.8-next"), keeping
+the original body and a reference to the main PR.
 
 Publishing or updating the advisory itself (the patched-version field,
 whether and when it goes public) is always the maintainer's call, never

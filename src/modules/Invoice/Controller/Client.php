@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Controller;
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -28,7 +28,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/invoice', 'get_invoices', [], static::class);
         $app->post('/invoice', 'get_invoices', [], static::class);
@@ -42,14 +42,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/invoice/pdf/:hash', 'get_pdf', ['hash' => '[a-z0-9]+'], static::class);
     }
 
-    public function get_invoices(\Box_App $app): string
+    public function get_invoices(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_invoice_index');
     }
 
-    public function get_invoice(\Box_App $app, $hash): string|Response
+    public function get_invoice(\FOSSBilling\Core\Http\App $app, $hash): string|Response
     {
         $data = [
             'hash' => $hash,
@@ -62,7 +62,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_invoice', ['invoice' => $invoice]);
     }
 
-    public function get_invoice_print(\Box_App $app, $hash): string|Response
+    public function get_invoice_print(\FOSSBilling\Core\Http\App $app, $hash): string|Response
     {
         $data = [
             'hash' => $hash,
@@ -75,7 +75,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_print', ['invoice' => $invoice]);
     }
 
-    public function get_thankyoupage(\Box_App $app, $hash): string|Response
+    public function get_thankyoupage(\FOSSBilling\Core\Http\App $app, $hash): string|Response
     {
         $data = [
             'hash' => $hash,
@@ -88,7 +88,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_thankyou', ['invoice' => $invoice]);
     }
 
-    public function get_banklink(\Box_App $app, $hash, $id): string|Response
+    public function get_banklink(\FOSSBilling\Core\Http\App $app, $hash, $id): string|Response
     {
         $data = [
             'allow_subscription' => $app->getRequest()->query->getBoolean('allow_subscription', true),
@@ -116,7 +116,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_banklink', ['payment' => $payment, 'invoice' => $invoice]);
     }
 
-    public function get_pdf(\Box_App $app, $hash): Response
+    public function get_pdf(\FOSSBilling\Core\Http\App $app, $hash): Response
     {
         $api = $this->di['api_guest'];
         $data = [
@@ -134,13 +134,13 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!$response instanceof Response) {
-            throw new \FOSSBilling\Exception('Invoice PDF response could not be generated');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invoice PDF response could not be generated');
         }
 
         return $response;
     }
 
-    private function getInvoiceOrRedirect(\Box_App $app, array $data): array|Response
+    private function getInvoiceOrRedirect(\FOSSBilling\Core\Http\App $app, array $data): array|Response
     {
         $api = $this->di['api_guest'];
 

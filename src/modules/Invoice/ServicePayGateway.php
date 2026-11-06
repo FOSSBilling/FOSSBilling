@@ -16,9 +16,8 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Sanitizer\GatewaySvgSanitizer;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
@@ -135,7 +134,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $available = $this->getAvailable();
         if (!in_array($code, $available)) {
-            throw new \FOSSBilling\Exception('Payment gateway is not available for installation.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway is not available for installation.');
         }
 
         $new = new PayGateway();
@@ -208,7 +207,7 @@ class ServicePayGateway implements InjectionAwareInterface
                 $declared = $class::getSecretFields();
                 $secrets = array_merge($secrets, $declared);
             }
-        } catch (\FOSSBilling\Exception) {
+        } catch (\FOSSBilling\Core\Exception\BaseException) {
             // Gateway adapter could not be resolved; fall back to the form's own 'secret' flags below.
         }
 
@@ -225,9 +224,9 @@ class ServicePayGateway implements InjectionAwareInterface
         return array_values(array_unique([...$secrets, ...$this->secretCodec()->names($model->getConfig() ?? [])]));
     }
 
-    private function secretCodec(): \FOSSBilling\SecretFields
+    private function secretCodec(): \FOSSBilling\Core\Security\SecretFields
     {
-        return new \FOSSBilling\SecretFields($this->di['crypt']);
+        return new \FOSSBilling\Core\Security\SecretFields($this->di['crypt']);
     }
 
     public function migrateConfigSecrets(): void
@@ -237,7 +236,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
             try {
                 $fields = $this->getSecretFields($model);
-            } catch (\FOSSBilling\Exception) {
+            } catch (\FOSSBilling\Core\Exception\BaseException) {
                 $this->di['logger']->warning('Credential encryption deferred for unavailable gateway adapter #{id}', ['id' => $model->getId()]);
 
                 continue;
@@ -274,6 +273,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
         $existingConfig = $this->secretCodec()->reveal($model->getConfig() ?? []);
         $mergedConfig = $existingConfig;
+        $secretFields = [];
         if (isset($data['config']) && is_array($data['config'])) {
             $secretFields = $this->getSecretFields($model);
             foreach ($data['config'] as $key => $value) {
@@ -288,7 +288,7 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         $customLogo = $model->getCustomLogo();
-        if (Tools::normalizeBoolean($data['remove_custom_logo'] ?? false)) {
+        if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['remove_custom_logo'] ?? false)) {
             $customLogo = null;
         } elseif ($file !== null) {
             $customLogo = $this->storeUploadedLogo($file);
@@ -335,9 +335,9 @@ class ServicePayGateway implements InjectionAwareInterface
             }
             new $class($adapterConfig);
         } catch (\Payment_Exception $e) {
-            throw new \FOSSBilling\Exception($e->getMessage(), null, 819);
+            throw new \FOSSBilling\Core\Exception\BaseException($e->getMessage(), null, 819);
         } catch (\Throwable $e) {
-            throw new \FOSSBilling\Exception('Payment gateway configuration error: ' . $e->getMessage(), null, 819);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway configuration error: ' . $e->getMessage(), null, 819);
         }
     }
 
@@ -372,15 +372,15 @@ class ServicePayGateway implements InjectionAwareInterface
         $id = (int) $model->getId();
 
         if ($this->di['em']->getRepository(Invoice::class)->existsByGatewayId($id)) {
-            throw new \FOSSBilling\InformationException('Cannot remove payment gateway with existing invoices');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove payment gateway with existing invoices');
         }
 
         if ($this->di['em']->getRepository(Subscription::class)->existsByGatewayId($id)) {
-            throw new \FOSSBilling\InformationException('Cannot remove payment gateway with existing subscriptions');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove payment gateway with existing subscriptions');
         }
 
         if ($this->di['em']->getRepository(Transaction::class)->existsByGatewayId($id)) {
-            throw new \FOSSBilling\InformationException('Cannot remove payment gateway with existing transactions');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove payment gateway with existing transactions');
         }
 
         $this->di['em']->remove($model);
@@ -409,22 +409,22 @@ class ServicePayGateway implements InjectionAwareInterface
 
                 if (!empty($config['logo'])) {
                     $gateway['logo'] = $config['logo'];
-                    $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo']);
+                    $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo'], $gtw->getGateway());
                 } else {
                     // Templates read gtw.logo.logo/height/width unconditionally,
                     // so always provide the key even when the adapter ships no logo.
                     $gateway['logo'] = [
-                        'logo' => $this->resolveGatewayLogo([]),
+                        'logo' => $this->resolveGatewayLogo([], $gtw->getGateway()),
                         'height' => '50px',
                         'width' => '50px',
                     ];
                 }
 
                 if (($customLogoUrl = $this->getCustomLogoUrl($gtw)) !== null) {
-                    // Custom images reuse the adapter's display size.
+                    // Custom images keep their aspect ratio; width follows the adapter size, height capped in templates.
                     $height = $gateway['logo']['height'] ?? '50px';
                     $width = $gateway['logo']['width'] ?? '150px';
-                    $gateway['logo'] = ['logo' => $customLogoUrl, 'avif' => $this->getCustomLogoUrl($gtw, true), 'height' => $height, 'width' => $width];
+                    $gateway['logo'] = ['logo' => $customLogoUrl, 'avif' => $this->getCustomLogoUrl($gtw, true), 'height' => $height, 'width' => $width, 'custom' => true];
                 }
 
                 $result[] = $gateway;
@@ -448,7 +448,7 @@ class ServicePayGateway implements InjectionAwareInterface
             return null;
         }
 
-        return $this->di['tools']->url('/public/gateways/custom/' . $filename);
+        return $this->di['url']->link('/public/gateways/custom/' . $filename);
     }
 
     /** Import once; client pages always use the stored local image. */
@@ -457,7 +457,7 @@ class ServicePayGateway implements InjectionAwareInterface
         if (!is_string($url) || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)
             || !in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)
             || parse_url($url, PHP_URL_USER) !== null || parse_url($url, PHP_URL_PASS) !== null) {
-            throw new \FOSSBilling\Exception('Enter a valid HTTP or HTTPS image URL without credentials.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Enter a valid HTTP or HTTPS image URL without credentials.');
         }
 
         $client = new NoPrivateNetworkHttpClient($this->di['http_client']);
@@ -475,17 +475,17 @@ class ServicePayGateway implements InjectionAwareInterface
                 },
             ]);
             if ($response->getStatusCode() !== 200) {
-                throw new \FOSSBilling\Exception('Could not download the payment gateway image.');
+                throw new \FOSSBilling\Core\Exception\InformationException('Could not download the payment gateway image.');
             }
             $bytes = '';
             foreach ($client->stream($response) as $chunk) {
                 $bytes .= $chunk->getContent();
                 if (strlen($bytes) > self::MAX_LOGO_BYTES) {
-                    throw new \FOSSBilling\Exception('Payment gateway images must be no larger than 2 MB.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway images must be no larger than 2 MB.');
                 }
             }
         } catch (ExceptionInterface) {
-            throw new \FOSSBilling\Exception('Could not download the payment gateway image. Use a publicly accessible image URL, no larger than 2 MB.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Could not download the payment gateway image. Use a publicly accessible image URL, no larger than 2 MB.');
         } finally {
             $response?->cancel();
         }
@@ -496,10 +496,10 @@ class ServicePayGateway implements InjectionAwareInterface
     private function storeUploadedLogo(UploadedFile $file): string
     {
         if (!$file->isValid()) {
-            throw new \FOSSBilling\Exception('Payment gateway image upload failed.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway image upload failed.');
         }
         if ($file->getSize() > self::MAX_LOGO_BYTES) {
-            throw new \FOSSBilling\Exception('Payment gateway images must be no larger than 2 MB.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway images must be no larger than 2 MB.');
         }
 
         return $this->storeGatewayLogo($this->filesystem->readFile($file->getPathname()));
@@ -508,7 +508,7 @@ class ServicePayGateway implements InjectionAwareInterface
     private function storeGatewayLogo(string $bytes): string
     {
         if (strlen($bytes) > self::MAX_LOGO_BYTES) {
-            throw new \FOSSBilling\Exception('Payment gateway images must be no larger than 2 MB.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway images must be no larger than 2 MB.');
         }
 
         $avif = null;
@@ -524,12 +524,12 @@ class ServicePayGateway implements InjectionAwareInterface
             $bytes = GatewaySvgSanitizer::sanitize($bytes);
             $extension = 'svg';
         } elseif ($extension === null || $image[0] <= 0 || $image[1] <= 0 || $image[0] * $image[1] > self::MAX_LOGO_PIXELS) {
-            throw new \FOSSBilling\Exception('Use a PNG, JPEG, WebP, AVIF, or SVG image with no more than 4 million pixels.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Use a PNG, JPEG, WebP, AVIF, or SVG image with no more than 4 million pixels.');
         } else {
             [$bytes, $extension, $avif] = $this->normalizeRasterLogo($bytes, $extension);
         }
         if (strlen($bytes) > self::MAX_LOGO_BYTES || ($avif !== null && strlen($avif) > self::MAX_LOGO_BYTES)) {
-            throw new \FOSSBilling\Exception('The processed payment gateway image exceeds 2 MB. Use a smaller image.');
+            throw new \FOSSBilling\Core\Exception\InformationException('The processed payment gateway image exceeds 2 MB. Use a smaller image.');
         }
 
         // Gateway copies share stored images.
@@ -561,7 +561,7 @@ class ServicePayGateway implements InjectionAwareInterface
         }
         $image = @imagecreatefromstring($bytes);
         if ($image === false) {
-            throw new \FOSSBilling\Exception('Could not decode the payment gateway image.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Could not decode the payment gateway image.');
         }
         imagepalettetotruecolor($image);
         imagesavealpha($image, true);
@@ -579,7 +579,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
         try {
             if (!@$encoder($image, null, $quality) || ob_get_length() === 0) {
-                throw new \FOSSBilling\Exception('Could not process the payment gateway image.');
+                throw new \FOSSBilling\Core\Exception\InformationException('Could not process the payment gateway image.');
             }
 
             return (string) ob_get_contents();
@@ -588,22 +588,30 @@ class ServicePayGateway implements InjectionAwareInterface
         }
     }
 
-    public function resolveGatewayLogo(array $logoConfig): string
+    public function resolveGatewayLogo(array $logoConfig, ?string $gateway = null): string
     {
         $filename = $logoConfig['logo'] ?? 'default.png';
+        $encodedFilename = implode('/', array_map(rawurlencode(...), explode('/', $filename)));
+
+        if ($gateway !== null && $gateway !== '') {
+            $nestedPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, $filename);
+            if ($this->filesystem->exists($nestedPath)) {
+                return $this->di['url']->link("/library/Payment/Adapter/{$gateway}/{$encodedFilename}");
+            }
+        }
 
         $libraryPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $filename);
         $publicPath = Path::join(PATH_ROOT, 'public', 'gateways', $filename);
 
         if ($this->filesystem->exists($libraryPath)) {
-            return $this->di['tools']->url("/library/Payment/Adapter/{$filename}");
+            return $this->di['url']->link("/library/Payment/Adapter/{$encodedFilename}");
         }
 
         if ($this->filesystem->exists($publicPath)) {
-            return $this->di['tools']->url("/public/gateways/{$filename}");
+            return $this->di['url']->link("/public/gateways/{$encodedFilename}");
         }
 
-        return $this->di['tools']->url('/public/gateways/default.png');
+        return $this->di['url']->link('/public/gateways/default.png');
     }
 
     public function canPerformRecurrentPayment(PayGateway $model): bool
@@ -648,11 +656,11 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['cancel_url'] = $this->getCancelUrl($pg, $model);
         $defaults['notify_url'] = $this->getCallbackUrl($pg, $model);
         $defaults['redirect_url'] = $this->getCallbackRedirect($pg, $model);
-        $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
+        $defaults['continue_shopping_url'] = $this->di['url']->link('/order');
         $defaults['single_page'] = true;
         if ($model instanceof Invoice) {
             $defaults['thankyou_url'] = $this->getPaymentReturnUrl($model, 'thankyou');
-            $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->getHash()}");
+            $defaults['invoice_url'] = $this->di['url']->link("/invoice/{$model->getHash()}");
         }
 
         if (isset($optional['auto_redirect'])) {
@@ -665,7 +673,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $class = $this->getAdapterClassName($pg);
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found.', [':adapter' => $class]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway :adapter was not found.', [':adapter' => $class]);
         }
 
         $adapter = new $class($config);
@@ -694,7 +702,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $class = $this->getAdapterClassName($pg);
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $pg->getGateway()]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway :adapter was not found', [':adapter' => $pg->getGateway()]);
         }
 
         if (!method_exists($class, 'getConfig')) {
@@ -711,7 +719,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $gateway = $pg->getGateway();
         if ($gateway === null || $gateway === '') {
-            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => '']);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway :adapter was not found', [':adapter' => '']);
         }
         $class = "Payment_Adapter_{$gateway}";
 

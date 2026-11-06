@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\SentryHelper;
+use FOSSBilling\Core\SentryHelper;
 use Symfony\Component\Filesystem\Path;
 
 function invokeIsThirdPartyAdapter(string $path): bool

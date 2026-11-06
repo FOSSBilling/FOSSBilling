@@ -238,6 +238,7 @@ test('getThemeSettings returns theme settings', function (): void {
         ->atLeast()
         ->once()
         ->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('default');
 
     $di = themeContainerWithRepository($repositoryMock);
 
@@ -274,6 +275,43 @@ test('getThemeSettings fills keys missing from saved presets with shipped defaul
     expect($result)->toBe(['custom_key' => 'saved', 'new_key' => 'default-value']);
 });
 
+test('getThemeSettings falls back to the shipped preset for a preset created in the admin', function (): void {
+    $service = new Service();
+    $extensionMetaModel = (new ExtensionMeta())->setMetaValue(json_encode(['custom_key' => 'saved']));
+
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')->andReturn($extensionMetaModel);
+
+    $themeMock = Mockery::mock(Model\Theme::class);
+    $themeMock->shouldReceive('getName')->andReturn('default');
+    // 'My preset' exists only in the database, so settings_data.json has no entry for it.
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('My preset')->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('Default');
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('Default')->andReturn(['custom_key' => 'shipped', 'new_key' => 'shipped-value']);
+
+    $service->setDi(themeContainerWithRepository($repositoryMock));
+
+    expect($service->getThemeSettings($themeMock, 'My preset'))->toBe(['custom_key' => 'saved', 'new_key' => 'shipped-value']);
+});
+
+test('getThemeSettings returns shipped defaults for a preset without saved metadata', function (): void {
+    $service = new Service();
+
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')->andReturn(null);
+
+    $themeMock = Mockery::mock(Model\Theme::class);
+    $themeMock->shouldReceive('getName')->andReturn('default');
+    // 'My preset' exists only in the database, so settings_data.json has no entry for it.
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('My preset')->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('Default');
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('Default')->andReturn(['custom_key' => 'shipped', 'new_key' => 'shipped-value']);
+
+    $service->setDi(themeContainerWithRepository($repositoryMock));
+
+    expect($service->getThemeSettings($themeMock, 'My preset'))->toBe(['custom_key' => 'shipped', 'new_key' => 'shipped-value']);
+});
+
 test('getThemeSettings with empty presets returns empty array', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -297,6 +335,7 @@ test('getThemeSettings with empty presets returns empty array', function (): voi
         ->atLeast()
         ->once()
         ->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('default');
 
     $di = themeContainerWithRepository($repositoryMock);
     $serviceMock->setDi($di);
@@ -594,7 +633,7 @@ test('updateSettings denies unauthorized writes before persistence', function ()
     $di = container();
     $staff = $di['mod_service']('Staff');
     $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings')
-        ->andThrow(new FOSSBilling\InformationException('Permission denied', null, 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied', null, 403));
     $repository = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
     $repository->shouldNotReceive('findOneByExtensionAndScope');
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -606,5 +645,5 @@ test('updateSettings denies unauthorized writes before persistence', function ()
     $service->setDi($di);
 
     expect(fn () => $service->updateSettings(new Model\Theme('default/client'), 'Default', ['inject_javascript' => '<script>alert(1)</script>']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied', 403);
 });

@@ -6,7 +6,8 @@ use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Enums\ExtensionType;
+use FOSSBilling\Core\Exception\InformationException;
 
 function createMassmailerDi(?Connection $dbal = null): Pimple\Container
 {
@@ -16,7 +17,7 @@ function createMassmailerDi(?Connection $dbal = null): Pimple\Container
     $em->shouldReceive('getRepository')->with(MassmailerMessage::class)->andReturn($repo);
     $di['em'] = $em;
     $di['dbal'] = $dbal ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     return $di;
 }
@@ -63,7 +64,7 @@ function createSendMessageDi(Box\Mod\Client\Entity\Client $client): Pimple\Conta
     $systemService->shouldReceive('renderEmailTplString')->andReturn('Content');
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')->with('mod', 'demo')->andReturn(false);
+    $extensionService->shouldReceive('isExtensionActive')->with(ExtensionType::Module->value, 'demo')->andReturn(false);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendMail')->zeroOrMoreTimes();
@@ -206,7 +207,7 @@ test('install creates the mod_massmailer table portably instead of via raw MySQL
     // against a real SQLite connection. mod_massmailer already exists in the pre-cutover schema, so this
     // hook was already redundant on MySQL; it's only load-bearing on PG/SQLite.
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
 
     expect($connection->createSchemaManager()->tablesExist(['mod_massmailer']))->toBeFalse();
 

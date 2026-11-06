@@ -22,13 +22,18 @@ use Symfony\Component\HttpFoundation\Request;
 function container(): Container
 {
     $di = new Container();
-    $di['crypt'] = fn (): \FOSSBilling\Crypt => new \FOSSBilling\Crypt();
+    $di['crypt'] = fn (): \FOSSBilling\Core\Security\Crypt => new \FOSSBilling\Core\Security\Crypt();
     $di['config'] = [
         'salt' => 'test_salt_' . uniqid(),
         'url' => 'http://localhost/',
     ];
-    $di['validator'] = fn (): \FOSSBilling\Validate => new \FOSSBilling\Validate();
-    $di['tools'] = fn (): \FOSSBilling\Tools => new \FOSSBilling\Tools();
+    $di['url'] = function (): \FOSSBilling\Core\Url {
+        $url = new \FOSSBilling\Core\Url();
+        $url->setBaseUri(defined('SYSTEM_URL') ? (string) SYSTEM_URL : '/');
+
+        return $url;
+    };
+    $di['validator'] = fn (): \FOSSBilling\Core\Validation\Validator => new \FOSSBilling\Core\Validation\Validator();
     $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {
         public array $calls = [];
@@ -68,7 +73,7 @@ function container(): Container
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
     $di['session'] = static function (): object {
-        $session = \Mockery::mock(\FOSSBilling\Session::class)->shouldIgnoreMissing();
+        $session = \Mockery::mock(\FOSSBilling\Core\Security\Session::class)->shouldIgnoreMissing();
         $session->shouldReceive('regenerateId')->byDefault()->andReturnNull();
         $session->shouldReceive('set')->byDefault()->andReturnNull();
         $session->shouldReceive('get')->byDefault()->andReturnNull();
@@ -126,7 +131,7 @@ function container(): Container
 
         return $dbal;
     };
-    $di['event_dispatcher'] = fn (): \FOSSBilling\Events\EventDispatcher => new \FOSSBilling\Events\EventDispatcher(
+    $di['event_dispatcher'] = fn (): \FOSSBilling\Core\Events\EventDispatcher => new \FOSSBilling\Core\Events\EventDispatcher(
         static fn (): array => [],
         static fn (string $module): object => throw new \LogicException('No module listeners are configured in the test container.'),
     );
@@ -152,24 +157,24 @@ function container(): Container
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
         }
 
-        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\PaginationOptions $pagination, mixed ...$apiArrayArgs): array
+        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\Core\Pagination\Options $pagination, mixed ...$apiArrayArgs): array
         {
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => $pagination->page, 'per_page' => $pagination->perPage];
         }
     };
     $di['rate_limiter'] = fn (): object => new class {
-        public function consume(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+        public function consume(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Core\Security\RateLimitResult
         {
-            return new \FOSSBilling\Security\RateLimitResult($policyName, false, null, null);
+            return new \FOSSBilling\Core\Security\RateLimitResult($policyName, false, null, null);
         }
 
-        public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+        public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Core\Security\RateLimitResult
         {
             return $this->consume($policyName, $subject, $tokens);
         }
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
-    $di['cookie_queue'] = fn (): \FOSSBilling\Http\CookieQueue => new \FOSSBilling\Http\CookieQueue();
+    $di['cookie_queue'] = fn (): \FOSSBilling\Core\Http\CookieQueue => new \FOSSBilling\Core\Http\CookieQueue();
     $di['em'] = static function () use ($di): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
@@ -423,6 +428,31 @@ function accessPrivate(object $instance, string $property, mixed $value = null):
 
     // Otherwise, get the property value
     return $prop->getValue($instance);
+}
+
+/**
+ * Create a Crypt double that emulates the real encrypt/decrypt contract
+ * (v2:-prefixed ciphertext, false for legacy plaintext) without depending
+ * on the application config passphrase.
+ */
+function cryptMock(): object
+{
+    $crypt = \Mockery::mock(\FOSSBilling\Core\Security\Crypt::class);
+    $crypt->shouldReceive('encrypt')
+        ->byDefault()
+        ->andReturnUsing(static fn (string $text, ?string $pass = null): string => \FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX . base64_encode($text));
+    $crypt->shouldReceive('decrypt')
+        ->byDefault()
+        ->andReturnUsing(static function (?string $text, ?string $pass = null): string|false {
+            if (!is_string($text) || !str_starts_with($text, \FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX)) {
+                return false;
+            }
+            $decoded = base64_decode(substr($text, strlen(\FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX)), true);
+
+            return $decoded === false ? false : $decoded;
+        });
+
+    return $crypt;
 }
 
 /**

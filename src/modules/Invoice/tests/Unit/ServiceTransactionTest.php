@@ -140,7 +140,7 @@ test('processed transaction history fields are frozen', function (): void {
     // Money and history fields cannot change once the transaction processed.
     foreach ([['amount' => '99.99'], ['currency' => 'EUR'], ['txn_id' => 'other'], ['invoice_id' => 2]] as $data) {
         expect(fn () => $service->update($transactionModel, $data))
-            ->toThrow(FOSSBilling\InformationException::class, 'record money that already moved');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'record money that already moved');
     }
 
     // Operational annotations may still be edited.
@@ -179,7 +179,7 @@ test('transaction cannot be re-pointed to a canceled invoice', function (): void
     $transactionModel = createEntity(Transaction::class, ['id' => 1]);
 
     expect(fn () => $service->update($transactionModel, ['invoice_id' => 9]))
-        ->toThrow(FOSSBilling\InformationException::class, 'canceled, refunded, or replaced');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'canceled, refunded, or replaced');
 });
 
 test('processed transactions cannot be deleted', function (): void {
@@ -193,7 +193,7 @@ test('processed transactions cannot be deleted', function (): void {
     $transactionModel->setStatus(Transaction::STATUS_PROCESSED);
 
     expect(fn () => $service->delete($transactionModel))
-        ->toThrow(FOSSBilling\InformationException::class, 'record money that already moved');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'record money that already moved');
 });
 
 test('deleting a transaction removes its orphaned balance rows', function (): void {
@@ -231,7 +231,7 @@ test('throws exception when creating transaction with missing invoice id', funct
     ];
 
     expect(fn (): ?int => $service->create($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Transaction invoice ID is missing')
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Transaction invoice ID is missing')
         ->and($events)->toHaveCount(1)
         ->and($events[0]->input)->toBe(['skip_validation' => false]);
 });
@@ -245,7 +245,7 @@ test('throws exception when creating transaction with missing gateway id', funct
     ];
 
     expect(fn (): ?int => $service->create($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment gateway ID is missing');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Payment gateway ID is missing');
 });
 
 test('creates a transaction with safe lifecycle events and excludes raw IPN and credential input', function (): void {
@@ -298,6 +298,72 @@ test('creates a transaction with safe lifecycle events and excludes raw IPN and 
         ->and($events[1][0])->toBeInstanceOf(AfterAdminTransactionCreateEvent::class)
         ->and($events[1][0]->transactionId)->toBe(27)
         ->and($events[1][1])->toBeTrue();
+});
+
+test('stores only an allow-list of the callback server data', function (): void {
+    $stored = null;
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once()->with(Mockery::on(static function (Transaction $transaction) use (&$stored): bool {
+        setEntityId($transaction, 28);
+        $stored = $transaction;
+
+        return true;
+    }));
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(null, null, $em);
+    $service->getDi()['event_dispatcher'] = new SymfonyEventDispatcher();
+
+    $service->create([
+        'skip_validation' => true,
+        'source' => 'ipn',
+        'server' => [
+            'REMOTE_ADDR' => '203.0.113.9',
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_TIME_FLOAT' => 1790000000.123456,
+            'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+            'HTTP_USER_AGENT' => 'GatewayBot/1.0',
+            'HTTP_PAYPAL_TRANSMISSION_SIG' => 'signature-value',
+            'HTTP_COOKIE' => 'fb_sid=session-secret; BBLANG=en',
+            'HTTP_AUTHORIZATION' => 'Bearer authorization-secret',
+            'PHP_AUTH_PW' => 'basic-auth-secret',
+            'DB_PASSWORD' => 'environment-secret',
+        ],
+    ]);
+
+    $ipn = $stored->getIpn();
+
+    expect($ipn['server'])->toBe([
+        'REMOTE_ADDR' => '203.0.113.9',
+        'REQUEST_METHOD' => 'POST',
+        'REQUEST_TIME_FLOAT' => 1790000000.123456,
+        'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+        'HTTP_USER_AGENT' => 'GatewayBot/1.0',
+        'HTTP_PAYPAL_TRANSMISSION_SIG' => 'signature-value',
+    ])
+        ->and($stored->getIpn())->not->toContain('session-secret')
+        ->not->toContain('authorization-secret')
+        ->not->toContain('basic-auth-secret')
+        ->not->toContain('environment-secret');
+});
+
+test('a callback without server data stores none', function (): void {
+    $stored = null;
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once()->with(Mockery::on(static function (Transaction $transaction) use (&$stored): bool {
+        setEntityId($transaction, 29);
+        $stored = $transaction;
+
+        return true;
+    }));
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(null, null, $em);
+    $service->getDi()['event_dispatcher'] = new SymfonyEventDispatcher();
+
+    $service->create(['skip_validation' => true, 'source' => 'ipn']);
+
+    expect(json_decode((string) $stored->getIpn(), true)['server'])->toBeNull();
 });
 
 test('deletes a transaction', function (): void {
@@ -648,7 +714,7 @@ test('claimForProcessing executes on SQLite despite the reserved table name', fu
     // A real connection, not a mock, is the only way to prove the quoting works.
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([Symfony\Component\Filesystem\Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new Doctrine\ORM\EntityManager(
         Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]),
         $config
@@ -842,7 +908,7 @@ test('offline approval rejects overlapping requests and processed retries', func
     $database = $filesystem->tempnam(sys_get_temp_dir(), 'approval-race-');
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $firstEm = new Doctrine\ORM\EntityManager(
         Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $database]),
         $config
@@ -868,7 +934,7 @@ test('offline approval rejects overlapping requests and processed retries', func
         $secondTx = $secondEm->find(Transaction::class, $id);
         $secondService = new ServiceTransaction();
         $dispatches = 0;
-        $adapter = new readonly class(function () use ($firstEm, $secondEm, $secondService, $secondTx, $tx, $id, &$dispatches): void {
+        $settle = function () use ($firstEm, $secondEm, $secondService, $secondTx, $tx, $id, &$dispatches): void {
             ++$dispatches;
             if ($dispatches > 1) {
                 throw new RuntimeException('overlapping approval reached settlement');
@@ -882,7 +948,8 @@ test('offline approval rejects overlapping requests and processed retries', func
                 ->and($tx->getErrorCode())->toBeNull();
             $tx->setStatus(Transaction::STATUS_PROCESSED);
             $firstEm->flush();
-        }) {
+        };
+        $adapter = new readonly class($settle) {
             public function __construct(private Closure $settle)
             {
             }
@@ -936,7 +1003,7 @@ test('approveTransaction refuses automated gateways', function (): void {
     $service = transactionService();
 
     expect(fn () => $service->approveTransaction($transactionModel))
-        ->toThrow(FOSSBilling\Exception::class, 'does not require manual approval');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'does not require manual approval');
 });
 
 test('processReceivedATransactions skips offline gateways', function (): void {

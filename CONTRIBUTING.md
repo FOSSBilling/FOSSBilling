@@ -62,14 +62,14 @@ Other modules extend the whole FOSSBilling API with any functionality needed. Ch
 
 ### Typed module events
 
-FOSSBilling modules use typed events for extension points. Event classes extend `FOSSBilling\Events\Event`, and each module keeps its event classes in `src/modules/<Module>/Event/`. The shared base event is in `src/library/FOSSBilling/Events/Event.php`.
+FOSSBilling modules use typed events for extension points. Event classes extend `FOSSBilling\Core\Events\Event`, and each module keeps its event classes in `src/modules/<Module>/Event/`. The shared base event is in `src/core/Events/Event.php`.
 
 Define an event in the owning module's `Event/` directory and dispatch it from the code that owns the operation:
 
 ```php
 namespace Box\Mod\Example\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 final class BeforeExampleOperationEvent extends Event
 {
@@ -199,6 +199,33 @@ We would like FOSSBilling to be available to as many people in as many languages
 The software is primarily written in English. If you are a native or fluent speaker of another language then we could use your help with the translations.
 
 We use Crowdin to manage translations. You can take a look at the [getting started guide](https://support.crowdin.com/crowdin-intro/), and then get involved in translating at [https://translate.fossbilling.org](https://translate.fossbilling.org).
+
+#### Translation lookup in code
+
+<!-- cspell:words msgfmt -->
+
+Twig templates under `src/modules/<Module>/` look up translations in that module, then core, then return the original English. Layouts, includes, and macros use their own file's module. Templates elsewhere, including database-stored templates, use core by default.
+
+Use `from` to override the detected source:
+
+```twig
+{{ 'Save'|trans(from: 'core') }}
+{{ 'Hello :name'|trans({':name': client.first_name}, from: 'cookieconsent') }}
+```
+
+PHP helpers and translated exceptions accept `from`. Without it, they keep the current translation source:
+
+```php
+__trans('Cookie Consent Settings', from: 'cookieconsent');
+__pluralTrans(':count cookie', ':count cookies', $count, [':count' => $count], from: 'cookieconsent');
+throw new InformationException('Unable to save settings.', from: 'cookieconsent');
+```
+
+Sources use lowercase module IDs. Module translations load from `src/modules/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo`. Missing files and missing or empty entries fall back; intentional translations identical to English are preserved. Lookups keep the current language and global translation source unchanged.
+
+MoTranslator selects plural forms; empty forms fall back individually. Validate translation files with `msgfmt --check --check-format` before distributing them.
+
+MoTranslator is temporarily pinned to [upstream fix `1ba5f557`](https://github.com/phpmyadmin/motranslator/commit/1ba5f5579f0f1ba5befd9c975610b304d5494a87) for boolean plural rules such as `n != 1`. When a stable 6.x release includes it, require that release or newer and update the lockfile.
 
 ### Sponsoring the project
 

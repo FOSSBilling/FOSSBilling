@@ -9,8 +9,8 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\JsonMigration;
-use FOSSBilling\Doctrine\JsonMigrationException;
+use FOSSBilling\Core\Doctrine\JsonMigration;
+use FOSSBilling\Core\Doctrine\JsonMigrationException;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -118,7 +118,7 @@ test('automatic TEXT upgrades retain JSON meaning and safely repeat', function (
     }
     $migration = new JsonMigration();
     expect(fn () => $migration->assertReady($this->connection))->toThrow(JsonMigrationException::class);
-    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Crypt()))->toBe(['columns' => 1, 'empty_values' => 2]);
+    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 1, 'empty_values' => 2]);
     $migration->assertReady($this->connection);
     foreach ($this->em->getRepository(MassmailerMessage::class)->findBy([], ['id' => 'ASC']) as $index => $message) {
         expect($message->getFilter())->toEqual(json_decode($values[$index] ?? 'null', true));
@@ -126,7 +126,7 @@ test('automatic TEXT upgrades retain JSON meaning and safely repeat', function (
     }
     $this->em->flush();
     $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
-    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0])
+    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0])
         ->and($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
     $this->em->clear();
     $message = $this->em->getRepository(MassmailerMessage::class)->findOneBy([]);
@@ -143,7 +143,7 @@ test('unsafe legacy documents block conversion without changing earlier valid ro
     $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
 
     try {
-        (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Crypt());
+        (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt());
         $this->fail('Unsafe legacy JSON was accepted.');
     } catch (JsonMigrationException $exception) {
         expect($exception->getMessage())->not->toContain('private-secret', $raw);
@@ -155,7 +155,7 @@ test('the full JSON-column inventory migrates while encrypted and dormant exclus
     $c = $this->connection;
     $c->executeStatement('DROP TABLE mod_massmailer');
     $payload = '{"id":"001","fraction":1.0,"nested":{"enabled":false},"label":"Résumé"}';
-    foreach (FOSSBilling\Doctrine\JsonFields::FIELDS as $table => $definition) {
+    foreach (FOSSBilling\Core\Doctrine\JsonFields::FIELDS as $table => $definition) {
         $idType = $table === 'session' ? 'VARCHAR(255)' : 'BIGINT';
         $columns = array_map(static fn ($column): string => $c->quoteSingleIdentifier($column) . ' TEXT NULL', array_keys($definition['columns']));
         if ($table === 'service_license') {
@@ -176,9 +176,9 @@ test('the full JSON-column inventory migrates while encrypted and dormant exclus
     $c->executeStatement('CREATE TABLE email_template (id BIGINT PRIMARY KEY, vars TEXT)');
     $c->insert('email_template', ['id' => 1, 'vars' => 'encrypted-private-value']);
     $migration = new JsonMigration();
-    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt()))->toBe(['columns' => 29, 'empty_values' => 28]);
+    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 29, 'empty_values' => 28]);
     $migration->assertReady($c);
-    foreach (FOSSBilling\Doctrine\JsonFields::FIELDS as $table => $definition) {
+    foreach (FOSSBilling\Core\Doctrine\JsonFields::FIELDS as $table => $definition) {
         $actual = $c->createSchemaManager()->introspectTableByUnquotedName($table);
         foreach (array_keys($definition['columns']) as $column) {
             $values = $c->fetchFirstColumn('SELECT ' . $c->quoteSingleIdentifier($column) . ' FROM ' . $c->quoteSingleIdentifier($table) . ' ORDER BY id');
@@ -211,10 +211,10 @@ test('JSON conversion and patch 133 compose in either upgrade order', function (
     $c->insert('product', ['id' => 1, 'plugin_config' => $original]);
     $c->insert('mod_massmailer', ['subject' => 'Résumé', 'filter' => $original]);
     $id = (int) $c->lastInsertId();
-    $patcher = new FOSSBilling\UpdatePatcher();
+    $patcher = new FOSSBilling\Core\Update\Patcher();
     $patcher->setDi(new Pimple\Container(['pdo' => $c->getNativeConnection(), 'dbal' => $c, 'logger' => new Tests\Helpers\TestLogger()]));
-    $unicode = (new ReflectionMethod($patcher, 'patch133'))->getClosure($patcher);
-    $json = fn () => (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt());
+    $unicode = fn () => (new FOSSBilling\Core\Update\Patch\Patch133())->apply($patcher);
+    $json = fn () => (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt());
     if ($unicodeFirst) {
         $unicode();
         $json();
@@ -240,7 +240,7 @@ test('JSON conversion and patch 133 compose in either upgrade order', function (
 
 test('automatic updates convert mixed defaults and real binary session identifiers without manual files', function (): void {
     $c = $this->connection;
-    $sessionEm = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
+    $sessionEm = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c);
     (new SchemaTool($sessionEm))->createSchema([$sessionEm->getClassMetadata(Box\Mod\System\Entity\Session::class)]);
     $platform = $c->getDatabasePlatform();
     if ($platform instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
@@ -256,12 +256,12 @@ test('automatic updates convert mixed defaults and real binary session identifie
         $c->insert('session', ['id' => sprintf('session-%04d', $id), 'fingerprint' => '', 'modified_at' => 1, 'content' => '', 'lifetime' => 7200], ['id' => Doctrine\DBAL\Types\Types::BINARY, 'content' => Doctrine\DBAL\Types\Types::BLOB]);
     }
     $migration = new JsonMigration();
-    expect(count(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'session', 100))))->toBe(503);
-    $result = $migration->automatic($sessionEm, new FOSSBilling\Crypt());
+    expect(count(iterator_to_array((new FOSSBilling\Core\Doctrine\JsonAudit())->inspect($c, 'session', 100))))->toBe(503);
+    $result = $migration->automatic($sessionEm, new FOSSBilling\Core\Security\Crypt());
     expect($result['empty_values'])->toBe(503)
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM session WHERE fingerprint IS NULL'))->toBe(503)
         ->and(array_map(fn ($value) => json_decode($value, true), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe(['false', '0', str_repeat('x', 255), ['one', 'two']])
-        ->and($migration->automatic($sessionEm, new FOSSBilling\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0]);
+        ->and($migration->automatic($sessionEm, new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0]);
 });
 
 test('unchanged checkbox defaults migrate and repeat safely on native databases', function (): void {
@@ -270,9 +270,9 @@ test('unchanged checkbox defaults migrate and repeat safely on native databases'
     foreach (['{"1":"selected"}', '["selected"]'] as $id => $raw) {
         $c->insert('form_field', ['id' => $id, 'type' => 'checkbox', 'default_value' => $raw]);
     }
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c);
     $migration = new JsonMigration();
-    $crypt = new FOSSBilling\Crypt();
+    $crypt = new FOSSBilling\Core\Security\Crypt();
     $migration->automatic($em, $crypt);
     expect(array_map(fn ($raw) => json_decode($raw, true, 512, JSON_THROW_ON_ERROR), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe([[1 => 'selected'], ['selected']])
         ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0])
@@ -286,26 +286,26 @@ test('unsafe checkbox collections are reported before normalization and leave so
     $c->insert('form_field', ['id' => 2, 'type' => 'checkbox', 'default_value' => '{"0":"valid"}']);
     $c->insert('form_field', ['id' => 3, 'type' => 'checkbox', 'default_value' => $raw]);
     $before = $c->fetchAllAssociative('SELECT * FROM form_field ORDER BY id');
-    $issues = iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field'));
+    $issues = iterator_to_array((new FOSSBilling\Core\Doctrine\JsonAudit())->inspect($c, 'form_field'));
     expect($issues)->toHaveCount(1)
         ->and((int) $issues[0]['id'])->toBe(3)
         ->and($issues[0]['column'])->toBe('default_value')
         ->and(json_encode($issues, JSON_THROW_ON_ERROR))->not->toContain('private-secret');
-    expect(fn () => (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt()))
+    expect(fn () => (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt()))
         ->toThrow(JsonMigrationException::class, 'JSON preflight failed for form_field.default_value id=3');
     expect($c->fetchAllAssociative('SELECT * FROM form_field ORDER BY id'))->toBe($before)
-        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, 'prepared:form_field.default_value:1'))->toBeFalse()
-        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
+        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, 'prepared:form_field.default_value:1'))->toBeFalse()
+        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
 })->with(['{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}']);
 
 test('fresh JSON mappings preserve form defaults through later automatic upgrades', function (): void {
     $c = $this->connection;
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c);
     (new SchemaTool($em))->createSchema([
         $em->getClassMetadata(Box\Mod\Formbuilder\Entity\Form::class),
         $em->getClassMetadata(Box\Mod\Formbuilder\Entity\FormField::class),
     ]);
-    JsonMigration::markInstalled($em, new FOSSBilling\Crypt());
+    JsonMigration::markInstalled($em, new FOSSBilling\Core\Security\Crypt());
     $values = ['false', '0', '{"literal":true}', '', ['one', 'two'], false, 0];
     $ids = [];
     foreach ($values as $value) {
@@ -315,19 +315,19 @@ test('fresh JSON mappings preserve form defaults through later automatic upgrade
         $ids[] = $field->getId();
     }
     // A later release runs the normal portable update step again.
-    $patcher = new FOSSBilling\UpdatePatcher();
-    $patcher->setDi(new Pimple\Container(['em' => $em, 'crypt' => new FOSSBilling\Crypt(), 'cache' => new ArrayAdapter()]));
+    $patcher = new FOSSBilling\Core\Update\Patcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em, 'crypt' => new FOSSBilling\Core\Security\Crypt(), 'cache' => new ArrayAdapter()]));
     $patcher->applyJsonMigrations();
     $patcher->applyJsonMigrations();
     $em->clear();
     expect(array_map(fn ($id) => $em->find(Box\Mod\Formbuilder\Entity\FormField::class, $id)->getDefaultValue(), $ids))->toBe($values)
-        ->and(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field')))->toBe([]);
+        ->and(iterator_to_array((new FOSSBilling\Core\Doctrine\JsonAudit())->inspect($c, 'form_field')))->toBe([]);
 });
 
 /** @param list<class-string> $classes */
 function jsonRuntimeSchema(Doctrine\DBAL\Connection $connection, array $classes): Doctrine\ORM\EntityManagerInterface
 {
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
     (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), $classes));
 
     return $em;
@@ -448,13 +448,13 @@ test('interruption after native conversion keeps column progress and resumes rem
     $configuration = new Doctrine\DBAL\Configuration();
     $configuration->setMiddlewares([new Doctrine\DBAL\Logging\Middleware($logger)]);
     $interrupted = DriverManager::getConnection($c->getParams(), $configuration);
-    expect(fn () => (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($interrupted), new FOSSBilling\Crypt()))
+    expect(fn () => (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($interrupted), new FOSSBilling\Core\Security\Crypt()))
         ->toThrow(RuntimeException::class, 'Simulated interruption');
     $interrupted->close();
     expect($c->createSchemaManager()->introspectTableByUnquotedName('mod_massmailer')->getColumn('filter')->getTypeName())->toBe(Doctrine\DBAL\Types\Types::JSON)
-        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, 'column:mod_massmailer.filter'))->toBeTrue()
-        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
-    (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt());
+        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, 'column:mod_massmailer.filter'))->toBeTrue()
+        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
+    (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt());
     expect(json_decode($c->fetchOne('SELECT default_value FROM form_field'), true, 512, JSON_THROW_ON_ERROR))->toBe('false')
         ->and(json_decode($c->fetchOne('SELECT ' . $c->quoteSingleIdentifier('filter') . ' FROM mod_massmailer'), true, 512, JSON_THROW_ON_ERROR))->toBe(['code' => '001'])
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);

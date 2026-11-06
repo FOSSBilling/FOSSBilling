@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\cryptMock;
 
 function gatewayLogoPng(): string
 {
@@ -55,10 +56,11 @@ function gatewayLogoService(MockHttpClient $client, Filesystem $filesystem): Ser
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $em->shouldReceive('flush')->byDefault();
     $di['em'] = $em;
+    $di['crypt'] = cryptMock();
     $di['http_client'] = $client;
     $di['filesystem'] = $filesystem;
-    $di['url'] = Mockery::mock(FOSSBilling\Url::class);
-    $di['url']->shouldReceive('link')->andReturn('https://billing.example/');
+    $di['url'] = Mockery::mock(FOSSBilling\Core\Url::class);
+    $di['url']->shouldReceive('link')->andReturnUsing(fn (string $path): string => SYSTEM_URL . ltrim($path, '/'));
     $service = new ServicePayGateway();
     $service->setDi($di);
 
@@ -119,7 +121,7 @@ test('gateway image rejects invalid or private URLs without making a request or 
     $service->getDi()['em']->shouldReceive('flush')->never();
     $gateway = createEntity(PayGateway::class, ['enabled' => false, 'name' => 'Original', 'customLogo' => 'original.png']);
 
-    expect(fn () => $service->update($gateway, ['title' => 'Changed', 'logo_url' => $url]))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['title' => 'Changed', 'logo_url' => $url]))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($gateway->getName())->toBe('Original')->and($gateway->getCustomLogo())->toBe('original.png');
 })->with([
     'file:///etc/passwd', 'ftp://8.8.8.8/logo.png', 'https://',
@@ -137,7 +139,7 @@ test('gateway image rejects unsuccessful or unsafe downloads', function (string 
     $service->getDi()['em']->shouldReceive('flush')->never();
     $gateway = createEntity(PayGateway::class, ['enabled' => false, 'customLogo' => 'original.png']);
 
-    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
     expect($gateway->getCustomLogo())->toBe('original.png');
 })->with([
     'HTML' => ['<html>not an image</html>', 200],
@@ -159,7 +161,7 @@ test('gateway image rejects redirects to private networks', function (): void {
     $service = gatewayLogoService($client, $filesystem);
     $gateway = createEntity(PayGateway::class, ['enabled' => false]);
 
-    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('active gateways use the imported local image and fall back if it is missing', function (bool $exists): void {
@@ -172,6 +174,7 @@ test('active gateways use the imported local image and fall back if it is missin
     $service->getPayGatewayRepository()->shouldReceive('findEnabledOrderedByIdDesc')->andReturn([$gateway]);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'default.png'))->andReturn(false);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'default.png'))->andReturn(true);
+    $filesystem->shouldReceive('exists')->with(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'Custom', 'custom.png'))->andReturn(false);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'custom.png'))->andReturn(false);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'custom.png'))->andReturn(false);
 
@@ -215,7 +218,8 @@ test('active gateways keep the adapter display size for custom logos', function 
     $logo = $service->getActive([])[0]['logo'];
     expect($logo['logo'])->toContain('public/gateways/custom/' . $filename)
         ->and($logo['height'])->toBe($expectedHeight)
-        ->and($logo['width'])->toBe($expectedWidth);
+        ->and($logo['width'])->toBe($expectedWidth)
+        ->and($logo['custom'])->toBeTrue();
 })->with([
     'tall Stripe-style logo keeps its portrait box' => [['logo' => 'stripe.png', 'height' => '86px', 'width' => '65px'], '86px', '65px'],
     'default Stripe logo keeps its configured size' => [['logo' => 'stripe.png', 'height' => '30px', 'width' => '65px'], '30px', '65px'],
@@ -248,7 +252,7 @@ test('gateway image rejects a changed connection address and excessive advertise
     $service = gatewayLogoService($client, $filesystem);
     $gateway = createEntity(PayGateway::class, ['enabled' => false]);
 
-    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with([['127.0.0.1', 0], ['8.8.8.8', 2 * 1024 * 1024 + 1]]);
 
 test('gateway settings render image import and default restoration controls', function (?string $imageUrl): void {
@@ -319,7 +323,7 @@ test('gateway image upload rejects errors, GIFs, and oversized files without cha
         $gateway = createEntity(PayGateway::class, ['enabled' => false, 'customLogo' => 'original.png', 'name' => 'Original']);
         $file = new UploadedFile($path, 'logo.png', 'image/png', $error, true);
 
-        expect(fn () => $service->update($gateway, ['title' => 'Changed'], $file))->toThrow(FOSSBilling\Exception::class);
+        expect(fn () => $service->update($gateway, ['title' => 'Changed'], $file))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
         expect($gateway->getCustomLogo())->toBe('original.png')->and($gateway->getName())->toBe('Original');
     } finally {
         $realFilesystem->remove($path);
@@ -359,7 +363,7 @@ test('gateway SVG sanitizer preserves artwork while removing active and external
         . '<path transform="translate(1, 2)" d="M0 0L10 10" fill="url(#g)" style="stroke:red;fill:url(https://evil.example/a);opacity:0.5"/>'
         . '<rect fill="&#117;rl(https://evil.example/a)"/>'
         . '</svg>';
-    $clean = FOSSBilling\Sanitizer\GatewaySvgSanitizer::sanitize($svg);
+    $clean = FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer::sanitize($svg);
 
     expect($clean)->toContain('linearGradient')->toContain('fill="url(#g)"')->toContain('transform="translate(1, 2)"')
         ->toContain('style="stroke:red;opacity:0.5"')->not->toContain('evil.example')
@@ -367,7 +371,7 @@ test('gateway SVG sanitizer preserves artwork while removing active and external
 });
 
 test('gateway SVG rejects entities and non SVG documents', function (string $bytes): void {
-    expect(fn () => FOSSBilling\Sanitizer\GatewaySvgSanitizer::sanitize($bytes))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer::sanitize($bytes))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with([
     '<!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg">&x;</svg>',
     '<html><body>not svg</body></html>',
@@ -405,7 +409,7 @@ test('raster normalization rejects a PNG with valid headers but corrupt image da
     $gateway = createEntity(PayGateway::class, ['enabled' => false]);
 
     expect(fn () => $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo.png']))
-        ->toThrow(FOSSBilling\Exception::class, 'Could not decode the payment gateway image.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Could not decode the payment gateway image.');
 });
 
 test('raster images store PNG and at most one AVIF generated from the same decoded image', function (): void {
@@ -481,6 +485,38 @@ test('payment selectors render AVIF with one PNG fallback and support images wit
     ['Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', false],
 ]);
 
+test('payment selectors keep custom image aspect ratio with width-only sizing', function (string $template): void {
+    $gateway = [
+        'id' => 1, 'title' => 'Cards', 'accepted_currencies' => ['USD'],
+        'allow_single' => true, 'allow_recurrent' => false,
+        'logo' => ['logo' => 'https://billing.example/custom.png', 'height' => '30px', 'width' => '65px', 'custom' => true],
+    ];
+    $guest = new Tests\Support\PermissiveStub([
+        'invoice_gateways' => [$gateway],
+        'cart_get' => new Tests\Support\PermissiveStub([
+            'items' => [new Tests\Support\PermissiveStub(['id' => 1, 'title' => 'Service', 'quantity' => 1, 'total' => 10, 'discount_price' => 0, 'setup_price' => 0, 'discount_setup' => 0, 'form_id' => false, 'period' => false])],
+            'currency' => ['code' => 'USD', 'conversion_rate' => 1], 'total' => 10, 'discount' => 0, 'subtotal' => 10,
+        ]),
+    ]);
+    $html = (new Tests\Support\StrictTemplateRenderer())->renderTemplate(PATH_MODS . '/' . $template, [
+        'app_area' => 'client', 'client' => null, 'guest' => $guest,
+        'invoice' => new Tests\Support\PermissiveStub([
+            'status' => 'unpaid', 'currency' => 'USD', 'items' => [],
+            'credit_note_for_invoice_id' => false, 'debit_note_for_invoice_id' => false,
+            'refunded_by_invoice_ids' => [], 'debited_by_invoice_ids' => [],
+            'paid_at' => '', 'created_at' => '2026-10-12', 'tax' => 0, 'subtotal' => 10, 'total' => 10,
+            'buyer' => new Tests\Support\PermissiveStub(['country' => 'US']),
+        ]),
+        'request' => new Tests\Support\PermissiveStub(['checkout' => true, 'show_custom_form_values' => false]),
+    ]);
+    expect($html)->toContain('style="width:65px; padding: 0;"')
+        ->and($html)->toContain('style="max-width: 100%; max-height: 150px; width: auto; height: auto; display: block; margin: 0 auto;"')
+        ->and($html)->not->toContain('style="height:30px; width:65px; padding: 0;"');
+})->with([
+    ['Invoice/templates/client/mod_invoice_invoice.html.twig'],
+    ['Orderbutton/templates/client/mod_orderbutton_checkout.html.twig'],
+]);
+
 test('gateway images above four million pixels are rejected before decoding or changing settings', function (): void {
     $bytes = gatewayLogoPng();
     // Change the PNG header dimensions without allocating a large decoded image.
@@ -496,6 +532,75 @@ test('gateway images above four million pixels are rejected before decoding or c
     $gateway = createEntity(PayGateway::class, ['enabled' => false, 'name' => 'Original', 'customLogo' => 'original.png']);
 
     expect(fn () => $service->update($gateway, ['title' => 'Changed', 'logo_url' => 'https://8.8.8.8/logo.png']))
-        ->toThrow(FOSSBilling\Exception::class, 'no more than 4 million pixels');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'no more than 4 million pixels');
     expect($gateway->getName())->toBe('Original')->and($gateway->getCustomLogo())->toBe('original.png');
 });
+
+function gatewayLogoResolverService(array $existingPaths): ServicePayGateway
+{
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')
+        ->andReturnUsing(static fn (string $path): bool => in_array($path, $existingPaths, true));
+    $service = new ServicePayGateway($filesystem);
+    $di = container();
+    // setDi() prefers $di['filesystem'] over the constructor value.
+    $di['filesystem'] = $filesystem;
+    $service->setDi($di);
+
+    return $service;
+}
+
+function gatewayLogoCandidatePaths(): array
+{
+    return [
+        'nested' => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'PayHere', 'PayHereLogo.png'),
+        'flat' => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'PayHereLogo.png'),
+        'public' => Path::join(PATH_ROOT, 'public', 'gateways', 'PayHereLogo.png'),
+    ];
+}
+
+test('nested adapter folder logo takes precedence over flat and public paths', function (): void {
+    $paths = gatewayLogoCandidatePaths();
+    $service = gatewayLogoResolverService(array_values($paths));
+
+    expect($service->resolveGatewayLogo(['logo' => 'PayHereLogo.png'], 'PayHere'))
+        ->toBe(SYSTEM_URL . 'library/Payment/Adapter/PayHere/PayHereLogo.png');
+});
+
+test('gateway logo filenames are URL-encoded', function (array $existingKinds, string $expectedPath): void {
+    $paths = [
+        'nested' => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'PayHere', 'brand#2026.png'),
+        'flat' => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'brand#2026.png'),
+        'public' => Path::join(PATH_ROOT, 'public', 'gateways', 'brand#2026.png'),
+    ];
+    $service = gatewayLogoResolverService(array_map(static fn (string $kind): string => $paths[$kind], $existingKinds));
+
+    expect($service->resolveGatewayLogo(['logo' => 'brand#2026.png'], 'PayHere'))->toBe(SYSTEM_URL . $expectedPath);
+})->with([
+    'nested branch' => [['nested'], 'library/Payment/Adapter/PayHere/brand%232026.png'],
+    'flat branch' => [['flat'], 'library/Payment/Adapter/brand%232026.png'],
+    'public branch' => [['public'], 'public/gateways/brand%232026.png'],
+]);
+
+test('gateway logo falls back through flat, public and default paths', function (array $existingKinds, ?string $gateway, string $expectedPath): void {
+    $paths = gatewayLogoCandidatePaths();
+    $service = gatewayLogoResolverService(array_map(static fn (string $kind): string => $paths[$kind], $existingKinds));
+
+    expect($service->resolveGatewayLogo(['logo' => 'PayHereLogo.png'], $gateway))->toBe(SYSTEM_URL . $expectedPath);
+})->with([
+    'flat wins when nested is missing' => [
+        ['flat', 'public'], 'PayHere', 'library/Payment/Adapter/PayHereLogo.png',
+    ],
+    'public wins when adapter paths are missing' => [
+        ['public'], 'PayHere', 'public/gateways/PayHereLogo.png',
+    ],
+    'defaults when nothing exists' => [
+        [], 'PayHere', 'public/gateways/default.png',
+    ],
+    'keeps legacy behavior without a gateway code' => [
+        ['flat', 'public'], null, 'library/Payment/Adapter/PayHereLogo.png',
+    ],
+    'defaults without a gateway code when nothing exists' => [
+        [], null, 'public/gateways/default.png',
+    ],
+]);

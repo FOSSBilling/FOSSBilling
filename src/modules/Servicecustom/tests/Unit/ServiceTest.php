@@ -157,7 +157,7 @@ test('validate custom form invalid url exception', function (): void {
     ];
 
     expect(fn () => $service->validateCustomForm($data, $product))
-        ->toThrow(FOSSBilling\InformationException::class, 'Field Website must be a valid URL with a TLD (e.g., https://example.com)');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Field Website must be a valid URL with a TLD (e.g., https://example.com)');
 });
 
 test('validate custom form valid url', function (): void {
@@ -229,7 +229,7 @@ test('validate custom form url array input throws information exception', functi
     ];
 
     expect(fn () => $service->validateCustomForm($data, $product))
-        ->toThrow(FOSSBilling\InformationException::class, 'Field Website must be a valid URL with a TLD (e.g., https://example.com)');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Field Website must be a valid URL with a TLD (e.g., https://example.com)');
 });
 
 test('action create', function (): void {
@@ -514,12 +514,12 @@ test('to api array', function (): void {
     expect($result['created_at'])->toEqual($model->getCreatedAt()?->format('Y-m-d H:i:s'));
 });
 
-test('custom call forbidden method exception', function (): void {
+test('custom call forbidden method exception', function (string $method): void {
     $service = new Service();
 
-    expect(fn () => $service->customCall(new ServiceCustom(), 'delete'))
+    expect(fn () => $service->customCall(new ServiceCustom(), $method))
         ->toThrow(Exception::class);
-});
+})->with(['delete', 'Delete', 'RENEW', 'Activate', 'uncancel']);
 
 test('get service custom by order id', function (): void {
     $service = new Service();
@@ -554,7 +554,7 @@ test('get service custom by order id rejects order owned by another client', fun
     $service->setDi($di);
 
     expect(fn (): ?\Box\Mod\Servicecustom\Entity\ServiceCustom => $service->getServiceCustomByOrderId(1, 42))
-        ->toThrow(FOSSBilling\InformationException::class, 'Order not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Order not found');
 });
 
 test('get service custom by order id order service not found exception', function (): void {
@@ -593,7 +593,7 @@ test('get service custom by order id rejects expired order for client context', 
     $orderService->shouldReceive('assertOrderUsable')
         ->once()
         ->with($expiredOrder)
-        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Subscription expired'));
     $orderService->shouldNotReceive('getOrderService');
 
     $di = container();
@@ -602,7 +602,7 @@ test('get service custom by order id rejects expired order for client context', 
     $service->setDi($di);
 
     expect(fn (): ?\Box\Mod\Servicecustom\Entity\ServiceCustom => $service->getServiceCustomByOrderId(1, 42))
-        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Subscription expired');
 });
 
 test('update config', function (): void {
@@ -616,7 +616,7 @@ test('update config', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $serviceMock->setDi($di);
 
     $config = ['param1' => 'value1'];
@@ -635,7 +635,7 @@ test('update config not array exception', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $serviceMock->setDi($di);
 
     $config = '';

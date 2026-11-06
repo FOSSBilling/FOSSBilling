@@ -1,8 +1,20 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "client",
-  "type": "mod",
   "name": "Client",
+  "version": "0.8.9",
   "description": "Manages client accounts, profiles, authentication settings, and client-facing account preferences.",
+  "author": {
+    "name": "FOSSBilling",
+    "url": "https://fossbilling.org"
+  },
+  "license": "Apache-2.0",
+  "homepage_url": "https://fossbilling.org",
   "icon_url": "icon.svg",
-  "version": "1.0.0"
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

@@ -1,0 +1,384 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace FOSSBilling\Core\Remote;
+
+use Composer\Semver\Semver;
+use Composer\Semver\VersionParser;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Enums\ExtensionType;
+use FOSSBilling\Core\Exception\BaseException as Exception;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Version;
+use Psr\Cache\CacheItemPoolInterface;
+
+class ExtensionManager implements InjectionAwareInterface
+{
+    protected ?\Pimple\Container $di = null;
+
+    private string $apiUrl = 'https://api.fossbilling.net/extensions/v2/';
+
+    /**
+     * How long a fetched directory response is served as-is.
+     */
+    private const int DIRECTORY_CACHE_TTL = 3600;
+
+    private const int DIRECTORY_MAX_PAGES = 100;
+    private const int DIRECTORY_MAX_ITEMS = 10_000;
+    private const float DIRECTORY_REQUEST_BUDGET = 10.0;
+
+    /**
+     * How long the last-known-good response is kept as a fallback for directory outages.
+     */
+    private const int DIRECTORY_STALE_TTL = 48 * 3600;
+
+    /**
+     * How long a failed refresh suppresses further directory requests.
+     */
+    private const int DIRECTORY_UNAVAILABLE_TTL = 5 * 60;
+
+    public function setDi(\Pimple\Container $di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
+
+    /**
+     * Fetch extension details from the FOSSBilling extension directory.
+     *
+     * @param string $id The extension identifier (e.g. Example)
+     *
+     * @return array The extension details
+     *
+     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response
+     *
+     * @throws Exception
+     */
+    public function getExtension(string $id): array
+    {
+        $this->assertValidIdentifier($id);
+
+        return $this->makeRequest('extensions/' . strtolower($id), [], function (array $manifest): void {
+            if (empty($manifest)) {
+                throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
+            }
+
+            $this->validateMetadata($manifest);
+        });
+    }
+
+    /**
+     * Fetch the list of releases of an extension from the FOSSBilling extension directory.
+     *
+     * @param string $id The extension identifier (e.g. Example)
+     *
+     * @return array The list of releases of the extension
+     *
+     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response (the "releases" array)
+     *
+     * @throws Exception
+     */
+    public function getExtensionReleases(string $id): array
+    {
+        $releases = $this->getExtension($id)['releases'];
+
+        if (empty($releases) || !is_array($releases)) {
+            throw new Exception('An error occurred when fetching the extensions releases');
+        }
+
+        return $releases;
+    }
+
+    /**
+     * Fetch the latest release of an extension from the FOSSBilling extension directory.
+     *
+     * @param string $id The extension identifier (e.g. Example)
+     *
+     * @return array The latest release of the extension
+     *
+     * @example https://api.fossbilling.net/extensions/v2/extensions/example An example of the API response (the first element in the "releases" array)
+     *
+     * @throws Exception
+     */
+    public function getLatestExtensionRelease(string $id): array
+    {
+        $releases = $this->getExtensionReleases($id);
+        $latest = reset($releases);
+
+        if (empty($latest) || !is_array($latest)) {
+            throw new Exception('Unable to fetch the latest extension release.');
+        }
+
+        return $latest;
+    }
+
+    /**
+     * Fetch the list of extensions from the FOSSBilling extension directory.
+     *
+     * @param string $type The extension type (e.g. module) - optional
+     *
+     * @return array The list of extensions
+     *
+     * @example https://api.fossbilling.net/extensions/v2/extensions An example of the API response
+     */
+    public function getExtensionList(?string $type = null): array
+    {
+        $params = [];
+
+        if (!empty($type)) {
+            $params['type'] = ExtensionType::normalize($type);
+        }
+
+        $params['limit'] = 100;
+
+        return $this->makeRequest('extensions', $params, function (array $extensions): void {
+            foreach ($extensions as $extension) {
+                $this->validateMetadata($extension);
+            }
+        });
+    }
+
+    private function assertValidIdentifier(string $id): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
+            throw new InformationException('Extension ID contains invalid characters.');
+        }
+    }
+
+    /** Validate after cache lookup so previously cached metadata is checked too. */
+    private function validateMetadata(mixed $extension): void
+    {
+        if (!is_array($extension) || !is_string($extension['id'] ?? null)
+            || preg_match('/\A[A-Za-z0-9_-]+\z/', $extension['id']) !== 1
+            || !is_string($extension['name'] ?? null)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+
+        $author = $extension['author'] ?? [];
+        if (!is_array($author)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+
+        $url = $author['url'] ?? null;
+        if ($url === null || $url === '') {
+            return;
+        }
+
+        if (!is_string($url) || preg_match('/[\x00-\x20\x7f]/', $url) === 1
+            || filter_var($url, FILTER_VALIDATE_URL) === false
+            || !in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+    }
+
+    /**
+     * Check if the latest version of an extension is compatible with the current FOSSBilling version.
+     *
+     * @param string $extension The extension identifier (e.g. Example)
+     *
+     * @return bool True if the extension is compatible, false otherwise
+     */
+    public function isExtensionCompatible(string $extension): bool
+    {
+        return $this->isReleaseCompatible($this->getLatestExtensionRelease($extension));
+    }
+
+    /** Check the exact release selected for download without fetching it again. */
+    public function isReleaseCompatible(array $release): bool
+    {
+        $constraint = $release['requires']['fossbilling'] ?? null;
+        if (!is_string($constraint) || trim($constraint) === '') {
+            return false;
+        }
+
+        try {
+            (new VersionParser())->parseConstraints($constraint);
+
+            return Config::getProperty('update_branch', 'release') !== 'release'
+                || Semver::satisfies(Version::VERSION, $constraint);
+        } catch (\UnexpectedValueException) {
+            return false;
+        }
+    }
+
+    /**
+     * Make a request to the FOSSBilling extension directory.
+     *
+     * Successful responses are cached for an hour. When a refresh fails, the
+     * last-known-good response is served instead (up to two days old), and
+     * further refresh attempts are suppressed for a few minutes so an
+     * unreachable directory doesn't slow down every admin page load.
+     *
+     * @param string        $endpoint       The API endpoint to call (e.g. list)
+     * @param array         $params         The array of parameters to pass to the API endpoint
+     * @param callable|null $validateResult Optional check receiving the decoded result; must throw
+     *                                      when it isn't usable. Applied to cached hits as well as
+     *                                      fresh responses, so invalid data never replaces the
+     *                                      last-known-good copy.
+     *
+     * @return array The API response
+     *
+     * @throws Exception when the directory can't be reached and nothing usable is cached
+     */
+    public function makeRequest(string $endpoint, array $params = [], ?callable $validateResult = null): array
+    {
+        $url = $this->apiUrl . $endpoint;
+        $query = $params;
+        // Keep v2 metadata separate from cached v1 projections.
+        $key = 'extension-manager-v2-' . hash('xxh3', $endpoint . serialize($query));
+        $cache = $this->di['cache'];
+
+        $fresh = $cache->getItem($key);
+        if ($fresh->isHit() && is_array($fresh->get())) {
+            $result = $fresh->get();
+            if ($validateResult === null) {
+                return $result;
+            }
+
+            try {
+                $validateResult($result);
+
+                return $result;
+            } catch (\Exception) {
+                // Cached data no longer validates: fall through and refresh it.
+            }
+        }
+
+        if ($cache->getItem($key . '-unavailable')->isHit()) {
+            return $this->staleOrThrow($cache, $key, new Exception('The FOSSBilling extension directory is temporarily unreachable.', null, 746), $validateResult);
+        }
+
+        try {
+            $result = $this->fetchDirectoryResult($url, $query, $endpoint === 'extensions');
+            if ($validateResult !== null) {
+                $validateResult($result);
+            }
+        } catch (\Exception $e) {
+            $unavailable = $cache->getItem($key . '-unavailable');
+            $unavailable->set(true);
+            $unavailable->expiresAfter(self::DIRECTORY_UNAVAILABLE_TTL);
+            $cache->save($unavailable);
+
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning('Extension directory refresh for "{endpoint}" failed: {error}', [
+                    'endpoint' => $endpoint,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            return $this->staleOrThrow($cache, $key, $e instanceof Exception ? $e : new Exception('Unable to fetch the extension details from the FOSSBilling extension directory: :reason.', [':reason' => $e->getMessage()], 746), $validateResult);
+        }
+
+        $fresh->set($result);
+        $fresh->expiresAfter(self::DIRECTORY_CACHE_TTL);
+        $cache->save($fresh);
+
+        $stale = $cache->getItem($key . '-stale');
+        $stale->set($result);
+        $stale->expiresAfter(self::DIRECTORY_STALE_TTL);
+        $cache->save($stale);
+
+        return $result;
+    }
+
+    /**
+     * Perform the directory HTTP request and validate the response shape.
+     *
+     * @throws \Exception when the request fails or the response is unusable
+     */
+    private function fetchDirectoryResult(string $url, array $query, bool $paginate): array
+    {
+        $items = [];
+        $seenCursors = [];
+        $deadline = $this->getMonotonicTime() + self::DIRECTORY_REQUEST_BUDGET;
+        $pages = 0;
+        while (true) {
+            $remaining = $deadline - $this->getMonotonicTime();
+            // cURL truncates durations to milliseconds; zero would disable its timeout.
+            if ($remaining < 0.001 || ($paginate && $pages >= self::DIRECTORY_MAX_PAGES)) {
+                throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
+            }
+            ++$pages;
+            $response = $this->di['http_client']->request('GET', $url, [
+                'timeout' => min(5, $remaining),
+                'max_duration' => $remaining,
+                'query' => $query,
+            ]);
+            $json = $response->toArray();
+            if ($this->getMonotonicTime() >= $deadline) {
+                throw new Exception('Extension directory refresh exceeded its request limits.', null, 746);
+            }
+            if (isset($json['error']) && is_array($json['error'])) {
+                throw new Exception((string) ($json['error']['message'] ?? 'Unknown error'), null, 746);
+            }
+            if (!isset($json['result']) || !is_array($json['result'])) {
+                throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+            }
+            if (!$paginate) {
+                return $json['result'];
+            }
+            $pagination = $json['pagination'] ?? null;
+            if (!array_is_list($json['result']) || !is_array($pagination)
+                || !is_bool($pagination['has_more'] ?? null)
+                || !array_key_exists('next_cursor', $pagination)) {
+                throw new Exception('Invalid pagination from the FOSSBilling extension directory.', null, 746);
+            }
+            if (count($json['result']) > self::DIRECTORY_MAX_ITEMS - count($items)) {
+                throw new Exception('Extension directory refresh exceeded its item limit.', null, 746);
+            }
+            $items = [...$items, ...$json['result']];
+            if (!$pagination['has_more']) {
+                return $items;
+            }
+            $cursor = $pagination['next_cursor'];
+            if (!is_string($cursor) || $cursor === '' || isset($seenCursors[$cursor])) {
+                throw new Exception('Invalid pagination from the FOSSBilling extension directory.', null, 746);
+            }
+            $seenCursors[$cursor] = true;
+            $query['cursor'] = $cursor;
+        }
+    }
+
+    /** Monotonic seconds, kept overridable for deterministic deadline tests. */
+    protected function getMonotonicTime(): float
+    {
+        return hrtime(true) / 1e9;
+    }
+
+    /**
+     * Serve the last-known-good response, or throw when nothing usable is cached yet.
+     *
+     * @throws Exception the given fallback when there is no stale response
+     */
+    private function staleOrThrow(CacheItemPoolInterface $cache, string $key, Exception $fallback, ?callable $validateResult): array
+    {
+        $stale = $cache->getItem($key . '-stale');
+        if ($stale->isHit() && is_array($stale->get())) {
+            $result = $stale->get();
+            if ($validateResult !== null) {
+                try {
+                    $validateResult($result);
+                } catch (\Exception) {
+                    throw $fallback;
+                }
+            }
+
+            return $result;
+        }
+
+        throw $fallback;
+    }
+}

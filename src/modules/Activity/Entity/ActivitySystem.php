@@ -13,12 +13,13 @@ namespace Box\Mod\Activity\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
+use FOSSBilling\Core\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Activity\Repository\ActivitySystemRepository::class)]
 #[ORM\Table(name: 'activity_system')]
 #[ORM\Index(name: 'activity_system_admin_id_idx', columns: ['admin_id'])]
 #[ORM\Index(name: 'activity_system_client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'activity_system_created_at_idx', columns: ['created_at'])]
 #[ORM\HasLifecycleCallbacks]
 class ActivitySystem
 {

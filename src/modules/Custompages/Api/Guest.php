@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Custompages\Api;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get paginated list of custom pages.
@@ -36,12 +36,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\InformationException when the page is missing or not found
+     * @throws \FOSSBilling\Core\Exception\InformationException when the page is missing or not found
      */
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \FOSSBilling\InformationException('Custom page ID or slug is missing');
+            throw new \FOSSBilling\Core\Exception\InformationException('Custom page ID or slug is missing');
         }
 
         $page = isset($data['slug'])
@@ -49,7 +49,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             : $this->getService()->getPage((int) $data['id']);
 
         if ($page === null) {
-            throw new \FOSSBilling\InformationException('Custom page not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Custom page not found');
         }
 
         return $page;

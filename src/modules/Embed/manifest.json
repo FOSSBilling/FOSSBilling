@@ -1,12 +1,20 @@
 {
+  "manifest_version": 1,
+  "type": "module",
   "id": "embed",
-  "type": "mod",
   "name": "Embed Parts",
+  "version": "0.8.9",
   "description": "Provides ability to embed parts of FOSSBilling to other websites",
-  "icon_url": "icon.svg",
+  "author": {
+    "name": "FOSSBilling",
+    "url": "http://extensions.fossbilling.org/"
+  },
+  "license": "Apache-2.0",
   "homepage_url": "https://github.com/FOSSBilling",
-  "author": "FOSSBilling",
-  "author_url": "http://extensions.fossbilling.org/",
-  "license": "GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
-  "version": "1.0.1"
+  "icon_url": "icon.svg",
+  "requires": {
+    "fossbilling": ">=0.8.9",
+    "php": ">=8.3",
+    "modules": {}
+  }
 }

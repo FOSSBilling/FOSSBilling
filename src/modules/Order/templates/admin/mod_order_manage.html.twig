@@ -616,7 +616,7 @@
                         </div>
                     </div>
                 {% endif %}
-            {% elseif order.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+            {% elseif order.form_id and guest.extension_is_on({"module": 'formbuilder' }) %}
                 {{ include('mod_formbuilder_manage.html.twig', order) }}
             {% else %}
                 {# trans 'Order form was not found' #}

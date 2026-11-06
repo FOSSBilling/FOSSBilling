@@ -49,7 +49,7 @@
         {% set currency = guest.currency_get %}
 
         <div class="col-sm-6 col-xxl-3">
-            <a href="{{ 'client'|url }}" class="card card-sm h-100">
+            <a href="{{ 'client'|url(query: { 'status': 'suspended' }) }}" class="card card-sm h-100">
                 <div class="card-body">
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">
@@ -60,15 +60,15 @@
                             </span>
                         </div>
                         <div class="col">
-                            <div class="fw-medium">{{ stats.clients_total }} {{ 'Clients'|trans }}</div>
-                            <div class="text-muted">{{ client_statuses.suspended }} {{ 'Suspended'|trans }}</div>
+                            <div class="fw-medium">{{ client_statuses.suspended }} {{ 'Suspended'|trans }}</div>
+                            <div class="text-muted">{{ stats.clients_total }} {{ 'Clients'|trans }}</div>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-sm-6 col-xxl-3">
-            <a href="{{ 'order'|url }}" class="card card-sm h-100">
+            <a href="{{ 'order'|url(query: { 'status': 'suspended' }) }}" class="card card-sm h-100">
                 <div class="card-body">
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">
@@ -79,15 +79,15 @@
                         </span>
                         </div>
                         <div class="col">
-                            <div class="fw-medium">{{ stats.orders_total }} {{ 'Orders'|trans }}</div>
-                            <div class="text-muted">{{ order_statuses.suspended }} {{ 'Suspended'|trans }}</div>
+                            <div class="fw-medium">{{ order_statuses.suspended }} {{ 'Suspended'|trans }}</div>
+                            <div class="text-muted">{{ stats.orders_total }} {{ 'Orders'|trans }}</div>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-sm-6 col-xxl-3">
-            <a href="{{ 'invoice'|url }}" class="card card-sm h-100">
+            <a href="{{ 'invoice'|url(query: { 'status': 'unpaid' }) }}" class="card card-sm h-100">
                 <div class="card-body">
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">
@@ -98,15 +98,15 @@
                             </span>
                         </div>
                         <div class="col">
-                            <div class="fw-medium">{{ stats.invoices_total }} {{ 'Invoices'|trans }}</div>
-                            <div class="text-muted">{{ invoice_statuses.unpaid }} {{ 'Unpaid'|trans }}</div>
+                            <div class="fw-medium">{{ invoice_statuses.unpaid }} {{ 'Unpaid'|trans }}</div>
+                            <div class="text-muted">{{ stats.invoices_total }} {{ 'Invoices'|trans }}</div>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-sm-6 col-xxl-3">
-            <a href="{{ 'support'|url }}" class="card card-sm h-100">
+            <a href="{{ 'support'|url(query: { 'status': 'open' }) }}" class="card card-sm h-100">
                 <div class="card-body">
                     <div class="row g-3 align-items-center">
                         <div class="col-auto">
@@ -117,8 +117,8 @@
                         </span>
                         </div>
                         <div class="col">
-                            <div class="fw-medium">{{ stats.tickets_total }} {{ 'Tickets'|trans }}</div>
-                            <div class="text-muted">{{ support_statuses.open }} {{ 'Waiting for Staff Reply'|trans }}</div>
+                            <div class="fw-medium">{{ support_statuses.open }} {{ 'Waiting for Staff Reply'|trans }}</div>
+                            <div class="text-muted">{{ stats.tickets_total }} {{ 'Tickets'|trans }}</div>
                         </div>
                     </div>
                 </div>

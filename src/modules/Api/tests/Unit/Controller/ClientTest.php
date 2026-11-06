@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Api\Controller\Client;
-use FOSSBilling\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,14 +14,14 @@ class ClientTestRateLimiterDouble
     {
     }
 
-    public function consume(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+    public function consume(string $policy, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
     {
         $this->calls[] = [$policy, $subject, $tokens];
 
-        return new FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
+        return new FOSSBilling\Core\Security\RateLimitResult($policy, false, 100, 99);
     }
 
-    public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+    public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
     {
         return $this->consume($policy, $subject, $tokens);
     }
@@ -296,9 +296,9 @@ test('raw response bypasses JSON rendering', function (): void {
         {
         }
 
-        public function getIdentity(): FOSSBilling\Identity\Guest
+        public function getIdentity(): FOSSBilling\Core\Identity\Guest
         {
-            return new FOSSBilling\Identity\Guest();
+            return new FOSSBilling\Core\Identity\Guest();
         }
     };
 
@@ -320,6 +320,49 @@ test('guest client login is throttled under the anti-brute-force api_login polic
     expect($controller->renderedData)->toBe(['ok' => true])
         ->and($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
 });
+
+test('mixed-case API method names reach rate limiting and dispatch in canonical form', function (string $class, string $method, string $expectedCall): void {
+    [$controller, $rateLimitCalls] = createTestController(['csrf_token' => 'browser-nonce']);
+    $params = ['email' => 'client@example.test', 'password' => 'password', 'CSRFToken' => 'browser-nonce'];
+    $request = Request::create('/api/guest/' . $class . '/' . $method, 'POST', $params);
+    $controller->getDi()['request'] = $request;
+
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), $expectedCall, ['email' => 'client@example.test', 'password' => 'password'])->andReturn(['ok' => true]);
+    $controller->getDi()['api_dispatcher'] = $dispatcher;
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $controller->post_method($app, 'guest', $class, $method);
+
+    expect($controller->renderedData)->toBe(['ok' => true])
+        ->and($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
+})->with([
+    ['client', 'login', 'client_login'],
+    ['client', 'LoGiN', 'client_login'],
+    ['CLIENT', 'LOGIN', 'client_login'],
+    ['staff', 'login', 'staff_login'],
+    ['staff', 'LoGiN', 'staff_login'],
+    ['STAFF', 'LOGIN', 'staff_login'],
+]);
+
+test('mixed-case session-preference method names still authenticate via session', function (string $method): void {
+    [$controller] = createTestController(['client_id' => 123]);
+    $controller->hasValidSession = true;
+    $controller->shouldUseTokenLogin = true;
+    $controller->shouldFailCsrf = true;
+    $request = Request::create('/api/client/profile/' . $method);
+    $controller->getDi()['request'] = $request;
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $controller->get_method($app, 'client', 'profile', $method);
+
+    expect($controller->calls)->toBe(['csrf'])
+        ->and($controller->renderedException?->getCode())->toBe(403);
+})->with(['api_key_get', 'API_KEY_GET', 'Api_Key_Get']);
 
 test('admin impersonation of client login is not throttled under the guest api_login policy', function (): void {
     [$controller, $rateLimitCalls] = createTestController(['admin' => ['id' => 7]]);
@@ -433,7 +476,7 @@ test('tryCall only reports unexpected failures to Sentry', function (Throwable $
     expect($controller->renderedException)->toBe($error);
 })->with([
     'sandbox rejection (InformationException) is not reported' => [new InformationException('Email template contains disallowed Twig syntax: Function "attribute" is not allowed.'), false],
-    'missing API service (base Exception) is reported' => [new FOSSBilling\Exception('Service object is not set for the API'), true],
+    'missing API service (base Exception) is reported' => [new FOSSBilling\Core\Exception\BaseException('Service object is not set for the API'), true],
     'unexpected runtime failure is reported' => [new RuntimeException('Twig runtime failure'), true],
 ]);
 
@@ -452,7 +495,7 @@ test('guest authentication rejects unsafe requests before dispatch and preserves
     $dispatcher = Mockery::mock();
     $dispatcher->shouldNotReceive('dispatch');
     $controller->getDi()['api_dispatcher'] = $dispatcher;
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
 
     $verb === 'GET'
@@ -501,7 +544,7 @@ test('guest authentication accepts session-bound form JSON and header tokens', f
     unset($params['CSRFToken']);
     $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), $class . '_' . $method, $params)->andReturn(['ok' => true]);
     $controller->getDi()['api_dispatcher'] = $dispatcher;
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
 
     $controller->post_method($app, 'guest', $class, $method);
@@ -516,7 +559,7 @@ test('guest cart mutations accept same-origin GET with the session nonce', funct
     $dispatcher = Mockery::mock();
     $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), 'cart_remove_item', ['id' => 5])->andReturn(['ok' => true]);
     $controller->getDi()['api_dispatcher'] = $dispatcher;
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
 
     $controller->get_method($app, 'guest', 'cart', 'remove_item');
@@ -532,7 +575,7 @@ test('guest cart mutations reject requests without the session nonce or from a c
     $dispatcher = Mockery::mock();
     $dispatcher->shouldNotReceive('dispatch');
     $controller->getDi()['api_dispatcher'] = $dispatcher;
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
 
     $verb === 'GET'
@@ -555,7 +598,7 @@ test('guest login cannot take its nonce or credentials from the query string', f
     $dispatcher = Mockery::mock();
     $dispatcher->shouldNotReceive('dispatch');
     $controller->getDi()['api_dispatcher'] = $dispatcher;
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
 
     $controller->post_method($app, 'guest', 'client', 'login');

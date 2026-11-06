@@ -31,23 +31,23 @@
         </tr>
         </thead>
         <tbody>
-        {% set extensions = admin.extension_get_latest({ "type": type|default('mod')}) %}
+        {% set extensions = admin.extension_get_latest({ "type": type|default('module')}) %}
         {% for extension in extensions %}
-        {% set latest = extension.releases|default([])|first|default({}) %}
             <tr>
                 <td class="text-nowrap">
-                    {% if extension.icon_url|default('') %}
+                    {% set icon = extension.icon_url|default('') %}
+                    {% if icon|lower starts with 'https://' or icon|lower starts with 'http://' %}
                         <img src="{{ extension.icon_url }}" alt="{{ extension.name|default('Extension') }}" style="width: 32px; height: 32px;">
                     {% else %}
                         <svg class="icon" style="width: 32px; height: 32px;"><use href="#settings" /></svg>
                     {% endif %}
                 </td>
                 <td class="text-wrap">
-                    <strong>{{ extension.name|default('Unknown extension') }}</strong> {{ latest.tag|default('') }}<br>
+                    <strong>{{ extension.name|default('Unknown extension') }}</strong> {{ extension.version|default('') }}<br>
                     {% set author = extension.author|default({}) %}
-                    {% set author_name = author.id|default(author.name|default('Unknown')) %}
-                    {% if author.URL|default('') %}
-                    <span>by <a href="{{ author.URL }}" target="_blank">{{ author_name }}</a></span>
+                    {% set author_name = author.name|default('Unknown') %}
+                    {% if author.url|default('') %}
+                    <span>by <a href="{{ author.url }}" target="_blank">{{ author_name }}</a></span>
                     {% else %}
                     <span>by {{ author_name }}</span>
                     {% endif %}
@@ -64,7 +64,7 @@
                     </a>
                 </td>
                 <td class="text-nowrap">
-                    <a class="btn btn-icon" href="{{ 'extension/install'|api_url(query: { 'type': extension.type|default(type|default('mod')), 'id': extension.id|default('') }) }}"
+                    <a class="btn btn-icon" href="{{ 'extension/install'|api_url(query: { 'type': extension.type|default(type|default('module')), 'id': extension.id|default('') }) }}"
                         data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}"
                         {{ fb_api_link({ message: 'By installing "' ~ extension.name|default('this extension') ~ '", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                         <svg class="icon">

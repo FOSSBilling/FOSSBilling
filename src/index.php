@@ -13,8 +13,8 @@ require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 global $di, $request;
 
 use DebugBar\DataCollector\TimeDataCollector;
-use FOSSBilling\Http\PaymentReturn;
-use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Core\Http\PaymentReturn;
+use FOSSBilling\Core\Http\RequestFactory;
 
 // A cross-site payment return must not start a replacement session when the
 // browser withholds its Strict cookie. Resume through a same-site navigation.
@@ -23,7 +23,7 @@ if ($paymentReturn !== null) {
     emitResponse($paymentReturn);
 }
 
-$config = FOSSBilling\Config::getConfig();
+$config = FOSSBilling\Core\System\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
 
@@ -73,11 +73,11 @@ if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $urlWithoutQueryString = parse_url($url, PHP_URL_PATH) ?? $url;
     $adminRelativeUrl = str_replace(ADMIN_PREFIX, '', (string) $urlWithoutQueryString);
     $appUrl = $adminRelativeUrl;
-    $app = new Box_AppAdmin([], $debugBar);
+    $app = new FOSSBilling\Core\Http\AppAdmin([], $debugBar);
 } else {
     define('ADMIN_AREA', false);
     $appUrl = $url;
-    $app = new Box_AppClient([], $debugBar);
+    $app = new FOSSBilling\Core\Http\AppClient([], $debugBar);
 }
 
 $app->setUrl($appUrl);
@@ -91,12 +91,12 @@ $timeCollector?->stopMeasure('translate');
 if (!is_null($http_err_code)) {
     switch ($http_err_code) {
         case 404:
-            $e = new FOSSBilling\Exception('Page :url not found', [':url' => $url], 404);
+            $e = new FOSSBilling\Core\Exception\BaseException('Page :url not found', [':url' => $url], 404);
             $response = $app->show404($e);
 
             break;
         default:
-            $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
+            $e = new FOSSBilling\Core\Exception\BaseException('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
             $response = $app->errorResponse($e);
     }
 } else {

@@ -144,7 +144,7 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([$invoiceItemModel]);
 
-    $periodMock = Mockery::mock(FOSSBilling\Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Core\Period::class);
     $periodMock->shouldReceive('getUnit');
     $periodMock->shouldReceive('getQty');
 
@@ -216,7 +216,7 @@ test('issued invoices show the frozen seller snapshot, drafts show live settings
         ->byDefault()
         ->andReturn('1W');
 
-    $periodMock = Mockery::mock(FOSSBilling\Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Core\Period::class);
     $periodMock->shouldReceive('getUnit');
     $periodMock->shouldReceive('getQty');
 
@@ -458,7 +458,7 @@ test('to api array self-heals invoice with missing hash', function (): void {
     $em->shouldReceive('flush')
         ->atLeast()->once();
 
-    $periodMock = Mockery::mock(FOSSBilling\Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Core\Period::class);
     $periodMock->shouldReceive('getUnit');
     $periodMock->shouldReceive('getQty');
 
@@ -988,7 +988,7 @@ test('marks invoice as paid', function (): void {
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -1136,7 +1136,7 @@ test('markAsPaid throws when the invoice currency rate is not configured', funct
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->markAsPaid($invoiceModel))
-        ->toThrow(FOSSBilling\Exception::class, "Currency rate for code 'CHF' is not configured");
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, "Currency rate for code 'CHF' is not configured");
 });
 
 test('markAsPaidByAdmin refuses canceled and replaced invoices before any write', function (): void {
@@ -1161,7 +1161,7 @@ test('markAsPaidByAdmin refuses canceled and replaced invoices before any write'
         $service->setDi($di);
 
         expect(fn () => $service->markAsPaidByAdmin($invoice, []))
-            ->toThrow(FOSSBilling\InformationException::class, 'canceled and cannot be marked as paid');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'canceled and cannot be marked as paid');
     }
 });
 
@@ -1183,7 +1183,7 @@ test('markAsPaid refuses invoices canceled while waiting on the lock', function 
     $service->setDi($di);
 
     expect(fn () => $service->markAsPaid($invoice))
-        ->toThrow(FOSSBilling\InformationException::class, 'canceled and cannot be marked as paid');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'canceled and cannot be marked as paid');
 });
 
 test('admin mark as paid with custom gateway records transaction and marks invoice paid', function (): void {
@@ -1243,7 +1243,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -1339,7 +1339,7 @@ test('admin mark as paid credits client balance for a deposit invoice with custo
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -1418,7 +1418,7 @@ test('admin mark as paid credits client balance for a deposit invoice with a non
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -1502,7 +1502,7 @@ test('admin mark as paid credits only deposit lines on a mixed invoice', functio
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -1634,7 +1634,7 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
 
     expect(fn () => $serviceMock->markAsPaidByAdmin($invoiceModel, [
         'transactionId' => 'manual-reference-1',
-    ]))->toThrow(FOSSBilling\InformationException::class, 'Transaction ID is already associated with another invoice.');
+    ]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Transaction ID is already associated with another invoice.');
 });
 
 test('markAsPaidByAdmin applies a payment date override', function (): void {
@@ -1771,7 +1771,7 @@ test('issueInvoice still issues when the journal snapshot fails', function (): v
     $em->shouldReceive('flush')->atLeast()->once();
 
     $eventDispatcher = new class {
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             return $event;
         }
@@ -1835,7 +1835,7 @@ test('markAsPaidByAdmin rejects an invalid payment date before any write', funct
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->markAsPaidByAdmin($invoiceModel, ['paid_at' => 'not-a-date']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invalid date format for paid_at');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invalid date format for paid_at');
 });
 
 test('validateAdminMarkAsPaidRequest requires a gateway when neither request nor invoice has one', function (): void {
@@ -1852,7 +1852,7 @@ test('validateAdminMarkAsPaidRequest requires a gateway when neither request nor
     $service->setDi($di);
 
     expect(fn () => $service->validateAdminMarkAsPaidRequest([], $invoiceModel))
-        ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is required when marking an invoice as paid.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Payment gateway is required when marking an invoice as paid.');
 });
 
 test('validateAdminMarkAsPaidRequest rejects a disabled gateway', function (): void {
@@ -1876,7 +1876,7 @@ test('validateAdminMarkAsPaidRequest rejects a disabled gateway', function (): v
     $service->setDi($di);
 
     expect(fn () => $service->validateAdminMarkAsPaidRequest(['gateway_id' => 5], $invoiceModel))
-        ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is not enabled');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Payment gateway is not enabled');
 });
 
 test('validateAdminMarkAsPaidRequest accepts an explicit gateway for a gateway-less issued invoice', function (): void {
@@ -1941,7 +1941,7 @@ test('admin mark as paid creates no transaction when the invoice is canceled und
     expect(fn () => $serviceMock->markAsPaidByAdmin($invoiceModel, [
         'gateway_id' => 5,
         'transactionId' => 'manual-reference-1',
-    ]))->toThrow(FOSSBilling\InformationException::class, 'canceled and cannot be marked as paid');
+    ]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'canceled and cannot be marked as paid');
 });
 
 test('counts income', function (): void {
@@ -2110,7 +2110,7 @@ test('prepareInvoice with instant issue reports issuance failures instead of ret
     $serviceMock->shouldReceive('recordJournalEvent')->once();
     $serviceMock->shouldReceive('issueInvoice')
         ->once()
-        ->andThrow(new FOSSBilling\InformationException('Only unpaid draft invoices can be issued.'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Only unpaid draft invoices can be issued.'));
 
     $clientModel = createEntity(Client::class, ['currency' => 'EUR']);
 
@@ -2128,7 +2128,7 @@ test('prepareInvoice with instant issue reports issuance failures instead of ret
     // The prepared draft persists, but the caller asked for an issued invoice:
     // the failure surfaces instead of a silent draft.
     expect(fn () => $serviceMock->prepareInvoice($clientModel, ['issue' => true]))
-        ->toThrow(FOSSBilling\InformationException::class, 'could not be issued');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'could not be issued');
     expect($logger->calls)->toContain([
         'method' => 'warning',
         'params' => ['Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => null, 'message' => 'Only unpaid draft invoices can be issued.']],
@@ -2244,7 +2244,7 @@ test('getNextInvoiceNumber throws when no number can be determined', function ()
     $service->setDi($di);
 
     expect(fn (): int => $service->getNextInvoiceNumber())
-        ->toThrow(FOSSBilling\Exception::class, 'Unable to determine the next invoice number');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Unable to determine the next invoice number');
 });
 
 test('issues an invoice', function (): void {
@@ -2271,7 +2271,7 @@ test('issues an invoice', function (): void {
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->steps[] = $event;
 
@@ -2739,7 +2739,7 @@ test('refunds invoice with negative invoice logic', function (): void {
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -2853,7 +2853,7 @@ test('refunds invoice with credit note logic and reserved numbering', function (
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -2992,7 +2992,7 @@ test('refundInvoice keeps the refund successful when notification delivery fails
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -3056,7 +3056,7 @@ test('refundInvoice in manual mode records an offline refund document', function
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -3186,7 +3186,7 @@ test('refundInvoice refuses invoices that are not paid', function (): void {
         $service->setDi($di);
 
         expect(fn () => $service->refundInvoice($invoice))
-            ->toThrow(FOSSBilling\InformationException::class, 'Only paid invoices can be refunded');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only paid invoices can be refunded');
     }
 });
 
@@ -3231,7 +3231,7 @@ test('updates an invoice', function (): void {
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -3409,7 +3409,7 @@ test('deletes invoice by admin', function (): void {
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -3450,7 +3450,7 @@ test('renews an invoice', function (): void {
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -3817,7 +3817,7 @@ test('throws exception when generating invoice for negative amount order', funct
     $clientOrder = createEntity(Order::class, ['price' => -1, 'quantity' => 1]);
 
     expect(fn (): Invoice => $service->generateForOrder($clientOrder))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for negative amount orders.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invoices are not generated for negative amount orders.');
 });
 
 test('returns true when no expiring orders found', function (): void {
@@ -4267,7 +4267,7 @@ test('merged renewal invoice requires at least one order', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->setDi(container());
 
-    expect(fn (): Invoice => $serviceMock->generateMergedInvoiceForOrders([]))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): Invoice => $serviceMock->generateMergedInvoiceForOrders([]))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('merged renewal invoice resolves every line before persisting anything', function (): void {
@@ -4296,7 +4296,7 @@ test('merged renewal invoice resolves every line before persisting anything', fu
     $serviceMock->setDi($di);
 
     expect(fn (): Invoice => $serviceMock->generateMergedInvoiceForOrders([$good, $bad]))
-        ->toThrow(FOSSBilling\InformationException::class, 'negative amount');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'negative amount');
 });
 
 test('activates paid invoices in batch', function (): void {
@@ -4343,7 +4343,7 @@ test('handles exception during batch paid invoice activation', function (): void
     $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $itemInvoiceServiceMock->shouldReceive('executeTask')
         ->with($invoiceItemModel)
-        ->andThrow(new FOSSBilling\Exception('testing exception..'));
+        ->andThrow(new FOSSBilling\Core\Exception\BaseException('testing exception..'));
     $itemInvoiceServiceMock->shouldReceive('getAllNotExecutePaidItems')
         ->atLeast()->once()
         ->andReturn([['id' => 1]]);
@@ -4803,7 +4803,7 @@ test('throws exception when generating funds invoice without active order', func
     $clientModel = createEntity(Client::class);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
-        ->toThrow(FOSSBilling\Exception::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
 });
 
 test('throws exception when generating funds invoice while the feature is disabled', function (): void {
@@ -4822,7 +4822,7 @@ test('throws exception when generating funds invoice while the feature is disabl
     $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
-        ->toThrow(FOSSBilling\Exception::class, 'Adding funds to the account balance is currently disabled');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Adding funds to the account balance is currently disabled');
 });
 
 test('throws exception when generating funds invoice below minimum amount', function (): void {
@@ -4843,7 +4843,7 @@ test('throws exception when generating funds invoice below minimum amount', func
     $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
-        ->toThrow(FOSSBilling\Exception::class, 'Amount must be at least ' . $minAmount);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Amount must be at least ' . $minAmount);
 });
 
 test('throws exception when generating funds invoice above maximum amount', function (): void {
@@ -4864,7 +4864,7 @@ test('throws exception when generating funds invoice above maximum amount', func
     $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
-        ->toThrow(FOSSBilling\Exception::class, 'Amount cannot exceed ' . $maxAmount);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Amount cannot exceed ' . $maxAmount);
 });
 
 test('generates funds invoice', function (): void {
@@ -4997,7 +4997,7 @@ test('throws exception when processing invoice not found', function (): void {
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invoice not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invoice not found');
 });
 
 test('throws exception when processing invoice with gateway not found', function (): void {
@@ -5023,7 +5023,7 @@ test('throws exception when processing invoice with gateway not found', function
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Payment method not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Payment method not found');
 });
 
 test('throws exception when processing invoice with gateway not enabled', function (): void {
@@ -5051,7 +5051,7 @@ test('throws exception when processing invoice with gateway not enabled', functi
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment method not enabled');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Payment method not enabled');
 });
 
 test('throws exception when processing a canceled or replaced invoice', function (): void {
@@ -5083,7 +5083,7 @@ test('throws exception when processing a canceled or replaced invoice', function
         $service->setDi($di);
 
         expect(fn (): array => $service->processInvoice($data))
-            ->toThrow(FOSSBilling\InformationException::class, $message);
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, $message);
     }
 });
 
@@ -5150,7 +5150,7 @@ test('processes an invoice', function (): void {
             return $subscribeService;
         }
     });
-    $di['api_admin'] = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+    $di['api_admin'] = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -5391,7 +5391,7 @@ test('validatePaymentAmount throws on underpayment', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->validatePaymentAmount(40.00, 50.00))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('validatePaymentAmount logs warning on significant overpayment', function (): void {
@@ -5608,7 +5608,7 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -5866,7 +5866,7 @@ test('promoAddToInvoice applies a promo to an order on an unpaid invoice', funct
         'currency' => $currencyService,
         'client' => $clientService,
     ]));
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $service->setDi($di);
 
     $amount = $service->promoAddToInvoice($invoice, $promo, $order);
@@ -5975,7 +5975,7 @@ test('promoAddToInvoice values a percentage promo from the invoice order line', 
         'currency' => $currencyService,
         'client' => $clientService,
     ]));
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $service->setDi($di);
 
     $amount = $service->promoAddToInvoice($invoice, $promo, $order);
@@ -5995,7 +5995,7 @@ test('promoAddToInvoice refuses paid invoices', function (): void {
     $promo = new Box\Mod\Product\Entity\Promo();
 
     expect(fn () => $service->promoAddToInvoice($invoice, $promo))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promotions can only be applied to unpaid invoices');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promotions can only be applied to unpaid invoices');
 });
 
 test('promoRemoveFromInvoice removes a recorded promo', function (): void {
@@ -6058,7 +6058,7 @@ test('promoRemoveFromInvoice removes a recorded promo', function (): void {
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['product' => $productService]));
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $service->setDi($di);
 
     $amount = $service->promoRemoveFromInvoice($invoice, $promo, $order);
@@ -6097,7 +6097,7 @@ test('promoRemoveFromInvoice throws when the promo is not applied', function ():
     $service->setDi($di);
 
     expect(fn () => $service->promoRemoveFromInvoice($invoice, $promo, $order))
-        ->toThrow(FOSSBilling\InformationException::class, 'This promotion is not applied to the selected order');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This promotion is not applied to the selected order');
 });
 
 test('promoAddToInvoice aborts when the invoice is paid concurrently', function (): void {
@@ -6157,7 +6157,7 @@ test('promoAddToInvoice aborts when the invoice is paid concurrently', function 
     $service->setDi($di);
 
     expect(fn () => $service->promoAddToInvoice($invoice, $promo, $order))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promotions can only be applied to unpaid invoices');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promotions can only be applied to unpaid invoices');
 });
 
 test('promoRemoveFromInvoice aborts when the invoice is paid concurrently', function (): void {
@@ -6189,7 +6189,7 @@ test('promoRemoveFromInvoice aborts when the invoice is paid concurrently', func
     $service->setDi($di);
 
     expect(fn () => $service->promoRemoveFromInvoice($invoice, $promo, $order))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promotions can only be removed from unpaid invoices');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promotions can only be removed from unpaid invoices');
 });
 
 test('getInvoicePromoApplications groups redemptions by promo and order', function (): void {
@@ -6262,7 +6262,7 @@ test('refundInvoice supports partial line refunds and flips to refunded at full'
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6403,7 +6403,7 @@ test('refundInvoice validates partial refund input', function (): void {
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6419,13 +6419,13 @@ test('refundInvoice validates partial refund input', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [99 => 1]))
-        ->toThrow(FOSSBilling\InformationException::class, 'was not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'was not found');
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only charge lines');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only charge lines');
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [11 => 5]))
-        ->toThrow(FOSSBilling\InformationException::class, 'exceeds the remaining refundable quantity');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'exceeds the remaining refundable quantity');
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [11 => 0]))
-        ->toThrow(FOSSBilling\InformationException::class, 'No invoice lines selected');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'No invoice lines selected');
     expect($events)->toHaveCount(4);
     foreach ($events as $event) {
         expect($event)->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
@@ -6448,7 +6448,7 @@ test('debitInvoice issues a payable debit note linked to the original', function
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6554,7 +6554,7 @@ test('debitInvoice refuses ineligible invoices and lines', function (): void {
         $service->setDi($di);
 
         expect(fn () => $service->debitInvoice($invoice, $items))
-            ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid or paid invoices can be debited');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid or paid invoices can be debited');
     }
 
     $service = new Service();
@@ -6566,11 +6566,11 @@ test('debitInvoice refuses ineligible invoices and lines', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->debitInvoice($invoice, []))
-        ->toThrow(FOSSBilling\InformationException::class, 'No debit lines given');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'No debit lines given');
     expect(fn () => $service->debitInvoice($invoice, [['title' => '   ', 'price' => 5]]))
-        ->toThrow(FOSSBilling\InformationException::class, 'No debit lines given');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'No debit lines given');
     expect(fn () => $service->debitInvoice($invoice, [['title' => 'X', 'price' => 0]]))
-        ->toThrow(FOSSBilling\InformationException::class, 'positive amount');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'positive amount');
 });
 
 test('isInvoiceEditable gates issued invoices by setting', function (): void {
@@ -6643,7 +6643,7 @@ test('updateInvoice refuses to edit a locked invoice', function (): void {
         $service->setDi($di);
 
         expect(fn () => $service->updateInvoice($invoice, ['notes' => 'Edited']))
-            ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
     }
 });
 
@@ -6662,7 +6662,7 @@ test('updateInvoice resends an issued invoice after editing it', function (): vo
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6701,7 +6701,7 @@ test('updateInvoice does not resend a draft invoice', function (): void {
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6746,7 +6746,7 @@ test('deleteInvoiceByAdmin only deletes unissued unpaid invoices', function (): 
         $service->setDi($di);
 
         expect(fn () => $service->deleteInvoiceByAdmin($invoice))
-            ->toThrow(FOSSBilling\InformationException::class, 'Only unissued, unpaid invoices (drafts) can be deleted');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only unissued, unpaid invoices (drafts) can be deleted');
     }
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -6757,7 +6757,7 @@ test('deleteInvoiceByAdmin only deletes unissued unpaid invoices', function (): 
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6787,7 +6787,7 @@ test('debitInvoice writes nothing when lines are invalid', function (): void {
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6806,9 +6806,9 @@ test('debitInvoice writes nothing when lines are invalid', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->debitInvoice($invoiceModel, [['title' => 'X', 'price' => 0]]))
-        ->toThrow(FOSSBilling\InformationException::class, 'positive amount');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'positive amount');
     expect(fn () => $serviceMock->debitInvoice($invoiceModel, [['title' => '', 'price' => 5]]))
-        ->toThrow(FOSSBilling\InformationException::class, 'No debit lines given');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'No debit lines given');
     expect($eventDispatcher->events)->toHaveCount(2)
         ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceDebitEvent::class)
         ->and($eventDispatcher->events[1])->toBeInstanceOf(BeforeAdminInvoiceDebitEvent::class);
@@ -6838,7 +6838,7 @@ test('refundInvoice enforces per-line remaining quantities across partials', fun
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6900,7 +6900,7 @@ test('refundInvoice enforces per-line remaining quantities across partials', fun
         ->and($events[1])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
         ->and($events[1]->invoiceId)->toBe(10);
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))
-        ->toThrow(FOSSBilling\InformationException::class, 'remaining');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'remaining');
     expect($events)->toHaveCount(3)
         ->and($events[2])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
         ->and($events[2]->invoiceId)->toBe(10);
@@ -6923,7 +6923,7 @@ test('attachOrderToInvoice attaches an existing pending order as an order line',
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -6985,7 +6985,7 @@ test('attachOrderToInvoice does not resend a draft invoice', function (): void {
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7031,7 +7031,7 @@ test('attachOrderToInvoice refuses locked invoices and invalid orders', function
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7058,7 +7058,7 @@ test('attachOrderToInvoice refuses locked invoices and invalid orders', function
     setEntityId($locked, 10);
 
     expect(fn () => $serviceMock->attachOrderToInvoice($locked, ['order_id' => 42]))
-        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
 
     // Payload shape is validated before anything is written.
     $editable = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
@@ -7067,9 +7067,9 @@ test('attachOrderToInvoice refuses locked invoices and invalid orders', function
     setEntityId($editable, 11);
 
     expect(fn () => $serviceMock->attachOrderToInvoice($editable, []))
-        ->toThrow(FOSSBilling\InformationException::class, 'Product was not passed');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Product was not passed');
     expect(fn () => $serviceMock->attachOrderToInvoice($editable, ['order_id' => 42, 'product_id' => 7]))
-        ->toThrow(FOSSBilling\InformationException::class, 'either an order or product');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'either an order or product');
 
     // Order state is validated inside the transaction; the line is never added.
     $cases = [
@@ -7106,7 +7106,7 @@ test('attachOrderToInvoice refuses locked invoices and invalid orders', function
         $serviceMock->setDi($txDi);
 
         expect(fn () => $serviceMock->attachOrderToInvoice($editable, ['order_id' => 42]))
-            ->toThrow(FOSSBilling\InformationException::class, $message);
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, $message);
     }
 
     expect($eventDispatcher->events)->toHaveCount(7);
@@ -7167,7 +7167,7 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7275,7 +7275,7 @@ test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', 
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7297,14 +7297,14 @@ test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', 
     $draft->setStatus(Invoice::STATUS_UNPAID);
     setEntityId($draft, 10);
     expect(fn () => $serviceMock->reissueInvoice($draft))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid');
 
     $paid = createEntity(Invoice::class, ['clientId' => 5]);
     $paid->setIssued(true);
     $paid->setStatus(Invoice::STATUS_PAID);
     setEntityId($paid, 10);
     expect(fn () => $serviceMock->reissueInvoice($paid))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid');
 
     $note = createEntity(Invoice::class, ['clientId' => 5]);
     $note->setIssued(true);
@@ -7312,7 +7312,7 @@ test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', 
     $note->setCreditNoteForInvoiceId(7);
     setEntityId($note, 10);
     expect(fn () => $serviceMock->reissueInvoice($note))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid');
 
     $already = createEntity(Invoice::class, ['clientId' => 5]);
     $already->setIssued(true);
@@ -7320,7 +7320,7 @@ test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', 
     $already->setReplacedByInvoiceId(11);
     setEntityId($already, 10);
     expect(fn () => $serviceMock->reissueInvoice($already))
-        ->toThrow(FOSSBilling\InformationException::class, 'already been reissued');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'already been reissued');
 
     expect($eventDispatcher->events)->toHaveCount(4);
     foreach ($eventDispatcher->events as $event) {
@@ -7340,7 +7340,7 @@ test('cancelInvoice voids an issued unpaid invoice without replacement', functio
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7403,7 +7403,7 @@ test('cancelInvoice emails the client when void notifications are opted in', fun
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7469,7 +7469,7 @@ test('cancelInvoice stays silent for guest invoices even when opted in', functio
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7521,7 +7521,7 @@ test('issuing an invoice freezes buyer details from the live client', function (
         ->andReturn(9);
 
     $eventDispatcher = new class {
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             return $event;
         }
@@ -7595,7 +7595,7 @@ test('issuing a legacy numbered draft keeps its number', function (): void {
     $serviceMock->shouldReceive('getNextInvoiceNumber')->never();
 
     $eventDispatcher = new class {
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             return $event;
         }
@@ -7636,7 +7636,7 @@ test('cancelInvoice refuses drafts, paid invoices, notes, and reissued invoices'
     $eventDispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -7658,14 +7658,14 @@ test('cancelInvoice refuses drafts, paid invoices, notes, and reissued invoices'
     $draft->setStatus(Invoice::STATUS_UNPAID);
     setEntityId($draft, 10);
     expect(fn () => $serviceMock->cancelInvoice($draft))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid invoices can be canceled');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid invoices can be canceled');
 
     $paid = createEntity(Invoice::class, ['clientId' => 5]);
     $paid->setIssued(true);
     $paid->setStatus(Invoice::STATUS_PAID);
     setEntityId($paid, 10);
     expect(fn () => $serviceMock->cancelInvoice($paid))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid invoices can be canceled');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid invoices can be canceled');
 
     $note = createEntity(Invoice::class, ['clientId' => 5]);
     $note->setIssued(true);
@@ -7673,7 +7673,7 @@ test('cancelInvoice refuses drafts, paid invoices, notes, and reissued invoices'
     $note->setCreditNoteForInvoiceId(7);
     setEntityId($note, 10);
     expect(fn () => $serviceMock->cancelInvoice($note))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid invoices can be canceled');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid invoices can be canceled');
 
     $already = createEntity(Invoice::class, ['clientId' => 5]);
     $already->setIssued(true);
@@ -7681,7 +7681,7 @@ test('cancelInvoice refuses drafts, paid invoices, notes, and reissued invoices'
     $already->setReplacedByInvoiceId(11);
     setEntityId($already, 10);
     expect(fn () => $serviceMock->cancelInvoice($already))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only issued unpaid invoices can be canceled');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only issued unpaid invoices can be canceled');
 
     expect($eventDispatcher->events)->toHaveCount(4);
     foreach ($eventDispatcher->events as $event) {
@@ -7738,7 +7738,7 @@ test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
         $eventDispatcher = new class {
             public array $events = [];
 
-            public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+            public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
             {
                 $this->events[] = $event;
 
@@ -7765,7 +7765,7 @@ test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
     $issued->setStatus(Invoice::STATUS_UNPAID);
     setEntityId($issued, 10);
     expect(fn () => $offService->deleteInvoiceByAdmin($issued))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only unissued, unpaid invoices (drafts) can be deleted');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only unissued, unpaid invoices (drafts) can be deleted');
     expect($offEvents->events)->toHaveCount(0);
 
     // … but deleted when relaxed.
@@ -7797,7 +7797,7 @@ test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
     $paid->setStatus(Invoice::STATUS_PAID);
     setEntityId($paid, 12);
     expect(fn () => $paidService->deleteInvoiceByAdmin($paid))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only unissued, unpaid invoices (drafts) can be deleted');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only unissued, unpaid invoices (drafts) can be deleted');
     expect($paidEvents->events)->toHaveCount(0);
 });
 
@@ -7822,13 +7822,13 @@ test('updateInvoice refuses identity changes on issued invoices even when relaxe
     // Rewriting the number, series, status, or issue state of an issued invoice
     // is refused even though relaxed content edits are allowed.
     expect(fn () => $service->updateInvoice($invoice, ['nr' => '43']))
-        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'locked once issued');
     expect(fn () => $service->updateInvoice($invoice, ['serie' => 'XX-']))
-        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'locked once issued');
     expect(fn () => $service->updateInvoice($invoice, ['status' => Invoice::STATUS_PAID]))
-        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'locked once issued');
     expect(fn () => $service->updateInvoice($invoice, ['issued' => false]))
-        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'locked once issued');
 });
 
 test('updateInvoice ignores snapshot params since parties freeze at issuance', function (): void {
@@ -7851,7 +7851,7 @@ test('updateInvoice ignores snapshot params since parties freeze at issuance', f
 
     // Issued invoices reject all edits in strict mode, snapshot fields included.
     expect(fn () => $service->updateInvoice($invoice, ['buyer_first_name' => 'Grace']))
-        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
 });
 
 test('updateInvoice changing the tax rate moves the computed total', function (): void {
@@ -7918,7 +7918,7 @@ test('updateInvoice refuses non-lifecycle statuses on drafts', function (): void
     // the payment, refund, and issuance paths never expect a draft to be in.
     foreach ([Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, 'approved', 'whatever'] as $status) {
         expect(fn () => $service->updateInvoice($invoice, ['status' => $status]))
-            ->toThrow(FOSSBilling\InformationException::class, 'Draft invoices can only be unpaid or canceled');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Draft invoices can only be unpaid or canceled');
     }
 });
 
@@ -7948,7 +7948,7 @@ test('updateInvoice refuses to flip the issued flag', function (): void {
     // Issuance runs through issueInvoice(): flipping the flag here would
     // mint a numberless, snapshot-less, journal-less "issued" invoice.
     expect(fn () => $service->updateInvoice($invoice, ['issued' => 1]))
-        ->toThrow(FOSSBilling\InformationException::class, 'issue action');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'issue action');
     expect($invoice->isIssued())->toBeFalse();
 });
 
@@ -8002,7 +8002,7 @@ test('issueInvoice refuses drafts that are not unpaid', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->issueInvoice($invoice, []))
-        ->toThrow(FOSSBilling\InformationException::class, 'Only unpaid draft invoices can be issued');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only unpaid draft invoices can be issued');
     expect($invoice->isIssued())->toBeFalse();
 });
 
@@ -8022,9 +8022,9 @@ test('promoAddToInvoice and promoRemoveFromInvoice refuse locked issued invoices
     $promo = new Box\Mod\Product\Entity\Promo();
 
     expect(fn () => $service->promoAddToInvoice($invoice, $promo))
-        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
     expect(fn () => $service->promoRemoveFromInvoice($invoice, $promo))
-        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'can no longer be edited');
 });
 
 test('expired cleanup isolates a concurrently-changed invoice and keeps going', function (): void {
@@ -8048,7 +8048,7 @@ test('expired cleanup isolates a concurrently-changed invoice and keeps going', 
     $invoiceServiceMock->shouldReceive('rmInvoice')
         ->once()
         ->with($changed, true)
-        ->andThrow(new FOSSBilling\InformationException('Only unissued, unpaid invoices (drafts) can be deleted'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Only unissued, unpaid invoices (drafts) can be deleted'));
     $invoiceServiceMock->shouldReceive('rmInvoice')
         ->once()
         ->with($draft, true)
@@ -8408,7 +8408,7 @@ test('refundInvoice skips the gateway when gateway_refund is disabled', function
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -8489,7 +8489,7 @@ test('refundInvoice issues a Stripe refund and records an audit transaction', fu
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -8613,7 +8613,7 @@ test('refundInvoice aborts the credit note when the Stripe refund fails', functi
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'Gateway refund failed');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Gateway refund failed');
 });
 
 test('refundInvoice reuses an unrecorded Stripe refund instead of refunding twice', function (): void {
@@ -8656,7 +8656,7 @@ test('refundInvoice reuses an unrecorded Stripe refund instead of refunding twic
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -8766,7 +8766,7 @@ test('refundInvoice aborts when an unrecorded Stripe refund covers a different a
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 're_old');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 're_old');
 });
 
 test('refundInvoice reverses the deposit credit when refunding through the gateway', function (): void {
@@ -8814,7 +8814,7 @@ test('refundInvoice reverses the deposit credit when refunding through the gatew
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -8944,7 +8944,7 @@ test('refundInvoice aborts before Stripe when the deposit credit cannot be rever
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'insufficient');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'insufficient');
 });
 
 test('refundInvoice reverses the deposit credit for recorded dashboard refunds without calling Stripe', function (): void {
@@ -8978,7 +8978,7 @@ test('refundInvoice reverses the deposit credit for recorded dashboard refunds w
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -9081,7 +9081,7 @@ test('refundInvoice stamps the refunded lines into the gateway refund metadata',
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -9138,7 +9138,7 @@ test('refundInvoice stamps the refunded lines into the gateway refund metadata',
 
 test('refundInvoice fails closed when another refund holds the invoice lock', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('withInvoiceRefundLock')->once()->andThrow(new FOSSBilling\InformationException('Another refund for this invoice is already in progress. Please retry.'));
+    $serviceMock->shouldReceive('withInvoiceRefundLock')->once()->andThrow(new FOSSBilling\Core\Exception\InformationException('Another refund for this invoice is already in progress. Please retry.'));
 
     $invoiceModel = createEntity(Invoice::class);
     $invoiceModel->setStatus(Invoice::STATUS_PAID);
@@ -9148,7 +9148,7 @@ test('refundInvoice fails closed when another refund holds the invoice lock', fu
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    expect(fn (): mixed => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'already in progress');
+    expect(fn (): mixed => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'already in progress');
 });
 
 test('refundInvoice reverses the deposit credit before calling the gateway', function (): void {
@@ -9208,7 +9208,7 @@ test('refundInvoice reverses the deposit credit before calling the gateway', fun
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -9323,7 +9323,7 @@ test('refundInvoice issues distinct Stripe refunds for repeated identical partia
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -9439,7 +9439,7 @@ test('refundInvoice reuses an unrecorded Stripe refund with matching lines', fun
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -9550,7 +9550,7 @@ test('refundInvoice aborts when an unrecorded Stripe refund covers the same amou
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 're_9');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 're_9');
 });
 
 test('refundInvoice rejects a Stripe refund ID that is already recorded', function (): void {
@@ -9623,7 +9623,7 @@ test('refundInvoice rejects a Stripe refund ID that is already recorded', functi
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'already recorded');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'already recorded');
 });
 
 test('refundInvoice fails when a requested gateway refund has no refundable payment', function (): void {
@@ -9666,7 +9666,7 @@ test('refundInvoice fails when a requested gateway refund has no refundable paym
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'No refundable gateway payment');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'No refundable gateway payment');
 });
 
 test('refundInvoice fails when the payment adapter cannot load', function (): void {
@@ -9701,7 +9701,7 @@ test('refundInvoice fails when the payment adapter cannot load', function (): vo
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'Could not load the payment gateway');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Could not load the payment gateway');
 });
 
 test('refundInvoice reuses an unrecorded Stripe refund with matching partial lines', function (): void {
@@ -9747,7 +9747,7 @@ test('refundInvoice reuses an unrecorded Stripe refund with matching partial lin
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -9863,5 +9863,5 @@ test('refundInvoice aborts when an unrecorded Stripe refund has no line selectio
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
-    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))->toThrow(FOSSBilling\InformationException::class, 're_legacy');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 're_legacy');
 });

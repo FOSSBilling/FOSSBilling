@@ -151,7 +151,7 @@
                                 {{ include(product_order, { product: basket_product }) }}
                             {% endif %}
 
-                            {% if basket_product.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                            {% if basket_product.form_id and guest.extension_is_on({"module": 'formbuilder' }) %}
                                 {{ include('mod_formbuilder_build.html.twig', { product: basket_product }) }}
                             {% endif %}
 

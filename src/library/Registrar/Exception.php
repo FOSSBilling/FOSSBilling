@@ -8,10 +8,10 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Registrar_Exception extends FOSSBilling\Exception
+class Registrar_Exception extends FOSSBilling\Core\Exception\BaseException
 {
     /**
-     * Creates a new translated exception, using the FOSSBilling\Exception class.
+     * Creates a new translated exception, using the FOSSBilling\Core\Exception\BaseException class.
      *
      * @param string         $message   error message
      * @param array|int|null $variables translation variables, or the exception code
@@ -20,13 +20,13 @@ class Registrar_Exception extends FOSSBilling\Exception
      *                                  rather than fataling and hiding the error)
      * @param int            $code      the exception code
      */
-    public function __construct(string $message, array|int|null $variables = null, int $code = 0)
+    public function __construct(string $message, array|int|null $variables = null, int $code = 0, ?string $from = null)
     {
         if (is_int($variables)) {
             $code = $variables;
             $variables = null;
         }
 
-        parent::__construct($message, $variables, $code, true);
+        parent::__construct($message, $variables, $code, true, $from);
     }
 }

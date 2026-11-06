@@ -22,14 +22,15 @@ use Box\Mod\Email\Repository\EmailTemplateGroupRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Box\Mod\Email\Repository\QueuedEmailRepository;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\Config;
-use FOSSBilling\Environment;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Core\Enums\ExtensionType;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     protected EmailTemplateRepository $templateRepository;
@@ -267,7 +268,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client']) && !isset($data['to_admin'])) {
-            throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
+            throw new \FOSSBilling\Core\Exception\InformationException('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
         }
         $vars = $data;
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin'], $vars['client_billing_email']);
@@ -313,7 +314,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 ];
                 $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
             } else {
-                throw new \FOSSBilling\InformationException('Admin not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('Admin not found');
             }
         }
 
@@ -333,7 +334,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (isset($customer) && !empty($customer['timezone'])) {
             $recipientTimezone = (string) $customer['timezone'];
         } elseif (isset($oneStaff) && !empty($oneStaff['timezone'] ?? null)) {
-            $recipientTimezone = (string) $oneStaff['timezone'];
+            $recipientTimezone = $oneStaff['timezone'];
         }
 
         $recipientLocale = null;
@@ -360,7 +361,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $sent = false;
 
         if (!$from) {
-            throw new \FOSSBilling\InformationException('The "from" email address cannot be empty');
+            throw new \FOSSBilling\Core\Exception\InformationException('The "from" email address cannot be empty');
         }
 
         if (isset($staff)) {
@@ -732,7 +733,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             return [$ps, $pc];
-        } catch (\FOSSBilling\Exception $e) {
+        } catch (\FOSSBilling\Core\Exception\BaseException $e) {
             $template->setLastError($e->getMessage());
             $template->setErrorCheckedAt(new \DateTimeImmutable());
             $this->di['em']->flush();
@@ -744,7 +745,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function resend(ActivityClientEmail $email): bool
     {
         $extensionService = $this->di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
+        if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
             return false;
         }
 
@@ -910,7 +911,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $group = $this->di['mod_service']('staff')->getAdminGroupRepository()->find($groupId);
         if ($group === null) {
-            throw new \FOSSBilling\InformationException('Staff group not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Staff group not found');
         }
 
         if ($this->templateGroupRepository->findAssociation((int) $template->getId(), $groupId) instanceof EmailTemplateGroup) {
@@ -944,12 +945,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $default = $this->getDefaultTemplate((string) $code);
         if ($default === null) {
-            throw new \FOSSBilling\Exception('Email template :code does not have a file-backed default', [':code' => $code]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Email template :code does not have a file-backed default', [':code' => $code]);
         }
 
         $template = $this->getOrCreateTemplateByCode((string) $code, ['code' => $code]);
         if ($this->isCustomTemplate($template)) {
-            throw new \FOSSBilling\Exception('Custom email template :code cannot be reset to a default', [':code' => $code]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Custom email template :code cannot be reset to a default', [':code' => $code]);
         }
 
         $this->resetBuiltinTemplate($template, $default);
@@ -1032,7 +1033,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory(Path::getDirectory($file->getPath()))));
 
             // Skip if module is not active.
-            if (!$extensionService->isExtensionActive('mod', $module)) {
+            if (!$extensionService->isExtensionActive(ExtensionType::Module->value, $module)) {
                 continue;
             }
 
@@ -1080,7 +1081,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $template = $this->getTemplateRepository()->find($id);
         if (!$template instanceof EmailTemplate) {
-            throw new \FOSSBilling\Exception('Email template not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Email template not found');
         }
 
         if (!$this->isCustomTemplate($template)) {
@@ -1097,7 +1098,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $qb = $this->getTemplateRepository()->getSearchQueryBuilder($data);
 
-        $result = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        $result = $this->di['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
 
         $list = [];
         foreach ($result['list'] as $templateRow) {
@@ -1231,7 +1232,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
-        if ($extensionService->isExtensionActive('mod', 'demo')) {
+        if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
             return false;
         }
         $queue->setStatus('sending');
@@ -1256,7 +1257,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $attachment = $this->queuedAttachmentToArray($queue);
 
         try {
-            $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->getSubject(), $queue->getContent(), $transport, $settings['custom_dsn'] ?? null);
+            $mail = new \FOSSBilling\Core\Mail($sender, $recipient, $queue->getSubject(), $queue->getContent(), $transport, $settings['custom_dsn'] ?? null);
 
             if ($attachment !== null) {
                 $mail->attach($attachment['content'], $attachment['name'], $attachment['mime']);
@@ -1325,7 +1326,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 // If the error message is long, truncate it and inform the user the rest is in the error log.
                 $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message, 0, 350) . '...' : $message;
 
-                throw new \FOSSBilling\Exception($truncated);
+                throw new \FOSSBilling\Core\Exception\BaseException($truncated);
             }
         }
 

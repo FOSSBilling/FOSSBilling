@@ -21,8 +21,7 @@ use Box\Mod\Invoice\Event\AfterAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Event\BeforeAdminTransactionCreateEvent;
 use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Repository\TransactionRepository;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
@@ -100,7 +99,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if (!empty($data['invoice_id'])) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
             if (!$invoice instanceof Invoice) {
-                throw new \FOSSBilling\InformationException('Invoice not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('Invoice not found');
             }
             $this->assertInvoiceAcceptsTransactions($invoice);
             $model->setInvoice($invoice);
@@ -110,7 +109,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if (!empty($data['gateway_id'])) {
             $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
             if (!$gateway instanceof PayGateway) {
-                throw new \FOSSBilling\InformationException('Payment gateway not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway not found');
             }
             $model->setGateway($gateway);
         }
@@ -200,11 +199,27 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public const MAX_CALLBACK_BODY_SIZE = 1048576;
 
+    /**
+     * The only parts of a callback's $_SERVER that are stored with the transaction. Everything else is
+     * dropped, in particular the Cookie header (session ids), Authorization and PHP_AUTH_* credentials, and
+     * the process environment that PHP-FPM exposes through $_SERVER. REQUEST_TIME_FLOAT stays: the IPN
+     * hash below covers the stored payload, and it is what keeps two identical callbacks apart.
+     */
+    private const array STORED_SERVER_KEYS = [
+        'REMOTE_ADDR', 'REQUEST_METHOD', 'REQUEST_URI', 'QUERY_STRING', 'REQUEST_TIME', 'REQUEST_TIME_FLOAT',
+        'REQUEST_SCHEME', 'SERVER_NAME', 'SERVER_PORT', 'HTTPS', 'CONTENT_TYPE', 'CONTENT_LENGTH',
+        'HTTP_HOST', 'HTTP_USER_AGENT', 'HTTP_REFERER', 'HTTP_ORIGIN',
+        'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED_PROTO', 'HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP',
+    ];
+
+    /** Webhook signature headers (Stripe-Signature, PayPal-Transmission-Sig...) stay with the stored callback. */
+    private const string SIGNATURE_HEADER_PATTERN = '/^HTTP_[A-Z0-9_]*(?:SIGNATURE|_SIG|HMAC|DIGEST)(?:_[0-9]+)?$/';
+
     private function authenticateJsonCallback(array $data): void
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         if (!is_string($rawBody) || strlen($rawBody) > self::MAX_CALLBACK_BODY_SIZE) {
-            throw new \FOSSBilling\InformationException('Invalid callback body');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid callback body');
         }
 
         $body = ltrim($rawBody);
@@ -223,11 +238,11 @@ class ServiceTransaction implements InjectionAwareInterface
         $gateway = empty($data['gateway_id']) ? null
             : $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
         if (!$gateway instanceof PayGateway) {
-            throw new \FOSSBilling\InformationException('Invalid payment gateway');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid payment gateway');
         }
         $adapter = $this->di['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway);
-        if (!$adapter instanceof \FOSSBilling\Payment\JsonWebhookAuthenticatorInterface) {
-            throw new \FOSSBilling\InformationException('Payment gateway does not support authenticated JSON callbacks');
+        if (!$adapter instanceof \FOSSBilling\Core\Payment\JsonWebhookAuthenticatorInterface) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway does not support authenticated JSON callbacks');
         }
         $adapter->authenticateJsonWebhook($data);
     }
@@ -237,7 +252,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->authenticateJsonCallback($data);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionCreateEvent($this->getSafeCreateEventInput($data)));
 
-        $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
+        $skip_validation = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
                 $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -249,23 +264,23 @@ class ServiceTransaction implements InjectionAwareInterface
                     $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
                 }
 
-                throw new \FOSSBilling\InformationException('Invalid payment gateway');
+                throw new \FOSSBilling\Core\Exception\InformationException('Invalid payment gateway');
             }
         }
         if (!$skip_validation) {
             if (!isset($data['invoice_id'])) {
-                throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');
+                throw new \FOSSBilling\Core\Exception\InformationException('Transaction invoice ID is missing');
             }
 
             if (!isset($data['gateway_id'])) {
-                throw new \FOSSBilling\InformationException('Payment gateway ID is missing');
+                throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway ID is missing');
             }
             $invoice = $this->di['em']->getRepository(Invoice::class)->find($data['invoice_id']);
             if ($invoice === null) {
-                throw new \FOSSBilling\InformationException('Invoice was not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('Invoice was not found');
             }
             if ($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']) === null) {
-                throw new \FOSSBilling\Exception('Gateway was not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Gateway was not found');
             }
         }
 
@@ -294,7 +309,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
             'post' => (isset($data['post']) && is_array($data['post'])) ? $data['post'] : null,
             'http_raw_post_data' => $data['http_raw_post_data'] ?? null,
-            'server' => $data['server'] ?? null,
+            'server' => $this->filterServerData($data['server'] ?? null),
         ];
 
         // Fallback dedupe: compute a canonical hash of the IPN payload and
@@ -334,6 +349,27 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionCreateEvent($newId));
 
         return $newId;
+    }
+
+    /**
+     * Reduce a callback's $_SERVER to what is worth keeping with the transaction, which admins can read
+     * through the API.
+     */
+    private function filterServerData(mixed $server): ?array
+    {
+        if (!is_array($server)) {
+            return null;
+        }
+
+        $kept = [];
+        foreach ($server as $key => $value) {
+            $key = (string) $key;
+            if (in_array($key, self::STORED_SERVER_KEYS, true) || preg_match(self::SIGNATURE_HEADER_PATTERN, $key) === 1) {
+                $kept[$key] = $value;
+            }
+        }
+
+        return $kept;
     }
 
     private function supportsTransactionIpnHash(): bool
@@ -383,7 +419,7 @@ class ServiceTransaction implements InjectionAwareInterface
         // any client-balance credit written when it was debited). Deleting it
         // would rewrite financial history and orphan those rows.
         if ($model->getStatus() === Transaction::STATUS_PROCESSED) {
-            throw new \FOSSBilling\InformationException('Processed transactions cannot be deleted because they record money that already moved.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Processed transactions cannot be deleted because they record money that already moved.');
         }
         // Unprocessed transactions move no money, but drop any balance rows
         // that reference them so no orphans remain.
@@ -442,7 +478,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $changed[] = 'status';
         }
         if ($changed !== []) {
-            throw new \FOSSBilling\InformationException('Processed transactions cannot change :fields because they record money that already moved.', [':fields' => implode(', ', $changed)]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Processed transactions cannot change :fields because they record money that already moved.', [':fields' => implode(', ', $changed)]);
         }
     }
 
@@ -457,7 +493,7 @@ class ServiceTransaction implements InjectionAwareInterface
             || $invoice->getStatus() === Invoice::STATUS_REFUNDED
             || $invoice->getReplacedByInvoiceId() !== null
         ) {
-            throw new \FOSSBilling\InformationException('Transactions cannot be linked to a canceled, refunded, or replaced invoice.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Transactions cannot be linked to a canceled, refunded, or replaced invoice.');
         }
     }
 
@@ -719,7 +755,7 @@ class ServiceTransaction implements InjectionAwareInterface
      *
      * @param int $id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     /**
      * Dispatch a transaction to its payment adapter. This is the single funnel all adapter
@@ -735,12 +771,12 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $tx = $this->getTransactionRepository()->find((int) $id);
         if ($tx === null) {
-            throw new \FOSSBilling\Exception('Transaction :id not found.', ['id' => $id], 404);
+            throw new \FOSSBilling\Core\Exception\BaseException('Transaction :id not found.', ['id' => $id], 404);
         }
 
         $gtw = $tx->getGateway();
         if (!$gtw instanceof PayGateway) {
-            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->getGateway()?->getId()], 704);
+            throw new \FOSSBilling\Core\Exception\BaseException('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->getGateway()?->getId()], 704);
         }
 
         if (ServicePayGateway::isManualApprovalGateway($gtw->getGateway())) {
@@ -750,7 +786,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
         if (!method_exists($adapter, 'processTransaction')) {
-            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'processTransaction'], 705);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'processTransaction'], 705);
         }
 
         $ipn = $this->getIpnPayload($tx);
@@ -769,13 +805,13 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $gtw = $model->getGateway();
         if (!$gtw instanceof PayGateway || !ServicePayGateway::isManualApprovalGateway($gtw->getGateway())) {
-            throw new \FOSSBilling\Exception('This payment gateway does not require manual approval.', [], 7003);
+            throw new \FOSSBilling\Core\Exception\BaseException('This payment gateway does not require manual approval.', [], 7003);
         }
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
         if (!method_exists($adapter, 'approveTransaction')) {
-            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'approveTransaction'], 705);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'approveTransaction'], 705);
         }
 
         // Serialize concurrent approvals the same way processing claims do:

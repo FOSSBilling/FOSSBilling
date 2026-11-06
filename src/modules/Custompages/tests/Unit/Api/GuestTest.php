@@ -44,7 +44,7 @@ test('guest get throws when id and slug are missing', function (): void {
     $api = apiEndpoint(new Guest());
     $api->setService(Mockery::mock(Service::class));
 
-    expect(fn () => $api->get([]))->toThrow(FOSSBilling\InformationException::class, 'Custom page ID or slug is missing');
+    expect(fn () => $api->get([]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Custom page ID or slug is missing');
 });
 
 test('guest get throws when page is not found', function (): void {
@@ -55,5 +55,5 @@ test('guest get throws when page is not found', function (): void {
 
     $api->setService($serviceMock);
 
-    expect(fn () => $api->get(['slug' => 'missing']))->toThrow(FOSSBilling\InformationException::class, 'Custom page not found');
+    expect(fn () => $api->get(['slug' => 'missing']))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Custom page not found');
 });
