@@ -131,6 +131,10 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     /** Synthetic preview data only; live delivery variables are never retained on templates. */
     public function getVars(EmailTemplate $template): array
     {
+        // A custom action's variables come from its caller, not bundled preview fixtures.
+        if ($template->isCustom()) {
+            return [];
+        }
         $vars = $this->getTemplateVarDefaults($template->getActionCode());
         if (str_starts_with($template->getActionCode(), 'mod_invoice_')) {
             $currency = $this->di['mod_service']('currency')->getCurrencyRepository()->findDefault();

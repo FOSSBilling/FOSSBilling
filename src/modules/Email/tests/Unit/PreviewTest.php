@@ -58,3 +58,63 @@ test('bundled email previews render using only synthetic contexts in the real sa
     }
     expect($count)->toBeGreaterThan(0)->and($errors)->toBe([]);
 });
+
+test('custom action editor variables match actual delivery inputs under strict Twig', function (bool $requiresInvoice): void {
+    $template = (new Box\Mod\Email\Entity\EmailTemplate('custom_delivery', 1))
+        ->setIsCustom(true)->setEnabled(true)->setSubject('Custom message')
+        ->setContent($requiresInvoice ? '{{ invoice.id }}' : 'Generic custom message');
+    $di = Tests\Helpers\container();
+    $repo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repo->shouldReceive('findOneByActionCode')->with('custom_delivery')->andReturn($template);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\EmailTemplate::class)->andReturn($repo);
+    $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    if ($requiresInvoice) {
+        $service->shouldNotReceive('sendMail');
+    } else {
+        $service->shouldReceive('sendMail')->once()->with('recipient@example.com', 'sender@example.com', 'Custom message', 'Generic custom message', null, 'Example', null, null, false, false, null)->andReturnTrue();
+    }
+    $di['api_guest'] = new class {
+        public function system_company(): array
+        {
+            return [];
+        }
+    };
+    $di['mod'] = $di->protect(fn () => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $twig = (new FOSSBilling\Core\Twig\TwigFactory($di))->createEmailEnvironment('UTC', 'en_US');
+    $twig->enableStrictVariables();
+    $inputs = [];
+    $system = Mockery::mock(Box\Mod\System\Service::class);
+    $system->shouldReceive('renderEmailTplString', 'renderEmailSubjectString')->andReturnUsing(function ($source, array $vars) use ($twig, &$inputs): string {
+        $inputs[] = $vars;
+
+        return $twig->createTemplate($source)->render($vars);
+    });
+    $system->shouldReceive('getParamValue')->andReturnUsing(fn ($key) => $key === 'company_email' ? 'sender@example.com' : 'Example');
+    $di['mod_service'] = $di->protect(fn ($name) => match (strtolower($name)) {
+        'email' => $service,
+        'system' => $system,
+        default => throw new LogicException('Unexpected delivery service: ' . $name),
+    });
+    $service->setDi($di);
+    $api = Mockery::mock(Box\Mod\Email\Api\Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $api->shouldReceive('checkPermissions')->with('email', 'send_emails');
+    $api->setDi($di);
+    $api->setService($service);
+    expect($service->getVars($template))->toBe([])
+        ->and($service->templateToApiArray($template, true)['vars'])->toBe([]);
+    $send = fn () => $api->template_send(['code' => 'custom_delivery', 'to' => 'recipient@example.com']);
+    if ($requiresInvoice) {
+        expect($send)->toThrow(Twig\Error\RuntimeError::class);
+    } else {
+        expect($send())->toBeTrue();
+    }
+    expect($inputs)->not->toBeEmpty();
+    foreach ($inputs as $vars) {
+        expect($vars)->toBe($service->getVars($template))->not->toHaveKey('invoice');
+    }
+})->with([false, true]);
