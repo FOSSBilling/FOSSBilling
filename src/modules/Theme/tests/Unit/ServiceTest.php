@@ -467,7 +467,7 @@ test('getCurrentAdminAreaTheme returns theme configuration', function (): void {
         ->andReturn(false);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
 
@@ -503,7 +503,7 @@ test('getCurrentClientAreaThemeCode returns theme code', function (): void {
         ->andReturn('default/client');
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $result = $service->getCurrentClientAreaThemeCode();
@@ -520,7 +520,7 @@ test('getCurrentClientAreaThemeCode falls back when the setting is missing', fun
         ->andReturn(false);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->getCurrentClientAreaThemeCode())->toBe('default/client');

@@ -1940,7 +1940,9 @@ test('renameInvoiceApprovedColumn renames the flag while preserving values', fun
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $di['dbal'] = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]));
+            $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
 
             $patcher = new Patcher();
@@ -1972,7 +1974,9 @@ test('renameInvoiceStatusIndex swaps the legacy composite index name', function 
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $di['dbal'] = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]));
+            $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
 
             $patcher = new Patcher();
@@ -3120,7 +3124,6 @@ test('ensureSchemaInSync renames the issue flag on a code-only deploy instead of
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
             $di['em'] = $entityManager;
-            $di['dbal'] = $connection;
             $di['logger'] = new Tests\Helpers\TestLogger();
 
             $patcher = new Patcher();
@@ -3170,7 +3173,6 @@ test('ensureSchemaInSync drops the dead buyer country-code column on a code-only
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
             $di['em'] = $entityManager;
-            $di['dbal'] = $connection;
             $di['logger'] = new Tests\Helpers\TestLogger();
 
             $patcher = new Patcher();
@@ -3330,7 +3332,9 @@ test('invoice journal backfill writes one baseline entry per invoice missing fro
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $di['dbal'] = $connection;
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
 
             $patcher = new Patcher();
@@ -3379,7 +3383,9 @@ test('journal baseline writes are claimed per invoice', function (): void {
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $di['dbal'] = $connection;
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
 
             $patcher = new Patcher();
@@ -4009,14 +4015,16 @@ test('category priority heal patch adds the column and backfills NULLs', functio
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $di['dbal'] = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]));
+            $di['em'] = $em;
 
             $patcher = new Patcher();
             $patcher->setDi($di);
             (new FOSSBilling\Core\Update\Patch\Patch139())->apply($patcher);
 
-            expect($di['dbal']->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue()
-                ->and($di['dbal']->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+            expect($di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('product_category')->hasColumn('priority'))->toBeTrue()
+                ->and($di['em']->getConnection()->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
                     ['id' => 1, 'priority' => 10],
                     ['id' => 2, 'priority' => 20],
                 ]);
@@ -4024,7 +4032,7 @@ test('category priority heal patch adds the column and backfills NULLs', functio
             // Idempotent rerun preserves administrator-set values.
             $pdo->exec('UPDATE product_category SET priority = 99 WHERE id = 2');
             (new FOSSBilling\Core\Update\Patch\Patch139())->apply($patcher);
-            expect($di['dbal']->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
+            expect($di['em']->getConnection()->fetchAllAssociative('SELECT id, priority FROM product_category ORDER BY id'))->toBe([
                 ['id' => 1, 'priority' => 10],
                 ['id' => 2, 'priority' => 99],
             ]);

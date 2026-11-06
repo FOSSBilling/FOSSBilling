@@ -212,7 +212,7 @@ test('JSON conversion and patch 133 compose in either upgrade order', function (
     $c->insert('mod_massmailer', ['subject' => 'Résumé', 'filter' => $original]);
     $id = (int) $c->lastInsertId();
     $patcher = new FOSSBilling\Core\Update\Patcher();
-    $patcher->setDi(new Pimple\Container(['pdo' => $c->getNativeConnection(), 'dbal' => $c, 'logger' => new Tests\Helpers\TestLogger()]));
+    $patcher->setDi(new Pimple\Container(['pdo' => $c->getNativeConnection(), 'logger' => new Tests\Helpers\TestLogger()]));
     $unicode = fn () => (new FOSSBilling\Core\Update\Patch\Patch133())->apply($patcher);
     $json = fn () => (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt());
     if ($unicodeFirst) {

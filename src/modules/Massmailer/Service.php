@@ -127,7 +127,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $filter = $this->normalizeFilter($model->getFilter(), true);
 
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->di['em']->getConnection()->createQueryBuilder();
         $query
             ->select('DISTINCT c.id, c.email')
             ->from('client', 'c')
@@ -351,7 +351,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     private function getExistingIds(string $table, array $ids): array
     {
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->di['em']->getConnection()->createQueryBuilder();
         $query
             ->select('id')
             ->from($table)

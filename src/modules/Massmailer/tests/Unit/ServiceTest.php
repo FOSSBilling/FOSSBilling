@@ -16,7 +16,7 @@ function createMassmailerDi(?Connection $dbal = null): Pimple\Container
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(MassmailerMessage::class)->andReturn($repo);
     $di['em'] = $em;
-    $di['dbal'] = $dbal ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
     $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     return $di;
@@ -203,7 +203,7 @@ test('send message accepts a client with a valid email', function (): void {
 
 test('install creates the mod_massmailer table portably instead of via raw MySQL DDL', function (): void {
     // Regression test: install() used to run raw MySQL-only DDL (backticks, ENGINE=InnoDB)
-    // directly via $di['dbal'], which fails outright on PostgreSQL/SQLite - confirmed here
+    // directly via the legacy dbal service, which fails outright on PostgreSQL/SQLite - confirmed here
     // against a real SQLite connection. mod_massmailer already exists in the pre-cutover schema, so this
     // hook was already redundant on MySQL; it's only load-bearing on PG/SQLite.
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);

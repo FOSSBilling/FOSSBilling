@@ -52,7 +52,7 @@ final class JsonAudit extends Command implements InjectionAwareInterface
         $count = 0;
 
         try {
-            foreach ((new \FOSSBilling\Core\Doctrine\JsonAudit())->inspect($this->di['dbal'], $input->getOption('table'), $batch) as $issue) {
+            foreach ((new \FOSSBilling\Core\Doctrine\JsonAudit())->inspect($this->di['em']->getConnection(), $input->getOption('table'), $batch) as $issue) {
                 $output->writeln(sprintf('%s.%s id=%s %s', $issue['table'], $issue['column'], $issue['id'], $issue['issue']));
                 ++$count;
             }

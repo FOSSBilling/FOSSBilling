@@ -206,6 +206,24 @@ class PromoRedemptionRepository extends EntityRepository
     }
 
     /**
+     * Sum of non-released recurring-promo discounts recorded against one invoice.
+     */
+    public function sumRecurringDiscountForInvoice(int $invoiceId): float
+    {
+        return (float) $this->createQueryBuilder('pr')
+            ->select('COALESCE(SUM(pr.discountAmount), 0)')
+            ->join('pr.promo', 'p')
+            ->where('pr.invoiceId = :id')
+            ->andWhere('pr.status <> :released')
+            ->andWhere('p.recurring = :recurring')
+            ->setParameter('id', $invoiceId)
+            ->setParameter('released', PromoRedemption::STATUS_RELEASED)
+            ->setParameter('recurring', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * @return array{
      *     recorded_applications: int,
      *     checkout_applications: int,

@@ -1811,7 +1811,7 @@ class Service implements InjectionAwareInterface
     protected function withInvoiceRefundLock(Invoice $invoice, callable $callback): Invoice
     {
         $lockName = 'fb:invoice-refund:' . (int) $invoice->getId();
-        if (!NamedLock::acquire($this->di['dbal'], $lockName, 30)) {
+        if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 30)) {
             $this->di['logger']->warning('Timed out waiting for invoice refund lock for invoice #{id}', ['id' => $invoice->getId()]);
 
             throw new InformationException('Another refund for this invoice is already in progress. Please retry.');
@@ -1820,7 +1820,7 @@ class Service implements InjectionAwareInterface
         try {
             return $callback();
         } finally {
-            NamedLock::release($this->di['dbal'], $lockName);
+            NamedLock::release($this->di['em']->getConnection(), $lockName);
         }
     }
 
@@ -3817,9 +3817,12 @@ class Service implements InjectionAwareInterface
      * Other products keep the order's own price so admin-edited prices are
      * respected.
      *
+     * Public so subscription eligibility can compare the gateway's per-cycle
+     * amount against what a renewal invoice will actually bill.
+     *
      * @return array{price: float|string, line: array<string, mixed>}
      */
-    private function resolveRenewalLine(Order $order): array
+    public function resolveRenewalLine(Order $order): array
     {
         $price = $order->getPrice();
         $line = [
