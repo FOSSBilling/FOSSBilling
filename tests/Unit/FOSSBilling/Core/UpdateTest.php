@@ -135,7 +135,7 @@ test('resets the opcode cache after extracting the update archive', function ():
         'update_type' => 0,
     ];
 
-    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization = Mockery::mock(Finalization::class);
     $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->andReturn(['status' => 'pending']);
 

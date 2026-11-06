@@ -38,8 +38,8 @@ class ServiceHostingServer implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
     private ?string $hostname = null;
 
-    #[ORM\Column(name: 'assigned_ips', type: Types::TEXT, nullable: true)]
-    private ?string $assignedIps = null;
+    #[ORM\Column(name: 'assigned_ips', type: Types::JSON, nullable: true)]
+    private ?array $assignedIps = null;
 
     #[ORM\Column(name: 'status_url', type: Types::STRING, length: 255, nullable: true)]
     private ?string $statusUrl = null;
@@ -80,8 +80,8 @@ class ServiceHostingServer implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
     private ?string $port = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
     private ?bool $secure = null;
@@ -127,12 +127,12 @@ class ServiceHostingServer implements TimestampInterface
         return $this;
     }
 
-    public function getAssignedIps(): ?string
+    public function getAssignedIps(): ?array
     {
         return $this->assignedIps;
     }
 
-    public function setAssignedIps(?string $assignedIps): self
+    public function setAssignedIps(?array $assignedIps): self
     {
         $this->assignedIps = $assignedIps;
 
@@ -295,12 +295,12 @@ class ServiceHostingServer implements TimestampInterface
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
         return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
         $this->config = $config;
 

@@ -17,7 +17,7 @@ namespace FOSSBilling\Core\Enums;
  * The underlying string values must match the `extension.type` column values
  * and the extension directory API so the enum stays interchangeable with the
  * string-based code paths. This is the single source of truth, replacing the
- * former `TYPE_*` constant sets on {@see \FOSSBilling\ExtensionManager} and
+ * former `TYPE_*` constant sets on {@see \FOSSBilling\Core\Remote\ExtensionManager} and
  * {@see \Box\Mod\Extension\Entity\Extension}.
  *
  * Note: the old `Extension::TYPE_PG` constant held the value `'pg'`, which

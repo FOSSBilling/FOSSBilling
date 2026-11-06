@@ -128,44 +128,19 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return true;
     }
 
-    public function setVars(EmailTemplate $template, array $vars): bool
-    {
-        $encoded = json_encode($vars);
-        if ($encoded === false) {
-            throw new \FOSSBilling\Core\Exception\BaseException('Failed to encode email template variables.');
-        }
-        $template->setVars($this->di['crypt']->encrypt($encoded, Config::getProperty('info.salt')));
-        $this->di['em']->flush();
-
-        return true;
-    }
-
+    /** Synthetic preview data only; live delivery variables are never retained on templates. */
     public function getVars(EmailTemplate $template): array
     {
-        $vars = [];
-        if ($template->getVars() !== null && $template->getVars() !== '') {
-            $json = $this->di['crypt']->decrypt($template->getVars(), Config::getProperty('info.salt'));
-            $decoded = is_string($json) ? json_decode($json, true) : null;
-            $vars = is_array($decoded) ? $decoded : [];
+        // A custom action's variables come from its caller, not bundled preview fixtures.
+        if ($template->isCustom()) {
+            return [];
         }
-
-        // Invoice templates must remain previewable before an invoice email has
-        // populated the stored example variables.
+        $vars = $this->getTemplateVarDefaults($template->getActionCode());
         if (str_starts_with($template->getActionCode(), 'mod_invoice_')) {
-            $invoice = is_array($vars['invoice'] ?? null) ? $vars['invoice'] : [];
-            $invoice['total'] ??= 0;
-            if (empty($invoice['currency'])) {
-                $currency = $this->di['mod_service']('currency')->getCurrencyRepository()->findDefault();
-                if ($currency instanceof Currency) {
-                    $invoice['currency'] = $currency->getCode();
-                }
+            $currency = $this->di['mod_service']('currency')->getCurrencyRepository()->findDefault();
+            if ($currency instanceof Currency) {
+                $vars['invoice']['currency'] = $currency->getCode();
             }
-            $vars['invoice'] = $invoice;
-        }
-
-        $defaults = $this->getTemplateVarDefaults($template->getActionCode());
-        if ($defaults !== []) {
-            $vars = array_replace_recursive($defaults, $vars);
         }
 
         return $vars;
@@ -246,7 +221,37 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $staffTicket = $ticket;
         $staffTicket['client'] = $client;
 
-        return match ($actionCode) {
+        $base = [
+            'c' => $client,
+            'client' => $client,
+            'staff' => $staff,
+            'ticket' => $ticket,
+            'order' => [
+                'id' => 1, 'title' => 'Example service', 'currency' => 'USD',
+                'price' => 10, 'quantity' => 1, 'total' => 10, 'period' => '1M',
+                'config' => [], 'service' => [], 'status' => 'active',
+                'activated_at' => '2026-01-01', 'created_at' => '2026-01-01',
+            ],
+            'invoice' => [
+                'id' => 1, 'total' => 0, 'currency' => 'USD', 'items' => [],
+                'hash' => 'preview-invoice', 'series' => 'INV', 'nr' => 1, 'status' => 'unpaid',
+                'created_at' => '2026-01-01', 'due_at' => '2026-01-15', 'client' => $client,
+            ],
+            'service' => [
+                'domain' => 'example.com', 'sld' => 'example', 'tld' => '.com',
+                'username' => 'example', 'password' => 'preview-only',
+                'api_key' => 'preview-only-not-an-api-key',
+                'hosting_plan' => ['name' => 'Example plan'],
+                'server' => ['name' => 'Example server', 'ip' => '192.0.2.1', 'cpanel_url' => 'https://example.com/preview-only', 'ns1' => 'ns1.example.com', 'ns2' => 'ns2.example.com'],
+                'nameserver1' => 'ns1.example.com', 'nameserver2' => 'ns2.example.com',
+            ],
+            'hash' => 'preview-only-not-a-token',
+            'password' => 'preview-only',
+            'email_confirmation_link' => 'https://example.com/preview-only',
+            'message' => 'Example message',
+        ];
+
+        return array_replace($base, match ($actionCode) {
             'mod_support_ticket_staff_open',
             'mod_support_ticket_staff_close',
             'mod_support_ticket_staff_reply' => ['c' => $client, 'ticket' => $ticket],
@@ -256,7 +261,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             'mod_staff_password_reset_approve' => ['c' => $staff],
             'mod_staff_client_signup' => ['c' => $client, 'staff' => $staff],
             default => [],
-        };
+        });
     }
 
     public function sendTemplate($data)
@@ -316,8 +321,6 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 throw new \FOSSBilling\Core\Exception\InformationException('Admin not found');
             }
         }
-
-        $this->setVars($template, $vars);
 
         // do not send inactive template
         if (!$template->isEnabled()) {
@@ -876,13 +879,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         if (isset($subject)) {
             $vars['_tpl'] = $subject;
-            $systemService->renderEmailTplString($subject, $vars);
+            $systemService->renderEmailTplString($subject, $vars, null, null, $isCustom);
             $template->setSubject($subject);
         }
 
         if (isset($content)) {
             $vars['_tpl'] = $content;
-            $systemService->renderEmailTplString($content, $vars);
+            $systemService->renderEmailTplString($content, $vars, null, null, $isCustom);
             $template->setContent($content);
         }
 
@@ -966,11 +969,11 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
 
         if ($subject !== null && $subject !== '') {
-            $systemService->renderEmailTplString($subject, []);
+            $systemService->renderEmailTplString($subject, [], null, null, true);
         }
 
         if ($content !== null && $content !== '') {
-            $systemService->renderEmailTplString($content, []);
+            $systemService->renderEmailTplString($content, [], null, null, true);
         }
 
         $template = new EmailTemplate($actionCode);
@@ -1135,8 +1138,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             try {
                 [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
                 $vars = $this->getVars($template);
-                $systemService->renderEmailTplString($contentTemplate, $vars);
-                $systemService->renderEmailTplString($subjectTemplate, $vars);
+                $systemService->renderEmailTplString($contentTemplate, $vars, null, null, $template->isCustom());
+                $systemService->renderEmailTplString($subjectTemplate, $vars, null, null, $template->isCustom());
             } catch (\Throwable $e) {
                 $error = $e->getMessage();
             }

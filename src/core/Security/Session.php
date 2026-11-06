@@ -76,6 +76,13 @@ class Session implements InjectionAwareInterface
         return $this->session->getId();
     }
 
+    public function save(): void
+    {
+        if ($this->session->isStarted()) {
+            $this->session->save();
+        }
+    }
+
     public function delete(string $key): void
     {
         $this->session->remove($key);
@@ -165,7 +172,12 @@ class Session implements InjectionAwareInterface
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
             $fingerprint = $currentFingerprint ?? new Fingerprint($this->di['request']);
-            $storedFingerprint = json_decode((string) $session['fingerprint'], true);
+
+            try {
+                $storedFingerprint = json_decode($session['fingerprint'], true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                $storedFingerprint = null;
+            }
             if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint, $sessionID)) {
                 $invalid = true;
                 $this->di['logger']->withChannel('security')->warning(
@@ -218,9 +230,9 @@ class Session implements InjectionAwareInterface
             }
 
             $connection->executeStatement('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
-                'fingerprint' => json_encode($updatedFingerprint, JSON_THROW_ON_ERROR),
+                'fingerprint' => $updatedFingerprint,
                 'id' => $sessionID,
-            ]);
+            ], ['fingerprint' => \Doctrine\DBAL\Types\Types::JSON]);
         } catch (\Doctrine\DBAL\Exception|\JsonException) {
             return;
         }

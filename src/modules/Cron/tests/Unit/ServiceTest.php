@@ -148,6 +148,7 @@ test('runCrons clears cached setting misses between tasks', function (): void {
         };
 
         $updateFinalization = Mockery::mock();
+        $updateFinalization->shouldReceive('withRuntimeLock')->andReturnUsing(fn ($callback) => $callback());
         $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
         $updateFinalization->shouldReceive('healSchemaDrift')->once()->andReturnNull();
         $di['api_system'] = $api;
@@ -173,6 +174,7 @@ test('runCrons clears cached setting misses between tasks', function (): void {
 
 test('runCrons isolates failures in core batch tasks', function (string $failedTask): void {
     $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('withRuntimeLock')->andReturnUsing(fn ($callback) => $callback());
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $updateFinalization->shouldReceive('healSchemaDrift')->once()->andReturnNull();
 
@@ -240,6 +242,7 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
 
 test('runCrons restores the previous cron context when update finalization interrupts execution', function (): void {
     $updateFinalization = Mockery::mock()->shouldIgnoreMissing();
+    $updateFinalization->shouldReceive('withRuntimeLock')->andReturnUsing(fn ($callback) => $callback());
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
 
     $di = container();
@@ -262,6 +265,7 @@ test('runCrons still executes tasks when schema drift healing fails', function (
     // running against the live schema, exactly as before the healing existed.
     // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
     $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('withRuntimeLock')->andReturnUsing(fn ($callback) => $callback());
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $updateFinalization->shouldReceive('healSchemaDrift')->once()->andThrow(new RuntimeException('lock unavailable'));
 

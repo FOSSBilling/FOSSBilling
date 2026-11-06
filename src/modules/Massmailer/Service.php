@@ -157,19 +157,6 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function normalizeFilter(mixed $filter, bool $strict = false): array
     {
-        if (is_string($filter)) {
-            $filter = trim($filter);
-            if ($filter === '') {
-                return [];
-            }
-
-            try {
-                $filter = json_decode($filter, true, 512, JSON_THROW_ON_ERROR);
-            } catch (\JsonException) {
-                return $this->handleInvalidFilter('filter', $strict);
-            }
-        }
-
         if ($filter === null) {
             return [];
         }
@@ -210,11 +197,6 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         );
 
         return array_filter($normalized, static fn (array $values): bool => $values !== []);
-    }
-
-    public function serializeFilter(mixed $filter): string
-    {
-        return json_encode($this->normalizeFilter($filter, true), JSON_THROW_ON_ERROR);
     }
 
     public function getParsed(MassmailerMessage $model, int $client_id): array

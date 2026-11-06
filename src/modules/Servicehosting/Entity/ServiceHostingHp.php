@@ -56,8 +56,8 @@ class ServiceHostingHp implements TimestampInterface
     #[ORM\Column(name: 'max_addon', type: Types::STRING, length: 50, nullable: true)]
     private ?string $maxAddon = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     public function getId(): ?int
     {
@@ -172,12 +172,12 @@ class ServiceHostingHp implements TimestampInterface
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
         return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
         $this->config = $config;
 

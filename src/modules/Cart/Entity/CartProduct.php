@@ -26,8 +26,8 @@ class CartProduct
     #[ORM\Column(name: 'product_id', type: Types::BIGINT, nullable: true)]
     private ?int $productId = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     public function getId(): ?int
     {
@@ -58,12 +58,12 @@ class CartProduct
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
         return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
         $this->config = $config;
 

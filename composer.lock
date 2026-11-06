@@ -2337,23 +2337,23 @@
         },
         {
             "name": "nelexa/zip",
-            "version": "4.0.2",
+            "version": "4.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Ne-Lexa/php-zip.git",
-                "reference": "88a1b6549be813278ff2dd3b6b2ac188827634a7"
+                "reference": "e2fb47c8e740d4709c8229973f05070bffa8008e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Ne-Lexa/php-zip/zipball/88a1b6549be813278ff2dd3b6b2ac188827634a7",
-                "reference": "88a1b6549be813278ff2dd3b6b2ac188827634a7",
+                "url": "https://api.github.com/repos/Ne-Lexa/php-zip/zipball/e2fb47c8e740d4709c8229973f05070bffa8008e",
+                "reference": "e2fb47c8e740d4709c8229973f05070bffa8008e",
                 "shasum": ""
             },
             "require": {
                 "ext-zlib": "*",
                 "php": "^7.4 || ^8.0",
-                "psr/http-message": "*",
-                "symfony/finder": "*"
+                "psr/http-message": "^1.0 || ^2.0",
+                "symfony/finder": "^5.4 || ^6.0 || ^7.0 || ^8.0"
             },
             "require-dev": {
                 "ext-bz2": "*",
@@ -2363,9 +2363,9 @@
                 "ext-openssl": "*",
                 "ext-xml": "*",
                 "friendsofphp/php-cs-fixer": "^3.4.0",
-                "guzzlehttp/psr7": "^1.6",
+                "guzzlehttp/psr7": "^2.0",
                 "phpunit/phpunit": "^9",
-                "symfony/http-foundation": "*",
+                "symfony/http-foundation": "^5.4 || ^6.0 || ^7.0 || ^8.0",
                 "symfony/var-dumper": "*",
                 "vimeo/psalm": "^4.6"
             },
@@ -2404,9 +2404,10 @@
             ],
             "support": {
                 "issues": "https://github.com/Ne-Lexa/php-zip/issues",
-                "source": "https://github.com/Ne-Lexa/php-zip/tree/4.0.2"
+                "source": "https://github.com/Ne-Lexa/php-zip/tree/4.1.0"
             },
-            "time": "2022-06-17T11:17:46+00:00"
+            "time": "2026-11-05T21:28:38+00:00",
+            "published-time": "2026-11-05T21:32:10+00:00"
         },
         {
             "name": "nette/schema",

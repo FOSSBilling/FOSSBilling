@@ -61,6 +61,11 @@ class Service
 
     public function runCrons(): bool
     {
+        return $this->di['update_finalization']->withRuntimeLock(fn (): bool => $this->runCronsLocked());
+    }
+
+    private function runCronsLocked(): bool
+    {
         $hadCronFlag = isset($this->di['is_cron']);
         $previousCronFlag = $hadCronFlag ? $this->di['is_cron'] : null;
         $this->di['is_cron'] = true;

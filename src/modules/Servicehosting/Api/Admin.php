@@ -343,7 +343,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $model = $this->_getServer((int) $data['id']);
         $service = $this->getService();
 
-        $existingConfig = json_decode($model->getConfig() ?? '', true) ?? [];
+        $existingConfig = $model->getConfig() ?? [];
 
         $data['config'] = $existingConfig;
         $data['config']['userprefix'] = $data['userprefix'] ?? ($existingConfig['userprefix'] ?? null);
