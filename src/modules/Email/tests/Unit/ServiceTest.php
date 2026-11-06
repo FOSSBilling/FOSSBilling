@@ -1916,7 +1916,7 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
     $systemMock = Mockery::mock();
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
-        ->with('{{ content|disallowed_filter }}', Mockery::type('array'))
+        ->with('{{ content|disallowed_filter }}', Mockery::type('array'), null, null, false)
         ->andThrow(new FOSSBilling\Core\Exception\InformationException('Email template contains disallowed Twig syntax: Filter "disallowed_filter" is not allowed'));
     $systemMock->shouldReceive('renderEmailTplString')
         ->with('Hello {{ name }}', Mockery::any())

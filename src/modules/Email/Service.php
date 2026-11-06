@@ -879,13 +879,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         if (isset($subject)) {
             $vars['_tpl'] = $subject;
-            $systemService->renderEmailTplString($subject, $vars);
+            $systemService->renderEmailTplString($subject, $vars, null, null, $isCustom);
             $template->setSubject($subject);
         }
 
         if (isset($content)) {
             $vars['_tpl'] = $content;
-            $systemService->renderEmailTplString($content, $vars);
+            $systemService->renderEmailTplString($content, $vars, null, null, $isCustom);
             $template->setContent($content);
         }
 
@@ -969,11 +969,11 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
 
         if ($subject !== null && $subject !== '') {
-            $systemService->renderEmailTplString($subject, []);
+            $systemService->renderEmailTplString($subject, [], null, null, true);
         }
 
         if ($content !== null && $content !== '') {
-            $systemService->renderEmailTplString($content, []);
+            $systemService->renderEmailTplString($content, [], null, null, true);
         }
 
         $template = new EmailTemplate($actionCode);
@@ -1138,8 +1138,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             try {
                 [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
                 $vars = $this->getVars($template);
-                $systemService->renderEmailTplString($contentTemplate, $vars);
-                $systemService->renderEmailTplString($subjectTemplate, $vars);
+                $systemService->renderEmailTplString($contentTemplate, $vars, null, null, $template->isCustom());
+                $systemService->renderEmailTplString($subjectTemplate, $vars, null, null, $template->isCustom());
             } catch (\Throwable $e) {
                 $error = $e->getMessage();
             }

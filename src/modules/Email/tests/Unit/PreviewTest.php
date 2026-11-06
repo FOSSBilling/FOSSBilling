@@ -118,3 +118,58 @@ test('custom action editor variables match actual delivery inputs under strict T
         expect($vars)->toBe($service->getVars($template))->not->toHaveKey('invoice');
     }
 })->with([false, true]);
+
+test('custom templates validate without caller variables while delivery remains strict', function (string $operation, string $source, bool $valid): void {
+    $di = Tests\Helpers\container();
+    $di['api_guest'] = new class {
+        public function system_company(): array
+        {
+            return [];
+        }
+    };
+    $di['mod'] = $di->protect(fn () => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $factory = new class($di) extends FOSSBilling\Core\Twig\TwigFactory {
+        public function createEmailEnvironment(?string $timezone = null, ?string $locale = null): Twig\Environment
+        {
+            $twig = parent::createEmailEnvironment('UTC', 'en_US');
+            $twig->enableStrictVariables();
+
+            return $twig;
+        }
+    };
+    $di['twig_factory'] = $factory;
+    $system = new Box\Mod\System\Service();
+    $system->setDi($di);
+    $di['mod_service'] = $di->protect(fn () => $system);
+    $service = new Box\Mod\Email\Service();
+    $template = (new Box\Mod\Email\Entity\EmailTemplate('custom_validation', 1))
+        ->setIsCustom(true)->setSubject('{{ c.first_name }}')->setContent($source);
+    $repo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repo->shouldReceive('findAll')->andReturn([$template]);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\EmailTemplate::class)->andReturn($repo);
+    $service->setDi($di);
+    $validate = fn () => match ($operation) {
+        'create' => $service->templateCreate('custom_validation', '{{ c.first_name }}', $source),
+        'update' => $service->updateTemplate($template, subject: '{{ c.first_name }}', content: $source),
+        'bulk' => $service->validateAllTemplates(),
+    };
+    if ($operation === 'bulk') {
+        expect($validate())->toMatchArray(['valid' => (int) $valid, 'invalid' => (int) !$valid]);
+    } elseif ($valid) {
+        expect($validate())->not->toBeFalse();
+    } else {
+        expect($validate)->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+    }
+    expect(fn () => $system->renderEmailTplString('{{ c.first_name }}', []))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class)
+        ->and($system->renderEmailTplString('{{ c.first_name }}', ['c' => ['first_name' => 'Alice']]))->toBe('Alice');
+})->with(['create', 'update', 'bulk'])->with([
+    'caller variables' => ['Hello {{ c.first_name }}', true],
+    'invalid syntax' => ['{% if %}', false],
+    'sandbox violation' => ['{% include "private" %}', false],
+]);
