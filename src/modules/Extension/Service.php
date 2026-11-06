@@ -388,11 +388,54 @@ class Service implements InjectionAwareInterface
         return $this->di['url']->adminLink(ltrim($uri, '/'));
     }
 
-    public function update(Extension $model): never
+    public function update(Extension $model): Extension
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
-        throw new \FOSSBilling\Core\Exception\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
+        $type = ExtensionType::normalize($model->getType());
+        $latest = $this->di['extension_manager']->getLatestExtensionRelease($model->getName());
+        if (!isset($latest['artifact_id']) || ($latest['tag'] ?? null) !== $model->getVersion()
+            || ($type === ExtensionType::Module->value && $this->isCoreModule($model->getName()))) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
+        }
+        if (!$this->di['extension_manager']->isReleaseCompatible($latest)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('This extension is not compatible with your version of FOSSBilling.');
+        }
+        $destination = $this->getExtensionPath($type, $model->getName(), true);
+        [$zipPath, $extractedPath] = $this->extractRelease($latest);
+
+        try {
+            $this->assertManagedManifest($latest, $type, $model->getName(), $extractedPath);
+            $installedManifest = Path::join($destination, 'manifest.json');
+            if (!is_file($installedManifest) || is_link($destination) || is_link($installedManifest)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('The installed extension has no regular manifest to update.');
+            }
+            $installed = filesize($installedManifest) <= 256 * 1024 ? json_decode(file_get_contents($installedManifest), true) : null;
+            if (!is_array($installed) || ($installed['version'] ?? null) !== $model->getVersion()
+                || ($installed['id'] ?? strtolower($model->getName())) !== strtolower($model->getName()) || ($installed['type'] ?? ExtensionType::Module->value) !== $type) {
+                throw new \FOSSBilling\Core\Exception\InformationException('The installed extension version differs from its registration; update it manually.');
+            }
+            // A same-version correction can replace metadata only. Preserve local
+            // configuration and refuse packages with changed or missing code.
+            $files = (new Finder())->files()->in($extractedPath)->ignoreDotFiles(false)->ignoreVCS(false);
+            foreach ($files as $file) {
+                $relative = $file->getRelativePathname();
+                if ($relative === 'manifest.json') {
+                    continue;
+                }
+                $target = Path::join($destination, $relative);
+                if (!is_file($target) || is_link($target) || hash_file('sha256', $file->getPathname()) !== hash_file('sha256', $target)) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('The extension files differ from this package; update it manually before applying manifest corrections.');
+                }
+            }
+            $manifest = file_get_contents(Path::join($extractedPath, 'manifest.json'));
+            $this->assertRequiresSatisfied(json_decode($manifest, true, 512, JSON_THROW_ON_ERROR));
+            $this->filesystem->dumpFile($installedManifest, $manifest);
+        } finally {
+            $this->filesystem->remove([$zipPath, $extractedPath]);
+        }
+
+        return $model;
     }
 
     /**
@@ -547,54 +590,14 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\InformationException('This extension is not compatible with your version of FOSSBilling.');
         }
 
-        $extractedPath = Path::join(PATH_CACHE, bin2hex(random_bytes(16)));
-        $zipPath = Path::join(PATH_CACHE, md5(uniqid()) . '.zip');
-
-        // Create a temporary directory to extract the extension
-        $this->filesystem->mkdir($extractedPath, 0o700);
-
-        // Download the extension archive and save it to the cache folder
-        $httpClient = $this->di['http_client'];
-        $response = $httpClient->request('GET', $latest['download_url']);
-
-        $code = $response->getStatusCode();
-        if ($code !== 200) {
-            throw new \FOSSBilling\Core\Exception\BaseException('Failed to download the extension with error :code', [':code' => $code]);
-        }
-
-        $fileHandler = fopen($zipPath, 'w');
-        foreach ($httpClient->stream($response) as $chunk) {
-            fwrite($fileHandler, (string) $chunk->getContent());
-        }
-        fclose($fileHandler);
-
-        // Extract the archive
-        $zip = new \PhpZip\ZipFile();
-        $extracted = false;
-
-        try {
-            $zip->openFile($zipPath);
-            // Validate the complete archive before allowing any entry to be written.
-            foreach ($zip->getListFiles() as $entryName) {
-                $entry = $zip->getEntry($entryName);
-                $fileType = $entry->getUnixMode() & 0o170000;
-                if (!\FOSSBilling\Core\Update\Updater::isSafeArchiveEntry($entryName)
-                    || str_contains($entryName, "\0")
-                    || str_contains($entryName, ':')
-                    || !in_array($fileType, [0, 0o040000, 0o100000], true)) {
-                    throw new \FOSSBilling\Core\Exception\BaseException('The extension archive contains an unsafe file path or file type and cannot be extracted.');
-                }
-            }
-            $zip->extractTo($extractedPath);
-            $extracted = true;
-        } catch (\PhpZip\Exception\ZipException $e) {
-            $this->di['logger']->error($e->getMessage());
-
-            throw new \FOSSBilling\Core\Exception\BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
-        } finally {
-            $zip->close();
-            if (!$extracted) {
+        [$zipPath, $extractedPath] = $this->extractRelease($latest);
+        if (isset($latest['artifact_id'])) {
+            try {
+                $this->assertManagedManifest($latest, ExtensionType::normalize($type), $id, $extractedPath);
+            } catch (\Throwable $e) {
                 $this->filesystem->remove([$zipPath, $extractedPath]);
+
+                throw $e;
             }
         }
 
@@ -630,6 +633,106 @@ class Service implements InjectionAwareInterface
         $this->filesystem->remove($extractedPath);
 
         return true;
+    }
+
+    /** Download and stage a verified archive without changing installed files. */
+    private function extractRelease(array $latest): array
+    {
+        if (!is_string($latest['download_url'] ?? null) || filter_var($latest['download_url'], FILTER_VALIDATE_URL) === false
+            || !in_array(strtolower((string) parse_url($latest['download_url'], PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The extension download URL is invalid.');
+        }
+        if ((isset($latest['artifact_id']) && !isset($latest['sha256']))
+            || (isset($latest['sha256']) && (!is_string($latest['sha256']) || preg_match('/\A[a-f0-9]{64}\z/', $latest['sha256']) !== 1))) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The extension package checksum is missing or invalid.');
+        }
+        $extractedPath = Path::join(PATH_CACHE, bin2hex(random_bytes(16)));
+        $zipPath = Path::join(PATH_CACHE, bin2hex(random_bytes(16)) . '.zip');
+
+        // Create a temporary directory to extract the extension
+        $this->filesystem->mkdir($extractedPath, 0o700);
+
+        try {
+            $response = $this->di['http_client']->request('GET', $latest['download_url'], ['timeout' => 15, 'max_duration' => 60]);
+            if ($response->getStatusCode() !== 200) {
+                throw new \FOSSBilling\Core\Exception\BaseException('Failed to download the extension with error :code', [':code' => $response->getStatusCode()]);
+            }
+            $fileHandler = fopen($zipPath, 'xb');
+            if ($fileHandler === false) {
+                throw new \FOSSBilling\Core\Exception\BaseException('Failed to create the temporary extension archive.');
+            }
+            $hash = hash_init('sha256');
+            $size = 0;
+
+            try {
+                $this->filesystem->chmod($zipPath, 0o600);
+                foreach ($this->di['http_client']->stream($response) as $chunk) {
+                    $bytes = $chunk->getContent();
+                    $size += strlen($bytes);
+                    if ($size > 17 * 1024 * 1024 || fwrite($fileHandler, $bytes) !== strlen($bytes)) {
+                        throw new \FOSSBilling\Core\Exception\BaseException('Extension download exceeded its size limit or could not be saved.');
+                    }
+                    hash_update($hash, $bytes);
+                }
+            } finally {
+                fclose($fileHandler);
+            }
+            if (isset($latest['sha256']) && !hash_equals($latest['sha256'], hash_final($hash))) {
+                throw new \FOSSBilling\Core\Exception\InformationException('The extension download failed SHA-256 verification.');
+            }
+        } catch (\Throwable $e) {
+            if (isset($response)) {
+                $response->cancel();
+            }
+            $this->filesystem->remove([$zipPath, $extractedPath]);
+
+            throw $e;
+        }
+
+        // Extract the archive
+        $zip = new \PhpZip\ZipFile();
+        $extracted = false;
+
+        try {
+            $zip->openFile($zipPath);
+            // Validate the complete archive before allowing any entry to be written.
+            foreach ($zip->getListFiles() as $entryName) {
+                $entry = $zip->getEntry($entryName);
+                $fileType = $entry->getUnixMode() & 0o170000;
+                if (!\FOSSBilling\Core\Update\Updater::isSafeArchiveEntry($entryName)
+                    || str_contains($entryName, "\0")
+                    || str_contains($entryName, ':')
+                    || !in_array($fileType, [0, 0o040000, 0o100000], true)) {
+                    throw new \FOSSBilling\Core\Exception\BaseException('The extension archive contains an unsafe file path or file type and cannot be extracted.');
+                }
+            }
+            $zip->extractTo($extractedPath);
+            $extracted = true;
+        } catch (\PhpZip\Exception\ZipException $e) {
+            $this->di['logger']->error($e->getMessage());
+
+            throw new \FOSSBilling\Core\Exception\BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+        } finally {
+            $zip->close();
+            if (!$extracted) {
+                $this->filesystem->remove([$zipPath, $extractedPath]);
+            }
+        }
+
+        return [$zipPath, $extractedPath];
+    }
+
+    private function assertManagedManifest(array $release, string $type, string $id, string $path): void
+    {
+        $manifestPath = Path::join($path, 'manifest.json');
+        $raw = is_file($manifestPath) && !is_link($manifestPath) ? file_get_contents($manifestPath) : false;
+        $manifest = is_string($raw) ? json_decode($raw, true) : null;
+        if (!is_array($manifest) || ($manifest['manifest_version'] ?? null) !== 1
+            || ($manifest['id'] ?? null) !== strtolower($id) || ($manifest['type'] ?? null) !== $type
+            || ($manifest['version'] ?? null) !== ($release['tag'] ?? null)
+            || ($manifest['requires'] ?? null) != ($release['requires'] ?? null)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The package manifest does not match the selected extension release.');
+        }
     }
 
     public function getInstalledMods()

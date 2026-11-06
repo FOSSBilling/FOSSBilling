@@ -435,6 +435,7 @@ test('update throws exception for extensions that need manual update', function 
     $ext = extensionCreateEntity(1, ExtensionType::Module->value, 'testExtension', 'installed', '2');
 
     $extensionStub = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class);
+    $extensionStub->shouldReceive('getLatestExtensionRelease')->once()->andReturn(['download_url' => 'https://example.test/external.zip']);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
@@ -1602,14 +1603,14 @@ test('the typed cron listener refreshes the extension list', function (): void {
 });
 
 /** Run the real download/extraction boundary with a local archive response. */
-function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array &$stagingPaths, bool $safe = true): Service
+function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array &$stagingPaths, bool $safe = true, ?array $release = null, bool $emptyOnFailure = true): Service
 {
     $filesystem = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class)->makePartial();
     $filesystem->shouldReceive('mkdir')->andReturnUsing(function (string $path, int $mode) use (&$stagingPaths): void {
         $stagingPaths[] = $path;
         (new Symfony\Component\Filesystem\Filesystem())->mkdir($path, $mode);
     });
-    if (!$safe) {
+    if (!$safe && $emptyOnFailure) {
         $filesystem->shouldReceive('remove')->once()->andReturnUsing(function (array $paths) use (&$stagingPaths): void {
             $entries = new Symfony\Component\Finder\Finder();
             $entries->in($stagingPaths[0])->ignoreDotFiles(false);
@@ -1624,8 +1625,9 @@ function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array
         $service->shouldReceive('getExtensionPath')->never();
     }
     $manager = Mockery::mock(FOSSBilling\Core\Remote\ExtensionManager::class);
-    $manager->shouldReceive('getLatestExtensionRelease')->once()->andReturn(['download_url' => 'https://example.test/package.zip']);
-    $manager->shouldReceive('isReleaseCompatible')->once()->with(['download_url' => 'https://example.test/package.zip'])->andReturnTrue();
+    $release ??= ['download_url' => 'https://example.test/package.zip'];
+    $manager->shouldReceive('getLatestExtensionRelease')->once()->andReturn($release);
+    $manager->shouldReceive('isReleaseCompatible')->once()->with($release)->andReturnTrue();
     $staff = Mockery::mock(Box\Mod\Staff\Service::class);
     $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('extension', 'manage_extensions');
     $di = container();
@@ -1755,3 +1757,91 @@ test('downloadAndExtract checks the selected release without fetching latest twi
         FOSSBilling\Core\System\Config::setProperty('update_branch', $branch, false);
     }
 });
+
+function managedExtensionTestPackage(): array
+{
+    $manifest = ['manifest_version' => 1, 'id' => 'example', 'type' => 'module', 'version' => '1.0.0', 'name' => 'Example', 'description' => 'Corrected metadata', 'author' => ['name' => 'Author'], 'license' => 'MIT', 'requires' => ['fossbilling' => '*', 'php' => '>=8.3']];
+    $zip = new PhpZip\ZipFile();
+    $zip->addFromString('manifest.json', json_encode($manifest, JSON_THROW_ON_ERROR));
+    $zip->addFromString('Service.php', '<?php // same source');
+    $release = ['tag' => '1.0.0', 'download_url' => 'https://example.test/package.zip', 'artifact_id' => '134cf413-b5ab-4f57-b2ad-520020af880d', 'sha256' => hash('sha256', $zip->outputAsString()), 'requires' => $manifest['requires']];
+
+    return [$zip, $manifest, $release];
+}
+
+test('managed downloads verify SHA-256 before extracting any file', function (): void {
+    [$zip, $manifest, $release] = managedExtensionTestPackage();
+    $release['sha256'] = str_repeat('0', 64);
+    $paths = [];
+    $destination = Path::join(PATH_CACHE, 'checksum-test-' . bin2hex(random_bytes(8)));
+    $service = extensionArchiveService($zip, $destination, $paths, false, $release);
+
+    try {
+        expect(fn () => $service->downloadAndExtract('module', 'example'))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'SHA-256 verification');
+        expect(is_dir($destination))->toBeFalse();
+        expect(is_dir($paths[0]))->toBeFalse();
+    } finally {
+        $zip->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
+    }
+});
+
+test('managed downloads install the matching manifest and reject a different extension identity', function (string $id, bool $valid): void {
+    [$zip, $manifest, $release] = managedExtensionTestPackage();
+    $paths = [];
+    $destination = Path::join(PATH_CACHE, 'manifest-test-' . bin2hex(random_bytes(8)));
+    $service = extensionArchiveService($zip, $destination, $paths, $valid, $release, false);
+
+    try {
+        if ($valid) {
+            expect($service->downloadAndExtract('module', $id))->toBeTrue();
+            expect(json_decode(file_get_contents($destination . '/manifest.json'), true))->toBe($manifest);
+        } else {
+            expect(fn () => $service->downloadAndExtract('module', $id))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'manifest does not match');
+            expect(is_dir($destination))->toBeFalse();
+        }
+    } finally {
+        $zip->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
+    }
+})->with([['example', true], ['different', false]]);
+
+test('same-version corrections change only the manifest and preserve installed code and configuration', function (bool $changedSource, array $identity, bool $validIdentity = true): void {
+    [$zip, $manifest, $release] = managedExtensionTestPackage();
+    $paths = [];
+    $destination = Path::join(PATH_CACHE, 'correction-test-' . bin2hex(random_bytes(8)));
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $old = array_replace(array_diff_key($manifest, ['id' => true, 'type' => true]), $identity, ['description' => 'Original metadata']);
+    $filesystem->dumpFile($destination . '/manifest.json', json_encode($old, JSON_THROW_ON_ERROR));
+    $source = $changedSource ? '<?php // local edits' : '<?php // same source';
+    $filesystem->dumpFile($destination . '/Service.php', $source);
+    $filesystem->dumpFile($destination . '/config.local.php', '<?php // preserve configuration');
+    $service = extensionArchiveService($zip, $destination, $paths, true, $release);
+    $service->shouldReceive('isCoreModule')->once()->with('example')->andReturnFalse();
+    $model = extensionCreateEntity(1, 'module', 'example', 'installed', '1.0.0');
+
+    try {
+        if (!$validIdentity) {
+            expect(fn () => $service->update($model))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'version differs from its registration');
+        } elseif ($changedSource) {
+            expect(fn () => $service->update($model))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'extension files differ');
+        } else {
+            expect($service->update($model))->toBe($model);
+        }
+        expect(json_decode(file_get_contents($destination . '/manifest.json'), true))->toBe($changedSource || !$validIdentity ? $old : $manifest);
+        expect(file_get_contents($destination . '/Service.php'))->toBe($source);
+        expect(file_get_contents($destination . '/config.local.php'))->toBe('<?php // preserve configuration');
+        expect(is_dir($paths[0]))->toBeFalse();
+    } finally {
+        $zip->close();
+        $filesystem->remove([...$paths, $destination]);
+    }
+})->with([
+    [false, ['id' => 'example', 'type' => 'module']],
+    [true, ['id' => 'example', 'type' => 'module']],
+    [false, []],
+    [false, ['id' => 'example']],
+    [false, ['type' => 'module']],
+    [false, ['id' => 'different'], false],
+    [false, ['type' => 'theme'], false],
+]);

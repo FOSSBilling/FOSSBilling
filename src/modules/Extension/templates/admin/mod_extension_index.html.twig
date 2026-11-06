@@ -97,6 +97,13 @@
                                                         </svg>
                                                     </a>
                                                 {% endif %}
+                                                {% if ext.status == 'installed' %}
+                                                    <a class="btn btn-icon" href="{{ 'extension/update'|api_url(query: { 'type': ext.type, 'id': ext.id }) }}"
+                                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Apply manifest correction'|trans }}"
+                                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Apply manifest correction'|trans, content: 'Apply reviewed metadata for this version from the extension directory. This requires a managed package with matching installed files and does not update extension code.'|trans, button: 'Apply'|trans}, reload: true}) }}>
+                                                        <svg class="icon"><use href="#refresh" /></svg>
+                                                    </a>
+                                                {% endif %}
                                                 {% if ext.has_settings %}
                                                     <a class="btn btn-icon" href='{{ "extension/settings/#{ext.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
                                                         <svg class="icon">
