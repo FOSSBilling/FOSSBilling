@@ -473,3 +473,22 @@ it('enforces the cumulative item limit across pages', function (int $lastPageSiz
     expect($requests)->toBe(2);
     expect($di['cache']->getItem(catalogCacheKey('extensions', ['limit' => 100]))->isHit())->toBe($accepted);
 })->with([[5_000, true], [5_001, false]]);
+
+it('honors the selected release and otherwise prefers the newest stable package', function (): void {
+    $entry = catalogEntry();
+    $entry['releases'] = [
+        ['tag' => '1.0.0', 'requires' => ['fossbilling' => '*']],
+        ['tag' => '3.0.0-beta.1', 'requires' => ['fossbilling' => '*']],
+        ['tag' => '2.0.0', 'requires' => ['fossbilling' => '*']],
+    ];
+    expect(catalogManager($entry)->getLatestExtensionRelease('example')['tag'])->toBe('2.0.0');
+    $entry['releases'][0]['is_latest'] = true;
+    expect(catalogManager($entry)->getLatestExtensionRelease('example')['tag'])->toBe('1.0.0');
+});
+
+it('checks an extension PHP requirement independently of the FOSSBilling constraint', function (): void {
+    $manager = new ExtensionManager();
+    expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => '>=' . PHP_VERSION]]))->toBeTrue();
+    expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => '>' . PHP_VERSION]]))->toBeFalse();
+    expect($manager->isReleaseCompatible(['requires' => ['fossbilling' => '*', 'php' => 'invalid constraint']]))->toBeFalse();
+});

@@ -116,7 +116,24 @@ class ExtensionManager implements InjectionAwareInterface
     public function getLatestExtensionRelease(string $id): array
     {
         $releases = $this->getExtensionReleases($id);
-        $latest = reset($releases);
+        $selected = array_filter($releases, static fn (array $release): bool => ($release['is_latest'] ?? false) === true);
+        $stable = array_filter($releases, static fn (array $release): bool => !str_contains(explode('+', (string) ($release['tag'] ?? ''), 2)[0], '-'));
+        $candidates = $selected ?: ($stable ?: $releases);
+        $latest = reset($candidates);
+        if (!$selected) {
+            try {
+                $tags = Semver::rsort(array_column($candidates, 'tag'));
+                foreach ($candidates as $release) {
+                    if (($release['tag'] ?? null) === ($tags[0] ?? null)) {
+                        $latest = $release;
+
+                        break;
+                    }
+                }
+            } catch (\UnexpectedValueException) {
+                throw new Exception('Unable to compare extension release versions.');
+            }
+        }
 
         if (empty($latest) || !is_array($latest)) {
             throw new Exception('Unable to fetch the latest extension release.');
@@ -206,6 +223,11 @@ class ExtensionManager implements InjectionAwareInterface
 
         try {
             (new VersionParser())->parseConstraints($constraint);
+
+            $php = $release['requires']['php'] ?? null;
+            if ($php !== null && (!is_string($php) || trim($php) === '' || !Semver::satisfies(PHP_VERSION, $php))) {
+                return false;
+            }
 
             return Config::getProperty('update_branch', 'release') !== 'release'
                 || Semver::satisfies(Version::VERSION, $constraint);
