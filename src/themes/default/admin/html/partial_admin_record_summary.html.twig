@@ -1,0 +1,8 @@
+<nav class="nav nav-pills gap-2 mb-3" aria-label="{{ label }}">
+    {% for item in items %}
+    <a class="nav-link d-inline-flex align-items-baseline gap-2{% if item.status == current_status|default('') %} active{% endif %}" href="{{ item.status ? path|url(query: { status: item.status }) : path|url }}"{% if item.status == current_status|default('') %} aria-current="page"{% endif %}>
+        <span>{{ item.label }}</span>
+        <span class="fw-semibold">{{ item.count }}</span>
+    </a>
+    {% endfor %}
+</nav>

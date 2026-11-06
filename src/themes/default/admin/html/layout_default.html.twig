@@ -2,6 +2,12 @@
 {% set company = guest.system_company %}
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
 {% set current_active_menu = active_menu|default('') %}
+{% set quick_create_actions = [
+    { label: 'Client'|trans, path: 'client#tab-new', allowed: has_permission('client', 'create') },
+    { label: 'Invoice'|trans, path: 'invoice#tab-new', allowed: has_permission('invoice', 'manage_invoices') },
+    { label: 'Order'|trans, path: 'order#tab-new', allowed: has_permission('order', 'manage') },
+    { label: 'Support ticket'|trans, path: 'support#tab-new', allowed: has_permission('support', 'manage_tickets') }
+]|filter(action => action.allowed) %}
 
 <!DOCTYPE html>
 <html lang="{{ active_locale }}" data-bs-theme="dark">
@@ -27,7 +33,7 @@
     {% block head %}{% endblock %}
 </head>
 
-<body>
+<body class="admin-workspace {% block body_class %}{% endblock %}">
 
     {% if not admin %}
     <script>
@@ -46,10 +52,25 @@
         {{ include('partial_admin_sidebar.html.twig') }}
         {% block nav %}{% endblock %}
         <div class="page-wrapper">
+            <header class="admin-topbar d-print-none d-flex justify-content-end align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{{ '/'|url(area: 'client') }}" target="_blank" rel="noopener" class="text-reset fs-3">{{ 'Client area'|trans }} <span aria-hidden="true">↗</span></a>
+                    {% if quick_create_actions %}
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">{{ 'Create'|trans }}</button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            {% for action in quick_create_actions %}
+                            <a class="dropdown-item" href="{{ action.path|url }}">{{ action.label }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </header>
             {% block before_content %}{% endblock %}
             <main class="page-body" id="main-content" tabindex="-1">
                 <div class="container-fluid px-lg-4">
-                    <nav class="mb-3 mb-lg-4" aria-label="breadcrumb">
+                    <nav class="mb-3" aria-label="breadcrumb">
                         {% block breadcrumbs %}
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">

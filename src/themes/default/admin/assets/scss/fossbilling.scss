@@ -1,10 +1,13 @@
 @use "flags";
 @use "theme_settings";
 @use "../../../../../../frontend/styles/shared-theme";
+@use "workspace_theme";
+@use "workspace";
+
 
 // Let responsive tables use the available width before falling back to scrolling.
 // Individual cells can retain text-nowrap for values that must stay together.
-.table-responsive > .table > :is(thead, tbody, tfoot) > tr > :is(th, td):not(.text-nowrap) {
+.table-responsive > .table:not(.table-nowrap) > :is(thead, tbody, tfoot) > tr > :is(th, td):not(.text-nowrap) {
     white-space: normal;
     overflow-wrap: break-word;
 }

@@ -19,7 +19,6 @@
     "settings-bolt",
     { "name": "address-book", "dynamic": true },
     "copy",
-    "currency-dollar",
     "trash",
     "dots-vertical",
     "download",

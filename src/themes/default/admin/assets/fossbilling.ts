@@ -2,6 +2,7 @@
 import './js/ui/modals.ts';
 import initClipboard from './js/clipboard.ts';
 import initThemePreference from './js/ui/theme.ts';
+import initSidebar from './js/ui/sidebar.ts';
 import initDebugBarLayout from './js/ui/debugBar.ts';
 import * as tabler from '@tabler/core';
 import './js/fossbilling.ts';
@@ -46,6 +47,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initThemePreference();
+  initSidebar();
+
+  const newClientModal = document.getElementById('newClientModal');
+  if (newClientModal) {
+    const openNewClient = () => {
+      if (window.location.hash === '#tab-new') {
+        tabler.Modal.getOrCreateInstance(newClientModal).show();
+      }
+    };
+    openNewClient();
+    window.addEventListener('hashchange', openNewClient);
+    newClientModal.addEventListener('hidden.bs.modal', () => {
+      if (window.location.hash === '#tab-new') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    });
+  }
 
   /**
    * Enable Bootstrap Tooltip
