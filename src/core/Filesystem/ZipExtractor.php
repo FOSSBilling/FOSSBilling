@@ -69,7 +69,6 @@ final class ZipExtractor
             }
 
             $directories = [];
-            $remainingBytes = $maxBytes;
             foreach ($entries as $entry) {
                 // Core updates skip symlinks; extension validation rejects them.
                 if (($entry['mode'] & 0o170000) === 0o120000) {
@@ -92,7 +91,7 @@ final class ZipExtractor
                     throw new \RuntimeException('Cannot extract a ZIP entry over a symbolic link.');
                 }
 
-                $remainingBytes -= $this->extractFile($zip, $entry, $path, $remainingBytes, $filesystem);
+                $this->extractFile($zip, $entry, $path, $filesystem);
             }
 
             // Apply directory modes last so a read-only archived directory does
@@ -107,7 +106,7 @@ final class ZipExtractor
     }
 
     /** @param array{index: int, size: int, crc: int, mode: int, mtime: int} $entry */
-    private function extractFile(\ZipArchive $zip, array $entry, string $path, int $remainingBytes, Filesystem $filesystem): int
+    private function extractFile(\ZipArchive $zip, array $entry, string $path, Filesystem $filesystem): void
     {
         $temporary = $filesystem->tempnam(Path::getDirectory($path), '.fossbilling-zip-');
 
@@ -122,7 +121,7 @@ final class ZipExtractor
                     throw new \RuntimeException('Unable to read or stage ZIP entry contents.');
                 }
                 // Bound the actual write as well as checking the declared size.
-                $written = @stream_copy_to_stream($input, $output, min($entry['size'], $remainingBytes));
+                $written = @stream_copy_to_stream($input, $output, $entry['size']);
                 $extra = @fread($input, 1);
             } finally {
                 if ($input !== false) {
@@ -141,8 +140,6 @@ final class ZipExtractor
             $filesystem->chmod($temporary, $entry['mode'] & 0o7777);
             $filesystem->touch($temporary, $entry['mtime']);
             $filesystem->rename($temporary, $path, true);
-
-            return $written;
         } finally {
             $filesystem->remove($temporary);
         }
