@@ -741,7 +741,7 @@ test('reserveNextNumericParamValue claims the current value and advances the cou
         ->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
@@ -760,7 +760,7 @@ test('reserveNextNumericParamValue returns null when the counter is missing or n
     $dbalMock->shouldNotReceive('executeStatement');
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
@@ -780,7 +780,7 @@ test('reserveNextNumericParamValue rejects non-integer counter values', function
     $dbalMock->shouldNotReceive('executeStatement');
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
@@ -805,7 +805,7 @@ test('reserveNextNumericParamValue seeds a missing counter and reserves from it'
         ->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(101);
@@ -818,7 +818,6 @@ test('reserveNextNumericParamValue invalidates a cached missing setting after se
 
     $di = container();
     $di['em'] = $entityManager;
-    $di['dbal'] = $connection;
 
     $service = new Service();
     $service->setDi($di);
@@ -848,7 +847,7 @@ test('reserveNextNumericParamValue ignores the seed when the counter became vali
         ->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
@@ -884,7 +883,7 @@ test('reserveNextNumericParamValue reserves from the winning row when seeding co
         ->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     // Must not be 101: that is the number the winner reserved.
@@ -926,7 +925,7 @@ test('reserveNextNumericParamValue issues a lock-escalating no-op UPDATE before 
         ->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
@@ -949,7 +948,7 @@ test('reserveNextNumericParamValue propagates errors from the guarded work on SQ
     $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andThrow(new RuntimeException('boom'));
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))
@@ -985,7 +984,7 @@ test('reserveNextNumericParamValue retries once when SQLite reports the write lo
     );
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
@@ -1021,7 +1020,7 @@ test('reserveNextNumericParamValue retries more than once when SQLite contention
     );
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
@@ -1044,7 +1043,7 @@ test('reserveNextNumericParamValue gives up and rethrows once contention exhaust
         ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\LockWaitTimeoutException::class));
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))

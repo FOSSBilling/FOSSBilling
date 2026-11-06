@@ -1732,7 +1732,7 @@ class Service implements InjectionAwareInterface
         $order->setSuspendedAt(null);
         $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
-        $this->di['dbal']->executeStatement(
+        $this->di['em']->getConnection()->executeStatement(
             'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
             ['order_id' => $orderId, 'name' => self::META_CANCEL_AT_PERIOD_END],
         );
@@ -1773,7 +1773,7 @@ class Service implements InjectionAwareInterface
 
     public function rmInvoiceItemByOrder(Order $order): void
     {
-        $this->di['dbal']->executeStatement(
+        $this->di['em']->getConnection()->executeStatement(
             'DELETE FROM invoice_item WHERE rel_id = :rel_id AND status = :status',
             [
                 'rel_id' => (string) $this->orderId($order),
@@ -2317,7 +2317,7 @@ class Service implements InjectionAwareInterface
             $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
         }
 
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->di['em']->getConnection()->createQueryBuilder();
         $query
             ->delete('client_order')
             ->where('client_id = :id')

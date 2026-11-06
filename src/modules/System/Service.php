@@ -853,7 +853,7 @@ class Service
     private function reserveNumericParamValue(string $param, ?int $seed): ?int
     {
         /** @var Connection $connection */
-        $connection = $this->di['dbal'];
+        $connection = $this->di['em']->getConnection();
 
         try {
             return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));

@@ -441,10 +441,9 @@ test('update finalization status falls back to legacy admin while pending', func
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
     $updateFinalization->shouldReceive('getStatus')->once()->withNoArgs()->andReturn(['required' => true]);
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('fetchOne')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
-    $connection->shouldReceive('fetchOne')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('admin');
-
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, role TEXT)');
+    $connection->insert('admin', ['id' => 1, 'role' => 'admin']);
     $di = container();
     $di['update_finalization'] = $updateFinalization;
     $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
@@ -466,9 +465,9 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('fetchOne')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
-    $connection->shouldReceive('fetchOne')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('staff');
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, role TEXT)');
+    $connection->insert('admin', ['id' => 1, 'role' => 'staff']);
 
     $di = container();
     $di['update_finalization'] = $updateFinalization;

@@ -20,7 +20,9 @@ test('JSON audit scans all rows in bounded batches without changing or exposing 
         ->and(array_column($issues, 'id'))->toBe([-1, 0, 4, 5, 6])
         ->and($connection->fetchAllAssociative('SELECT * FROM product ORDER BY id'))->toBe($before);
     $command = new JsonAuditCommand();
-    $command->setDi(new Pimple\Container(['dbal' => $connection]));
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $command->setDi(new Pimple\Container(['em' => $em]));
     $tester = new CommandTester($command);
     expect($tester->execute(['--table' => 'product', '--batch-size' => '2']))->toBe(1)
         ->and($tester->getDisplay())->not->toContain('invalid-secret', 'private')

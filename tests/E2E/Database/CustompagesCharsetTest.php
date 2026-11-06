@@ -25,7 +25,9 @@ beforeEach(function (): void {
     ]);
     $di = new Pimple\Container();
     $di['pdo'] = $this->pdo;
-    $di['dbal'] = $this->connection;
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->andReturn($this->connection);
+    $di['em'] = $em;
     $this->patcher = new Patcher();
     $this->patcher->setDi($di);
     $this->runPatch = (new ReflectionMethod($this->patcher, 'patch128'))->getClosure($this->patcher);

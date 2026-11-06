@@ -19,7 +19,7 @@ function createSession(?SymfonySession $httpSession = null): FOSSBilling\Core\Se
 function createDatabaseSession(Connection $connection): array
 {
     $di = Tests\Helpers\container();
-    $di['dbal'] = $connection;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['request'] = fn (): Request => Request::create('http://localhost/', server: [
         'HTTP_USER_AGENT' => 'Mozilla/5.0 (X11; Linux x86_64) Chrome/126.0.0.0',
         'REMOTE_ADDR' => '127.0.0.1',

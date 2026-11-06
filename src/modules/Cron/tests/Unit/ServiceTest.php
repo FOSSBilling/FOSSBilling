@@ -118,7 +118,6 @@ test('runCrons clears cached setting misses between tasks', function (): void {
 
         $di = container();
         $di['em'] = $entityManager;
-        $di['dbal'] = $connection;
         $systemService = new Box\Mod\System\Service();
         $systemService->setDi($di);
 

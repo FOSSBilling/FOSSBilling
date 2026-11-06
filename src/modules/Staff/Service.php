@@ -168,7 +168,7 @@ class Service implements InjectionAwareInterface
 
         $sql .= sprintf(' ORDER BY name ASC LIMIT %u', $limit);
 
-        return $this->di['dbal']->fetchAllKeyValue($sql, $params);
+        return $this->di['em']->getConnection()->fetchAllKeyValue($sql, $params);
     }
 
     public function getPermissions($member_id): array

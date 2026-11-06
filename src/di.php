@@ -9,7 +9,6 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Core\Cache\CacheFactory;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
@@ -97,14 +96,6 @@ $di['crypt'] = function () use ($di) {
  * @return EntityManager The Doctrine ORM EntityManager instance.
  */
 $di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
-
-/*
- *
- * @param void
- *
- * @return Connection The shared Doctrine DBAL connection instance.
- */
-$di['dbal'] = (fn (): Connection => DriverManagerFactory::getSharedConnection());
 
 /*
  * Creates a new PDO object for database connections

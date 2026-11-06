@@ -894,8 +894,8 @@ test('converts ticket to api array', function (): void {
     $clientRepo->shouldReceive('find')->byDefault()->andReturn(createEntity(Client::class, ['id' => 1, 'first_name' => 'Client', 'last_name' => 'Name']));
     $emMock->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
     $di = container();
-    $di['dbal'] = $dbalMock;
     $di['em'] = $emMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
@@ -964,6 +964,11 @@ test('converts ticket to api array with rel details', function (): void {
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepo->shouldReceive('find')->byDefault()->andReturn(createEntity(Client::class, ['id' => 1, 'first_name' => 'Client', 'last_name' => 'Name']));
     $emMock->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAssociative')
+        ->byDefault()
+        ->andReturn(['id' => 1, 'first_name' => 'Client', 'last_name' => 'Name', 'email' => 'client@example.com']);
+    $emMock->shouldReceive('getConnection')->byDefault()->andReturn($dbalMock);
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -2377,7 +2382,7 @@ test('message get author details admin', function (): void {
         ->andReturn(['id' => 1, 'name' => 'Admin Name', 'email' => 'admin@example.com']);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $ticketMsg = new SupportTicketMessage();
@@ -2398,7 +2403,7 @@ test('message get author details client', function (): void {
         ->andReturn(['id' => 1, 'first_name' => 'Client', 'last_name' => 'Name', 'email' => 'client@example.com']);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $ticketMsg = new SupportTicketMessage();
@@ -2419,7 +2424,7 @@ test('message get author details client with null last name', function (): void 
         ->andReturn(['id' => 1, 'first_name' => 'Client', 'last_name' => null, 'email' => 'client@example.com']);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $ticketMsg = new SupportTicketMessage();
@@ -2511,7 +2516,7 @@ test('note get author details', function (): void {
         ->andReturn(['id' => 1, 'name' => 'AdminName', 'email' => 'admin@example.com']);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $note = new SupportTicketNote();
@@ -2671,7 +2676,7 @@ test('batch ticket list falls back to a guest author when the client is missing'
     $dbalMock->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
