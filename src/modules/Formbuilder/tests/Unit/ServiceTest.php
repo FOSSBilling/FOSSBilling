@@ -491,3 +491,14 @@ test('copying forms keeps structured options and false-like scalar defaults with
     $field = $service->getForm($copy)['fields'][0];
     expect($field['options'])->toBe(['Custom label' => '0'])->and($field['default_value'])->toBe('0');
 });
+
+test('field writes reject non-array options before saving', function (mixed $options, string $method): void {
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldNotReceive('insert', 'update');
+    $service = new Service();
+    $di = container();
+    $di['dbal'] = $dbal;
+    $service->setDi($di);
+    expect(fn () => $service->$method(['id' => 1, 'form_id' => 1, 'type' => 'select', 'options' => $options]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Field options must be an array.');
+})->with(['{"Choice":"1"}', 'text', 1, false, null])->with(['addNewField', 'updateField']);

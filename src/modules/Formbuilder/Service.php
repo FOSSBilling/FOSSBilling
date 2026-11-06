@@ -112,6 +112,9 @@ class Service implements InjectionAwareInterface
 
     public function addNewField($field): int
     {
+        if (array_key_exists('options', $field) && !is_array($field['options'])) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Field options must be an array.');
+        }
         $fieldNumber = $this->getFormFieldsCount($field['form_id']) + 1;
         $types = $this->getFormFieldsTypes();
         $type = $field['type'];
@@ -177,6 +180,9 @@ class Service implements InjectionAwareInterface
 
     public function updateField(array $field): int
     {
+        if (array_key_exists('options', $field) && !is_array($field['options'])) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Field options must be an array.');
+        }
         $fieldId = (int) $field['id'];
         $label = $field['label'] ?? 'New field';
         $name = $this->slugify($field['name']);
