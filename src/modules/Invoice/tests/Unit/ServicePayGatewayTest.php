@@ -911,3 +911,18 @@ test('cron retries deferred gateway encryption when its adapter becomes availabl
     expect($first->getConfig())->toBe($upgraded)->and($second->getConfig())->toBe($preserved)
         ->and((new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($upgraded)['api_key'])->toBe('first-secret');
 });
+
+test('deferred gateway retry stops cron after unexpected persistence or adapter errors', function (Throwable $failure): void {
+    $gateway = Mockery::mock(ServicePayGateway::class);
+    $gateway->shouldReceive('migrateConfigSecrets')->with(true)->once()->andThrow($failure);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $gateway);
+    $invoice = new Box\Mod\Invoice\Service();
+    $invoice->setDi($di);
+
+    expect(fn () => $invoice->retryDeferredGatewaySecrets(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent()))
+        ->toThrow($failure::class, $failure->getMessage());
+})->with([
+    'adapter contract' => [new TypeError('Broken adapter contract')],
+    'closed entity manager' => [Doctrine\ORM\Exception\EntityManagerClosed::create()],
+]);

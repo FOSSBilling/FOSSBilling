@@ -2725,3 +2725,14 @@ test('cron retries deferred registrar encryption without changing another regist
     expect($first->getConfig())->toBe($upgraded)->and($second->getConfig())->toBe($preserved)
         ->and($service->registrarGetConfiguration($first)['api-key'])->toBe('first-secret');
 });
+
+test('deferred registrar retry stops cron after unexpected persistence or adapter errors', function (Throwable $failure): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('migrateConfigSecrets')->with(true)->once()->andThrow($failure);
+
+    expect(fn () => $service->retryDeferredConfigSecrets(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent()))
+        ->toThrow($failure::class, $failure->getMessage());
+})->with([
+    'adapter contract' => [new TypeError('Broken adapter contract')],
+    'closed entity manager' => [Doctrine\ORM\Exception\EntityManagerClosed::create()],
+]);
