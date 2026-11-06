@@ -29,8 +29,6 @@ final class ZipExtractor
         }
 
         $zip = new \ZipArchive();
-        // CHECKCONS also rejects raw NUL-containing names, which libzip would
-        // otherwise silently truncate before exposing them to our validator.
         $result = @$zip->open($archive, \ZipArchive::RDONLY | \ZipArchive::CHECKCONS);
         if ($result !== true) {
             throw new \RuntimeException(sprintf('Unable to open ZIP archive (error %s).', $result));
@@ -39,6 +37,7 @@ final class ZipExtractor
         $filesystem = new Filesystem();
 
         try {
+            $this->validateRawNames($archive, $zip);
             $entries = [];
             for ($index = 0; $index < $zip->numFiles; ++$index) {
                 $entry = $zip->statIndex($index);
@@ -113,6 +112,65 @@ final class ZipExtractor
             }
         } finally {
             $zip->close();
+        }
+    }
+
+    /** Older libzip versions replace NUL bytes with spaces before exposing names. */
+    private function validateRawNames(string $archive, \ZipArchive $zip): void
+    {
+        $stream = @fopen($archive, 'rb');
+        if ($stream === false) {
+            throw new \RuntimeException('Unable to read ZIP entry names.');
+        }
+
+        try {
+            $comment = $zip->getArchiveComment(\ZipArchive::FL_ENC_RAW);
+            if (fseek($stream, -22 - strlen($comment), SEEK_END) !== 0) {
+                throw new \RuntimeException('Unable to read the ZIP central directory.');
+            }
+            $footer = fread($stream, 22);
+            if ($footer === false || strlen($footer) !== 22 || !str_starts_with($footer, "PK\x05\x06")) {
+                throw new \RuntimeException('Invalid ZIP central directory footer.');
+            }
+            $offset = unpack('Voffset', substr($footer, 16, 4))['offset'];
+
+            if ($offset === 0xFFFFFFFF) {
+                // ZIP64 stores the directory offset in its extended footer.
+                fseek($stream, -42 - strlen($comment), SEEK_END);
+                $locator = fread($stream, 20);
+                if ($locator === false || strlen($locator) !== 20 || !str_starts_with($locator, "PK\x06\x07")) {
+                    throw new \RuntimeException('Invalid ZIP64 central directory locator.');
+                }
+                $footerOffset = unpack('Poffset', substr($locator, 8, 8))['offset'];
+                if (fseek($stream, $footerOffset) !== 0) {
+                    throw new \RuntimeException('Unable to read the ZIP64 footer.');
+                }
+                $footer = fread($stream, 56);
+                if ($footer === false || strlen($footer) !== 56 || !str_starts_with($footer, "PK\x06\x06")) {
+                    throw new \RuntimeException('Invalid ZIP64 central directory footer.');
+                }
+                $offset = unpack('Poffset', substr($footer, 48, 8))['offset'];
+            }
+
+            if (fseek($stream, $offset) !== 0) {
+                throw new \RuntimeException('Unable to read the ZIP central directory.');
+            }
+            for ($index = 0; $index < $zip->numFiles; ++$index) {
+                $header = fread($stream, 46);
+                if ($header === false || strlen($header) !== 46 || !str_starts_with($header, "PK\x01\x02")) {
+                    throw new \RuntimeException('Invalid ZIP central directory entry.');
+                }
+                $lengths = unpack('vname/vextra/vcomment', substr($header, 28, 6));
+                $name = $lengths['name'] > 0 ? fread($stream, $lengths['name']) : '';
+                if ($name === false || strlen($name) !== $lengths['name'] || str_contains($name, "\0")) {
+                    throw new \RuntimeException('The ZIP archive contains an invalid file name.');
+                }
+                if (fseek($stream, $lengths['extra'] + $lengths['comment'], SEEK_CUR) !== 0) {
+                    throw new \RuntimeException('Unable to read the next ZIP directory entry.');
+                }
+            }
+        } finally {
+            fclose($stream);
         }
     }
 

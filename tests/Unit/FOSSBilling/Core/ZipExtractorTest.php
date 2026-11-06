@@ -9,6 +9,18 @@ use Symfony\Component\Filesystem\Path;
 
 use function Tests\Helpers\zipArchive;
 
+// cspell:ignore ventries Vsize VVPPPP
+function zip64TestArchive(string $archive): string
+{
+    $footer = unpack('ventriesDisk/ventries/Vsize/Voffset', substr($archive, -14, 12));
+    $body = substr($archive, 0, -22);
+    $zip64Footer = pack('a4PvvVVPPPP', "PK\x06\x06", 44, 45, 45, 0, 0, $footer['entries'], $footer['entries'], $footer['size'], $footer['offset']);
+    $locator = pack('a4VPV', "PK\x06\x07", 0, strlen($body), 1);
+    $footer = pack('a4vvvvVVv', "PK\x05\x06", 0, 0, 0xFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0);
+
+    return $body . $zip64Footer . $locator . $footer;
+}
+
 beforeEach(function (): void {
     $this->filesystem = new Filesystem();
     $this->directory = Path::join(sys_get_temp_dir(), 'fossbilling-zip-' . bin2hex(random_bytes(8)));
@@ -80,7 +92,22 @@ test('native extraction fails on invalid archives without writing files', functi
     'not a ZIP' => ['not a zip'],
     'truncated ZIP' => [substr(zipArchive(['file.txt' => 'content']), 0, -15)],
     'raw NUL filename' => [zipArchive(["null\0.txt" => 'content'])],
+    'ZIP64 raw NUL filename' => [zip64TestArchive(zipArchive(["null\0.txt" => 'content']))],
 ]);
+
+test('native extraction reads ZIP64 directories and binary archive comments', function (bool $zip64): void {
+    $archive = zipArchive(['file.txt' => 'content']);
+    if ($zip64) {
+        $archive = zip64TestArchive($archive);
+    }
+    $comment = "comment PK\x05\x06 with a NUL \0";
+    $archive = substr($archive, 0, -2) . pack('v', strlen($comment)) . $comment;
+    $this->filesystem->dumpFile($this->archive, $archive);
+
+    (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate);
+
+    expect(file_get_contents($this->destination . '/file.txt'))->toBe('content');
+})->with([false, true]);
 
 test('native extraction detects corrupt file contents', function (): void {
     // A short entry is stored uncompressed, so changing its bytes leaves the
