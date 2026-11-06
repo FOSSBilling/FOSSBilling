@@ -484,7 +484,7 @@ test('copying forms keeps structured options and false-like scalar defaults with
         $em->getClassMetadata(Box\Mod\Formbuilder\Entity\FormField::class),
     ]);
     $service = new Service();
-    $service->setDi(new Pimple\Container(['dbal' => $connection, 'logger' => new Tests\Helpers\TestLogger()]));
+    $service->setDi(new Pimple\Container(['em' => $em, 'logger' => new Tests\Helpers\TestLogger()]));
     $form = $service->addNewForm(['name' => 'Original']);
     $service->addNewField(['form_id' => $form, 'type' => 'select', 'name' => 'selection', 'options' => ['Custom label' => '0'], 'default_value' => '0']);
     $copy = $service->duplicateForm(['form_id' => $form, 'name' => 'Copy']);
@@ -497,7 +497,7 @@ test('field writes reject non-array options before saving', function (mixed $opt
     $dbal->shouldNotReceive('insert', 'update');
     $service = new Service();
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $service->setDi($di);
     expect(fn () => $service->$method(['id' => 1, 'form_id' => 1, 'type' => 'select', 'options' => $options]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Field options must be an array.');
