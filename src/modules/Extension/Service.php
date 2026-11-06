@@ -35,6 +35,9 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
 {
+    private const int MAX_ARCHIVE_ENTRIES = 10_000;
+    private const int MAX_EXTRACTED_BYTES = 256 * 1024 * 1024;
+
     protected ?\Pimple\Container $di = null;
     protected ExtensionRepository $extensionRepository;
     protected ExtensionMetaRepository $extensionMetaRepository;
@@ -701,7 +704,7 @@ class Service implements InjectionAwareInterface
                     || !in_array($fileType, [0, 0o040000, 0o100000], true)) {
                     throw new \FOSSBilling\Core\Exception\BaseException('The extension archive contains an unsafe file path or file type and cannot be extracted.');
                 }
-            });
+            }, maxEntries: self::MAX_ARCHIVE_ENTRIES, maxBytes: self::MAX_EXTRACTED_BYTES);
             $extracted = true;
         } catch (\RuntimeException $e) {
             $this->di['logger']->error($e->getMessage());

@@ -115,8 +115,61 @@ test('native extraction detects corrupt file contents', function (): void {
     $archive = zipArchive(['file.txt' => 'original data']);
     expect(substr_count($archive, 'original data'))->toBe(1);
     $this->filesystem->dumpFile($this->archive, str_replace('original data', 'modified data', $archive));
+    $this->filesystem->dumpFile($this->destination . '/file.txt', 'installed copy');
 
-    expect(fn () => (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate))->toThrow(RuntimeException::class);
+    expect(fn () => (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate))->toThrow(RuntimeException::class)
+        ->and(file_get_contents($this->destination . '/file.txt'))->toBe('installed copy')
+        ->and(scandir($this->destination))->toBe(['.', '..', 'file.txt']);
+});
+
+test('replacement is verified independently of the installed file permissions', function (): void {
+    $path = $this->destination . '/file.txt';
+    $this->filesystem->dumpFile($path, 'installed copy');
+    $this->filesystem->chmod($path, 0o044);
+    $this->filesystem->dumpFile($this->archive, zipArchive(['file.txt' => 'replacement'], ['file.txt' => 0o100640]));
+
+    (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate);
+
+    expect(file_get_contents($path))->toBe('replacement')
+        ->and(scandir($this->destination))->toBe(['.', '..', 'file.txt']);
+    if (DIRECTORY_SEPARATOR !== '\\') {
+        expect(fileperms($path) & 0o777)->toBe(0o640);
+    }
+});
+
+test('extraction limits reject the complete archive before writing', function (int $maxEntries, int $maxBytes, string $message): void {
+    $this->filesystem->dumpFile($this->archive, zipArchive(['first.txt' => 'first', 'second.txt' => 'second']));
+
+    expect(fn () => (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate, $maxEntries, $maxBytes))
+        ->toThrow(RuntimeException::class, $message)
+        ->and(scandir($this->destination))->toBe(['.', '..']);
+})->with([
+    'entry count' => [1, 100, 'entry limit'],
+    'expanded bytes' => [2, 10, 'extracted size limit'],
+]);
+
+test('extraction accepts archives at the configured limits', function (): void {
+    $this->filesystem->dumpFile($this->archive, zipArchive(['first.txt' => 'first', 'second.txt' => 'second', 'empty.txt' => '']));
+
+    (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate, maxEntries: 3, maxBytes: 11);
+
+    expect(file_get_contents($this->destination . '/first.txt'))->toBe('first')
+        ->and(file_get_contents($this->destination . '/second.txt'))->toBe('second')
+        ->and(file_get_contents($this->destination . '/empty.txt'))->toBe('');
+});
+
+test('a false declared size cannot replace an installed file or leave staged bytes', function (): void {
+    $archive = zipArchive(['file.txt' => str_repeat('compressible content', 1000)]);
+    $central = strpos($archive, "PK\x01\x02");
+    $archive = substr_replace($archive, pack('V', 1), 22, 4);
+    $archive = substr_replace($archive, pack('V', 1), $central + 24, 4);
+    $this->filesystem->dumpFile($this->archive, $archive);
+    $this->filesystem->dumpFile($this->destination . '/file.txt', 'installed copy');
+
+    expect(fn () => (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate, maxBytes: 1))
+        ->toThrow(RuntimeException::class)
+        ->and(file_get_contents($this->destination . '/file.txt'))->toBe('installed copy')
+        ->and(scandir($this->destination))->toBe(['.', '..', 'file.txt']);
 });
 
 test('native extraction does not write through existing destination symlinks', function (bool $directory): void {

@@ -15,8 +15,9 @@ An omitted PHP constraint leaves the FOSSBilling runtime requirements in force.
 Downloads are limited to 17 MiB and checked against any supplied SHA-256 before
 extraction. Managed packages require a checksum, and their root manifest must
 match the selected extension ID, type, version and requirements. External
-releases without a checksum retain their existing installation behavior.
+releases without a checksum remain supported.
 Temporary downloads and extraction directories are removed on failure.
+Extraction is limited to 10,000 archive entries and 256 MiB of expanded files.
 
 ## Same-version manifest corrections
 

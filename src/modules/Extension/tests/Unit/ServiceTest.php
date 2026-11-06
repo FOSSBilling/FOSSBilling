@@ -1671,6 +1671,36 @@ test('downloadAndExtract rejects unsafe archives before writing any entry', func
     ['pipe', 0o010644],
 ]);
 
+test('downloadAndExtract rejects packages exceeding extraction limits', function (bool $tooManyEntries): void {
+    if ($tooManyEntries) {
+        $files = [];
+        for ($index = 0; $index <= 10_000; ++$index) {
+            $files["file-{$index}.txt"] = 'x';
+        }
+        $zip = Tests\Helpers\zipArchive($files);
+        $reason = 'entry limit';
+    } else {
+        $zip = Tests\Helpers\zipArchive(['large.txt' => str_repeat('compressible content', 1000)]);
+        $central = strpos($zip, "PK\x01\x02");
+        $size = pack('V', 256 * 1024 * 1024 + 1);
+        $zip = substr_replace($zip, $size, 22, 4);
+        $zip = substr_replace($zip, $size, $central + 24, 4);
+        $reason = 'extracted size limit';
+    }
+    $paths = [];
+    $destination = Path::join(PATH_CACHE, 'extension-limit-' . bin2hex(random_bytes(8)));
+    $service = extensionArchiveService($zip, $destination, $paths, false);
+
+    try {
+        expect(fn () => $service->downloadAndExtract('module', 'example'))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Failed to extract file');
+        expect($service->getDi()['logger']->calls[0]['params'][0])->toContain($reason)
+            ->and(is_dir($paths[0]))->toBeFalse()
+            ->and(is_dir($destination))->toBeFalse();
+    } finally {
+        (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
+    }
+})->with([true, false]);
+
 test('downloadAndExtract preserves ordinary package files and directories', function (): void {
     $files = ['manifest.json' => '{}', 'nested/my file v1.2.txt' => 'content', '.hidden' => 'dotfile', 'nested/123' => 'numeric', 'nested/é.txt' => 'unicode'];
     $zip = Tests\Helpers\zipArchive(['nested/' => null, ...$files]);
