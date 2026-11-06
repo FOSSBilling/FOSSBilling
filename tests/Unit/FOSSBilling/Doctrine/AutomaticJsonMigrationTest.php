@@ -110,14 +110,16 @@ test('an interrupted preflight resumes from its durable batch cursor before any 
 test('interrupted form default preparation retains originals and resumes without double encoding', function (): void {
     $c = automaticJsonConnection();
     $c->executeStatement('CREATE TABLE form_field (id INTEGER PRIMARY KEY, type TEXT, options TEXT, default_value VARCHAR(255))');
-    $c->insert('form_field', ['id' => 1, 'type' => 'text', 'options' => '{}', 'default_value' => 'false']);
-    $c->insert('form_field', ['id' => 2, 'type' => 'checkbox', 'options' => '{}', 'default_value' => '{"0":"a","1":"b"}']);
-    $c->executeStatement("CREATE TRIGGER interrupt_defaults BEFORE UPDATE ON form_field WHEN OLD.id = 2 BEGIN SELECT RAISE(ABORT, 'interrupted'); END");
+    $c->insert('form_field', ['id' => 1, 'type' => 'checkbox', 'options' => '{}', 'default_value' => '{"1":"selected"}']);
+    $c->insert('form_field', ['id' => 2, 'type' => 'text', 'options' => '{}', 'default_value' => 'false']);
+    $c->insert('form_field', ['id' => 3, 'type' => 'checkbox', 'options' => '{}', 'default_value' => '{"0":"a","1":"b"}']);
+    $c->executeStatement("CREATE TRIGGER interrupt_defaults BEFORE UPDATE ON form_field WHEN OLD.id = 3 BEGIN SELECT RAISE(ABORT, 'interrupted'); END");
     $em = EntityManagerFactory::create($c);
     $crypt = new Crypt();
     expect(fn () => (new JsonMigration())->automatic($em, $crypt))->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class);
     $journal = new FOSSBilling\Doctrine\JsonMigrationJournal($em, $crypt);
-    expect(base64_decode($journal->find('prepared:form_field.default_value:1')['base64']))->toBe('false')
+    expect(base64_decode($journal->find('prepared:form_field.default_value:1')['base64']))->toBe('{"1":"selected"}')
+        ->and(base64_decode($journal->find('prepared:form_field.default_value:2')['base64']))->toBe('false')
         ->and(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field')))->toBe([]);
     // Recovery payloads contain no plaintext default values at rest.
     foreach ($c->fetchFirstColumn('SELECT payload FROM json_migration_record') as $payload) {
@@ -125,6 +127,18 @@ test('interrupted form default preparation retains originals and resumes without
     }
     $c->executeStatement('DROP TRIGGER interrupt_defaults');
     (new JsonMigration())->automatic($em, $crypt);
-    expect(array_map(fn ($raw) => json_decode($raw, true, 512, JSON_THROW_ON_ERROR), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe(['false', ['a', 'b']])
+    expect(array_map(fn ($raw) => json_decode($raw, true, 512, JSON_THROW_ON_ERROR), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe([[1 => 'selected'], 'false', ['a', 'b']])
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+});
+
+test('a no-op default update still rejects a missing source row and rolls back preparation', function (): void {
+    $c = automaticJsonConnection();
+    $c->executeStatement('CREATE TABLE form_field (id INTEGER PRIMARY KEY, type TEXT, default_value TEXT)');
+    $c->insert('form_field', ['id' => 1, 'type' => 'checkbox', 'default_value' => '{"1":"selected"}']);
+    $c->executeStatement('CREATE TRIGGER remove_default BEFORE UPDATE ON form_field BEGIN DELETE FROM form_field WHERE id = OLD.id; SELECT RAISE(IGNORE); END');
+    $em = EntityManagerFactory::create($c);
+    $crypt = new Crypt();
+    expect(fn () => (new JsonMigration())->automatic($em, $crypt))->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class, 'Form default changed')
+        ->and($c->fetchOne('SELECT default_value FROM form_field WHERE id = 1'))->toBe('{"1":"selected"}')
+        ->and((new FOSSBilling\Doctrine\JsonMigrationJournal($em, $crypt))->has('prepared:form_field.default_value:1'))->toBeFalse();
 });

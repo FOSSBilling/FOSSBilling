@@ -264,6 +264,21 @@ test('automatic updates convert mixed defaults and real binary session identifie
         ->and($migration->automatic($sessionEm, new FOSSBilling\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0]);
 });
 
+test('unchanged checkbox defaults migrate and repeat safely on native databases', function (): void {
+    $c = $this->connection;
+    $c->executeStatement('CREATE TABLE form_field (id BIGINT PRIMARY KEY, type VARCHAR(30), default_value VARCHAR(255))');
+    foreach (['{"1":"selected"}', '["selected"]'] as $id => $raw) {
+        $c->insert('form_field', ['id' => $id, 'type' => 'checkbox', 'default_value' => $raw]);
+    }
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
+    $migration = new JsonMigration();
+    $crypt = new FOSSBilling\Crypt();
+    $migration->automatic($em, $crypt);
+    expect(array_map(fn ($raw) => json_decode($raw, true, 512, JSON_THROW_ON_ERROR), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe([[1 => 'selected'], ['selected']])
+        ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0])
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+});
+
 test('fresh JSON mappings preserve form defaults through later automatic upgrades', function (): void {
     $c = $this->connection;
     $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);

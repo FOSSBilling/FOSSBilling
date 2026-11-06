@@ -141,7 +141,8 @@ final class JsonMigration
                     $connection->transactional(function () use ($connection, $journal, $table, $column, $row, $prepared): void {
                         $journal->save('prepared:' . $table . '.' . $column . ':' . $row['id'], ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($row['value'])]);
                         $changed = $connection->executeStatement('UPDATE form_field SET default_value = ? WHERE id = ? AND default_value = ?', [$prepared, $row['id'], $row['value']]);
-                        if ($changed !== 1) {
+                        // MySQL reports changed rows, so verify a no-op still has the expected value.
+                        if ($changed !== 1 && ($prepared !== $row['value'] || $connection->fetchOne('SELECT default_value FROM form_field WHERE id = ?', [$row['id']]) !== $prepared)) {
                             throw new JsonMigrationException('Form default changed during migration; retry finalization.');
                         }
                     });
