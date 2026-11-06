@@ -62,7 +62,7 @@ class Patch72 implements PatchInterface
             );
         }
 
-        $schemaManager = $patcher->di['dbal']->createSchemaManager();
+        $schemaManager = $patcher->di['em']->getConnection()->createSchemaManager();
         $table = $schemaManager->introspectTable('promo_redemption');
         $columns = [];
 
@@ -106,9 +106,9 @@ class Patch72 implements PatchInterface
             }
         }
 
-        $existingRedemptions = (int) $patcher->di['dbal']->executeQuery('SELECT COUNT(id) FROM promo_redemption')->fetchOne();
+        $existingRedemptions = (int) $patcher->di['em']->getConnection()->executeQuery('SELECT COUNT(id) FROM promo_redemption')->fetchOne();
         if ($existingRedemptions === 0) {
-            $orders = $patcher->di['dbal']->executeQuery(
+            $orders = $patcher->di['em']->getConnection()->executeQuery(
                 'SELECT id, promo_id, client_id, promo_used, discount, currency, created_at, updated_at
                  FROM client_order
                  WHERE promo_id IS NOT NULL'
@@ -119,7 +119,7 @@ class Patch72 implements PatchInterface
                 $renewalCreatedAt = $order['updated_at'] ?: $checkoutCreatedAt;
                 $discountAmount = $order['discount'] !== null ? (float) $order['discount'] : null;
 
-                $patcher->di['dbal']->insert('promo_redemption', [
+                $patcher->di['em']->getConnection()->insert('promo_redemption', [
                     'promo_id' => $order['promo_id'],
                     'client_id' => $order['client_id'],
                     'client_order_id' => $order['id'],
@@ -137,7 +137,7 @@ class Patch72 implements PatchInterface
 
                 $renewalCount = max(0, ((int) ($order['promo_used'] ?? 1)) - 1);
                 for ($i = 0; $i < $renewalCount; ++$i) {
-                    $patcher->di['dbal']->insert('promo_redemption', [
+                    $patcher->di['em']->getConnection()->insert('promo_redemption', [
                         'promo_id' => $order['promo_id'],
                         'client_id' => $order['client_id'],
                         'client_order_id' => $order['id'],

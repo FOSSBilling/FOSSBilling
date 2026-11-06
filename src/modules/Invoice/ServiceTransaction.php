@@ -379,7 +379,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         try {
-            $schemaManager = $this->di['dbal']->createSchemaManager();
+            $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
             $table = $schemaManager->introspectTableByUnquotedName('transaction');
             $supported = $table->hasColumn('ipn_hash') && $table->hasIndex('transaction_ipn_hash_idx');
         } catch (\Throwable $e) {

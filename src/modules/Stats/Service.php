@@ -69,7 +69,7 @@ class Service implements InjectionAwareInterface
     {
         $stats = [];
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
         $boundaries = $this->getDayBoundaries();
 
         $total_query = 'SELECT COUNT(1) FROM :table';
@@ -153,7 +153,7 @@ class Service implements InjectionAwareInterface
     {
         $stats = [];
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
         $boundaries = $this->getDayBoundaries();
 
         $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')";
@@ -192,7 +192,7 @@ class Service implements InjectionAwareInterface
 
     public function getProductSummary($data)
     {
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
 
         $query = "SELECT p.id, p.title, COUNT(o.id) as orders
                 FROM client_order o
@@ -211,7 +211,7 @@ class Service implements InjectionAwareInterface
     {
         [$time_from, $time_to] = $this->_getDateInterval($data);
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
 
         $query = 'SELECT title, COUNT(product_id) as sales
                 FROM client_order
@@ -231,7 +231,7 @@ class Service implements InjectionAwareInterface
 
     public function incomeAndRefundStats($data)
     {
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
 
         $query = 'SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income
                 FROM invoice
@@ -262,7 +262,7 @@ class Service implements InjectionAwareInterface
             $time_to = strtotime((string) $data['date_to']);
         }
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
 
         // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
         // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
@@ -299,7 +299,7 @@ class Service implements InjectionAwareInterface
             $time_to = strtotime((string) $data['date_to']);
         }
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
 
         // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
         // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
@@ -333,7 +333,7 @@ class Service implements InjectionAwareInterface
             ORDER BY clients DESC
             LIMIT $limit
         ";
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
         $result = $dbal->executeQuery($q);
 
         return $result->fetchAllKeyValue();
@@ -350,7 +350,7 @@ class Service implements InjectionAwareInterface
             ORDER BY sales DESC
             LIMIT $limit
         ";
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
         $result = $dbal->executeQuery($q);
 
         return $result->fetchAllKeyValue();
@@ -389,7 +389,7 @@ class Service implements InjectionAwareInterface
             $time_to = strtotime((string) $data['date_to']);
         }
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
 
         // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
         // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have. $table is

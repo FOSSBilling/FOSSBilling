@@ -1599,11 +1599,11 @@ class Patcher implements InjectionAwareInterface
      */
     private function renameInvoiceApprovedColumn(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        $table = $this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice');
+        $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
         if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
             return;
         }
@@ -1623,14 +1623,14 @@ class Patcher implements InjectionAwareInterface
      */
     private function renameInvoiceStatusIndex(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
         $old = 'invoice_status_approved_due_at_idx';
         $new = 'invoice_status_issued_due_at_idx';
 
-        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
         if ($schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old)) {
             $this->executeSql($this->isLegacyPatchDriver()
                 ? "DROP INDEX `$old` ON `invoice`"
@@ -1650,11 +1650,11 @@ class Patcher implements InjectionAwareInterface
      */
     private function dropInvoiceBuyerPhoneCcColumn(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
+        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
             return;
         }
 
@@ -1672,11 +1672,11 @@ class Patcher implements InjectionAwareInterface
      */
     private function dropTransactionValidateIpnColumn(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
             return;
         }
 
@@ -1698,11 +1698,11 @@ class Patcher implements InjectionAwareInterface
      */
     public function backfillInvoiceJournal(int $maxPages = 0): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
         if (!$dbal->createSchemaManager()->tablesExist(['invoice_event'])) {
             return;
         }
@@ -2038,7 +2038,7 @@ class Patcher implements InjectionAwareInterface
             if ($name === 'unit' && in_array($table, ['product', 'client_order', 'invoice_item'], true)
                 && $column['Default'] !== null && $column['Extra'] === ''
                 && preg_match('/^varchar\([0-9]+\)$/', $column['Type'])) {
-                $connection = $this->di['dbal'];
+                $connection = $this->di['em']->getConnection();
                 // MySQL marks expression defaults DEFAULT_GENERATED. MariaDB quotes
                 // literal strings in information_schema (but not SHOW FULL COLUMNS).
                 // Never turn an expression into a quoted string default.
@@ -2071,11 +2071,11 @@ class Patcher implements InjectionAwareInterface
                 $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
             );
             if ($literalUnitDefault !== null) {
-                $definition .= ' DEFAULT ' . $this->di['dbal']->quote($literalUnitDefault);
+                $definition .= ' DEFAULT ' . $this->di['em']->getConnection()->quote($literalUnitDefault);
             } elseif ($column['Null'] === 'YES') {
                 $definition .= ' DEFAULT NULL';
             }
-            $definition .= ' COMMENT ' . $this->di['dbal']->quote($column['Comment']);
+            $definition .= ' COMMENT ' . $this->di['em']->getConnection()->quote($column['Comment']);
             $changes[] = $definition;
         }
 

@@ -75,9 +75,9 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    private function getDbal(): Connection
+    private function getConnection(): Connection
     {
-        return $this->di['dbal'];
+        return $this->di['em']->getConnection();
     }
 
     public function logEvent($data): void
@@ -175,20 +175,20 @@ class Service implements InjectionAwareInterface
             throw new \InvalidArgumentException('Unsupported activity table: ' . $table);
         }
 
-        $dbal = $this->getDbal();
+        $connection = $this->getConnection();
 
         do {
             if (microtime(true) >= $deadline) {
                 return;
             }
-            $ids = $dbal->fetchFirstColumn(
+            $ids = $connection->fetchFirstColumn(
                 sprintf('SELECT id FROM %s WHERE created_at <= ? ORDER BY created_at, id LIMIT %d', $table, self::RETENTION_BATCH_SIZE),
                 [$cutoff],
             );
             if ($ids === []) {
                 return;
             }
-            $dbal->executeStatement(
+            $connection->executeStatement(
                 sprintf('DELETE FROM %s WHERE id IN (?)', $table),
                 [$ids],
                 [ArrayParameterType::INTEGER],
@@ -277,7 +277,7 @@ class Service implements InjectionAwareInterface
 
     public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null, ?array $attachment = null): bool
     {
-        $this->getDbal()->insert('activity_client_email', [
+        $this->getConnection()->insert('activity_client_email', [
             'client_id' => $clientId,
             'sender' => $sender,
             'recipients' => $recipients,
@@ -297,7 +297,7 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(ActivityClientHistory $model): array
     {
-        $client = $this->getDbal()->executeQuery(
+        $client = $this->getConnection()->executeQuery(
             'SELECT id, first_name, last_name, email FROM client WHERE id = ?',
             [$model->getClientId()]
         )->fetchAssociative();

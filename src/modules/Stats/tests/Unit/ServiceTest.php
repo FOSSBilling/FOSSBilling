@@ -60,7 +60,7 @@ function statsConnectionWithRows(): Doctrine\DBAL\Connection
 test('getSummary counts client rows into the correct day/month buckets on SQLite', function (): void {
     $service = new Box\Mod\Stats\Service();
     $di = container();
-    $di['dbal'] = statsConnectionWithRows();
+    $di['em']->shouldReceive('getConnection')->andReturn(statsConnectionWithRows());
     $service->setDi($di);
 
     $result = $service->getSummary();
@@ -82,7 +82,7 @@ test('getSummary counts client rows into the correct day/month buckets on SQLite
 test('getSummaryIncome sums paid invoices into the correct day bucket on SQLite', function (): void {
     $service = new Box\Mod\Stats\Service();
     $di = container();
-    $di['dbal'] = statsConnectionWithRows();
+    $di['em']->shouldReceive('getConnection')->andReturn(statsConnectionWithRows());
     $service->setDi($di);
 
     $result = $service->getSummaryIncome();
@@ -137,7 +137,7 @@ test('gets product summary', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
     $result = $service->getProductSummary($data);
@@ -160,7 +160,7 @@ test('gets summary', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $expected = [
@@ -210,7 +210,7 @@ test('gets summary income', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $expected = [
@@ -243,7 +243,7 @@ test('gets product sales', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $data = [
@@ -276,7 +276,7 @@ test('gets income and refund stats', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $result = $service->incomeAndRefundStats([]);
@@ -300,7 +300,7 @@ test('gets refunds', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
 
@@ -328,7 +328,7 @@ test('gets income', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
 
@@ -356,7 +356,7 @@ test('gets client countries', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
 
@@ -380,7 +380,7 @@ test('gets sales by country', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
 
@@ -404,7 +404,7 @@ test('gets table stats', function (): void {
     $expectation2->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
 

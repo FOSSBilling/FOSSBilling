@@ -48,7 +48,9 @@ beforeEach(function (): void {
     ]);
     $di = new Pimple\Container();
     $di['pdo'] = $this->pdo;
-    $di['dbal'] = $this->connection;
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->andReturn($this->connection);
+    $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $this->patcher = new Patcher();
     $this->patcher->setDi($di);

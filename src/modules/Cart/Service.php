@@ -688,7 +688,7 @@ class Service implements InjectionAwareInterface
             'total' => $total - $items_discount,
             'items' => $items,
             'currency' => $currency->toApiArray(),
-            'subscribable' => $this->getSubscriptionPeriodFromItems($items) !== null,
+            'subscribable' => $this->getSubscriptionPeriodFromItems($items, $promos) !== null,
         ];
     }
 
@@ -768,10 +768,18 @@ class Service implements InjectionAwareInterface
         return $client instanceof Client ? $client : null;
     }
 
-    private function getSubscriptionPeriodFromItems(array $items): ?string
+    /**
+     * @param list<Promo> $promos promos in effect for the cart
+     */
+    private function getSubscriptionPeriodFromItems(array $items, array $promos = []): ?string
     {
         $subscriptionPeriod = null;
-
+        // Renewals only repeat discounts from recurring promos, so a cart
+        // with any other discount cannot be billed as a fixed subscription.
+        $discountRecurs = $promos !== [];
+        foreach ($promos as $promo) {
+            $discountRecurs = $discountRecurs && $promo->isRecurring();
+        }
         foreach ($items as $item) {
             $netSetupPrice = (float) ($item['setup_price'] ?? 0) - (float) ($item['discount_setup'] ?? 0);
             if ($netSetupPrice > 0) {
@@ -780,6 +788,10 @@ class Service implements InjectionAwareInterface
 
             if ((float) ($item['total'] ?? 0) <= 0) {
                 continue;
+            }
+
+            if ((float) ($item['discount_price'] ?? 0) > 0 && !$discountRecurs) {
+                return null;
             }
 
             $period = $item['period'] ?? null;

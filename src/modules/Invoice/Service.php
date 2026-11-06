@@ -1804,7 +1804,7 @@ class Service implements InjectionAwareInterface
     protected function withInvoiceRefundLock(Invoice $invoice, callable $callback): Invoice
     {
         $lockName = 'fb:invoice-refund:' . (int) $invoice->getId();
-        if (!NamedLock::acquire($this->di['dbal'], $lockName, 30)) {
+        if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 30)) {
             $this->di['logger']->warning('Timed out waiting for invoice refund lock for invoice #{id}', ['id' => $invoice->getId()]);
 
             throw new InformationException('Another refund for this invoice is already in progress. Please retry.');
@@ -1813,7 +1813,7 @@ class Service implements InjectionAwareInterface
         try {
             return $callback();
         } finally {
-            NamedLock::release($this->di['dbal'], $lockName);
+            NamedLock::release($this->di['em']->getConnection(), $lockName);
         }
     }
 

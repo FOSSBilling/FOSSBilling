@@ -45,9 +45,9 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    private function getDbal(): Connection
+    private function getConnection(): Connection
     {
-        return $this->di['dbal'];
+        return $this->di['em']->getConnection();
     }
 
     public function getFormFieldsTypes(): array
@@ -97,14 +97,14 @@ class Service implements InjectionAwareInterface
             'show_title' => $data['show_title'] ?? '0',
         ];
 
-        $this->getDbal()->insert('form', [
+        $this->getConnection()->insert('form', [
             'name' => $data['name'],
             'style' => json_encode($style, JSON_FORCE_OBJECT),
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $formId = (int) $this->getDbal()->lastInsertId();
+        $formId = (int) $this->getConnection()->lastInsertId();
         $this->di['logger']->info('Created new form {form_name} with id {form_id}', ['form_name' => $data['name'], 'form_id' => $formId]);
 
         return $formId;
@@ -135,7 +135,7 @@ class Service implements InjectionAwareInterface
             $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
         }
 
-        $this->getDbal()->insert('form_field', [
+        $this->getConnection()->insert('form_field', [
             'form_id' => $field['form_id'],
             'name' => $name,
             'label' => $label,
@@ -158,7 +158,7 @@ class Service implements InjectionAwareInterface
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $fieldId = (int) $this->getDbal()->lastInsertId();
+        $fieldId = (int) $this->getConnection()->lastInsertId();
         $this->di['logger']->info('Added new field {field_id} to form {form_id}', ['field_id' => $fieldId, 'form_id' => $field['form_id']]);
 
         return $fieldId;
@@ -230,7 +230,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->getDbal()->update('form_field', [
+        $this->getConnection()->update('form_field', [
             'name' => $name,
             'label' => $label,
             'hide_label' => $field['hide_label'] ?? null,
@@ -257,7 +257,7 @@ class Service implements InjectionAwareInterface
 
     public function getForm(int $formId): array
     {
-        $result = $this->getDbal()->executeQuery(
+        $result = $this->getConnection()->executeQuery(
             'SELECT * FROM form WHERE id = ?',
             [$formId]
         )->fetchAssociative();
@@ -277,7 +277,7 @@ class Service implements InjectionAwareInterface
 
     public function getFormFields($formId)
     {
-        return $this->getDbal()->executeQuery(
+        return $this->getConnection()->executeQuery(
             'SELECT * FROM form_field WHERE form_id = ? ORDER BY id ASC',
             [$formId]
         )->fetchAllAssociative();
@@ -300,7 +300,7 @@ class Service implements InjectionAwareInterface
 
     public function getFormFieldsCount($form_id): int
     {
-        return (int) $this->getDbal()->executeQuery(
+        return (int) $this->getConnection()->executeQuery(
             'SELECT COUNT(*) FROM form_field WHERE form_id = ?',
             [$form_id]
         )->fetchOne();
@@ -312,7 +312,7 @@ class Service implements InjectionAwareInterface
     public function getFormPairs(): array
     {
         $pairs = [];
-        $rows = $this->getDbal()->executeQuery('SELECT id, name FROM form')->fetchAllAssociative();
+        $rows = $this->getConnection()->executeQuery('SELECT id, name FROM form')->fetchAllAssociative();
         foreach ($rows as $row) {
             $pairs[$row['id']] = $row['name'];
         }
@@ -322,7 +322,7 @@ class Service implements InjectionAwareInterface
 
     public function getField($fieldId)
     {
-        $result = $this->getDbal()->executeQuery(
+        $result = $this->getConnection()->executeQuery(
             'SELECT * FROM form_field WHERE id = ?',
             [$fieldId]
         )->fetchAssociative();
@@ -345,10 +345,10 @@ class Service implements InjectionAwareInterface
 
     public function removeForm($form_id): bool
     {
-        $this->getDbal()->executeStatement('DELETE FROM form_field WHERE form_id = ?', [$form_id]);
-        $this->getDbal()->executeStatement('DELETE FROM form WHERE id = ?', [$form_id]);
-        $this->getDbal()->executeStatement('UPDATE product SET form_id = NULL WHERE form_id = ?', [$form_id]);
-        $this->getDbal()->executeStatement('UPDATE client_order SET form_id = NULL WHERE form_id = ?', [$form_id]);
+        $this->getConnection()->executeStatement('DELETE FROM form_field WHERE form_id = ?', [$form_id]);
+        $this->getConnection()->executeStatement('DELETE FROM form WHERE id = ?', [$form_id]);
+        $this->getConnection()->executeStatement('UPDATE product SET form_id = NULL WHERE form_id = ?', [$form_id]);
+        $this->getConnection()->executeStatement('UPDATE client_order SET form_id = NULL WHERE form_id = ?', [$form_id]);
 
         $this->di['logger']->info('Deleted custom form {form_id}', ['form_id' => $form_id]);
 
@@ -357,7 +357,7 @@ class Service implements InjectionAwareInterface
 
     public function removeField($data): bool
     {
-        $deleted = $this->getDbal()->executeStatement('DELETE FROM form_field WHERE id = ?', [$data['id']]);
+        $deleted = $this->getConnection()->executeStatement('DELETE FROM form_field WHERE id = ?', [$data['id']]);
         if ($deleted === 0) {
             throw new \FOSSBilling\Core\Exception\InformationException('Field was not found');
         }
@@ -369,7 +369,7 @@ class Service implements InjectionAwareInterface
 
     public function formFieldNameExists($data): bool
     {
-        return (int) $this->getDbal()->executeQuery(
+        return (int) $this->getConnection()->executeQuery(
             'SELECT COUNT(*) FROM form_field WHERE form_id = ? AND name = ? AND id != ?',
             [$data['form_id'], $data['field_name'], $data['field_id']]
         )->fetchOne() > 0;
@@ -377,7 +377,7 @@ class Service implements InjectionAwareInterface
 
     public function getForms()
     {
-        return $this->getDbal()->executeQuery(
+        return $this->getConnection()->executeQuery(
             'SELECT f.id, f.name, COUNT(p.id) AS product_count, COUNT(co.id) AS order_count
             FROM form f
             LEFT JOIN product p ON f.id = p.form_id
@@ -410,7 +410,7 @@ class Service implements InjectionAwareInterface
             'show_title' => $data['show_title'] ?? '1',
         ];
 
-        $this->getDbal()->update('form', [
+        $this->getConnection()->update('form', [
             'name' => $data['form_name'],
             'style' => json_encode($style, JSON_FORCE_OBJECT),
             'updated_at' => date('Y-m-d H:i:s'),

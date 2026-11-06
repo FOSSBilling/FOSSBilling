@@ -71,7 +71,7 @@ test('adds a new form', function (): void {
     $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFormId);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -97,7 +97,7 @@ test('adds a new field', function (): void {
     $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFieldId);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -137,7 +137,7 @@ test('updates a field', function (string $fieldType, int|string $fieldId): void 
     $dbal->shouldReceive('update')->once()->with('form_field', Mockery::type('array'), ['id' => $updateFieldId]);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
@@ -263,7 +263,7 @@ test('gets a form', function (): void {
     $dbal->shouldReceive('executeQuery')->twice()->andReturn($formResult, $fieldsResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $formId = 1;
 
@@ -282,7 +282,7 @@ test('gets form fields', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($result);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getFormFields($formId);
@@ -299,7 +299,7 @@ test('gets form fields count', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getFormFieldsCount($formId);
@@ -317,7 +317,7 @@ test('gets form pairs', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getFormPairs();
@@ -345,7 +345,7 @@ test('gets a field', function (): void {
     $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getField($fieldId);
@@ -359,7 +359,7 @@ test('removes a form', function (): void {
     $dbal->shouldReceive('executeStatement')->times(4)->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -376,7 +376,7 @@ test('removes a field', function (): void {
     $dbal->shouldReceive('executeStatement')->once()->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -399,7 +399,7 @@ test('checks if form field name exists', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->formFieldNameExists($data);
@@ -415,7 +415,7 @@ test('gets all forms', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getForms();
@@ -468,7 +468,7 @@ test('updates form settings', function (): void {
     $dbal->shouldReceive('update')->once()->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);

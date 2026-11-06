@@ -160,8 +160,10 @@ test('updates client', function (): void {
     $clientServiceMock->shouldReceive('revokeEmailConfirmations')->once()->with(0);
 
     $di = container();
-    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
-    $di['dbal']->shouldReceive('executeStatement')->once()->with('UPDATE client SET email_approved = false WHERE id = :id', ['id' => 0])->andReturn(1);
+    $conn = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $conn->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $conn->shouldReceive('executeStatement')->once()->with('UPDATE client SET email_approved = false WHERE id = :id', ['id' => 0])->andReturn(1);
+    $di['em']->shouldReceive('getConnection')->andReturn($conn);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
@@ -245,7 +247,9 @@ test('throws exception when email change is not allowed', function (): void {
         ->andReturn(false);
 
     $di = container();
-    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $conn = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $conn->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $di['em']->shouldReceive('getConnection')->andReturn($conn);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
@@ -269,7 +273,9 @@ test('does not reject a save that omits the email when email changes are disable
     $modMock->shouldReceive('getConfig')->andReturn(['disable_change_email' => 1]);
 
     $di = container();
-    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $conn = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $conn->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $di['em']->shouldReceive('getConnection')->andReturn($conn);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['event_dispatcher'] = new ProfileTestEventDispatcher();
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
@@ -301,7 +307,9 @@ test('throws exception when email already registered', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $conn = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $conn->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $di['em']->shouldReceive('getConnection')->andReturn($conn);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);

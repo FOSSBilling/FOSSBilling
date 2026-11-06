@@ -361,10 +361,12 @@ test('canChangeCurrency throws exception when client has invoices', function ():
     $model = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'currency' => 'USD']);
 
     $di = container();
-    $di['dbal']->shouldReceive('fetchOne')
+    $connMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connMock->shouldReceive('fetchOne')
         ->once()
         ->with('SELECT 1 FROM invoice WHERE client_id = :client_id LIMIT 1', ['client_id' => 1])
         ->andReturn(1);
+    $di['em']->shouldReceive('getConnection')->andReturn($connMock);
 
     $service->setDi($di);
 

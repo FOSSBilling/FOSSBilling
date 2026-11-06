@@ -142,7 +142,7 @@ class Session implements InjectionAwareInterface
         }
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
-        $connection = $this->di['dbal'];
+        $connection = $this->di['em']->getConnection();
 
         try {
             $session = $connection->fetchAssociative('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => $sessionID]);
@@ -201,7 +201,7 @@ class Session implements InjectionAwareInterface
             return;
         }
 
-        $connection = $this->di['dbal'];
+        $connection = $this->di['em']->getConnection();
 
         try {
             $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
