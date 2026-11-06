@@ -14,10 +14,9 @@ namespace FOSSBilling\Core\Update;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Exception\BaseException;
 use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Filesystem\ZipExtractor;
 use FOSSBilling\Core\System\Config;
 use FOSSBilling\Core\System\Version;
-use PhpZip\Exception\ZipException;
-use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -347,7 +346,7 @@ class Updater implements InjectionAwareInterface
 
         $readiness = $this->di['update_readiness']->check();
         if (!$readiness['can_update']) {
-            throw new BaseException('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
+            throw new BaseException('This server does not meet the requirements to perform the update. Resolve the reported issues before trying again.', null, 820);
         }
 
         $updateBranch = $this->getUpdateBranch();
@@ -461,16 +460,12 @@ class Updater implements InjectionAwareInterface
         try {
             // Extract latest version archive on top of the current version.
             try {
-                $zip = new ZipFile();
-                $zip->openFile($archiveFile);
-                foreach ($zip->getListFiles() as $entryName) {
+                (new ZipExtractor())->extract($archiveFile, PATH_ROOT, static function (string $entryName): void {
                     if (!self::isSafeArchiveEntry($entryName)) {
                         throw new BaseException('The update archive contains an unsafe file path and cannot be extracted.');
                     }
-                }
-                $zip->extractTo(PATH_ROOT);
-                $zip->close();
-            } catch (ZipException $e) {
+                });
+            } catch (\RuntimeException $e) {
                 $this->di['logger']->withChannel('update')->error($e->getMessage());
 
                 throw new BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
@@ -515,17 +510,14 @@ class Updater implements InjectionAwareInterface
      * Whether a release archive entry name is safe to extract under PATH_ROOT
      * (Zip Slip / CWE-22 guard).
      *
-     * nelexa/zip normalizes entry names by splitting on '/' only, so on a
-     * Windows host an entry such as `..\..\poc.php` isn't recognized as
-     * traversal and extractTo() can write outside PATH_ROOT (CVE-2026-16767).
-     * Normalizing backslashes to forward slashes before checking for '..'
-     * segments and absolute paths closes that gap on every platform.
+     * Treat both slashes as separators so Windows traversal, drive paths,
+     * and stream-wrapper names are rejected on every platform.
      */
     public static function isSafeArchiveEntry(string $entryName): bool
     {
         $normalized = str_replace('\\', '/', $entryName);
 
-        if (str_starts_with($normalized, '/') || preg_match('#^[a-zA-Z]:#', $normalized)) {
+        if (str_starts_with($normalized, '/') || str_contains($normalized, ':') || str_contains($normalized, "\0")) {
             return false;
         }
 
