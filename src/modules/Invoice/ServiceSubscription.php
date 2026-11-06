@@ -415,7 +415,7 @@ class ServiceSubscription implements InjectionAwareInterface
             INNER JOIN promo p ON p.id = pr.promo_id
             WHERE pr.invoice_id = :id
                 AND pr.status <> :released
-                AND p.recurring = 1';
+                AND p.recurring = true';
         $recurringDiscount = (float) $this->di['em']->getConnection()->fetchOne($query, [
             'id' => $invoiceId,
             'released' => PromoRedemption::STATUS_RELEASED,
