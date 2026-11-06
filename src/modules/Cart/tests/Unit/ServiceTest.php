@@ -2858,3 +2858,46 @@ test('cart is subscribable with a discount only when the promo is recurring', fu
     'one-time promo' => [false, false],
     'recurring promo' => [true, true],
 ]);
+
+test('cart with a discounted domain is not subscribable even with a recurring promo', function (): void {
+    $cart = createEntity(Cart::class, ['id' => 43, 'currency_id' => 1, 'promo_id' => 9]);
+    $cartProduct = new CartProduct();
+    $cartProduct->setProductId(6);
+    $promo = createPromoEntity(9);
+    $promo->setCode('WELCOME');
+    $promo->setRecurring(true);
+
+    $cartProductRepository = Mockery::mock(CartProductRepository::class);
+    $cartProductRepository->shouldReceive('findByCartId')->with(43)->andReturn([$cartProduct]);
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepository);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->with(9)->andReturn($promo);
+    $productService->shouldReceive('findMissingRequiredProductIds')->with($promo, [6])->andReturn([]);
+
+    $currency = Mockery::mock(Currency::class);
+    $currency->shouldReceive('toApiArray')->andReturn(['code' => 'USD']);
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->with(1)->andReturn($currency);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('cartProductToApiArray')->andReturn([
+        'total' => 30,
+        'setup_price' => 0,
+        'discount' => 20,
+        'discount_price' => 20,
+        'discount_setup' => 0,
+        'period' => '1Y',
+        'type' => ProductService::DOMAIN,
+    ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(static fn (string $module) => $module === 'currency' ? $currencyService : $productService);
+    $service->setDi($di);
+
+    expect($service->toApiArray($cart)['subscribable'])->toBeFalse();
+});

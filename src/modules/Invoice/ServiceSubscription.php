@@ -361,7 +361,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string
     {
-        $query = 'SELECT period, price, quantity
+        $query = 'SELECT period, price, quantity, type, rel_id
             FROM invoice_item
             WHERE invoice_id = :id
             ORDER BY id ASC';
@@ -373,6 +373,8 @@ class ServiceSubscription implements InjectionAwareInterface
 
         $subscriptionPeriod = null;
         $discountTotal = 0.0;
+        $positiveTotal = 0.0;
+        $orderIds = [];
         foreach ($items as $item) {
             $lineTotal = (float) ($item['price'] ?? 0) * (float) ($item['quantity'] ?? 0);
             $period = $item['period'] ?? null;
@@ -385,6 +387,11 @@ class ServiceSubscription implements InjectionAwareInterface
 
             if (empty($period)) {
                 return null;
+            }
+
+            $positiveTotal += $lineTotal;
+            if (($item['type'] ?? null) === Entity\InvoiceItem::TYPE_ORDER && is_numeric($item['rel_id'] ?? null)) {
+                $orderIds[(int) $item['rel_id']] = true;
             }
 
             if ($subscriptionPeriod === null) {
@@ -401,8 +408,14 @@ class ServiceSubscription implements InjectionAwareInterface
         // The gateway bills this invoice's total on every cycle, but renewal
         // invoices only repeat discounts from recurring promos. Keep one-time
         // discounts out of subscriptions so renewals charge the renewal total.
-        if ($subscriptionPeriod !== null && $discountTotal > 0 && !$this->isDiscountRecurring($invoiceId, $discountTotal)) {
-            return null;
+        if ($subscriptionPeriod !== null && $discountTotal > 0) {
+            if (!$this->isDiscountRecurring($invoiceId, $discountTotal)) {
+                return null;
+            }
+
+            if (!$this->matchesRenewalTotal($positiveTotal - $discountTotal, array_keys($orderIds))) {
+                return null;
+            }
         }
 
         return $subscriptionPeriod;
@@ -415,5 +428,51 @@ class ServiceSubscription implements InjectionAwareInterface
         $recurringDiscount = $this->di['em']->getRepository(PromoRedemption::class)->sumRecurringDiscountForInvoice($invoiceId);
 
         return round($discountTotal - $recurringDiscount, 2) <= 0.0;
+    }
+
+    /**
+     * Whether the invoice's pre-tax total equals what its orders will bill on
+     * renewal. Renewal invoices reprice domains and re-apply only recurring
+     * promos (capped at each order total), so any drift — edited lines, capped
+     * absolute promos, removed promos — blocks the subscription. Anything
+     * unexpected fails closed: eligibility must never break invoice rendering.
+     */
+    private function matchesRenewalTotal(float $firstTotal, array $orderIds): bool
+    {
+        if ($orderIds === []) {
+            return false;
+        }
+
+        try {
+            $orders = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
+            if (count($orders) !== count($orderIds)) {
+                return false;
+            }
+
+            $invoiceService = $this->di['mod_service']('Invoice');
+            $productService = $this->di['mod_service']('Product');
+
+            $renewalTotal = 0.0;
+            foreach ($orders as $order) {
+                ['price' => $price, 'line' => $line] = $invoiceService->resolveRenewalLine($order);
+                $price = (float) $price;
+                $quantity = (float) ($line['quantity'] ?? $order->getQuantity());
+                $orderTotal = $price * $quantity;
+                if ($orderTotal <= 0) {
+                    return false;
+                }
+
+                $discount = 0.0;
+                foreach ($productService->getRenewalPromoAdjustments($order, $price, $quantity) as $adjustment) {
+                    $discount += (float) ($adjustment['discount_amount'] ?? 0);
+                }
+
+                $renewalTotal += max(0.0, $orderTotal - $discount);
+            }
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return round($firstTotal - $renewalTotal, 2) === 0.0;
     }
 }

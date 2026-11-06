@@ -16,12 +16,14 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use Box\Mod\Invoice\Service as InvoiceService;
 use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Product\Entity\PromoRedemption;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
+use Box\Mod\Product\Service as ProductService;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -521,7 +523,7 @@ test('unsubscribes', function (): void {
     $service->unsubscribe($subscriptionModel);
 });
 
-function discountedInvoiceService(array $items, float $recurringSum): ServiceSubscription
+function discountedInvoiceService(array $items, float $recurringSum, array $orders = [], array $adjustments = [], array $renewalLines = []): ServiceSubscription
 {
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($items);
@@ -529,34 +531,92 @@ function discountedInvoiceService(array $items, float $recurringSum): ServiceSub
     $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
     $redemptionRepo->shouldReceive('sumRecurringDiscountForInvoice')->with(30)->andReturn($recurringSum);
 
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('findBy')->andReturn($orders);
+
+    $invoiceService = Mockery::mock(InvoiceService::class);
+    $invoiceService->shouldReceive('resolveRenewalLine')->andReturnUsing(
+        static fn (Order $order): array => $renewalLines[(int) $order->getId()]
+            ?? ['price' => $order->getPrice(), 'line' => ['quantity' => $order->getQuantity()]]
+    );
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('getRenewalPromoAdjustments')->andReturnUsing(
+        static fn (Order $order): array => $adjustments[(int) $order->getId()] ?? []
+    );
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn(Mockery::mock(SubscriptionRepository::class));
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldReceive('getRepository')->with(PromoRedemption::class)->andReturn($redemptionRepo);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
     $em->shouldReceive('getConnection')->andReturn($connection);
 
     $service = new ServiceSubscription();
     $di = container();
     $di['em'] = $em;
+    $di['mod_service'] = $di->protect(static fn (string $module) => $module === 'Product' ? $productService : $invoiceService);
     $service->setDi($di);
 
     return $service;
 }
 
-test('does not subscribe an invoice whose discount only applies to the first payment', function (array $items, float $recurringSum): void {
-    expect(discountedInvoiceService($items, $recurringSum)->isSubscribable(30))->toBeFalse();
+function discountedOrder(int $id, float $price = 10.0, int $quantity = 1): Order
+{
+    return createEntity(Order::class, ['id' => $id, 'price' => $price, 'quantity' => $quantity]);
+}
+
+function orderLine(int $orderId, float $price = 10.0): array
+{
+    return ['period' => '1M', 'price' => $price, 'quantity' => 1, 'type' => 'order', 'rel_id' => (string) $orderId];
+}
+
+function discountLine(float $amount): array
+{
+    return ['period' => null, 'price' => -$amount, 'quantity' => 1];
+}
+
+test('does not subscribe an invoice whose discount only applies to the first payment', function (array $items, float $recurringSum, array $orders, array $adjustments, array $renewalLines = []): void {
+    expect(discountedInvoiceService($items, $recurringSum, $orders, $adjustments, $renewalLines)->isSubscribable(30))->toBeFalse();
 })->with([
-    'one-time promo' => [[['period' => '1M', 'price' => 10.0, 'quantity' => 1], ['period' => null, 'price' => -2.50, 'quantity' => 1]], 0.0],
-    'discount without a promo' => [[['period' => '1M', 'price' => 10.0, 'quantity' => 1], ['period' => null, 'price' => -2.50, 'quantity' => 1]], 0.0],
-    'recurring promo covers part of the discount' => [[['period' => '1M', 'price' => 10.0, 'quantity' => 1], ['period' => null, 'price' => -2.50, 'quantity' => 1], ['period' => null, 'price' => -1.0, 'quantity' => 1]], 2.50],
-    'recurring promo shares 0.01 short of the discount' => [[['period' => '1M', 'price' => 10.0, 'quantity' => 1], ['period' => null, 'price' => -2.50, 'quantity' => 1]], 2.49],
+    'one-time promo' => [
+        [orderLine(10), discountLine(2.5)], 0.0,
+        [discountedOrder(10)], [],
+    ],
+    'discount without a promo' => [
+        [orderLine(10), discountLine(2.5)], 0.0,
+        [discountedOrder(10)], [],
+    ],
+    'recurring promo covers part of the discount' => [
+        [orderLine(10), discountLine(2.5), discountLine(1.0)], 2.50,
+        [discountedOrder(10)], [10 => [['discount_amount' => 2.50]]],
+    ],
+    'recurring promo shares 0.01 short of the discount' => [
+        [orderLine(10), discountLine(2.5)], 2.49,
+        [discountedOrder(10)], [10 => [['discount_amount' => 2.49]]],
+    ],
+    'recurring promo recorded 0.01 above the invoice discount' => [
+        [orderLine(10), discountLine(2.5)], 2.51,
+        [discountedOrder(10)], [10 => [['discount_amount' => 2.51]]],
+    ],
+    'capped recurring promo leaves a zero renewal total' => [
+        [orderLine(11, 30.0), discountLine(20.0)], 20.0,
+        [discountedOrder(11, 30.0)], [11 => [['discount_amount' => 20.0]]],
+        [11 => ['price' => 10.0, 'line' => ['quantity' => 1]]],
+    ],
+    'stale redemption cannot cover another order discount' => [
+        [orderLine(10), discountLine(2.5)], 2.50,
+        [discountedOrder(10)], [10 => [['discount_amount' => 0.50]]],
+    ],
 ]);
 
-test('subscribes an invoice whose discount comes from a recurring promo', function (array $items, float $recurringSum): void {
-    $service = discountedInvoiceService($items, $recurringSum);
+test('subscribes an invoice whose discount comes from a recurring promo', function (array $items, float $recurringSum, array $orders, array $adjustments): void {
+    $service = discountedInvoiceService($items, $recurringSum, $orders, $adjustments);
 
     expect($service->getSubscriptionPeriod(createEntity(Invoice::class, ['id' => 30])))->toBe('1M');
 })->with([
-    'one recurring promo' => [[['period' => '1M', 'price' => 10.0, 'quantity' => 1], ['period' => null, 'price' => -2.50, 'quantity' => 1]], 2.50],
-    'recurring promo shares 0.01 above the discount' => [[['period' => '1M', 'price' => 10.0, 'quantity' => 1], ['period' => null, 'price' => -2.50, 'quantity' => 1]], 2.51],
+    'one recurring promo' => [
+        [orderLine(10), discountLine(2.5)], 2.50,
+        [discountedOrder(10)], [10 => [['discount_amount' => 2.50]]],
+    ],
 ]);

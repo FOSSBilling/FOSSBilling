@@ -794,6 +794,14 @@ class Service implements InjectionAwareInterface
                 return null;
             }
 
+            // Domain renewal pricing comes from the registrar and can differ
+            // from the first payment, so a discounted domain can never be
+            // billed as a fixed subscription. The renewal invoice itself,
+            // priced without the first-payment discount, can be subscribed.
+            if ((float) ($item['discount_price'] ?? 0) > 0 && ($item['type'] ?? null) === ProductService::DOMAIN) {
+                return null;
+            }
+
             $period = $item['period'] ?? null;
             if (empty($period)) {
                 return null;

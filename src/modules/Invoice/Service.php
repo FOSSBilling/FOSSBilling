@@ -3817,9 +3817,12 @@ class Service implements InjectionAwareInterface
      * Other products keep the order's own price so admin-edited prices are
      * respected.
      *
+     * Public so subscription eligibility can compare the gateway's per-cycle
+     * amount against what a renewal invoice will actually bill.
+     *
      * @return array{price: float|string, line: array<string, mixed>}
      */
-    private function resolveRenewalLine(Order $order): array
+    public function resolveRenewalLine(Order $order): array
     {
         $price = $order->getPrice();
         $line = [

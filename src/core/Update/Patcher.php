@@ -263,19 +263,15 @@ class Patcher implements InjectionAwareInterface
         // installs the invoice_event table only comes into existence there, and backfilling
         // first would find no table and leave existing invoices without baseline entries.
         // Deliberately outside the drift healer: a large backlog must not stall page loads.
-        // Best-effort like the probes above: an unreachable database is already recorded by
-        // syncPortableSchema's boundary, and a missed backfill converges via the cron healer
-        // (Invoice Service healMissingJournalEntries) instead of failing finalization.
+        // A genuine backfill failure propagates so finalization stays pending: invoices
+        // that gain a live event before a later run are never revisited by the healer,
+        // so completing finalization here would leave baselines missing for good. Only
+        // an unreachable database is skipped, already recorded by syncPortableSchema.
         try {
             $this->backfillInvoiceJournal();
-        } catch (\Throwable $e) {
-            $this->logUpdate('warning', 'Invoice journal backfill failed: {message}', ['message' => $e->getMessage()]);
-        }
-
-        try {
             $this->checkInvoiceNumberCounter();
-        } catch (\Throwable $e) {
-            $this->logUpdate('warning', 'Invoice number counter check failed: {message}', ['message' => $e->getMessage()]);
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            return;
         }
     }
 
@@ -1653,8 +1649,10 @@ class Patcher implements InjectionAwareInterface
 
         try {
             $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
-        } catch (\Throwable) {
-            // Unreachable database: syncPortableSchema's boundary downstream logs it.
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
             return;
         }
         if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
@@ -1687,8 +1685,10 @@ class Patcher implements InjectionAwareInterface
             $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
             $dropOld = $schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old);
             $missingNew = !$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new);
-        } catch (\Throwable) {
-            // Unreachable database: syncPortableSchema's boundary downstream logs it.
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
             return;
         }
         if ($dropOld) {
@@ -1718,8 +1718,10 @@ class Patcher implements InjectionAwareInterface
             if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
                 return;
             }
-        } catch (\Throwable) {
-            // Unreachable database: syncPortableSchema's boundary downstream logs it.
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
             return;
         }
 
@@ -1745,8 +1747,10 @@ class Patcher implements InjectionAwareInterface
             if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
                 return;
             }
-        } catch (\Throwable) {
-            // Unreachable database: syncPortableSchema's boundary downstream logs it.
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
             return;
         }
 
