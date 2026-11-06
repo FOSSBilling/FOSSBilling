@@ -41,9 +41,9 @@
         label: 'Ticket status'|trans,
         current_status: request.status|default(''),
         items: [
-            {label: 'Awaiting Staff'|trans, count: statuses.open, status: 'open', count_class: 'bg-warning-subtle text-warning-emphasis'},
-            {label: 'Awaiting Client'|trans, count: statuses.on_hold, status: 'on_hold', count_class: 'bg-info-subtle text-info-emphasis'},
-            {label: 'Closed'|trans, count: statuses.closed, status: 'closed'},
+            {label: mf.status_name('open', 'ticket')|trim, count: statuses.open, status: 'open', count_class: 'bg-warning-subtle text-warning-emphasis'},
+            {label: mf.status_name('on_hold', 'ticket')|trim, count: statuses.on_hold, status: 'on_hold', count_class: 'bg-info-subtle text-info-emphasis'},
+            {label: mf.status_name('closed', 'ticket')|trim, count: statuses.closed, status: 'closed'},
             {label: 'Total'|trans, count: statuses.open + statuses.on_hold + statuses.closed, status: '', count_class: 'bg-primary-lt text-primary-emphasis'}
         ]
     }) }}
@@ -119,7 +119,7 @@
                         <div class="col-md-6 col-xl-3">
                             <div>
                                 <label class="form-label text-muted small mb-1" for="status">{{ 'Status'|trans }}</label>
-                                {{ mf.selectbox('status', {'open': 'Awaiting Staff'|trans, 'on_hold': 'Awaiting Client'|trans, 'closed': 'Closed'|trans}, request.status, 0, 'All Statuses'|trans) }}
+                                {{ mf.selectbox('status', {'open': mf.status_name('open', 'ticket')|trim, 'on_hold': mf.status_name('on_hold', 'ticket')|trim, 'closed': mf.status_name('closed', 'ticket')|trim}, request.status, 0, 'All Statuses'|trans) }}
                             </div>
                         </div>
                         <div class="col-md-6 col-xl-3">
@@ -203,7 +203,7 @@
                                 {% endif %}
                             </div>
                         </td>
-                        <td>{{ include('partial_support_ticket_status.html.twig', {status: ticket.status}) }}</td>
+                        <td>{{ mf.status_badge(ticket.status, 'ticket', true) }}</td>
                         <td>
                             {% if ticket.author.role|default('') == 'client' %}
                                 <div class="d-flex py-1 align-items-center">

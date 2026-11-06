@@ -58,7 +58,7 @@
                 {% set task = ticket.rel %}
                 <div class="card">
                     <div class="card-header d-flex flex-wrap gap-3">
-                        {{ include('partial_support_ticket_status.html.twig', {status: ticket.status}) }}
+                        {{ mf.status_badge(ticket.status, 'ticket', true) }}
                         <span class="text-secondary small">{{ 'Updated'|trans }} {{ '%time% ago'|trans({'%time%': ticket.updated_at|timeago}) }}</span>
                         <div class="d-flex flex-wrap gap-2 ms-auto">
                             {% if ticket.status != 'closed' %}
@@ -257,7 +257,7 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Status'|trans }}</label>
-                                    {{ mf.selectbox('status', {'open': 'Awaiting Staff'|trans, 'on_hold': 'Awaiting Client'|trans, 'closed': 'Closed'|trans}, ticket.status, 1) }}
+                                    {{ mf.selectbox('status', {'open': mf.status_name('open', 'ticket')|trim, 'on_hold': mf.status_name('on_hold', 'ticket')|trim, 'closed': mf.status_name('closed', 'ticket')|trim}, ticket.status, 1) }}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Priority'|trans }}</label>
@@ -365,7 +365,7 @@
                                     <td>{{ related_ticket.id }}</td>
                                     <td>{{ related_ticket.helpdesk.name }}</td>
                                     <td><a class="fw-semibold" href='{{ "support/ticket/#{related_ticket.id}"|url }}'>{{ related_ticket.subject|truncate(30) }}</a></td>
-                                    <td>{{ include('partial_support_ticket_status.html.twig', {status: related_ticket.status}) }}</td>
+                                    <td>{{ mf.status_badge(related_ticket.status, 'ticket', true) }}</td>
                                     <td>
                                         <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "support/ticket/#{related_ticket.id}"|url }}'>
                                             <svg class="icon"><use href="#edit" /></svg>

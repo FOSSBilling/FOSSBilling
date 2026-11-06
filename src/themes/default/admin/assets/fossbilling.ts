@@ -49,22 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initThemePreference();
   initSidebar();
 
-  const newClientModal = document.getElementById('newClientModal');
-  if (newClientModal) {
-    const openNewClient = () => {
-      if (window.location.hash === '#tab-new') {
-        tabler.Modal.getOrCreateInstance(newClientModal).show();
-      }
-    };
-    openNewClient();
-    window.addEventListener('hashchange', openNewClient);
-    newClientModal.addEventListener('hidden.bs.modal', () => {
-      if (window.location.hash === '#tab-new') {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-    });
-  }
-
   /**
    * Enable Bootstrap Tooltip
    */

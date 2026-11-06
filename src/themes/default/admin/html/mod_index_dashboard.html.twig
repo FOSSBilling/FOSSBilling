@@ -16,10 +16,7 @@
             {{ include('partial_dashboard_product_sales_card.html.twig') }}
         {% endif %}
     {% else %}
-    <div class="dashboard-heading">
-        <div><div class="admin-eyebrow">{{ 'Dashboard'|trans }}</div><h1>{{ 'Overview'|trans }}</h1></div>
-        <span class="dashboard-date">{{ 'now'|format_date }}</span>
-    </div>
+    {{ include('partial_admin_page_heading.html.twig', {title: 'Dashboard'|trans}) }}
     {% set alerts = admin.system_cas_messages()|merge(admin.system_messages()) %}
     {% for alert in alerts %}
     {% set alertIcon = {danger: 'alert-triangle', warning: 'alert-triangle', success: 'circle-check', info: 'info-circle'}[alert.type]|default('info-circle') %}

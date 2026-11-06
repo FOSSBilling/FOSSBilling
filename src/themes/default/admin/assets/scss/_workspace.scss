@@ -21,9 +21,6 @@
 }
 
 .admin-eyebrow { color: var(--tblr-secondary); text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.875rem; font-weight: 600; line-height: 1.5; }
-.dashboard-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.75rem; }
-.dashboard-heading h1 { font-size: 2.125rem; letter-spacing: -0.045em; font-weight: 500; margin: 0.25rem 0 0; line-height: 1.2; }
-.dashboard-date { color: var(--tblr-secondary); font-size: 0.875rem; }
 .dashboard-overview { display: grid; grid-template-columns: 1.2fr 1fr; border: 1px solid var(--tblr-border-color); background: var(--tblr-bg-surface); }
 .dashboard-income { padding: 1.75rem 2rem; }
 .dashboard-income-value { display: inline-block; color: var(--tblr-body-color); font-size: clamp(2rem, 4vw, 3rem); font-weight: 500; letter-spacing: -0.055em; font-variant-numeric: tabular-nums; margin-block: 0.25rem 1.25rem; line-height: 1.25; }
@@ -144,6 +141,5 @@
     .dashboard-overview { grid-template-columns: 1fr; }
     .dashboard-income { padding: 1.25rem; }
     .dashboard-work { border-left: 0; border-top: 1px solid var(--tblr-border-color); padding: 1.25rem; }
-    .dashboard-heading { margin-bottom: 1.25rem; }
     .dashboard-totals { gap: 0.5rem 1.25rem; }
 }
