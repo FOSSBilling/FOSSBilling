@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -126,9 +127,9 @@ def placeholder_set(text: str) -> set[str]:
     return set(re.findall(r"(?<!:):[A-Za-z_][A-Za-z0-9_]*", text))
 
 
-def validate_entries(po: Path, template: Path) -> polib.MOFile:
-    expected = parse_pot_entries(str(template))
+def validate_entries(po: Path, expected: dict[str, str | None]) -> polib.MOFile:
     translations = polib.pofile(str(po))
+    # Build the MO file directly to retain partially translated plural entries.
     compiled = polib.MOFile(encoding="utf-8")
     compiled.metadata = translations.metadata.copy()
     compiled.metadata["Content-Type"] = "text/plain; charset=UTF-8"
@@ -171,41 +172,34 @@ def compile_translations(modules: list[Module], templates: Path, output: Path | 
         raise ValueError("GNU gettext msgfmt is required to validate or compile translations")
     if output is not None and output.exists() and (not output.is_dir() or any(output.iterdir())):
         raise ValueError(f"compile output must be a new or empty staging directory: {output}")
-    compiled: list[tuple[Path, Path]] = []
+    compiled: list[tuple[polib.MOFile, Path]] = []
     checked = 0
-    with tempfile.TemporaryDirectory(prefix="fossbilling-module-mo-") as temporary:
-        for module in modules:
-            template = template_path(templates, module)
-            if not template.is_file():
-                raise ValueError(f"missing module template: {template}")
-            for po in sorted((module.path / "locale").rglob("*.po")):
-                relative = po.relative_to(module.path / "locale")
-                if (
-                    len(relative.parts) != 3
-                    or relative.parts[1:] != ("LC_MESSAGES", f"{module.id}.po")
-                    or not re.fullmatch(r"[a-z]{2,3}(?:_[A-Za-z0-9]+)*", relative.parts[0])
-                ):
-                    raise ValueError(f"{po}: expected locale/<locale>/LC_MESSAGES/{module.id}.po")
-                mo = Path(temporary) / module.path.name / "locale" / relative.with_suffix(".mo")
-                mo.parent.mkdir(parents=True, exist_ok=True)
-                result = subprocess.run(
-                    [compiler, "--check", "--check-format", str(po), "-o", str(mo)],
-                    capture_output=True, text=True,
-                )
-                if result.returncode:
-                    raise ValueError(f"{po}: msgfmt failed\n{result.stderr.strip()}")
-                translations = validate_entries(po, template)
-                if translations:
-                    # msgfmt omits an entire plural entry when form zero is empty.
-                    # Keep every usable form for the runtime's per-form fallback.
-                    translations.save(str(mo))
-                    compiled.append((mo, mo.relative_to(temporary)))
-                checked += 1
-        if output is not None:
-            for mo, relative in compiled:
-                target = output / relative
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(mo, target)
+    for module in modules:
+        template = template_path(templates, module)
+        expected = parse_pot_entries(str(template))
+        for po in sorted((module.path / "locale").rglob("*.po")):
+            relative = po.relative_to(module.path / "locale")
+            if (
+                len(relative.parts) != 3
+                or relative.parts[1:] != ("LC_MESSAGES", f"{module.id}.po")
+                or not re.fullmatch(r"[a-z]{2,3}(?:_[A-Za-z0-9]+)*", relative.parts[0])
+            ):
+                raise ValueError(f"{po}: expected locale/<locale>/LC_MESSAGES/{module.id}.po")
+            result = subprocess.run(
+                [compiler, "--check", "--check-format", str(po), "-o", os.devnull],
+                capture_output=True, text=True,
+            )
+            if result.returncode:
+                raise ValueError(f"{po}: msgfmt failed\n{result.stderr.strip()}")
+            translations = validate_entries(po, expected)
+            if translations:
+                compiled.append((translations, Path(module.path.name) / "locale" / relative.with_suffix(".mo")))
+            checked += 1
+    if output is not None:
+        for translations, relative in compiled:
+            target = output / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            translations.save(str(target))
     print(f"Validated {checked} PO files; {len(compiled)} contain usable translations.")
     return 0
 

@@ -10,7 +10,6 @@ web-asset extensions); obsolete msgids are dropped.
 
 Usage:
     extract_pot.py <src_dir> <out.pot>
-    extract_pot.py <module_dir> <out.pot> --module-id example --source example
     extract_pot.py <src_dir> <out.pot> --check
     extract_pot.py --diff <old.pot> <new.pot>   # msgid-set comparison,
         # flagging casing-only changes (gettext matches case-sensitively,
@@ -867,8 +866,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("src_dir", nargs="?", help="FOSSBilling src/ directory")
     parser.add_argument("out_pot", nargs="?", help="Output .pot path")
     parser.add_argument("--diff", nargs=2, metavar=("OLD_POT", "NEW_POT"), help="Compare two .pot files")
-    parser.add_argument("--module-id", help="Infer Twig sources when src_dir is a standalone module directory")
-    parser.add_argument("--source", help="Write only entries whose first translation source matches this ID (or core)")
     parser.add_argument("--check", action="store_true", help="Check an existing template without modifying it")
     args = parser.parse_args(argv)
 
@@ -876,23 +873,18 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_diff(args.diff[0], args.diff[1])
     if not args.src_dir or not args.out_pot:
         parser.error("src_dir and out_pot are required (or use --diff)")
-    if args.source is not None and not _SOURCE_ID.fullmatch(args.source):
-        parser.error("--source must be a literal lowercase source ID")
     try:
-        occurrences, stats = extract_all(args.src_dir, args.module_id)
+        occurrences, stats = extract_all(args.src_dir)
     except ValueError as error:
         parser.error(str(error))
     if stats["source_errors"]:
         for error in stats["source_errors"]:
             print(f"error: {error}", file=sys.stderr)
         return 1
-    if args.source is not None:
-        occurrences = [occ for occ in occurrences if occ.source == args.source]
-    project = f"FOSSBilling module {args.module_id}" if args.module_id else "4"
     if args.check:
         with tempfile.TemporaryDirectory() as temporary:
             generated = os.path.join(temporary, "messages.pot")
-            count = write_pot(occurrences, generated, project)
+            count = write_pot(occurrences, generated)
             if not os.path.isfile(args.out_pot):
                 print(f"missing template: {args.out_pot}", file=sys.stderr)
                 return 1
@@ -901,7 +893,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"template needs regeneration: {args.out_pot}", file=sys.stderr)
                 return 1
     else:
-        count = write_pot(occurrences, args.out_pot, project)
+        count = write_pot(occurrences, args.out_pot)
     print(f"files scanned: {stats['files']}", file=sys.stderr)
     print(f"twig hits: {stats['twig']}, php hits: {stats['php']}", file=sys.stderr)
     print(f"unique msgids written: {count}", file=sys.stderr)

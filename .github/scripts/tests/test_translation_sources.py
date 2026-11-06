@@ -12,7 +12,7 @@ import unittest
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
-from extract_pot import Occurrence, extract_all, parse_pot_entries, write_pot  # noqa: E402
+from extract_pot import extract_all, parse_pot_entries  # noqa: E402
 
 
 class TranslationSourcesTest(unittest.TestCase):
@@ -156,16 +156,13 @@ class TranslationSourcesTest(unittest.TestCase):
             self.write(f'{directory}/input.php', "<?php __trans('Ignore');")
         self.assertEqual(self.entries(), {('Visible', None, 'core')})
 
-    def test_combined_cli_remains_compatible_and_source_filter_is_opt_in(self) -> None:
+    def test_combined_cli_keeps_core_and_bundled_module_messages(self) -> None:
         self.write('modules/Example/page.twig', "{{ 'Module'|trans }}")
         self.write('Service.php', "<?php __trans('Core');")
         target = self.root / 'messages.pot'
         result = self.cli(self.src, target)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(parse_pot_entries(str(target)), {'Core': None, 'Module': None})
-        result = self.cli(self.src, target, '--source', 'example')
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(parse_pot_entries(str(target)), {'Module': None})
 
     def test_check_is_read_only_ignores_dates_and_detects_reference_changes(self) -> None:
         self.write('Service.php', "<?php __trans('Original');")
@@ -187,10 +184,6 @@ class TranslationSourcesTest(unittest.TestCase):
         result = self.cli(self.root / 'missing', target)
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(target.exists())
-
-    def test_conflicting_plural_templates_can_be_rejected(self) -> None:
-        with self.assertRaisesRegex(ValueError, 'conflicting plurals'):
-            write_pot([Occurrence('One', 'Many', 'a:1'), Occurrence('One', 'Others', 'b:1')], str(self.root / 'conflict.pot'), strict=True)
 
 
 if __name__ == '__main__':
