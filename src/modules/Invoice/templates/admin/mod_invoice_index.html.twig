@@ -26,11 +26,11 @@
         path: 'invoice',
         current_status: request.status,
         items: [
-            { status: '', label: 'All invoices'|trans, count: statuses.total },
-            { status: 'unpaid', label: 'Unpaid'|trans, count: statuses.unpaid },
-            { status: 'paid', label: 'Paid'|trans, count: statuses.paid },
-            { status: 'refunded', label: 'Refunded'|trans, count: statuses.refunded },
-            { status: 'canceled', label: 'Canceled'|trans, count: statuses.canceled }
+            { status: 'unpaid', label: 'Unpaid'|trans, count: statuses.unpaid, count_class: 'bg-warning-subtle text-warning-emphasis' },
+            { status: 'paid', label: 'Paid'|trans, count: statuses.paid, count_class: 'bg-success-subtle text-success-emphasis' },
+            { status: 'refunded', label: 'Refunded'|trans, count: statuses.refunded, count_class: 'bg-info-subtle text-info-emphasis' },
+            { status: 'canceled', label: 'Canceled'|trans, count: statuses.canceled, count_class: 'bg-secondary-subtle text-secondary-emphasis' },
+            { status: '', label: 'All invoices'|trans, count: statuses.total, count_class: 'bg-primary-subtle text-primary-emphasis' }
         ]
     }) }}
     {% endblock %}
@@ -172,7 +172,7 @@
                             </td>
                             <td class="py-2">
                                 <a class="d-inline-flex align-items-center gap-2 text-reset" href='{{ "client/manage/#{invoice.client.id}"|url }}'>
-                                    {{ avatar(invoice.buyer.email, 24, 'avatar avatar-xs') }}
+                                    {{ avatar(invoice.buyer.email, 24, 'avatar avatar-xs', name: invoice.buyer.first_name|default('') ~ ' ' ~ invoice.buyer.last_name|default('')) }}
                                     <span>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</span>
                                 </a>
                             </td>

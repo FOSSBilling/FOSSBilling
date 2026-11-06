@@ -45,11 +45,12 @@ use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\I18n\I18n;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\SortOptions;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
-    private array $permissionCache = [];
+    private ArrayAdapter $authorizationCache;
 
     private AdminGroupRepository $adminGroupRepository;
     private AdminGroupMemberRepository $adminGroupMemberRepository;
@@ -60,6 +61,7 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->authorizationCache = $di['request_authorization_cache'] ??= new ArrayAdapter();
         $this->adminGroupRepository = $di['em']->getRepository(AdminGroup::class);
         $this->adminGroupMemberRepository = $di['em']->getRepository(AdminGroupMember::class);
         $this->adminPasswordResetRepository = $di['em']->getRepository(AdminPasswordReset::class);
@@ -78,17 +80,6 @@ class Service implements InjectionAwareInterface
     public function getAdminGroupMemberRepository(): AdminGroupMemberRepository
     {
         return $this->adminGroupMemberRepository;
-    }
-
-    private function getPermissionsFromCache(int|string $memberId): ?array
-    {
-        $cacheKey = (string) $memberId;
-
-        if (!array_key_exists($cacheKey, $this->permissionCache)) {
-            return null;
-        }
-
-        return is_array($this->permissionCache[$cacheKey]) ? $this->permissionCache[$cacheKey] : [];
     }
 
     public function getModulePermissions(): array
@@ -173,17 +164,9 @@ class Service implements InjectionAwareInterface
 
     public function getPermissions($member_id): array
     {
-        $cachedPermissions = $this->getPermissionsFromCache($member_id);
+        $memberId = (int) $member_id;
 
-        if (!is_null($cachedPermissions)) {
-            return $cachedPermissions;
-        }
-
-        $permissions = $this->adminGroupMemberRepository->getPermissionsForAdmin((int) $member_id);
-
-        $this->permissionCache[(string) $member_id] = $permissions;
-
-        return $permissions;
+        return $this->authorizationCache->get('permissions_' . $memberId, fn (): array => $this->adminGroupMemberRepository->getPermissionsForAdmin($memberId));
     }
 
     /**
@@ -641,6 +624,8 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         });
 
+        $this->authorizationCache->clear();
+
         $this->di['event_dispatcher']->dispatch(new AfterAdminStaffDeleteEvent((int) $id));
 
         $this->di['logger']->info('Deleted staff member #{id} "{name}"', ['id' => $id, 'name' => $name]);
@@ -706,6 +691,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
 
+        $this->authorizationCache->clear();
         $newId = (int) $model->getId();
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminStaffCreateEvent($newId));
@@ -729,6 +715,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->persist($group);
         $this->di['em']->flush();
+
+        $this->authorizationCache->clear();
 
         $this->di['logger']->info('Created staff group #{group_id} "{group_name}" under parent group #{parent_id} "{parent_name}"', ['group_id' => $group->getId(), 'group_name' => $group->getName(), 'parent_id' => $parent->getId(), 'parent_name' => $parent->getName()]);
 
@@ -761,7 +749,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->permissionCache = [];
+        $this->authorizationCache->clear();
 
         $this->di['logger']->info('Deleted staff group #{id} "{name}"', ['id' => $id, 'name' => $name]);
 
@@ -817,7 +805,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
-        $this->permissionCache = [];
+        $this->authorizationCache->clear();
 
         $this->di['logger']->info('Updated staff group #{model_id} "{model_name}"; parent changed: {parent_changed}; permissions changed: {permissions_changed}', ['model_id' => $model->getId(), 'model_name' => $model->getName(), 'parent_changed' => $parentChanged ? 'yes' : 'no', 'permissions_changed' => $permissionsChanged ? 'yes' : 'no']);
 
@@ -838,7 +826,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->persist(new AdminGroupMember($admin, $group));
         $this->di['em']->flush();
-        $this->permissionCache = [];
+        $this->authorizationCache->clear();
 
         $this->di['logger']->info('Added staff member #{admin_id} "{admin_name}" to group #{group_id} "{group_name}"', ['admin_id' => $adminId, 'admin_name' => $admin->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
@@ -864,7 +852,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->remove($membership);
         $this->di['em']->flush();
-        $this->permissionCache = [];
+        $this->authorizationCache->clear();
 
         $this->di['logger']->info('Removed staff member #{admin_id} "{admin_name}" from group #{group_id} "{group_name}"', ['admin_id' => $adminId, 'admin_name' => $admin->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
@@ -875,7 +863,9 @@ class Service implements InjectionAwareInterface
     {
         $memberId ??= $this->di['loggedin_admin']->getId();
 
-        return $this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $memberId, AdminGroup::SYSTEM_SUPER_ADMIN);
+        $memberId = (int) $memberId;
+
+        return $this->authorizationCache->get('super_admin_' . $memberId, fn (): bool => $this->adminGroupMemberRepository->adminBelongsToSystemGroup($memberId, AdminGroup::SYSTEM_SUPER_ADMIN));
     }
 
     private function actorBypassesHierarchy(Admin $actor): bool

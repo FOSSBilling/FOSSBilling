@@ -17,7 +17,7 @@
     <div class="card-body {{ (show_header ?? true) ? 'pt-3' : 'pt-0' }} pb-0 px-0">
         <div class="card border-0 shadow-none rounded-0{% if inner_card_class|default('') %} {{ inner_card_class }}{% endif %}">
             <div class="card-header">
-                <ul class="nav nav-pills card-header-pills flex-nowrap overflow-x-auto" role="tablist">
+                <ul class="nav nav-pills card-header-pills flex-nowrap text-nowrap overflow-x-auto" role="tablist">
                     {{ detail_tabs|raw }}
                 </ul>
             </div>

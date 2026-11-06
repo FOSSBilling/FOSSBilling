@@ -1,9 +1,10 @@
 // Application layout only. Components keep Tabler's defaults.
-:root { --tblr-sidebar-width: 14.5rem; }
+:root { --admin-sidebar-width: 14.5rem; --tblr-sidebar-width: var(--admin-sidebar-width); }
 
 .admin-workspace .admin-sidebar {
     background: var(--tblr-bg-surface-secondary);
     .navbar-brand-image { max-width: 10rem; height: 2rem; }
+    .admin-brand-mark { display: none; }
 }
 
 .admin-topbar {
@@ -52,13 +53,44 @@
 }
 
 @media (min-width: 992px) {
-    .admin-workspace .admin-sidebar [data-bs-toggle="sidebar-folded"] { opacity: 1; }
+    .admin-workspace .admin-sidebar .navbar-brand {
+        height: 3.5rem;
+        min-height: 3.5rem;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-    [data-bs-sidebar="folded"] .admin-workspace .admin-sidebar {
-        .navbar-brand { justify-content: center; }
-        .navbar-brand > a { display: none; }
-        [data-bs-toggle="sidebar-folded"] { display: inline-flex !important; }
-        [data-bs-toggle="sidebar-folded"] .icon { transform: rotate(180deg); }
+    .admin-workspace .admin-sidebar {
+        .admin-brand-full { min-width: 0; max-width: calc(100% - 2.5rem); }
+        .admin-brand-full .navbar-brand-image { max-width: 100%; object-fit: contain; }
+        .admin-sidebar-toggle {
+            position: static;
+            flex-shrink: 0;
+            width: 2rem;
+            height: 2rem;
+            min-width: 2rem;
+            min-height: 2rem;
+            padding: 0;
+            opacity: 1;
+        }
+        .admin-sidebar-pin { display: none; }
+    }
+
+    [data-bs-sidebar="folded-hover"] .admin-workspace .admin-sidebar .admin-sidebar-toggle {
+        .admin-sidebar-pin { display: block; }
+        .admin-sidebar-unpin { display: none; }
+    }
+
+    [data-bs-sidebar="folded-hover"] .admin-workspace .admin-sidebar:is(:hover, :has(:focus-visible)) {
+        width: var(--admin-sidebar-width);
+    }
+
+    [data-bs-sidebar="folded-hover"] .admin-workspace .admin-sidebar:not(:hover):not(:has(:focus-visible)) {
+        .navbar-brand { justify-content: center; padding: 0; }
+        .admin-brand-full { display: none; }
+        .admin-brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; flex-shrink: 0; }
+        .admin-brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+        .admin-sidebar-toggle { display: none !important; }
         .nav-link { justify-content: center; }
         .nav-link-icon { margin: 0; }
     }

@@ -11,10 +11,12 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Core\Doctrine;
 
+use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\Core\Exception\BaseException as Exception;
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\Filesystem\Filesystem;
 
 class DriverManagerFactory
 {
@@ -106,7 +108,13 @@ class DriverManagerFactory
 
         $connectionParams = self::buildConnectionParams($dbConfig, $driverOptions);
 
-        $connection = DriverManager::getConnection($connectionParams);
+        $configuration = new Configuration();
+        // The installer also uses this factory before config.php exists.
+        if ((new Filesystem())->exists(PATH_CONFIG) && (bool) Config::getProperty('debug_and_monitoring.debug', false)) {
+            $configuration->setMiddlewares([new DebugMiddleware()]);
+        }
+
+        $connection = DriverManager::getConnection($connectionParams, $configuration);
         self::applySessionSettings($connection, $dbConfig);
 
         return $connection;

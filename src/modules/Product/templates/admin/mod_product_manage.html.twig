@@ -22,37 +22,41 @@
     </ol>
 {% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: product.title, description: mf.status_name(product.type) ~ ' · #' ~ product.id}) }}
+{% endblock %}
+
 {% block content %}
+{{ include('partial_product_overview.html.twig') }}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
-    title: product.title,
-    subtitle: 'Manage product settings, service configuration, related addons, and upgrade paths.'|trans
+    show_header: false
 } %}
     {% block detail_tabs %}
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'General Settings'|trans }}</button>
+                        <button class="nav-link active" id="settings-tab" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button" role="tab" aria-controls="tab-settings" aria-selected="true">{{ 'General Settings'|trans }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#tab-config" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Configuration'|trans }}</button>
+                        <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#tab-config" type="button" role="tab" aria-controls="tab-config" aria-selected="false">{{ 'Configuration'|trans }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="addons-tab" data-bs-toggle="tab" data-bs-target="#tab-addons" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Addons'|trans }}</button>
+                        <button class="nav-link" id="addons-tab" data-bs-toggle="tab" data-bs-target="#tab-addons" type="button" role="tab" aria-controls="tab-addons" aria-selected="false">{{ 'Addons'|trans }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="upgrades-tab" data-bs-toggle="tab" data-bs-target="#tab-upgrades" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Upgrades'|trans }}</button>
+                        <button class="nav-link" id="upgrades-tab" data-bs-toggle="tab" data-bs-target="#tab-upgrades" type="button" role="tab" aria-controls="tab-upgrades" aria-selected="false">{{ 'Upgrades'|trans }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#tab-links" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Links'|trans }}</button>
+                        <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#tab-links" type="button" role="tab" aria-controls="tab-links" aria-selected="false">{{ 'Links'|trans }}</button>
                     </li>
     {% endblock %}
 
     {% block detail_tab_content %}
         {% import 'macro_functions.html.twig' as mf %}
-        <div class="tab-pane fade show active" id="tab-settings" role="tabpanel">
+        <div class="tab-pane fade show active" id="tab-settings" role="tabpanel" aria-labelledby="settings-tab">
             <div class="p-3">
-                <form method="post" action="admin/product/update" name="form" {{ fb_api_form({message: 'Product Configuration Updated'|trans}) }}>
+                <form method="post" action="admin/product/update" name="form" {{ fb_api_form({message: 'Product Configuration Updated'|trans, reload: true}) }}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Product Settings'|trans,
-                        subtitle: 'Manage visibility, fulfillment behavior, stock controls, pricing, and ordering details for this product.'|trans
+                        card_class: 'border-0 shadow-none rounded-0'
                     } %}
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
@@ -222,7 +226,7 @@
                                 <div class="list-group-item d-flex align-items-center gap-3">
                                     <input class="form-check-input mt-0" type="checkbox" name="addons[]" value="{{ addon_id }}" id="addon_{{ addon_id }}"{% if addon_id in assigned_addons %} checked{% endif %}>
                                     <label class="mb-0 flex-grow-1" for="addon_{{ addon_id }}">{{ addon_title }}</label>
-                                    <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
+                                    <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit Addon'|trans }}" href='{{ "product/addon/#{addon_id}"|url }}'>
                                         <svg class="icon">
                                             <use href="#edit" />
                                         </svg>
@@ -239,7 +243,7 @@
 
                     {% block section_footer %}
                         <div class="d-flex justify-content-end gap-2">
-                            <a href="{{ 'product/addons'|url }}#tab-new" class="btn btn-primary">
+                            <a href="{{ 'product/addons'|url }}#tab-new" class="btn btn-outline-secondary">
                                 <svg class="icon">
                                     <use href="#plus" />
                                 </svg>
@@ -253,7 +257,7 @@
             </form>
         </div>
 
-        <div class="tab-pane fade" id="tab-upgrades" role="tabpanel">
+        <div class="tab-pane fade" id="tab-upgrades" role="tabpanel" aria-labelledby="upgrades-tab">
             <form method="post" action="admin/product/update" {{ fb_api_form({message: 'Product Configuration Updated'|trans}) }}>
                 {% embed 'partial_admin_related_section.html.twig' with {
                     title: 'Product Upgrades'|trans,
@@ -285,7 +289,7 @@
             </form>
         </div>
 
-        <div class="tab-pane fade" id="tab-links" role="tabpanel">
+        <div class="tab-pane fade" id="tab-links" role="tabpanel" aria-labelledby="links-tab">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Product Links'|trans,
                 subtitle: 'Use these client-facing links to open the product order page directly or share it externally.'|trans,

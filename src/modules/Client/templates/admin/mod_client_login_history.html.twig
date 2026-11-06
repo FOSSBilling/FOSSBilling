@@ -108,7 +108,7 @@
                 <td>{{ event.id }}</td>
                 <td>
                     <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                        {{ avatar(event.client.email, 24, 'avatar avatar-xs d-none d-md-inline-block') }}
+                        {{ avatar(event.client.email, 24, 'avatar avatar-xs d-none d-md-inline-block', name: event.client.name|default('')) }}
                     </a>
                 </td>
                 <td>

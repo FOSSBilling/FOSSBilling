@@ -65,120 +65,56 @@ class Service implements InjectionAwareInterface
         ];
     }
 
+    /**
+     * Conditions use plain date comparisons so the same aggregates work on every driver.
+     * The column names are internal constants, never request input.
+     *
+     * @return array<string, string>
+     */
+    private function getPeriodConditions(string $column): array
+    {
+        return [
+            'today' => "{$column} >= :today_start AND {$column} < :tomorrow_start",
+            'yesterday' => "{$column} >= :yesterday_start AND {$column} < :today_start",
+            'this_month' => "{$column} >= :month_start AND {$column} < :next_month_start",
+            'last_month' => "{$column} >= :last_month_start AND {$column} < :month_start",
+        ];
+    }
+
     public function getSummary(): array
     {
         $stats = [];
-
-        $dbal = $this->di['dbal'];
         $boundaries = $this->getDayBoundaries();
+        $columns = ['COUNT(1) AS total'];
+        foreach ($this->getPeriodConditions('created_at') as $period => $condition) {
+            $columns[] = "COUNT(CASE WHEN {$condition} THEN 1 END) AS {$period}";
+        }
+        $select = implode(', ', $columns);
 
-        $total_query = 'SELECT COUNT(1) FROM :table';
-        $yeste_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :yesterday_start AND created_at < :today_start';
-        $today_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :today_start AND created_at < :tomorrow_start';
-        $month_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :month_start AND created_at < :next_month_start';
-        $last_month_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :last_month_start AND created_at < :month_start';
-
-        // client stats
-        $table = 'client';
-        $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
-        $stats['clients_total'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
-        $stats['clients_today'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
-        $stats['clients_yesterday'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
-        $stats['clients_this_month'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
-        $stats['clients_last_month'] = $result->fetchOne();
-
-        // orders stats
-        $table = 'client_order';
-        $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
-        $stats['orders_total'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
-        $stats['orders_today'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
-        $stats['orders_yesterday'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
-        $stats['orders_this_month'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
-        $stats['orders_last_month'] = $result->fetchOne();
-
-        // invoice stats
-        $table = 'invoice';
-        $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
-        $stats['invoices_total'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
-        $stats['invoices_today'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
-        $stats['invoices_yesterday'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
-        $stats['invoices_this_month'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
-        $stats['invoices_last_month'] = $result->fetchOne();
-
-        // ticket stats
-        $table = 'support_ticket';
-        $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
-        $stats['tickets_total'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
-        $stats['tickets_today'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
-        $stats['tickets_yesterday'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
-        $stats['tickets_this_month'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
-        $stats['tickets_last_month'] = $result->fetchOne();
+        foreach (['clients' => 'client', 'orders' => 'client_order', 'invoices' => 'invoice', 'tickets' => 'support_ticket'] as $prefix => $table) {
+            $row = $this->di['dbal']->executeQuery("SELECT {$select} FROM {$table}", $boundaries)->fetchAssociative() ?: [];
+            foreach ($row as $period => $count) {
+                $stats["{$prefix}_{$period}"] = $count;
+            }
+        }
 
         return $stats;
     }
 
     public function getSummaryIncome(): array
     {
-        $stats = [];
+        $columns = ['COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0) AS total'];
+        foreach ($this->getPeriodConditions('paid_at') as $period => $condition) {
+            // Aggregate each amount separately to retain the original NULL and refund semantics.
+            $columns[] = "COALESCE(SUM(CASE WHEN {$condition} THEN base_income END), 0)"
+                . " - COALESCE(SUM(CASE WHEN {$condition} THEN base_refund END), 0) AS {$period}";
+        }
+        $select = implode(', ', $columns);
 
-        $dbal = $this->di['dbal'];
-        $boundaries = $this->getDayBoundaries();
-
-        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')";
-        $total_query = $base;
-        $yeste_query = $base . ' AND paid_at >= :yesterday_start AND paid_at < :today_start';
-        $today_query = $base . ' AND paid_at >= :today_start AND paid_at < :tomorrow_start';
-        $month_query = $base . ' AND paid_at >= :month_start AND paid_at < :next_month_start';
-        $last_month_query = $base . ' AND paid_at >= :last_month_start AND paid_at < :month_start';
-
-        $result = $dbal->executeQuery($total_query);
-        $stats['total'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery($today_query, $boundaries);
-        $stats['today'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery($yeste_query, $boundaries);
-        $stats['yesterday'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery($month_query, $boundaries);
-        $stats['this_month'] = $result->fetchOne();
-
-        $result = $dbal->executeQuery($last_month_query, $boundaries);
-        $stats['last_month'] = $result->fetchOne();
-
-        return $stats;
+        return $this->di['dbal']->executeQuery(
+            "SELECT {$select} FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')",
+            $this->getDayBoundaries(),
+        )->fetchAssociative() ?: [];
     }
 
     public function getOrdersStatuses($data)

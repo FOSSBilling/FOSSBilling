@@ -43,10 +43,10 @@
         path: 'client',
         current_status: request.status,
         items: [
-            { status: '', label: 'All clients'|trans, count: count_clients.total },
-            { status: 'active', label: 'Active'|trans, count: count_clients.active },
-            { status: 'suspended', label: 'Suspended'|trans, count: count_clients.suspended },
-            { status: 'canceled', label: 'Canceled'|trans, count: count_clients.canceled }
+            { status: 'active', label: 'Active'|trans, count: count_clients.active, count_class: 'bg-success-subtle text-success-emphasis' },
+            { status: 'suspended', label: 'Suspended'|trans, count: count_clients.suspended, count_class: 'bg-danger-subtle text-danger-emphasis' },
+            { status: 'canceled', label: 'Canceled'|trans, count: count_clients.canceled, count_class: 'bg-secondary-subtle text-secondary-emphasis' },
+            { status: '', label: 'All clients'|trans, count: count_clients.total, count_class: 'bg-primary-subtle text-primary-emphasis' }
         ]
     }) }}
 {% endblock %}
@@ -194,34 +194,34 @@
                                 <td>
                                     <div class="d-flex py-1 align-items-center">
                                         <a href='{{ "client/manage/#{client.id}"|url }}'>
-                                            {{ avatar(client.email, 28, 'avatar me-2') }}
+                                            {{ avatar(client.email, 28, 'avatar me-2', name: client.first_name|default('') ~ ' ' ~ client.last_name|default('')) }}
                                         </a>
                                         <div class="flex-fill">
-                                            <div class="font-weight-medium">
+                                            <div class="fw-semibold">
                                                 <a href='{{ "client/manage/#{client.id }"|url }}'>{{ client.first_name }} {{ client.last_name }}</a>
                                                 {% if client.country is not empty %}
                                                     <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
                                                 {% endif %}
                                             </div>
-                                            <div class="text-muted">{{ client.email }}</div>
+                                            <div class="text-secondary fs-4">{{ client.email }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <a href='{{ "client/manage/#{client.id}"|url }}' title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
+                                    <a class="text-reset" href='{{ "client/manage/#{client.id}"|url }}' title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
                                 </td>
                                 <td>
                                     {{ mf.status_badge(client.status, 'client', true) }}
                                 </td>
-                                <td>{{ client.created_at|format_date }}</td>
-                                <td>
-                                    <a class="btn btn-icon" href='{{ "client/manage/#{client.id}"|url }}'>
+                                <td class="text-secondary">{{ client.created_at|format_date }}</td>
+                                <td class="text-nowrap">
+                                    <a class="btn btn-icon btn-ghost-secondary btn-sm" href='{{ "client/manage/#{client.id}"|url }}' aria-label="{{ 'Edit'|trans }}">
                                         <svg class="icon">
                                             <use href="#edit" />
                                         </svg>
                                     </a>
                                     {% if can_delete_client %}
-                                    <a class="btn btn-icon"
+                                    <a class="btn btn-icon btn-ghost-secondary btn-sm" aria-label="{{ 'Delete'|trans }}"
                                         {{ fb_api_link({href: 'client/delete'|api_url(query: { 'id': client.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
                                             <use href="#trash" />

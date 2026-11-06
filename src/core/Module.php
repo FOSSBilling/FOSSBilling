@@ -16,6 +16,7 @@ use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Exception\BaseException as Exception;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -25,6 +26,7 @@ class Module implements InjectionAwareInterface
     private ?\Pimple\Container $di = null;
     private readonly string $module;
     private Filesystem $filesystem;
+    private ArrayAdapter $configCache;
 
     public const MANIFEST_FILENAME = 'manifest.json';
     public const SERVICE_CLASS_PREFIX = 'Box\\Mod\\';
@@ -43,6 +45,7 @@ class Module implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->configCache = $di['request_module_config_cache'] ??= new ArrayAdapter();
         if (isset($di['filesystem'])) {
             $this->filesystem = $di['filesystem'];
         }
@@ -291,17 +294,19 @@ class Module implements InjectionAwareInterface
     {
         $modName = "mod_{$this->module}";
 
-        $meta = $this->di['em']->getRepository(ExtensionMeta::class)->findOneByExtensionAndScope($modName, 'config');
-        if (!$meta instanceof ExtensionMeta || empty($meta->getMetaValue())) {
-            return [];
-        }
+        return $this->configCache->get($modName, function () use ($modName): array {
+            $meta = $this->di['em']->getRepository(ExtensionMeta::class)->findOneByExtensionAndScope($modName, 'config');
+            if (!$meta instanceof ExtensionMeta || empty($meta->getMetaValue())) {
+                return [];
+            }
 
-        $decrypted = $this->di['crypt']->decrypt($meta->getMetaValue(), Config::getProperty('info.salt'));
-        if (!is_string($decrypted) || !json_validate($decrypted)) {
-            return [];
-        }
+            $decrypted = $this->di['crypt']->decrypt($meta->getMetaValue(), Config::getProperty('info.salt'));
+            if (!is_string($decrypted) || !json_validate($decrypted)) {
+                return [];
+            }
 
-        return json_decode($decrypted, true);
+            return json_decode($decrypted, true);
+        });
     }
 
     public function getName(): string

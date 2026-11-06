@@ -23,11 +23,14 @@
 </ul>
 {% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: category.title, description: 'Category'|trans}) }}
+{% endblock %}
+
 {% block content %}
-<div class="card">
     <form method="post" action="{{ 'product/category_update'|api_url }}" {{ fb_api_form({message: 'Category Updated'|trans}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
-            title: category.title,
+            title: 'Category Settings'|trans,
             subtitle: 'Update the category title, icon, and description shown on the products area.'|trans,
             body_class: 'pt-4',
             footer_align: 'between'
@@ -55,7 +58,7 @@
             {% endblock %}
 
             {% block form_actions %}
-                <a href="{{ 'product'|url }}" class="btn btn-secondary">
+                <a href="{{ 'product'|url }}#tab-categories" class="btn btn-outline-secondary">
                     <svg class="icon">
                         <use href="#arrow-left" />
                     </svg>
@@ -65,7 +68,6 @@
             {% endblock %}
         {% endembed %}
     </form>
-</div>
 {% endblock %}
 
 {% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

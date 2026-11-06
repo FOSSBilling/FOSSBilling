@@ -1,0 +1,7 @@
+{% set ticket_statuses = {
+    open: {label: 'Awaiting Staff'|trans, class: 'bg-warning-subtle text-warning-emphasis'},
+    on_hold: {label: 'Awaiting Client'|trans, class: 'bg-info-subtle text-info-emphasis'},
+    closed: {label: 'Closed'|trans, class: 'bg-secondary-subtle text-secondary-emphasis'}
+} %}
+{% set ticket_status = ticket_statuses[status]|default({label: status, class: 'bg-secondary-subtle text-secondary-emphasis'}) %}
+<span class="badge {{ ticket_status.class }}">{{ ticket_status.label }}</span>

@@ -317,7 +317,7 @@
                                         <tr>
                                             <td>
                                                 <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                                                    {{ avatar(event.client.email, 24, 'avatar avatar-xs') }}
+                                                    {{ avatar(event.client.email, 24, 'avatar avatar-xs', name: event.client.name|default('')) }}
                                                 </a>&nbsp;
                                                 <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name|truncate(40) }}</a>
                                             </td>
@@ -350,7 +350,7 @@
                                         <tr>
                                             <td>
                                                 <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                                                    {{ avatar(event.staff.email, 24, 'avatar avatar-xs') }}
+                                                    {{ avatar(event.staff.email, 24, 'avatar avatar-xs', name: event.staff.name|default('')) }}
                                                 </a>&nbsp;
                                                 <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
                                             </td>

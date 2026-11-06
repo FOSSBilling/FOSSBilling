@@ -148,9 +148,9 @@ test('gets summary', function (): void {
     $service = new Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
     /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $resultMock->shouldReceive('fetchOne');
+    $expectation1 = $resultMock->shouldReceive('fetchAssociative');
     $expectation1->atLeast()->once();
-    $expectation1->andReturn(null);
+    $expectation1->andReturn(['total' => null, 'today' => null, 'yesterday' => null, 'this_month' => null, 'last_month' => null]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
@@ -198,9 +198,9 @@ test('gets summary income', function (): void {
     $service = new Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
     /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $resultMock->shouldReceive('fetchOne');
+    $expectation1 = $resultMock->shouldReceive('fetchAssociative');
     $expectation1->atLeast()->once();
-    $expectation1->andReturn(null);
+    $expectation1->andReturn(['total' => null, 'today' => null, 'yesterday' => null, 'this_month' => null, 'last_month' => null]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));

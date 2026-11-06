@@ -238,7 +238,7 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFunction('avatar', isSafe: ['html'])]
-    public function avatar(?string $email, int $size = 40, string $classes = 'avatar', ?string $fallback = null, string $tag = 'span'): string
+    public function avatar(?string $email, int $size = 40, string $classes = 'avatar', ?string $fallback = null, string $tag = 'span', ?string $name = null): string
     {
         if ($email === null || trim($email) === '') {
             return htmlspecialchars($fallback ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -246,7 +246,7 @@ class FOSSBillingExtension
 
         $tag = in_array($tag, ['span', 'div'], true) ? $tag : 'span';
         $size = max(1, $size);
-        $dataUri = $this->getAvatarDataUri($this->hash($email), $size);
+        $dataUri = $this->getAvatarDataUri(trim($name ?? '') ?: trim($email), $size);
         $styles = sprintf(
             'width: %1$dpx; height: %1$dpx; background-image: url("%2$s"); background-size: 100%% 100%%; background-position: center; background-repeat: no-repeat;',
             $size,
@@ -277,7 +277,7 @@ class FOSSBillingExtension
                 throw new \RuntimeException('The dicebear/styles package is not installed.');
             }
 
-            $definitionPath = Path::join($basePath, 'src/identicon.json');
+            $definitionPath = Path::join($basePath, 'src/initials.json');
 
             if (!$this->di['filesystem']->exists($definitionPath)) {
                 throw new \RuntimeException(sprintf('DiceBear style definition "%s" was not found.', $definitionPath));

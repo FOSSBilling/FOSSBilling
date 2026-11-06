@@ -186,6 +186,31 @@ test('getConnection actually connects for an in-memory pdo_sqlite database', fun
     });
 });
 
+test('getConnection installs a shared tracing proxy only when debug is enabled', function (bool $debug): void {
+    $filesystem = new Filesystem();
+    $config = FOSSBilling\Core\System\Config::getConfig();
+    $config['debug_and_monitoring']['debug'] = $debug;
+    $filesystem->dumpFile(PATH_CONFIG, '<?php return ' . var_export($config, true) . ';');
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(PATH_CONFIG, true);
+    }
+    $connection = DriverManagerFactory::getConnection(dbConfig: ['driver' => 'pdo_sqlite', 'memory' => true]);
+    $pdo = $connection->getNativeConnection();
+    expect($pdo instanceof DebugBar\DataCollector\PDO\TraceablePDO)->toBe($debug);
+    expect($connection->fetchOne('SELECT 1'))->toBe(1);
+    if ($debug) {
+        expect($pdo->getExecutedStatements())->toHaveCount(1);
+    }
+})->with([true, false]);
+
+test('getConnection supports the installer before a configuration file exists', function (): void {
+    (new Filesystem())->remove(PATH_CONFIG);
+    $connection = DriverManagerFactory::getConnection(dbConfig: ['driver' => 'pdo_sqlite', 'memory' => true]);
+
+    expect($connection->getNativeConnection())->not->toBeInstanceOf(DebugBar\DataCollector\PDO\TraceablePDO::class)
+        ->and($connection->fetchOne('SELECT 1'))->toBe(1);
+});
+
 test('getConnection actually connects for a file-based pdo_sqlite database', function (): void {
     $path = sys_get_temp_dir() . '/fossbilling-driver-manager-factory-test-' . bin2hex(random_bytes(4)) . '.sqlite';
 

@@ -44,7 +44,7 @@
                     <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
                         <td>
                             <a href='{{ "client/manage/#{order.client.id}"|url }}'>
-                                {{ avatar(order.client.email, 24, 'avatar avatar-xs') }}
+                                {{ avatar(order.client.email, 24, 'avatar avatar-xs', name: order.client.first_name|default('') ~ ' ' ~ order.client.last_name|default('')) }}
                             </a>&nbsp;
                             <a href='{{ "client/manage/#{order.client_id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a>
                         </td>

@@ -91,7 +91,7 @@
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_header_aside %}
-                        {{ avatar(client.email, 48, 'avatar avatar-rounded') }}
+                        {{ avatar(client.email, 48, 'avatar avatar-rounded', name: client.first_name|default('') ~ ' ' ~ client.last_name|default('')) }}
                     {% endblock %}
 
                     {% block summary_content %}

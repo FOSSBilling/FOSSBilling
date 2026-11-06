@@ -22,13 +22,14 @@
 
 {% block meta_title %}{{ 'Create New Order'|trans }}{% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', { title: 'Create New Order'|trans, description: product.title ~ ' · ' ~ client.first_name ~ ' ' ~ client.last_name }) }}
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <div class="d-flex flex-column gap-1 mb-4">
-            <h3 class="mb-0">{{ 'Create New Order'|trans }}</h3>
-            <p class="text-secondary mb-0">{{ product.title }} {{ 'for'|trans }} {{ client.first_name }} {{ client.last_name }}</p>
-        </div>
+
 
         <form method="post" action="{{ 'order/create'|api_url }}" {{ fb_api_form({callback: 'onAfterOrderPlaced'}) }}>
             <div class="card mb-4">

@@ -132,7 +132,7 @@
                                     <td>{{ member.id }}</td>
                                     <td>
                                         <a href='{{ "staff/manage/#{member.id}"|url }}'>
-                                        {{ avatar(member.email, 25, 'avatar avatar-xs me-2') }}
+                                        {{ avatar(member.email, 25, 'avatar avatar-xs me-2', name: member.name|default('')) }}
                                         </a>
                                         <a href='{{ "staff/manage/#{member.id}"|url }}'>{{ member.name }}</a>
                                     </td>

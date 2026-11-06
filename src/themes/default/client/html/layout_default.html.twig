@@ -154,7 +154,7 @@
                                     <div class="dropdown client-dropdown">
                                         <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             {% set avatar_size = 25 %}
-                                            {{ avatar(profile.email, avatar_size, 'rounded-circle d-inline-block', null, 'div') }}
+                                            {{ avatar(profile.email, avatar_size, 'rounded-circle d-inline-block', null, 'div', name: profile.name|default(profile.first_name|default('') ~ ' ' ~ profile.last_name|default(''))) }}
                                             <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
                                         </button>
                                         <ul class="dropdown-menu">

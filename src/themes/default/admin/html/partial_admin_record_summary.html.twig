@@ -1,8 +1,14 @@
-<nav class="nav nav-pills gap-2 mb-3" aria-label="{{ label }}">
+<nav class="row row-cards g-3 mb-3" aria-label="{{ label }}">
     {% for item in items %}
-    <a class="nav-link d-inline-flex align-items-baseline gap-2{% if item.status == current_status|default('') %} active{% endif %}" href="{{ item.status ? path|url(query: { status: item.status }) : path|url }}"{% if item.status == current_status|default('') %} aria-current="page"{% endif %}>
-        <span>{{ item.label }}</span>
-        <span class="fw-semibold">{{ item.count }}</span>
-    </a>
+    {% set selected = item.status == current_status|default('') %}
+    {% set item_query = item.query|default(item.status ? { status: item.status } : {}) %}
+    <div class="col-6 col-lg">
+        <a class="card card-sm h-100 shadow-none text-decoration-none{% if selected %} bg-primary-lt{% endif %}" href="{{ path|url(query: item_query) }}" aria-label="{{ item.label }} {{ item.count }}"{% if selected %} aria-current="page"{% endif %}>
+            <div class="card-body d-flex flex-wrap align-items-center gap-3">
+                <span class="avatar avatar-lg rounded fs-1 fw-semibold shadow-none {{ item.count_class|default('bg-secondary-subtle text-secondary-emphasis') }}">{{ item.count }}</span>
+                <span class="fw-medium{% if selected %} text-primary-emphasis{% endif %}">{{ item.label }}</span>
+            </div>
+        </a>
+    </div>
     {% endfor %}
 </nav>

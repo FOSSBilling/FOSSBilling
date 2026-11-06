@@ -6,7 +6,7 @@
             preference = localStorage.getItem('theme') || 'system';
             const sidebar = localStorage.getItem('tabler-sidebar');
             if (sidebar === 'folded' || sidebar === 'folded-hover') {
-                document.documentElement.setAttribute('data-bs-sidebar', 'folded');
+                document.documentElement.setAttribute('data-bs-sidebar', 'folded-hover');
             }
         } catch {}
         const dark = preference === 'dark' || (preference !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);

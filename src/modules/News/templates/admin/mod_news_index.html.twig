@@ -17,18 +17,18 @@
 
 {% block meta_title %}{{ 'News'|trans }}{% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: 'News & Announcements'|trans}) }}
+{% endblock %}
+
 {% block content %}
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'News & Announcements'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage published announcements and draft new updates for the client area.'|trans }}</p>
-            </div>
-        </div>
         <div class="card-body p-0">
             {{ include('partial_search.html.twig', {
                 search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                search_toolbar_actions: new_post_action
+                search_toolbar_actions: new_post_action,
+                search_max_width: 'none',
+                search_hidden_fields: {id: request.id|default(''), status: request.status|default(''), section: request.section|default('')}
             }) }}
             <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
                 <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
@@ -79,7 +79,7 @@
                             </th>
                             {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'news/index', 'th_class': 'w-1', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'news/index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Active'|trans, 'sort_key': 'status', 'url': 'news/index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'news/index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'news/index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                         </tr>
@@ -93,17 +93,17 @@
                             </td>
                             <td>{{ post.id }}</td>
                             <td>
-                                <a href='{{ "news/post/#{post.id}"|url }}'>{{ post.title }}</a>
+                                <a class="fw-semibold" href='{{ "news/post/#{post.id}"|url }}'>{{ post.title }}</a>
                             </td>
-                            <td>{{ mf.status_badge(post.status, 'post') }}</td>
+                            <td>{{ mf.status_badge(post.status, 'post', true) }}</td>
                             <td>{{ post.created_at|format_datetime }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}'>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Edit'|trans }}" href='{{ "news/post/#{post.id}"|url }}'>
                                     <svg class="icon">
                                         <use href="#edit" />
                                     </svg>
                                 </a>
-                                <a class="btn btn-icon" href="{{ 'news/delete'|api_url(query: { 'id': post.id }) }}"
+                                <a class="btn btn-ghost-secondary btn-icon btn-sm" aria-label="{{ 'Delete'|trans }}" href="{{ 'news/delete'|api_url(query: { 'id': post.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|url}) }}>
                                     <svg class="icon">
                                         <use href="#trash" />
@@ -120,7 +120,7 @@
                 </table>
             </div>
 
-            <div class="card-footer d-flex align-items-center justify-content-between">
+            <div class="card-footer d-flex flex-wrap gap-3 align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'news/batch_delete' } %}
                 {% include 'partial_pagination.html.twig' with { 'list': posts, 'url': 'news/index' } %}
             </div>

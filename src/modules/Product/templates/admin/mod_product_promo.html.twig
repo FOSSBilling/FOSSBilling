@@ -23,200 +23,21 @@
     </ol>
 {% endblock %}
 
+{% block top_content %}
+    {{ include('partial_admin_page_heading.html.twig', {title: promo.code, description: 'Product Promotion'|trans}) }}
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-body">
-        <h3>{{ 'Manage Promotion'|trans }}</h3>
-        {% if not promo.can_be_deleted %}
-            <div class="alert alert-info" role="alert">
-                {{ 'This promotion has redemption history and can no longer be deleted. Disable it to archive it.'|trans }}
-            </div>
-        {% endif %}
-        {% set stats = promo.usage_stats %}
-        <div class="row row-cards mb-4">
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Recorded Applications'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.recorded_applications }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Checkout Applications'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.checkout_applications }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Renewal Applications'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.renewal_applications }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Reserved Applications'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.reserved_applications }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Committed Applications'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.committed_applications }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Released Applications'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.released_applications }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Distinct Clients'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.distinct_clients }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Orders Using Promo'|trans }}</div>
-                        <div class="h2 m-0">{{ stats.orders_using_promo }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    <div class="card-body">
-                        <div class="text-secondary">{{ 'Operational Counter'|trans }}</div>
-                        <div class="h2 m-0">
-                            {{ stats.operational_use_count }}
-                            {% if stats.max_uses is not null %}/ {{ stats.max_uses }}{% else %}/ &#8734;{% endif %}
-                        </div>
-                        <div class="text-secondary small">
-                            {{ 'Used only for max-use enforcement, not historical reporting.'|trans }}
-                        </div>
-                        <div class="text-secondary small">
-                            {{ 'Active checkout applications'|trans }}: {{ stats.active_checkout_applications }}
-                        </div>
-                        <div class="text-secondary small">
-                            {% if stats.remaining_operational_uses is null %}
-                                {{ 'Remaining operational uses'|trans }}: {{ 'Unlimited'|trans }}
-                            {% else %}
-                                {{ 'Remaining operational uses'|trans }}: {{ stats.remaining_operational_uses }}
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+{% import 'macro_functions.html.twig' as mf %}
+<div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+    {{ mf.boolean_badge(promo.active, 'Enabled'|trans, 'Disabled'|trans, 'bg-success-subtle text-success-emphasis', 'bg-secondary-subtle text-secondary-emphasis') }}
+    <span class="fw-semibold">{% if promo.type == 'percentage' %}{{ promo.value }}%{% else %}{{ promo.value|format_currency(admin.currency_get_default.code) }}{% endif %} {{ 'discount'|trans }}</span>
+    <span class="text-secondary">{% if promo.end_at %}{{ 'Until'|trans }} {{ promo.end_at|format_date }}{% else %}{{ 'No expiry'|trans }}{% endif %}</span>
+    <a href='{{ "product/promo/#{promo.id}"|url }}#promo-redemptions'>{{ 'Redemption History'|trans }}</a>
 </div>
-
-<div class="card mt-4" id="promo-redemptions">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ 'Redemption History'|trans }}</h3>
-            <p class="card-subtitle">{{ 'The individual clients, orders, and invoices where this promotion has been applied.'|trans }}</p>
-        </div>
-    </div>
-    <div class="card-body p-0">
-        {% set redemption_pagination_url = "product/promo/#{promo.id}" %}
-        {% set redemptions = admin.product_promo_redemption_get_list({ 'per_page': 10, 'page': request.page }|merge(request)|merge({ 'promo_id': promo.id })) %}
-        <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th>{{ 'Client'|trans }}</th>
-                        <th>{{ 'Order'|trans }}</th>
-                        <th>{{ 'Invoice'|trans }}</th>
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Phase'|trans, 'sort_key': 'phase', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Discount'|trans, 'sort_key': 'discount_amount', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Redeemed At'|trans, 'sort_key': 'created_at', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                    </tr>
-                </thead>
-                <tbody>
-                {% for redemption in redemptions.list %}
-                    <tr>
-                        <td>
-                            {% if redemption.client %}
-                                <a href='{{ "client/manage/#{redemption.client.id}"|url }}'>{{ redemption.client.first_name }} {{ redemption.client.last_name }}</a>
-                                <div class="text-secondary small">{{ redemption.client.email }}</div>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.order %}
-                                <a href='{{ "order/manage/#{redemption.order.id}"|url }}'>{{ redemption.order.title|default("Order ##{redemption.order.id}") }}</a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.invoice %}
-                                <a href='{{ "invoice/manage/#{redemption.invoice.id}"|url }}'>{{ redemption.invoice.serie_nr|default("##{redemption.invoice.id}") }}</a>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.phase == 'renewal' %}
-                                <span class="badge text-bg-info">{{ 'Renewal'|trans }}</span>
-                            {% else %}
-                                <span class="badge text-bg-primary">{{ 'Checkout'|trans }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.status == 'committed' %}
-                                <span class="badge text-bg-success">{{ 'Committed'|trans }}</span>
-                            {% elseif redemption.status == 'reserved' %}
-                                <span class="badge text-bg-warning">{{ 'Reserved'|trans }}</span>
-                            {% else %}
-                                <span class="badge text-bg-secondary">{{ 'Released'|trans }}</span>
-                                {% if redemption.release_reason %}
-                                    <div class="text-secondary small">{{ redemption.release_reason }}</div>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.discount_amount is not null %}
-                                {{ redemption.discount_amount|format_currency(redemption.currency) }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>{{ redemption.created_at|format_date }}</td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td class="text-muted" colspan="7">{{ 'No clients have redeemed this promotion yet.'|trans }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer d-flex align-items-center">
-            {{ include('partial_pagination.html.twig', { 'list': redemptions, 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'split_footer_controls': true }) }}
-        </div>
-    </div>
-</div>
-
-<div class="card mt-4">
+{% if not promo.can_be_deleted %}
+    <div class="alert alert-info" role="alert">{{ 'This promotion has redemption history and can no longer be deleted. Disable it to archive it.'|trans }}</div>
+{% endif %}
     <form method="post" action="{{ 'product/promo_update'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
             title: 'Manage Promotion'|trans,
@@ -323,28 +144,28 @@
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Applicable Products (Select None to Apply to All)'|trans }}</label>
                         <input type="hidden" name="products[]" value=""/>
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <table class="table card-table table-vcenter table-striped text-wrap">
                             <tbody>{% set products = admin.product_get_pairs %}{% for id,product in products %}<tr><td class="w-1"><input type="checkbox" name="products[]" value="{{ id }}" {% if id in promo.products %} checked{% endif %} /></td><td>{{ product }}</td></tr>{% endfor %}</tbody>
                         </table>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Applicable Periods (Select None to Apply to All)'|trans }}</label>
                         <input type="hidden" name="periods[]" value=""/>
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <table class="table card-table table-vcenter table-striped text-wrap">
                             <tbody>{% set periods = guest.system_periods %}{% for id, period in periods %}<tr><td class="w-1"><input type="checkbox" name="periods[]" value="{{ id }}" {% if id in promo.periods %} checked{% endif %} /></td><td>{{ period }}</td></tr>{% endfor %}</tbody>
                         </table>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Applicable Client Groups (Select None to Apply to All)'|trans }}</label>
                         <input type="hidden" name="client_groups[]" value=""/>
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <table class="table card-table table-vcenter table-striped text-wrap">
                             <tbody>{% set client_groups = admin.client_group_get_pairs %}{% for id, client_group in client_groups %}<tr><td class="w-1"><input type="checkbox" name="client_groups[]" value="{{ id }}" {% if id in promo.client_groups %} checked{% endif %} /></td><td>{{ client_group }}</td></tr>{% endfor %}</tbody>
                         </table>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Required Products (Select None for No Condition)'|trans }}</label>
                         <input type="hidden" name="requires_products[]" value=""/>
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <table class="table card-table table-vcenter table-striped text-wrap">
                             <tbody>{% set required_products = admin.product_get_pairs %}{% for id, required_product in required_products %}<tr><td class="w-1"><input type="checkbox" name="requires_products[]" value="{{ id }}" {% if id in promo.requires_products %} checked{% endif %} /></td><td>{{ required_product }}</td></tr>{% endfor %}</tbody>
                         </table>
                         <small class="form-text">{{ 'The promotion only applies when every selected product is in the cart.'|trans }}</small>
@@ -358,5 +179,192 @@
             {% endblock %}
         {% endembed %}
     </form>
+<div class="card mt-3">
+    <div class="card-body">
+        <h3 class="card-title mb-3">{{ 'Promotion Usage'|trans }}</h3>
+        {% set stats = promo.usage_stats %}
+        <div class="row row-cards mb-4">
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Recorded Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.recorded_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Checkout Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.checkout_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Renewal Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.renewal_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Reserved Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.reserved_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Committed Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.committed_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Released Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.released_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Distinct Clients'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.distinct_clients }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Orders Using Promo'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.orders_using_promo }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Operational Counter'|trans }}</div>
+                        <div class="h2 m-0">
+                            {{ stats.operational_use_count }}
+                            {% if stats.max_uses is not null %}/ {{ stats.max_uses }}{% else %}/ &#8734;{% endif %}
+                        </div>
+                        <div class="text-secondary small">
+                            {{ 'Used only for max-use enforcement, not historical reporting.'|trans }}
+                        </div>
+                        <div class="text-secondary small">
+                            {{ 'Active checkout applications'|trans }}: {{ stats.active_checkout_applications }}
+                        </div>
+                        <div class="text-secondary small">
+                            {% if stats.remaining_operational_uses is null %}
+                                {{ 'Remaining operational uses'|trans }}: {{ 'Unlimited'|trans }}
+                            {% else %}
+                                {{ 'Remaining operational uses'|trans }}: {{ stats.remaining_operational_uses }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+
+<div class="card mt-4" id="promo-redemptions">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Redemption History'|trans }}</h3>
+            <p class="card-subtitle">{{ 'The individual clients, orders, and invoices where this promotion has been applied.'|trans }}</p>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% set redemption_pagination_url = "product/promo/#{promo.id}" %}
+        {% set redemptions = admin.product_promo_redemption_get_list({ 'per_page': 10, 'page': request.page }|merge(request)|merge({ 'promo_id': promo.id })) %}
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-wrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Client'|trans }}</th>
+                        <th>{{ 'Order'|trans }}</th>
+                        <th>{{ 'Invoice'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Phase'|trans, 'sort_key': 'phase', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Discount'|trans, 'sort_key': 'discount_amount', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Redeemed At'|trans, 'sort_key': 'created_at', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for redemption in redemptions.list %}
+                    <tr>
+                        <td>
+                            {% if redemption.client %}
+                                <a href='{{ "client/manage/#{redemption.client.id}"|url }}'>{{ redemption.client.first_name }} {{ redemption.client.last_name }}</a>
+                                <div class="text-secondary small">{{ redemption.client.email }}</div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.order %}
+                                <a href='{{ "order/manage/#{redemption.order.id}"|url }}'>{{ redemption.order.title|default("Order ##{redemption.order.id}") }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.invoice %}
+                                <a href='{{ "invoice/manage/#{redemption.invoice.id}"|url }}'>{{ redemption.invoice.serie_nr|default("##{redemption.invoice.id}") }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.phase == 'renewal' %}
+                                <span class="badge bg-info-subtle text-info-emphasis">{{ 'Renewal'|trans }}</span>
+                            {% else %}
+                                <span class="badge text-bg-primary">{{ 'Checkout'|trans }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.status == 'committed' %}
+                                <span class="badge bg-success-subtle text-success-emphasis">{{ 'Committed'|trans }}</span>
+                            {% elseif redemption.status == 'reserved' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis">{{ 'Reserved'|trans }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ 'Released'|trans }}</span>
+                                {% if redemption.release_reason %}
+                                    <div class="text-secondary small">{{ redemption.release_reason }}</div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.discount_amount is not null %}
+                                {{ redemption.discount_amount|format_currency(redemption.currency) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ redemption.created_at|format_date }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="7">{{ 'No clients have redeemed this promotion yet.'|trans }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer d-flex align-items-center">
+            {{ include('partial_pagination.html.twig', { 'list': redemptions, 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'split_footer_controls': true }) }}
+        </div>
+    </div>
+</div>
+
 {% endblock %}
