@@ -2819,7 +2819,7 @@ test('cart is subscribable with a discount only when the promo is recurring', fu
     $cartProduct = new CartProduct();
     $cartProduct->setProductId(5);
     $promo = createPromoEntity(8);
-    $promo->setCode('FIRSTMONTH');
+    $promo->setCode('WELCOME');
     $promo->setRecurring($recurring);
 
     $cartProductRepository = Mockery::mock(CartProductRepository::class);

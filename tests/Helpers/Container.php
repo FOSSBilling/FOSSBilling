@@ -174,7 +174,7 @@ function container(): Container
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['cookie_queue'] = fn (): \FOSSBilling\Core\Http\CookieQueue => new \FOSSBilling\Core\Http\CookieQueue();
-    $di['em'] = static function () use ($di, $defaultConnection): object {
+    $di['em'] = static function () use ($defaultConnection): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
         $adminPasswordResetRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminPasswordResetRepository::class)->shouldIgnoreMissing();

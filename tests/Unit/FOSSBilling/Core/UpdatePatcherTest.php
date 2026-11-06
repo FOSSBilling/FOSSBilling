@@ -1931,7 +1931,7 @@ test('renameInvoiceApprovedColumn renames the flag while preserving values', fun
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
             $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]));
             $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1965,7 +1965,7 @@ test('renameInvoiceStatusIndex swaps the legacy composite index name', function 
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
             $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]));
             $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
@@ -3324,7 +3324,7 @@ test('invoice journal backfill writes one baseline entry per invoice missing fro
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
             $em->shouldReceive('getConnection')->andReturn($connection);
             $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
@@ -3375,7 +3375,7 @@ test('journal baseline writes are claimed per invoice', function (): void {
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
             $em->shouldReceive('getConnection')->andReturn($connection);
             $di['em'] = $em;
             $di['logger'] = new Tests\Helpers\TestLogger();
@@ -4007,7 +4007,7 @@ test('category priority heal patch adds the column and backfills NULLs', functio
 
             $di = new Pimple\Container();
             $di['pdo'] = $pdo;
-            $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
             $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]));
             $di['em'] = $em;
 
