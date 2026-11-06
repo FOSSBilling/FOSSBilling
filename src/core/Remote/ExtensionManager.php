@@ -116,7 +116,30 @@ class ExtensionManager implements InjectionAwareInterface
     public function getLatestExtensionRelease(string $id): array
     {
         $releases = $this->getExtensionReleases($id);
-        $latest = reset($releases);
+        $selected = array_filter($releases, static fn (array $release): bool => ($release['is_latest'] ?? false) === true);
+        $latest = reset($selected);
+        if (!$selected) {
+            $parser = new VersionParser();
+            $versioned = array_filter($releases, static function (array $release) use ($parser): bool {
+                try {
+                    $parser->normalize((string) ($release['tag'] ?? ''));
+
+                    return true;
+                } catch (\UnexpectedValueException) {
+                    return false;
+                }
+            });
+            $stable = array_filter($versioned, static fn (array $release): bool => !str_contains(explode('+', $release['tag'], 2)[0], '-') && VersionParser::parseStability($release['tag']) === 'stable');
+            $candidates = $stable ?: $versioned;
+            $tags = Semver::rsort(array_column($candidates, 'tag'));
+            foreach ($candidates as $release) {
+                if ($release['tag'] === ($tags[0] ?? null)) {
+                    $latest = $release;
+
+                    break;
+                }
+            }
+        }
 
         if (empty($latest) || !is_array($latest)) {
             throw new Exception('Unable to fetch the latest extension release.');
@@ -206,6 +229,11 @@ class ExtensionManager implements InjectionAwareInterface
 
         try {
             (new VersionParser())->parseConstraints($constraint);
+
+            $php = $release['requires']['php'] ?? null;
+            if ($php !== null && (!is_string($php) || trim($php) === '' || !Semver::satisfies(PHP_VERSION, $php))) {
+                return false;
+            }
 
             return Config::getProperty('update_branch', 'release') !== 'release'
                 || Semver::satisfies(Version::VERSION, $constraint);

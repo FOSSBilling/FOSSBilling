@@ -117,3 +117,35 @@ test('extension directory degrades gracefully with sparse directory metadata', f
         ['<img'],
     ],
 ]);
+
+test('installed extensions expose the manifest correction action', function (string $status, bool $visible): void {
+    $admin = new readonly class($status) {
+        public function __construct(private string $status)
+        {
+        }
+
+        public function extension_get_list(): array
+        {
+            return [[
+                'id' => 'example', 'type' => 'module', 'name' => 'Example', 'version' => '1.0.0',
+                'author' => 'Author', 'author_url' => '', 'description' => 'Example module',
+                'project_url' => 'https://example.test', 'icon_url' => '', 'has_settings' => false,
+                'status' => $this->status,
+            ]];
+        }
+
+        public function extension_get_latest(array $params): array
+        {
+            return [];
+        }
+    };
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Extension/templates/admin/mod_extension_index.html.twig',
+        ['admin' => $admin, 'request' => ['ajax' => true]],
+    );
+    if ($visible) {
+        expect($html)->toContain('Apply manifest correction')->toContain('does not update extension code.');
+    } else {
+        expect($html)->not->toContain('Apply manifest correction');
+    }
+})->with([['installed', true], ['core', false], ['', false]]);
