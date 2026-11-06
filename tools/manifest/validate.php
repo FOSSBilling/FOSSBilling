@@ -57,7 +57,7 @@ foreach ($packages as $dir) {
             $errors[] = $field . ' must be an http(s) URL';
         }
     }
-    $icons = array_filter(['icon.svg', 'icon.png', 'icon.webp', 'icon.avif'], static fn ($icon) => is_file($dir . '/' . $icon));
+    $icons = array_filter(['icon.svg', 'icon.png', 'icon.webp', 'icon.avif'], static fn ($icon): bool => is_file($dir . '/' . $icon));
     if (count($icons) > 1) {
         $errors[] = 'include only one package icon: icon.svg, icon.png, icon.webp or icon.avif';
     }
