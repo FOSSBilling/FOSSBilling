@@ -1,0 +1,24 @@
+{
+  "name": "branding-cookieconsent",
+  "locale_repository": "https://github.com/FOSSBilling/locale",
+  "locale_revision": "0f00d645373d9546d741c337d9f9e75fdd5bc6a6",
+  "source_locale": "en_US",
+  "modules": ["Branding", "Cookieconsent"],
+  "source_changes": [
+    {
+      "path": "Cookieconsent/Controller/Admin.php",
+      "before": "__trans('Cookie Consent')",
+      "after": "__trans('Cookie Consent', from: 'cookieconsent')"
+    },
+    {
+      "path": "Cookieconsent/Service.php",
+      "before": "$config['message'] ?? 'This website uses cookies. By continuing to use this website, you consent to our use of these cookies.'",
+      "after": "$config['message'] ?? __trans('This website uses cookies. By continuing to use this website, you consent to our use of these cookies.', from: 'cookieconsent')"
+    },
+    {
+      "path": "Cookieconsent/templates/admin/mod_cookieconsent_index.html.twig",
+      "before": "{% else %}This website uses cookies. By continuing to use this website, you consent to our use of these cookies.{% endif %}",
+      "after": "{% else %}{{ 'This website uses cookies. By continuing to use this website, you consent to our use of these cookies.'|trans }}{% endif %}"
+    }
+  ]
+}

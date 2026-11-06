@@ -7,6 +7,7 @@ on:
       - 'src/**/*.twig'
       - '.github/scripts/extract_pot.py'
       - '.github/scripts/module_translations.py'
+      - '.github/scripts/prepare_translation_migration.py'
       - '.github/scripts/requirements-i18n.txt'
       - '.github/scripts/tests/**'
       - 'tools/i18n/**'
