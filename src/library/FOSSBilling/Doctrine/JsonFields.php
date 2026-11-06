@@ -69,6 +69,10 @@ final class JsonFields
         }
         // Only checkbox defaults were collections. JSON-looking text must remain text.
         $decoded = $row['type'] === 'checkbox' ? json_decode($row['value'], true) : null;
+        if (is_array($decoded)) {
+            // Check the source before re-encoding can hide duplicate keys or integer overflow.
+            JsonMigrationValidation::assertCompatible($row['value']);
+        }
 
         return json_encode(is_array($decoded) ? $decoded : $row['value'], JSON_THROW_ON_ERROR);
     }

@@ -279,6 +279,25 @@ test('unchanged checkbox defaults migrate and repeat safely on native databases'
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
 });
 
+test('unsafe checkbox collections are reported before normalization and leave source rows unchanged', function (string $raw): void {
+    $c = $this->connection;
+    $c->executeStatement('CREATE TABLE form_field (id BIGINT PRIMARY KEY, type VARCHAR(30), default_value VARCHAR(255))');
+    $c->insert('form_field', ['id' => 1, 'type' => 'text', 'default_value' => $raw]);
+    $c->insert('form_field', ['id' => 2, 'type' => 'checkbox', 'default_value' => '{"0":"valid"}']);
+    $c->insert('form_field', ['id' => 3, 'type' => 'checkbox', 'default_value' => $raw]);
+    $before = $c->fetchAllAssociative('SELECT * FROM form_field ORDER BY id');
+    $issues = iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field'));
+    expect($issues)->toHaveCount(1)
+        ->and((int) $issues[0]['id'])->toBe(3)
+        ->and($issues[0]['column'])->toBe('default_value')
+        ->and(json_encode($issues, JSON_THROW_ON_ERROR))->not->toContain('private-secret');
+    expect(fn () => (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt()))
+        ->toThrow(JsonMigrationException::class, 'JSON preflight failed for form_field.default_value id=3');
+    expect($c->fetchAllAssociative('SELECT * FROM form_field ORDER BY id'))->toBe($before)
+        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, 'prepared:form_field.default_value:1'))->toBeFalse()
+        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
+})->with(['{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}']);
+
 test('fresh JSON mappings preserve form defaults through later automatic upgrades', function (): void {
     $c = $this->connection;
     $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
