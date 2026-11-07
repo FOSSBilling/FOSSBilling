@@ -125,7 +125,7 @@ final class Catalogue
             "Content-Type: text/plain; charset=UTF-8\n"
             "Content-Transfer-Encoding: 8bit\n"
             "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
-            "X-Generator: FOSSBilling extract_pot.php\n"
+            "X-Generator: FOSSBilling i18n\n"
 
             POT;
         $output = sprintf($header, self::escape($project), gmdate('Y-m-d H:i+0000'));

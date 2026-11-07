@@ -5,8 +5,6 @@ on:
     paths:
       - 'src/**/*.php'
       - 'src/**/*.twig'
-      - '.github/scripts/extract_pot.php'
-      - '.github/scripts/module_translations.php'
       - 'tools/i18n/**'
       - '.github/workflows/i18n-pot-check.yml'
 
@@ -39,12 +37,12 @@ jobs:
         run: composer install --working-dir=tools/i18n --no-interaction --no-progress
 
       - name: 'Extract msgids (head)'
-        run: php .github/scripts/extract_pot.php src /tmp/head.pot
+        run: php tools/i18n/console.php extract src /tmp/head.pot
 
       - name: 'Extract msgids (base)'
         run: |
           git worktree add /tmp/base "${{ github.event.pull_request.base.sha }}"
-          php .github/scripts/extract_pot.php /tmp/base/src /tmp/base.pot
+          php tools/i18n/console.php extract /tmp/base/src /tmp/base.pot
           git worktree remove --force /tmp/base
 
       - name: 'Install translation test dependencies'
@@ -57,7 +55,7 @@ jobs:
       - name: 'Compare'
         id: diff
         run: |
-          php .github/scripts/extract_pot.php --diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt 2>&1 || true
+          php tools/i18n/console.php diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt 2>&1 || true
           {
             echo 'body<<EOF'
             cat /tmp/pot-diff.txt

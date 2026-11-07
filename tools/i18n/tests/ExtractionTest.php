@@ -36,8 +36,8 @@ test('retains PHP extraction counters for ternaries and denied constructors', fu
 test('rejects invalid Twig and unknown extension tags without overwriting templates', function (string $code): void {
     $this->fixture->write('input/page.twig', $code);
     $target = $this->fixture->write('messages.pot', 'keep this template');
-    $result = $this->fixture->cli([$this->fixture->root . '/input', $target]);
-    expect($result->getExitCode())->toBe(1)->and($result->getErrorOutput())->toContain('error:')->and((new Symfony\Component\Filesystem\Filesystem())->readFile($target))->toBe('keep this template');
+    $result = $this->fixture->cli(['extract', $this->fixture->root . '/input', $target]);
+    expect($result->getExitCode())->toBe(1)->and($result->getErrorOutput())->not->toBeEmpty()->and((new Symfony\Component\Filesystem\Filesystem())->readFile($target))->toBe('keep this template');
 })->with(["{% if flag %}{{ 'Save'|trans }}", "{% custom_tag %}{{ 'Save'|trans }}"]);
 
 test('extracts parenthesized and binary string literals', function (): void {

@@ -51,10 +51,10 @@ final class TranslationFixture
         $this->write('modules/Other/templates/page.twig', "{{ 'Other'|trans }} {{ 'Hello :name'|trans }}");
     }
 
-    public function cli(array $arguments, bool $modules = false, array $env = []): Process
+    public function cli(array $arguments, array $env = []): Process
     {
         $repo = dirname(__DIR__, 3);
-        $process = new Process([PHP_BINARY, Path::join($repo, '.github/scripts/' . ($modules ? 'module_translations.php' : 'extract_pot.php')), ...$arguments], $repo, $env);
+        $process = new Process([PHP_BINARY, Path::join($repo, 'tools/i18n/console.php'), ...$arguments], $repo, ['COLUMNS' => '1000', ...$env]);
         $process->run();
 
         return $process;
@@ -62,17 +62,17 @@ final class TranslationFixture
 
     public function extract(array $extra = [], ?string $root = null): Process
     {
-        return $this->cli(['--modules', $root ?? $this->modules, '--core-pot', $this->core, '--output', $this->templates, ...$extra]);
+        return $this->cli(['extract-modules', $root ?? $this->modules, $this->core, $this->templates, ...$extra]);
     }
 
     public function translate(string $command, array $env = [], ?string $output = null): Process
     {
-        $arguments = [$command, $this->modules, '--templates', $this->templates];
+        $arguments = [$command, $this->modules, $this->templates];
         if ($command === 'compile') {
-            array_push($arguments, '--output', $output ?? $this->build);
+            $arguments[] = $output ?? $this->build;
         }
 
-        return $this->cli($arguments, true, $env);
+        return $this->cli($arguments, $env);
     }
 
     public function template(string $module = 'Example'): string

@@ -78,29 +78,29 @@ final class Extractor
         $raw = \PhpToken::tokenize($code);
         $count = count($raw);
         for ($i = 0; $i < $count; ++$i) {
-            $t = $raw[$i];
-            if ($t->is([T_WHITESPACE, T_COMMENT, T_DOC_COMMENT, T_OPEN_TAG, T_OPEN_TAG_WITH_ECHO, T_CLOSE_TAG, T_INLINE_HTML])) {
+            $token = $raw[$i];
+            if ($token->is([T_WHITESPACE, T_COMMENT, T_DOC_COMMENT, T_OPEN_TAG, T_OPEN_TAG_WITH_ECHO, T_CLOSE_TAG, T_INLINE_HTML])) {
                 continue;
             }
             // Dynamic quoted strings and heredocs are opaque, matching current extraction policy.
-            if ($t->text === '"' || $t->id === T_START_HEREDOC || $t->text === '`') {
-                $end = $t->id === T_START_HEREDOC ? T_END_HEREDOC : $t->text;
+            if ($token->text === '"' || $token->id === T_START_HEREDOC || $token->text === '`') {
+                $end = $token->id === T_START_HEREDOC ? T_END_HEREDOC : $token->text;
                 while (++$i < $count && !$raw[$i]->is($end)) {
                 }
-                $result[] = new \PhpToken(T_ENCAPSED_AND_WHITESPACE, '__dynamic__', $t->line, $t->pos);
+                $result[] = new \PhpToken(T_ENCAPSED_AND_WHITESPACE, '__dynamic__', $token->line, $token->pos);
             } else {
-                $result[] = $t;
+                $result[] = $token;
             }
         }
 
         return $result;
     }
 
-    private static function pairs(array $t): array
+    private static function pairs(array $tokens): array
     {
         $stack = [];
         $pairs = [];
-        foreach ($t as $i => $token) {
+        foreach ($tokens as $i => $token) {
             if (in_array($token->text, ['(', '[', '{', '#['], true)) {
                 $stack[] = $i;
             } elseif (in_array($token->text, [')', ']', '}'], true) && $stack) {
@@ -112,27 +112,27 @@ final class Extractor
         return $pairs;
     }
 
-    private static function arguments(array $t, int $open, array $p): ?array
+    private static function arguments(array $tokens, int $open, array $pairs): ?array
     {
-        if (!isset($p[$open])) {
+        if (!isset($pairs[$open])) {
             return null;
         }
         $result = [];
         $start = $open + 1;
-        $end = $p[$open];
+        $end = $pairs[$open];
         for ($i = $start; $i < $end; ++$i) {
-            if (isset($p[$i])) {
-                $i = $p[$i];
+            if (isset($pairs[$i])) {
+                $i = $pairs[$i];
 
                 continue;
             }
-            if ($t[$i]->text === ',') {
-                $result[] = array_slice($t, $start, $i - $start);
+            if ($tokens[$i]->text === ',') {
+                $result[] = array_slice($tokens, $start, $i - $start);
                 $start = $i + 1;
             }
         }
         if ($start < $end) {
-            $result[] = array_slice($t, $start, $end - $start);
+            $result[] = array_slice($tokens, $start, $end - $start);
         }
 
         return $result;
@@ -173,57 +173,57 @@ final class Extractor
         return $tokens;
     }
 
-    private static function literal(array $t): ?string
+    private static function literal(array $tokens): ?string
     {
-        $t = self::ungroup($t);
-        if (count($t) !== 1 || $t[0]->id !== T_CONSTANT_ENCAPSED_STRING) {
+        $tokens = self::ungroup($tokens);
+        if (count($tokens) !== 1 || $tokens[0]->id !== T_CONSTANT_ENCAPSED_STRING) {
             return null;
         }
-        $s = $t[0]->text;
-        if ($s[0] === 'b' || $s[0] === 'B') {
-            $s = substr($s, 1);
+        $literal = $tokens[0]->text;
+        if ($literal[0] === 'b' || $literal[0] === 'B') {
+            $literal = substr($literal, 1);
         }
-        $body = substr($s, 1, -1);
-        if ($s[0] === "'") {
+        $body = substr($literal, 1, -1);
+        if ($literal[0] === "'") {
             return str_replace(['\\\\', "\\'", "\0"], ["\0", "'", '\\'], $body);
         }
 
         // PhpToken retains string spelling; decode PHP escapes without evaluating source.
-        return preg_replace_callback('/\\\\(u\{[0-9A-Fa-f]+\}|x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|.)/s', function ($m) {
+        return preg_replace_callback('/\\\\(u\{[0-9A-Fa-f]+\}|x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|.)/s', function ($match) {
             $escapes = ['n' => "\n", 'r' => "\r", 't' => "\t", 'v' => "\v", 'e' => "\x1b", 'f' => "\f", '\\' => '\\', '$' => '$', '"' => '"'];
-            if (str_starts_with($m[1], 'u{')) {
-                return mb_chr(hexdec(substr($m[1], 2, -1)), 'UTF-8');
+            if (str_starts_with($match[1], 'u{')) {
+                return mb_chr(hexdec(substr($match[1], 2, -1)), 'UTF-8');
             }
 
-            return $escapes[$m[1]] ?? (str_starts_with($m[1], 'x') ? chr(hexdec(substr($m[1], 1))) : (ctype_digit($m[1][0]) ? chr(octdec($m[1]) & 255) : $m[0]));
+            return $escapes[$match[1]] ?? (str_starts_with($match[1], 'x') ? chr(hexdec(substr($match[1], 1))) : (ctype_digit($match[1][0]) ? chr(octdec($match[1]) & 255) : $match[0]));
         }, $body);
     }
 
-    private static function messages(array $t, bool $ternary): ?array
+    private static function messages(array $tokens, bool $ternary): ?array
     {
-        $t = self::ungroup($t);
-        if (($value = self::literal($t)) !== null) {
+        $tokens = self::ungroup($tokens);
+        if (($value = self::literal($tokens)) !== null) {
             return [$value];
         }
         if (!$ternary) {
             return null;
         }
-        $p = self::pairs($t);
-        for ($i = 0; $i < count($t); ++$i) {
-            if (isset($p[$i])) {
-                $i = $p[$i];
+        $pairs = self::pairs($tokens);
+        for ($i = 0; $i < count($tokens); ++$i) {
+            if (isset($pairs[$i])) {
+                $i = $pairs[$i];
 
                 continue;
             }
-            if ($t[$i]->id === T_DOUBLE_ARROW) {
+            if ($tokens[$i]->id === T_DOUBLE_ARROW) {
                 return null;
             }
-            if ($t[$i]->text === '?') {
-                if (($t[$i + 2]->text ?? '') !== ':') {
+            if ($tokens[$i]->text === '?') {
+                if (($tokens[$i + 2]->text ?? '') !== ':') {
                     return null;
                 }
-                $a = self::literal(array_slice($t, $i + 1, 1));
-                $b = self::literal(array_slice($t, $i + 3));
+                $a = self::literal(array_slice($tokens, $i + 1, 1));
+                $b = self::literal(array_slice($tokens, $i + 3));
 
                 return $a !== null && $b !== null ? [$a, $b] : null;
             }
@@ -232,16 +232,16 @@ final class Extractor
         return null;
     }
 
-    private static function source(?array $t, string $default): string
+    private static function source(?array $tokens, string $default): string
     {
-        if ($t === null) {
+        if ($tokens === null) {
             return $default;
         }
-        $t = self::ungroup($t);
-        if (count($t) === 1 && strtolower($t[0]->text) === 'null') {
+        $tokens = self::ungroup($tokens);
+        if (count($tokens) === 1 && strtolower($tokens[0]->text) === 'null') {
             return 'core';
         }
-        $s = self::literal($t);
+        $s = self::literal($tokens);
         if ($s !== null && preg_match('/\A[a-z][a-z0-9_-]*\z/', $s)) {
             return $s;
         }
@@ -267,33 +267,33 @@ final class Extractor
 
     private static function context(string $code): array
     {
-        $t = self::tokens($code);
-        $p = self::pairs($t);
-        $c = ['tokens' => $t, 'pairs' => $p, 'namespace' => '', 'aliases' => [], 'classes' => []];
-        foreach ($t as $i => $token) {
-            if ($token->id === T_NAMESPACE && $c['namespace'] === '') {
-                $c['namespace'] = strtolower($t[$i + 1]->text);
+        $tokens = self::tokens($code);
+        $pairs = self::pairs($tokens);
+        $context = ['tokens' => $tokens, 'pairs' => $pairs, 'namespace' => '', 'aliases' => [], 'classes' => []];
+        foreach ($tokens as $i => $token) {
+            if ($token->id === T_NAMESPACE && $context['namespace'] === '') {
+                $context['namespace'] = strtolower($tokens[$i + 1]->text);
             }
-            if ($token->id !== T_CLASS || ($t[$i + 1]->id ?? 0) !== T_STRING) {
+            if ($token->id !== T_CLASS || ($tokens[$i + 1]->id ?? 0) !== T_STRING) {
                 continue;
             }
             $j = $i + 2;
             $parent = '';
-            if (($t[$j]->id ?? 0) === T_EXTENDS) {
-                $parent = $t[++$j]->text;
+            if (($tokens[$j]->id ?? 0) === T_EXTENDS) {
+                $parent = $tokens[++$j]->text;
                 ++$j;
             }
-            while (isset($t[$j]) && $t[$j]->text !== '{') {
+            while (isset($tokens[$j]) && $tokens[$j]->text !== '{') {
                 ++$j;
             }
-            if (!isset($p[$j])) {
+            if (!isset($pairs[$j])) {
                 continue;
             }
             $parameters = null;
-            for ($k = $j + 1; $k < $p[$j]; ++$k) {
-                if ($t[$k]->id === T_FUNCTION && strtolower($t[$k + 1]->text ?? '') === '__construct') {
+            for ($k = $j + 1; $k < $pairs[$j]; ++$k) {
+                if ($tokens[$k]->id === T_FUNCTION && strtolower($tokens[$k + 1]->text ?? '') === '__construct') {
                     $parameters = [];
-                    foreach (self::arguments($t, $k + 2, $p) ?? [] as $arg) {
+                    foreach (self::arguments($tokens, $k + 2, $pairs) ?? [] as $arg) {
                         foreach ($arg as $parameter) {
                             if ($parameter->id === T_VARIABLE) {
                                 $parameters[] = substr($parameter->text, 1);
@@ -306,56 +306,56 @@ final class Extractor
                     break;
                 }
             }
-            $c['classes'][] = ['name' => strtolower(($c['namespace'] ? $c['namespace'] . '\\' : '') . $t[$i + 1]->text), 'parentRaw' => $parent, 'parameters' => $parameters, 'start' => $i, 'end' => $p[$j]];
+            $context['classes'][] = ['name' => strtolower(($context['namespace'] ? $context['namespace'] . '\\' : '') . $tokens[$i + 1]->text), 'parentRaw' => $parent, 'parameters' => $parameters, 'start' => $i, 'end' => $pairs[$j]];
         }
-        foreach ($t as $i => $token) {
-            if ($token->id !== T_USE || ($t[$i + 1]->id ?? 0) === T_FUNCTION || ($t[$i + 1]->id ?? 0) === T_CONST) {
+        foreach ($tokens as $i => $token) {
+            if ($token->id !== T_USE || ($tokens[$i + 1]->id ?? 0) === T_FUNCTION || ($tokens[$i + 1]->id ?? 0) === T_CONST) {
                 continue;
             }
-            foreach ($c['classes'] as $class) {
+            foreach ($context['classes'] as $class) {
                 if ($class['start'] < $i && $i < $class['end']) {
                     continue 2;
                 }
             }
             $raw = '';
-            for ($j = $i + 1; isset($t[$j]) && $t[$j]->text !== ';'; ++$j) {
-                $raw .= $t[$j]->id === T_AS ? ' as ' : $t[$j]->text;
+            for ($j = $i + 1; isset($tokens[$j]) && $tokens[$j]->text !== ';'; ++$j) {
+                $raw .= $tokens[$j]->id === T_AS ? ' as ' : $tokens[$j]->text;
             }
             $prefix = '';
-            if (preg_match('/^(.*\\\\)\{(.*)\}$/s', $raw, $m)) {
-                $prefix = $m[1];
-                $raw = $m[2];
+            if (preg_match('/^(.*\\\\)\{(.*)\}$/s', $raw, $match)) {
+                $prefix = $match[1];
+                $raw = $match[2];
             }
             foreach (explode(',', $raw) as $item) {
                 $parts = preg_split('/\s+as\s+/i', trim($item));
                 $name = ltrim($prefix . $parts[0], '\\');
                 $short = explode('\\', $name);
                 $alias = $parts[1] ?? end($short);
-                $c['aliases'][strtolower($alias)] = strtolower($name);
+                $context['aliases'][strtolower($alias)] = strtolower($name);
             }
         }
-        foreach ($c['classes'] as &$class) {
-            $class['parent'] = $class['parentRaw'] ? self::resolveName($class['parentRaw'], $c) : '';
+        foreach ($context['classes'] as &$class) {
+            $class['parent'] = $class['parentRaw'] ? self::resolveName($class['parentRaw'], $context) : '';
         }
 
-        return $c;
+        return $context;
     }
 
     private static function signatures(array $contexts): array
     {
         $base = ['message', 'variables', 'code', 'protected', 'from'];
         $adapter = ['message', 'variables', 'code', 'from'];
-        $s = [];
+        $signatures = [];
         foreach (['baseexception', 'informationexception', 'fossbilling\\core\\exception\\baseexception', 'fossbilling\\core\\exception\\informationexception'] as $name) {
-            $s[$name] = $base;
+            $signatures[$name] = $base;
         }
         foreach (['payment_exception', 'registrar_exception', 'server_exception'] as $name) {
-            $s[$name] = $adapter;
+            $signatures[$name] = $adapter;
         }
         $pending = [];
-        foreach ($contexts as $c) {
-            foreach ($c['classes'] as $class) {
-                if (!array_key_exists($class['name'], $s)) {
+        foreach ($contexts as $context) {
+            foreach ($context['classes'] as $class) {
+                if (!array_key_exists($class['name'], $signatures)) {
                     $pending[] = $class;
                 }
             }
@@ -363,48 +363,48 @@ final class Extractor
         do {
             $changed = false;
             foreach ($pending as $i => $class) {
-                if (array_key_exists($class['parent'], $s) && $s[$class['parent']] !== null) {
-                    $s[$class['name']] = $class['parameters'] ?? $s[$class['parent']];
+                if (array_key_exists($class['parent'], $signatures) && $signatures[$class['parent']] !== null) {
+                    $signatures[$class['name']] = $class['parameters'] ?? $signatures[$class['parent']];
                     unset($pending[$i]);
                     $changed = true;
                 }
             }
         } while ($changed);
         foreach ($pending as $class) {
-            $s[$class['name']] = null;
+            $signatures[$class['name']] = null;
         }
 
-        return $s;
+        return $signatures;
     }
 
-    private static function phpOccurrences(string $rel, array $c, array $signatures, array &$out, array &$errors, array &$stats): void
+    private static function phpOccurrences(string $rel, array $context, array $signatures, array &$out, array &$errors, array &$stats): void
     {
-        $t = $c['tokens'];
-        $p = $c['pairs'];
+        $tokens = $context['tokens'];
+        $pairs = $context['pairs'];
         $deny = array_map('strtolower', ['DateTime', 'DateTimeImmutable', 'DateTimeZone', 'DateInterval', 'DatePeriod', 'Response', 'RedirectResponse', 'DOMDocument', 'PDO', 'ReflectionClass', 'AuthenticationRequiredException']);
-        foreach ($t as $i => $token) {
+        foreach ($tokens as $i => $token) {
             $name = null;
             $short = null;
             $constructor = '';
             $open = null;
             $acceptsSource = true;
-            if (in_array(ltrim($token->text, '\\'), ['__trans', '__pluralTrans'], true) && ($t[$i + 1]->text ?? '') === '(' && ($t[$i - 1]->id ?? 0) !== T_FUNCTION) {
+            if (in_array(ltrim($token->text, '\\'), ['__trans', '__pluralTrans'], true) && ($tokens[$i + 1]->text ?? '') === '(' && ($tokens[$i - 1]->id ?? 0) !== T_FUNCTION) {
                 $name = ltrim($token->text, '\\');
                 $open = $i + 1;
-            } elseif ($token->id === T_NEW && isset($t[$i + 1]) && ($t[$i + 2]->text ?? '') === '(') {
-                $parts = explode('\\', $t[$i + 1]->text);
+            } elseif ($token->id === T_NEW && isset($tokens[$i + 1]) && ($tokens[$i + 2]->text ?? '') === '(') {
+                $parts = explode('\\', $tokens[$i + 1]->text);
                 $short = end($parts);
                 if (in_array(strtolower($short), $deny, true) || strtolower($short) === 'class') {
                     ++$stats['skipped_ctor'];
 
                     continue;
                 }
-                $constructor = self::resolveName($t[$i + 1]->text, $c);
+                $constructor = self::resolveName($tokens[$i + 1]->text, $context);
                 $open = $i + 2;
-            } elseif (in_array(strtolower($token->text), ['parent', 'self', 'static'], true) && ($t[$i + 1]->id ?? 0) === T_DOUBLE_COLON && strtolower($t[$i + 2]->text ?? '') === '__construct' && ($t[$i + 3]->text ?? '') === '(') {
+            } elseif (in_array(strtolower($token->text), ['parent', 'self', 'static'], true) && ($tokens[$i + 1]->id ?? 0) === T_DOUBLE_COLON && strtolower($tokens[$i + 2]->text ?? '') === '__construct' && ($tokens[$i + 3]->text ?? '') === '(') {
                 $short = '__construct';
                 $open = $i + 3;
-                foreach (array_reverse($c['classes']) as $class) {
+                foreach (array_reverse($context['classes']) as $class) {
                     if ($class['start'] < $i && $i < $class['end']) {
                         $constructor = strtolower($token->text) === 'parent' ? $class['parent'] : $class['name'];
 
@@ -426,7 +426,7 @@ final class Extractor
             $ref = $rel . ':' . $token->line;
 
             try {
-                $args = self::arguments($t, $open, $p);
+                $args = self::arguments($tokens, $open, $pairs);
                 if ($args === null) {
                     throw new \RuntimeException('unbalanced translation arguments');
                 }
@@ -487,28 +487,14 @@ final class Extractor
                     $ref = $rel . ':' . $value->getTemplateLine();
 
                     try {
-                        $bound = [];
-                        $named = false;
-                        foreach ($node->getNode('arguments') as $key => $arg) {
-                            if (is_int($key) || ctype_digit((string) $key)) {
-                                if ($named) {
-                                    throw new \RuntimeException('positional argument after named argument');
-                                }
-                                $key = ['values', 'from'][(int) $key] ?? (string) $key;
-                            } else {
-                                $named = true;
-                            }
-                            if (isset($bound[$key])) {
-                                throw new \RuntimeException("duplicate argument '$key'");
-                            }
-                            $bound[$key] = $arg;
-                        }
+                        $arguments = $node->getNode('arguments');
+                        $source = $arguments->hasNode('from') ? $arguments->getNode('from') : ($arguments->hasNode('1') ? $arguments->getNode('1') : null);
                         $from = $module ?? 'core';
-                        if (isset($bound['from'])) {
-                            if (!$bound['from'] instanceof ConstantExpression) {
+                        if ($source !== null) {
+                            if (!$source instanceof ConstantExpression) {
                                 throw new \RuntimeException('from must be a literal lowercase source ID or null');
                             }
-                            $from = $bound['from']->getAttribute('value');
+                            $from = $source->getAttribute('value');
                             if ($from === null) {
                                 $from = 'core';
                             } elseif (!is_string($from) || !preg_match('/\A[a-z][a-z0-9_-]*\z/', $from)) {

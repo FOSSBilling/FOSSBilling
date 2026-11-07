@@ -6,6 +6,7 @@
         "php": ">=8.3",
         "ext-mbstring": "*",
         "ext-tokenizer": "*",
+        "symfony/console": "^7.4",
         "symfony/filesystem": "^7.4",
         "symfony/finder": "^7.4",
         "symfony/process": "^7.4",
