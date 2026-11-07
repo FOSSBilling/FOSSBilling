@@ -263,6 +263,8 @@ test('exports template comparisons as JSON without counting metadata changes', f
     $diff = json_decode($json->getOutput(), true, flags: JSON_THROW_ON_ERROR);
     $text = $f->cli(['diff', $old, $new]);
     $this->assertSame(0, $text->getExitCode(), $text->getErrorOutput());
+    $invalid = $f->cli(['diff', $old, $new, '--format=invalid']);
+    expect($invalid->getExitCode())->not->toBe(0);
     expect($diff['report'])->toBe($text->getOutput());
     unset($diff['report']);
     expect($diff)->toBe($expected);
