@@ -73,11 +73,13 @@ class Fingerprint
             ],
             'platform' => [
                 'source' => $this->request->headers->get('Sec-Ch-Ua-Platform', ''),
-                'weight' => 100, // Should more-or-less match the 'OS'. This also should never randomly change
+                'weight' => 100, // Reject conflicting platforms when both requests supply one.
+                'optional' => true,
             ],
             'mobile' => [
                 'source' => $this->request->headers->get('Sec-Ch-Ua-Mobile', ''),
                 'weight' => 2,
+                'optional' => true,
             ],
             'geoIpCountry' => [
                 'source' => $this->getIpCountry($clientIp),
@@ -91,15 +93,17 @@ class Fingerprint
     }
 
     /**
-     * Generates a fingerprint for the device that made the request to the server.
+     * Generates a fingerprint, retaining previously supplied optional hints when omitted.
      */
-    public function fingerprint(): array
+    public function fingerprint(array $previousFingerprint = []): array
     {
         $fingerprint = [];
 
         foreach ($this->fingerprintProperties as $name => $properties) {
             if (!empty($properties['source'])) {
                 $fingerprint[$name] = hash('md5', (string) $properties['source']);
+            } elseif (($properties['optional'] ?? false) && isset($previousFingerprint[$name])) {
+                $fingerprint[$name] = $previousFingerprint[$name];
             }
         }
 
@@ -111,7 +115,8 @@ class Fingerprint
      * This function creates a baseline "score" with the total of properties in the fingerprint. The final score must be at least half of the baseline.
      *      - Each property can define a weight. For example, if the IP address doesn't match and the weight is set to 3, 3 will be selected from the total.
      *          - This means with a total of 9 properties, the IP address being wrong would effectively be weighted as 3 properties and only two more differing properties will make it fail the check.
-     *      - If any property is found in one of the fingerprints and not the other, the baseline is incremented and the final score is decreased by its weight.
+     *      - If a property is found in one fingerprint only, it counts as a difference unless it is optional.
+     *      - Optional Client Hints are compared only when present in both fingerprints.
      *
      * @return bool `true` if the fingerprint passes, `false` if it's considered invalid
      */
@@ -124,6 +129,10 @@ class Fingerprint
         foreach ($this->fingerprintProperties as $name => $properties) {
             $existsInFingerprint = array_key_exists($name, $fingerprint);
             $existsInCurrentFingerprint = !empty($properties['source']);
+
+            if (($properties['optional'] ?? false) && (!$existsInFingerprint || !$existsInCurrentFingerprint)) {
+                continue;
+            }
 
             if ((!$existsInFingerprint && $existsInCurrentFingerprint) || ($existsInFingerprint && !$existsInCurrentFingerprint)) {
                 // The property exists in one fingerprint and not the other, so we increment the total count and deduct from the score.

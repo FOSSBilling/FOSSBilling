@@ -22,7 +22,6 @@ use Box\Mod\Servicedomain\Repository\DomainRepository;
 use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Core\SecretConfig;
 use FOSSBilling\Core\SortOptions;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
@@ -1203,11 +1202,42 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $this->getTldRegistrarRepository()->findActiveRegistrar();
     }
 
+    private function secretCodec(): \FOSSBilling\Core\Security\SecretFields
+    {
+        return new \FOSSBilling\Core\Security\SecretFields($this->di['crypt']);
+    }
+
+    public function migrateConfigSecrets(bool $onlyPlaintext = false): void
+    {
+        foreach ($this->getTldRegistrarRepository()->findAll() as $model) {
+            $stored = $model->getConfig() ?? [];
+
+            try {
+                $fields = $this->resolveRegistrarSecretFields($model, $this->registrarGetRegistrarAdapterConfig($model));
+            } catch (\FOSSBilling\Core\Exception\BaseException) {
+                $this->di['logger']->warning('Credential encryption deferred for unavailable registrar adapter #{id}', ['id' => $model->getId()]);
+
+                continue;
+            }
+            $protected = $onlyPlaintext
+                ? array_replace($stored, $this->secretCodec()->store(array_filter($stored, is_string(...)), $fields))
+                : $this->secretCodec()->store($stored, $fields);
+            if ($protected !== $stored) {
+                $model->setConfig($protected);
+            }
+        }
+        $this->di['em']->flush();
+    }
+
+    #[AsEventListener(priority: 100)]
+    public function retryDeferredConfigSecrets(BeforeAdminCronRunEvent $event): void
+    {
+        $this->migrateConfigSecrets(onlyPlaintext: true);
+    }
+
     public function registrarGetConfiguration(TldRegistrar $model): array
     {
-        $config = json_decode($model->getConfig() ?? '', true) ?? [];
-
-        return SecretConfig::decryptMarkedValues($config, $this->di['crypt']);
+        return $this->secretCodec()->reveal($model->getConfig() ?? []);
     }
 
     public function registrarGetRegistrarAdapterConfig(TldRegistrar $model)
@@ -1331,7 +1361,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $model->setName($data['title'] ?? $model->getName());
         $model->setTestMode(array_key_exists('test_mode', $data) ? (bool) $data['test_mode'] : $model->isTestMode());
         if (isset($data['config']) && is_array($data['config'])) {
-            $existingConfiguration = $this->registrarGetConfiguration($model);
+            $existingConfiguration = $model->getConfig() ?? [];
             $configuration = $existingConfiguration;
             $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
             $secretFields = $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
@@ -1348,7 +1378,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 }
             }
 
-            $model->setConfig(json_encode(SecretConfig::encryptSecretFields($configuration, $secretFields, $this->di['crypt']), JSON_THROW_ON_ERROR));
+            $model->setConfig($this->secretCodec()->store($configuration, $secretFields));
             $this->registrarValidateConfiguration($model);
         }
 
@@ -1415,7 +1445,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $c = $this->registrarGetRegistrarAdapterConfig($model);
 
-        $config = $this->registrarGetConfiguration($model);
+        $config = $model->getConfig() ?? [];
         $secretFields = $this->resolveRegistrarSecretFields($model, $c);
         foreach ($secretFields as $field) {
             $value = $config[$field] ?? null;
@@ -1472,7 +1502,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 $declared = $class::getSecretFields();
                 $secrets = array_merge($secrets, $declared);
             }
-        } catch (\Throwable) {
+        } catch (\FOSSBilling\Core\Exception\BaseException) {
             // Registrar adapter could not be resolved; fall back to the form's own 'secret' flags below.
         }
 
@@ -1486,7 +1516,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             }
         }
 
-        return array_values(array_unique($secrets));
+        return array_values(array_unique([...$secrets, ...$this->secretCodec()->names($model->getConfig() ?? [])]));
     }
 
     public function updateDomain(ServiceDomain $s, $data): bool

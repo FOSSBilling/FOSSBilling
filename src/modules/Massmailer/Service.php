@@ -127,7 +127,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $filter = $this->normalizeFilter($model->getFilter(), true);
 
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->di['em']->getConnection()->createQueryBuilder();
         $query
             ->select('DISTINCT c.id, c.email')
             ->from('client', 'c')
@@ -157,19 +157,6 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function normalizeFilter(mixed $filter, bool $strict = false): array
     {
-        if (is_string($filter)) {
-            $filter = trim($filter);
-            if ($filter === '') {
-                return [];
-            }
-
-            try {
-                $filter = json_decode($filter, true, 512, JSON_THROW_ON_ERROR);
-            } catch (\JsonException) {
-                return $this->handleInvalidFilter('filter', $strict);
-            }
-        }
-
         if ($filter === null) {
             return [];
         }
@@ -210,11 +197,6 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         );
 
         return array_filter($normalized, static fn (array $values): bool => $values !== []);
-    }
-
-    public function serializeFilter(mixed $filter): string
-    {
-        return json_encode($this->normalizeFilter($filter, true), JSON_THROW_ON_ERROR);
     }
 
     public function getParsed(MassmailerMessage $model, int $client_id): array
@@ -369,7 +351,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     private function getExistingIds(string $table, array $ids): array
     {
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->di['em']->getConnection()->createQueryBuilder();
         $query
             ->select('id')
             ->from($table)

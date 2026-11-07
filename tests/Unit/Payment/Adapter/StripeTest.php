@@ -669,7 +669,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $invoiceService->shouldReceive('issueInvoice')->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService, $invoiceService) {
             if ($service === 'Transaction') {
@@ -774,7 +774,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'in_456', 1);
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
             'Transaction' => $transactionService,
@@ -851,7 +851,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'in_renewal_1', 1);
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
@@ -910,7 +910,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'in_init_dup', 1);
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
@@ -966,7 +966,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'in_missing_reason', 1);
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
@@ -1169,7 +1169,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'in_1TnBdC', 4);
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
             'Transaction' => $transactionService,
@@ -1221,7 +1221,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             ->andReturn($existingTx);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $this->adapter->setDi($di);
 
@@ -1289,7 +1289,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             ->andReturn(null);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {
             $service === 'Transaction' => $transactionService,
@@ -1404,7 +1404,7 @@ describe('processPaymentIntent', function (): void {
         $em->shouldReceive('flush')->once();
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $this->adapter->setDi($di);
 
@@ -1624,7 +1624,7 @@ test('releases the Stripe object lock when processing fails', function (): void 
     expectStripeObjectLock($dbalMock, 'pi_failure', 2);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $this->adapter->setDi($di);
 
     expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withStripeObjectLock', [
@@ -1646,7 +1646,7 @@ test('logs Stripe object lock timeouts with lock context', function (): void {
 
     $logger = new Tests\Helpers\TestLogger();
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $di['logger'] = $logger;
     $this->adapter->setDi($di);
 
@@ -1738,7 +1738,7 @@ describe('_generateSubscriptionForm', function (): void {
         $dbalMock->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
         $this->adapter->setDi($di);
 
         $html = invokePrivateMethod($this->adapter, '_generateSubscriptionForm', [$invoiceModel]);
@@ -2555,7 +2555,7 @@ describe('Stripe webhook gateway ownership', function (): void {
             ->andReturn('3');
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
         $this->adapter->setDi($di);
 
         expect(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 3]))->toBeTrue()
@@ -2577,7 +2577,7 @@ describe('Stripe webhook gateway ownership', function (): void {
             ->andReturn('3');
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
         $this->adapter->setDi($di);
 
         expect(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 3]))->toBeTrue()
@@ -2894,7 +2894,7 @@ describe('handleRefundCreatedWebhook', function (): void {
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
@@ -2943,7 +2943,7 @@ describe('handleRefundCreatedWebhook', function (): void {
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
@@ -3002,7 +3002,7 @@ describe('handleRefundCreatedWebhook races', function (): void {
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
@@ -3216,7 +3216,7 @@ describe('handleRefundCreatedWebhook invoice payment fallback', function (): voi
         setPrivateProperty($this->adapter, 'stripe', $stripe);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
@@ -3258,7 +3258,7 @@ describe('handleRefundCreatedWebhook invoice payment fallback', function (): voi
         setPrivateProperty($this->adapter, 'stripe', $stripe);
 
         $di = container();
-        $di['dbal'] = $dbalMock;
+        $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);

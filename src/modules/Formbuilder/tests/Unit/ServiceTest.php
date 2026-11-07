@@ -63,15 +63,15 @@ test('adds a new form', function (): void {
     $newFormId = 1;
     $data = [
         'name' => 'testName',
-        'style' => [],
+        'style' => null,
     ];
 
     $dbal = Mockery::mock(Connection::class);
-    $dbal->shouldReceive('insert')->once()->with('form', Mockery::on(fn (array $row): bool => $row['name'] === 'testName'));
+    $dbal->shouldReceive('insert')->once()->with('form', Mockery::on(fn (array $row): bool => $row['name'] === 'testName' && is_array($row['style'])), ['style' => Doctrine\DBAL\Types\Types::JSON]);
     $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFormId);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -93,11 +93,11 @@ test('adds a new field', function (): void {
 
     $dbal = Mockery::mock(Connection::class);
     $dbal->shouldReceive('executeQuery')->once()->andReturn($countResult);
-    $dbal->shouldReceive('insert')->once()->with('form_field', Mockery::on(fn (array $row): bool => $row['form_id'] === 1 && $row['type'] === 'select'));
+    $dbal->shouldReceive('insert')->once()->with('form_field', Mockery::on(fn (array $row): bool => $row['form_id'] === 1 && $row['type'] === 'select'), ['options' => Doctrine\DBAL\Types\Types::JSON, 'default_value' => Doctrine\DBAL\Types\Types::JSON]);
     $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFieldId);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -134,10 +134,10 @@ test('updates a field', function (string $fieldType, int|string $fieldId): void 
 
     $dbal = Mockery::mock(Connection::class);
     $dbal->shouldReceive('executeQuery')->twice()->andReturn($fieldResult, $existsResult);
-    $dbal->shouldReceive('update')->once()->with('form_field', Mockery::type('array'), ['id' => $updateFieldId]);
+    $dbal->shouldReceive('update')->once()->with('form_field', Mockery::type('array'), ['id' => $updateFieldId], ['options' => Doctrine\DBAL\Types\Types::JSON, 'default_value' => Doctrine\DBAL\Types\Types::JSON]);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
@@ -244,13 +244,13 @@ test('throws exception when textarea size is invalid', function (): void {
 test('gets a form', function (): void {
     $service = new Service();
     $modelArray = [
-        'style' => '',
+        'style' => null,
         'id' => 1,
     ];
     $getAllResult = [
         [
             'options' => '{"options":["hidden"]}',
-            'default_value' => 'TestingValue',
+            'default_value' => '"TestingValue"',
         ],
     ];
 
@@ -263,7 +263,7 @@ test('gets a form', function (): void {
     $dbal->shouldReceive('executeQuery')->twice()->andReturn($formResult, $fieldsResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $formId = 1;
 
@@ -282,7 +282,7 @@ test('gets form fields', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($result);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getFormFields($formId);
@@ -299,7 +299,7 @@ test('gets form fields count', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getFormFieldsCount($formId);
@@ -317,7 +317,7 @@ test('gets form pairs', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getFormPairs();
@@ -345,7 +345,7 @@ test('gets a field', function (): void {
     $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getField($fieldId);
@@ -359,7 +359,7 @@ test('removes a form', function (): void {
     $dbal->shouldReceive('executeStatement')->times(4)->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -376,7 +376,7 @@ test('removes a field', function (): void {
     $dbal->shouldReceive('executeStatement')->once()->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -399,7 +399,7 @@ test('checks if form field name exists', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->formFieldNameExists($data);
@@ -415,7 +415,7 @@ test('gets all forms', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
 
     $service->setDi($di);
     $result = $service->getForms();
@@ -468,10 +468,37 @@ test('updates form settings', function (): void {
     $dbal->shouldReceive('update')->once()->andReturn(1);
 
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
     $result = $service->updateFormSettings($data);
     expect($result)->toBeTrue();
 });
+
+test('copying forms keeps structured options and false-like scalar defaults without double encoding', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([
+        $em->getClassMetadata(Box\Mod\Formbuilder\Entity\Form::class),
+        $em->getClassMetadata(Box\Mod\Formbuilder\Entity\FormField::class),
+    ]);
+    $service = new Service();
+    $service->setDi(new Pimple\Container(['em' => $em, 'logger' => new Tests\Helpers\TestLogger()]));
+    $form = $service->addNewForm(['name' => 'Original']);
+    $service->addNewField(['form_id' => $form, 'type' => 'select', 'name' => 'selection', 'options' => ['Custom label' => '0'], 'default_value' => '0']);
+    $copy = $service->duplicateForm(['form_id' => $form, 'name' => 'Copy']);
+    $field = $service->getForm($copy)['fields'][0];
+    expect($field['options'])->toBe(['Custom label' => '0'])->and($field['default_value'])->toBe('0');
+});
+
+test('field writes reject non-array options before saving', function (mixed $options, string $method): void {
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldNotReceive('insert', 'update');
+    $service = new Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
+    $service->setDi($di);
+    expect(fn () => $service->$method(['id' => 1, 'form_id' => 1, 'type' => 'select', 'options' => $options]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Field options must be an array.');
+})->with(['{"Choice":"1"}', 'text', 1, false, null])->with(['addNewField', 'updateField']);

@@ -1,18 +1,17 @@
 # Branding and Cookieconsent translation migration
 
-<!-- cspell:words msgfmt polib -->
+<!-- cspell:words msgfmt msgcat msgattrib -->
 
 This prepares the two-project Crowdin configuration, translation seeds, and a candidate Cookieconsent patch for review. Application modules and live Crowdin settings stay unchanged. The configuration files use `.example.yml` names and no synchronization job reads them.
 
 ## Prepare the bundle
 
-Use the [translation tooling dependencies](../../README.md): Python 3.10+, polib, and GNU gettext. `profile.json` pins `FOSSBilling/locale` to `0f00d645373d9546d741c337d9f9e75fdd5bc6a6`. Supply a clean checkout of that revision with its PO files, `messages.pot`, and licence files:
+Use the [translation tooling dependencies](../../README.md): PHP 8.5 and GNU gettext. The generator also uses Git for snapshot verification and `diff` for the source patch. `profile.json` pins `FOSSBilling/locale` to `0f00d645373d9546d741c337d9f9e75fdd5bc6a6`. Supply a clean checkout of that revision with its PO files, `messages.pot`, and licence files:
 
 ```bash
-python3 .github/scripts/prepare_translation_migration.py \
-  --app-root . \
-  --locale-root /path/to/pinned/locale \
-  --output tools/i18n/migrations/branding-cookieconsent/prepared
+tools/i18n/bin/console prepare-migration \
+  . /path/to/pinned/locale \
+  tools/i18n/migrations/branding-cookieconsent/prepared
 ```
 
 The output must be a new or empty directory outside `src/` and the locale input. Git inputs must match the pin and have no modified, untracked, or ignored translation inputs. Exported snapshots are accepted with their revision marked unverified. The report records input SHA-256 hashes in either case.
@@ -44,14 +43,14 @@ Seeds copy active, context-free entries only when both the message and plural te
 
 Translator comments, flags, translated text, author/team metadata, revision dates, and plural rules are retained. References and module metadata are updated; donor Crowdin IDs are replaced with a pinned revision marker. Source English (`en_US`) is excluded as a target; regional English targets and donor Crowdin language IDs remain in the inventory.
 
-Fuzzy work stays in the module copies for review, is blanked in import copies, and is omitted from compiled output. Intentional translations identical to English are retained. The copied `LICENSE.translations`, `LICENSE.md`, and `TRANSLATION_ATTRIBUTION.md` accompany the candidate modules; code remains Apache-2.0 and translations CC BY 4.0.
+Non-fuzzy plural translations must fill every required form or leave all forms empty, as required by the shared build validator. Fuzzy work stays in the module copies for review, is blanked in import copies, and is omitted from compiled output. Intentional translations identical to English are retained. The copied `LICENSE.translations`, `LICENSE.md`, and `TRANSLATION_ATTRIBUTION.md` accompany the candidate modules; code remains Apache-2.0 and translations CC BY 4.0.
 
 PO files do not carry Crowdin approval state, votes, or complete translation history. Imported seeds need independent review before approval. Keep the original project and its history available for attribution and older releases.
 
 ## Local checks
 
 ```bash
-python3 -m unittest discover -s .github/scripts/tests -p 'test_*.py' -v
+composer test --working-dir=tools/i18n
 
 git apply --check --directory=src/modules \
   tools/i18n/migrations/branding-cookieconsent/prepared/module-source.patch

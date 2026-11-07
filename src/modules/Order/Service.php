@@ -401,7 +401,7 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(Order $model): array
     {
-        return json_decode($model->getConfig() ?? '', true) ?? [];
+        return $model->getConfig() ?? [];
     }
 
     public function productHasOrders(Product $product): bool
@@ -553,7 +553,7 @@ class Service implements InjectionAwareInterface
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
 
-        $data['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+        $data['config'] = $model->getConfig() ?? [];
         $data['total'] = $this->getTotal($model);
         $data['discount'] ??= 0;
         $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
@@ -650,7 +650,7 @@ class Service implements InjectionAwareInterface
         foreach ($orders as $order) {
             $clientId = $order['client_id'];
             $data = $order;
-            $data['config'] = json_decode($order['config'] ?? '', true) ?? [];
+            $data['config'] = json_decode($order['config'] ?? 'null', true, 512, JSON_THROW_ON_ERROR) ?? [];
             $data['total'] = $this->calculateTotal($order['price'], $order['quantity']);
             $data['title'] = $order['title'];
             $data['meta'] = $meta[$order['id']] ?? [];
@@ -964,7 +964,7 @@ class Service implements InjectionAwareInterface
             $order->setServiceType($this->getProductType($product));
             $order->setUnit($this->getProductUnit($product));
             $order->setStatus(Order::STATUS_PENDING_SETUP);
-            $order->setConfig(json_encode($config));
+            $order->setConfig($config);
             $order->setInvoiceOption($invoiceOption);
 
             if ($period) {
@@ -1732,7 +1732,7 @@ class Service implements InjectionAwareInterface
         $order->setSuspendedAt(null);
         $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
-        $this->di['dbal']->executeStatement(
+        $this->di['em']->getConnection()->executeStatement(
             'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
             ['order_id' => $orderId, 'name' => self::META_CANCEL_AT_PERIOD_END],
         );
@@ -1773,7 +1773,7 @@ class Service implements InjectionAwareInterface
 
     public function rmInvoiceItemByOrder(Order $order): void
     {
-        $this->di['dbal']->executeStatement(
+        $this->di['em']->getConnection()->executeStatement(
             'DELETE FROM invoice_item WHERE rel_id = :rel_id AND status = :status',
             [
                 'rel_id' => (string) $this->orderId($order),
@@ -2117,7 +2117,7 @@ class Service implements InjectionAwareInterface
 
         $oldConfig = $order->getConfig();
 
-        $order->setConfig(json_encode($config));
+        $order->setConfig($config);
         $order->setUpdatedAt(new \DateTime());
         $this->di['em']->persist($order);
         $this->di['em']->flush();
@@ -2317,7 +2317,7 @@ class Service implements InjectionAwareInterface
             $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
         }
 
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->di['em']->getConnection()->createQueryBuilder();
         $query
             ->delete('client_order')
             ->where('client_id = :id')

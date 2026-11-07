@@ -76,6 +76,13 @@ class Session implements InjectionAwareInterface
         return $this->session->getId();
     }
 
+    public function save(): void
+    {
+        if ($this->session->isStarted()) {
+            $this->session->save();
+        }
+    }
+
     public function delete(string $key): void
     {
         $this->session->remove($key);
@@ -142,7 +149,7 @@ class Session implements InjectionAwareInterface
         }
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
-        $connection = $this->di['dbal'];
+        $connection = $this->di['em']->getConnection();
 
         try {
             $session = $connection->fetchAssociative('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => $sessionID]);
@@ -165,7 +172,12 @@ class Session implements InjectionAwareInterface
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
             $fingerprint = $currentFingerprint ?? new Fingerprint($this->di['request']);
-            $storedFingerprint = json_decode((string) $session['fingerprint'], true);
+
+            try {
+                $storedFingerprint = json_decode($session['fingerprint'], true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException) {
+                $storedFingerprint = null;
+            }
             if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint, $sessionID)) {
                 $invalid = true;
                 $this->di['logger']->withChannel('security')->warning(
@@ -201,26 +213,29 @@ class Session implements InjectionAwareInterface
             return;
         }
 
-        $connection = $this->di['dbal'];
+        $connection = $this->di['em']->getConnection();
 
         try {
-            $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
+            $session = $connection->fetchAssociative('SELECT fingerprint FROM session WHERE id = :id', ['id' => $sessionID]);
 
-            if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-                $updatedFingerprint = ($currentFingerprint ?? new Fingerprint($this->di['request']))->fingerprint();
-            } else {
-                $updatedFingerprint = [];
-            }
-
-            // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
+            // The installer uses filesystem sessions before the database is set up.
             if ($session === false) {
                 return;
             }
 
+            if (Config::getProperty('security.perform_session_fingerprinting', true)) {
+                $previousFingerprint = json_decode($session['fingerprint'] ?: '[]', true, 512, JSON_THROW_ON_ERROR);
+                $updatedFingerprint = ($currentFingerprint ?? new Fingerprint($this->di['request']))->fingerprint(
+                    is_array($previousFingerprint) ? $previousFingerprint : [],
+                );
+            } else {
+                $updatedFingerprint = [];
+            }
+
             $connection->executeStatement('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
-                'fingerprint' => json_encode($updatedFingerprint, JSON_THROW_ON_ERROR),
+                'fingerprint' => $updatedFingerprint,
                 'id' => $sessionID,
-            ]);
+            ], ['fingerprint' => \Doctrine\DBAL\Types\Types::JSON]);
         } catch (\Doctrine\DBAL\Exception|\JsonException) {
             return;
         }

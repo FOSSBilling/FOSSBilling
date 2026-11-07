@@ -1,78 +1,47 @@
 # Translation tooling
 
-<!-- cspell:words msgfmt Ucfirst mktemp polib venv -->
-
-The tools in `.github/scripts/` require Python 3.10+. For module translations, install GNU gettext (`msgfmt` on `PATH`) and the pinned Python dependency:
+Requires PHP 8.5 with tokenizer and mbstring. Validation and compilation also require GNU gettext (`msgfmt`, `msgcat`, and `msgattrib` on `PATH`). Install the tooling dependencies:
 
 ```bash
-python3 -m venv /tmp/fossbilling-i18n-venv
-. /tmp/fossbilling-i18n-venv/bin/activate
-python3 -m pip install --require-hashes -r .github/scripts/requirements-i18n.txt
+composer install --working-dir=tools/i18n
 ```
 
-## Combined core template
+Use `--no-dev` when tests aren't needed. The tools inspect source without executing PHP files, rendering templates, or loading the application.
 
-The existing command still includes application and bundled-module strings in one template, as required by the current `FOSSBilling/locale` workflow:
+## Commands
 
 ```bash
-python3 .github/scripts/extract_pot.py src /tmp/messages.pot
-python3 .github/scripts/extract_pot.py src /tmp/messages.pot --check
-python3 .github/scripts/extract_pot.py --diff old.pot new.pot
+tools/i18n/bin/console extract src /tmp/messages.pot
+tools/i18n/bin/console extract src /tmp/messages.pot --check
+tools/i18n/bin/console diff old.pot new.pot
+tools/i18n/bin/console diff old.pot new.pot --format=json
+tools/i18n/bin/console extract-modules /path/to/modules /path/to/core/messages.pot /tmp/templates
+tools/i18n/bin/console validate /path/to/modules /tmp/templates
+tools/i18n/bin/console compile /path/to/modules /tmp/templates /tmp/compiled
 ```
 
-`--check` detects changed messages, plural pairs, and references without writing files; it ignores creation dates. `--diff` reports message and plural changes, including casing changes that invalidate existing translations.
+`extract` produces the combined core and bundled-module template used by `FOSSBilling/locale`. `extract-modules` accepts a modules checkout or single module directory and writes `<Module>/locale/<id>.pot` beneath its output directory. Each module needs a v1 manifest and a directory named `Ucfirst(id)`. The core POT must match the module's minimum core version; shared references must match its message and plural pair. Cross-module references require the target module in the input checkout.
 
-## Module templates
+Both extraction commands support `--check`, which reports stale templates without writing and ignores creation dates. `diff` reports added, removed, plural, and casing changes. `--format=json` returns a `changed` flag, counts (`added`, `removed`, `gone`, `casing_only`, `plural_changed`), and the text `report`; dates, references, and entry order do not count as changes. `gone` excludes casing-only replacements. Generation validates all sources before writing, leaves unchanged module templates alone, and rejects conflicting plurals or orphaned templates.
 
-`module_translations.py` uses the [translation source rules](../../CONTRIBUTING.md#translation-lookup-in-code). Each module needs a v1 manifest and a directory named `Ucfirst(id)`. PHP extraction assumes the standard core default; module-owned PHP messages need a literal `from` argument. Dynamic messages are skipped, and ambiguous or invalid sources fail extraction.
+Extraction follows the [translation source rules](../../CONTRIBUTING.md#translation-lookup-in-code). PHP messages default to core; module-owned messages need an explicit literal `from` at the message call site. Constructor defaults and values forwarded through constructor bodies are not inferred. Dynamic messages are skipped. Invalid Twig syntax, unknown tags, and ambiguous translation arguments fail extraction. Unknown filter, function, and test names are accepted as inert parsing declarations; custom tags need explicit registration.
 
-Pass a core POT snapshot from a pinned revision compatible with the module's minimum core version. Shared core references must match its message and plural pair. Cross-module references require the target module in the input checkout; identical wording can belong to more than one module.
+## Module translations
 
-```bash
-CORE_TOOLS="/path/to/pinned/FOSSBilling/.github/scripts"
-MODULES_ROOT="/path/to/modules"
-CORE_POT="/path/to/pinned/locale/messages.pot"
-TRANSLATION_STAGING="$(mktemp -d)"
+PO files live at `<Module>/locale/<locale>/LC_MESSAGES/<id>.po`, for example `Example/locale/fr_FR/LC_MESSAGES/example.po`. Compilation writes the same layout with `.mo` files beneath a new or empty staging directory, after every input passes validation.
 
-python3 "$CORE_TOOLS/module_translations.py" extract "$MODULES_ROOT" \
-  --core-pot "$CORE_POT" --output "$TRANSLATION_STAGING/templates"
+Validation runs `msgfmt --check --check-format` and checks template membership, plural slots, filenames, and `:name` placeholders. Missing entries are allowed for core fallback; stale entries and message contexts are rejected. Retain gettext format flags for printf-style validation.
 
-python3 "$CORE_TOOLS/module_translations.py" extract "$MODULES_ROOT" \
-  --core-pot "$CORE_POT" --output "$TRANSLATION_STAGING/templates" --check
-```
+Fuzzy entries are filtered before normalization, and empty translations are omitted. Non-fuzzy plural entries must translate every required form or leave all forms empty. Intentional translations identical to English are preserved. Compilation uses normalized UTF-8 input, including with older gettext versions.
 
-A single module directory is also accepted. Templates are written to `templates/<Module>/locale/<id>.pot`. Generation validates all sources before writing, leaves unchanged templates alone, and rejects conflicting plurals or orphaned templates. Use the modules checkout as `--output` to update committed templates, or add `--check` to verify them without writing.
-
-## Validate and compile
-
-PO inputs live at `<Module>/locale/<locale>/LC_MESSAGES/<id>.po`, for example `Example/locale/fr_FR/LC_MESSAGES/example.po`.
-
-```bash
-python3 "$CORE_TOOLS/module_translations.py" validate "$MODULES_ROOT" \
-  --templates "$TRANSLATION_STAGING/templates"
-
-python3 "$CORE_TOOLS/module_translations.py" compile "$MODULES_ROOT" \
-  --templates "$TRANSLATION_STAGING/templates" \
-  --output "$TRANSLATION_STAGING/compiled"
-```
-
-Validation runs `msgfmt --check --check-format` and checks template membership, plural slots, filenames, and `:name` placeholders. Missing entries are allowed for core fallback; stale entries and message contexts are rejected.
-
-For printf-style validation, retain the appropriate gettext format flag in each PO entry.
-
-Compilation writes `compiled/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo` after every input passes validation. The output directory must be new or empty. Fuzzy and empty translations are omitted; translations identical to English remain valid.
-
-polib writes the MO files because `msgfmt` omits a whole plural entry when its first form is empty. This preserves usable later forms for runtime fallback. The tool also checks plural slot counts, which `msgfmt` skips in that case. Plural expressions are validated by gettext and evaluated by MoTranslator.
-
-## Tests
+## Migration preparation
 
 For the two-project Crowdin drafts and offline Branding/Cookieconsent translation seeds, see [migration preparation](migrations/branding-cookieconsent/README.md).
 
-With the dependencies above installed:
+## Tests
 
 ```bash
-python3 .github/scripts/tests/test_extract_pot.py
-python3 -m unittest discover -s .github/scripts/tests -p 'test_*.py' -v
+composer test --working-dir=tools/i18n
 ```
 
-Tests use temporary modules and language files, and read compiled output with Python's gettext implementation.
+The Pest suite covers extraction, CLI behavior, module templates, and gettext builds. It inspects raw MO bytes and exercises fuzzy plurals and older gettext encoding behavior. Tests use temporary directories.

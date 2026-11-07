@@ -34,7 +34,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
-function createProductEntity(?int $id = null, ?string $type = null, ?string $config = null): Product
+function createProductEntity(?int $id = null, ?string $type = null, ?array $config = null): Product
 {
     $product = new Product();
     if ($id !== null) {
@@ -377,13 +377,13 @@ test('removeProduct removes matching addons', function (): void {
     $mainProductId = 7;
     $main = new CartProduct();
     $main->setProductId($mainProductId);
-    $main->setConfig(json_encode(['domain_name' => 'example.com']));
+    $main->setConfig(['domain_name' => 'example.com']);
 
     $addon = new CartProduct();
-    $addon->setConfig(json_encode(['parent_id' => $mainProductId, 'domain_name' => 'example.com']));
+    $addon->setConfig(['parent_id' => $mainProductId, 'domain_name' => 'example.com']);
 
     $unrelated = new CartProduct();
-    $unrelated->setConfig(json_encode(['parent_id' => 999, 'domain_name' => 'other.com']));
+    $unrelated->setConfig(['parent_id' => 999, 'domain_name' => 'other.com']);
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findOneByCartAndId')->once()->with($cartId, 1)->andReturn($main);
@@ -1413,7 +1413,7 @@ test('createFromCart groups stamped cart families under shared group ids', funct
     expect(array_map(fn (Order $order): ?string => $order->getGroupId(), $createdOrders))->toBe(['3_1', '3_1', '3_2']);
     // Family bookkeeping must not leak into the stored order config.
     foreach ($createdOrders as $order) {
-        expect(json_decode((string) $order->getConfig(), true))->not->toHaveKey(Service::CART_FAMILY_KEY);
+        expect($order->getConfig())->not->toHaveKey(Service::CART_FAMILY_KEY);
     }
     expect($masterOrder)->toBe($createdOrders[0]);
     expect($invoiceModel)->toBeNull();
@@ -1878,7 +1878,7 @@ test('addItem rejects cumulative stock overflow', function (): void {
 
     $existingCartProduct = createEntity(CartProduct::class);
     $existingCartProduct->product_id = 7;
-    $existingCartProduct->config = json_encode(['quantity' => 1]);
+    $existingCartProduct->config = ['quantity' => 1];
 
     $eventDispatcher = new SymfonyEventDispatcher();
 
@@ -1921,7 +1921,7 @@ test('addItem rejects duplicate domain register', function (): void {
 
     // An existing cart item already holds example.com via register keys.
     $existingCartProduct = createEntity(CartProduct::class);
-    $existingCartProduct->config = json_encode(['register_sld' => 'example', 'register_tld' => '.com']);
+    $existingCartProduct->config = ['register_sld' => 'example', 'register_tld' => '.com'];
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->andReturn([$existingCartProduct]);
@@ -1963,7 +1963,7 @@ test('addItem rejects duplicate domain transfer', function (): void {
 
     // An existing cart item holds example.net via transfer keys.
     $existingCartProduct = createEntity(CartProduct::class);
-    $existingCartProduct->config = json_encode(['transfer_sld' => 'example', 'transfer_tld' => '.net']);
+    $existingCartProduct->config = ['transfer_sld' => 'example', 'transfer_tld' => '.net'];
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->andReturn([$existingCartProduct]);
@@ -2005,9 +2005,9 @@ test('addItem rejects duplicate domain nested', function (): void {
 
     // An existing hosting cart item stores the domain under the nested 'domain' key.
     $existingCartProduct = createEntity(CartProduct::class);
-    $existingCartProduct->config = json_encode([
+    $existingCartProduct->config = [
         'domain' => ['register_sld' => 'mysite', 'register_tld' => '.org'],
-    ]);
+    ];
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->andReturn([$existingCartProduct]);
@@ -2451,12 +2451,12 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
 
     expect($result)->toEqual($expectedResult);
 })->with(fn (): array => [
-    [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
-    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), false],
-    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), false],
-    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), true],
-    [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
-    [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
+    [createPromoEntity(1)->setClientGroups([]), createEntity(Client::class), true],
+    [createPromoEntity(2)->setClientGroups([1, 2]), createEntity(Client::class), false],
+    [createPromoEntity(3)->setClientGroups([1, 2]), createEntity(Client::class), false],
+    [createPromoEntity(4)->setClientGroups([1, 2]), createEntity(Client::class), true],
+    [createPromoEntity(5)->setClientGroups([]), null, true],
+    [createPromoEntity(6)->setClientGroups([1, 2]), null, false],
 ]);
 
 test('addItem strips client-injected hosting_plan_id', function (): void {
@@ -2473,11 +2473,11 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
     // Admin-configured product bound to hosting plan id 1.
     $productModel = createProductEntity(
         type: 'hosting',
-        config: json_encode([
+        config: [
             'hosting_plan_id' => 1,
             'server_id' => 1,
             'allow_domain_own' => true,
-        ]),
+        ],
     );
 
     // Attacker payload injects premium hosting_plan_id (2), plus a
@@ -2812,4 +2812,92 @@ test('getItemPromoDiscountShares scales shares down to the item subtotal', funct
     // 90:80 scaled to a 100.00 total stays reconciled to the cent.
     expect(array_sum($shares))->toEqual(100.0);
     expect($shares[7])->toBeGreaterThan($shares[8]);
+});
+
+test('cart is subscribable with a discount only when the promo is recurring', function (bool $recurring, bool $expected): void {
+    $cart = createEntity(Cart::class, ['id' => 42, 'currency_id' => 1, 'promo_id' => 8]);
+    $cartProduct = new CartProduct();
+    $cartProduct->setProductId(5);
+    $promo = createPromoEntity(8);
+    $promo->setCode('WELCOME');
+    $promo->setRecurring($recurring);
+
+    $cartProductRepository = Mockery::mock(CartProductRepository::class);
+    $cartProductRepository->shouldReceive('findByCartId')->with(42)->andReturn([$cartProduct]);
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepository);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->with(8)->andReturn($promo);
+    $productService->shouldReceive('findMissingRequiredProductIds')->with($promo, [5])->andReturn([]);
+
+    $currency = Mockery::mock(Currency::class);
+    $currency->shouldReceive('toApiArray')->andReturn(['code' => 'USD']);
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->with(1)->andReturn($currency);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('cartProductToApiArray')->andReturn([
+        'total' => 10,
+        'setup_price' => 0,
+        'discount' => 2.5,
+        'discount_price' => 2.5,
+        'discount_setup' => 0,
+        'period' => '1M',
+    ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(static fn (string $module) => $module === 'currency' ? $currencyService : $productService);
+    $service->setDi($di);
+
+    expect($service->toApiArray($cart)['subscribable'])->toBe($expected);
+})->with([
+    'one-time promo' => [false, false],
+    'recurring promo' => [true, true],
+]);
+
+test('cart with a discounted domain is not subscribable even with a recurring promo', function (): void {
+    $cart = createEntity(Cart::class, ['id' => 43, 'currency_id' => 1, 'promo_id' => 9]);
+    $cartProduct = new CartProduct();
+    $cartProduct->setProductId(6);
+    $promo = createPromoEntity(9);
+    $promo->setCode('WELCOME');
+    $promo->setRecurring(true);
+
+    $cartProductRepository = Mockery::mock(CartProductRepository::class);
+    $cartProductRepository->shouldReceive('findByCartId')->with(43)->andReturn([$cartProduct]);
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepository);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->with(9)->andReturn($promo);
+    $productService->shouldReceive('findMissingRequiredProductIds')->with($promo, [6])->andReturn([]);
+
+    $currency = Mockery::mock(Currency::class);
+    $currency->shouldReceive('toApiArray')->andReturn(['code' => 'USD']);
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->with(1)->andReturn($currency);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('cartProductToApiArray')->andReturn([
+        'total' => 30,
+        'setup_price' => 0,
+        'discount' => 20,
+        'discount_price' => 20,
+        'discount_setup' => 0,
+        'period' => '1Y',
+        'type' => ProductService::DOMAIN,
+    ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(static fn (string $module) => $module === 'currency' ? $currencyService : $productService);
+    $service->setDi($di);
+
+    expect($service->toApiArray($cart)['subscribable'])->toBeFalse();
 });

@@ -12,7 +12,6 @@ return [
         'admin_group.permissions',
         'cart_product.config',
         'client_order.config',
-        'email_template.vars',
         'form.style',
         'invoice_event.snapshot',
         'mod_massmailer.filter',

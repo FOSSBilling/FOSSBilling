@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceEvent;
@@ -70,6 +71,12 @@ use Twig\Loader\FilesystemLoader;
 
 class Service implements InjectionAwareInterface
 {
+    #[AsEventListener(priority: 100)]
+    public function retryDeferredGatewaySecrets(BeforeAdminCronRunEvent $event): void
+    {
+        $this->di['mod_service']('Invoice', 'PayGateway')->migrateConfigSecrets(onlyPlaintext: true);
+    }
+
     /**
      * Columns on the `invoice` table permitted in CSV exports.
      * The `hash` column (bearer token for public invoice access) is excluded.
@@ -1804,7 +1811,7 @@ class Service implements InjectionAwareInterface
     protected function withInvoiceRefundLock(Invoice $invoice, callable $callback): Invoice
     {
         $lockName = 'fb:invoice-refund:' . (int) $invoice->getId();
-        if (!NamedLock::acquire($this->di['dbal'], $lockName, 30)) {
+        if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 30)) {
             $this->di['logger']->warning('Timed out waiting for invoice refund lock for invoice #{id}', ['id' => $invoice->getId()]);
 
             throw new InformationException('Another refund for this invoice is already in progress. Please retry.');
@@ -1813,7 +1820,7 @@ class Service implements InjectionAwareInterface
         try {
             return $callback();
         } finally {
-            NamedLock::release($this->di['dbal'], $lockName);
+            NamedLock::release($this->di['em']->getConnection(), $lockName);
         }
     }
 
@@ -3349,7 +3356,7 @@ class Service implements InjectionAwareInterface
         }
 
         $product = $productService->findProductById((int) $order->getProductId());
-        $promoConfig = json_decode($order->getConfig() ?? '', true) ?? [];
+        $promoConfig = $order->getConfig() ?? [];
         if ($product->getType() !== \Box\Mod\Product\Service::DOMAIN && !isset($promoConfig['period']) && $order->getPeriod()) {
             $promoConfig['period'] = $order->getPeriod();
         }
@@ -3810,9 +3817,12 @@ class Service implements InjectionAwareInterface
      * Other products keep the order's own price so admin-edited prices are
      * respected.
      *
+     * Public so subscription eligibility can compare the gateway's per-cycle
+     * amount against what a renewal invoice will actually bill.
+     *
      * @return array{price: float|string, line: array<string, mixed>}
      */
-    private function resolveRenewalLine(Order $order): array
+    public function resolveRenewalLine(Order $order): array
     {
         $price = $order->getPrice();
         $line = [
@@ -3829,7 +3839,7 @@ class Service implements InjectionAwareInterface
             $product = $productService->findProductById((int) $order->getProductId());
 
             if ($productService instanceof \Box\Mod\Product\Service && $product->getType() === \Box\Mod\Product\Service::DOMAIN) {
-                $config = json_decode($order->getConfig() ?? '', true) ?? [];
+                $config = $order->getConfig() ?? [];
                 $currencyService = $this->di['mod_service']('Currency');
                 $currencyRepository = $currencyService->getCurrencyRepository();
                 $rate = $currencyRepository->getRateByCode($order->getCurrency());

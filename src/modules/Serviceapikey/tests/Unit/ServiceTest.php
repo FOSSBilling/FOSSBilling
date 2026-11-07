@@ -27,7 +27,7 @@ test('toApiArray serializes service api key entity', function (): void {
     $entity = createEntity(ServiceApiKey::class);
     $entity->id = 1;
     $entity->setApiKey('KEY-123');
-    $entity->setConfig('{"length":32}');
+    $entity->setConfig(['length' => 32]);
     $entity->onPrePersist();
 
     $result = $service->toApiArray($entity);

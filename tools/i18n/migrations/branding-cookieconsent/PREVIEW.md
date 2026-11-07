@@ -8,7 +8,7 @@ Locale snapshot: [0f00d645373d9546d741c337d9f9e75fdd5bc6a6](https://github.com/F
 
 Locale revision: verified Git snapshot. Target locale folders: 42; source English is not imported as a target.
 
-Application source SHA-256: `39dd6c25bd4104f5e02c22ce6aec9cb0c90f411997f199c7c474e7cd5c693911`.
+Application source SHA-256: `d79c8dcb30498b19a7c0b92a56b44e5b0cd9618ea58e69ab1cf43c4788e73f94`.
 
 | Module | Source entries | Locales with usable seeded translations |
 | --- | ---: | ---: |
@@ -27,7 +27,7 @@ Application source SHA-256: `39dd6c25bd4104f5e02c22ce6aec9cb0c90f411997f199c7c47
 
 ## Candidate core cleanup
 
-Core entries: 3906 before, 3901 after.
+Core entries: 3950 before, 3945 after.
 
 Only strings with no remaining application source reference are removed:
 

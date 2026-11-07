@@ -21,6 +21,7 @@ use Box\Mod\System\Event\BeforeAdminManualUpdateEvent;
 use Box\Mod\System\Event\BeforeAdminUpdateCoreEvent;
 use FOSSBilling\Core\Cache\CacheFactory;
 use FOSSBilling\Core\Cache\Driver;
+use FOSSBilling\Core\Doctrine\DbCompat;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\System\Config;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -402,9 +403,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             } catch (\Doctrine\DBAL\Exception) {
                 // If the installation hasn't migrated to the new group structure yet,
                 // Manually look for the old "admin" role
+                $connection = $this->getDi()['em']->getConnection();
                 if (
-                    $this->getDi()['em']->getConnection()->fetchOne("SHOW COLUMNS FROM `admin` LIKE 'role'")
-                    && $this->getDi()['em']->getConnection()->fetchOne('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->getId()]) === 'admin'
+                    DbCompat::tableHasColumn($connection, 'admin', 'role')
+                    && $connection->fetchOne('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->getId()]) === 'admin'
                 ) {
                     return;
                 }

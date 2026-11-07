@@ -176,7 +176,7 @@ test('logs retention failures through the application logger', function (): void
 
     $logger = new Tests\Helpers\TestLogger();
     $di = container();
-    $di['dbal'] = $dbal;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal);
     $di['logger'] = $logger;
     $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
 
@@ -218,7 +218,7 @@ test('retention removes old rows in batches, keeps recent rows and spares tables
     // Email retention is off (0), so the old email row must survive.
     $extensionService->shouldReceive('getConfig')->with('mod_activity')->andReturn(['max_age' => 90, 'email_max_age' => 0]);
     $di = container();
-    $di['dbal'] = $connection;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
 
@@ -274,7 +274,7 @@ test('log email', function (): void {
             && isset($values['created_at'])), Mockery::any())
         ->andReturn(1);
 
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $result = $service->logEmail($data['subject'], $data['client_id'], $data['sender'], $data['recipients'], $data['content_html'], $data['content_text']);
@@ -306,7 +306,7 @@ test('log email stores the given attachment', function (): void {
             && $values['attachment_mime'] === $attachment['mime']), Mockery::on(static fn (array $types): bool => ($types['attachment_content'] ?? null) === Doctrine\DBAL\Types\Types::BLOB))
         ->andReturn(1);
 
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $service->setDi($di);
 
     $result = $service->logEmail($data['subject'], $data['client_id'], $data['sender'], $data['recipients'], $data['content_html'], $data['content_text'], $attachment);
@@ -337,7 +337,7 @@ test('to api array', function (): void {
         ->andReturn($resultMock);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
 
     $service->setDi($di);
 

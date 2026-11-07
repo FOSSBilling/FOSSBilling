@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1.28@sha256:bb22d9815c728170f72750f4e5b0d672e06176142e1d602c7e66c050100b7e5b
 
-ARG PHP_VERSION=8.5
-ARG NODE_VERSION=24
+# Renovate needs the complete image reference to update both the tag and digest.
+ARG PHP_IMAGE=php:8.5-apache@sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46
+# Keep PHP_VERSION overrides working without applying the default image's digest.
+ARG PHP_VERSION
+ARG PHP_VERSION_IMAGE=${PHP_VERSION:+php:${PHP_VERSION}-apache}
+ARG NODE_VERSION=26
 
-FROM php:${PHP_VERSION}-apache AS php-base
+FROM ${PHP_VERSION_IMAGE:-${PHP_IMAGE}} AS php-base
 
 RUN set -eux; \
   savedAptMark="$(apt-mark showmanual)"; \
@@ -47,7 +51,7 @@ FROM php-base AS composer-base
 
 WORKDIR /app
 
-COPY --from=composer:2@sha256:5190d9b445add2fa26090108273cb1ef1e1af98175201c737b85b3c4f90fbf7c /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:8de2184c6de224f4689e8f80ed5f5edaf0030b6b8b7839a22a2bcb6722ac87d0 /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git \
@@ -106,7 +110,7 @@ ARG INSTALL_TRANSLATIONS=true
 ARG TRANSLATIONS_URL=https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip
 ARG TRANSLATIONS_SHA256=
 
-COPY --from=composer:2@sha256:5190d9b445add2fa26090108273cb1ef1e1af98175201c737b85b3c4f90fbf7c /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:8de2184c6de224f4689e8f80ed5f5edaf0030b6b8b7839a22a2bcb6722ac87d0 /usr/bin/composer /usr/bin/composer
 COPY composer.json ./composer.json
 COPY src ./src
 COPY README.md LICENSE ./src/

@@ -1351,6 +1351,7 @@ test('syncs domain expiration dates before admin cron through a typed event list
     $serviceMock->shouldReceive('batchSyncExpirationDates')
         ->once()
         ->andReturn(true);
+    $serviceMock->shouldReceive('migrateConfigSecrets')->with(true)->once();
     $dispatcher = new FOSSBilling\Core\Events\EventDispatcher(
         static fn (): array => ['servicedomain'],
         static fn (string $module): object => $serviceMock,
@@ -1980,7 +1981,7 @@ test('gets registrar pairs', function (): void {
 test('gets active registrar', function (): void {
     $service = new Service();
     $tldRegistrarModel = new TldRegistrar();
-    $tldRegistrarModel->setConfig(json_encode(['key' => 'val']));
+    $tldRegistrarModel->setConfig(['key' => 'val']);
 
     $trRepo = Mockery::mock(TldRegistrarRepository::class);
     $trRepo->shouldReceive('findActiveRegistrar')->andReturn($tldRegistrarModel);
@@ -2009,7 +2010,7 @@ test('gets registrar configuration', function (): void {
     $service->setDi($di);
 
     $model = new TldRegistrar();
-    $model->setConfig(json_encode($config));
+    $model->setConfig($config);
 
     $result = $service->registrarGetConfiguration($model);
 
@@ -2161,15 +2162,15 @@ test('converts registrar to api array', function (): void {
     $serviceMock->shouldReceive('registrarGetRegistrarAdapterConfig')
         ->atLeast()->once()
         ->andReturn($config);
-    $serviceMock->shouldReceive('registrarGetConfiguration')
-        ->atLeast()->once()
-        ->andReturn(['param1' => 'value1']);
+    $serviceMock->shouldNotReceive('registrarGetConfiguration');
 
     $model = new TldRegistrar();
     setEntityId($model, 1);
     $model->setName('ResellerClub');
     $model->setTestMode(true);
+    $model->setConfig(['param1' => 'value1']);
 
+    $serviceMock->setDi(container());
     $serviceMock->registrarToApiArray($model);
 });
 
@@ -2184,11 +2185,11 @@ test('converts registrar to api array masks secrets for an admin', function (): 
     $model->setName('Namecheap');
     $model->setRegistrar('Namecheap');
     $model->setTestMode(false);
-    $model->setConfig(json_encode([
+    $model->setConfig([
         'api-user-id' => 'reseller-id',
         'api-key' => 'super-secret-key',
         'username' => 'my-username',
-    ]));
+    ]);
 
     $result = $service->registrarToApiArray($model);
 
@@ -2214,12 +2215,12 @@ test('registrarUpdate keeps the existing secret when the incoming value is blank
     $model = new TldRegistrar();
     setEntityId($model, 1);
     $model->setRegistrar('Namecheap');
-    $model->setConfig(json_encode([
+    $model->setConfig([
         'api-user-id' => 'reseller-id',
         'api-key' => 'existing-secret',
         'username' => 'existing-username',
         'ip' => '127.0.0.1',
-    ]));
+    ]);
 
     $result = $service->registrarUpdate($model, [
         'config' => [
@@ -2229,8 +2230,8 @@ test('registrarUpdate keeps the existing secret when the incoming value is blank
     ]);
 
     expect($result)->toBeTrue();
-    $stored = json_decode((string) $model->getConfig(), true);
-    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    $stored = $model->getConfig();
+    $config = (new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($stored);
     expect($config['api-key'])->toBe('existing-secret');
     expect($config['api-user-id'])->toBe('new-reseller-id');
     expect($stored['api-user-id'])->toBe('new-reseller-id');
@@ -2250,18 +2251,18 @@ test('registrarUpdate rotates a secret when a new value is submitted', function 
     $model = new TldRegistrar();
     setEntityId($model, 1);
     $model->setRegistrar('Namecheap');
-    $model->setConfig(json_encode([
+    $model->setConfig([
         'api-user-id' => 'reseller-id',
         'api-key' => 'old-secret',
         'username' => 'existing-username',
         'ip' => '127.0.0.1',
-    ]));
+    ]);
 
     $result = $service->registrarUpdate($model, ['config' => ['api-key' => 'new-secret']]);
 
     expect($result)->toBeTrue();
-    $stored = json_decode((string) $model->getConfig(), true);
-    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    $stored = $model->getConfig();
+    $config = (new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($stored);
     expect($config['api-key'])->toBe('new-secret');
 });
 
@@ -2279,25 +2280,25 @@ test('registrarUpdate stores registrar secrets encrypted at rest', function (): 
     $model = new TldRegistrar();
     setEntityId($model, 1);
     $model->setRegistrar('Namecheap');
-    $model->setConfig(json_encode([
+    $model->setConfig([
         'api-user-id' => 'reseller-id',
         'api-key' => 'old-secret',
         'username' => 'existing-username',
         'ip' => '127.0.0.1',
-    ]));
+    ]);
 
     $result = $service->registrarUpdate($model, ['config' => ['api-key' => 'new-secret']]);
 
     expect($result)->toBeTrue();
 
-    $raw = (string) $model->getConfig();
+    $raw = json_encode($model->getConfig(), JSON_THROW_ON_ERROR);
     expect($raw)->not->toContain('new-secret')
         ->and($raw)->toContain('reseller-id');
 
-    $stored = json_decode($raw, true);
-    expect($stored['api-key'])->toStartWith(FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX);
+    $stored = $model->getConfig();
+    expect($stored['api-key']['_fossbilling_encrypted'])->toStartWith(FOSSBilling\Core\Security\Crypt::CURRENT_FORMAT_PREFIX);
 
-    $config = FOSSBilling\Core\SecretConfig::decryptMarkedValues($stored, $di['crypt']);
+    $config = (new FOSSBilling\Core\Security\SecretFields($di['crypt']))->reveal($stored);
     expect($config['api-key'])->toBe('new-secret');
 });
 
@@ -2312,9 +2313,9 @@ test('reads a legacy plaintext registrar configuration', function (): void {
     $model->setName('Namecheap');
     $model->setRegistrar('Namecheap');
     $model->setTestMode(false);
-    $model->setConfig(json_encode([
+    $model->setConfig([
         'api-key' => 'legacy-secret-key',
-    ]));
+    ]);
 
     $result = $service->registrarToApiArray($model);
 
@@ -2340,7 +2341,7 @@ test('registrar adapter receives decrypted secrets from encrypted storage', func
     $model->setName('Namecheap');
     $model->setRegistrar('Namecheap');
     $model->setTestMode(false);
-    $model->setConfig(json_encode($stored));
+    $model->setConfig($stored);
 
     $adapter = $service->registrarGetRegistrarAdapter($model);
 
@@ -2621,11 +2622,11 @@ test('preserves registrar configuration fields omitted from an update', function
 
     $model = new TldRegistrar();
     $model->setRegistrar('Custom');
-    $model->setConfig(json_encode(['existing' => 'value']));
+    $model->setConfig(['existing' => 'value']);
 
     $service->registrarUpdate($model, ['config' => ['new' => 'value']]);
 
-    expect(json_decode((string) $model->getConfig(), true))->toBe([
+    expect($model->getConfig())->toBe([
         'existing' => 'value',
         'new' => 'value',
     ]);
@@ -2674,3 +2675,64 @@ test('updates domain', function (): void {
 
     expect($result)->toBeTrue();
 });
+
+test('an unreadable registrar credential can be edited without revealing the old value', function (): void {
+    $service = new Service();
+    $di = container();
+    $di['crypt'] = cryptMock();
+    $di['em']->shouldReceive('flush')->once();
+    $di['loggedin_admin'] = Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+    $model = (new TldRegistrar())->setRegistrar('Namecheap')->setConfig([
+        'api-key' => ['_fossbilling_encrypted' => 'v3:broken'],
+        'api-user-id' => 'reseller', 'username' => 'example', 'ip' => '127.0.0.1',
+    ]);
+    setEntityId($model, 1);
+    $masked = $service->registrarToApiArray($model);
+    expect($masked['config']['api-key'])->toBeNull()->and($masked['config']['api-key_set'])->toBeTrue();
+    $service->registrarUpdate($model, ['config' => ['api-key' => 'replacement-secret']]);
+    expect($service->registrarGetConfiguration($model)['api-key'])->toBe('replacement-secret');
+});
+
+test('cron retries deferred registrar encryption without changing another registrar', function (): void {
+    $first = (new TldRegistrar())->setRegistrar('Namecheap')->setConfig(['api-key' => 'first-secret']);
+    $second = (new TldRegistrar())->setRegistrar('Namecheap')->setConfig(['api-key' => 'second-secret']);
+    setEntityId($first, 1);
+    setEntityId($second, 2);
+    $available = false;
+    $repo = Mockery::mock(TldRegistrarRepository::class);
+    $repo->shouldReceive('findAll')->times(3)->andReturn([$first, $second]);
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarGetRegistrarAdapterConfig')->andReturnUsing(function (TldRegistrar $model) use (&$available): array {
+        if (!$available && $model->getId() === 1) {
+            throw new FOSSBilling\Core\Exception\InformationException('Missing adapter');
+        }
+
+        return ['form' => ['api-key' => ['password', ['secret' => true]]]];
+    });
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($repo);
+    $di['em']->shouldReceive('flush')->times(3);
+    $service->setDi($di);
+    $service->migrateConfigSecrets();
+    $preserved = $second->getConfig();
+    expect($first->getConfig()['api-key'])->toBe('first-secret')->and($preserved['api-key'])->toBeArray();
+    $available = true;
+    $event = new Box\Mod\Cron\Event\BeforeAdminCronRunEvent();
+    $service->retryDeferredConfigSecrets($event);
+    $upgraded = $first->getConfig();
+    $service->retryDeferredConfigSecrets($event);
+    expect($first->getConfig())->toBe($upgraded)->and($second->getConfig())->toBe($preserved)
+        ->and($service->registrarGetConfiguration($first)['api-key'])->toBe('first-secret');
+});
+
+test('deferred registrar retry stops cron after unexpected persistence or adapter errors', function (Throwable $failure): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('migrateConfigSecrets')->with(true)->once()->andThrow($failure);
+
+    expect(fn () => $service->retryDeferredConfigSecrets(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent()))
+        ->toThrow($failure::class, $failure->getMessage());
+})->with([
+    'adapter contract' => [new TypeError('Broken adapter contract')],
+    'closed entity manager' => [Doctrine\ORM\Exception\EntityManagerClosed::create()],
+]);

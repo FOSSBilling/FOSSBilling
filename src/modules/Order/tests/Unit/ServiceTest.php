@@ -120,7 +120,7 @@ test('batch order serialization does not expose admin-only client details', func
             'id' => 11,
             'client_id' => 7,
             'product_id' => 3,
-            'config' => '{}',
+            'config' => '{"enabled":false,"code":"001"}',
             'price' => 10,
             'quantity' => 1,
             'title' => 'Example order',
@@ -149,7 +149,8 @@ test('batch order serialization does not expose admin-only client details', func
     // The batch boundary forwards no identity, so the embedded client must be
     // the general (non-admin) representation: UI fields present, admin-only
     // fields absent.
-    expect($result[0]['client'])->toBe($generalClient);
+    expect($result[0]['client'])->toBe($generalClient)
+        ->and($result[0]['config'])->toBe(['enabled' => false, 'code' => '001']);
     foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_groups', 'api_token'] as $adminOnlyKey) {
         expect($result[0]['client'])->not->toHaveKey($adminOnlyKey);
     }
@@ -1495,7 +1496,7 @@ test('getLogger returns logger with event items', function (): void {
 test('toApiArray returns expected keys', function (): void {
     $model = createEntity(Order::class, [
         'id' => 1,
-        'config' => '{}',
+        'config' => [],
         'price' => 10,
         'quantity' => 1,
         'client_id' => 1,
@@ -1594,7 +1595,7 @@ test('toApiArray reads meta through the repository', function (): void {
 
     $order = createEntity(Order::class, [
         'id' => 7,
-        'config' => '{}',
+        'config' => [],
         'price' => 10,
         'quantity' => 1,
         'client_id' => 1,
@@ -3023,7 +3024,7 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['dbal'] = $connectionMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
     $eventDispatcher = new OrderServiceTestEventRecorder();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
@@ -3077,7 +3078,7 @@ test('gateway finalized cancellation dispatches both lifecycle events', function
 
     $di = container();
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $di['dbal'] = $connection;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['mod_service'] = $di->protect(static fn (string $module): object => $productService);
     $events = new OrderServiceTestEventRecorder();
     $di['event_dispatcher'] = $events;
@@ -3204,84 +3205,14 @@ test('rmByClient removes all client orders', function (): void {
 
     $orderModel = createEntity(Order::class, ['id' => 1]);
 
-    $queryBuilderMock = new class {
-        private bool $deleteCalled = false;
-        private bool $whereCalled = false;
-        private bool $setParamCalled = false;
-        private mixed $deleteTable = null;
-        private mixed $whereCond = null;
-        private mixed $paramId = null;
+    $queryBuilderMock = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
+    $queryBuilderMock->shouldReceive('delete')->once()->with('client_order')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('where')->once()->with('client_id = :id')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('setParameter')->once()->with('id', 100)->andReturnSelf();
+    $queryBuilderMock->shouldReceive('executeStatement')->once()->andReturn(1);
 
-        public function delete($table)
-        {
-            $this->deleteCalled = true;
-            $this->deleteTable = $table;
-
-            return $this;
-        }
-
-        public function where($cond)
-        {
-            $this->whereCalled = true;
-            $this->whereCond = $cond;
-
-            return $this;
-        }
-
-        public function setParameter($key, $val)
-        {
-            $this->setParamCalled = true;
-            $this->paramId = $val;
-
-            return $this;
-        }
-
-        public function executeStatement(): int
-        {
-            return 1;
-        }
-
-        public function getDeleteTable()
-        {
-            return $this->deleteTable;
-        }
-
-        public function getWhereCond()
-        {
-            return $this->whereCond;
-        }
-
-        public function getParamId()
-        {
-            return $this->paramId;
-        }
-
-        public function wasDeleteCalled(): bool
-        {
-            return $this->deleteCalled;
-        }
-
-        public function wasWhereCalled(): bool
-        {
-            return $this->whereCalled;
-        }
-
-        public function wasSetParamCalled(): bool
-        {
-            return $this->setParamCalled;
-        }
-    };
-
-    $dbalMock = new class($queryBuilderMock) {
-        public function __construct(private $qb)
-        {
-        }
-
-        public function createQueryBuilder()
-        {
-            return $this->qb;
-        }
-    };
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('createQueryBuilder')->once()->andReturn($queryBuilderMock);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('findByClientId')->once()->with(100)->andReturn([$orderModel]);
@@ -3308,7 +3239,7 @@ test('rmByClient removes all client orders', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
     $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
         'product' => $productServiceMock,
         default => Mockery::mock()->shouldIgnoreMissing(),
@@ -3318,10 +3249,6 @@ test('rmByClient removes all client orders', function (): void {
     $svc->setDi($di);
 
     $svc->rmByClient($clientModel);
-
-    expect($queryBuilderMock->getDeleteTable())->toBe('client_order');
-    expect($queryBuilderMock->getWhereCond())->toBe('client_id = :id');
-    expect($queryBuilderMock->getParamId())->toBe($clientModel->id);
 });
 
 test('updatePeriod sets period when given', function (): void {
@@ -3745,14 +3672,14 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
 
     $order = createEntity(Order::class);
     $order->form_id = 11;
-    $order->setConfig(json_encode([
+    $order->setConfig([
         'period' => '1M',
         'price' => 12.5,
         'quantity' => 2,
         'service_options' => ['region' => 'eu'],
         'hostname' => 'old.example.com',
         'addons' => ['backup', 'ssl'],
-    ]));
+    ]);
 
     $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro']);
 

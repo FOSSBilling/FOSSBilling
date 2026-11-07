@@ -32,7 +32,7 @@ final class SecretConfig
                 continue;
             }
 
-            if (str_starts_with($value, Crypt::CURRENT_FORMAT_PREFIX) && is_string($crypt->decrypt($value, $passphrase))) {
+            if ((str_starts_with($value, Crypt::CURRENT_FORMAT_PREFIX) || str_starts_with($value, 'v2:')) && is_string($crypt->decrypt($value, $passphrase))) {
                 continue;
             }
 
@@ -52,7 +52,7 @@ final class SecretConfig
     public static function decryptMarkedValues(array $config, Crypt $crypt, ?string $passphrase = null): array
     {
         foreach ($config as $field => $value) {
-            if (!is_string($value) || !str_starts_with($value, Crypt::CURRENT_FORMAT_PREFIX)) {
+            if (!is_string($value) || (!str_starts_with($value, Crypt::CURRENT_FORMAT_PREFIX) && !str_starts_with($value, 'v2:'))) {
                 continue;
             }
 
