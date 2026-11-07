@@ -485,6 +485,7 @@
         "pwreset",
         "pagebottom",
         "forceable",
+        "phpdoc",
         "phpstan",
         "progressbar",
         "valuenow",
