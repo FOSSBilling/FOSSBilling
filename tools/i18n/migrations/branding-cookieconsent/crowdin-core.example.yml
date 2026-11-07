@@ -1,0 +1,13 @@
+# Install in FOSSBilling/locale only after the migration is reviewed.
+# Project 4 keeps its identity; rename its display name to FOSSBilling Core later.
+project_id: 4
+api_token_env: CROWDIN_PERSONAL_TOKEN
+base_url: https://fossbilling.api.crowdin.com
+base_path: .
+preserve_hierarchy: true
+files:
+  - source: /messages.pot
+    translation: /%locale_with_underscore%/LC_MESSAGES/messages.po
+pull_request_title: '[Automated] Crowdin synchronization'
+pull_request_labels:
+  - crowdin

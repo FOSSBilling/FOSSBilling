@@ -43,3 +43,6 @@ tools/demo-seed/manifest*.json
 ### Python (extractor script bytecode cache) ###
 .github/scripts/__pycache__/
 .github/scripts/tests/__pycache__/
+
+# Generated migration review bundle
+/tools/i18n/migrations/branding-cookieconsent/prepared/

@@ -66,6 +66,8 @@ polib writes the MO files because `msgfmt` omits a whole plural entry when its f
 
 ## Tests
 
+For the two-project Crowdin drafts and offline Branding/Cookieconsent translation seeds, see [migration preparation](migrations/branding-cookieconsent/README.md).
+
 With the dependencies above installed:
 
 ```bash
