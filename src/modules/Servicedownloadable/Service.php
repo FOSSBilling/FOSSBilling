@@ -19,8 +19,6 @@ use Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
@@ -481,19 +479,9 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         }
 
-        $response = new BinaryFileResponse($filePath);
-
-        $disposition = $response->headers->makeDisposition(
-            HeaderUtils::DISPOSITION_ATTACHMENT,
-            $file->getFilename()
-        );
-
-        $response->headers->set('Content-Type', 'application/octet-stream');
-        $response->headers->set('Content-Disposition', $disposition);
-
         $this->di['logger']->info('Downloaded service file {file_id}', ['file_id' => $file->getId()]);
 
-        return $response;
+        return $this->di['response_factory']->download($file->getFilename(), $filePath);
     }
 
     public function saveProductConfig(Product $productModel, $data): bool
@@ -520,19 +508,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        $response = new BinaryFileResponse($filePath);
-
-        $disposition = $response->headers->makeDisposition(
-            HeaderUtils::DISPOSITION_ATTACHMENT,
-            $definition['filename']
-        );
-
-        $response->headers->set('Content-Type', 'application/octet-stream');
-        $response->headers->set('Content-Disposition', $disposition);
-
         $this->di['logger']->info('Downloaded product {product_id} file by admin.', ['product_id' => $product->getId()]);
 
-        return $response;
+        return $this->di['response_factory']->download($definition['filename'], $filePath);
     }
 
     private function getUploadedFile(): \Symfony\Component\HttpFoundation\File\UploadedFile

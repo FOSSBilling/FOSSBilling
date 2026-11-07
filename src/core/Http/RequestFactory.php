@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Core\Http;
 
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -206,19 +207,16 @@ final class RequestFactory
 
     private static function parseForwardedHeader(string $header): array
     {
-        $firstForwardedValue = explode(',', $header)[0];
-        $values = [];
-
-        foreach (explode(';', $firstForwardedValue) as $part) {
-            [$key, $value] = array_pad(explode('=', $part, 2), 2, null);
-            $key = strtolower(trim((string) $key));
-            $value = trim((string) $value, " \t\n\r\0\x0B\"");
-            if ($key !== '' && $value !== '') {
-                $values[$key] = $value;
-            }
+        $parts = HeaderUtils::split($header, ',;=');
+        if ($parts === []) {
+            return [];
         }
 
-        return $values;
+        // Only the first Forwarded value (hop) is used.
+        return array_filter(
+            HeaderUtils::combine($parts[0]),
+            static fn (mixed $value): bool => is_string($value) && $value !== ''
+        );
     }
 
     private static function getFirstHeaderValue(mixed $value): ?string
