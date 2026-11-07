@@ -15,6 +15,8 @@
 /src/public/gateways/custom/
 /src/vendor/*
 /tools/manifest/vendor/
+/tools/i18n/vendor/
+/tools/i18n/.phpunit.cache/
 build
 
 # Needed for some workflows
@@ -39,7 +41,3 @@ tests/E2E/Playwright/artifacts
 ### Demo seed (generated per-run artifacts) ###
 tools/demo-seed/manifest*.json
 .ddev/*.sql.gz
-
-### Python (extractor script bytecode cache) ###
-.github/scripts/__pycache__/
-.github/scripts/tests/__pycache__/

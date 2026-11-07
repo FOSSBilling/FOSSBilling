@@ -5,9 +5,8 @@ on:
     paths:
       - 'src/**/*.php'
       - 'src/**/*.twig'
-      - '.github/scripts/extract_pot.py'
-      - '.github/scripts/module_translations.py'
-      - '.github/scripts/tests/**'
+      - '.github/scripts/extract_pot.php'
+      - '.github/scripts/module_translations.php'
       - 'tools/i18n/**'
       - '.github/workflows/i18n-pot-check.yml'
 
@@ -17,6 +16,9 @@ permissions:
 
 jobs:
   pot-diff:
+    strategy:
+      matrix:
+        php: ['8.3', '8.5']
     runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
@@ -26,13 +28,23 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: 'Setup PHP'
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+
+      - name: 'Install standalone translation tooling'
+        run: composer install --working-dir=tools/i18n --no-interaction --no-progress
+
       - name: 'Extract msgids (head)'
-        run: python3 .github/scripts/extract_pot.py src /tmp/head.pot
+        run: php .github/scripts/extract_pot.php src /tmp/head.pot
 
       - name: 'Extract msgids (base)'
         run: |
           git worktree add /tmp/base "${{ github.event.pull_request.base.sha }}"
-          python3 .github/scripts/extract_pot.py /tmp/base/src /tmp/base.pot
+          php .github/scripts/extract_pot.php /tmp/base/src /tmp/base.pot
           git worktree remove --force /tmp/base
 
       - name: 'Install translation test dependencies'
@@ -40,14 +52,12 @@ jobs:
           sudo apt-get update && sudo apt-get install --yes gettext
 
       - name: 'Run translation tooling fixtures'
-        run: |
-          python3 .github/scripts/tests/test_extract_pot.py
-          python3 -m unittest discover -s .github/scripts/tests -p 'test_*.py' -v
+        run: composer test --working-dir=tools/i18n
 
       - name: 'Compare'
         id: diff
         run: |
-          python3 .github/scripts/extract_pot.py --diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt 2>&1 || true
+          php .github/scripts/extract_pot.php --diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt 2>&1 || true
           {
             echo 'body<<EOF'
             cat /tmp/pot-diff.txt
@@ -55,6 +65,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: 'Comment on PR'
+        if: matrix.php == '8.3'
         # Fork PRs get a read-only token, so commenting may fail there;
         # the extraction result above is still visible in the job log.
         continue-on-error: true
