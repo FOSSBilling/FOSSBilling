@@ -62,15 +62,16 @@ final class SeedCommand extends Command
         }
 
         $baseUrl = rtrim((string) ($input->getOption('url') ?? getenv('APP_URL') ?: 'https://fossbilling.ddev.site'), '/');
-        $manifestDir = Path::normalize($input->getOption('manifest') ?? $this->defaultManifestDir);
+        $manifestDir = $input->getOption('manifest') ?? $this->defaultManifestDir;
+        $dryRun = $input->getOption('dry-run');
         $seeder = new Seeder(
             new ApiClient($baseUrl, $apiKey),
             $baseUrl,
-            (bool) $input->getOption('dry-run'),
+            $dryRun,
             (int) $input->getOption('limit-clients'),
             (int) $input->getOption('limit-orders'),
             (int) $input->getOption('limit-tickets'),
-            Path::join($manifestDir, $input->getOption('dry-run') ? 'manifest.dry.json' : 'manifest.json'),
+            Path::join($manifestDir, $dryRun ? 'manifest.dry.json' : 'manifest.json'),
             $output,
         );
 

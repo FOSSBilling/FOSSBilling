@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 use FOSSBilling\Tools\Manifest\Command\ValidateCommand;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -28,13 +27,14 @@ const MANIFEST_VALID_MODULE = [
     'requires' => ['fossbilling' => '>=1.0.0', 'php' => '>=8.3'],
 ];
 
-function manifestValidatorRoot(): string
-{
-    $root = Path::join(sys_get_temp_dir(), 'fossbilling-manifest-test-' . bin2hex(random_bytes(10)));
-    (new Filesystem())->mkdir($root);
+beforeEach(function (): void {
+    $this->root = Path::join(sys_get_temp_dir(), 'fossbilling-manifest-test-' . bin2hex(random_bytes(10)));
+    (new Filesystem())->mkdir($this->root);
+});
 
-    return $root;
-}
+afterEach(function (): void {
+    (new Filesystem())->remove($this->root);
+});
 
 function manifestValidatorCommand(string $root): CommandTester
 {
@@ -53,91 +53,52 @@ function manifestValidatorWriteModule(string $root, string $directory, array $ma
     $filesystem->dumpFile(Path::join($root, 'modules', $directory, 'manifest.json'), json_encode($manifest, JSON_THROW_ON_ERROR));
 }
 
-function manifestValidatorCleanup(string $root): void
-{
-    try {
-        (new Filesystem())->remove($root);
-    } catch (IOException) {
-        // Best-effort cleanup only.
-    }
-}
-
 test('validates a correct module manifest', function (): void {
-    $root = manifestValidatorRoot();
+    manifestValidatorWriteModule($this->root, 'Example', MANIFEST_VALID_MODULE);
+    $tester = manifestValidatorCommand($this->root);
 
-    try {
-        manifestValidatorWriteModule($root, 'Example', MANIFEST_VALID_MODULE);
-        $tester = manifestValidatorCommand($root);
+    $status = $tester->execute(['modules' => Path::join($this->root, 'modules')]);
 
-        $status = $tester->execute(['modules' => Path::join($root, 'modules')]);
-
-        expect($status)->toBe(0)
-            ->and($tester->getDisplay())->toContain('PASS Example')
-            ->and($tester->getDisplay())->toContain('OK: 1 package(s) valid');
-    } finally {
-        manifestValidatorCleanup($root);
-    }
+    expect($status)->toBe(0)
+        ->and($tester->getDisplay())->toContain('PASS Example')
+        ->and($tester->getDisplay())->toContain('OK: 1 package(s) valid');
 });
 
 test('rejects a manifest whose id does not match its directory', function (): void {
-    $root = manifestValidatorRoot();
+    manifestValidatorWriteModule($this->root, 'Example', [...MANIFEST_VALID_MODULE, 'id' => 'other']);
+    $tester = manifestValidatorCommand($this->root);
 
-    try {
-        manifestValidatorWriteModule($root, 'Example', [...MANIFEST_VALID_MODULE, 'id' => 'other']);
-        $tester = manifestValidatorCommand($root);
+    $status = $tester->execute(['modules' => Path::join($this->root, 'modules')]);
 
-        $status = $tester->execute(['modules' => Path::join($root, 'modules')]);
-
-        expect($status)->toBe(1)
-            ->and($tester->getDisplay())->toContain('FAIL Example')
-            ->and($tester->getDisplay())->toContain('id "other" must match directory "Example" (case-insensitive)');
-    } finally {
-        manifestValidatorCleanup($root);
-    }
+    expect($status)->toBe(1)
+        ->and($tester->getDisplay())->toContain('FAIL Example')
+        ->and($tester->getDisplay())->toContain('id "other" must match directory "Example" (case-insensitive)');
 });
 
-test('rejects a non-semver version and a "v" prefixed version', function (): void {
-    $root = manifestValidatorRoot();
+test('rejects a "v" prefixed version', function (): void {
+    manifestValidatorWriteModule($this->root, 'Example', [...MANIFEST_VALID_MODULE, 'version' => 'v1.0.0']);
+    $tester = manifestValidatorCommand($this->root);
 
-    try {
-        manifestValidatorWriteModule($root, 'Example', [...MANIFEST_VALID_MODULE, 'version' => 'v1.0.0']);
-        $tester = manifestValidatorCommand($root);
+    $status = $tester->execute(['modules' => Path::join($this->root, 'modules')]);
 
-        $status = $tester->execute(['modules' => Path::join($root, 'modules')]);
-
-        expect($status)->toBe(1)
-            ->and($tester->getDisplay())->toContain('version must not have a "v" prefix');
-    } finally {
-        manifestValidatorCleanup($root);
-    }
+    expect($status)->toBe(1)
+        ->and($tester->getDisplay())->toContain('version must not have a "v" prefix');
 });
 
 test('rejects a module directory without manifest.json', function (): void {
-    $root = manifestValidatorRoot();
+    (new Filesystem())->mkdir(Path::join($this->root, 'modules', 'Example'));
+    $tester = manifestValidatorCommand($this->root);
 
-    try {
-        (new Filesystem())->mkdir(Path::join($root, 'modules', 'Example'));
-        $tester = manifestValidatorCommand($root);
+    $status = $tester->execute(['modules' => Path::join($this->root, 'modules')]);
 
-        $status = $tester->execute(['modules' => Path::join($root, 'modules')]);
-
-        expect($status)->toBe(1)
-            ->and($tester->getDisplay())->toContain('manifest.json is missing');
-    } finally {
-        manifestValidatorCleanup($root);
-    }
+    expect($status)->toBe(1)
+        ->and($tester->getDisplay())->toContain('manifest.json is missing');
 });
 
 test('fails when the modules directory contains no modules', function (): void {
-    $root = manifestValidatorRoot();
+    (new Filesystem())->mkdir(Path::join($this->root, 'modules'));
+    $tester = manifestValidatorCommand($this->root);
 
-    try {
-        (new Filesystem())->mkdir(Path::join($root, 'modules'));
-        $tester = manifestValidatorCommand($root);
-
-        expect(fn (): int => $tester->execute(['modules' => Path::join($root, 'modules')]))
-            ->toThrow(RuntimeException::class, 'No module directories found under');
-    } finally {
-        manifestValidatorCleanup($root);
-    }
+    expect(fn (): int => $tester->execute(['modules' => Path::join($this->root, 'modules')]))
+        ->toThrow(RuntimeException::class, 'No module directories found under');
 });
