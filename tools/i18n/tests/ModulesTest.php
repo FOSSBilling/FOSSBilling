@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Tools\I18n\Modules;
 use FOSSBilling\Tools\I18n\TranslationCatalog;
 
 test('extracts separate module templates without modifying module files', function (): void {
@@ -182,7 +183,7 @@ test('reads CRLF core templates and checks catalogues without newline-only chang
     expect($f->fs->readFile($target))->toBe($before);
 });
 
-test('resolves inherited exception signatures across sibling modules', function (): void {
+test('resolves sibling exception signatures afresh on each extraction run', function (): void {
     $f = $this->fixture;
     $f->setupModules();
     $f->write('modules/Other/Errors.php', <<<'PHP'
@@ -196,10 +197,30 @@ test('resolves inherited exception signatures across sibling modules', function 
         class Child extends \Other\ParentError {}
         new Child('Owned by child', null, 0, false, 'example');
         PHP);
-    $result = $f->extract();
-    $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
-    expect(TranslationCatalog::entries($f->template()))->toHaveKey('Owned by child');
-    expect(TranslationCatalog::entries($f->template('Other')))->not->toHaveKey('Owned by child');
+    ob_start();
+
+    try {
+        expect(Modules::extract($f->modules, $f->core, $f->templates, false))->toBe(0);
+        expect(TranslationCatalog::entries($f->template()))->toHaveKey('Owned by child');
+        expect(TranslationCatalog::entries($f->template('Other')))->not->toHaveKey('Owned by child');
+
+        $f->write('modules/Other/Errors.php', <<<'PHP'
+            <?php
+            namespace Other;
+            class ParentError extends \FOSSBilling\Core\Exception\BaseException {
+                public function __construct(string $message, ?string $from = null) {
+                    parent::__construct($message, from: $from);
+                }
+            }
+            PHP);
+        $f->fs->dumpFile($f->modules . '/Example/Errors.php', str_replace(
+            "'Owned by child', null, 0, false, 'example'", "'Updated child', 'example'", $f->fs->readFile($f->modules . '/Example/Errors.php'),
+        ));
+        expect(Modules::extract($f->modules, $f->core, $f->templates, false))->toBe(0);
+        expect(TranslationCatalog::entries($f->template()))->toHaveKey('Updated child')->not->toHaveKey('Owned by child');
+    } finally {
+        ob_end_clean();
+    }
 });
 
 test('accepts a dot path inside a single module and preserves sibling templates', function (): void {

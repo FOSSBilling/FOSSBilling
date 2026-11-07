@@ -70,10 +70,11 @@ final class Modules
         $fs = new Filesystem();
         $modules = self::discover($root);
         $core = TranslationCatalog::entries($corePot);
+        $prepared = Extractor::prepare(array_column($modules, 'path'));
         $sources = array_fill_keys(array_column($modules, 'id'), []);
         $errors = [];
         foreach ($modules as $module) {
-            $result = Extractor::extract($module['path'], $module['id'], array_column($modules, 'path'));
+            $result = Extractor::extract($module['path'], $module['id'], $prepared);
             foreach ($result['source_errors'] as $error) {
                 $errors[] = basename($module['path']) . '/' . $error;
             }

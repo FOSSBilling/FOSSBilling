@@ -29,12 +29,28 @@ use Twig\TwigTest;
 /** Static source inspection only: source PHP and template callables are never executed. */
 final class Extractor
 {
+    /** @param list<string> $roots */
+    public static function prepare(array $roots): array
+    {
+        $contexts = $scopes = [];
+        foreach ($roots as $root) {
+            $contexts[$root] = [];
+            foreach ((new Finder())->useUnixPaths()->files()->in($root)->name('*.php')->exclude(['vendor', 'install', 'data', 'tests', 'locale', 'node_modules', '.git'])->notName('load.php')->sortByName() as $file) {
+                $fileContexts = self::contexts($file->getContents());
+                $contexts[$root][$file->getRelativePathname()] = $fileContexts;
+                array_push($scopes, ...$fileContexts);
+            }
+        }
+
+        return ['contexts' => $contexts, 'signatures' => self::signatures($scopes)];
+    }
+
     /**
-     * @param list<string> $dependencies Source directories used only to resolve inherited constructor signatures
+     * @param array|null $prepared PHP contexts and signatures prepared for this extraction run
      *
      * @return array{occurrences: list<array{string, ?string, string, string}>, source_errors: list<string>, files: int}
      */
-    public static function extract(string $root, ?string $module = null, array $dependencies = []): array
+    public static function extract(string $root, ?string $module = null, ?array $prepared = null): array
     {
         if (!(new Filesystem())->exists($root) || !is_dir($root)) {
             throw new \RuntimeException("source directory does not exist: $root");
@@ -42,6 +58,7 @@ final class Extractor
         if ($module !== null && (!preg_match('/\A[a-z][a-z0-9_-]*\z/', $module) || $module === 'core')) {
             throw new \RuntimeException("invalid module ID: $module");
         }
+        $prepared ??= self::prepare([$root]);
         $twig = new Environment(new ArrayLoader(), ['cache' => false, 'autoescape' => false, 'optimizations' => 0]);
         $twig->addExtension(new class extends AbstractExtension {
             public function getExpressionParsers(): array
@@ -53,31 +70,16 @@ final class Extractor
         $twig->registerUndefinedFilterCallback(static fn (string $name): TwigFilter => new TwigFilter($name, static fn (...$args): null => null, ['is_variadic' => true]));
         $twig->registerUndefinedFunctionCallback(static fn (string $name): TwigFunction => new TwigFunction($name, static fn (...$args): null => null, ['is_variadic' => true]));
         $twig->registerUndefinedTestCallback(static fn (string $name): TwigTest => new TwigTest($name, static fn (...$args): true => true));
-        $files = $contexts = [];
         $finder = (new Finder())->useUnixPaths()->files()->in($root)->name(['*.php', '*.twig'])
             ->exclude(['vendor', 'install', 'data', 'tests', 'locale', 'node_modules', '.git'])->notName('load.php')->sortByName();
+        $out = $errors = [];
+        $files = 0;
         foreach ($finder as $file) {
             $rel = $file->getRelativePathname();
-            $files[$rel] = $file->getContents();
+            ++$files;
             if ($file->getExtension() === 'php') {
-                $contexts[$rel] = self::contexts($files[$rel]);
-            }
-        }
-        $signatureContexts = array_merge([], ...array_values($contexts));
-        foreach ($dependencies as $dependency) {
-            if ($dependency === $root) {
-                continue;
-            }
-            foreach ((new Finder())->files()->in($dependency)->name('*.php')->exclude(['vendor', 'install', 'data', 'tests', 'locale', 'node_modules', '.git'])->notName('load.php') as $file) {
-                array_push($signatureContexts, ...self::contexts($file->getContents()));
-            }
-        }
-        $signatures = self::signatures($signatureContexts);
-        $out = $errors = [];
-        foreach ($files as $rel => $code) {
-            if (str_ends_with($rel, '.php')) {
-                foreach ($contexts[$rel] as $context) {
-                    self::phpOccurrences($rel, $context, $signatures, $out, $errors);
+                foreach ($prepared['contexts'][$root][$rel] as $context) {
+                    self::phpOccurrences($rel, $context, $prepared['signatures'], $out, $errors);
                 }
             } else {
                 $inferred = $module;
@@ -87,11 +89,11 @@ final class Extractor
                         $inferred = $candidate;
                     }
                 }
-                self::twigOccurrences($twig, $rel, $code, $inferred, $out, $errors);
+                self::twigOccurrences($twig, $rel, $file->getContents(), $inferred, $out, $errors);
             }
         }
 
-        return ['occurrences' => $out, 'source_errors' => $errors, 'files' => count($files)];
+        return ['occurrences' => $out, 'source_errors' => $errors, 'files' => $files];
     }
 
     private static function tokens(string $code): array
