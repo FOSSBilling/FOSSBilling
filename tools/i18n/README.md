@@ -14,6 +14,7 @@ Use `--no-dev` when tests aren't needed. The tools inspect source without execut
 tools/i18n/bin/console extract src /tmp/messages.pot
 tools/i18n/bin/console extract src /tmp/messages.pot --check
 tools/i18n/bin/console diff old.pot new.pot
+tools/i18n/bin/console diff old.pot new.pot --format=json
 tools/i18n/bin/console extract-modules /path/to/modules /path/to/core/messages.pot /tmp/templates
 tools/i18n/bin/console validate /path/to/modules /tmp/templates
 tools/i18n/bin/console compile /path/to/modules /tmp/templates /tmp/compiled
@@ -21,7 +22,7 @@ tools/i18n/bin/console compile /path/to/modules /tmp/templates /tmp/compiled
 
 `extract` produces the combined core and bundled-module template used by `FOSSBilling/locale`. `extract-modules` accepts a modules checkout or single module directory and writes `<Module>/locale/<id>.pot` beneath its output directory. Each module needs a v1 manifest and a directory named `Ucfirst(id)`. The core POT must match the module's minimum core version; shared references must match its message and plural pair. Cross-module references require the target module in the input checkout.
 
-Both extraction commands support `--check`, which reports stale templates without writing and ignores creation dates. `diff` reports added, removed, plural, and casing changes. Generation validates all sources before writing, leaves unchanged module templates alone, and rejects conflicting plurals or orphaned templates.
+Both extraction commands support `--check`, which reports stale templates without writing and ignores creation dates. `diff` reports added, removed, plural, and casing changes. `--format=json` returns a `changed` flag, counts (`added`, `removed`, `gone`, `casing_only`, `plural_changed`), and the text `report`; dates, references, and entry order do not count as changes. `gone` excludes casing-only replacements. Generation validates all sources before writing, leaves unchanged module templates alone, and rejects conflicting plurals or orphaned templates.
 
 Extraction follows the [translation source rules](../../CONTRIBUTING.md#translation-lookup-in-code). PHP messages default to core; module-owned messages need an explicit literal `from` at the message call site. Constructor defaults and values forwarded through constructor bodies are not inferred. Dynamic messages are skipped. Invalid Twig syntax, unknown tags, and ambiguous translation arguments fail extraction. Unknown filter, function, and test names are accepted as inert parsing declarations; custom tags need explicit registration.
 
