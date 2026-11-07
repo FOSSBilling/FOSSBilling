@@ -3,41 +3,30 @@
 declare(strict_types=1);
 
 use FOSSBilling\Tools\I18n\Catalogue;
-use Symfony\Component\Finder\Finder;
-
-function translationSnapshot(string $root): array
-{
-    $result = [];
-    foreach ((new Finder())->files()->in($root)->sortByName() as $file) {
-        $result[$file->getRelativePathname()] = $file->getContents();
-    }
-
-    return $result;
-}
 
 test('extracts separate module templates without modifying module files', function (): void {
     $f = $this->fixture;
     $f->setupModules();
-    $before = translationSnapshot($f->modules);
+    $before = $f->snapshot($f->modules);
     $result = $f->extract();
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
     expect(Catalogue::entries($f->template()))->toBe([':n item' => ':n items', 'Hello :name' => null]);
     expect(Catalogue::entries($f->template('Other')))->toBe(['Hello :name' => null, 'Other' => null]);
-    expect((new Symfony\Component\Filesystem\Filesystem())->readFile($f->template()))->toContain('Project-Id-Version: FOSSBilling module example', 'Example/templates/page.twig:1');
-    expect(translationSnapshot($f->modules))->toBe($before);
+    expect($f->fs->readFile($f->template()))->toContain('Project-Id-Version: FOSSBilling module example', 'Example/templates/page.twig:1');
+    expect($f->snapshot($f->modules))->toBe($before);
 });
 
 test('keeps unchanged templates and performs read-only stale checks', function (): void {
     $f = $this->fixture;
     $f->setupModules();
     $this->assertSame(0, $f->extract()->getExitCode());
-    $f->fs->dumpFile($f->template(), str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', (new Symfony\Component\Filesystem\Filesystem())->readFile($f->template())));
-    $before = (new Symfony\Component\Filesystem\Filesystem())->readFile($f->template());
-    expect($f->extract()->getExitCode())->toBe(0)->and((new Symfony\Component\Filesystem\Filesystem())->readFile($f->template()))->toBe($before);
+    $f->fs->dumpFile($f->template(), str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', $f->fs->readFile($f->template())));
+    $before = $f->fs->readFile($f->template());
+    expect($f->extract()->getExitCode())->toBe(0)->and($f->fs->readFile($f->template()))->toBe($before);
     expect($f->extract(['--check'])->getExitCode())->toBe(0);
     $f->write('modules/Example/templates/page.twig', "{{ 'Changed'|trans }}");
     $result = $f->extract(['--check']);
-    expect($result->getExitCode())->toBe(1)->and($result->getOutput())->toContain('Hello :name', 'Changed')->and((new Symfony\Component\Filesystem\Filesystem())->readFile($f->template()))->toBe($before);
+    expect($result->getExitCode())->toBe(1)->and($result->getOutput())->toContain('Hello :name', 'Changed')->and($f->fs->readFile($f->template()))->toBe($before);
 });
 
 test('routes cross-module translations to the requested source', function (): void {
@@ -61,10 +50,10 @@ test('rejects invalid sources before changing any templates', function (string $
     $f = $this->fixture;
     $f->setupModules();
     expect($f->extract()->getExitCode())->toBe(0);
-    $before = translationSnapshot($f->templates);
+    $before = $f->snapshot($f->templates);
     $f->write('modules/Other/templates/page.twig', "{{ 'Changed'|trans(from: $from) }}");
     $result = $f->extract();
-    expect($result->getExitCode())->toBe(1)->and($result->getErrorOutput())->toContain('Other/templates/page.twig:1')->and(translationSnapshot($f->templates))->toBe($before);
+    expect($result->getExitCode())->toBe(1)->and($result->getErrorOutput())->toContain('Other/templates/page.twig:1')->and($f->snapshot($f->templates))->toBe($before);
 })->with(["'unknown'", 'source']);
 
 test('rejects conflicting plurals before publishing any template', function (): void {
@@ -111,9 +100,9 @@ test('supports single modules and leaves other committed templates untouched', f
     expect($f->extract([], $f->modules . '/Example')->getExitCode())->toBe(0);
     expect(is_file($f->template('Other')))->toBeFalse();
     expect($f->extract()->getExitCode())->toBe(0);
-    $other = (new Symfony\Component\Filesystem\Filesystem())->readFile($f->template('Other'));
+    $other = $f->fs->readFile($f->template('Other'));
     foreach ([[], ['--check']] as $options) {
-        expect($f->extract($options, $f->modules . '/Example')->getExitCode())->toBe(0)->and((new Symfony\Component\Filesystem\Filesystem())->readFile($f->template('Other')))->toBe($other);
+        expect($f->extract($options, $f->modules . '/Example')->getExitCode())->toBe(0)->and($f->fs->readFile($f->template('Other')))->toBe($other);
     }
 });
 
@@ -141,13 +130,13 @@ test('preserves combined extraction, date-insensitive checks and diff diagnostic
     $pot = $f->root . '/messages.pot';
     expect($f->cli(['extract', $f->root . '/input', $pot])->getExitCode())->toBe(0);
     expect(Catalogue::entries($pot))->toHaveKeys(['Original', 'One', 'Module']);
-    $f->fs->dumpFile($pot, str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', (new Symfony\Component\Filesystem\Filesystem())->readFile($pot)));
-    $before = (new Symfony\Component\Filesystem\Filesystem())->readFile($pot);
-    expect($f->cli(['extract', $f->root . '/input', $pot, '--check'])->getExitCode())->toBe(0)->and((new Symfony\Component\Filesystem\Filesystem())->readFile($pot))->toBe($before);
+    $f->fs->dumpFile($pot, str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', $f->fs->readFile($pot)));
+    $before = $f->fs->readFile($pot);
+    expect($f->cli(['extract', $f->root . '/input', $pot, '--check'])->getExitCode())->toBe(0)->and($f->fs->readFile($pot))->toBe($before);
     foreach ([str_replace('Original', 'Changed', $source), str_replace('Many', 'Changed plurals', $source), str_replace('<?php ', "<?php\n\n", $source)] as $changed) {
         $f->write('input/Service.php', $changed);
         $result = $f->cli(['extract', $f->root . '/input', $pot, '--check']);
-        expect($result->getExitCode())->toBe(1)->and((new Symfony\Component\Filesystem\Filesystem())->readFile($pot))->toBe($before);
+        expect($result->getExitCode())->toBe(1)->and($f->fs->readFile($pot))->toBe($before);
     }
     $new = $f->root . '/new.pot';
     Catalogue::write([['original', null, 'new.php:1', 'core'], ['One', 'More', 'new.php:2', 'core']], $new);
@@ -158,7 +147,7 @@ test('preserves combined extraction, date-insensitive checks and diff diagnostic
 test('does not generate empty templates for missing source roots', function (): void {
     $f = $this->fixture;
     $target = $f->root . '/messages.pot';
-    expect($f->cli(['extract', $f->root . '/missing', $target])->getExitCode())->toBe(1)->and((new Symfony\Component\Filesystem\Filesystem())->exists($target))->toBeFalse();
+    expect($f->cli(['extract', $f->root . '/missing', $target])->getExitCode())->toBe(1)->and($f->fs->exists($target))->toBeFalse();
 });
 
 test('reads CRLF core templates and checks catalogues without newline-only changes', function (): void {
@@ -172,9 +161,9 @@ test('reads CRLF core templates and checks catalogues without newline-only chang
     foreach ([$f->template(), $f->template('Other')] as $path) {
         $f->fs->dumpFile($path, str_replace("\n", "\r\n", $f->fs->readFile($path)));
     }
-    $before = translationSnapshot($f->templates);
+    $before = $f->snapshot($f->templates);
     expect($f->extract(['--check'])->getExitCode())->toBe(0);
-    expect(translationSnapshot($f->templates))->toBe($before);
+    expect($f->snapshot($f->templates))->toBe($before);
     $f->write('input/Service.php', "<?php __trans('Hello');");
     $target = $f->root . '/messages.pot';
     expect($f->cli(['extract', $f->root . '/input', $target])->getExitCode())->toBe(0);

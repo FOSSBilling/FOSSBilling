@@ -6,9 +6,8 @@ use FOSSBilling\Tools\I18n\Catalogue;
 use FOSSBilling\Tools\I18n\Extractor;
 
 dataset('extraction', function (): iterable {
-    $fixtures = json_decode((new Symfony\Component\Filesystem\Filesystem())->readFile(__DIR__ . '/fixtures/extraction.json'), true, flags: JSON_THROW_ON_ERROR);
-    foreach ($fixtures as $fixture) {
-        yield $fixture['name'] => [$fixture];
+    foreach (require __DIR__ . '/fixtures/extraction.php' as $name => $fixture) {
+        yield $name => [$fixture];
     }
 });
 
@@ -17,27 +16,23 @@ test('extracts messages, plural pairs, references and sources and rejects invali
         $this->fixture->write('input/' . $relative, $content);
     }
     $result = Extractor::extract($this->fixture->root . '/input', $fixture['module']);
-    $serialize = static function (array $occurrences): array {
-        $rows = array_map(static fn ($row): string => json_encode($row, JSON_THROW_ON_ERROR), $occurrences);
-        sort($rows, SORT_STRING);
-
-        return $rows;
-    };
-    expect($serialize($result['occurrences']))->toBe($serialize($fixture['occurrences']));
-    expect((bool) $result['source_errors'])->toBe($fixture['has_errors']);
+    $expected = $fixture['occurrences'];
+    $actual = $result['occurrences'];
+    sort($expected);
+    sort($actual);
+    expect($actual)->toBe($expected);
+    if ($fixture['error'] === null) {
+        expect($result['source_errors'])->toBe([]);
+    } else {
+        expect(implode("\n", $result['source_errors']))->toContain($fixture['error']);
+    }
 })->with('extraction');
-
-test('retains PHP extraction counters for ternaries and denied constructors', function (): void {
-    $this->fixture->write('input/Case.php', "<?php new RuntimeException(\$area ? 'Admin' : 'Client'); new DateTime('now');");
-    $result = Extractor::extract($this->fixture->root . '/input');
-    expect($result['stats']['php'])->toBe(1)->and($result['stats']['ctor_classes']['RuntimeException'])->toBe(1)->and($result['stats']['skipped_ctor'])->toBe(1);
-});
 
 test('rejects invalid Twig and unknown extension tags without overwriting templates', function (string $code): void {
     $this->fixture->write('input/page.twig', $code);
     $target = $this->fixture->write('messages.pot', 'keep this template');
     $result = $this->fixture->cli(['extract', $this->fixture->root . '/input', $target]);
-    expect($result->getExitCode())->toBe(1)->and($result->getErrorOutput())->not->toBeEmpty()->and((new Symfony\Component\Filesystem\Filesystem())->readFile($target))->toBe('keep this template');
+    expect($result->getExitCode())->toBe(1)->and($result->getErrorOutput())->not->toBeEmpty()->and($this->fixture->fs->readFile($target))->toBe('keep this template');
 })->with(["{% if flag %}{{ 'Save'|trans }}", "{% custom_tag %}{{ 'Save'|trans }}"]);
 
 test('extracts parenthesized and binary string literals', function (): void {
@@ -74,7 +69,7 @@ test('includes embedded templates and keeps duplicate AST nodes out of generated
     $pot = $this->fixture->root . '/messages.pot';
     Catalogue::write($result['occurrences'], $pot);
     expect(Catalogue::entries($pot))->toBe(['Embedded' => null]);
-    expect(substr_count((new Symfony\Component\Filesystem\Filesystem())->readFile($pot), 'page.twig:1'))->toBe(1);
+    expect(substr_count($this->fixture->fs->readFile($pot), 'page.twig:1'))->toBe(1);
 });
 
 test('does not execute PHP or template callables', function (): void {
@@ -82,7 +77,7 @@ test('does not execute PHP or template callables', function (): void {
     $this->fixture->write('input/Case.php', '<?php file_put_contents(' . var_export($marker, true) . ", 'bad'); __trans('PHP');");
     $this->fixture->write('input/page.twig', "{{ dangerous('bad') }} {{ 'Twig'|trans }}");
     $result = Extractor::extract($this->fixture->root . '/input');
-    expect($result['source_errors'])->toBe([])->and((new Symfony\Component\Filesystem\Filesystem())->exists($marker))->toBeFalse();
+    expect($result['source_errors'])->toBe([])->and($this->fixture->fs->exists($marker))->toBeFalse();
     expect(array_column($result['occurrences'], 0))->toBe(['PHP', 'Twig']);
 });
 

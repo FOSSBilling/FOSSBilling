@@ -21,7 +21,7 @@ use Twig\TwigTest;
 /** Static source inspection only: source PHP and template callables are never executed. */
 final class Extractor
 {
-    /** @return array{occurrences: list<array{string, ?string, string, string}>, source_errors: list<string>, stats: array} */
+    /** @return array{occurrences: list<array{string, ?string, string, string}>, source_errors: list<string>, files: int} */
     public static function extract(string $root, ?string $module = null): array
     {
         if (!(new Filesystem())->exists($root) || !is_dir($root)) {
@@ -53,10 +53,9 @@ final class Extractor
         }
         $signatures = self::signatures($contexts);
         $out = $errors = [];
-        $stats = ['php' => 0, 'twig' => 0, 'skipped_ctor' => 0, 'skipped_dynamic' => 0, 'ctor_classes' => [], 'files' => count($files)];
         foreach ($files as $rel => $code) {
             if (str_ends_with($rel, '.php')) {
-                self::phpOccurrences($rel, $contexts[$rel], $signatures, $out, $errors, $stats);
+                self::phpOccurrences($rel, $contexts[$rel], $signatures, $out, $errors);
             } else {
                 $inferred = $module;
                 if ($inferred === null && preg_match('~^modules/([^/]+)/~', $rel, $matches)) {
@@ -65,11 +64,11 @@ final class Extractor
                         $inferred = $candidate;
                     }
                 }
-                self::twigOccurrences($twig, $rel, $code, $inferred, $out, $errors, $stats);
+                self::twigOccurrences($twig, $rel, $code, $inferred, $out, $errors);
             }
         }
 
-        return ['occurrences' => $out, 'source_errors' => $errors, 'stats' => $stats];
+        return ['occurrences' => $out, 'source_errors' => $errors, 'files' => count($files)];
     }
 
     private static function tokens(string $code): array
@@ -377,7 +376,7 @@ final class Extractor
         return $signatures;
     }
 
-    private static function phpOccurrences(string $rel, array $context, array $signatures, array &$out, array &$errors, array &$stats): void
+    private static function phpOccurrences(string $rel, array $context, array $signatures, array &$out, array &$errors): void
     {
         $tokens = $context['tokens'];
         $pairs = $context['pairs'];
@@ -395,8 +394,6 @@ final class Extractor
                 $parts = explode('\\', $tokens[$i + 1]->text);
                 $short = end($parts);
                 if (in_array(strtolower($short), $deny, true) || strtolower($short) === 'class') {
-                    ++$stats['skipped_ctor'];
-
                     continue;
                 }
                 $constructor = self::resolveName($tokens[$i + 1]->text, $context);
@@ -433,8 +430,6 @@ final class Extractor
                 $bound = self::bind($args, $names);
                 $variants = self::messages($bound[$names[0]] ?? [], $name !== '__pluralTrans');
                 if ($variants === null) {
-                    ++$stats['skipped_dynamic'];
-
                     continue;
                 }
                 if (in_array('from', $names, true)) {
@@ -453,10 +448,6 @@ final class Extractor
                     $plural = $forms[0];
                 }
                 $from = self::source($acceptsSource ? ($bound['from'] ?? null) : null, 'core');
-                ++$stats['php'];
-                if ($short !== null) {
-                    $stats['ctor_classes'][$short] = ($stats['ctor_classes'][$short] ?? 0) + 1;
-                }
                 foreach ($variants as $msgid) {
                     $out[] = [$msgid, $plural, $ref, $from];
                 }
@@ -466,7 +457,7 @@ final class Extractor
         }
     }
 
-    private static function twigOccurrences(Environment $twig, string $rel, string $code, ?string $module, array &$out, array &$errors, array &$stats): void
+    private static function twigOccurrences(Environment $twig, string $rel, string $code, ?string $module, array &$out, array &$errors): void
     {
         try {
             $tree = $twig->parse($twig->tokenize(new Source($code, $rel)));
@@ -476,7 +467,7 @@ final class Extractor
             return;
         }
         $seen = new \SplObjectStorage();
-        $walk = function (Node $node) use (&$walk, $rel, $module, &$out, &$errors, &$stats, $seen): void {
+        $walk = function (Node $node) use (&$walk, $rel, $module, &$out, &$errors, $seen): void {
             if ($seen->offsetExists($node)) {
                 return;
             }
@@ -502,7 +493,6 @@ final class Extractor
                             }
                         }
                         $out[] = [$value->getAttribute('value'), null, $ref, $from];
-                        ++$stats['twig'];
                     } catch (\Throwable $e) {
                         $errors[] = $ref . ': ' . $e->getMessage();
                     }

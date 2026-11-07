@@ -674,7 +674,7 @@
             "words": ["objets", "Profil", "Salut", "Supprimé", "Valeur"]
         },
         {
-            "filename": "tools/i18n/tests/fixtures/extraction.json",
+            "filename": "tools/i18n/tests/fixtures/extraction.php",
             "words": ["mple"]
         }
     ],

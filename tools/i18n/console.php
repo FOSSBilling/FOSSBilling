@@ -50,7 +50,7 @@ $application->addCommand((new Command('extract'))
 
             return $count;
         });
-        $output->writeln(sprintf('Scanned %d files; found %d messages.', $result['stats']['files'], $count));
+        $output->writeln(sprintf('Scanned %d files; found %d messages.', $result['files'], $count));
 
         return Command::SUCCESS;
     }));

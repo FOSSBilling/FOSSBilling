@@ -5,6 +5,7 @@ declare(strict_types=1);
 use FOSSBilling\Tools\I18n\Catalogue;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\Process;
 
 final readonly class TranslationFixture
@@ -40,6 +41,16 @@ final readonly class TranslationFixture
         return $path;
     }
 
+    public function snapshot(string $root): array
+    {
+        $result = [];
+        foreach ((new Finder())->files()->in($root)->sortByName() as $file) {
+            $result[$file->getRelativePathname()] = $file->getContents();
+        }
+
+        return $result;
+    }
+
     public function setupModules(): void
     {
         Catalogue::write([['Save', null, 'core.php:1', 'core'], ['Shared item', 'Shared items', 'core.php:2', 'core']], $this->core);
@@ -65,11 +76,11 @@ final readonly class TranslationFixture
         return $this->cli(['extract-modules', $root ?? $this->modules, $this->core, $this->templates, ...$extra]);
     }
 
-    public function translate(string $command, array $env = [], ?string $output = null): Process
+    public function translate(string $command, array $env = []): Process
     {
         $arguments = [$command, $this->modules, $this->templates];
         if ($command === 'compile') {
-            $arguments[] = $output ?? $this->build;
+            $arguments[] = $this->build;
         }
 
         return $this->cli($arguments, $env);
@@ -80,9 +91,9 @@ final readonly class TranslationFixture
         return Path::join($this->templates, $module, 'locale', strtolower($module) . '.pot');
     }
 
-    public function mo(string $locale = 'fr_FR', ?string $output = null): string
+    public function mo(): string
     {
-        return Path::join($output ?? $this->build, 'Example/locale', $locale, 'LC_MESSAGES/example.mo');
+        return Path::join($this->build, 'Example/locale/fr_FR/LC_MESSAGES/example.mo');
     }
 
     public function po(array $entries, string $locale = 'fr_FR', string $rule = 'nplurals=2; plural=(n > 1);'): string
