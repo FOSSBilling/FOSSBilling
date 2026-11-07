@@ -197,7 +197,7 @@ test('always compiles UTF-8 bytes even with pre-0.22 gettext encoding behavior',
     $help = new Process([$compiler, '--help']);
     $help->mustRun();
     $options = str_contains($help->getOutput(), '--no-convert') ? ['--no-convert'] : [];
-    $bootstrap = dirname(__DIR__) . '/bootstrap.php';
+    $bootstrap = dirname(__DIR__, 2) . '/bootstrap.php';
     $wrapper = '#!' . PHP_BINARY . "\n<?php\nrequire " . var_export($bootstrap, true) . ";\n\$p = new Symfony\\Component\\Process\\Process(array_merge(" . var_export([$compiler, ...$options], true) . ", array_slice(\$argv, 1)));\n\$p->run(); echo \$p->getOutput(); fwrite(STDERR, \$p->getErrorOutput()); exit(\$p->getExitCode());\n";
     $f->write('legacy-bin/msgfmt', $wrapper);
     $f->fs->chmod($f->root . '/legacy-bin/msgfmt', 0o755);
@@ -226,7 +226,7 @@ test('rejects staging directories containing only version-control metadata', fun
 test('compiles from a dot path inside a single module', function (): void {
     $f = $this->fixture;
     $f->po([['Hello :name', null, ['Bonjour :name'], false]]);
-    $result = $f->cli(['compile', '.', $f->templates, $f->build], cwd: $f->modules . '/Example');
+    $result = $f->cli(['i18n:compile', '.', $f->templates, $f->build], cwd: $f->modules . '/Example');
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
     expect($f->readMo($f->mo())['Hello :name'])->toBe('Bonjour :name');
 });
