@@ -449,7 +449,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $model->setContactPhone($contact->getTel());
 
         $model->setDetails(serialize($whois));
-        $model->setExpiresAt($this->formatRegistrarTimestamp($whois->getExpirationTime()));
+
+        // Some registrars do not report an expiration or registration timestamp.
+        // Only overwrite the stored values when the registrar actually provides them.
+        $expiresAt = $this->formatRegistrarTimestamp($whois->getExpirationTime());
+        if ($expiresAt !== null) {
+            $model->setExpiresAt($expiresAt);
+        }
 
         // Some registrars do not report a registration timestamp. Only overwrite
         // the stored value when the registrar actually provides one.
@@ -462,7 +468,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         // values when the registrar does not return any.
         foreach ([1, 2, 3, 4] as $i) {
             $ns = $whois->{"getNs{$i}"}();
-            if (!empty($ns)) {
+            if (is_string($ns) && $ns !== '') {
                 $model->{"setNs{$i}"}($ns);
             }
         }

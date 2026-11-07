@@ -186,3 +186,61 @@ test('syncWhois still refreshes expires_at and synced_at', function (): void {
     expect($model->getSyncedAt())->toBeInstanceOf(DateTime::class);
     expect($em->flushCount)->toBe(1);
 });
+
+test('syncWhois keeps stored nameservers when the registrar reports empty strings', function (): void {
+    $em = makeEntityManagerSpy();
+
+    $whois = new Registrar_Domain();
+    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setNs1('');
+    $whois->setNs2('');
+
+    $service = makeSyncWhoisService($whois, $em);
+
+    $model = new ServiceDomain();
+    $model->setNs1('ns1.old.test');
+    $model->setNs2('ns2.old.test');
+
+    $service->syncWhois($model, new Box\Mod\Order\Entity\Order());
+
+    expect($model->getNs1())->toBe('ns1.old.test');
+    expect($model->getNs2())->toBe('ns2.old.test');
+});
+
+test('syncWhois skips non-string nameserver values without interrupting the sync', function (): void {
+    $em = makeEntityManagerSpy();
+
+    $whois = new Registrar_Domain();
+    $whois->setContactRegistrar(makeWhoisContact());
+    // Some adapters pass through API responses that return nameservers as arrays.
+    $whois->setNs1(['ns1.registrar.test']);
+    $whois->setNs2('ns2.registrar.test');
+
+    $service = makeSyncWhoisService($whois, $em);
+
+    $model = new ServiceDomain();
+    $model->setNs1('ns1.old.test');
+
+    $service->syncWhois($model, new Box\Mod\Order\Entity\Order());
+
+    expect($model->getNs1())->toBe('ns1.old.test');
+    expect($model->getNs2())->toBe('ns2.registrar.test');
+    expect($em->flushCount)->toBe(1);
+});
+
+test('syncWhois does not clear expires_at when the registrar returns no expiration timestamp', function (): void {
+    $em = makeEntityManagerSpy();
+
+    $whois = new Registrar_Domain();
+    $whois->setContactRegistrar(makeWhoisContact());
+    // No expiration time set.
+
+    $service = makeSyncWhoisService($whois, $em);
+
+    $model = new ServiceDomain();
+    $model->setExpiresAt(new DateTime('2027-06-15 00:00:00'));
+
+    $service->syncWhois($model, new Box\Mod\Order\Entity\Order());
+
+    expect($model->getExpiresAt()?->format('Y-m-d H:i:s'))->toBe('2027-06-15 00:00:00');
+});
