@@ -73,7 +73,7 @@ final readonly class TranslationFixture
     public function cli(array $arguments, array $env = [], ?string $cwd = null): Process
     {
         $repo = dirname(__DIR__, 3);
-        $process = new Process([PHP_BINARY, Path::join($repo, 'tools/i18n/console.php'), ...$arguments], $cwd ?? $repo, ['COLUMNS' => '1000', ...$env]);
+        $process = new Process([PHP_BINARY, Path::join($repo, 'tools/i18n/bin/console'), ...$arguments], $cwd ?? $repo, ['COLUMNS' => '1000', ...$env]);
         $process->run();
 
         return $process;

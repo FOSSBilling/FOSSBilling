@@ -672,6 +672,10 @@
     ],
     "overrides": [
         {
+            "filename": "tools/i18n/bin/console",
+            "languageId": "php"
+        },
+        {
             "filename": "tools/i18n/tests/GettextTest.php",
             "words": ["objets", "Profil", "Salut", "Supprimé", "Valeur"]
         },

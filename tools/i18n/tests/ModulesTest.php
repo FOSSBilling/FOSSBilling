@@ -233,3 +233,17 @@ test('accepts a dot path inside a single module and preserves sibling templates'
     expect(TranslationCatalog::entries($f->template()))->toHaveKey('Hello :name');
     expect($f->fs->readFile($f->template('Other')))->toBe($before);
 });
+
+test('keeps diff values on one line and preserves literal console tags', function (): void {
+    $f = $this->fixture;
+    $old = $f->root . '/old.pot';
+    $new = $f->root . '/new.pot';
+    TranslationCatalog::write([['Item', "Old\nitems", 'old.php:1', 'core']], $old);
+    TranslationCatalog::write([
+        ['Item', "New\nitems", 'new.php:1', 'core'],
+        ["<info>First\nEOF\nSecond</info>", null, 'new.php:2', 'core'],
+    ], $new);
+    $result = $f->cli(['diff', $old, $new]);
+    $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
+    expect($result->getOutput())->toContain('"<info>First\\nEOF\\nSecond</info>"', '"Old\\nitems" -> "New\\nitems"')->not->toContain("\nEOF\n");
+});

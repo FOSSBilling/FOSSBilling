@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-require __DIR__ . '/bootstrap.php';
+require dirname(__DIR__) . '/bootstrap.php';
 
 use FOSSBilling\Tools\I18n\Extractor;
 use FOSSBilling\Tools\I18n\Gettext;
@@ -48,7 +48,7 @@ $application->addCommand((new Command('extract'))
                     throw new RuntimeException("missing template: $target");
                 }
                 if (TranslationCatalog::normalized($generated) !== TranslationCatalog::normalized($target)) {
-                    $output->write(TranslationCatalog::diff($target, $generated));
+                    $output->write(TranslationCatalog::diff($target, $generated), false, OutputInterface::OUTPUT_RAW);
 
                     throw new RuntimeException("template needs regeneration: $target");
                 }
@@ -76,7 +76,7 @@ $application->addCommand((new Command('diff'))
     ->addArgument('old-template', InputArgument::REQUIRED)
     ->addArgument('new-template', InputArgument::REQUIRED)
     ->setCode(static function (InputInterface $input, OutputInterface $output): int {
-        $output->write(TranslationCatalog::diff($input->getArgument('old-template'), $input->getArgument('new-template')));
+        $output->write(TranslationCatalog::diff($input->getArgument('old-template'), $input->getArgument('new-template')), false, OutputInterface::OUTPUT_RAW);
 
         return Command::SUCCESS;
     }));

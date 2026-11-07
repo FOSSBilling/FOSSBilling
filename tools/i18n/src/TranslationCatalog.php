@@ -158,6 +158,11 @@ final class TranslationCatalog
         return count($merged);
     }
 
+    private static function quote(string|int|null $value): string
+    {
+        return json_encode($value === null ? null : (string) $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
     public static function diff(string $oldPath, string $newPath): string
     {
         $old = self::entries($oldPath);
@@ -185,19 +190,19 @@ final class TranslationCatalog
         if ($casing) {
             $output .= "\nCasing-only changes (invalidate existing translations!):\n";
             foreach ($casing as [$a, $b]) {
-                $output .= "  - '$a' -> '$b'\n";
+                $output .= '  - ' . self::quote($a) . ' -> ' . self::quote($b) . "\n";
             }
         }
         if ($realAdded) {
             $output .= "\nNew msgids needing translation:\n";
             foreach ($realAdded as $msgid) {
-                $output .= "  + '$msgid'\n";
+                $output .= '  + ' . self::quote($msgid) . "\n";
             }
         }
         if ($realRemoved) {
             $output .= "\nDropped msgids:\n";
             foreach ($realRemoved as $msgid) {
-                $output .= "  - '$msgid'\n";
+                $output .= '  - ' . self::quote($msgid) . "\n";
             }
         }
         $changed = [];
@@ -214,7 +219,7 @@ final class TranslationCatalog
         if ($changed) {
             $output .= "\nChanged plural forms:\n";
             foreach ($changed as [$a, $b]) {
-                $output .= "  ~ '$a'" . ($a === $b ? '' : " -> '$b'") . ': ' . var_export($old[$a], true) . ' -> ' . var_export($new[$b], true) . "\n";
+                $output .= '  ~ ' . self::quote($a) . ($a === $b ? '' : ' -> ' . self::quote($b)) . ': ' . self::quote($old[$a]) . ' -> ' . self::quote($new[$b]) . "\n";
             }
         }
 

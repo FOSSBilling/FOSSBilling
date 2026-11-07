@@ -11,12 +11,12 @@ Use `--no-dev` when tests aren't needed. The tools inspect source without execut
 ## Commands
 
 ```bash
-php tools/i18n/console.php extract src /tmp/messages.pot
-php tools/i18n/console.php extract src /tmp/messages.pot --check
-php tools/i18n/console.php diff old.pot new.pot
-php tools/i18n/console.php extract-modules /path/to/modules /path/to/core/messages.pot /tmp/templates
-php tools/i18n/console.php validate /path/to/modules /tmp/templates
-php tools/i18n/console.php compile /path/to/modules /tmp/templates /tmp/compiled
+tools/i18n/bin/console extract src /tmp/messages.pot
+tools/i18n/bin/console extract src /tmp/messages.pot --check
+tools/i18n/bin/console diff old.pot new.pot
+tools/i18n/bin/console extract-modules /path/to/modules /path/to/core/messages.pot /tmp/templates
+tools/i18n/bin/console validate /path/to/modules /tmp/templates
+tools/i18n/bin/console compile /path/to/modules /tmp/templates /tmp/compiled
 ```
 
 `extract` produces the combined core and bundled-module template used by `FOSSBilling/locale`. `extract-modules` accepts a modules checkout or single module directory and writes `<Module>/locale/<id>.pot` beneath its output directory. Each module needs a v1 manifest and a directory named `Ucfirst(id)`. The core POT must match the module's minimum core version; shared references must match its message and plural pair. Cross-module references require the target module in the input checkout.

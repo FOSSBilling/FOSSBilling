@@ -34,12 +34,12 @@ jobs:
         run: composer install --working-dir=tools/i18n --no-interaction --no-progress
 
       - name: 'Extract msgids (head)'
-        run: php tools/i18n/console.php extract src /tmp/head.pot
+        run: tools/i18n/bin/console extract src /tmp/head.pot
 
       - name: 'Extract msgids (base)'
         run: |
           git worktree add /tmp/base "${{ github.event.pull_request.base.sha }}"
-          php tools/i18n/console.php extract /tmp/base/src /tmp/base.pot
+          tools/i18n/bin/console extract /tmp/base/src /tmp/base.pot
           git worktree remove --force /tmp/base
 
       - name: 'Install translation test dependencies'
@@ -52,7 +52,7 @@ jobs:
       - name: 'Compare'
         id: diff
         run: |
-          php tools/i18n/console.php diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt
+          tools/i18n/bin/console diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt
           delimiter=POT_DIFF
           while grep -Fq "$delimiter" /tmp/pot-diff.txt; do
             delimiter="${delimiter}_"
