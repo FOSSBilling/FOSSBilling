@@ -247,3 +247,36 @@ test('keeps diff values on one line and preserves literal console tags', functio
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
     expect($result->getOutput())->toContain('"<info>First\\nEOF\\nSecond</info>"', '"Old\\nitems" -> "New\\nitems"')->not->toContain("\nEOF\n");
 });
+
+test('exports template comparisons as JSON without counting metadata changes', function (array $oldEntries, array $newEntries, array $expected): void {
+    $f = $this->fixture;
+    $old = $f->root . '/old.pot';
+    $new = $f->root . '/new.pot';
+    foreach ([[$old, $oldEntries, 'old.php:1'], [$new, $newEntries, 'new.php:2']] as [$path, $entries, $ref]) {
+        TranslationCatalog::write(array_map(static fn (array $entry): array => [$entry[0], $entry[1], $ref, 'core'], $entries), $path);
+    }
+    $blocks = explode("\n\n", $f->fs->readFile($old));
+    $header = str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', array_shift($blocks));
+    $f->fs->dumpFile($old, $header . "\n\n" . implode("\n\n", array_reverse($blocks)));
+    $json = $f->cli(['diff', $old, $new, '--format=json']);
+    $this->assertSame(0, $json->getExitCode(), $json->getErrorOutput());
+    $diff = json_decode($json->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+    $text = $f->cli(['diff', $old, $new]);
+    $this->assertSame(0, $text->getExitCode(), $text->getErrorOutput());
+    expect($diff['report'])->toBe($text->getOutput());
+    unset($diff['report']);
+    expect($diff)->toBe($expected);
+})->with([
+    'unchanged messages' => [
+        [['Stay', null], ['Item', 'Items']], [['Stay', null], ['Item', 'Items']],
+        ['changed' => false, 'added' => 0, 'removed' => 0, 'gone' => 0, 'casing_only' => 0, 'plural_changed' => 0],
+    ],
+    'plural-only change' => [
+        [['Item', 'Items']], [['Item', 'More items']],
+        ['changed' => true, 'added' => 0, 'removed' => 0, 'gone' => 0, 'casing_only' => 0, 'plural_changed' => 1],
+    ],
+    'additions, removals and casing' => [
+        [['Stay', null], ['Drop', null], ['Title', null]], [['Stay', null], ['Added', null], ['title', null]],
+        ['changed' => true, 'added' => 2, 'removed' => 2, 'gone' => 1, 'casing_only' => 1, 'plural_changed' => 0],
+    ],
+]);
