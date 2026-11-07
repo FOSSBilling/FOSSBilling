@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\DBAL\Connection;
 use FOSSBilling\Core\Http\CookieNames;
+use FOSSBilling\Core\Security\Fingerprint;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
@@ -109,7 +110,7 @@ test('session validation tolerates a database lookup failure', function (): void
 test('session validation initializes a missing creation time', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session, $di] = createDatabaseSession($connection);
-    $fingerprint = json_encode((new FOSSBilling\Core\Security\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
+    $fingerprint = json_encode((new Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
@@ -146,7 +147,7 @@ test('session validation tolerates a creation time update failure', function ():
 test('session validation deletes an expired session', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session, $di] = createDatabaseSession($connection);
-    $fingerprint = json_encode((new FOSSBilling\Core\Security\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
+    $fingerprint = json_encode((new Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
@@ -162,6 +163,35 @@ test('session validation deletes an expired session', function (): void {
 
     expect($_COOKIE)->not->toHaveKey('PHPSESSID');
 });
+
+test('session validation preserves sessions when client hints disappear or reappear', function (bool $hintsOnStoredRequest): void {
+    $connection = Mockery::mock(Connection::class);
+    [$session, $di] = createDatabaseSession($connection);
+    $withHints = clone $di['request'];
+    $withHints->headers->add([
+        'Sec-CH-UA-Platform' => '"Linux"',
+        'Sec-CH-UA-Mobile' => '?0',
+        'Upgrade-Insecure-Requests' => '1',
+    ]);
+    $withoutHints = clone $di['request'];
+    $withoutHints->headers->set('Referer', 'http://localhost/admin/staff/login');
+
+    $stored = new Fingerprint($hintsOnStoredRequest ? $withHints : $withoutHints);
+    $current = new Fingerprint($hintsOnStoredRequest ? $withoutHints : $withHints);
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->with('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => 'same-browser'])
+        ->andReturn([
+            'fingerprint' => json_encode($stored->fingerprint(), JSON_THROW_ON_ERROR),
+            'created_at' => time(),
+        ]);
+    $connection->shouldNotReceive('executeStatement');
+
+    setSessionCookie('same-browser');
+    invokePrivate($session, 'canUseSession', [$current]);
+
+    expect($_COOKIE['PHPSESSID'])->toBe('same-browser');
+})->with([true, false]);
 
 test('session validation deletes a malformed fingerprint', function (): void {
     $connection = Mockery::mock(Connection::class);
