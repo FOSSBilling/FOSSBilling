@@ -94,7 +94,8 @@ test('rejects a manifest missing a schema-required field', function (): void {
     $status = $tester->execute(['modules' => Path::join($this->root, 'modules')]);
 
     expect($status)->toBe(1)
-        ->and($tester->getDisplay())->toContain('FAIL Example');
+        ->and($tester->getDisplay())->toContain('FAIL Example')
+        ->and($tester->getDisplay())->toContain('[name] The property name is required');
 });
 
 test('rejects a module directory without manifest.json', function (): void {

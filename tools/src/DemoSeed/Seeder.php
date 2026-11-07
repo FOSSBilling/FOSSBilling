@@ -452,11 +452,11 @@ final class Seeder
             } else {
                 try {
                     $product = $this->api->call('admin/product/get', ['id' => $ebookPid]);
-                    if (($product['config']['files'] ?? []) === []) {
+                    if (($product['type'] ?? '') === 'downloadable' && ($product['config']['files'] ?? []) === []) {
                         $this->api->upload('admin/servicedownloadable/upload', ['id' => (string) $ebookPid], 'file_data', $this->demoFilePath);
                         $this->note('  attached demo file to Demo Ebook Download');
                     }
-                } catch (Throwable $e) {
+                } catch (\Throwable $e) {
                     $this->recordError('servicedownloadable/upload Demo Ebook Download', $e->getMessage());
                 }
             }
