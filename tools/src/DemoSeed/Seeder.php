@@ -360,10 +360,11 @@ final class Seeder
 
         // products
         $existingProducts = $this->fetchAll('admin/product/get_list');
-        $productIds = [];
+        $existingByTitle = [];
         foreach ($existingProducts as $p) {
-            $productIds[$p['title']] = (int) $p['id'];
+            $existingByTitle[(string) $p['title']] = ['id' => (int) $p['id'], 'type' => (string) ($p['type'] ?? '')];
         }
+        $productIds = array_map(static fn (array $p): int => $p['id'], $existingByTitle);
         $recurrent = static function (array $periods): array {
             $out = ['type' => 'recurrent', 'recurrent' => []];
             foreach ($periods as $code => [$price, $setup]) {
@@ -385,6 +386,13 @@ final class Seeder
         ];
         foreach ($productDefs as $def) {
             if (isset($productIds[$def['title']])) {
+                $existing = $existingByTitle[$def['title']];
+                if ($existing['type'] !== $def['type']) {
+                    $title = $def['title'];
+                    $this->recordError('product ' . $title, "existing product id {$existing['id']} has type '{$existing['type']}', expected '{$def['type']}'; not reused, manifest entry not written");
+
+                    continue;
+                }
                 $this->note("  product '{$def['title']}' exists id={$productIds[$def['title']]}");
                 $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $productIds[$def['title']], 'existing' => true];
 
@@ -452,7 +460,7 @@ final class Seeder
             } else {
                 try {
                     $product = $this->api->call('admin/product/get', ['id' => $ebookPid]);
-                    if (($product['type'] ?? '') === 'downloadable' && ($product['config']['files'] ?? []) === []) {
+                    if (($product['config']['files'] ?? []) === []) {
                         $this->api->upload('admin/servicedownloadable/upload', ['id' => (string) $ebookPid], 'file_data', $this->demoFilePath);
                         $this->note('  attached demo file to Demo Ebook Download');
                     }
