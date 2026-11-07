@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        php: ['8.3', '8.4', '8.5']
+        php: ['8.3', '8.4', '8.5', 'default']
       fail-fast: true
     steps:
       - name: 'Checkout Repository'
@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           build-args: |
-            PHP_IMAGE=php:${{ matrix.php }}-apache
+            ${{ matrix.php != 'default' && format('PHP_VERSION={0}', matrix.php) || '' }}
             INSTALL_TRANSLATIONS=false
           cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-ci-${{ matrix.php }}
           context: .
@@ -57,7 +57,7 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           build-args: |
-            PHP_IMAGE=php:${{ matrix.php }}-apache
+            ${{ matrix.php != 'default' && format('PHP_VERSION={0}', matrix.php) || '' }}
             INSTALL_TRANSLATIONS=false
           cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-ci-${{ matrix.php }}
           cache-to: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-ci-${{ matrix.php }},mode=max
@@ -69,8 +69,8 @@ jobs:
 
       - name: 'PHPStan'
         id: phpstan
-        # PHPStan analyses source, not runtime behavior, so one PHP version is sufficient coverage.
-        if: matrix.php == '8.3'
+        # Check the minimum PHP version and the pinned release image.
+        if: matrix.php == '8.3' || matrix.php == 'default'
         run: |
           docker run --rm \
             --env APP_ENV=test \
