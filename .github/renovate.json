@@ -22,6 +22,17 @@
   "constraints": {
     "php": "~8.3.31"
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update the DDEV Node.js runtime",
+      "managerFilePatterns": ["/^\\.ddev/config\\.yaml$/"],
+      "matchStrings": ["nodejs_version: \"(?<currentValue>\\d+)\""],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    }
+  ],
   "packageRules": [
     {
       "groupName": "CKEditor Development Tools",

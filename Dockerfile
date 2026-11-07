@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1.28@sha256:bb22d9815c728170f72750f4e5b0d672e06176142e1d602c7e66c050100b7e5b
 
 ARG PHP_VERSION=8.5
-ARG NODE_VERSION=24
 
 FROM php:${PHP_VERSION}-apache AS php-base
 
@@ -77,7 +76,7 @@ RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-dev \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
   composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
-FROM node:${NODE_VERSION}-bookworm-slim AS frontend-assets
+FROM node:26-bookworm-slim AS frontend-assets
 
 WORKDIR /app
 
