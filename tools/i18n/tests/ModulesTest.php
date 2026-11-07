@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Tools\I18n\Catalogue;
+use FOSSBilling\Tools\I18n\TranslationCatalogue;
 
 test('extracts separate module templates without modifying module files', function (): void {
     $f = $this->fixture;
@@ -18,8 +18,8 @@ test('extracts separate module templates without modifying module files', functi
     $before = $f->snapshot($f->modules);
     $result = $f->extract();
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
-    expect(Catalogue::entries($f->template()))->toBe([':n item' => ':n items', 'Hello :name' => null]);
-    expect(Catalogue::entries($f->template('Other')))->toBe(['Hello :name' => null, 'Other' => null]);
+    expect(TranslationCatalogue::entries($f->template()))->toBe([':n item' => ':n items', 'Hello :name' => null]);
+    expect(TranslationCatalogue::entries($f->template('Other')))->toBe(['Hello :name' => null, 'Other' => null]);
     expect($f->fs->readFile($f->template()))->toContain('Project-Id-Version: FOSSBilling module example', 'Example/templates/page.twig:1');
     expect($f->snapshot($f->modules))->toBe($before);
 });
@@ -42,8 +42,8 @@ test('routes cross-module translations to the requested source', function (): vo
     $f->setupModules();
     $f->write('modules/Example/templates/cross.twig', "{{ 'Owned by Other'|trans(from: 'other') }}");
     expect($f->extract()->getExitCode())->toBe(0);
-    expect(Catalogue::entries($f->template()))->not->toHaveKey('Owned by Other');
-    expect(Catalogue::entries($f->template('Other')))->toHaveKey('Owned by Other');
+    expect(TranslationCatalogue::entries($f->template()))->not->toHaveKey('Owned by Other');
+    expect(TranslationCatalogue::entries($f->template('Other')))->toHaveKey('Owned by Other');
 });
 
 test('requires exact core messages and plural pairs before writing templates', function (string $code): void {
@@ -137,7 +137,7 @@ test('preserves combined extraction, date-insensitive checks and diff diagnostic
     $f->write('input/modules/Example/page.twig', "{{ 'Module'|trans }}");
     $pot = $f->root . '/messages.pot';
     expect($f->cli(['extract', $f->root . '/input', $pot])->getExitCode())->toBe(0);
-    expect(Catalogue::entries($pot))->toHaveKeys(['Original', 'One', 'Module']);
+    expect(TranslationCatalogue::entries($pot))->toHaveKeys(['Original', 'One', 'Module']);
     $f->fs->dumpFile($pot, str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', $f->fs->readFile($pot)));
     $before = $f->fs->readFile($pot);
     expect($f->cli(['extract', $f->root . '/input', $pot, '--check'])->getExitCode())->toBe(0)->and($f->fs->readFile($pot))->toBe($before);
@@ -147,7 +147,7 @@ test('preserves combined extraction, date-insensitive checks and diff diagnostic
         expect($result->getExitCode())->toBe(1)->and($f->fs->readFile($pot))->toBe($before);
     }
     $new = $f->root . '/new.pot';
-    Catalogue::write([['original', null, 'new.php:1', 'core'], ['One', 'More', 'new.php:2', 'core']], $new);
+    TranslationCatalogue::write([['original', null, 'new.php:1', 'core'], ['One', 'More', 'new.php:2', 'core']], $new);
     $diff = $f->cli(['diff', $pot, $new]);
     expect($diff->getExitCode())->toBe(0)->and($diff->getOutput())->toContain('casing-only: 1', 'Casing-only changes', 'Changed plural forms');
 });
@@ -163,7 +163,7 @@ test('reads CRLF core templates and checks catalogues without newline-only chang
     $f->setupModules();
     $lf = $f->fs->readFile($f->core);
     $f->fs->dumpFile($f->core, str_replace("\n", "\r\n", $lf));
-    expect(Catalogue::entries($f->core))->toBe(['Save' => null, 'Shared item' => 'Shared items']);
+    expect(TranslationCatalogue::entries($f->core))->toBe(['Save' => null, 'Shared item' => 'Shared items']);
     $result = $f->extract();
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
     foreach ([$f->template(), $f->template('Other')] as $path) {

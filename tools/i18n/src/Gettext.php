@@ -34,7 +34,7 @@ final class Gettext
 
     private static function validate(string $po, string $canonical, string $active, array $expected): bool
     {
-        foreach (Catalogue::read($canonical) as $entry) {
+        foreach (TranslationCatalogue::read($canonical) as $entry) {
             $msgid = $entry['msgid'];
             if (array_key_exists('msgctxt', $entry)) {
                 throw new \RuntimeException("$po: message contexts are not supported by the module translation runtime");
@@ -46,7 +46,7 @@ final class Gettext
                 throw new \RuntimeException("$po: stale or mismatched entry '$msgid'; merge the current module template");
             }
         }
-        $entries = Catalogue::read($active);
+        $entries = TranslationCatalogue::read($active);
         $header = '';
         foreach ($entries as $entry) {
             if ($entry['msgid'] === '') {
@@ -136,7 +136,7 @@ final class Gettext
             $checked = 0;
             $compiled = [];
             foreach ($modules as $module) {
-                $expected = Catalogue::entries(Modules::template($templates, $module));
+                $expected = TranslationCatalogue::entries(Modules::template($templates, $module));
                 $localeRoot = Path::join($module['path'], 'locale');
                 if (!is_dir($localeRoot)) {
                     continue;

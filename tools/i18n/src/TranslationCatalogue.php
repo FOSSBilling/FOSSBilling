@@ -14,7 +14,7 @@ namespace FOSSBilling\Tools\I18n;
 
 use Symfony\Component\Filesystem\Filesystem;
 
-final class Catalogue
+final class TranslationCatalogue
 {
     public static function escape(string $value): string
     {

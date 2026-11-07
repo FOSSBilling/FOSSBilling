@@ -13,11 +13,11 @@ declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
 
-use FOSSBilling\Tools\I18n\Catalogue;
 use FOSSBilling\Tools\I18n\Extractor;
 use FOSSBilling\Tools\I18n\Gettext;
 use FOSSBilling\Tools\I18n\Modules;
 use FOSSBilling\Tools\I18n\TemporaryDirectory;
+use FOSSBilling\Tools\I18n\TranslationCatalogue;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -41,14 +41,14 @@ $application->addCommand((new Command('extract'))
         $target = $input->getArgument('template');
         $count = TemporaryDirectory::run(static function ($temporary) use ($result, $target, $input, $output): int {
             $generated = Path::join($temporary, 'messages.pot');
-            $count = Catalogue::write($result['occurrences'], $generated);
+            $count = TranslationCatalogue::write($result['occurrences'], $generated);
             $filesystem = new Filesystem();
             if ($input->getOption('check')) {
                 if (!$filesystem->exists($target)) {
                     throw new RuntimeException("missing template: $target");
                 }
-                if (Catalogue::normalized($generated) !== Catalogue::normalized($target)) {
-                    $output->write(Catalogue::diff($target, $generated));
+                if (TranslationCatalogue::normalized($generated) !== TranslationCatalogue::normalized($target)) {
+                    $output->write(TranslationCatalogue::diff($target, $generated));
 
                     throw new RuntimeException("template needs regeneration: $target");
                 }
@@ -76,7 +76,7 @@ $application->addCommand((new Command('diff'))
     ->addArgument('old-template', InputArgument::REQUIRED)
     ->addArgument('new-template', InputArgument::REQUIRED)
     ->setCode(static function (InputInterface $input, OutputInterface $output): int {
-        $output->write(Catalogue::diff($input->getArgument('old-template'), $input->getArgument('new-template')));
+        $output->write(TranslationCatalogue::diff($input->getArgument('old-template'), $input->getArgument('new-template')));
 
         return Command::SUCCESS;
     }));

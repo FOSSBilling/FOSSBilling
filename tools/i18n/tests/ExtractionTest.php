@@ -10,8 +10,8 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Tools\I18n\Catalogue;
 use FOSSBilling\Tools\I18n\Extractor;
+use FOSSBilling\Tools\I18n\TranslationCatalogue;
 
 dataset('extraction', function (): iterable {
     foreach (require __DIR__ . '/fixtures/extraction.php' as $name => $fixture) {
@@ -75,8 +75,8 @@ test('includes embedded templates and keeps duplicate AST nodes out of generated
     $this->fixture->write('input/page.twig', "{% embed 'base.twig' %}{% block content %}{{ value|default('Embedded'|trans) }}{% endblock %}{% endembed %}");
     $result = Extractor::extract($this->fixture->root . '/input');
     $pot = $this->fixture->root . '/messages.pot';
-    Catalogue::write($result['occurrences'], $pot);
-    expect(Catalogue::entries($pot))->toBe(['Embedded' => null]);
+    TranslationCatalogue::write($result['occurrences'], $pot);
+    expect(TranslationCatalogue::entries($pot))->toBe(['Embedded' => null]);
     expect(substr_count($this->fixture->fs->readFile($pot), 'page.twig:1'))->toBe(1);
 });
 
