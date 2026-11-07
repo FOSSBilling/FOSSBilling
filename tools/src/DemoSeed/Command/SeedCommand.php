@@ -45,23 +45,39 @@ final class SeedCommand extends Command
                 skipped when they already exist; orders, invoices and tickets are appended
                 on every run, so re-running grows those lists rather than converging.
 
-                Sends no real email (clients created with send_welcome_email=0) and only
-                enables offline-safe gateways (Custom, ClientBalance). Requires an admin
-                API key in TEST_API_KEY.
+                Clients are created with send_welcome_email=0 and only offline-safe
+                gateways (Custom, ClientBalance) are enabled, but other seed actions can
+                still trigger the target's normal notifications, so seed instances where
+                mail delivery is disabled or captured by a local sink. Domain orders are
+                only created when the registrar for .com is in test mode. Requires an
+                admin API key in TEST_API_KEY.
                 TXT);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $errorOutput = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+
         $apiKey = (string) (getenv('TEST_API_KEY') ?: '');
         if ($apiKey === '') {
-            $errorOutput = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
             $errorOutput->writeln('Missing API key. Set TEST_API_KEY.');
 
             return 2;
         }
 
+        foreach (['limit-clients', 'limit-orders', 'limit-tickets'] as $limit) {
+            $value = $input->getOption($limit);
+            if (!is_int($value) && (!is_string($value) || preg_match('/^\d+$/', $value) !== 1)) {
+                throw new \InvalidArgumentException(sprintf('The "--%s" option must be a non-negative integer, got "%s".', $limit, (string) $value));
+            }
+        }
+
         $baseUrl = rtrim((string) ($input->getOption('url') ?? getenv('APP_URL') ?: 'https://fossbilling.ddev.site'), '/');
+        $host = (string) parse_url($baseUrl, PHP_URL_HOST);
+        if (parse_url($baseUrl, PHP_URL_SCHEME) === 'http' && !in_array($host, ['localhost', '127.0.0.1', '::1'], true) && !str_ends_with($host, '.localhost') && !str_ends_with($host, '.ddev.site') && !str_ends_with($host, '.test')) {
+            $errorOutput->writeln('Warning: the admin API key will be sent over plaintext HTTP to a remote host. Use HTTPS or a local development domain.');
+        }
+
         $manifestDir = $input->getOption('manifest') ?? $this->defaultManifestDir;
         $dryRun = $input->getOption('dry-run');
         $seeder = new Seeder(
@@ -78,7 +94,6 @@ final class SeedCommand extends Command
         try {
             $errors = $seeder->run();
         } catch (\RuntimeException $e) {
-            $errorOutput = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
             $errorOutput->writeln($e->getMessage());
 
             return Command::FAILURE;

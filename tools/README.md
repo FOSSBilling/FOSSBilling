@@ -92,7 +92,9 @@ The SQL dump is the portable snapshot; this command is the repeatable recipe. Re
 
 - Additive only; never wipes.
 - `send_welcome_email=0` for clients.
-- Only offline-safe gateways (Custom, ClientBalance) are enabled.
+- Only offline-safe gateways (Custom, ClientBalance) are enabled; existing gateway currency settings are merged, not replaced.
+- Domain orders are only created when the registrar behind `.com` is in test mode, so activation can never reach a live registrar.
+- Seed actions can still trigger the target's own notifications (e.g. staff alerts on order suspension); use an instance with mail delivery disabled or captured by a local sink.
 - Dummy hosting server uses TEST-NET `192.0.2.10` + Custom manager.
 
 Sample files for the downloadable demo product live in [resources/demo-seed](resources/demo-seed).

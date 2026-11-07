@@ -23,8 +23,10 @@ use Symfony\Component\Filesystem\Filesystem;
  * are appended on every run, so re-running grows those lists rather than
  * converging.
  *
- * Sends no real email (clients created with send_welcome_email=0) and only
- * enables offline-safe gateways (Custom, ClientBalance).
+ * Clients are created with send_welcome_email=0 and only offline-safe
+ * gateways (Custom, ClientBalance) are enabled; other seed actions can
+ * trigger the target's normal notifications, so seed instances with mail
+ * delivery disabled or captured by a local sink.
  */
 final class Seeder
 {
@@ -232,7 +234,9 @@ final class Seeder
                     'id' => $g['id'],
                     'enabled' => 1,
                     'test_mode' => 1,
-                    'accepted_currencies' => ['GBP', 'USD', 'EUR'],
+                    // Add the demo currencies without dropping currencies the
+                    // gateway was already configured to accept.
+                    'accepted_currencies' => array_values(array_unique(array_merge($g['accepted_currencies'] ?? [], ['GBP', 'USD', 'EUR']))),
                 ]);
                 if (is_array($u) && isset($u['__error'])) {
                     $this->recordError('gateway/update ' . $g['code'], $u['__error']);
@@ -615,12 +619,34 @@ final class Seeder
             }
         }
         $periodCycle = ['1M', '1Y', '1M', '3M', '1Y', '1M'];
+        // Activating a domain order triggers a live registrar call, which could
+        // register a real domain and incur charges. Only seed domain orders
+        // when the registrar behind .com is verifiably in test mode.
+        $registrarsInTestMode = [];
+        foreach ($this->fetchAll('admin/servicedomain/registrar_get_list') as $r) {
+            $registrarsInTestMode[(int) $r['id']] = (bool) ($r['test_mode'] ?? false);
+        }
+        $comRegistrarId = null;
+        foreach ($existingTlds as $t) {
+            if (($t['tld'] ?? '') === '.com') {
+                $comRegistrarId = (int) ($t['registrar']['id'] ?? 0);
+            }
+        }
+        $domainsSafe = $comRegistrarId !== null && ($registrarsInTestMode[$comRegistrarId] ?? false);
+        if (!$domainsSafe) {
+            $this->note('  domain orders skipped: the registrar for .com is not in test mode');
+        }
         $clientIdList = array_values($clientIds);
         $orderTarget = $this->limitOrders > 0 ? $this->limitOrders : 36;
         $ordersCreated = [];
         $orderIndex = 0;
         foreach ($clientIdList as $ci => $cid) {
             if (count($ordersCreated) >= $orderTarget) {
+                break;
+            }
+            if ($orderProductCycle === []) {
+                $this->recordError('orders', 'no orderable products available');
+
                 break;
             }
             $rounds = $ci < 12 ? 2 : 1; // first 12 clients get 2 orders => ~36 total
@@ -630,7 +656,7 @@ final class Seeder
                 $period = $periodCycle[($orderIndex - 1) % count($periodCycle)];
                 $title = "Demo order #{$orderIndex}";
                 // domain orders need special config; force every 6th order to be a domain
-                $isDomain = $domainPid !== null && ($orderIndex % 6 === 0);
+                $isDomain = $domainsSafe && $domainPid !== null && ($orderIndex % 6 === 0);
                 if ($isDomain) {
                     $pid = $domainPid;
                 }
@@ -650,7 +676,13 @@ final class Seeder
                     $productPricing = [];
                 }
                 if ($productType === 'domain') {
-                    // generic cycle should never contain domains, but coerce just in case
+                    // generic cycle should never contain domains, but coerce when safe;
+                    // never send a domain order to a live registrar
+                    if (!$domainsSafe) {
+                        $this->recordError("order/create client={$cid}", 'skipping domain product: the registrar for .com is not in test mode');
+
+                        continue;
+                    }
                     $isDomain = true;
                     $pid = $domainPid ?? $pid;
                 }
@@ -825,6 +857,7 @@ final class Seeder
         $payGatewayId = $gatewayIds['ClientBalance'] ?? $customGatewayId;
         $payNeedsTxnId = !isset($gatewayIds['ClientBalance']);
         $paid = 0;
+        $paidInvoiceIds = [];
         foreach ($allInvoices as $ii => $iid) {
             if ($this->dryRun) {
                 continue;
@@ -839,6 +872,7 @@ final class Seeder
                     }
                     $this->api->call('admin/invoice/mark_as_paid', $markPayload);
                     ++$paid;
+                    $paidInvoiceIds[] = $iid;
                     // NOTE: pass unique get/post/server so the IPN-hash dedupe treats each as distinct.
                     $txn = $this->api->callSafe('admin/invoice/transaction_create', [
                         'invoice_id' => $iid,
@@ -860,7 +894,10 @@ final class Seeder
                 } elseif ($slot === 5) {
                     // leave unpaid (overdue coverage)
                 } elseif ($slot === 6) {
-                    $this->api->callSafe('admin/invoice/pay_with_credits', ['id' => $iid]);
+                    $r = $this->api->callSafe('admin/invoice/pay_with_credits', ['id' => $iid]);
+                    if (is_array($r) && isset($r['__error'])) {
+                        $this->recordError('invoice/pay_with_credits id=' . $iid, $r['__error']);
+                    }
                 } elseif ($slot === 7) {
                     $t = $this->api->callSafe('admin/invoice/transaction_create', [
                         'invoice_id' => $iid,
@@ -874,7 +911,9 @@ final class Seeder
                         'status' => 'pending',
                         'type' => 'payment',
                     ]);
-                    if (!(is_array($t) && isset($t['__error']))) {
+                    if (is_array($t) && isset($t['__error'])) {
+                        $this->recordError('transaction/create (pending) invoice=' . $iid, $t['__error']);
+                    } else {
                         $this->manifest['transactions'][] = ['id' => $t, 'invoice_id' => $iid, 'status' => 'pending'];
                     }
                 }
@@ -883,8 +922,8 @@ final class Seeder
             }
         }
         $this->note("  marked ~{$paid} invoices paid + transactions");
-        // one refund on first paid invoice
-        $firstPaid = $this->manifest['transactions'][0]['invoice_id'] ?? null;
+        // one refund on the first invoice that was actually marked paid
+        $firstPaid = $paidInvoiceIds[0] ?? null;
         if ($firstPaid !== null && !$this->dryRun) {
             $r = $this->api->callSafe('admin/invoice/refund', ['id' => $firstPaid, 'note' => 'Demo seed refund test']);
             if (is_array($r) && isset($r['__error'])) {
@@ -949,7 +988,6 @@ final class Seeder
             }
         }
         $this->manifest['helpdesks'] = $helpdeskIds;
-        $defaultHelpdeskId = reset($helpdeskIds) ?: 1;
         // canned categories + responses
         $cannedPairs = $this->api->callSafe('admin/support/canned_category_pairs', []);
         if (!is_array($cannedPairs) || isset($cannedPairs['__error'])) {
@@ -1071,11 +1109,24 @@ final class Seeder
             'Hello, please help migrate demo data. Nothing urgent, testing only.',
         ];
         $ticketTarget = $this->limitTickets > 0 ? $this->limitTickets : 20;
-        $helpdeskKeys = array_values($helpdeskIds);
-        if ($helpdeskKeys === []) {
-            $helpdeskKeys = [$defaultHelpdeskId];
-        }
+        // Route demo tickets only to the seeded demo helpdesks so they never
+        // land in the target's operational support queues.
+        $helpdeskKeys = array_values(array_filter(
+            $helpdeskIds,
+            static fn (int $id, string $name): bool => str_starts_with($name, 'Demo'),
+            ARRAY_FILTER_USE_BOTH,
+        ));
         for ($t = 0; $t < $ticketTarget; ++$t) {
+            if ($clientIdList === []) {
+                $this->recordError('tickets', 'no demo clients available');
+
+                break;
+            }
+            if ($helpdeskKeys === []) {
+                $this->recordError('tickets', 'no demo helpdesks available');
+
+                break;
+            }
             $subj = 'Demo ticket #' . ($t + 1) . ' - ' . $subjects[$t % count($subjects)];
             if ($this->dryRun) {
                 $this->note("  [dry] ticket {$subj}");
@@ -1101,13 +1152,19 @@ final class Seeder
                     $this->api->call('admin/support/ticket_reply', ['id' => $tid, 'content' => 'Demo follow-up: anything else we can test for you?']);
                 }
                 if ($t % 2 === 0) {
-                    $this->api->callSafe('admin/support/note_create', ['ticket_id' => $tid, 'note' => 'Demo internal note.']);
+                    $n = $this->api->callSafe('admin/support/note_create', ['ticket_id' => $tid, 'note' => 'Demo internal note.']);
+                    if (is_array($n) && isset($n['__error'])) {
+                        $this->recordError('note/create ticket=' . $tid, $n['__error']);
+                    }
                 }
                 if ($t % 3 === 0) {
                     $this->api->call('admin/support/ticket_close', ['id' => $tid]);
                 }
                 if ($t === 1) {
-                    $this->api->callSafe('admin/support/task_complete', ['id' => $tid]);
+                    $c = $this->api->callSafe('admin/support/task_complete', ['id' => $tid]);
+                    if (is_array($c) && isset($c['__error'])) {
+                        $this->recordError('task/complete ticket=' . $tid, $c['__error']);
+                    }
                 }
                 $this->note("  ticket id={$tid} {$subj}");
             } catch (\Throwable $e) {
@@ -1144,7 +1201,9 @@ final class Seeder
 
         // ------------------------------------------------------- manifest
         (new Filesystem())->mkdir(dirname($this->manifestPath));
-        file_put_contents($this->manifestPath, json_encode($this->manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        if (file_put_contents($this->manifestPath, json_encode($this->manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) === false) {
+            throw new RuntimeException("Failed to write manifest: {$this->manifestPath}");
+        }
         $this->note('Wrote manifest: ' . $this->manifestPath);
         $this->note('Done. Errors: ' . count($this->manifest['errors']));
 
