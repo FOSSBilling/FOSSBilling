@@ -23,7 +23,7 @@ php tools/i18n/console.php compile /path/to/modules /tmp/templates /tmp/compiled
 
 Both extraction commands support `--check`, which reports stale templates without writing and ignores creation dates. `diff` reports added, removed, plural, and casing changes. Generation validates all sources before writing, leaves unchanged module templates alone, and rejects conflicting plurals or orphaned templates.
 
-Extraction follows the [translation source rules](../../CONTRIBUTING.md#translation-lookup-in-code). PHP messages default to core; module-owned messages need `from`. Dynamic messages are skipped. Invalid Twig syntax, unknown tags, and ambiguous translation arguments fail extraction. Unknown filter, function, and test names are accepted as inert parsing declarations; custom tags need explicit registration.
+Extraction follows the [translation source rules](../../CONTRIBUTING.md#translation-lookup-in-code). PHP messages default to core; module-owned messages need an explicit literal `from` at the message call site. Constructor defaults and values forwarded through constructor bodies are not inferred. Dynamic messages are skipped. Invalid Twig syntax, unknown tags, and ambiguous translation arguments fail extraction. Unknown filter, function, and test names are accepted as inert parsing declarations; custom tags need explicit registration.
 
 ## Module translations
 

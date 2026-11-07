@@ -52,11 +52,15 @@ jobs:
       - name: 'Compare'
         id: diff
         run: |
-          php tools/i18n/console.php diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt 2>&1 || true
+          php tools/i18n/console.php diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt
+          delimiter=POT_DIFF
+          while grep -Fq "$delimiter" /tmp/pot-diff.txt; do
+            delimiter="${delimiter}_"
+          done
           {
-            echo 'body<<EOF'
+            echo "body<<$delimiter"
             cat /tmp/pot-diff.txt
-            echo 'EOF'
+            echo "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
       - name: 'Comment on PR'

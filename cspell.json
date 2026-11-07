@@ -132,7 +132,9 @@
         "msgfmt",
         "msgids",
         "Ucfirst",
-        "ungroup"
+        "ungroup",
+        "nullsafe",
+        "pluraltrans"
     ],
 
     "ignoreWords": [

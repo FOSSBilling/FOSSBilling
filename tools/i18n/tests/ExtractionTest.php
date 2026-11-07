@@ -83,8 +83,24 @@ test('includes embedded templates and keeps duplicate AST nodes out of generated
 test('does not execute PHP or template callables', function (): void {
     $marker = $this->fixture->root . '/executed';
     $this->fixture->write('input/Case.php', '<?php file_put_contents(' . var_export($marker, true) . ", 'bad'); __trans('PHP');");
+    $this->fixture->write('input/guard.twig', "{{ constant('I18nRenderSentinel::VALUE') }}");
     $this->fixture->write('input/page.twig', "{{ dangerous('bad') }} {{ 'Twig'|trans }}");
-    $result = Extractor::extract($this->fixture->root . '/input');
+    $autoloaded = false;
+    $loader = static function (string $class) use (&$autoloaded): void {
+        if ($class === 'I18nRenderSentinel') {
+            $autoloaded = true;
+
+            throw new LogicException('Template was rendered');
+        }
+    };
+    spl_autoload_register($loader);
+
+    try {
+        $result = Extractor::extract($this->fixture->root . '/input');
+    } finally {
+        spl_autoload_unregister($loader);
+    }
+    expect($autoloaded)->toBeFalse();
     expect($result['source_errors'])->toBe([])->and($this->fixture->fs->exists($marker))->toBeFalse();
     expect(array_column($result['occurrences'], 0))->toBe(['PHP', 'Twig']);
 });
@@ -94,3 +110,63 @@ test('rejects ambiguous Twig translation arguments before AST normalization', fu
     $result = Extractor::extract($this->fixture->root . '/input');
     expect($result['source_errors'])->not->toBeEmpty();
 })->with(["from: 'example', from: 'other'", "{}, 'example', from: 'other'", '...args', "from: 'example', {}"]);
+
+test('recognizes helper aliases and case variants without treating methods as helpers', function (): void {
+    $this->fixture->write('input/Case.php', <<<'PHP'
+        <?php
+        namespace Example;
+        use function __trans as translate;
+        use function __pluralTrans as plural;
+        \__TRANS('Upper');
+        __pluraltrans('One', 'Many', $n, from: 'example');
+        translate('Alias', from: 'example');
+        plural('One alias', 'Many aliases', $n, from: 'example');
+        $object->__trans('Object', from: $source);
+        $object?->__trans('Nullsafe', from: $source);
+        Widget::__trans('Static', from: $source);
+        PHP);
+    $result = Extractor::extract($this->fixture->root . '/input');
+    expect($result['source_errors'])->toBe([]);
+    expect(array_column($result['occurrences'], 0))->toBe(['Upper', 'One', 'Alias', 'One alias']);
+    expect(array_column($result['occurrences'], 1))->toBe([null, 'Many', null, 'Many aliases']);
+    expect(array_column($result['occurrences'], 3))->toBe(['core', 'example', 'example', 'example']);
+});
+
+test('keeps imports local to each namespace and resolves namespace-relative parents', function (bool $braced): void {
+    $first = <<<'PHP'
+        use FOSSBilling\Core\Exception\BaseException as Base;
+        class ParentError extends Base {}
+        class Child extends namespace\ParentError {}
+        new Child('Owned', from: 'example');
+        PHP;
+    $second = <<<'PHP'
+        use RuntimeException as Base;
+        new Base('Shared');
+        PHP;
+    $code = $braced ? "namespace First { $first } namespace Second { $second }" : "namespace First; $first namespace Second; $second";
+    $this->fixture->write('input/Case.php', '<?php ' . $code);
+    $result = Extractor::extract($this->fixture->root . '/input');
+    expect($result['source_errors'])->toBe([]);
+    expect(array_column($result['occurrences'], 0))->toBe(['Owned', 'Shared']);
+    expect(array_column($result['occurrences'], 3))->toBe(['example', 'core']);
+})->with(['semicolon namespaces' => false, 'braced namespaces' => true]);
+
+test('extracts parenthesized ternary branches', function (): void {
+    $this->fixture->write('input/Case.php', "<?php new RuntimeException(\$ok ? ('Success') : (('Failure')));");
+    $result = Extractor::extract($this->fixture->root . '/input');
+    expect($result['source_errors'])->toBe([]);
+    expect(array_column($result['occurrences'], 0))->toBe(['Success', 'Failure']);
+});
+
+test('rejects invalid combined catalogues before replacing the template', function (string $file, string $code, string $error): void {
+    $f = $this->fixture;
+    $f->write('input/' . $file, $code);
+    $target = $f->write('messages.pot', 'keep this template');
+    $result = $f->cli(['extract', $f->root . '/input', $target]);
+    expect($result->getExitCode())->toBe(1)->and($result->getErrorOutput())->toContain($error);
+    expect($f->fs->readFile($target))->toBe('keep this template');
+})->with([
+    'conflicting plurals' => ['Case.php', "<?php __pluralTrans('One', 'Many', \$n); __pluralTrans('One', 'Others', \$n);", 'conflicting plurals'],
+    'empty PHP message' => ['Case.php', "<?php __trans('');", 'Case.php:1: empty message IDs'],
+    'empty Twig message' => ['page.twig', "{{ ''|trans }}", 'page.twig:1: empty message IDs'],
+]);

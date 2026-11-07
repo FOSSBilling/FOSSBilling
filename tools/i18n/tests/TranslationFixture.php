@@ -70,10 +70,10 @@ final readonly class TranslationFixture
         $this->write('modules/Other/templates/page.twig', "{{ 'Other'|trans }} {{ 'Hello :name'|trans }}");
     }
 
-    public function cli(array $arguments, array $env = []): Process
+    public function cli(array $arguments, array $env = [], ?string $cwd = null): Process
     {
         $repo = dirname(__DIR__, 3);
-        $process = new Process([PHP_BINARY, Path::join($repo, 'tools/i18n/console.php'), ...$arguments], $repo, ['COLUMNS' => '1000', ...$env]);
+        $process = new Process([PHP_BINARY, Path::join($repo, 'tools/i18n/console.php'), ...$arguments], $cwd ?? $repo, ['COLUMNS' => '1000', ...$env]);
         $process->run();
 
         return $process;

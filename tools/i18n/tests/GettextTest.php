@@ -222,3 +222,11 @@ test('rejects staging directories containing only version-control metadata', fun
     expect(is_dir($f->build . '/.git'))->toBeTrue();
     expect($f->fs->exists($f->mo()))->toBeFalse();
 });
+
+test('compiles from a dot path inside a single module', function (): void {
+    $f = $this->fixture;
+    $f->po([['Hello :name', null, ['Bonjour :name'], false]]);
+    $result = $f->cli(['compile', '.', $f->templates, $f->build], cwd: $f->modules . '/Example');
+    $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
+    expect($f->readMo($f->mo())['Hello :name'])->toBe('Bonjour :name');
+});

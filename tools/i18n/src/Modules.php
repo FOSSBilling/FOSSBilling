@@ -21,6 +21,7 @@ final class Modules
     /** @return list<array{id: string, path: string}> */
     public static function discover(string $root): array
     {
+        $root = Path::makeAbsolute($root, getcwd());
         $fs = new Filesystem();
         if (!is_dir($root)) {
             throw new \RuntimeException("modules directory does not exist: $root");
@@ -65,13 +66,14 @@ final class Modules
 
     public static function extract(string $root, string $corePot, string $output, bool $check): int
     {
+        $root = Path::makeAbsolute($root, getcwd());
         $fs = new Filesystem();
         $modules = self::discover($root);
         $core = TranslationCatalog::entries($corePot);
         $sources = array_fill_keys(array_column($modules, 'id'), []);
         $errors = [];
         foreach ($modules as $module) {
-            $result = Extractor::extract($module['path'], $module['id']);
+            $result = Extractor::extract($module['path'], $module['id'], array_column($modules, 'path'));
             foreach ($result['source_errors'] as $error) {
                 $errors[] = basename($module['path']) . '/' . $error;
             }
@@ -110,7 +112,7 @@ final class Modules
             $changed = [];
             foreach ($modules as $module) {
                 $generated = Path::join($temporary, $module['id'] . '.pot');
-                $count = TranslationCatalog::write($sources[$module['id']], $generated, 'FOSSBilling module ' . $module['id'], true);
+                $count = TranslationCatalog::write($sources[$module['id']], $generated, 'FOSSBilling module ' . $module['id']);
                 $target = self::template($output, $module);
                 if (!$fs->exists($target) || TranslationCatalog::normalized($target) !== TranslationCatalog::normalized($generated)) {
                     $changed[] = [$generated, $target];

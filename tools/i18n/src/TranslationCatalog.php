@@ -94,10 +94,13 @@ final class TranslationCatalog
         return explode("\n", str_replace(["\r\n", "\r"], "\n", $content));
     }
 
-    public static function write(array $occurrences, string $path, string $project = '4', bool $strict = false): int
+    public static function write(array $occurrences, string $path, string $project = '4'): int
     {
         $merged = [];
         foreach ($occurrences as [$msgid, $plural, $ref]) {
+            if ($msgid === '') {
+                throw new \RuntimeException("$ref: empty message IDs are reserved for the gettext header");
+            }
             if (!array_key_exists($msgid, $merged)) {
                 $merged[$msgid] = ['refs' => [], 'plural' => null];
             }
@@ -105,14 +108,9 @@ final class TranslationCatalog
             $entry['refs'][] = $ref;
             if ($plural !== null) {
                 if ($entry['plural'] !== null && $entry['plural'] !== $plural) {
-                    $message = "conflicting plurals for '$msgid': '{$entry['plural']}' vs '$plural'";
-                    if ($strict) {
-                        throw new \RuntimeException($message);
-                    }
-                    fwrite(STDERR, "warning: $message (keeping first)\n");
-                } else {
-                    $entry['plural'] = $plural;
+                    throw new \RuntimeException("conflicting plurals for '$msgid': '{$entry['plural']}' vs '$plural'");
                 }
+                $entry['plural'] = $plural;
             }
             unset($entry);
         }

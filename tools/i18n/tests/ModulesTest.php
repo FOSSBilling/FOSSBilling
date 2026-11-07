@@ -181,3 +181,34 @@ test('reads CRLF core templates and checks catalogues without newline-only chang
     expect($f->cli(['extract', $f->root . '/input', $target, '--check'])->getExitCode())->toBe(0);
     expect($f->fs->readFile($target))->toBe($before);
 });
+
+test('resolves inherited exception signatures across sibling modules', function (): void {
+    $f = $this->fixture;
+    $f->setupModules();
+    $f->write('modules/Other/Errors.php', <<<'PHP'
+        <?php
+        namespace Other;
+        class ParentError extends \FOSSBilling\Core\Exception\BaseException {}
+        PHP);
+    $f->write('modules/Example/Errors.php', <<<'PHP'
+        <?php
+        namespace Example;
+        class Child extends \Other\ParentError {}
+        new Child('Owned by child', null, 0, false, 'example');
+        PHP);
+    $result = $f->extract();
+    $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
+    expect(TranslationCatalog::entries($f->template()))->toHaveKey('Owned by child');
+    expect(TranslationCatalog::entries($f->template('Other')))->not->toHaveKey('Owned by child');
+});
+
+test('accepts a dot path inside a single module and preserves sibling templates', function (): void {
+    $f = $this->fixture;
+    $f->setupModules();
+    expect($f->extract()->getExitCode())->toBe(0);
+    $before = $f->fs->readFile($f->template('Other'));
+    $result = $f->cli(['extract-modules', '.', $f->core, $f->templates], cwd: $f->modules . '/Example');
+    $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
+    expect(TranslationCatalog::entries($f->template()))->toHaveKey('Hello :name');
+    expect($f->fs->readFile($f->template('Other')))->toBe($before);
+});

@@ -29,8 +29,12 @@ use Twig\TwigTest;
 /** Static source inspection only: source PHP and template callables are never executed. */
 final class Extractor
 {
-    /** @return array{occurrences: list<array{string, ?string, string, string}>, source_errors: list<string>, files: int} */
-    public static function extract(string $root, ?string $module = null): array
+    /**
+     * @param list<string> $dependencies Source directories used only to resolve inherited constructor signatures
+     *
+     * @return array{occurrences: list<array{string, ?string, string, string}>, source_errors: list<string>, files: int}
+     */
+    public static function extract(string $root, ?string $module = null, array $dependencies = []): array
     {
         if (!(new Filesystem())->exists($root) || !is_dir($root)) {
             throw new \RuntimeException("source directory does not exist: $root");
@@ -56,14 +60,25 @@ final class Extractor
             $rel = $file->getRelativePathname();
             $files[$rel] = $file->getContents();
             if ($file->getExtension() === 'php') {
-                $contexts[$rel] = self::context($files[$rel]);
+                $contexts[$rel] = self::contexts($files[$rel]);
             }
         }
-        $signatures = self::signatures($contexts);
+        $signatureContexts = array_merge([], ...array_values($contexts));
+        foreach ($dependencies as $dependency) {
+            if ($dependency === $root) {
+                continue;
+            }
+            foreach ((new Finder())->files()->in($dependency)->name('*.php')->exclude(['vendor', 'install', 'data', 'tests', 'locale', 'node_modules', '.git'])->notName('load.php') as $file) {
+                array_push($signatureContexts, ...self::contexts($file->getContents()));
+            }
+        }
+        $signatures = self::signatures($signatureContexts);
         $out = $errors = [];
         foreach ($files as $rel => $code) {
             if (str_ends_with($rel, '.php')) {
-                self::phpOccurrences($rel, $contexts[$rel], $signatures, $out, $errors);
+                foreach ($contexts[$rel] as $context) {
+                    self::phpOccurrences($rel, $context, $signatures, $out, $errors);
+                }
             } else {
                 $inferred = $module;
                 if ($inferred === null && preg_match('~^modules/([^/]+)/~', $rel, $matches)) {
@@ -226,11 +241,12 @@ final class Extractor
                 return null;
             }
             if ($tokens[$i]->text === '?') {
-                if (($tokens[$i + 2]->text ?? '') !== ':') {
-                    return null;
+                $colon = $i + 1;
+                while (isset($tokens[$colon]) && $tokens[$colon]->text !== ':') {
+                    $colon = ($pairs[$colon] ?? $colon) + 1;
                 }
-                $a = self::literal(array_slice($tokens, $i + 1, 1));
-                $b = self::literal(array_slice($tokens, $i + 3));
+                $a = self::literal(array_slice($tokens, $i + 1, $colon - $i - 1));
+                $b = self::literal(array_slice($tokens, $colon + 1));
 
                 return $a !== null && $b !== null ? [$a, $b] : null;
             }
@@ -261,6 +277,9 @@ final class Extractor
         if (str_starts_with($name, '\\')) {
             return strtolower(substr($name, 1));
         }
+        if (str_starts_with(strtolower($name), 'namespace\\')) {
+            return strtolower(($context['namespace'] ? $context['namespace'] . '\\' : '') . substr($name, 10));
+        }
         $parts = explode('\\', $name);
         $first = strtolower($parts[0]);
         if (isset($context['aliases'][$first])) {
@@ -272,15 +291,47 @@ final class Extractor
         return strtolower(($context['namespace'] ? $context['namespace'] . '\\' : '') . $name);
     }
 
-    private static function context(string $code): array
+    private static function contexts(string $code): array
     {
         $tokens = self::tokens($code);
         $pairs = self::pairs($tokens);
-        $context = ['tokens' => $tokens, 'pairs' => $pairs, 'namespace' => '', 'aliases' => [], 'classes' => []];
-        foreach ($tokens as $i => $token) {
-            if ($token->id === T_NAMESPACE && $context['namespace'] === '') {
-                $context['namespace'] = strtolower($tokens[$i + 1]->text);
+        $contexts = [];
+        $start = 0;
+        $namespace = '';
+        for ($i = 0; $i < count($tokens); ++$i) {
+            if ($tokens[$i]->id === T_NAMESPACE) {
+                if ($start < $i) {
+                    $contexts[] = self::context(array_slice($tokens, $start, $i - $start), $namespace);
+                }
+                $j = $i + 1;
+                $namespace = '';
+                if ($tokens[$j]->text !== '{') {
+                    $namespace = strtolower($tokens[$j++]->text);
+                }
+                if ($tokens[$j]->text === '{') {
+                    $contexts[] = self::context(array_slice($tokens, $j + 1, $pairs[$j] - $j - 1), $namespace);
+                    $i = $pairs[$j];
+                    $namespace = '';
+                } else {
+                    $i = $j;
+                }
+                $start = $i + 1;
+            } elseif (isset($pairs[$i])) {
+                $i = $pairs[$i];
             }
+        }
+        if ($start < count($tokens)) {
+            $contexts[] = self::context(array_slice($tokens, $start), $namespace);
+        }
+
+        return $contexts;
+    }
+
+    private static function context(array $tokens, string $namespace): array
+    {
+        $pairs = self::pairs($tokens);
+        $context = ['tokens' => $tokens, 'pairs' => $pairs, 'namespace' => $namespace, 'aliases' => [], 'functions' => [], 'classes' => []];
+        foreach ($tokens as $i => $token) {
             if ($token->id !== T_CLASS || ($tokens[$i + 1]->id ?? 0) !== T_STRING) {
                 continue;
             }
@@ -316,7 +367,7 @@ final class Extractor
             $context['classes'][] = ['name' => strtolower(($context['namespace'] ? $context['namespace'] . '\\' : '') . $tokens[$i + 1]->text), 'parentRaw' => $parent, 'parameters' => $parameters, 'start' => $i, 'end' => $pairs[$j]];
         }
         foreach ($tokens as $i => $token) {
-            if ($token->id !== T_USE || ($tokens[$i + 1]->id ?? 0) === T_FUNCTION || ($tokens[$i + 1]->id ?? 0) === T_CONST) {
+            if ($token->id !== T_USE || ($tokens[$i + 1]->text ?? '') === '(' || ($tokens[$i + 1]->id ?? 0) === T_CONST) {
                 continue;
             }
             foreach ($context['classes'] as $class) {
@@ -324,8 +375,9 @@ final class Extractor
                     continue 2;
                 }
             }
+            $function = ($tokens[$i + 1]->id ?? 0) === T_FUNCTION;
             $raw = '';
-            for ($j = $i + 1; isset($tokens[$j]) && $tokens[$j]->text !== ';'; ++$j) {
+            for ($j = $i + ($function ? 2 : 1); isset($tokens[$j]) && $tokens[$j]->text !== ';'; ++$j) {
                 $raw .= $tokens[$j]->id === T_AS ? ' as ' : $tokens[$j]->text;
             }
             $prefix = '';
@@ -338,7 +390,7 @@ final class Extractor
                 $name = ltrim($prefix . $parts[0], '\\');
                 $short = explode('\\', $name);
                 $alias = $parts[1] ?? end($short);
-                $context['aliases'][strtolower($alias)] = strtolower($name);
+                $context[$function ? 'functions' : 'aliases'][strtolower($alias)] = strtolower($name);
             }
         }
         foreach ($context['classes'] as &$class) {
@@ -395,8 +447,13 @@ final class Extractor
             $constructor = '';
             $open = null;
             $acceptsSource = true;
-            if (in_array(ltrim($token->text, '\\'), ['__trans', '__pluralTrans'], true) && ($tokens[$i + 1]->text ?? '') === '(' && ($tokens[$i - 1]->id ?? 0) !== T_FUNCTION) {
-                $name = ltrim($token->text, '\\');
+            $function = strtolower(ltrim($token->text, '\\'));
+            if ($token->id === T_STRING) {
+                $function = $context['functions'][$function] ?? $function;
+            }
+            $helper = ['__trans' => '__trans', '__pluraltrans' => '__pluralTrans'][$function] ?? null;
+            if ($helper !== null && ($tokens[$i + 1]->text ?? '') === '(' && !in_array($tokens[$i - 1]->id ?? 0, [T_FUNCTION, T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON], true)) {
+                $name = $helper;
                 $open = $i + 1;
             } elseif ($token->id === T_NEW && isset($tokens[$i + 1]) && ($tokens[$i + 2]->text ?? '') === '(') {
                 $parts = explode('\\', $tokens[$i + 1]->text);
