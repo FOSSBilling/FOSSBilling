@@ -95,3 +95,41 @@ test('constructor sources request headers and anonymized trusted client IP into 
         ->and($generated['referrer'])->toBe(md5('https://referrer.example.com/'))
         ->and($generated)->not->toHaveKey('forwardedFor');
 });
+
+function browserFingerprintRequest(): Request
+{
+    return Request::create('https://example.com/admin/staff/login', server: [
+        'REMOTE_ADDR' => '203.0.113.42',
+        'HTTP_USER_AGENT' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+        'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9',
+        'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br',
+        'HTTP_CF_IPCOUNTRY' => 'GB',
+    ]);
+}
+
+test('client hints may appear or disappear between navigation and API requests', function (array $headers): void {
+    $navigation = browserFingerprintRequest();
+    $navigation->headers->set('Upgrade-Insecure-Requests', '1');
+    $navigation->headers->add($headers);
+
+    $api = browserFingerprintRequest();
+    $api->headers->set('Referer', $navigation->getUri());
+
+    $navigationFingerprint = new Fingerprint($navigation);
+    $apiFingerprint = new Fingerprint($api);
+
+    expect($apiFingerprint->checkFingerprint($navigationFingerprint->fingerprint()))->toBeTrue()
+        ->and($navigationFingerprint->checkFingerprint($apiFingerprint->fingerprint()))->toBeTrue();
+})->with([
+    'platform' => [['Sec-CH-UA-Platform' => '"macOS"']],
+    'mobile' => [['Sec-CH-UA-Mobile' => '?0']],
+]);
+
+test('changing an explicitly supplied platform still rejects the fingerprint', function (): void {
+    $stored = browserFingerprintRequest();
+    $stored->headers->set('Sec-CH-UA-Platform', '"macOS"');
+    $current = clone $stored;
+    $current->headers->set('Sec-CH-UA-Platform', '"Windows"');
+
+    expect((new Fingerprint($current))->checkFingerprint((new Fingerprint($stored))->fingerprint()))->toBeFalse();
+});
