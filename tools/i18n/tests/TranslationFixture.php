@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Tools\I18n\TranslationCatalogue;
+use FOSSBilling\Tools\I18n\TranslationCatalog;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -61,7 +61,7 @@ final readonly class TranslationFixture
 
     public function setupModules(): void
     {
-        TranslationCatalogue::write([['Save', null, 'core.php:1', 'core'], ['Shared item', 'Shared items', 'core.php:2', 'core']], $this->core);
+        TranslationCatalog::write([['Save', null, 'core.php:1', 'core'], ['Shared item', 'Shared items', 'core.php:2', 'core']], $this->core);
         foreach (['Example', 'Other'] as $module) {
             $this->write("modules/$module/manifest.json", json_encode(['manifest_version' => 1, 'type' => 'module', 'id' => strtolower($module)], JSON_THROW_ON_ERROR));
         }
@@ -109,17 +109,17 @@ final readonly class TranslationFixture
         $header = ['Project-Id-Version: FOSSBilling module example', 'Report-Msgid-Bugs-To: info@fossbilling.org', 'POT-Creation-Date: 2026-01-01 00:00+0000', 'PO-Revision-Date: 2026-01-01 00:00+0000', 'Last-Translator: Test <test@example.com>', 'Language-Team: Test', "Language: $locale", 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: 8bit', "Plural-Forms: $rule"];
         $text = "msgid \"\"\nmsgstr \"\"\n";
         foreach ($header as $line) {
-            $text .= '"' . TranslationCatalogue::escape($line . "\n") . "\"\n";
+            $text .= '"' . TranslationCatalog::escape($line . "\n") . "\"\n";
         }
         foreach ($entries as [$msgid, $plural, $forms, $fuzzy]) {
-            $text .= "\n" . ($fuzzy ? "#, fuzzy\n" : '') . 'msgid "' . TranslationCatalogue::escape($msgid) . "\"\n";
+            $text .= "\n" . ($fuzzy ? "#, fuzzy\n" : '') . 'msgid "' . TranslationCatalog::escape($msgid) . "\"\n";
             if ($plural !== null) {
-                $text .= 'msgid_plural "' . TranslationCatalogue::escape($plural) . "\"\n";
+                $text .= 'msgid_plural "' . TranslationCatalog::escape($plural) . "\"\n";
                 foreach ($forms as $i => $form) {
-                    $text .= "msgstr[$i] \"" . TranslationCatalogue::escape($form) . "\"\n";
+                    $text .= "msgstr[$i] \"" . TranslationCatalog::escape($form) . "\"\n";
                 }
             } else {
-                $text .= 'msgstr "' . TranslationCatalogue::escape($forms[0]) . "\"\n";
+                $text .= 'msgstr "' . TranslationCatalog::escape($forms[0]) . "\"\n";
             }
         }
 

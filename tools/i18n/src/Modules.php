@@ -67,7 +67,7 @@ final class Modules
     {
         $fs = new Filesystem();
         $modules = self::discover($root);
-        $core = TranslationCatalogue::entries($corePot);
+        $core = TranslationCatalog::entries($corePot);
         $sources = array_fill_keys(array_column($modules, 'id'), []);
         $errors = [];
         foreach ($modules as $module) {
@@ -110,13 +110,13 @@ final class Modules
             $changed = [];
             foreach ($modules as $module) {
                 $generated = Path::join($temporary, $module['id'] . '.pot');
-                $count = TranslationCatalogue::write($sources[$module['id']], $generated, 'FOSSBilling module ' . $module['id'], true);
+                $count = TranslationCatalog::write($sources[$module['id']], $generated, 'FOSSBilling module ' . $module['id'], true);
                 $target = self::template($output, $module);
-                if (!$fs->exists($target) || TranslationCatalogue::normalized($target) !== TranslationCatalogue::normalized($generated)) {
+                if (!$fs->exists($target) || TranslationCatalog::normalized($target) !== TranslationCatalog::normalized($generated)) {
                     $changed[] = [$generated, $target];
                     echo $module['id'] . ": $count entries; " . ($check ? 'needs regeneration' : 'updated') . "\n";
                     if ($fs->exists($target)) {
-                        echo TranslationCatalogue::diff($target, $generated);
+                        echo TranslationCatalog::diff($target, $generated);
                     }
                 } else {
                     echo $module['id'] . ": $count entries; unchanged\n";
