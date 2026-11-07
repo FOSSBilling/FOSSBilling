@@ -17,7 +17,7 @@ use Pimple\Container;
 /**
  * Minimal entity manager stand-in; syncWhois() only calls flush().
  */
-function makeEntityManagerSpy(): object
+function makeSyncWhoisEntityManagerSpy(): object
 {
     return new class {
         public int $flushCount = 0;
@@ -32,7 +32,7 @@ function makeEntityManagerSpy(): object
 /**
  * A fully populated registrar contact, as syncWhois() copies every field.
  */
-function makeWhoisContact(): Registrar_Domain_Contact
+function makeSyncWhoisContact(): Registrar_Domain_Contact
 {
     $contact = new Registrar_Domain_Contact();
     $contact->setFirstName('Jane');
@@ -60,6 +60,7 @@ function makeSyncWhoisService(Registrar_Domain $whois, object $em): Service
     $service = new class($whois) extends Service {
         public function __construct(private readonly Registrar_Domain $whois)
         {
+            parent::__construct();
         }
 
         protected function _getD(ServiceDomain $model): array
@@ -88,10 +89,10 @@ function makeSyncWhoisService(Registrar_Domain $whois, object $em): Service
 }
 
 test('syncWhois does not clear registered_at when the registrar returns no registration timestamp', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     // No registration time set: many registrars omit it.
 
     $service = makeSyncWhoisService($whois, $em);
@@ -107,10 +108,10 @@ test('syncWhois does not clear registered_at when the registrar returns no regis
 });
 
 test('syncWhois updates registered_at when the registrar returns a registration timestamp', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     $whois->setRegistrationTime(1_551_676_767); // 2019-03-04 05:19:27 UTC
 
     $service = makeSyncWhoisService($whois, $em);
@@ -124,10 +125,10 @@ test('syncWhois updates registered_at when the registrar returns a registration 
 });
 
 test('syncWhois persists nameservers reported by the registrar', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     $whois->setNs1('ns1.registrar.test');
     $whois->setNs2('ns2.registrar.test');
     $whois->setNs3('ns3.registrar.test');
@@ -146,10 +147,10 @@ test('syncWhois persists nameservers reported by the registrar', function (): vo
 });
 
 test('syncWhois keeps stored nameservers the registrar does not report', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     $whois->setNs1('ns1.registrar.test');
     // ns2-ns4 not reported by the registrar.
 
@@ -170,10 +171,10 @@ test('syncWhois keeps stored nameservers the registrar does not report', functio
 });
 
 test('syncWhois still refreshes expires_at and synced_at', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     $whois->setExpirationTime(1_800_000_000); // 2027-01-15 08:00:00 UTC
 
     $service = makeSyncWhoisService($whois, $em);
@@ -188,10 +189,10 @@ test('syncWhois still refreshes expires_at and synced_at', function (): void {
 });
 
 test('syncWhois keeps stored nameservers when the registrar reports empty strings', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     $whois->setNs1('');
     $whois->setNs2('');
 
@@ -208,10 +209,10 @@ test('syncWhois keeps stored nameservers when the registrar reports empty string
 });
 
 test('syncWhois skips non-string nameserver values without interrupting the sync', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     // Some adapters pass through API responses that return nameservers as arrays.
     $whois->setNs1(['ns1.registrar.test']);
     $whois->setNs2('ns2.registrar.test');
@@ -229,10 +230,10 @@ test('syncWhois skips non-string nameserver values without interrupting the sync
 });
 
 test('syncWhois does not clear expires_at when the registrar returns no expiration timestamp', function (): void {
-    $em = makeEntityManagerSpy();
+    $em = makeSyncWhoisEntityManagerSpy();
 
     $whois = new Registrar_Domain();
-    $whois->setContactRegistrar(makeWhoisContact());
+    $whois->setContactRegistrar(makeSyncWhoisContact());
     // No expiration time set.
 
     $service = makeSyncWhoisService($whois, $em);
