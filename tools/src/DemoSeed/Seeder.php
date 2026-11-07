@@ -392,6 +392,11 @@ final class Seeder
             }
             if ($this->dryRun) {
                 $this->note("  [dry] create product {$def['title']}");
+                // Keep planned products in the plan so the order preview can
+                // use them on fresh installs; ids are placeholders.
+                $pid = -count($this->manifest['products']) - 1;
+                $productIds[$def['title']] = $pid;
+                $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $pid, 'planned' => true];
 
                 continue;
             }
@@ -425,16 +430,6 @@ final class Seeder
             $this->note("  created product {$def['title']} id={$pid}");
             $productIds[$def['title']] = $pid;
             $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $pid];
-            if ($def['title'] === 'Demo Ebook Download' && $this->demoFilePath !== null && is_file($this->demoFilePath)) {
-                // The storefront product needs a downloadable file, or adding
-                // it to the cart fails with "Product is not configured completely."
-                try {
-                    $this->api->upload('admin/servicedownloadable/upload', ['id' => (string) $pid], 'file_data', $this->demoFilePath);
-                    $this->note("  attached demo file to {$def['title']}");
-                } catch (Throwable $e) {
-                    $this->recordError('servicedownloadable/upload ' . $def['title'], $e->getMessage());
-                }
-            }
         }
         // domain product already exists (only one allowed) — reuse it
         if (!isset($productIds['Domains registration and transfer'])) {
@@ -442,6 +437,27 @@ final class Seeder
                 if (($p['type'] ?? '') === 'domain') {
                     $productIds[$p['title']] = (int) $p['id'];
                     $this->manifest['products'][] = ['title' => $p['title'], 'type' => 'domain', 'id' => (int) $p['id'], 'existing' => true];
+                }
+            }
+        }
+
+        // The storefront product needs a downloadable file, or adding it to
+        // the cart fails with "Product is not configured completely." Attach
+        // it whether the product was just created or seeded by an earlier run
+        // that could not upload; skip products that already carry a file.
+        $ebookPid = $productIds['Demo Ebook Download'] ?? null;
+        if (!$this->dryRun && $ebookPid !== null) {
+            if ($this->demoFilePath === null || !is_file($this->demoFilePath)) {
+                $this->recordError('servicedownloadable/upload', 'demo download archive missing at ' . ($this->demoFilePath ?? '(unavailable)'));
+            } else {
+                try {
+                    $product = $this->api->call('admin/product/get', ['id' => $ebookPid]);
+                    if (($product['config']['files'] ?? []) === []) {
+                        $this->api->upload('admin/servicedownloadable/upload', ['id' => (string) $ebookPid], 'file_data', $this->demoFilePath);
+                        $this->note('  attached demo file to Demo Ebook Download');
+                    }
+                } catch (Throwable $e) {
+                    $this->recordError('servicedownloadable/upload Demo Ebook Download', $e->getMessage());
                 }
             }
         }
@@ -606,14 +622,15 @@ final class Seeder
         // ------------------------------------------------------- 4. orders
         $this->note('-- orders (mixed states)');
         $orderProductCycle = [];
+        // Only reuse products this seeder seeds, matched by exact title: a
+        // target's own product (hosting or otherwise) can provision or charge
+        // against live integrations, and gateway test mode does not sandbox that.
+        $seederProductTitles = array_column($productDefs, 'title');
         foreach ($existingProducts as $p) {
             if (in_array($p['type'] ?? '', ['domain', 'downloadable'], true)) {
                 continue; // domain handled via dedicated $domainPid orders; downloadable needs files config, catalog-only
             }
-            // Never activate demo orders against products the seeder didn't
-            // create: a target's own hosting product can provision on a live
-            // server, and gateway test mode does not sandbox that.
-            if (!str_starts_with((string) ($p['title'] ?? ''), 'Demo')) {
+            if (!in_array((string) ($p['title'] ?? ''), $seederProductTitles, true)) {
                 continue;
             }
             $orderProductCycle[] = (int) $p['id'];
@@ -660,9 +677,10 @@ final class Seeder
         $clientIdList = array_values($clientIds);
         $orderTarget = $this->limitOrders > 0 ? $this->limitOrders : 36;
         $ordersCreated = [];
+        $plannedOrders = 0;
         $orderIndex = 0;
         foreach ($clientIdList as $ci => $cid) {
-            if (count($ordersCreated) >= $orderTarget) {
+            if (count($ordersCreated) + $plannedOrders >= $orderTarget) {
                 break;
             }
             if ($orderProductCycle === []) {
@@ -671,7 +689,7 @@ final class Seeder
                 break;
             }
             $rounds = $ci < 12 ? 2 : 1; // first 12 clients get 2 orders => ~36 total
-            for ($k = 0; $k < $rounds && count($ordersCreated) < $orderTarget; ++$k) {
+            for ($k = 0; $k < $rounds && count($ordersCreated) + $plannedOrders < $orderTarget; ++$k) {
                 ++$orderIndex;
                 $pid = $orderProductCycle[($orderIndex - 1) % count($orderProductCycle)];
                 $period = $periodCycle[($orderIndex - 1) % count($periodCycle)];
@@ -683,6 +701,7 @@ final class Seeder
                 }
                 if ($this->dryRun) {
                     $this->note("  [dry] create order client={$cid} product={$pid}");
+                    ++$plannedOrders;
 
                     continue;
                 }
@@ -994,6 +1013,8 @@ final class Seeder
             }
             if ($this->dryRun) {
                 $this->note("  [dry] create helpdesk {$hname}");
+                // Plan the helpdesk so the ticket preview can route against it.
+                $helpdeskIds[$hname] = 0;
 
                 continue;
             }
@@ -1131,7 +1152,7 @@ final class Seeder
         // land in the target's operational support queues.
         $helpdeskKeys = array_values(array_filter(
             $helpdeskIds,
-            static fn (int $id, string $name): bool => str_starts_with($name, 'Demo'),
+            static fn (int $id, string $name): bool => in_array($name, ['Demo Billing', 'Demo Technical'], true),
             ARRAY_FILTER_USE_BOTH,
         ));
         for ($t = 0; $t < $ticketTarget; ++$t) {
