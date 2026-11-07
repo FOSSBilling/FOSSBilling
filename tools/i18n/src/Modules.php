@@ -81,7 +81,7 @@ final class Modules
                 }
             }
         }
-        $known = array_map(static fn ($module) => self::template($output, $module), $modules);
+        $known = array_map(static fn ($module): string => self::template($output, $module), $modules);
         if (is_dir($output)) {
             $single = $fs->exists(Path::join($root, 'manifest.json'));
             foreach ((new Finder())->files()->in($output)->name('*.pot')->sortByName() as $file) {

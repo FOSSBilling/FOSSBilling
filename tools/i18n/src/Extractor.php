@@ -38,9 +38,9 @@ final class Extractor
             }
         });
         // Parsing needs names, not the application services behind these callables.
-        $twig->registerUndefinedFilterCallback(static fn (string $name) => new TwigFilter($name, static fn (...$args) => null, ['is_variadic' => true]));
-        $twig->registerUndefinedFunctionCallback(static fn (string $name) => new TwigFunction($name, static fn (...$args) => null, ['is_variadic' => true]));
-        $twig->registerUndefinedTestCallback(static fn (string $name) => new TwigTest($name, static fn (...$args) => true));
+        $twig->registerUndefinedFilterCallback(static fn (string $name): TwigFilter => new TwigFilter($name, static fn (...$args): null => null, ['is_variadic' => true]));
+        $twig->registerUndefinedFunctionCallback(static fn (string $name): TwigFunction => new TwigFunction($name, static fn (...$args): null => null, ['is_variadic' => true]));
+        $twig->registerUndefinedTestCallback(static fn (string $name): TwigTest => new TwigTest($name, static fn (...$args): true => true));
         $files = $contexts = [];
         $finder = (new Finder())->files()->in($root)->name(['*.php', '*.twig'])
             ->exclude(['vendor', 'install', 'data', 'tests', 'locale', 'node_modules', '.git'])->notName('load.php')->sortByName();
@@ -381,7 +381,7 @@ final class Extractor
     {
         $tokens = $context['tokens'];
         $pairs = $context['pairs'];
-        $deny = array_map('strtolower', ['DateTime', 'DateTimeImmutable', 'DateTimeZone', 'DateInterval', 'DatePeriod', 'Response', 'RedirectResponse', 'DOMDocument', 'PDO', 'ReflectionClass', 'AuthenticationRequiredException']);
+        $deny = array_map(strtolower(...), ['DateTime', 'DateTimeImmutable', 'DateTimeZone', 'DateInterval', 'DatePeriod', 'Response', 'RedirectResponse', 'DOMDocument', 'PDO', 'ReflectionClass', 'AuthenticationRequiredException']);
         foreach ($tokens as $i => $token) {
             $name = null;
             $short = null;

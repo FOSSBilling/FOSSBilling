@@ -7,14 +7,14 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Process\Process;
 
-final class TranslationFixture
+final readonly class TranslationFixture
 {
-    public readonly string $root;
-    public readonly string $modules;
-    public readonly string $templates;
-    public readonly string $build;
-    public readonly string $core;
-    public readonly Filesystem $fs;
+    public string $root;
+    public string $modules;
+    public string $templates;
+    public string $build;
+    public string $core;
+    public Filesystem $fs;
 
     public function __construct()
     {
@@ -111,7 +111,7 @@ final class TranslationFixture
     public function readMo(string $path): array
     {
         $data = $this->fs->readFile($path);
-        $format = substr($data, 0, 4) === "\xde\x12\x04\x95" ? 'V' : 'N';
+        $format = str_starts_with($data, "\xde\x12\x04\x95") ? 'V' : 'N';
         $header = unpack($format . 'magic/' . $format . 'revision/' . $format . 'count/' . $format . 'originals/' . $format . 'translations', substr($data, 0, 20));
         if ($header['magic'] !== 0x950412DE) {
             throw new RuntimeException('Invalid MO magic');

@@ -149,7 +149,7 @@ test('checks gettext format flags before compilation', function (): void {
 
 test('retains complete plural entries for one, two, three and six form languages', function (int $count, string $rule): void {
     $f = $this->fixture;
-    $forms = array_map(static fn ($n) => ':n form' . $n, range(0, $count - 1));
+    $forms = array_map(static fn ($n): string => ':n form' . $n, range(0, $count - 1));
     $f->po([[':n item', ':n items', $forms, false]], rule: "nplurals=$count; plural=($rule);");
     $result = $f->translate('compile');
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());

@@ -14,8 +14,8 @@ final class Gettext
 {
     public static function placeholders(string $text, array $expected = []): array
     {
-        usort($expected, static fn ($a, $b) => strlen($b) <=> strlen($a));
-        $choices = array_map(static fn ($value) => preg_quote($value, '~'), $expected);
+        usort($expected, static fn ($a, $b): int => strlen($b) <=> strlen($a));
+        $choices = array_map(static fn ($value): string => preg_quote($value, '~'), $expected);
         $choices[] = '(?<!:):[A-Za-z_][A-Za-z0-9_]*';
         preg_match_all('~' . implode('|', $choices) . '~', $text, $matches);
         $set = array_values(array_unique($matches[0]));
@@ -64,7 +64,7 @@ final class Gettext
                     }
                 }
                 $forms = array_values($slots);
-                $hasTranslations = count(array_filter($forms, static fn ($value) => $value !== '')) > 0;
+                $hasTranslations = count(array_filter($forms, static fn ($value): bool => $value !== '')) > 0;
                 $indices = array_keys($slots);
                 sort($indices, SORT_NUMERIC);
                 if ($hasTranslations && ($pluralCount === 0 || $indices !== range(0, $pluralCount - 1))) {

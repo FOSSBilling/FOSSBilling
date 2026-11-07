@@ -18,7 +18,7 @@ test('extracts messages, plural pairs, references and sources and rejects invali
     }
     $result = Extractor::extract($this->fixture->root . '/input', $fixture['module']);
     $serialize = static function (array $occurrences): array {
-        $rows = array_map(static fn ($row) => json_encode($row, JSON_THROW_ON_ERROR), $occurrences);
+        $rows = array_map(static fn ($row): string => json_encode($row, JSON_THROW_ON_ERROR), $occurrences);
         sort($rows, SORT_STRING);
 
         return $rows;

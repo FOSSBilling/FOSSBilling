@@ -76,7 +76,7 @@ final class Catalogue
             array_pop($lines);
         }
 
-        return implode("\n", array_filter($lines, static fn ($line) => !str_starts_with($line, '"POT-Creation-Date:')));
+        return implode("\n", array_filter($lines, static fn ($line): bool => !str_starts_with($line, '"POT-Creation-Date:')));
     }
 
     private static function lines(string $path): array
@@ -109,7 +109,7 @@ final class Catalogue
             unset($entry);
         }
         ksort($merged, SORT_STRING);
-        $header = <<<'POT'
+        $header = <<<'POT_WRAP'
             # en_US translation of FOSSBilling Application
             # Copyright 2022-2026 FOSSBilling
             #
@@ -127,7 +127,7 @@ final class Catalogue
             "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
             "X-Generator: FOSSBilling i18n\n"
 
-            POT;
+            POT_WRAP;
         $output = sprintf($header, self::escape($project), gmdate('Y-m-d H:i+0000'));
         foreach ($merged as $msgid => $entry) {
             $refs = array_values(array_unique($entry['refs']));
