@@ -93,15 +93,17 @@ class Fingerprint
     }
 
     /**
-     * Generates a fingerprint for the device that made the request to the server.
+     * Generates a fingerprint, retaining previously supplied optional hints when omitted.
      */
-    public function fingerprint(): array
+    public function fingerprint(array $previousFingerprint = []): array
     {
         $fingerprint = [];
 
         foreach ($this->fingerprintProperties as $name => $properties) {
             if (!empty($properties['source'])) {
                 $fingerprint[$name] = hash('md5', (string) $properties['source']);
+            } elseif (($properties['optional'] ?? false) && isset($previousFingerprint[$name])) {
+                $fingerprint[$name] = $previousFingerprint[$name];
             }
         }
 

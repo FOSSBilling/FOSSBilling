@@ -235,8 +235,8 @@ test('fingerprint update persists the current fingerprint', function (): void {
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
-        ->with('SELECT id FROM session WHERE id = :id', ['id' => 'current-session'])
-        ->andReturn(['id' => 'current-session']);
+        ->with('SELECT fingerprint FROM session WHERE id = :id', ['id' => 'current-session'])
+        ->andReturn(['fingerprint' => '']);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->withArgs(fn (string $query, array $parameters, array $types): bool => $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id'
@@ -250,13 +250,53 @@ test('fingerprint update persists the current fingerprint', function (): void {
     invokePrivate($session, 'updateFingerprint');
 });
 
+test('session remembers client hints across a request that omits them', function (string $platform, bool $valid): void {
+    $connection = Mockery::mock(Connection::class);
+    [$session, $di] = createDatabaseSession($connection);
+    $request = clone $di['request'];
+    $request->headers->add(['Sec-CH-UA-Platform' => '"Linux"', 'Sec-CH-UA-Mobile' => '?0']);
+    $stored = (new Fingerprint($request))->fingerprint();
+
+    $connection->shouldReceive('fetchAssociative')->andReturnUsing(function () use (&$stored): array {
+        return ['id' => 'same-browser', 'fingerprint' => json_encode($stored, JSON_THROW_ON_ERROR), 'created_at' => time()];
+    });
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->withArgs(fn (string $query): bool => $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id')
+        ->andReturnUsing(function (string $query, array $parameters) use (&$stored): int {
+            $stored = $parameters['fingerprint'];
+
+            return 1;
+        });
+    $connection->shouldReceive('executeStatement')
+        ->with('DELETE FROM session WHERE id = :id', ['id' => 'same-browser'])
+        ->times($valid ? 0 : 1)
+        ->andReturn(1);
+
+    setSessionCookie('same-browser');
+    $withoutHints = new Fingerprint($di['request']);
+    invokePrivate($session, 'canUseSession', [$withoutHints]);
+    invokePrivate($session, 'updateFingerprint', [$withoutHints]);
+
+    expect($stored['platform'] ?? null)->toBe(md5('"Linux"'))
+        ->and($stored['mobile'] ?? null)->toBe(md5('?0'));
+
+    $request->headers->set('Sec-CH-UA-Platform', $platform);
+    invokePrivate($session, 'canUseSession', [new Fingerprint($request)]);
+
+    expect(isset($_COOKIE['PHPSESSID']))->toBe($valid);
+})->with([
+    'same platform' => ['"Linux"', true],
+    'conflicting platform' => ['"Windows"', false],
+]);
+
 test('fingerprint update ignores a missing database record', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session] = createDatabaseSession($connection);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
-        ->with('SELECT id FROM session WHERE id = :id', ['id' => 'missing-session'])
+        ->with('SELECT fingerprint FROM session WHERE id = :id', ['id' => 'missing-session'])
         ->andReturnFalse();
 
     setSessionCookie('missing-session');
@@ -296,8 +336,8 @@ test('disabled fingerprinting skips validation and stores an empty fingerprint',
             ->andReturn(1);
         $connection->shouldReceive('fetchAssociative')
             ->once()
-            ->with('SELECT id FROM session WHERE id = :id', ['id' => 'fingerprinting-disabled'])
-            ->andReturn(['id' => 'fingerprinting-disabled']);
+            ->with('SELECT fingerprint FROM session WHERE id = :id', ['id' => 'fingerprinting-disabled'])
+            ->andReturn(['fingerprint' => '{not-valid-json']);
         $connection->shouldReceive('executeStatement')
             ->once()
             ->with('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
