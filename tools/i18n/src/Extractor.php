@@ -42,10 +42,10 @@ final class Extractor
         $twig->registerUndefinedFunctionCallback(static fn (string $name): TwigFunction => new TwigFunction($name, static fn (...$args): null => null, ['is_variadic' => true]));
         $twig->registerUndefinedTestCallback(static fn (string $name): TwigTest => new TwigTest($name, static fn (...$args): true => true));
         $files = $contexts = [];
-        $finder = (new Finder())->files()->in($root)->name(['*.php', '*.twig'])
+        $finder = (new Finder())->useUnixPaths()->files()->in($root)->name(['*.php', '*.twig'])
             ->exclude(['vendor', 'install', 'data', 'tests', 'locale', 'node_modules', '.git'])->notName('load.php')->sortByName();
         foreach ($finder as $file) {
-            $rel = str_replace('\\', '/', $file->getRelativePathname());
+            $rel = $file->getRelativePathname();
             $files[$rel] = $file->getContents();
             if ($file->getExtension() === 'php') {
                 $contexts[$rel] = self::context($files[$rel]);

@@ -133,8 +133,8 @@ final class Gettext
                 if (!is_dir($localeRoot)) {
                     continue;
                 }
-                foreach ((new Finder())->files()->in($localeRoot)->name('*.po')->sortByName() as $po) {
-                    $relative = str_replace('\\', '/', $po->getRelativePathname());
+                foreach ((new Finder())->useUnixPaths()->files()->in($localeRoot)->name('*.po')->sortByName() as $po) {
+                    $relative = $po->getRelativePathname();
                     if (!preg_match('~\A[a-z]{2,3}(?:_[A-Za-z0-9]+)*/LC_MESSAGES/' . preg_quote($module['id'], '~') . '\.po\z~', $relative)) {
                         throw new \RuntimeException("$po: expected locale/<locale>/LC_MESSAGES/{$module['id']}.po");
                     }
