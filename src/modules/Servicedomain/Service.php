@@ -450,7 +450,23 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         $model->setDetails(serialize($whois));
         $model->setExpiresAt($this->formatRegistrarTimestamp($whois->getExpirationTime()));
-        $model->setRegisteredAt($this->formatRegistrarTimestamp($whois->getRegistrationTime()));
+
+        // Some registrars do not report a registration timestamp. Only overwrite
+        // the stored value when the registrar actually provides one.
+        $registeredAt = $this->formatRegistrarTimestamp($whois->getRegistrationTime());
+        if ($registeredAt !== null) {
+            $model->setRegisteredAt($registeredAt);
+        }
+
+        // Persist the nameservers reported by the registrar, keeping the stored
+        // values when the registrar does not return any.
+        foreach ([1, 2, 3, 4] as $i) {
+            $ns = $whois->{"getNs{$i}"}();
+            if (!empty($ns)) {
+                $model->{"setNs{$i}"}($ns);
+            }
+        }
+
         $model->setSyncedAt(new \DateTime());
 
         $this->di['em']->flush();
