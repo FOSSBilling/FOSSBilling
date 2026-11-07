@@ -48,7 +48,7 @@ $application->addCommand((new Command('extract'))
                     throw new RuntimeException("missing template: $target");
                 }
                 if (TranslationCatalog::normalized($generated) !== TranslationCatalog::normalized($target)) {
-                    $output->write(TranslationCatalog::diff($target, $generated), false, OutputInterface::OUTPUT_RAW);
+                    $output->write(TranslationCatalog::diff($target, $generated)['report'], false, OutputInterface::OUTPUT_RAW);
 
                     throw new RuntimeException("template needs regeneration: $target");
                 }
@@ -75,8 +75,17 @@ $application->addCommand((new Command('diff'))
     ->setDescription('Report message, plural and casing changes between templates')
     ->addArgument('old-template', InputArgument::REQUIRED)
     ->addArgument('new-template', InputArgument::REQUIRED)
+    ->addOption('format', null, InputOption::VALUE_REQUIRED, 'Output format: text or json', 'text')
     ->setCode(static function (InputInterface $input, OutputInterface $output): int {
-        $output->write(TranslationCatalog::diff($input->getArgument('old-template'), $input->getArgument('new-template')), false, OutputInterface::OUTPUT_RAW);
+        $format = $input->getOption('format');
+        if (!in_array($format, ['text', 'json'], true)) {
+            throw new InvalidArgumentException('format must be text or json');
+        }
+        $diff = TranslationCatalog::diff($input->getArgument('old-template'), $input->getArgument('new-template'));
+        $report = $format === 'json'
+            ? json_encode($diff, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n"
+            : $diff['report'];
+        $output->write($report, false, OutputInterface::OUTPUT_RAW);
 
         return Command::SUCCESS;
     }));

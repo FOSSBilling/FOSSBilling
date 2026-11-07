@@ -119,7 +119,7 @@ final class Modules
                     $changed[] = [$generated, $target];
                     echo $module['id'] . ": $count entries; " . ($check ? 'needs regeneration' : 'updated') . "\n";
                     if ($fs->exists($target)) {
-                        echo TranslationCatalog::diff($target, $generated);
+                        echo TranslationCatalog::diff($target, $generated)['report'];
                     }
                 } else {
                     echo $module['id'] . ": $count entries; unchanged\n";

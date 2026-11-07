@@ -163,7 +163,7 @@ final class TranslationCatalog
         return json_encode($value === null ? null : (string) $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     }
 
-    public static function diff(string $oldPath, string $newPath): string
+    public static function diff(string $oldPath, string $newPath): array
     {
         $old = self::entries($oldPath);
         $new = self::entries($newPath);
@@ -223,6 +223,14 @@ final class TranslationCatalog
             }
         }
 
-        return $output;
+        return [
+            'changed' => $added !== [] || $removed !== [] || $changed !== [],
+            'added' => count($added),
+            'removed' => count($removed),
+            'gone' => count($realRemoved),
+            'casing_only' => count($casing),
+            'plural_changed' => count($changed),
+            'report' => $output,
+        ];
     }
 }
