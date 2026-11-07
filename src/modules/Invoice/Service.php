@@ -1397,7 +1397,8 @@ class Service implements InjectionAwareInterface
 
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
-            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), (float) $invoice->getRefund()));
+            // base_income excludes tax, so the refund it is netted against must exclude it too.
+            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), $this->getRefundExcludingTax($invoice)));
         } else {
             $invoice->setBaseRefund(null);
         }
@@ -1420,6 +1421,29 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
+    }
+
+    /**
+     * The refunded amount without the tax returned with it. `refund` holds what
+     * was paid back (tax included); the tax part is read from the credit notes
+     * issued against the invoice.
+     */
+    private function getRefundExcludingTax(Invoice $invoice): float
+    {
+        $refund = (float) $invoice->getRefund();
+        if ($refund <= 0) {
+            return $refund;
+        }
+
+        // Credit note amounts are negated, so their tax is too. Keep the sign:
+        // a refunded negative taxable subtotal (a taxed discount) gives back
+        // negative tax, which adds to the refund without tax.
+        $refundedTax = 0.0;
+        foreach ($this->findRefundingInvoices($invoice) as $creditNote) {
+            $refundedTax -= $this->getTax($creditNote);
+        }
+
+        return round(max(0.0, $refund - $refundedTax), 2);
     }
 
     public function prepareInvoice(Client $client, array $data): Invoice

@@ -2048,6 +2048,66 @@ test('stays silent when base-currency values are unchanged', function (): void {
     expect($infoCalls)->toBe([]);
 });
 
+test('counts the refund without tax so income nets out on a refunded invoice', function (string $refund, array $lines, array $creditNotes, float $expectedIncome, float $expectedRefund): void {
+    $service = new Service();
+
+    $makeLines = function (array $rows): array {
+        $items = [];
+        foreach ($rows as [$price, $taxed]) {
+            $item = new InvoiceItem();
+            $item->setPrice($price);
+            $item->setQuantity(1);
+            $item->setTaxed($taxed);
+            $items[] = $item;
+        }
+
+        return $items;
+    };
+
+    $invoice = setEntityId(new Invoice(), 30);
+    $invoice->setCurrency('USD');
+    $invoice->setTaxrate('20');
+    $invoice->setRefund($refund);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('toBaseCurrency')->andReturnUsing(fn (string $code, float|int $amount): float => (float) $amount);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(30)->andReturn($makeLines($lines));
+
+    $creditNoteEntities = [];
+    foreach ($creditNotes as $index => $creditLines) {
+        $creditNote = setEntityId(new Invoice(), 31 + $index);
+        $creditNote->setCurrency('USD');
+        $creditNote->setTaxrate('20');
+        $creditNote->setCreditNoteForInvoiceId(30);
+        $creditNoteEntities[] = $creditNote;
+        $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(31 + $index)->andReturn($makeLines($creditLines));
+    }
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findBy')->with(['creditNoteForInvoiceId' => 30])->andReturn($creditNoteEntities);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'currency' => $currencyService,
+        'invoice:invoiceitem' => new ServiceInvoiceItem(),
+    ]));
+
+    $service->setDi($di);
+    $service->countIncome($invoice);
+
+    expect((float) $invoice->getBaseIncome())->toBe($expectedIncome)
+        ->and((float) $invoice->getBaseRefund())->toBe($expectedRefund);
+})->with([
+    'full refund of a taxed line' => ['120.00', [['100.00', true]], [[['-100.00', true]]], 100.0, 100.0],
+    'partial refund over two credit notes, taxed and untaxed lines' => ['110.00', [['100.00', true], ['50.00', false]], [[['-50.00', true]], [['-50.00', false]]], 150.0, 100.0],
+    'full refund with a taxed discount' => ['78.00', [['90.00', false], ['-10.00', true]], [[['-90.00', false], ['10.00', true]]], 80.0, 80.0],
+    'older refund with no linked credit note' => ['60.00', [['100.00', true]], [], 100.0, 60.0],
+]);
+
 test('prepares invoice with undefined currency', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('setInvoiceDefaults')
