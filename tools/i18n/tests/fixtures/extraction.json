@@ -1,0 +1,1731 @@
+[
+    {
+        "name": "PHP extraction fixtures #1",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\FOSSBilling\\Core\\Exception\\BaseException('Cart not found');\n"
+        },
+        "occurrences": [
+            [
+                "Cart not found",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #2",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new BaseException('Cache configuration is invalid.');\n"
+        },
+        "occurrences": [
+            [
+                "Cache configuration is invalid.",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #3",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$e = new FOSSBilling\\Core\\Exception\\BaseException('Page :url not found', [':url' => $url], 404);\n$response = $app->show404($e);\n"
+        },
+        "occurrences": [
+            [
+                "Page :url not found",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #4",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nreturn new \\Payment_Exception('Custom payments must be approved.', [], 7002);\n"
+        },
+        "occurrences": [
+            [
+                "Custom payments must be approved.",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #5",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$country ??= throw new IncompleteRecord('Unknown country ISO code');\n"
+        },
+        "occurrences": [
+            [
+                "Unknown country ISO code",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #6",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException('Unable to encrypt data.');\n"
+        },
+        "occurrences": [
+            [
+                "Unable to encrypt data.",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #7",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\LogicException('License is not active', 1006);\n"
+        },
+        "occurrences": [
+            [
+                "License is not active",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #8",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new InvalidArgumentException('Invalid email address');\n"
+        },
+        "occurrences": [
+            [
+                "Invalid email address",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #9",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new Server_Exception('Invalid server manager.');\n"
+        },
+        "occurrences": [
+            [
+                "Invalid server manager.",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #10",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n'display_name' => \\__trans('Delete email history'),\n"
+        },
+        "occurrences": [
+            [
+                "Delete email history",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #11",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new AuthenticationRequiredException('client');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #12",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nclass LoginRequired extends \\RuntimeException {\n    public function __construct() {\n        parent::__construct('Client is not logged in');\n    }\n}\n"
+        },
+        "occurrences": [
+            [
+                "Client is not logged in",
+                null,
+                "Case.php:4",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #13",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException($area === 'admin' ? 'Admin area' : 'Client area');\n"
+        },
+        "occurrences": [
+            [
+                "Admin area",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Client area",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #14",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nparent::__construct($area === 'admin' ? 'Admin is not logged in' : 'Client is not logged in');\n"
+        },
+        "occurrences": [
+            [
+                "Admin is not logged in",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Client is not logged in",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #15",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException($message ?? 'Unknown error');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #16",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException(($failed ? 'Failure' : 'Success'));\n"
+        },
+        "occurrences": [
+            [
+                "Failure",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Success",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #17",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n<?php $a = 1; // note ?>\n<p>new Widget('Preview')</p>\n<?php throw new \\RuntimeException('Real message');\n"
+        },
+        "occurrences": [
+            [
+                "Real message",
+                null,
+                "Case.php:4",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #18",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n<?php $a = 1; # note ?>\n<p>new Widget('Preview')</p>\n<?php throw new \\RuntimeException('Real message');\n"
+        },
+        "occurrences": [
+            [
+                "Real message",
+                null,
+                "Case.php:4",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #19",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException($ok ? getMessage() : 'Fallback');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #20",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException(fn($x) => $x ? 'Enabled' : 'Disabled');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #21",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException(($t = <<<HTML\napples, oranges? no\nHTML) ? 'Present' : 'Absent');\n"
+        },
+        "occurrences": [
+            [
+                "Present",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Absent",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #22",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException('admin' === $area ? 'Admin area' : 'Client area');\n"
+        },
+        "occurrences": [
+            [
+                "Admin area",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Client area",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #23",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException($code, $on ? 'Enabled' : 'Disabled');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #24",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException(($a ?? $b) ? 'Available' : 'Unavailable');\n"
+        },
+        "occurrences": [
+            [
+                "Available",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Unavailable",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #25",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$d = new \\DateTime('now');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #26",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$d = new \\DateTimeImmutable('2026-01-01');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #27",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$i = new \\DateInterval('P1D');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #28",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$d = new \\datetime('now');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #29",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$r = new Response('<html>hi</html>');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #30",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$d = new \\DOMDocument('1.0', 'UTF-8');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #31",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$r = new \\ReflectionClass('Acme\\\\User');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #32",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$o = new class('not a message') extends Foo {};\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #33",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$o = new CLASS('not a message');\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #34",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException('No items for ID: ' . $id);\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #35",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException(\"Hello $name\");\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #36",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException($message);\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #37",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n__trans('Visible string');\n__pluralTrans('One apple', 'Many apples', $n);\n"
+        },
+        "occurrences": [
+            [
+                "Visible string",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "One apple",
+                "Many apples",
+                "Case.php:3",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #38",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$x = '<script>';\nthrow new \\RuntimeException('Kept');\n$y = '</script>';\n"
+        },
+        "occurrences": [
+            [
+                "Kept",
+                null,
+                "Case.php:3",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #39",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n<script>var l = <?= __trans('Save changes') ?>;\nvar d = new Date('2026-01-01');</script>\n<?php throw new \\RuntimeException('Real message');\n"
+        },
+        "occurrences": [
+            [
+                "Save changes",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Real message",
+                null,
+                "Case.php:4",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #40",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n<script><?php $x = 'a ?> b'; $y = __trans('Real'); ?></script>\n<?php throw new \\RuntimeException('Kept');\n"
+        },
+        "occurrences": [
+            [
+                "Real",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Kept",
+                null,
+                "Case.php:3",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #41",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException(match ($code) { 1 => true, default => false } ? 'First error' : 'Other error');\n"
+        },
+        "occurrences": [
+            [
+                "First error",
+                null,
+                "Case.php:2",
+                "core"
+            ],
+            [
+                "Other error",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #42",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n} catch (\\Exception $e) {\nif ($e instanceof \\RuntimeException) {\n$c = \\RuntimeException::class;\n}\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #43",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n$s = 'throw new \\RuntimeException(\\'fake\\')';\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #44",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n// renew the thing\n$renew = 1;\n"
+        },
+        "occurrences": [],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #45",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n<?php $a = 1; ?>\n<p>don't</p>\n<script>var d = new Date('2026-01-01');</script>\n<?php throw new \\RuntimeException('Real message');\n"
+        },
+        "occurrences": [
+            [
+                "Real message",
+                null,
+                "Case.php:5",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #46",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n<?php $a = 1; ?>\n<button onclick=\"new Widget('Preview')\">x</button>\n<?php throw new \\RuntimeException('Real message');\n"
+        },
+        "occurrences": [
+            [
+                "Real message",
+                null,
+                "Case.php:4",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #47",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n<script><?php $t = <<<HTML\n<p>a ?> b</p>\nHTML;\n$y = __trans('Real'); ?></script>\n"
+        },
+        "occurrences": [
+            [
+                "Real",
+                null,
+                "Case.php:5",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #48",
+        "module": null,
+        "files": {
+            "Case.php": "<button onclick=\"new Widget('Preview')\">\n<?php throw new \\RuntimeException('Kept');"
+        },
+        "occurrences": [
+            [
+                "Kept",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "PHP extraction fixtures #49",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\nthrow new \\RuntimeException('Kept');\n"
+        },
+        "occurrences": [
+            [
+                "Kept",
+                null,
+                "Case.php:2",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_check_is_read_only_ignores_dates_and_detects_reference_changes #50",
+        "module": null,
+        "files": {
+            "Service.php": "<?php __trans('Original'); __pluralTrans('One', 'Many', $n);"
+        },
+        "occurrences": [
+            [
+                "Original",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "One",
+                "Many",
+                "Service.php:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_check_is_read_only_ignores_dates_and_detects_reference_changes #51",
+        "module": null,
+        "files": {
+            "Service.php": "<?php __trans('Changed'); __pluralTrans('One', 'Many', $n);"
+        },
+        "occurrences": [
+            [
+                "Changed",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "One",
+                "Many",
+                "Service.php:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_check_is_read_only_ignores_dates_and_detects_reference_changes #52",
+        "module": null,
+        "files": {
+            "Service.php": "<?php __trans('Original'); __pluralTrans('One', 'Changed plurals', $n);"
+        },
+        "occurrences": [
+            [
+                "Original",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "One",
+                "Changed plurals",
+                "Service.php:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_check_is_read_only_ignores_dates_and_detects_reference_changes #53",
+        "module": null,
+        "files": {
+            "Service.php": "<?php\n\n__trans('Original'); __pluralTrans('One', 'Many', $n);"
+        },
+        "occurrences": [
+            [
+                "Original",
+                null,
+                "Service.php:3",
+                "core"
+            ],
+            [
+                "One",
+                "Many",
+                "Service.php:3",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_combined_cli_keeps_core_and_bundled_module_messages #54",
+        "module": null,
+        "files": {
+            "Service.php": "<?php __trans('Core');",
+            "modules/Example/page.twig": "{{ 'Module'|trans }}"
+        },
+        "occurrences": [
+            [
+                "Core",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "Module",
+                null,
+                "modules/Example/page.twig:1",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_comments_and_nested_arguments_do_not_override_source #55",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n            __trans('A', ['from' => 'other', 'nested' => bar(from: 'other')], /* from: 'wrong' */ from: 'example');\n            __trans('B', values: [':x' => fn ($a, $b) => [$a, $b]], from: 'example');\n            __trans('C', values: ['text' => \"from: 'other', )\"], from: 'example');\n        "
+        },
+        "occurrences": [
+            [
+                "A",
+                null,
+                "Case.php:2",
+                "example"
+            ],
+            [
+                "B",
+                null,
+                "Case.php:3",
+                "example"
+            ],
+            [
+                "C",
+                null,
+                "Case.php:4",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_constructor_aliases_inheritance_and_parent_signatures #56",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n            namespace Example;\n            use FOSSBilling\\Core\\Exception\\{InformationException as Notice, BaseException as Base};\n            new Notice('Alias', null, 0, false, 'example');\n            new Inherited('Inherited', null, 0, false, 'example');\n            class PaymentFailure extends \\Payment_Exception {\n                public function __construct() { parent::__construct('Payment parent', null, 0, 'example'); }\n            }\n            class ServerFailure extends \\Server_Exception {\n                public function __construct() { parent::__construct('Server parent', null, 0, 'example'); }\n            }\n            class BaseFailure extends Base {\n                public function __construct() { parent::__construct('Base parent', null, 0, false, 'example'); }\n            }\n            new PaymentFailure();\n            class Renamed extends Notice {\n                public function __construct($text, $from = null) { parent::__construct($text, from: $from); }\n            }\n            new Renamed('Own signature', 'example');\n        ",
+            "Inherited.php": "<?php\n            namespace Example;\n            use FOSSBilling\\Core\\Exception\\InformationException as Information;\n            class Inherited extends Information {}\n        "
+        },
+        "occurrences": [
+            [
+                "Alias",
+                null,
+                "Case.php:4",
+                "example"
+            ],
+            [
+                "Inherited",
+                null,
+                "Case.php:5",
+                "example"
+            ],
+            [
+                "Payment parent",
+                null,
+                "Case.php:7",
+                "example"
+            ],
+            [
+                "Server parent",
+                null,
+                "Case.php:10",
+                "example"
+            ],
+            [
+                "Base parent",
+                null,
+                "Case.php:13",
+                "example"
+            ],
+            [
+                "Own signature",
+                null,
+                "Case.php:19",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #57",
+        "module": null,
+        "files": {
+            "Case.php": "<?php __trans('Message', from: $source);"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #58",
+        "module": null,
+        "files": {
+            "Case.php": "<?php __trans('Message', null, 'ex' . $source);"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #59",
+        "module": null,
+        "files": {
+            "Case.php": "<?php __trans('Message', from: \"ex$source\");"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #60",
+        "module": null,
+        "files": {
+            "Case.php": "<?php __trans('Message', from: '../Other');"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #61",
+        "module": null,
+        "files": {
+            "Case.php": "<?php __trans('Message', from: 'Example');"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #62",
+        "module": null,
+        "files": {
+            "Case.php": "<?php __trans('Message', ...$options);"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #63",
+        "module": null,
+        "files": {
+            "Case.php": "<?php __trans('Message', null, 'example', from: 'other');"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #64",
+        "module": null,
+        "files": {
+            "Case.twig": "{{ 'Message'|trans(from: source) }}"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #65",
+        "module": null,
+        "files": {
+            "Case.twig": "{{ 'Message'|trans(from: 'ex' ~ source) }}"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #66",
+        "module": null,
+        "files": {
+            "Case.twig": "{{ 'Message'|trans(from: \"#{source}\") }}"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_dynamic_invalid_and_ambiguous_sources_fail_without_overwriting_output #67",
+        "module": null,
+        "files": {
+            "Case.twig": "{{ 'Message'|trans(from: '') }}"
+        },
+        "occurrences": [],
+        "has_errors": true
+    },
+    {
+        "name": "test_exceptions_and_chained_constructors #68",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n            new InformationException('Named', from: 'example');\n            new BaseException('Positional', [], 42, true, 'example');\n            new Payment_Exception('Payment', null, 42, 'example');\n            new Registrar_Exception('Registrar', 42, from: 'example');\n            new server_exception('Server', [], 42, 'example');\n            new CustomException(from: 'other', message: 'Custom');\n            new Unrelated('Unrelated', [], 0, true, 'not-a-source-parameter');\n            class Child extends BaseException {\n                public function __construct() { parent::__construct('Parent', null, 42, true, 'example'); }\n            }\n            new InformationException($failed ? 'Failed' : 'Success', from: 'example');\n            new InformationException('admin' === $area ? 'Admin' : 'Client', from: 'example');\n        "
+        },
+        "occurrences": [
+            [
+                "Named",
+                null,
+                "Case.php:2",
+                "example"
+            ],
+            [
+                "Positional",
+                null,
+                "Case.php:3",
+                "example"
+            ],
+            [
+                "Payment",
+                null,
+                "Case.php:4",
+                "example"
+            ],
+            [
+                "Registrar",
+                null,
+                "Case.php:5",
+                "example"
+            ],
+            [
+                "Server",
+                null,
+                "Case.php:6",
+                "example"
+            ],
+            [
+                "Custom",
+                null,
+                "Case.php:7",
+                "other"
+            ],
+            [
+                "Unrelated",
+                null,
+                "Case.php:8",
+                "core"
+            ],
+            [
+                "Parent",
+                null,
+                "Case.php:10",
+                "example"
+            ],
+            [
+                "Failed",
+                null,
+                "Case.php:12",
+                "example"
+            ],
+            [
+                "Success",
+                null,
+                "Case.php:12",
+                "example"
+            ],
+            [
+                "Admin",
+                null,
+                "Case.php:13",
+                "example"
+            ],
+            [
+                "Client",
+                null,
+                "Case.php:13",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_only_executable_twig_filters_are_extracted #69",
+        "module": null,
+        "files": {
+            "modules/Example/page.twig": "\n            <p>'Plain text'|trans(from: source)</p>\n            {% verbatim %}{{ 'Example'|trans(from: source) }}{% endverbatim %}\n            {{ \"Status: #{'Ready'|trans}\" }}\n            {{ \"Nested: #{'Hello'|trans(from: 'other')}\" }}\n            {{ \"Escaped \\#{'Inert'|trans(from: source)}\" }}\n            {{ \"Text containing 'Fake'|trans(from: source)\" }}\n            {{ 'Visible'|trans }}\n        "
+        },
+        "occurrences": [
+            [
+                "Ready",
+                null,
+                "modules/Example/page.twig:4",
+                "example"
+            ],
+            [
+                "Hello",
+                null,
+                "modules/Example/page.twig:5",
+                "other"
+            ],
+            [
+                "Visible",
+                null,
+                "modules/Example/page.twig:8",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_php_sources_named_positional_and_reordered_arguments #70",
+        "module": null,
+        "files": {
+            "modules/Example/Service.php": "<?php\n            __trans('Shared');\n            __trans('Named', from: 'example');\n            __trans('Positional', ['from' => 'ignored', 'nested' => foo(1, 2)], 'other');\n            __trans(from: 'example', values: [':n' => foo('from: other', [1, 2])], msgid: 'Reordered');\n            __trans('Null', from: null);\n            __trans('Explicit core', from: 'core');\n            __pluralTrans(':n item', ':n items', $n, [':n' => $n], 'example');\n            __pluralTrans(number: $n, from: 'other', msgidPlural: 'Many', msgid: 'One');\n            __trans($dynamic, from: $source);\n            __trans($dynamic, ...$arguments);\n            new Unrelated(...$arguments);\n            new Unrelated('Constructor message', ...$arguments);\n        "
+        },
+        "occurrences": [
+            [
+                "Shared",
+                null,
+                "modules/Example/Service.php:2",
+                "core"
+            ],
+            [
+                "Named",
+                null,
+                "modules/Example/Service.php:3",
+                "example"
+            ],
+            [
+                "Positional",
+                null,
+                "modules/Example/Service.php:4",
+                "other"
+            ],
+            [
+                "Reordered",
+                null,
+                "modules/Example/Service.php:5",
+                "example"
+            ],
+            [
+                "Null",
+                null,
+                "modules/Example/Service.php:6",
+                "core"
+            ],
+            [
+                "Explicit core",
+                null,
+                "modules/Example/Service.php:7",
+                "core"
+            ],
+            [
+                ":n item",
+                ":n items",
+                "modules/Example/Service.php:8",
+                "example"
+            ],
+            [
+                "One",
+                "Many",
+                "modules/Example/Service.php:9",
+                "other"
+            ],
+            [
+                "Constructor message",
+                null,
+                "modules/Example/Service.php:13",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_standalone_module_context_only_changes_twig_defaults #71",
+        "module": "example",
+        "files": {
+            "Service.php": "<?php __trans('Shared'); __trans('Own', from: 'example');",
+            "templates/page.twig": "{{ 'Implicit'|trans }}"
+        },
+        "occurrences": [
+            [
+                "Shared",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "Own",
+                null,
+                "Service.php:1",
+                "example"
+            ],
+            [
+                "Implicit",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_translation_inputs_and_test_sources_are_not_extracted #72",
+        "module": null,
+        "files": {
+            "Service.php": "<?php __trans('Visible');",
+            "locale/input.php": "<?php __trans('Ignore');",
+            "modules/Example/locale/input.php": "<?php __trans('Ignore');",
+            "node_modules/input.php": "<?php __trans('Ignore');",
+            "tests/input.php": "<?php __trans('Ignore');",
+            "vendor/input.php": "<?php __trans('Ignore');"
+        },
+        "occurrences": [
+            [
+                "Visible",
+                null,
+                "Service.php:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_twig_escapes_use_twig_rules_and_only_unescaped_interpolation_is_dynamic #73",
+        "module": "example",
+        "files": {
+            "page.twig": "{{ 'Hello\\n:name'|trans }}\n            {{ \"Quote's\"|trans }}\n            {{ '\\xC3\\xA9'|trans(from: 'ex\\x61mple') }}\n            {{ \"Literal \\#{label}\"|trans }}\n            {{ 'Single #{literal}'|trans }}\n            {{ \"Dynamic #{label}\"|trans }}\n            {{ \"Dynamic \\\\#{label}\"|trans }}\n        "
+        },
+        "occurrences": [
+            [
+                "Hello\n:name",
+                null,
+                "page.twig:1",
+                "example"
+            ],
+            [
+                "Quote's",
+                null,
+                "page.twig:2",
+                "example"
+            ],
+            [
+                "é",
+                null,
+                "page.twig:3",
+                "example"
+            ],
+            [
+                "Literal #{label}",
+                null,
+                "page.twig:4",
+                "example"
+            ],
+            [
+                "Single #{literal}",
+                null,
+                "page.twig:5",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_twig_inference_and_overrides #74",
+        "module": null,
+        "files": {
+            "modules/Example/templates/client/page.twig": "\n            {{ 'Inferred'|trans }}\n            {{ 'Placeholders'|trans(values: {':n': nested(1, 2), 'from': 'other'}) }}\n            {{ 'Override'|trans(from: 'other') }}\n            {{ 'Equals syntax'|trans(from = 'other') }}\n            {{ 'Positional'|trans({'from': 'not-a-source'}, 'other') }}\n            {{ 'Core'|trans(from: 'core') }}\n            {{ 'Null'|trans(from: null) }}\n            {{ 'None'|trans(from: none) }}\n            {{ 'Uppercase none'|trans(from: NONE) }}\n            {{ 'Dollar $literal'|trans }}\n            <input placeholder=\"{{ 'HTML quotes'|trans }}\">\n            {{ \"Text containing 'Fake'|trans(from: 'other')\" }}\n            {# {{ 'Comment'|trans(from: 'other') }} #}\n        ",
+            "themes/shared.twig": "{{ 'Layout'|trans }}"
+        },
+        "occurrences": [
+            [
+                "Inferred",
+                null,
+                "modules/Example/templates/client/page.twig:2",
+                "example"
+            ],
+            [
+                "Placeholders",
+                null,
+                "modules/Example/templates/client/page.twig:3",
+                "example"
+            ],
+            [
+                "Override",
+                null,
+                "modules/Example/templates/client/page.twig:4",
+                "other"
+            ],
+            [
+                "Equals syntax",
+                null,
+                "modules/Example/templates/client/page.twig:5",
+                "other"
+            ],
+            [
+                "Positional",
+                null,
+                "modules/Example/templates/client/page.twig:6",
+                "other"
+            ],
+            [
+                "Core",
+                null,
+                "modules/Example/templates/client/page.twig:7",
+                "core"
+            ],
+            [
+                "Null",
+                null,
+                "modules/Example/templates/client/page.twig:8",
+                "core"
+            ],
+            [
+                "None",
+                null,
+                "modules/Example/templates/client/page.twig:9",
+                "core"
+            ],
+            [
+                "Uppercase none",
+                null,
+                "modules/Example/templates/client/page.twig:10",
+                "core"
+            ],
+            [
+                "Dollar $literal",
+                null,
+                "modules/Example/templates/client/page.twig:11",
+                "example"
+            ],
+            [
+                "HTML quotes",
+                null,
+                "modules/Example/templates/client/page.twig:12",
+                "example"
+            ],
+            [
+                "Layout",
+                null,
+                "themes/shared.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_unrelated_constructor_from_arguments_are_not_translation_sources #75",
+        "module": null,
+        "files": {
+            "Case.php": "<?php\n            class Sender { public function __construct($message, $from) {} }\n            new Sender('Variable address', from: $address);\n            new Sender('Literal address', from: 'other');\n        "
+        },
+        "occurrences": [
+            [
+                "Variable address",
+                null,
+                "Case.php:3",
+                "core"
+            ],
+            [
+                "Literal address",
+                null,
+                "Case.php:4",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_compile_uses_real_gettext_and_preserves_module_and_locale_layout #76",
+        "module": "example",
+        "files": {
+            "Service.php": "<?php __trans('Save'); __pluralTrans(':n item', ':n items', $n, from: 'example');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/page.twig": "{{ 'Hello :name'|trans }} {{ 'Save'|trans(from: 'core') }}"
+        },
+        "occurrences": [
+            [
+                "Save",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                ":n item",
+                ":n items",
+                "Service.php:1",
+                "example"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "templates/page.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_compile_uses_real_gettext_and_preserves_module_and_locale_layout #77",
+        "module": "other",
+        "files": {
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"other\"}",
+            "templates/page.twig": "{{ 'Other'|trans }} {{ 'Hello :name'|trans }}"
+        },
+        "occurrences": [
+            [
+                "Other",
+                null,
+                "templates/page.twig:1",
+                "other"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "other"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_conflicting_plural_forms_abort_before_writing_templates #78",
+        "module": "other",
+        "files": {
+            "Service.php": "<?php __pluralTrans('One', 'Many', $n, from: 'other'); __pluralTrans('One', 'Others', $n, from: 'other');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"other\"}",
+            "templates/page.twig": "{{ 'Other'|trans }} {{ 'Hello :name'|trans }}"
+        },
+        "occurrences": [
+            [
+                "One",
+                "Many",
+                "Service.php:1",
+                "other"
+            ],
+            [
+                "One",
+                "Others",
+                "Service.php:1",
+                "other"
+            ],
+            [
+                "Other",
+                null,
+                "templates/page.twig:1",
+                "other"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "other"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_cross_module_overrides_are_routed_to_the_requested_owner #79",
+        "module": "example",
+        "files": {
+            "Service.php": "<?php __trans('Save'); __pluralTrans(':n item', ':n items', $n, from: 'example');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/cross.twig": "{{ 'Owned by Other'|trans(from: 'other') }}",
+            "templates/page.twig": "{{ 'Hello :name'|trans }} {{ 'Save'|trans(from: 'core') }}"
+        },
+        "occurrences": [
+            [
+                "Save",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                ":n item",
+                ":n items",
+                "Service.php:1",
+                "example"
+            ],
+            [
+                "Owned by Other",
+                null,
+                "templates/cross.twig:1",
+                "other"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "templates/page.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_generation_is_stable_and_check_reports_stale_templates_without_writing #80",
+        "module": "example",
+        "files": {
+            "Service.php": "<?php __trans('Save'); __pluralTrans(':n item', ':n items', $n, from: 'example');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/page.twig": "{{ 'Changed'|trans }}"
+        },
+        "occurrences": [
+            [
+                "Save",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                ":n item",
+                ":n items",
+                "Service.php:1",
+                "example"
+            ],
+            [
+                "Changed",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_gettext_format_flags_are_checked_before_compilation #81",
+        "module": "example",
+        "files": {
+            "Format.php": "<?php __trans('Value %s', from: 'example');",
+            "Service.php": "<?php __trans('Save'); __pluralTrans(':n item', ':n items', $n, from: 'example');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/page.twig": "{{ 'Hello :name'|trans }} {{ 'Save'|trans(from: 'core') }}"
+        },
+        "occurrences": [
+            [
+                "Value %s",
+                null,
+                "Format.php:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                ":n item",
+                ":n items",
+                "Service.php:1",
+                "example"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "templates/page.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_placeholder_mismatch_rejects_the_entire_compile_without_partial_outputs #82",
+        "module": "example",
+        "files": {
+            "Pair.php": "<?php __trans('Pair :name :names', from: 'example');",
+            "Service.php": "<?php __trans('Save'); __pluralTrans(':n item', ':n items', $n, from: 'example');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/page.twig": "{{ 'Hello :name'|trans }} {{ 'Save'|trans(from: 'core') }}"
+        },
+        "occurrences": [
+            [
+                "Pair :name :names",
+                null,
+                "Pair.php:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                ":n item",
+                ":n items",
+                "Service.php:1",
+                "example"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "templates/page.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_shared_core_calls_require_an_exact_pinned_core_entry #83",
+        "module": "example",
+        "files": {
+            "Service.php": "<?php __trans('New module message');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/page.twig": "{{ 'Hello :name'|trans }} {{ 'Save'|trans(from: 'core') }}"
+        },
+        "occurrences": [
+            [
+                "New module message",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "templates/page.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_shared_core_calls_require_an_exact_pinned_core_entry #84",
+        "module": "example",
+        "files": {
+            "Service.php": "<?php __pluralTrans('Shared item', 'Wrong plural', $n);",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/page.twig": "{{ 'Hello :name'|trans }} {{ 'Save'|trans(from: 'core') }}"
+        },
+        "occurrences": [
+            [
+                "Shared item",
+                "Wrong plural",
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "templates/page.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_shared_core_calls_require_an_exact_pinned_core_entry #85",
+        "module": "example",
+        "files": {
+            "Service.php": "<?php __trans('Shared item');",
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"example\"}",
+            "templates/page.twig": "{{ 'Hello :name'|trans }} {{ 'Save'|trans(from: 'core') }}"
+        },
+        "occurrences": [
+            [
+                "Shared item",
+                null,
+                "Service.php:1",
+                "core"
+            ],
+            [
+                "Hello :name",
+                null,
+                "templates/page.twig:1",
+                "example"
+            ],
+            [
+                "Save",
+                null,
+                "templates/page.twig:1",
+                "core"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_unknown_and_dynamic_sources_fail_before_updating_any_template #86",
+        "module": "other",
+        "files": {
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"other\"}",
+            "templates/page.twig": "{{ 'Changed'|trans(from: 'unknown') }}"
+        },
+        "occurrences": [
+            [
+                "Changed",
+                null,
+                "templates/page.twig:1",
+                "unknown"
+            ]
+        ],
+        "has_errors": false
+    },
+    {
+        "name": "test_unknown_and_dynamic_sources_fail_before_updating_any_template #87",
+        "module": "other",
+        "files": {
+            "manifest.json": "{\"manifest_version\": 1, \"type\": \"module\", \"id\": \"other\"}",
+            "templates/page.twig": "{{ 'Changed'|trans(from: source) }}"
+        },
+        "occurrences": [],
+        "has_errors": true
+    }
+]
