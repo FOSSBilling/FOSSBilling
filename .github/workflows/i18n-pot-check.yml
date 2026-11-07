@@ -14,9 +14,6 @@ permissions:
 
 jobs:
   pot-diff:
-    strategy:
-      matrix:
-        php: ['8.3', '8.5']
     runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
@@ -29,7 +26,7 @@ jobs:
       - name: 'Setup PHP'
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
-          php-version: ${{ matrix.php }}
+          php-version: '8.5'
           tools: composer:v2
           coverage: none
 
@@ -63,7 +60,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: 'Comment on PR'
-        if: matrix.php == '8.3'
         # Fork PRs get a read-only token, so commenting may fail there;
         # the extraction result above is still visible in the job log.
         continue-on-error: true

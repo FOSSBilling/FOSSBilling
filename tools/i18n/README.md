@@ -2,7 +2,7 @@
 
 <!-- cspell:words msgfmt msgcat msgattrib Ucfirst tokenizer Pest -->
 
-Requires PHP 8.3+ with tokenizer and mbstring. Validation and compilation also require GNU gettext (`msgfmt`, `msgcat`, and `msgattrib` on `PATH`). Install the tooling dependencies:
+Requires PHP 8.5 with tokenizer and mbstring. Validation and compilation also require GNU gettext (`msgfmt`, `msgcat`, and `msgattrib` on `PATH`). Install the tooling dependencies:
 
 ```bash
 composer install --working-dir=tools/i18n

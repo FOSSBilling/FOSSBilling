@@ -3,7 +3,7 @@
     "description": "Standalone translation extraction and GNU gettext validation tooling.",
     "license": "Apache-2.0",
     "require": {
-        "php": ">=8.3",
+        "php": "~8.5.0",
         "ext-mbstring": "*",
         "ext-tokenizer": "*",
         "symfony/console": "^7.4",
@@ -29,7 +29,7 @@
             "pestphp/pest-plugin": true
         },
         "platform": {
-            "php": "8.3.0"
+            "php": "8.5.0"
         }
     }
 }
