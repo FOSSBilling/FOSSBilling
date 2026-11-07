@@ -360,11 +360,14 @@ final class Seeder
 
         // products
         $existingProducts = $this->fetchAll('admin/product/get_list');
+        $productIds = [];
+        // Titles are not unique, so keep every candidate: a title may be
+        // carried by a foreign product of a different type.
         $existingByTitle = [];
         foreach ($existingProducts as $p) {
-            $existingByTitle[(string) $p['title']] = ['id' => (int) $p['id'], 'type' => (string) ($p['type'] ?? '')];
+            $productIds[(string) $p['title']] = (int) $p['id'];
+            $existingByTitle[(string) $p['title']][] = ['id' => (int) $p['id'], 'type' => (string) ($p['type'] ?? '')];
         }
-        $productIds = array_map(static fn (array $p): int => $p['id'], $existingByTitle);
         $recurrent = static function (array $periods): array {
             $out = ['type' => 'recurrent', 'recurrent' => []];
             foreach ($periods as $code => [$price, $setup]) {
@@ -385,16 +388,26 @@ final class Seeder
             ['title' => 'Demo API Credits', 'type' => 'apikey', 'cat' => 'Demo Software', 'pricing' => $once(15.00), 'setup' => 'after_payment'],
         ];
         foreach ($productDefs as $def) {
-            if (isset($productIds[$def['title']])) {
-                $existing = $existingByTitle[$def['title']];
-                if ($existing['type'] !== $def['type']) {
-                    $title = $def['title'];
-                    $this->recordError('product ' . $title, "existing product id {$existing['id']} has type '{$existing['type']}', expected '{$def['type']}'; not reused, manifest entry not written");
+            if (isset($existingByTitle[$def['title']])) {
+                // Prefer a candidate whose type actually matches; duplicates
+                // can carry the title with a foreign type.
+                $existing = null;
+                foreach ($existingByTitle[$def['title']] as $candidate) {
+                    if ($candidate['type'] === $def['type']) {
+                        $existing = $candidate;
+
+                        break;
+                    }
+                }
+                if ($existing === null) {
+                    $this->recordError('product ' . $def['title'], "no existing product titled '{$def['title']}' has type '{$def['type']}'; not reused, manifest entry not written");
+                    unset($productIds[$def['title']]);
 
                     continue;
                 }
-                $this->note("  product '{$def['title']}' exists id={$productIds[$def['title']]}");
-                $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $productIds[$def['title']], 'existing' => true];
+                $this->note("  product '{$def['title']}' exists id={$existing['id']}");
+                $productIds[$def['title']] = $existing['id'];
+                $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $existing['id'], 'existing' => true];
 
                 continue;
             }
@@ -630,15 +643,20 @@ final class Seeder
         // ------------------------------------------------------- 4. orders
         $this->note('-- orders (mixed states)');
         $orderProductCycle = [];
-        // Only reuse products this seeder seeds, matched by exact title: a
-        // target's own product (hosting or otherwise) can provision or charge
-        // against live integrations, and gateway test mode does not sandbox that.
-        $seederProductTitles = array_column($productDefs, 'title');
+        // Only reuse products this seeder seeds, matched by exact title and
+        // type: a target's own product (hosting or otherwise) can provision
+        // or charge against live integrations, and gateway test mode does
+        // not sandbox that.
+        $defTypeByTitle = [];
+        foreach ($productDefs as $def) {
+            $defTypeByTitle[$def['title']] = $def['type'];
+        }
         foreach ($existingProducts as $p) {
+            $title = (string) ($p['title'] ?? '');
             if (in_array($p['type'] ?? '', ['domain', 'downloadable'], true)) {
                 continue; // domain handled via dedicated $domainPid orders; downloadable needs files config, catalog-only
             }
-            if (!in_array((string) ($p['title'] ?? ''), $seederProductTitles, true)) {
+            if (!isset($defTypeByTitle[$title]) || $defTypeByTitle[$title] !== ($p['type'] ?? '')) {
                 continue;
             }
             $orderProductCycle[] = (int) $p['id'];
