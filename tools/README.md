@@ -67,7 +67,7 @@ Keep the copy in the [FOSSBilling/modules](https://github.com/FOSSBilling/module
 
 ## Demo seed
 
-Repeatable, additive test-data seeder for a FOSSBilling instance over the admin API. All records use a `Demo` prefix so they can be found and removed with the `batch_delete` endpoints.
+Repeatable, additive test-data seeder for a FOSSBilling instance over the admin API. Most records use a `Demo` prefix so they can be found and removed with the `batch_delete` endpoints — exceptions are the `WELCOME5` promo, the USD/EUR/CAD currencies, and the `.io`/`.dev`/`.org` TLDs, which carry no prefix (treat them as shared records and verify before deleting). The manifest is rewritten on every run, so it only describes the latest run's records.
 
 ```bash
 APP_URL=https://fossbilling.ddev.site TEST_API_KEY=... tools/bin/console demo:seed

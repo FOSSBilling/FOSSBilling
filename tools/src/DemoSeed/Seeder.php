@@ -41,6 +41,7 @@ final class Seeder
         private readonly int $limitTickets,
         private readonly string $manifestPath,
         private readonly OutputInterface $output,
+        private readonly ?string $demoFilePath = null,
     ) {
     }
 
@@ -424,6 +425,16 @@ final class Seeder
             $this->note("  created product {$def['title']} id={$pid}");
             $productIds[$def['title']] = $pid;
             $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $pid];
+            if ($def['title'] === 'Demo Ebook Download' && $this->demoFilePath !== null && is_file($this->demoFilePath)) {
+                // The storefront product needs a downloadable file, or adding
+                // it to the cart fails with "Product is not configured completely."
+                try {
+                    $this->api->upload('admin/servicedownloadable/upload', ['id' => (string) $pid], 'file_data', $this->demoFilePath);
+                    $this->note("  attached demo file to {$def['title']}");
+                } catch (Throwable $e) {
+                    $this->recordError('servicedownloadable/upload ' . $def['title'], $e->getMessage());
+                }
+            }
         }
         // domain product already exists (only one allowed) — reuse it
         if (!isset($productIds['Domains registration and transfer'])) {
@@ -531,6 +542,10 @@ final class Seeder
             }
             if ($this->dryRun) {
                 $this->note("  [dry] create client {$email}");
+                // Keep planned clients in the plan so dependent orders, invoices
+                // and tickets preview against them too. The id is a placeholder.
+                $clientIds[$email] = $n;
+                $this->manifest['clients'][] = ['email' => $email, 'id' => $n, 'planned' => true];
 
                 continue;
             }
@@ -594,6 +609,12 @@ final class Seeder
         foreach ($existingProducts as $p) {
             if (in_array($p['type'] ?? '', ['domain', 'downloadable'], true)) {
                 continue; // domain handled via dedicated $domainPid orders; downloadable needs files config, catalog-only
+            }
+            // Never activate demo orders against products the seeder didn't
+            // create: a target's own hosting product can provision on a live
+            // server, and gateway test mode does not sandbox that.
+            if (!str_starts_with((string) ($p['title'] ?? ''), 'Demo')) {
+                continue;
             }
             $orderProductCycle[] = (int) $p['id'];
         }
@@ -1201,7 +1222,10 @@ final class Seeder
 
         // ------------------------------------------------------- manifest
         (new Filesystem())->mkdir(dirname($this->manifestPath));
-        if (file_put_contents($this->manifestPath, json_encode($this->manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) === false) {
+        // Error text can carry invalid UTF-8 from remote responses; substitute
+        // it so encoding never fails and the previous manifest is not lost.
+        $encoded = json_encode($this->manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($encoded === false || file_put_contents($this->manifestPath, $encoded) === false) {
             throw new RuntimeException("Failed to write manifest: {$this->manifestPath}");
         }
         $this->note('Wrote manifest: ' . $this->manifestPath);

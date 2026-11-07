@@ -12,11 +12,15 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Tools\DemoSeed;
 
+use CURLFile;
+
 /**
  * Minimal admin-API client for the demo seeder.
  *
  * Every call authenticates as the admin user over HTTP basic auth and posts
- * form-encoded parameters, matching FOSSBilling's legacy API surface.
+ * form-encoded parameters, matching FOSSBilling's legacy API surface. Uploads
+ * are sent as multipart requests, as FOSSBilling's upload endpoints read
+ * $_FILES rather than form parameters.
  */
 final readonly class ApiClient
 {
@@ -33,6 +37,46 @@ final readonly class ApiClient
      */
     public function call(string $endpoint, array $params = []): mixed
     {
+        return $this->request($endpoint, http_build_query($params));
+    }
+
+    /**
+     * Multipart upload, mirroring call()'s response contract. The file is sent
+     * under the given form field name.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @throws \RuntimeException on transport, JSON or API errors
+     */
+    public function upload(string $endpoint, array $params, string $field, string $filePath): mixed
+    {
+        $params[$field] = new \CURLFile($filePath);
+
+        return $this->request($endpoint, $params);
+    }
+
+    /**
+     * Like call(), but converts failures into a `['__error' => message]` array
+     * so seeding can continue past individual record errors.
+     *
+     * @param array<string, mixed> $params
+     */
+    public function callSafe(string $endpoint, array $params = []): mixed
+    {
+        try {
+            return $this->call($endpoint, $params);
+        } catch (\Throwable $e) {
+            return ['__error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * @param array<string, mixed>|string $postFields form-encoded query string, or a multipart field map containing a CURLFile
+     *
+     * @throws \RuntimeException on transport, JSON or API errors
+     */
+    private function request(string $endpoint, array|string $postFields): mixed
+    {
         $url = $this->baseUrl . '/api/' . ltrim($endpoint, '/');
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -42,7 +86,7 @@ final readonly class ApiClient
             CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
             CURLOPT_USERPWD => "admin:{$this->apiKey}",
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => http_build_query($params),
+            CURLOPT_POSTFIELDS => $postFields,
         ]);
         $out = curl_exec($ch);
         if ($out === false) {
@@ -64,20 +108,5 @@ final readonly class ApiClient
         }
 
         return $decoded['result'];
-    }
-
-    /**
-     * Like call(), but converts failures into a `['__error' => message]` array
-     * so seeding can continue past individual record errors.
-     *
-     * @param array<string, mixed> $params
-     */
-    public function callSafe(string $endpoint, array $params = []): mixed
-    {
-        try {
-            return $this->call($endpoint, $params);
-        } catch (\Throwable $e) {
-            return ['__error' => $e->getMessage()];
-        }
     }
 }

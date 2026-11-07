@@ -27,6 +27,7 @@ final class SeedCommand extends Command
 {
     public function __construct(
         private readonly string $defaultManifestDir,
+        private readonly string $defaultDemoFilePath,
     ) {
         parent::__construct();
     }
@@ -89,6 +90,7 @@ final class SeedCommand extends Command
             (int) $input->getOption('limit-tickets'),
             Path::join($manifestDir, $dryRun ? 'manifest.dry.json' : 'manifest.json'),
             $output,
+            $this->defaultDemoFilePath,
         );
 
         try {

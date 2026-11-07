@@ -36,6 +36,9 @@ $application->addCommands([
         Path::join($repoRoot, 'src', 'modules'),
         Path::join($repoRoot, 'tools', 'resources', 'manifest.schema.json'),
     ),
-    new SeedCommand(Path::join($repoRoot, 'tools', 'var', 'demo-seed')),
+    new SeedCommand(
+        Path::join($repoRoot, 'tools', 'var', 'demo-seed'),
+        Path::join($repoRoot, 'tools', 'resources', 'demo-seed', 'demo-download.zip'),
+    ),
 ]);
 $application->run();
