@@ -216,17 +216,20 @@ class Session implements InjectionAwareInterface
         $connection = $this->di['em']->getConnection();
 
         try {
-            $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
+            $session = $connection->fetchAssociative('SELECT fingerprint FROM session WHERE id = :id', ['id' => $sessionID]);
 
-            if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-                $updatedFingerprint = ($currentFingerprint ?? new Fingerprint($this->di['request']))->fingerprint();
-            } else {
-                $updatedFingerprint = [];
-            }
-
-            // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
+            // The installer uses filesystem sessions before the database is set up.
             if ($session === false) {
                 return;
+            }
+
+            if (Config::getProperty('security.perform_session_fingerprinting', true)) {
+                $previousFingerprint = json_decode($session['fingerprint'] ?: '[]', true, 512, JSON_THROW_ON_ERROR);
+                $updatedFingerprint = ($currentFingerprint ?? new Fingerprint($this->di['request']))->fingerprint(
+                    is_array($previousFingerprint) ? $previousFingerprint : [],
+                );
+            } else {
+                $updatedFingerprint = [];
             }
 
             $connection->executeStatement('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
