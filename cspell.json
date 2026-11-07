@@ -122,7 +122,19 @@
         "imageavif",
         "webp",
         "webmoney",
-        "dasharray"
+        "dasharray",
+        "baseexception",
+        "heredocs",
+        "informationexception",
+        "msgattrib",
+        "msgcat",
+        "msgctxt",
+        "msgfmt",
+        "msgids",
+        "Ucfirst",
+        "ungroup",
+        "nullsafe",
+        "pluraltrans"
     ],
 
     "ignoreWords": [
@@ -657,6 +669,20 @@
         "telno",
         "telnocc",
         "actionstatus"
+    ],
+    "overrides": [
+        {
+            "filename": "tools/i18n/bin/console",
+            "languageId": "php"
+        },
+        {
+            "filename": "tools/i18n/tests/GettextTest.php",
+            "words": ["objets", "Profil", "Salut", "Supprimé", "Valeur"]
+        },
+        {
+            "filename": "tools/i18n/tests/fixtures/extraction.php",
+            "words": ["mple"]
+        }
     ],
     "ignorePaths": [
         "node_modules/**",

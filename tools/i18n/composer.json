@@ -1,0 +1,35 @@
+{
+    "name": "fossbilling/i18n-tools",
+    "description": "Standalone translation extraction and GNU gettext validation tooling.",
+    "license": "Apache-2.0",
+    "require": {
+        "php": "~8.5.0",
+        "ext-mbstring": "*",
+        "ext-tokenizer": "*",
+        "symfony/console": "^8.1",
+        "symfony/filesystem": "^8.1",
+        "symfony/finder": "^8.1",
+        "symfony/process": "^8.1",
+        "twig/twig": "^3.30"
+    },
+    "require-dev": {
+        "pestphp/pest": "^5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "FOSSBilling\\Tools\\I18n\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "pest --configuration phpunit.xml --test-directory tests"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "platform": {
+            "php": "8.5.0"
+        }
+    }
+}
