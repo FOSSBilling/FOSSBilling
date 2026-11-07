@@ -34,9 +34,9 @@ Validation runs `msgfmt --check --check-format` and checks template membership, 
 
 Fuzzy entries are filtered before normalization, and empty translations are omitted. Non-fuzzy plural entries must translate every required form or leave all forms empty. Intentional translations identical to English are preserved. Compilation uses normalized UTF-8 input, including with older gettext versions.
 
-## Migration preparation
+## Crowdin configuration
 
-For the two-project Crowdin drafts and offline Branding/Cookieconsent translation seeds, see [migration preparation](migrations/branding-cookieconsent/README.md).
+See the [configuration drafts](crowdin/README.md) for the proposed Core and Modules projects.
 
 ## Tests
 

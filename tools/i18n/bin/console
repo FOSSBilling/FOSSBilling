@@ -18,7 +18,6 @@ use FOSSBilling\Tools\I18n\Gettext;
 use FOSSBilling\Tools\I18n\Modules;
 use FOSSBilling\Tools\I18n\TemporaryDirectory;
 use FOSSBilling\Tools\I18n\TranslationCatalog;
-use FOSSBilling\Tools\I18n\TranslationMigration;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -101,16 +100,4 @@ $application->addCommand((new Command('compile'))
     ->addArgument('templates', InputArgument::REQUIRED, 'Directory containing module templates')
     ->addArgument('output', InputArgument::REQUIRED, 'New or empty output directory')
     ->setCode(static fn (InputInterface $input): int => Gettext::build($input->getArgument('modules'), $input->getArgument('templates'), $input->getArgument('output'))));
-$application->addCommand((new Command('prepare-migration'))
-    ->setDescription('Prepare an offline Branding/Cookieconsent translation migration bundle')
-    ->addArgument('app-root', InputArgument::REQUIRED, 'Application checkout')
-    ->addArgument('locale-root', InputArgument::REQUIRED, 'Pinned locale checkout or export')
-    ->addArgument('output', InputArgument::REQUIRED, 'New or empty review directory')
-    ->addOption('profile', null, InputOption::VALUE_REQUIRED, 'Migration profile', dirname(__DIR__) . '/migrations/branding-cookieconsent/profile.json')
-    ->setCode(static function (InputInterface $input, OutputInterface $output): int {
-        TranslationMigration::prepare($input->getArgument('app-root'), $input->getArgument('locale-root'), $input->getOption('profile'), $input->getArgument('output'));
-        $output->writeln('Prepared offline migration bundle: ' . $input->getArgument('output'));
-
-        return Command::SUCCESS;
-    }));
 $application->run();

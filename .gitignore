@@ -41,6 +41,3 @@ tests/E2E/Playwright/artifacts
 ### Demo seed (generated per-run artifacts) ###
 tools/demo-seed/manifest*.json
 .ddev/*.sql.gz
-
-# Generated migration review bundle
-/tools/i18n/migrations/branding-cookieconsent/prepared/

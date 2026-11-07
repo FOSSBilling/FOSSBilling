@@ -1,5 +1,5 @@
-# No project ID is guessed. Create FOSSBilling Modules after review and supply its ID.
-# Install in the modules repository; no source or translation upload is automatic here.
+# Install in FOSSBilling/modules after review, using the separate Modules project.
+# Supply its project ID and token through the environment.
 project_id_env: CROWDIN_MODULES_PROJECT_ID
 api_token_env: CROWDIN_MODULES_PERSONAL_TOKEN
 base_url: https://fossbilling.api.crowdin.com

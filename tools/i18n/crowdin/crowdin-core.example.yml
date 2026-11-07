@@ -1,5 +1,5 @@
-# Install in FOSSBilling/locale only after the migration is reviewed.
-# Project 4 keeps its identity; rename its display name to FOSSBilling Core later.
+# Install in FOSSBilling/locale after review.
+# Retain project 4 and its history; rename its display name to FOSSBilling Core.
 project_id: 4
 api_token_env: CROWDIN_PERSONAL_TOKEN
 base_url: https://fossbilling.api.crowdin.com
