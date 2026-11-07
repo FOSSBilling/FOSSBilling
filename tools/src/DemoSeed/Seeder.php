@@ -366,7 +366,7 @@ final class Seeder
         $existingByTitle = [];
         foreach ($existingProducts as $p) {
             $productIds[(string) $p['title']] = (int) $p['id'];
-            $existingByTitle[(string) $p['title']][] = ['id' => (int) $p['id'], 'type' => (string) ($p['type'] ?? '')];
+            $existingByTitle[(string) $p['title']][] = ['id' => (int) $p['id'], 'type' => (string) ($p['type'] ?? ''), 'config' => is_array($p['config'] ?? null) ? $p['config'] : []];
         }
         $recurrent = static function (array $periods): array {
             $out = ['type' => 'recurrent', 'recurrent' => []];
@@ -389,18 +389,25 @@ final class Seeder
         ];
         foreach ($productDefs as $def) {
             if (isset($existingByTitle[$def['title']])) {
-                // Prefer a candidate whose type actually matches; duplicates
-                // can carry the title with a foreign type.
+                // Prefer a candidate whose type matches; duplicates can carry
+                // the title with a foreign type. Hosting products must add the
+                // demo-server check: an inherited candidate could otherwise be
+                // activated against the target's own provisioning server.
                 $existing = null;
                 foreach ($existingByTitle[$def['title']] as $candidate) {
-                    if ($candidate['type'] === $def['type']) {
-                        $existing = $candidate;
-
-                        break;
+                    if ($candidate['type'] !== $def['type']) {
+                        continue;
                     }
+                    if ($def['type'] === 'hosting' && ($serverId === null || (int) ($candidate['config']['server_id'] ?? 0) !== $serverId)) {
+                        continue;
+                    }
+                    $existing = $candidate;
+
+                    break;
                 }
                 if ($existing === null) {
-                    $this->recordError('product ' . $def['title'], "no existing product titled '{$def['title']}' has type '{$def['type']}'; not reused, manifest entry not written");
+                    $extra = $def['type'] === 'hosting' ? ' attached to the demo server' : '';
+                    $this->recordError('product ' . $def['title'], "no existing product titled '{$def['title']}' of type '{$def['type']}'$extra; not reused, manifest entry not written");
                     unset($productIds[$def['title']]);
 
                     continue;
@@ -643,31 +650,16 @@ final class Seeder
         // ------------------------------------------------------- 4. orders
         $this->note('-- orders (mixed states)');
         $orderProductCycle = [];
-        // Only reuse products this seeder seeds, matched by exact title and
-        // type: a target's own product (hosting or otherwise) can provision
-        // or charge against live integrations, and gateway test mode does
-        // not sandbox that.
-        $defTypeByTitle = [];
-        foreach ($productDefs as $def) {
-            $defTypeByTitle[$def['title']] = $def['type'];
-        }
-        foreach ($existingProducts as $p) {
-            $title = (string) ($p['title'] ?? '');
-            if (in_array($p['type'] ?? '', ['domain', 'downloadable'], true)) {
-                continue; // domain handled via dedicated $domainPid orders; downloadable needs files config, catalog-only
-            }
-            if (!isset($defTypeByTitle[$title]) || $defTypeByTitle[$title] !== ($p['type'] ?? '')) {
-                continue;
-            }
-            $orderProductCycle[] = (int) $p['id'];
-        }
+        // Orderable products are exactly the ones the catalog phase accepted
+        // and recorded: each was matched on exact title and type (hosting also
+        // on the demo server), so nothing a target set up alongside the demo
+        // set can be activated. Domain goes through dedicated $domainPid
+        // orders and downloadables are catalog-only; both are excluded here.
         foreach ($this->manifest['products'] as $p) {
             if (in_array($p['type'] ?? '', ['domain', 'downloadable'], true)) {
                 continue;
             }
-            if (!in_array((int) $p['id'], $orderProductCycle, true)) {
-                $orderProductCycle[] = (int) $p['id'];
-            }
+            $orderProductCycle[] = (int) $p['id'];
         }
         $domainPid = null;
         foreach ($existingProducts as $p) {
