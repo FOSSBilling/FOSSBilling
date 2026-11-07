@@ -673,7 +673,7 @@ final class Seeder
             $rounds = $ci < 12 ? 2 : 1; // first 12 clients get 2 orders => ~36 total
             for ($k = 0; $k < $rounds && count($ordersCreated) < $orderTarget; ++$k) {
                 ++$orderIndex;
-                $pid = $orderProductCycle[($orderIndex - 1) % max(1, count($orderProductCycle))];
+                $pid = $orderProductCycle[($orderIndex - 1) % count($orderProductCycle)];
                 $period = $periodCycle[($orderIndex - 1) % count($periodCycle)];
                 $title = "Demo order #{$orderIndex}";
                 // domain orders need special config; force every 6th order to be a domain
@@ -696,16 +696,13 @@ final class Seeder
                     $productType = '';
                     $productPricing = [];
                 }
-                if ($productType === 'domain') {
-                    // generic cycle should never contain domains, but coerce when safe;
-                    // never send a domain order to a live registrar
-                    if (!$domainsSafe) {
-                        $this->recordError("order/create client={$cid}", 'skipping domain product: the registrar for .com is not in test mode');
+                // The cycle holds seeder-created non-domain products only, so a
+                // domain result here means the catalog changed mid-run. Never
+                // let it become a domain order on a live registrar.
+                if (!$domainsSafe && $productType === 'domain') {
+                    $this->recordError("order/create client={$cid}", 'skipping domain product: the registrar for .com is not in test mode');
 
-                        continue;
-                    }
-                    $isDomain = true;
-                    $pid = $domainPid ?? $pid;
+                    continue;
                 }
                 // pick a billing period the product actually offers (once/free products take no period)
                 $effPeriod = null;
@@ -1154,12 +1151,12 @@ final class Seeder
 
                 continue;
             }
-            $cid = $clientIdList[$t % max(1, count($clientIdList))];
+            $cid = $clientIdList[$t % count($clientIdList)];
 
             try {
                 $tid = $this->api->call('admin/support/ticket_create', [
                     'client_id' => $cid,
-                    'support_helpdesk_id' => $helpdeskKeys[$t % max(1, count($helpdeskKeys))],
+                    'support_helpdesk_id' => $helpdeskKeys[$t % count($helpdeskKeys)],
                     'subject' => $subj,
                     'content' => $bodies[$t % count($bodies)],
                 ]);
