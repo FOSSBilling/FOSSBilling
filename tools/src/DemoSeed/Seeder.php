@@ -654,7 +654,7 @@ final class Seeder
         // and recorded: each was matched on exact title and type (hosting also
         // on the demo server), so nothing a target set up alongside the demo
         // set can be activated. Domain goes through dedicated $domainPid
-        // orders and downloadables are catalog-only; both are excluded here.
+        // orders and downloadable products are catalog-only; both excluded.
         foreach ($this->manifest['products'] as $p) {
             if (in_array($p['type'] ?? '', ['domain', 'downloadable'], true)) {
                 continue;
