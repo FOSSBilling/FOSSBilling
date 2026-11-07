@@ -11,6 +11,7 @@ web-asset extensions); obsolete msgids are dropped.
 Usage:
     extract_pot.py <src_dir> <out.pot>
     extract_pot.py <src_dir> <out.pot> --check
+    extract_pot.py --modules <modules_dir> --core-pot <core.pot> --output <directory> [--check]
     extract_pot.py --diff <old.pot> <new.pot>   # msgid-set comparison,
         # flagging casing-only changes (gettext matches case-sensitively,
         # so those silently invalidate existing translations)
@@ -21,11 +22,15 @@ from __future__ import annotations
 import argparse
 import bisect
 import datetime
+import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 from collections import Counter
+from dataclasses import dataclass
+from pathlib import Path
 from typing import NamedTuple
 
 # ---------------------------------------------------------------------------
@@ -980,6 +985,107 @@ def cmd_diff(old_path: str, new_path: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Module templates
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Module:
+    id: str
+    path: Path
+
+
+def discover_modules(root: Path) -> list[Module]:
+    if not root.is_dir():
+        raise ValueError(f"modules directory does not exist: {root}")
+    directories = [root] if (root / "manifest.json").is_file() else sorted(root.iterdir())
+    modules: list[Module] = []
+    for directory in directories:
+        manifest = directory / "manifest.json"
+        if not directory.is_dir():
+            continue
+        if not manifest.is_file():
+            if (directory / "Service.php").is_file() or any((directory / name).is_dir() for name in ("templates", "Api", "Controller")):
+                raise ValueError(f"missing module manifest: {manifest}")
+            continue
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or data.get("manifest_version") != 1 or data.get("type") != "module":
+            raise ValueError(f"{manifest}: expected a v1 module manifest")
+        module_id = data.get("id")
+        if not isinstance(module_id, str) or not re.fullmatch(r"[a-z][a-z0-9_-]*", module_id) or module_id == "core":
+            raise ValueError(f"{manifest}: invalid or reserved module ID")
+        if directory.name != module_id[0].upper() + module_id[1:]:
+            raise ValueError(f"{manifest}: directory must match Ucfirst(id)")
+        modules.append(Module(module_id, directory))
+    if not modules:
+        raise ValueError(f"no module manifests found in {root}")
+    return modules
+
+
+def module_occurrences(modules: list[Module]) -> tuple[dict[str, list[Occurrence]], list[Occurrence]]:
+    by_source: dict[str, list[Occurrence]] = {module.id: [] for module in modules}
+    core: list[Occurrence] = []
+    errors: list[str] = []
+    for module in modules:
+        occurrences, stats = extract_all(str(module.path), module.id)
+        errors.extend(f"{module.path.name}/{error}" for error in stats["source_errors"])
+        for occurrence in occurrences:
+            occurrence = occurrence._replace(ref=f"{module.path.name}/{occurrence.ref}")
+            if occurrence.source == "core":
+                core.append(occurrence)
+            elif occurrence.source in by_source:
+                by_source[occurrence.source].append(occurrence)
+            else:
+                errors.append(f"{occurrence.ref}: unknown module translation source {occurrence.source!r}")
+    if errors:
+        raise ValueError("\n".join(errors))
+    return by_source, core
+
+
+def template_path(root: Path, module: Module) -> Path:
+    return root / module.path.name / "locale" / f"{module.id}.pot"
+
+
+def extract_templates(modules: list[Module], core_pot: Path, output: Path, check: bool, single_module: bool = False) -> int:
+    by_source, core = module_occurrences(modules)
+    core_entries = parse_pot_entries(str(core_pot))
+    errors = [
+        f"{occ.ref}: {occ.msgid!r} is not a matching shared core entry; use the module's from argument"
+        for occ in core
+        if occ.msgid not in core_entries or core_entries[occ.msgid] != occ.plural
+    ]
+    known_templates = {template_path(output, module) for module in modules}
+    if output.is_dir():
+        errors.extend(
+            f"{path}: template has no corresponding module; review its removal manually"
+            for path in sorted(output.glob(f"{modules[0].path.name if single_module else '*'}/locale/*.pot"))
+            if path not in known_templates
+        )
+    if errors:
+        raise ValueError("\n".join(errors))
+
+    changed: list[tuple[Path, Path]] = []
+    # Validate every source before writing any template, including plural conflicts.
+    with tempfile.TemporaryDirectory(prefix="fossbilling-module-pot-") as temporary:
+        for module in modules:
+            generated = Path(temporary) / f"{module.id}.pot"
+            count = write_pot(by_source[module.id], str(generated), f"FOSSBilling module {module.id}", strict=True)
+            target = template_path(output, module)
+            if not target.is_file() or normalized_pot(str(target)) != normalized_pot(str(generated)):
+                changed.append((generated, target))
+                print(f"{module.id}: {count} entries; {'needs regeneration' if check else 'updated'}")
+                if target.is_file():
+                    cmd_diff(str(target), str(generated))
+            else:
+                print(f"{module.id}: {count} entries; unchanged")
+        if check:
+            return int(bool(changed))
+        for generated, target in changed:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(generated, target)
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -989,7 +1095,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("out_pot", nargs="?", help="Output .pot path")
     parser.add_argument("--diff", nargs=2, metavar=("OLD_POT", "NEW_POT"), help="Compare two .pot files")
     parser.add_argument("--check", action="store_true", help="Check an existing template without modifying it")
+    parser.add_argument("--modules", type=Path, help="Extract separate templates from a modules checkout or single module")
+    parser.add_argument("--core-pot", type=Path, help="Pinned core template for validating shared module references")
+    parser.add_argument("--output", type=Path, help="Output root for per-module templates")
     args = parser.parse_args(argv)
+
+    if args.modules is not None:
+        if args.src_dir or args.out_pot or args.diff or args.core_pot is None or args.output is None:
+            parser.error("--modules requires --core-pot and --output, without positional arguments or --diff")
+        try:
+            modules = discover_modules(args.modules)
+            return extract_templates(modules, args.core_pot, args.output, args.check, (args.modules / "manifest.json").is_file())
+        except (ValueError, OSError) as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 1
+    if args.core_pot is not None or args.output is not None:
+        parser.error("--core-pot and --output require --modules")
 
     if args.diff:
         return cmd_diff(args.diff[0], args.diff[1])

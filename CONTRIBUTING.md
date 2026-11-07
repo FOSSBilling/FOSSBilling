@@ -225,7 +225,7 @@ Sources use lowercase module IDs. Module translations load from `src/modules/<Mo
 
 MoTranslator selects plural forms; empty forms fall back individually. Validate translation files with `msgfmt --check --check-format` before distributing them.
 
-See [translation tooling](tools/i18n/README.md) for source extraction, per-module templates, and validated translation builds.
+See [translation tooling](tools/i18n/README.md) for combined and per-module extraction with `extract_pot.py`, and GNU gettext validation and builds with `module_translations.py`. Module PO files must translate every plural form or leave the whole entry untranslated; partially translated non-fuzzy plural entries fail validation.
 
 MoTranslator is temporarily pinned to [upstream fix `1ba5f557`](https://github.com/phpmyadmin/motranslator/commit/1ba5f5579f0f1ba5befd9c975610b304d5494a87) for boolean plural rules such as `n != 1`. When a stable 6.x release includes it, require that release or newer and update the lockfile.
 

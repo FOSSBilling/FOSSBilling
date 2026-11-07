@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import gettext
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
@@ -41,7 +43,11 @@ class ModuleTranslationsTest(unittest.TestCase):
         return path
 
     def cli(self, *arguments: str | Path) -> subprocess.CompletedProcess[str]:
-        return subprocess.run([sys.executable, str(SCRIPTS / 'module_translations.py'), *map(str, arguments)], capture_output=True, text=True)
+        script = 'module_translations.py'
+        if arguments[0] == 'extract':
+            script = 'extract_pot.py'
+            arguments = ('--modules', *arguments[1:])
+        return subprocess.run([sys.executable, str(SCRIPTS / script), *map(str, arguments)], capture_output=True, text=True)
 
     def extract(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         return self.cli('extract', self.modules, '--core-pot', self.core, '--output', self.templates, *arguments)
@@ -77,8 +83,8 @@ class ModuleTranslationsTest(unittest.TestCase):
         return self.write(f'Example/locale/{locale}/LC_MESSAGES/example.po', '\n'.join(lines))
 
     def require_gettext(self) -> None:
-        if shutil.which('msgfmt') is None:
-            self.skipTest('GNU gettext msgfmt is not installed')
+        if any(shutil.which(tool) is None for tool in ('msgfmt', 'msgcat', 'msgattrib')):
+            self.skipTest('GNU gettext msgfmt, msgcat, and msgattrib are required')
 
     def test_extracts_independent_templates_without_modifying_modules(self) -> None:
         before = {path.relative_to(self.modules): path.read_bytes() for path in self.modules.rglob('*') if path.is_file()}
@@ -90,6 +96,27 @@ class ModuleTranslationsTest(unittest.TestCase):
         self.assertIn('Example/templates/page.twig:1', self.template().read_text())
         after = {path.relative_to(self.modules): path.read_bytes() for path in self.modules.rglob('*') if path.is_file()}
         self.assertEqual(before, after)
+
+    def test_module_extraction_needs_no_gettext_or_python_packages(self) -> None:
+        result = subprocess.run([
+            sys.executable, '-S', str(SCRIPTS / 'extract_pot.py'), '--modules', str(self.modules),
+            '--core-pot', str(self.core), '--output', str(self.templates),
+        ], capture_output=True, text=True, env={**os.environ, 'PATH': ''})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(self.template().is_file())
+
+    def test_module_extraction_rejects_incompatible_or_missing_arguments(self) -> None:
+        for arguments in [
+            ['--modules', self.modules],
+            ['--core-pot', self.core],
+            ['--output', self.templates],
+            ['--modules', self.modules, '--core-pot', self.core, '--output', self.templates, 'src', 'out.pot'],
+            ['--modules', self.modules, '--core-pot', self.core, '--output', self.templates, '--diff', self.core, self.core],
+        ]:
+            with self.subTest(arguments=arguments):
+                result = subprocess.run([sys.executable, str(SCRIPTS / 'extract_pot.py'), *map(str, arguments)], capture_output=True, text=True)
+                self.assertEqual(result.returncode, 2)
+                self.assertFalse(self.templates.exists())
 
     def test_generation_is_stable_and_check_reports_stale_templates_without_writing(self) -> None:
         self.assertEqual(self.extract().returncode, 0)
@@ -258,6 +285,100 @@ class ModuleTranslationsTest(unittest.TestCase):
             self.assertEqual(translations.gettext('Hello :name'), 'Bonjour :name')
             self.assertEqual(translations.gettext('Removed'), 'Removed')
 
+    def test_gettext_normalization_preserves_unicode_and_escaped_translations(self) -> None:
+        self.require_gettext()
+        self.assertEqual(self.extract().returncode, 0)
+        translation = '你好 :name "quoted" \\path\nnext\tcolumn\b\f\v\u2028end'
+        self.po([('Hello :name', None, [translation], False)])
+        result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with (self.build / 'Example/locale/fr_FR/LC_MESSAGES/example.mo').open('rb') as handle:
+            self.assertEqual(gettext.GNUTranslations(handle).gettext('Hello :name'), translation)
+
+    def test_gettext_normalizes_non_utf8_po_files_without_modifying_them(self) -> None:
+        self.require_gettext()
+        self.assertEqual(self.extract().returncode, 0)
+        po = self.po([('Hello :name', None, ['Salut :name, été'], False)])
+        po.write_bytes(po.read_text().replace('charset=UTF-8', 'charset=ISO-8859-1').encode('iso-8859-1'))
+        before = po.read_bytes()
+        result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(po.read_bytes(), before)
+        with (self.build / 'Example/locale/fr_FR/LC_MESSAGES/example.mo').open('rb') as handle:
+            self.assertEqual(gettext.GNUTranslations(handle).gettext('Hello :name'), 'Salut :name, été')
+
+    def test_fuzzy_plural_entries_are_ignored_even_when_the_first_form_is_empty(self) -> None:
+        self.require_gettext()
+        self.assertEqual(self.extract().returncode, 0)
+        for index, forms in enumerate([['', 'incorrect :placeholder'], ['incorrect :placeholder', ''], ['incorrect', 'incorrect']]):
+            with self.subTest(forms=forms):
+                po = self.po([
+                    (':n item', ':n items', forms, True),
+                    ('Hello :name', None, ['Bonjour :name'], False),
+                ])
+                if index == 0:
+                    po.write_text('#, fuzzy\n' + po.read_text())
+                before = po.read_bytes()
+                result = self.cli('validate', self.modules, '--templates', self.templates)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                output = self.build / str(index)
+                result = self.cli('compile', self.modules, '--templates', self.templates, '--output', output)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(po.read_bytes(), before)
+                with (output / 'Example/locale/fr_FR/LC_MESSAGES/example.mo').open('rb') as handle:
+                    translations = gettext.GNUTranslations(handle)
+                self.assertEqual(translations.gettext('Hello :name'), 'Bonjour :name')
+                self.assertEqual(translations.ngettext(':n item', ':n items', 1), ':n item')
+                self.assertEqual(translations.ngettext(':n item', ':n items', 2), ':n items')
+
+    def test_fuzzy_entries_still_require_current_sources_and_supported_contexts(self) -> None:
+        self.require_gettext()
+        self.assertEqual(self.extract().returncode, 0)
+        for message in ['Removed', ':n item']:
+            with self.subTest(message=message):
+                po = self.po([(message, ':n items', ['', ':n objets'], True)])
+                expected_error = 'stale or mismatched entry'
+                if message == ':n item':
+                    po.write_text(po.read_text().replace('msgid ":n item"', 'msgctxt "module"\nmsgid ":n item"'))
+                    expected_error = 'message contexts are not supported'
+                result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(expected_error, result.stderr)
+                self.assertFalse(self.build.exists())
+
+    def test_compiled_output_is_utf8_with_legacy_gettext_encoding_behavior(self) -> None:
+        self.require_gettext()
+        self.assertEqual(self.extract().returncode, 0)
+        translation = 'Salut :name, été'
+        po = self.po([('Hello :name', None, [translation], False)])
+        po.write_bytes(po.read_text().replace('charset=UTF-8', 'charset=ISO-8859-1').encode('iso-8859-1'))
+        before = po.read_bytes()
+        compiler = shutil.which('msgfmt')
+        help_text = subprocess.check_output([compiler, '--help'], text=True)
+        # New gettext defaults to UTF-8. Older releases preserve the input
+        # encoding, which --no-convert reproduces on newer releases.
+        options = ['--no-convert'] if '--no-convert' in help_text else []
+        wrapper_dir = self.root / 'legacy-bin'
+        wrapper_dir.mkdir()
+        wrapper = wrapper_dir / 'msgfmt'
+        wrapper.write_text(f'#!{sys.executable}\nimport os, sys\nos.execv({compiler!r}, [{compiler!r}, *{options!r}, *sys.argv[1:]])\n')
+        wrapper.chmod(0o755)
+        with patch.dict(os.environ, {'PATH': str(wrapper_dir) + os.pathsep + os.environ['PATH']}):
+            # Verify the wrapper really exercises the old encoding behavior.
+            control = self.root / 'control.mo'
+            subprocess.run(['msgfmt', str(po), '-o', str(control)], check=True)
+            with control.open('rb') as handle:
+                self.assertEqual(gettext.GNUTranslations(handle).charset().lower(), 'iso-8859-1')
+            result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(po.read_bytes(), before)
+        mo = self.build / 'Example/locale/fr_FR/LC_MESSAGES/example.mo'
+        self.assertIn(translation.encode('utf-8'), mo.read_bytes())
+        with mo.open('rb') as handle:
+            translations = gettext.GNUTranslations(handle)
+        self.assertEqual(translations.charset().lower(), 'utf-8')
+        self.assertEqual(translations.gettext('Hello :name'), translation)
+
     def test_message_contexts_fail_instead_of_generating_unreachable_translations(self) -> None:
         self.require_gettext()
         self.assertEqual(self.extract().returncode, 0)
@@ -327,19 +448,31 @@ class ModuleTranslationsTest(unittest.TestCase):
         self.assertIn('msgfmt failed', result.stderr)
         self.assertFalse(self.build.exists())
 
-    def test_empty_plural_forms_remain_valid_for_runtime_fallback(self) -> None:
+    def test_incomplete_plural_entries_fail_without_writing_outputs(self) -> None:
         self.require_gettext()
         self.assertEqual(self.extract().returncode, 0)
-        for index, forms in enumerate([[':n objet', ''], ['', ':n objets']]):
+        for forms in [[':n objet', ''], ['', ':n objets']]:
             with self.subTest(forms=forms):
-                self.po([(':n item', ':n items', forms, False)])
-                output = self.build / str(index)
-                result = self.cli('compile', self.modules, '--templates', self.templates, '--output', output)
-                self.assertEqual(result.returncode, 0, result.stderr)
-                with (output / 'Example/locale/fr_FR/LC_MESSAGES/example.mo').open('rb') as handle:
-                    translations = gettext.GNUTranslations(handle)
-                    self.assertEqual(translations.ngettext(':n item', ':n items', 1), forms[0])
-                    self.assertEqual(translations.ngettext(':n item', ':n items', 2), forms[1])
+                po = self.po([(':n item', ':n items', forms, False)])
+                before = po.read_bytes()
+                for command in ('validate', 'compile'):
+                    arguments = ['--output', self.build] if command == 'compile' else []
+                    result = self.cli(command, self.modules, '--templates', self.templates, *arguments)
+                    self.assertEqual(result.returncode, 1, result.stdout)
+                    self.assertIn('incomplete plural translation', result.stderr)
+                    self.assertFalse(self.build.exists())
+                    self.assertEqual(po.read_bytes(), before)
+
+    def test_untranslated_plural_entries_are_allowed_for_core_fallback(self) -> None:
+        self.require_gettext()
+        self.assertEqual(self.extract().returncode, 0)
+        self.po([(':n item', ':n items', ['', ''], False), ('Hello :name', None, ['Bonjour :name'], False)])
+        result = self.cli('compile', self.modules, '--templates', self.templates, '--output', self.build)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with (self.build / 'Example/locale/fr_FR/LC_MESSAGES/example.mo').open('rb') as handle:
+            translations = gettext.GNUTranslations(handle)
+        self.assertEqual(translations.ngettext(':n item', ':n items', 1), ':n item')
+        self.assertEqual(translations.ngettext(':n item', ':n items', 2), ':n items')
 
     def test_misnamed_translation_files_and_nonempty_build_directories_fail(self) -> None:
         self.require_gettext()

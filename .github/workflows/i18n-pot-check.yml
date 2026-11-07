@@ -7,7 +7,6 @@ on:
       - 'src/**/*.twig'
       - '.github/scripts/extract_pot.py'
       - '.github/scripts/module_translations.py'
-      - '.github/scripts/requirements-i18n.txt'
       - '.github/scripts/tests/**'
       - 'tools/i18n/**'
       - '.github/workflows/i18n-pot-check.yml'
@@ -38,14 +37,12 @@ jobs:
 
       - name: 'Install translation test dependencies'
         run: |
-          sudo apt-get update && sudo apt-get install --yes gettext python3-venv
-          python3 -m venv /tmp/i18n-venv
-          /tmp/i18n-venv/bin/python -m pip install --require-hashes -r .github/scripts/requirements-i18n.txt
+          sudo apt-get update && sudo apt-get install --yes gettext
 
       - name: 'Run translation tooling fixtures'
         run: |
           python3 .github/scripts/tests/test_extract_pot.py
-          /tmp/i18n-venv/bin/python -m unittest discover -s .github/scripts/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s .github/scripts/tests -p 'test_*.py' -v
 
       - name: 'Compare'
         id: diff

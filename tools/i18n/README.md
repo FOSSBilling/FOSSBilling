@@ -1,14 +1,8 @@
 # Translation tooling
 
-<!-- cspell:words msgfmt Ucfirst mktemp polib venv -->
+<!-- cspell:words msgfmt msgcat msgattrib Ucfirst mktemp -->
 
-The tools in `.github/scripts/` require Python 3.10+. For module translations, install GNU gettext (`msgfmt` on `PATH`) and the pinned Python dependency:
-
-```bash
-python3 -m venv /tmp/fossbilling-i18n-venv
-. /tmp/fossbilling-i18n-venv/bin/activate
-python3 -m pip install --require-hashes -r .github/scripts/requirements-i18n.txt
-```
+The tools in `.github/scripts/` require Python 3.10+, with no third-party Python dependencies. Extraction needs only Python. Module translation validation and compilation also require GNU gettext (`msgfmt`, `msgcat`, and `msgattrib` on `PATH`).
 
 ## Combined core template
 
@@ -24,7 +18,7 @@ python3 .github/scripts/extract_pot.py --diff old.pot new.pot
 
 ## Module templates
 
-`module_translations.py` uses the [translation source rules](../../CONTRIBUTING.md#translation-lookup-in-code). Each module needs a v1 manifest and a directory named `Ucfirst(id)`. PHP extraction assumes the standard core default; module-owned PHP messages need a literal `from` argument. Dynamic messages are skipped, and ambiguous or invalid sources fail extraction.
+`extract_pot.py --modules` uses the [translation source rules](../../CONTRIBUTING.md#translation-lookup-in-code). Each module needs a v1 manifest and a directory named `Ucfirst(id)`. PHP extraction assumes the standard core default; module-owned PHP messages need a literal `from` argument. Dynamic messages are skipped, and ambiguous or invalid sources fail extraction.
 
 Pass a core POT snapshot from a pinned revision compatible with the module's minimum core version. Shared core references must match its message and plural pair. Cross-module references require the target module in the input checkout; identical wording can belong to more than one module.
 
@@ -34,10 +28,10 @@ MODULES_ROOT="/path/to/modules"
 CORE_POT="/path/to/pinned/locale/messages.pot"
 TRANSLATION_STAGING="$(mktemp -d)"
 
-python3 "$CORE_TOOLS/module_translations.py" extract "$MODULES_ROOT" \
+python3 "$CORE_TOOLS/extract_pot.py" --modules "$MODULES_ROOT" \
   --core-pot "$CORE_POT" --output "$TRANSLATION_STAGING/templates"
 
-python3 "$CORE_TOOLS/module_translations.py" extract "$MODULES_ROOT" \
+python3 "$CORE_TOOLS/extract_pot.py" --modules "$MODULES_ROOT" \
   --core-pot "$CORE_POT" --output "$TRANSLATION_STAGING/templates" --check
 ```
 
@@ -56,13 +50,13 @@ python3 "$CORE_TOOLS/module_translations.py" compile "$MODULES_ROOT" \
   --output "$TRANSLATION_STAGING/compiled"
 ```
 
-Validation runs `msgfmt --check --check-format` and checks template membership, plural slots, filenames, and `:name` placeholders. Missing entries are allowed for core fallback; stale entries and message contexts are rejected.
+`module_translations.py` runs `msgfmt --check --check-format` and uses `msgcat` to normalize PO syntax and encoding for the FOSSBilling-specific checks: template membership, plural slots, filenames, and `:name` placeholders. Missing entries are allowed for core fallback; stale entries and message contexts are rejected.
 
 For printf-style validation, retain the appropriate gettext format flag in each PO entry.
 
-Compilation writes `compiled/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo` after every input passes validation. The output directory must be new or empty. Fuzzy and empty translations are omitted; translations identical to English remain valid.
+Compilation uses GNU `msgfmt` and writes `compiled/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo` after every input passes validation. The output directory must be new or empty. Fuzzy translations are filtered with `msgattrib` before normalization, while their source messages still undergo template and context checks. Empty translations are omitted; translations identical to English remain valid. Compilation reads the normalized UTF-8 catalogue, so output stays UTF-8 with older gettext versions as well.
 
-polib writes the MO files because `msgfmt` omits a whole plural entry when its first form is empty. This preserves usable later forms for runtime fallback. The tool also checks plural slot counts, which `msgfmt` skips in that case. Plural expressions are validated by gettext and evaluated by MoTranslator.
+Non-fuzzy plural entries must either translate every form required by `nplurals` or leave all forms empty for core fallback. Partially translated entries are rejected, including when the first form is empty and `msgfmt` would silently omit the entry. Plural expressions are validated by gettext and evaluated by MoTranslator. This replaces the previous build behavior that preserved individually translated plural forms.
 
 ## Tests
 
