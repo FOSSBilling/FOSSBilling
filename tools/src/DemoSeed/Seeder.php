@@ -1244,7 +1244,7 @@ final class Seeder
         // it so encoding never fails and the previous manifest is not lost.
         $encoded = json_encode($this->manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
         if ($encoded === false || file_put_contents($this->manifestPath, $encoded) === false) {
-            throw new RuntimeException("Failed to write manifest: {$this->manifestPath}");
+            throw new \RuntimeException("Failed to write manifest: {$this->manifestPath}");
         }
         $this->note('Wrote manifest: ' . $this->manifestPath);
         $this->note('Done. Errors: ' . count($this->manifest['errors']));

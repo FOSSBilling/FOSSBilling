@@ -85,6 +85,18 @@ test('rejects a "v" prefixed version', function (): void {
         ->and($tester->getDisplay())->toContain('version must not have a "v" prefix');
 });
 
+test('rejects a manifest missing a schema-required field', function (): void {
+    $manifest = MANIFEST_VALID_MODULE;
+    unset($manifest['name']);
+    manifestValidatorWriteModule($this->root, 'Example', $manifest);
+    $tester = manifestValidatorCommand($this->root);
+
+    $status = $tester->execute(['modules' => Path::join($this->root, 'modules')]);
+
+    expect($status)->toBe(1)
+        ->and($tester->getDisplay())->toContain('FAIL Example');
+});
+
 test('rejects a module directory without manifest.json', function (): void {
     (new Filesystem())->mkdir(Path::join($this->root, 'modules', 'Example'));
     $tester = manifestValidatorCommand($this->root);

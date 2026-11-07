@@ -68,3 +68,11 @@ test('does not warn for local development domains', function (): void {
     expect($status)->toBe(1)
         ->and($tester->getDisplay())->not->toContain('plaintext HTTP');
 });
+
+test('does not declare an option that could carry the API key', function (): void {
+    $command = new SeedCommand(sys_get_temp_dir() . '/fossbilling-demo-seed-test', '/nonexistent/demo-download.zip');
+
+    expect($command->getDefinition()->hasOption('key'))->toBeFalse()
+        ->and($command->getDefinition()->hasOption('api-key'))->toBeFalse()
+        ->and($command->getDefinition()->hasOption('apikey'))->toBeFalse();
+});
