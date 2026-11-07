@@ -2,7 +2,7 @@ name: fossbilling
 type: php
 docroot: src
 php_version: "8.3"
-nodejs_version: "24"
+nodejs_version: "26"
 webserver_type: nginx-fpm
 xdebug_enabled: false
 additional_hostnames: ["fossbilling.dev"]
