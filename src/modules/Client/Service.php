@@ -168,7 +168,7 @@ class Service implements InjectionAwareInterface
 
     public function approveClientEmailByHash($hash): bool
     {
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
 
         return $dbal->transactional(function () use ($dbal, $hash): bool {
             $result = $dbal->fetchAssociative(
@@ -200,7 +200,7 @@ class Service implements InjectionAwareInterface
 
     public function revokeEmailConfirmations(int $clientId): void
     {
-        $this->di['dbal']->delete('extension_meta', ['extension' => 'mod_client', 'client_id' => $clientId, 'meta_key' => 'confirm_email']);
+        $this->di['em']->getConnection()->delete('extension_meta', ['extension' => 'mod_client', 'client_id' => $clientId, 'meta_key' => 'confirm_email']);
     }
 
     public function generateEmailConfirmationLink($client_id)
@@ -208,7 +208,7 @@ class Service implements InjectionAwareInterface
         // The managed client also reflects a profile email change before its flush.
         $client = $this->clientRepository->find((int) $client_id) ?? throw new InformationException('Client not found');
         $hash = strtolower(\FOSSBilling\Core\Security\Credential::generatePassword(50));
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
         $dbal->transactional(function () use ($dbal, $client, $client_id, $hash): void {
             $dbal->executeStatement('UPDATE client SET email_approved = email_approved WHERE id = :id', ['id' => $client_id]);
             $this->revokeEmailConfirmations((int) $client_id);
@@ -403,11 +403,11 @@ class Service implements InjectionAwareInterface
         }
 
         $clientId = (int) $model->getId();
-        if ($this->di['dbal']->fetchOne('SELECT 1 FROM invoice WHERE client_id = :client_id LIMIT 1', ['client_id' => $clientId])) {
+        if ($this->di['em']->getConnection()->fetchOne('SELECT 1 FROM invoice WHERE client_id = :client_id LIMIT 1', ['client_id' => $clientId])) {
             throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 
-        if ($this->di['dbal']->fetchOne('SELECT 1 FROM client_order WHERE client_id = :client_id LIMIT 1', ['client_id' => $clientId])) {
+        if ($this->di['em']->getConnection()->fetchOne('SELECT 1 FROM client_order WHERE client_id = :client_id LIMIT 1', ['client_id' => $clientId])) {
             throw new InformationException('Currency cannot be changed. Client already has orders.');
         }
 

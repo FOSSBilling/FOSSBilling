@@ -16,7 +16,7 @@ function createMassmailerDi(?Connection $dbal = null): Pimple\Container
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(MassmailerMessage::class)->andReturn($repo);
     $di['em'] = $em;
-    $di['dbal'] = $dbal ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $di['em']->shouldReceive('getConnection')->andReturn($dbal ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
     $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     return $di;
@@ -118,12 +118,12 @@ test('get message receivers builds parameterized query', function (): void {
     $dbal = createMassmailerDbal();
     seedReceiverTables($dbal);
 
-    $model = (new MassmailerMessage())->setFilter(json_encode([
+    $model = (new MassmailerMessage())->setFilter([
         'client_status' => ['active'],
         'client_groups' => [1],
         'has_order' => [10],
         'has_order_with_status' => ['active'],
-    ], JSON_THROW_ON_ERROR));
+    ]);
 
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi($dbal));
@@ -135,10 +135,10 @@ test('get message receivers excludes clients without a valid email', function ()
     $dbal = createMassmailerDbal();
     seedReceiverTables($dbal);
 
-    $model = (new MassmailerMessage())->setFilter(json_encode([
+    $model = (new MassmailerMessage())->setFilter([
         'client_status' => ['active'],
         'client_groups' => [1],
-    ], JSON_THROW_ON_ERROR));
+    ]);
 
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi($dbal));
@@ -153,10 +153,10 @@ test('get message receivers accepts a valid email with surrounding whitespace', 
     $dbal = createMassmailerDbal();
     seedReceiverTables($dbal);
 
-    $model = (new MassmailerMessage())->setFilter(json_encode([
+    $model = (new MassmailerMessage())->setFilter([
         'client_status' => ['active'],
         'client_groups' => [2],
-    ], JSON_THROW_ON_ERROR));
+    ]);
 
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi($dbal));
@@ -165,9 +165,9 @@ test('get message receivers accepts a valid email with surrounding whitespace', 
 });
 
 test('get message receivers rejects invalid stored filter', function (): void {
-    $model = (new MassmailerMessage())->setFilter(json_encode([
+    $model = (new MassmailerMessage())->setFilter([
         'client_status' => ['active', 'not-valid'],
-    ], JSON_THROW_ON_ERROR));
+    ]);
 
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi());
@@ -203,7 +203,7 @@ test('send message accepts a client with a valid email', function (): void {
 
 test('install creates the mod_massmailer table portably instead of via raw MySQL DDL', function (): void {
     // Regression test: install() used to run raw MySQL-only DDL (backticks, ENGINE=InnoDB)
-    // directly via $di['dbal'], which fails outright on PostgreSQL/SQLite - confirmed here
+    // directly via the legacy dbal service, which fails outright on PostgreSQL/SQLite - confirmed here
     // against a real SQLite connection. mod_massmailer already exists in the pre-cutover schema, so this
     // hook was already redundant on MySQL; it's only load-bearing on PG/SQLite.
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
@@ -231,4 +231,9 @@ test('install creates the mod_massmailer table portably instead of via raw MySQL
 
     expect($connection->createSchemaManager()->tablesExist(['mod_massmailer']))->toBeTrue()
         ->and($capturedConfig)->toBe(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
+});
+
+test('filter API requires structured input rather than serialized JSON', function (): void {
+    $service = new Box\Mod\Massmailer\Service();
+    expect(fn () => $service->normalizeFilter('{"client_status":["active"]}', true))->toThrow(InformationException::class);
 });

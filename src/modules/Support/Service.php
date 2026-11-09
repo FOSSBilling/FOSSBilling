@@ -542,7 +542,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $clients = [];
         $clientAuthors = [];
         if (!empty($clientIds)) {
-            $clientRows = $this->di['dbal']->fetchAllAssociative(
+            $clientRows = $this->di['em']->getConnection()->fetchAllAssociative(
                 'SELECT id, first_name, last_name, email FROM client WHERE id IN (?)',
                 [$clientIds],
                 [\Doctrine\DBAL\ArrayParameterType::INTEGER]
@@ -747,7 +747,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
      */
     private function fetchAdminSummary(int $adminId): ?array
     {
-        $row = $this->di['dbal']->fetchAssociative(
+        $row = $this->di['em']->getConnection()->fetchAssociative(
             'SELECT id, name, email FROM admin WHERE id = :id',
             ['id' => $adminId]
         );
@@ -773,7 +773,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
      */
     private function fetchClientSummary(int $clientId): ?array
     {
-        $row = $this->di['dbal']->fetchAssociative(
+        $row = $this->di['em']->getConnection()->fetchAssociative(
             'SELECT id, first_name, last_name, email FROM client WHERE id = :id',
             ['id' => $clientId]
         );

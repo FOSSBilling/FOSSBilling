@@ -37,11 +37,11 @@ test('service api key getters and setters round-trip values', function (): void 
 
     $entity->setClientId(42)
         ->setApiKey('TEST-KEY-123')
-        ->setConfig('{"length":32}');
+        ->setConfig(['length' => 32]);
 
     expect($entity->getClientId())->toBe(42)
         ->and($entity->getApiKey())->toBe('TEST-KEY-123')
-        ->and($entity->getConfig())->toBe('{"length":32}')
+        ->and($entity->getConfig())->toBe(['length' => 32])
         ->and($entity->getId())->toBeNull();
 });
 

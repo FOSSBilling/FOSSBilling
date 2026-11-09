@@ -1,0 +1,39 @@
+{
+    "name": "fossbilling/tools",
+    "description": "FOSSBilling development and CI tooling: translations, manifests, demo seeding.",
+    "license": "Apache-2.0",
+    "require": {
+        "php": "~8.5.0",
+        "ext-curl": "*",
+        "ext-mbstring": "*",
+        "ext-tokenizer": "*",
+        "composer/semver": "^3.5",
+        "composer/spdx-licenses": "^1.5",
+        "justinrainbow/json-schema": "^6.0",
+        "symfony/console": "^8.1",
+        "symfony/filesystem": "^8.1",
+        "symfony/finder": "^8.1",
+        "symfony/process": "^8.1",
+        "twig/twig": "^3.30"
+    },
+    "require-dev": {
+        "pestphp/pest": "^5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "FOSSBilling\\Tools\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "pest --configuration phpunit.xml --test-directory tests"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "platform": {
+            "php": "8.5.0"
+        }
+    }
+}

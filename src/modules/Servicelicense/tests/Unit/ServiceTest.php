@@ -25,7 +25,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\setEntityId;
 
-function serviceLicenseCreateProductEntity(string $config): Product
+function serviceLicenseCreateProductEntity(array $config): Product
 {
     $product = new Product();
     $product->setConfig($config);
@@ -35,7 +35,7 @@ function serviceLicenseCreateProductEntity(string $config): Product
 
 test('attach order config empty product config', function (): void {
     $service = new Service();
-    $productModel = serviceLicenseCreateProductEntity('{}');
+    $productModel = serviceLicenseCreateProductEntity([]);
     $data = [];
 
     $result = $service->attachOrderConfig($productModel, $data);
@@ -45,9 +45,9 @@ test('attach order config empty product config', function (): void {
 
 test('attach order config', function (): void {
     $service = new Service();
-    $productModel = serviceLicenseCreateProductEntity('["hello", "world"]');
+    $productModel = serviceLicenseCreateProductEntity(['hello', 'world']);
     $data = ['testing' => 'phase'];
-    $expected = array_merge(json_decode($productModel->getConfig() ?? '', true) ?? [], $data);
+    $expected = array_merge($productModel->getConfig() ?? [], $data);
 
     $result = $service->attachOrderConfig($productModel, $data);
     expect($result)->toBeArray();
@@ -228,7 +228,7 @@ test('action delete', function (): void {
 
 test('reset', function (): void {
     $service = new Service();
-    $serviceLicenseModel = (new ServiceLicense())->setClientId(17)->setIps('["192.0.2.4"]');
+    $serviceLicenseModel = (new ServiceLicense())->setClientId(17)->setIps(['192.0.2.4']);
     setEntityId($serviceLicenseModel, 42);
 
     $timeline = [];
@@ -236,7 +236,7 @@ test('reset', function (): void {
     $eventDispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
     $eventDispatcher->addListener(BeforeServiceLicenseResetEvent::class, static function (BeforeServiceLicenseResetEvent $event) use (&$timeline, &$flushed, $serviceLicenseModel): void {
         expect($flushed)->toBeFalse();
-        expect($serviceLicenseModel->getIps())->toBe('["192.0.2.4"]');
+        expect($serviceLicenseModel->getIps())->toBe(['192.0.2.4']);
         expect(get_object_vars($event))->toBe(['licenseId' => 42, 'clientId' => 17]);
         $timeline[] = 'before';
     });
@@ -259,7 +259,7 @@ test('reset', function (): void {
     $service->setDi($di);
     $result = $service->reset($serviceLicenseModel);
     expect($result)->toBeTrue();
-    expect($serviceLicenseModel->getIps())->toBe('[]');
+    expect($serviceLicenseModel->getIps())->toBe([]);
     expect($timeline)->toBe(['before', 'after']);
 });
 
@@ -322,7 +322,7 @@ test('is license inactive when order has expired', function (): void {
 test('is valid ip', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setIps('{}');
+    $serviceLicenseModel->setIps([]);
     $value = '1.1.1.1';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -340,7 +340,7 @@ test('is valid ip', function (): void {
 test('is valid ip when ip is not in allowed list and validation is not enforced returns true', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setIps('["2.2.2.2"]');
+    $serviceLicenseModel->setIps(['2.2.2.2']);
     $value = '1.1.1.1';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -358,7 +358,7 @@ test('is valid ip when ip is not in allowed list and validation is not enforced 
 test('is valid ip when validate_ip is set and ip does not match returns false', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setIps('["2.2.2.2"]');
+    $serviceLicenseModel->setIps(['2.2.2.2']);
     $serviceLicenseModel->setValidateIp(true);
     $value = '1.1.1.1';
 
@@ -369,7 +369,7 @@ test('is valid ip when validate_ip is set and ip does not match returns false', 
 test('is valid version', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setVersions('{}');
+    $serviceLicenseModel->setVersions([]);
     $value = '1.0';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -387,7 +387,7 @@ test('is valid version', function (): void {
 test('is valid version test2', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setVersions('["2.0"]');
+    $serviceLicenseModel->setVersions(['2.0']);
     $value = '1.0';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -405,7 +405,7 @@ test('is valid version test2', function (): void {
 test('is valid version test3', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setVersions('["2.0"]');
+    $serviceLicenseModel->setVersions(['2.0']);
     $serviceLicenseModel->setValidateVersion(true);
     $value = '1.0';
 
@@ -416,7 +416,7 @@ test('is valid version test3', function (): void {
 test('is valid path', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setPaths('{}');
+    $serviceLicenseModel->setPaths([]);
     $value = '/var';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -434,7 +434,7 @@ test('is valid path', function (): void {
 test('is valid path test2', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setPaths('["/"]');
+    $serviceLicenseModel->setPaths(['/']);
     $value = '/var';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -452,7 +452,7 @@ test('is valid path test2', function (): void {
 test('is valid path test3', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setPaths('["/"]');
+    $serviceLicenseModel->setPaths(['/']);
     $serviceLicenseModel->setValidatePath(true);
     $value = '/var';
 
@@ -463,7 +463,7 @@ test('is valid path test3', function (): void {
 test('is valid host', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setHosts('{}');
+    $serviceLicenseModel->setHosts([]);
     $value = 'site.com';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -481,7 +481,7 @@ test('is valid host', function (): void {
 test('is valid host test2', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setHosts('["fossbilling.org"]');
+    $serviceLicenseModel->setHosts(['fossbilling.org']);
     $value = 'site.com';
 
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -499,7 +499,7 @@ test('is valid host test2', function (): void {
 test('is valid host test3', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
-    $serviceLicenseModel->setHosts('["fossbilling.org"]');
+    $serviceLicenseModel->setHosts(['fossbilling.org']);
     $serviceLicenseModel->setValidateHost(true);
     $value = 'site.com';
 

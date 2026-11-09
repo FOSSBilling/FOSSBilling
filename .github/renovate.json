@@ -22,7 +22,48 @@
   "constraints": {
     "php": "~8.3.31"
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update the default PHP image independently of the legacy version override",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": ["ARG PHP_IMAGE=(?<depName>php):(?<currentValue>[^\\s@]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?"],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker",
+      "autoReplaceStringTemplate": "ARG PHP_IMAGE=php:{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}"
+    },
+    {
+      "customType": "regex",
+      "description": "Update the Docker Node.js build argument",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": ["ARG NODE_VERSION=(?<currentValue>\\d+)\\s"],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    },
+    {
+      "customType": "regex",
+      "description": "Update the DDEV Node.js runtime",
+      "managerFilePatterns": ["/^\\.ddev/config\\.yaml$/"],
+      "matchStrings": ["nodejs_version: \"(?<currentValue>\\d+)\""],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    }
+  ],
   "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["php"],
+      "pinDigests": true
+    },
+    {
+      "description": "The custom manager updates NODE_VERSION; the Dockerfile manager cannot replace the interpolated tag",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["node"],
+      "matchFileNames": ["Dockerfile"],
+      "enabled": false
+    },
     {
       "groupName": "CKEditor Development Tools",
       "rangeStrategy": "auto",

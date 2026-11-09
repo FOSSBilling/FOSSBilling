@@ -71,6 +71,19 @@ test('pre-config proxy candidate ignores empty forwarded headers', function (): 
     expect($proxyCandidate)->toBe([]);
 });
 
+test('pre-config proxy candidate parses a quoted RFC 7239 Forwarded header', function (): void {
+    // Quoted-string values must arrive unquoted, and the suggestion must use the
+    // first hop rather than the last.
+    $proxyCandidate = RequestFactory::getPreConfigProxyCandidate([
+        'REMOTE_ADDR' => '172.18.0.5',
+        'HTTP_FORWARDED' => 'for=203.0.113.9;host="internal.example";proto="https",for=10.0.0.1;host="other.example";proto="http"',
+    ]);
+
+    expect($proxyCandidate['headers'])->toBe('forwarded')
+        ->and($proxyCandidate['header_values'])->toHaveKey('Forwarded')
+        ->and($proxyCandidate['suggested_url'])->toBe('https://internal.example/');
+});
+
 test('pre-config proxy config does not trust forwarded headers from public address', function (): void {
     $proxyConfig = RequestFactory::getPreConfigProxyConfig([
         'REMOTE_ADDR' => '198.51.100.10',

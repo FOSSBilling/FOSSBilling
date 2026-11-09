@@ -30,13 +30,13 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
     $cartProduct->id = 10;
     $cartProduct->setCart($cart);
     $cartProduct->product_id = 1;
-    $cartProduct->config = json_encode([
+    $cartProduct->config = [
         'action' => 'register',
         'register_sld' => 'example',
         'register_tld' => '.com',
         'register_years' => 2,
         'period' => '2Y',
-    ]);
+    ];
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->once()->with(20)->andReturn([]);

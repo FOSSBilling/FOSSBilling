@@ -18,12 +18,13 @@ use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use Box\Mod\Servicedownloadable\Service;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Core\Http\ResponseFactory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 
-function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config = null): Product
+function serviceDownloadableCreateProductEntity(?int $id = null, ?array $config = null): Product
 {
     $product = new Product();
     if ($id !== null) {
@@ -62,7 +63,7 @@ test('save product config', function (): void {
         'update_orders' => true,
     ];
 
-    $productModel = serviceDownloadableCreateProductEntity(config: '{"files": []}');
+    $productModel = serviceDownloadableCreateProductEntity(config: ['files' => []]);
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->once();
 
@@ -75,7 +76,7 @@ test('save product config', function (): void {
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 
-    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
+    $updatedConfig = $productModel->getConfig();
     expect($updatedConfig)->toBeArray();
     expect($updatedConfig['files'])->toBe([]);
     expect($updatedConfig['update_orders'])->toBeTrue();
@@ -88,7 +89,7 @@ test('save product config with existing config', function (): void {
         'update_orders' => false,
     ];
 
-    $productModel = serviceDownloadableCreateProductEntity(config: '{"files": [], "update_orders": true}');
+    $productModel = serviceDownloadableCreateProductEntity(config: ['files' => [], 'update_orders' => true]);
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->once();
 
@@ -101,7 +102,7 @@ test('save product config with existing config', function (): void {
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 
-    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
+    $updatedConfig = $productModel->getConfig();
     expect($updatedConfig)->toBeArray();
     expect($updatedConfig['files'])->toBe([]);
     expect($updatedConfig['update_orders'])->toBeFalse();
@@ -113,7 +114,7 @@ test('creates a downloadable service with all snapshotted files', function (): v
     $order = createEntity(Order::class, [
         'id' => 10,
         'client_id' => 20,
-        'config' => json_encode([
+        'config' => [
             'files' => [
                 [
                     'id' => str_repeat('a', 32),
@@ -130,7 +131,7 @@ test('creates a downloadable service with all snapshotted files', function (): v
                     'description' => null,
                 ],
             ],
-        ]),
+        ],
     ]);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -157,18 +158,18 @@ test('removes an order file and its config in one Doctrine transaction', functio
 
     $order = createEntity(Order::class, [
         'id' => 10,
-        'config' => json_encode(['files' => [[
+        'config' => ['files' => [[
             'id' => str_repeat('a', 32),
             'filename' => 'file.zip',
             'stored_filename' => str_repeat('b', 64),
-        ]]]),
+        ]]],
     ]);
 
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('update')
         ->once()
-        ->with('client_order', Mockery::on(static fn (array $data): bool => json_decode($data['config'], true) === ['files' => []]
-            && is_string($data['updated_at'])), ['id' => 10]);
+        ->with('client_order', Mockery::on(static fn (array $data): bool => $data['config'] === ['files' => []]
+            && is_string($data['updated_at'])), ['id' => 10], ['config' => Doctrine\DBAL\Types\Types::JSON]);
 
     $repository = Mockery::mock(Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository::class);
     $repository->shouldReceive('isStoredFilenameReferenced')->once()->andReturnTrue();
@@ -187,7 +188,7 @@ test('removes an order file and its config in one Doctrine transaction', functio
 
     expect($service->removeOrderFile($downloadable, $order, 2))->toBeTrue()
         ->and($downloadable->getFiles())->toHaveCount(0)
-        ->and(json_decode($order->config, true))->toBe(['files' => []]);
+        ->and($order->config)->toBe(['files' => []]);
 });
 
 test('rejects duplicate file IDs in order configuration', function (): void {
@@ -222,7 +223,7 @@ test('save product config with no existing config', function (): void {
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 
-    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
+    $updatedConfig = $productModel->getConfig();
     expect($updatedConfig)->toBeArray();
     expect($updatedConfig)->toHaveKey('update_orders');
     expect($updatedConfig['update_orders'])->toBeTrue();
@@ -284,10 +285,10 @@ test('attachOrderConfig merges admin config over client data (admin wins)', func
         'description' => 'Application files',
     ];
 
-    $productModel = serviceDownloadableCreateProductEntity(config: json_encode([
+    $productModel = serviceDownloadableCreateProductEntity(config: [
         'files' => [$fileDefinition],
         'update_orders' => true,
-    ], JSON_THROW_ON_ERROR));
+    ]);
 
     $clientData = [
         'period' => '1M',
@@ -310,7 +311,7 @@ test('attachOrderConfig merges admin config over client data (admin wins)', func
 
 test('attachOrderConfig throws when product has no files configured', function (): void {
     $service = new Service();
-    $productModel = serviceDownloadableCreateProductEntity(config: '{"files": []}');
+    $productModel = serviceDownloadableCreateProductEntity(config: ['files' => []]);
 
     expect(fn (): array => $service->attachOrderConfig($productModel, ['period' => '1M']))
         ->toThrow(Exception::class, 'Product is not configured completely.');
@@ -332,4 +333,61 @@ test('product file upload rejects a request without the expected file field', fu
 
     expect(fn (): bool => $service->uploadProductFile($productModel))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'File upload failed: no files in request.');
+});
+
+test('sendFile streams the stored file as an attachment download', function (): void {
+    $storedName = str_repeat('a1b2c3d4', 8);
+    $storedPath = Symfony\Component\Filesystem\Path::join(PATH_UPLOADS, $storedName);
+    file_put_contents($storedPath, 'download-me');
+
+    try {
+        $file = createEntity(ServiceDownloadableFile::class, [
+            'id' => 5,
+            'filename' => 'product-file.zip',
+            'storedFilename' => $storedName,
+        ]);
+
+        $di = container();
+        $di['response_factory'] = fn (): ResponseFactory => new ResponseFactory();
+
+        $service = new Service();
+        $service->setDi($di);
+
+        $response = $service->sendFile($file);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($response->headers->get('Content-Type'))->toBe('application/octet-stream')
+            ->and($response->headers->get('Content-Disposition'))->toBe('attachment; filename=product-file.zip');
+    } finally {
+        @unlink($storedPath);
+    }
+});
+
+test('sendProductFile streams the configured product file as an attachment download', function (): void {
+    $fileKey = str_repeat('b2c3d4e5', 4);
+    $storedName = str_repeat('a1b2c3d4', 8);
+    $storedPath = Symfony\Component\Filesystem\Path::join(PATH_UPLOADS, $storedName);
+    file_put_contents($storedPath, 'download-me');
+
+    try {
+        $product = serviceDownloadableCreateProductEntity(3, [
+            'files' => [
+                ['id' => $fileKey, 'filename' => 'product-file.zip', 'stored_filename' => $storedName],
+            ],
+        ]);
+
+        $di = container();
+        $di['response_factory'] = fn (): ResponseFactory => new ResponseFactory();
+
+        $service = new Service();
+        $service->setDi($di);
+
+        $response = $service->sendProductFile($product, $fileKey);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($response->headers->get('Content-Type'))->toBe('application/octet-stream')
+            ->and($response->headers->get('Content-Disposition'))->toBe('attachment; filename=product-file.zip');
+    } finally {
+        @unlink($storedPath);
+    }
 });

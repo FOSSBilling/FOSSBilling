@@ -21,7 +21,6 @@
     },
     "license": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9.\\-+_:() |]+$"},
     "homepage_url": {"type": "string", "pattern": "^https?://"},
-    "icon_url": {"type": "string", "pattern": "^(?!/)(?![a-zA-Z][a-zA-Z0-9+.-]*:)(?!.*\\.\\.)[^\\\\]+$"},
     "requires": {
       "type": "object", "required": ["fossbilling", "php"], "additionalProperties": false,
       "properties": {

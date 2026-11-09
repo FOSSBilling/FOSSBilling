@@ -11,6 +11,38 @@ declare(strict_types=1);
 
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
 use FOSSBilling\Core\System\Requirements;
+use Symfony\Component\Process\Process;
+
+test('installation requires the native PHP ZIP extension', function (): void {
+    $requirements = new Requirements();
+    $requirements->writable = ['folders' => [], 'files' => []];
+
+    expect($requirements->php_reqs['required_extensions'])->toContain('zip')
+        ->and($requirements->checkCompat()['required_extensions']['zip'])->toBe(extension_loaded('zip'));
+});
+
+test('missing ZIP support blocks an otherwise compatible installation', function (): void {
+    $code = <<<'PHP'
+        namespace FOSSBilling\Core\System;
+
+        function extension_loaded(string $extension): bool {
+            return $extension !== 'zip';
+        }
+
+        require $argv[1] . '/src/vendor/autoload.php';
+        define('PATH_ROOT', $argv[1] . '/src');
+        $requirements = new Requirements();
+        $requirements->writable = ['folders' => [], 'files' => []];
+        echo json_encode($requirements->checkCompat(), JSON_THROW_ON_ERROR);
+        PHP;
+    $process = new Process([PHP_BINARY, '-r', $code, dirname(PATH_TESTS)]);
+    $process->mustRun();
+    $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+
+    expect(array_filter($result['required_extensions'], static fn (bool $loaded): bool => !$loaded))->toBe(['zip' => false])
+        ->and($result['php_version']['isOk'])->toBeTrue()
+        ->and($result['can_install'])->toBeFalse();
+});
 
 test('required_extensions no longer hardcodes a single PDO driver', function (): void {
     $requirements = new Requirements();

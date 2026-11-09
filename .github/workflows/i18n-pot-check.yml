@@ -5,8 +5,7 @@ on:
     paths:
       - 'src/**/*.php'
       - 'src/**/*.twig'
-      - '.github/scripts/extract_pot.py'
-      - '.github/scripts/tests/**'
+      - 'tools/**'
       - '.github/workflows/i18n-pot-check.yml'
 
 permissions:
@@ -15,7 +14,9 @@ permissions:
 
 jobs:
   pot-diff:
-    runs-on: ubuntu-slim
+    # ubuntu-latest rather than ubuntu-slim: setup-php fetching PHP 8.5 on the
+    # slim image is slow and intermittently times out before the job even runs.
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: 'Checkout PR head'
@@ -24,26 +25,44 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: 'Setup PHP'
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - name: 'Install standalone translation tooling'
+        run: composer install --working-dir=tools --no-interaction --no-progress
+
       - name: 'Extract msgids (head)'
-        run: python3 .github/scripts/extract_pot.py src /tmp/head.pot
+        run: tools/bin/console i18n:extract src /tmp/head.pot
 
       - name: 'Extract msgids (base)'
         run: |
           git worktree add /tmp/base "${{ github.event.pull_request.base.sha }}"
-          python3 .github/scripts/extract_pot.py /tmp/base/src /tmp/base.pot
+          tools/bin/console i18n:extract /tmp/base/src /tmp/base.pot
           git worktree remove --force /tmp/base
 
-      - name: 'Run extractor fixtures'
-        run: python3 .github/scripts/tests/test_extract_pot.py
+      - name: 'Install translation test dependencies'
+        run: |
+          sudo apt-get update && sudo apt-get install --yes gettext
+
+      - name: 'Run translation tooling fixtures'
+        run: composer test --working-dir=tools
 
       - name: 'Compare'
         id: diff
         run: |
-          python3 .github/scripts/extract_pot.py --diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt 2>&1 || true
+          tools/bin/console i18n:diff /tmp/base.pot /tmp/head.pot > /tmp/pot-diff.txt
+          delimiter=POT_DIFF
+          while grep -Fq "$delimiter" /tmp/pot-diff.txt; do
+            delimiter="${delimiter}_"
+          done
           {
-            echo 'body<<EOF'
+            echo "body<<$delimiter"
             cat /tmp/pot-diff.txt
-            echo 'EOF'
+            echo "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
       - name: 'Comment on PR'

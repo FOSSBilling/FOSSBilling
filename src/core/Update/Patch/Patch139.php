@@ -29,8 +29,8 @@ class Patch139 implements PatchInterface
         // the portable sync does not run afterward. Idempotent: only NULL
         // priorities are touched, administrator-set values are preserved.
         $di = $patcher->getDi();
-        if ($di instanceof \Pimple\Container && $di->offsetExists('dbal')) {
-            $patcher->backfillProductCategoryPriorities($di['dbal']);
+        if ($di instanceof \Pimple\Container && $di->offsetExists('em')) {
+            $patcher->backfillProductCategoryPriorities($di['em']->getConnection());
         }
     }
 }

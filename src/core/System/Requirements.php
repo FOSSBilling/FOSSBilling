@@ -29,6 +29,7 @@ class Requirements
             'iconv',
             'json',
             'zlib',
+            'zip',
             'gd',
         ],
         'suggested_extensions' => [

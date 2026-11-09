@@ -15,8 +15,8 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 /**
- * Pre-flight check that verifies the web server user has sufficient
- * filesystem permissions to perform a FOSSBilling update.
+ * Pre-flight check of the PHP runtime and the web server user's filesystem
+ * permissions needed to perform a FOSSBilling update.
  *
  * Unlike {@see Requirements} which is geared at first-time installation,
  * this class is shaped around what an update actually does: it writes
@@ -48,6 +48,10 @@ final readonly class ReadinessCheck
     public function check(): array
     {
         $issues = [];
+
+        if (!extension_loaded('zip')) {
+            $issues[] = ['path' => 'ext-zip', 'type' => 'extension', 'reason' => 'missing', 'message' => 'The PHP ZIP extension (ext-zip) must be installed and enabled for the web server before updating FOSSBilling.'];
+        }
 
         $configFile = Path::join($this->configDir, 'config.php');
         $issues = array_merge($issues, $this->checkFile($configFile, 'config.php (used to enable maintenance mode and persist configuration)'));

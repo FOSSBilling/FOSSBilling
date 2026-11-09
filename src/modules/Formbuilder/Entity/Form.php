@@ -32,8 +32,8 @@ class Form implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $name = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $style = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $style = null;
 
     public function getId(): ?int
     {
@@ -52,12 +52,12 @@ class Form implements TimestampInterface
         return $this;
     }
 
-    public function getStyle(): ?string
+    public function getStyle(): ?array
     {
         return $this->style;
     }
 
-    public function setStyle(?string $style): self
+    public function setStyle(?array $style): self
     {
         $this->style = $style;
 

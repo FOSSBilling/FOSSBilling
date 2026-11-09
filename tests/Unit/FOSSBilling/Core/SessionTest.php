@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 use Doctrine\DBAL\Connection;
 use FOSSBilling\Core\Http\CookieNames;
+use FOSSBilling\Core\Security\Fingerprint;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
-function createSession(?SymfonySession $httpSession = null): FOSSBilling\Core\Security\Session
+function createSession(?SymfonySession $httpSession = null, ?Pimple\Container $di = null): FOSSBilling\Core\Security\Session
 {
-    return new FOSSBilling\Core\Security\Session($httpSession ?? new SymfonySession(new MockArraySessionStorage('PHPSESSID')));
+    $session = new FOSSBilling\Core\Security\Session($httpSession ?? new SymfonySession(new MockArraySessionStorage('PHPSESSID')));
+    $session->setDi($di ?? Tests\Helpers\container());
+
+    return $session;
 }
 
 /**
@@ -19,7 +24,7 @@ function createSession(?SymfonySession $httpSession = null): FOSSBilling\Core\Se
 function createDatabaseSession(Connection $connection): array
 {
     $di = Tests\Helpers\container();
-    $di['dbal'] = $connection;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['request'] = fn (): Request => Request::create('http://localhost/', server: [
         'HTTP_USER_AGENT' => 'Mozilla/5.0 (X11; Linux x86_64) Chrome/126.0.0.0',
         'REMOTE_ADDR' => '127.0.0.1',
@@ -61,7 +66,8 @@ afterEach(function (): void {
 test('session cookie name migrates and expires the previous session cookie', function (): void {
     $_COOKIE['PHPSESSID'] = 'legacy-session';
     $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
-    $session = createSession($httpSession);
+    $di = Tests\Helpers\container();
+    $session = createSession($httpSession, $di);
 
     invokePrivate($session, 'configureCookieName');
 
@@ -71,6 +77,43 @@ test('session cookie name migrates and expires the previous session cookie', fun
     invokePrivate($session, 'expireLegacySessionCookies');
 
     expect($_COOKIE)->not->toHaveKey('PHPSESSID');
+
+    // The expiry cookie is emitted via CookieQueue with the response, not setcookie().
+    $response = new Response();
+    $di['cookie_queue']->applyToResponse($response);
+    $queued = [];
+    foreach ($response->headers->getCookies() as $cookie) {
+        $queued[$cookie->getName()] = $cookie;
+    }
+
+    expect($queued)->toHaveKey('PHPSESSID')
+        ->and($queued['PHPSESSID']->getExpiresTime())->toBeLessThan(time());
+});
+
+test('session id rotation queues the new session cookie', function (): void {
+    $di = Tests\Helpers\container();
+    $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
+    $session = createSession($httpSession, $di);
+
+    $httpSession->start();
+    $oldId = $httpSession->getId();
+
+    invokePrivate($session, 'rotateSessionId');
+
+    $newId = $httpSession->getId();
+    expect($newId)->not->toBe($oldId)->not->toBe('');
+
+    $response = new Response();
+    $di['cookie_queue']->applyToResponse($response);
+    $queued = [];
+    foreach ($response->headers->getCookies() as $cookie) {
+        $queued[$cookie->getName()] = $cookie;
+    }
+
+    $sessionName = $httpSession->getName();
+    expect($queued)->toHaveKey($sessionName)
+        ->and($queued[$sessionName]->getValue())->toBe($newId)
+        ->and($queued[$sessionName]->getExpiresTime())->toBe(0);
 });
 
 test('session validation ignores a missing database record', function (): void {
@@ -109,7 +152,7 @@ test('session validation tolerates a database lookup failure', function (): void
 test('session validation initializes a missing creation time', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session, $di] = createDatabaseSession($connection);
-    $fingerprint = json_encode((new FOSSBilling\Core\Security\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
+    $fingerprint = json_encode((new Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
@@ -146,7 +189,7 @@ test('session validation tolerates a creation time update failure', function ():
 test('session validation deletes an expired session', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session, $di] = createDatabaseSession($connection);
-    $fingerprint = json_encode((new FOSSBilling\Core\Security\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
+    $fingerprint = json_encode((new Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
@@ -162,6 +205,35 @@ test('session validation deletes an expired session', function (): void {
 
     expect($_COOKIE)->not->toHaveKey('PHPSESSID');
 });
+
+test('session validation preserves sessions when client hints disappear or reappear', function (bool $hintsOnStoredRequest): void {
+    $connection = Mockery::mock(Connection::class);
+    [$session, $di] = createDatabaseSession($connection);
+    $withHints = clone $di['request'];
+    $withHints->headers->add([
+        'Sec-CH-UA-Platform' => '"Linux"',
+        'Sec-CH-UA-Mobile' => '?0',
+        'Upgrade-Insecure-Requests' => '1',
+    ]);
+    $withoutHints = clone $di['request'];
+    $withoutHints->headers->set('Referer', 'http://localhost/admin/staff/login');
+
+    $stored = new Fingerprint($hintsOnStoredRequest ? $withHints : $withoutHints);
+    $current = new Fingerprint($hintsOnStoredRequest ? $withoutHints : $withHints);
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->with('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => 'same-browser'])
+        ->andReturn([
+            'fingerprint' => json_encode($stored->fingerprint(), JSON_THROW_ON_ERROR),
+            'created_at' => time(),
+        ]);
+    $connection->shouldNotReceive('executeStatement');
+
+    setSessionCookie('same-browser');
+    invokePrivate($session, 'canUseSession', [$current]);
+
+    expect($_COOKIE['PHPSESSID'])->toBe('same-browser');
+})->with([true, false]);
 
 test('session validation deletes a malformed fingerprint', function (): void {
     $connection = Mockery::mock(Connection::class);
@@ -205,13 +277,14 @@ test('fingerprint update persists the current fingerprint', function (): void {
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
-        ->with('SELECT id FROM session WHERE id = :id', ['id' => 'current-session'])
-        ->andReturn(['id' => 'current-session']);
+        ->with('SELECT fingerprint FROM session WHERE id = :id', ['id' => 'current-session'])
+        ->andReturn(['fingerprint' => '']);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->withArgs(fn (string $query, array $parameters): bool => $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id'
+        ->withArgs(fn (string $query, array $parameters, array $types): bool => $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id'
+            && $types === ['fingerprint' => Doctrine\DBAL\Types\Types::JSON]
             && $parameters['id'] === 'current-session'
-            && is_array(json_decode($parameters['fingerprint'], true)))
+            && is_array($parameters['fingerprint']))
         ->andReturn(1);
 
     setSessionCookie('current-session');
@@ -219,13 +292,53 @@ test('fingerprint update persists the current fingerprint', function (): void {
     invokePrivate($session, 'updateFingerprint');
 });
 
+test('session remembers client hints across a request that omits them', function (string $platform, bool $valid): void {
+    $connection = Mockery::mock(Connection::class);
+    [$session, $di] = createDatabaseSession($connection);
+    $request = clone $di['request'];
+    $request->headers->add(['Sec-CH-UA-Platform' => '"Linux"', 'Sec-CH-UA-Mobile' => '?0']);
+    $stored = (new Fingerprint($request))->fingerprint();
+
+    $connection->shouldReceive('fetchAssociative')->andReturnUsing(function () use (&$stored): array {
+        return ['id' => 'same-browser', 'fingerprint' => json_encode($stored, JSON_THROW_ON_ERROR), 'created_at' => time()];
+    });
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->withArgs(fn (string $query): bool => $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id')
+        ->andReturnUsing(function (string $query, array $parameters) use (&$stored): int {
+            $stored = $parameters['fingerprint'];
+
+            return 1;
+        });
+    $connection->shouldReceive('executeStatement')
+        ->with('DELETE FROM session WHERE id = :id', ['id' => 'same-browser'])
+        ->times($valid ? 0 : 1)
+        ->andReturn(1);
+
+    setSessionCookie('same-browser');
+    $withoutHints = new Fingerprint($di['request']);
+    invokePrivate($session, 'canUseSession', [$withoutHints]);
+    invokePrivate($session, 'updateFingerprint', [$withoutHints]);
+
+    expect($stored['platform'] ?? null)->toBe(md5('"Linux"'))
+        ->and($stored['mobile'] ?? null)->toBe(md5('?0'));
+
+    $request->headers->set('Sec-CH-UA-Platform', $platform);
+    invokePrivate($session, 'canUseSession', [new Fingerprint($request)]);
+
+    expect(isset($_COOKIE['PHPSESSID']))->toBe($valid);
+})->with([
+    'same platform' => ['"Linux"', true],
+    'conflicting platform' => ['"Windows"', false],
+]);
+
 test('fingerprint update ignores a missing database record', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session] = createDatabaseSession($connection);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
-        ->with('SELECT id FROM session WHERE id = :id', ['id' => 'missing-session'])
+        ->with('SELECT fingerprint FROM session WHERE id = :id', ['id' => 'missing-session'])
         ->andReturnFalse();
 
     setSessionCookie('missing-session');
@@ -265,14 +378,14 @@ test('disabled fingerprinting skips validation and stores an empty fingerprint',
             ->andReturn(1);
         $connection->shouldReceive('fetchAssociative')
             ->once()
-            ->with('SELECT id FROM session WHERE id = :id', ['id' => 'fingerprinting-disabled'])
-            ->andReturn(['id' => 'fingerprinting-disabled']);
+            ->with('SELECT fingerprint FROM session WHERE id = :id', ['id' => 'fingerprinting-disabled'])
+            ->andReturn(['fingerprint' => '{not-valid-json']);
         $connection->shouldReceive('executeStatement')
             ->once()
             ->with('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
-                'fingerprint' => '[]',
+                'fingerprint' => [],
                 'id' => 'fingerprinting-disabled',
-            ])
+            ], ['fingerprint' => Doctrine\DBAL\Types\Types::JSON])
             ->andReturn(1);
 
         setSessionCookie('fingerprinting-disabled');

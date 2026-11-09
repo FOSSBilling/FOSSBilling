@@ -257,13 +257,57 @@ class Patcher implements InjectionAwareInterface
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
 
+        $this->applyJsonMigrations();
+
         // Baseline the invoice journal on every driver, after the sync above: on non-MySQL
         // installs the invoice_event table only comes into existence there, and backfilling
         // first would find no table and leave existing invoices without baseline entries.
         // Deliberately outside the drift healer: a large backlog must not stall page loads.
-        $this->backfillInvoiceJournal();
+        // A genuine backfill failure propagates so finalization stays pending: invoices
+        // that gain a live event before a later run are never revisited by the healer,
+        // so completing finalization here would leave baselines missing for good. Only
+        // an unreachable database is skipped, already recorded by syncPortableSchema.
+        try {
+            $this->backfillInvoiceJournal();
+            $this->checkInvoiceNumberCounter();
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            return;
+        }
+    }
 
-        $this->checkInvoiceNumberCounter();
+    public function applyJsonMigrations(): void
+    {
+        $em = $this->di['em'];
+        $crypt = $this->di['crypt'];
+        (new \FOSSBilling\Core\Doctrine\JsonMigration())->automatic($em, $crypt);
+        $connection = $em->getConnection();
+        (new \FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration())->run($connection, $crypt, $this->di['cache']);
+        if ($connection->createSchemaManager()->tablesExist(['email_template']) && $connection->createSchemaManager()->introspectTableByUnquotedName('email_template')->hasColumn('vars')) {
+            $connection->executeStatement('UPDATE email_template SET vars = NULL WHERE vars IS NOT NULL');
+        }
+        if ($connection->createSchemaManager()->tablesExist(['pay_gateway'])) {
+            $this->di['mod_service']('Invoice', 'PayGateway')->migrateConfigSecrets();
+        }
+        if ($connection->createSchemaManager()->tablesExist(['tld_registrar'])) {
+            $this->di['mod_service']('Servicedomain')->migrateConfigSecrets();
+        }
+    }
+
+    public function isJsonMigrationPending(): bool
+    {
+        if ($this->di === null || !isset($this->di['em'])) {
+            return false;
+        }
+
+        try {
+            $connection = $this->di['em']->getConnection();
+
+            return !$connection->createSchemaManager()->tablesExist(['json_migration_record'])
+                || !\FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($connection, \FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE);
+        } catch (\Doctrine\DBAL\Exception) {
+            // Bootstrap probes must tolerate an unavailable database; the next request retries.
+            return false;
+        }
     }
 
     public function checkInvoiceNumberCounter(): void
@@ -1599,11 +1643,18 @@ class Patcher implements InjectionAwareInterface
      */
     private function renameInvoiceApprovedColumn(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        $table = $this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice');
+        try {
+            $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
+            return;
+        }
         if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
             return;
         }
@@ -1623,21 +1674,30 @@ class Patcher implements InjectionAwareInterface
      */
     private function renameInvoiceStatusIndex(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
         $old = 'invoice_status_approved_due_at_idx';
         $new = 'invoice_status_issued_due_at_idx';
 
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        if ($schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old)) {
+        try {
+            $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+            $dropOld = $schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old);
+            $missingNew = !$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new);
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
+            return;
+        }
+        if ($dropOld) {
             $this->executeSql($this->isLegacyPatchDriver()
                 ? "DROP INDEX `$old` ON `invoice`"
                 : "DROP INDEX $old");
         }
 
-        if (!$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new)) {
+        if ($missingNew) {
             $this->executeSql('CREATE INDEX ' . $new . ' ON invoice (status, issued, due_at)');
         }
     }
@@ -1650,11 +1710,18 @@ class Patcher implements InjectionAwareInterface
      */
     private function dropInvoiceBuyerPhoneCcColumn(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
+        try {
+            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
+                return;
+            }
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
             return;
         }
 
@@ -1672,11 +1739,18 @@ class Patcher implements InjectionAwareInterface
      */
     private function dropTransactionValidateIpnColumn(): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+        try {
+            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+                return;
+            }
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            // Unreachable database: syncPortableSchema's boundary downstream
+            // records it. Any other failure propagates so finalization stays
+            // pending (and records no schema hash) until a retry succeeds.
             return;
         }
 
@@ -1698,11 +1772,11 @@ class Patcher implements InjectionAwareInterface
      */
     public function backfillInvoiceJournal(int $maxPages = 0): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return;
         }
 
-        $dbal = $this->di['dbal'];
+        $dbal = $this->di['em']->getConnection();
         if (!$dbal->createSchemaManager()->tablesExist(['invoice_event'])) {
             return;
         }
@@ -2038,7 +2112,7 @@ class Patcher implements InjectionAwareInterface
             if ($name === 'unit' && in_array($table, ['product', 'client_order', 'invoice_item'], true)
                 && $column['Default'] !== null && $column['Extra'] === ''
                 && preg_match('/^varchar\([0-9]+\)$/', $column['Type'])) {
-                $connection = $this->di['dbal'];
+                $connection = $this->di['em']->getConnection();
                 // MySQL marks expression defaults DEFAULT_GENERATED. MariaDB quotes
                 // literal strings in information_schema (but not SHOW FULL COLUMNS).
                 // Never turn an expression into a quoted string default.
@@ -2071,11 +2145,11 @@ class Patcher implements InjectionAwareInterface
                 $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
             );
             if ($literalUnitDefault !== null) {
-                $definition .= ' DEFAULT ' . $this->di['dbal']->quote($literalUnitDefault);
+                $definition .= ' DEFAULT ' . $this->di['em']->getConnection()->quote($literalUnitDefault);
             } elseif ($column['Null'] === 'YES') {
                 $definition .= ' DEFAULT NULL';
             }
-            $definition .= ' COMMENT ' . $this->di['dbal']->quote($column['Comment']);
+            $definition .= ' COMMENT ' . $this->di['em']->getConnection()->quote($column['Comment']);
             $changes[] = $definition;
         }
 
@@ -2284,7 +2358,16 @@ class Patcher implements InjectionAwareInterface
             // Only write when the row still holds what was read: an admin save
             // racing the migration keeps its newer values instead of being
             // overwritten, and the row is picked up by a later run.
-            $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+            $driver = $this->getPdo()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if (in_array($driver, ['pgsql', 'mysql'], true)) {
+                $quote = $driver === 'mysql' ? '`' : '"';
+                $comparison = $driver === 'mysql' ? 'CAST(config AS BINARY) = CAST(:previous AS BINARY)' : 'CAST(config AS TEXT) = :previous';
+                $this->executeSql(sprintf('UPDATE %s%s%s SET config = :config WHERE id = :id AND %s', $quote, $this->quoteIdentifier($table), $quote, $comparison), [
+                    'config' => json_encode($encrypted, JSON_THROW_ON_ERROR), 'id' => $row['id'], 'previous' => $row['config'],
+                ]);
+            } else {
+                $this->updateTable($table, ['config' => json_encode($encrypted)], ['id' => $row['id'], 'config' => $row['config']]);
+            }
         }
     }
 

@@ -22,7 +22,7 @@ beforeEach(function (): void {
     $this->client = createEntity(Client::class, ['email' => 'owner@example.com']);
     $this->connection->insert('client', ['id' => 1, 'email' => $this->client->getEmail(), 'email_approved' => 0]);
     $this->di = container();
-    $this->di['dbal'] = $this->connection;
+    $this->di['em']->shouldReceive('getConnection')->andReturn($this->connection);
     $this->di['em']->getRepository(Client::class)->shouldReceive('find')->with(1)->andReturn($this->client);
     $url = Mockery::mock(FOSSBilling\Core\Url::class);
     $url->shouldReceive('link')->andReturnUsing(fn (string $path): string => $path);
@@ -122,7 +122,6 @@ test('profile email changes reset a concurrently approved database row despite s
     $em->flush();
     $di = container();
     $di['em'] = $em;
-    $di['dbal'] = $connection;
     $url = Mockery::mock(FOSSBilling\Core\Url::class);
     $url->shouldReceive('link')->andReturnUsing(fn (string $path): string => $path);
     $di['url'] = $url;

@@ -45,7 +45,7 @@ jobs:
           # Triple-dot diffs against the merge-base, not the base branch's
           # current tip, so a PR isn't blamed for drift on main it never
           # touched — matches what GitHub's own "Files changed" tab shows.
-          git diff -z --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '*.php' > "$RUNNER_TEMP/changed-php-files.txt"
+          git diff -z --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '*.php' 'tools/bin/console' > "$RUNNER_TEMP/changed-php-files.txt"
           if [ -s "$RUNNER_TEMP/changed-php-files.txt" ]; then
             echo "has_php_files=true" >> "$GITHUB_OUTPUT"
             echo "Changed PHP files:"

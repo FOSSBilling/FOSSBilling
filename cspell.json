@@ -2,6 +2,8 @@
     "version": "0.2",
     "language": "en",
     "words": [
+        "libzip",
+        "OPSYS",
         "TINYTEXT",
         "FULLTEXT",
         "MEDIUMTEXT",
@@ -72,7 +74,6 @@
         "unindexed",
         "catchable",
         "stackable",
-        "nelexa",
         "apisecret",
         "cutover",
         "parameterless",
@@ -121,7 +122,19 @@
         "imageavif",
         "webp",
         "webmoney",
-        "dasharray"
+        "dasharray",
+        "baseexception",
+        "heredocs",
+        "informationexception",
+        "msgattrib",
+        "msgcat",
+        "msgctxt",
+        "msgfmt",
+        "msgids",
+        "Ucfirst",
+        "ungroup",
+        "nullsafe",
+        "pluraltrans"
     ],
 
     "ignoreWords": [
@@ -472,6 +485,7 @@
         "pwreset",
         "pagebottom",
         "forceable",
+        "phpdoc",
         "phpstan",
         "progressbar",
         "valuenow",
@@ -656,6 +670,20 @@
         "telno",
         "telnocc",
         "actionstatus"
+    ],
+    "overrides": [
+        {
+            "filename": "tools/bin/console",
+            "languageId": "php"
+        },
+        {
+            "filename": "tools/tests/I18n/GettextTest.php",
+            "words": ["objets", "Profil", "Salut", "Supprimé", "Valeur"]
+        },
+        {
+            "filename": "tools/tests/I18n/fixtures/extraction.php",
+            "words": ["mple"]
+        }
     ],
     "ignorePaths": [
         "node_modules/**",

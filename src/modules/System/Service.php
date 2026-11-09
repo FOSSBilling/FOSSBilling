@@ -582,26 +582,31 @@ class Service
      * Render a template string using the sandboxed email Twig environment.
      * Use this for database-stored templates (email templates, mass mailer).
      *
-     * @param string      $tpl      The template string to render
-     * @param array       $vars     Variables to pass to the template
-     * @param string|null $timezone Optional IANA timezone for date formatting;
-     *                              pass the recipient's so emails render in
-     *                              their local time. Falls back to the active
-     *                              user's timezone, then the config.
-     * @param string|null $locale   Optional ICU locale for date formatting;
-     *                              pass the recipient's language so emails
-     *                              render in their language. Outranks browser
-     *                              auto-detection. Falls back to the active
-     *                              locale, then the config.
+     * @param string      $tpl                   The template string to render
+     * @param array       $vars                  Variables to pass to the template
+     * @param string|null $timezone              Optional IANA timezone for date formatting;
+     *                                           pass the recipient's so emails render in
+     *                                           their local time. Falls back to the active
+     *                                           user's timezone, then the config.
+     * @param string|null $locale                Optional ICU locale for date formatting;
+     *                                           pass the recipient's language so emails
+     *                                           render in their language. Outranks browser
+     *                                           auto-detection. Falls back to the active
+     *                                           locale, then the config.
+     * @param bool        $allowMissingVariables Allow absent caller context during custom-template validation only
      *
      * @return string The rendered template
      *
      * @throws \FOSSBilling\Core\Exception\InformationException If template violates sandbox policy or has syntax errors
      */
-    public function renderEmailTplString(string $tpl, array $vars, ?string $timezone = null, ?string $locale = null): string
+    public function renderEmailTplString(string $tpl, array $vars, ?string $timezone = null, ?string $locale = null, bool $allowMissingVariables = false): string
     {
         $twigFactory = $this->di['twig_factory'];
         $twig = $twigFactory->createEmailEnvironment($timezone, $locale);
+        if ($allowMissingVariables) {
+            // Custom-template validation has no caller context. Delivery keeps the configured strictness.
+            $twig->disableStrictVariables();
+        }
 
         return SandboxedStringRenderer::render(
             $twig,
@@ -688,7 +693,7 @@ class Service
     {
         $request = $this->di['request'];
 
-        return $request->getSchemeAndHttpHost() . strtok($request->getRequestUri(), '?');
+        return $request->getSchemeAndHttpHost() . explode('?', $request->getRequestUri(), 2)[0];
     }
 
     public function getPeriod($code)
@@ -848,7 +853,7 @@ class Service
     private function reserveNumericParamValue(string $param, ?int $seed): ?int
     {
         /** @var Connection $connection */
-        $connection = $this->di['dbal'];
+        $connection = $this->di['em']->getConnection();
 
         try {
             return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));

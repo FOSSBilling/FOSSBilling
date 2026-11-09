@@ -254,7 +254,7 @@ class Service implements InjectionAwareInterface
         // explicitly by staff callers (client add_item has no such param).
         unset($data[ProductService::PRICE_OVERRIDE_KEY]);
 
-        $productConfig = json_decode($product->getConfig() ?? '', true) ?? [];
+        $productConfig = $product->getConfig() ?? [];
 
         // Collect all domains that will be added: top-level (direct domain product) and
         // nested under $data['domain'] (domain bundled with a hosting product).
@@ -273,7 +273,7 @@ class Service implements InjectionAwareInterface
         if (!empty($domainsBeingAdded)) {
             $existingItems = $this->findCartProducts($cart);
             foreach ($existingItems as $item) {
-                $itemConfig = json_decode((string) $item->getConfig(), true);
+                $itemConfig = $item->getConfig();
                 if (!is_array($itemConfig)) {
                     continue;
                 }
@@ -379,7 +379,7 @@ class Service implements InjectionAwareInterface
         $item = new CartProduct();
         $item->setCart($cart);
         $item->setProductId($this->getProductId($product));
-        $item->setConfig(json_encode($data));
+        $item->setConfig($data);
         $this->di['em']->persist($item);
         $this->di['em']->flush();
 
@@ -477,11 +477,11 @@ class Service implements InjectionAwareInterface
         }
 
         if ($removeAddons) {
-            $config_main = json_decode($cartProduct->getConfig() ?? '', true);
+            $config_main = $cartProduct->getConfig();
             $domain_name = $config_main['domain_name'] ?? '';
             $allCartProducts = $this->findCartProducts($cart);
             foreach ($allCartProducts as $cProduct) {
-                $config = json_decode($cProduct->getConfig() ?? '', true);
+                $config = $cProduct->getConfig();
                 if (isset($config['parent_id']) && $config['parent_id'] == $cartProduct->getProductId()) {
                     $domain_name_addon = $config['domain_name'] ?? '';
                     if ($domain_name && $domain_name != $domain_name_addon) {
@@ -780,7 +780,6 @@ class Service implements InjectionAwareInterface
         foreach ($promos as $promo) {
             $discountRecurs = $discountRecurs && $promo->isRecurring();
         }
-
         foreach ($items as $item) {
             $netSetupPrice = (float) ($item['setup_price'] ?? 0) - (float) ($item['discount_setup'] ?? 0);
             if ($netSetupPrice > 0) {
@@ -792,6 +791,14 @@ class Service implements InjectionAwareInterface
             }
 
             if ((float) ($item['discount_price'] ?? 0) > 0 && !$discountRecurs) {
+                return null;
+            }
+
+            // Domain renewal pricing comes from the registrar and can differ
+            // from the first payment, so a discounted domain can never be
+            // billed as a fixed subscription. The renewal invoice itself,
+            // priced without the first-payment discount, can be subscribed.
+            if ((float) ($item['discount_price'] ?? 0) > 0 && ($item['type'] ?? null) === ProductService::DOMAIN) {
                 return null;
             }
 
@@ -1182,7 +1189,7 @@ class Service implements InjectionAwareInterface
                     $order->setDiscount($item['discount_price'] * $currency->getConversionRate());
                     $order->setStatus(Order::STATUS_PENDING_SETUP);
                     $order->setNotes($item['notes'] ?? null);
-                    $order->setConfig(json_encode($item));
+                    $order->setConfig($item);
                     $this->di['em']->persist($order);
                     $this->di['em']->flush();
 
@@ -1399,7 +1406,7 @@ class Service implements InjectionAwareInterface
 
     public function getItemConfig(CartProduct $model): array
     {
-        return json_decode($model->getConfig() ?? '', true) ?? [];
+        return $model->getConfig() ?? [];
     }
 
     private function getProductService(): ProductService

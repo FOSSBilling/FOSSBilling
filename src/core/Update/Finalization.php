@@ -54,6 +54,8 @@ class Finalization implements InjectionAwareInterface
     private ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
     private readonly string $statePath;
+    /** @var resource|null */
+    private mixed $runtimeLock = null;
 
     public function __construct()
     {
@@ -104,7 +106,7 @@ class Finalization implements InjectionAwareInterface
     public function ensureCurrentVersionFinalization(): ?array
     {
         $state = $this->readState();
-        if ($this->isCompleteForCurrentVersion($state)) {
+        if ($this->isCompleteForCurrentVersion($state) && !$this->createPatcher()->isJsonMigrationPending()) {
             return null;
         }
 
@@ -136,6 +138,12 @@ class Finalization implements InjectionAwareInterface
      */
     public function finalizePendingUpdate(): void
     {
+        if ($this->isCompleteForCurrentVersion($this->readState()) && !$this->createPatcher()->isJsonMigrationPending()) {
+            $this->healSchemaDrift();
+
+            return;
+        }
+
         $pending = $this->withFinalizationLock(function (): bool {
             $state = $this->ensureCurrentVersionFinalization();
             if (($state['status'] ?? null) === self::STATUS_PENDING) {
@@ -229,7 +237,11 @@ class Finalization implements InjectionAwareInterface
      */
     public function finalizeUpdate(): array
     {
-        return $this->withFinalizationLock(fn (): array => $this->finalizeUpdateLocked($this->ensureCurrentVersionFinalization()));
+        return $this->withFinalizationLock(function (): array {
+            $state = $this->ensureCurrentVersionFinalization() ?? $this->createPendingState(Version::VERSION, Version::VERSION, ['source' => 'manual']);
+
+            return $this->finalizeUpdateLocked($state);
+        });
     }
 
     private function finalizeUpdateLocked(?array $state): array
@@ -262,8 +274,14 @@ class Finalization implements InjectionAwareInterface
 
     private function withFinalizationLock(\Closure $callback): mixed
     {
+        // Another reader can be waiting for this session while holding a shared runtime lock.
+        // Save it before waiting for exclusivity, so that reader can finish and release its lock.
+        if (session_status() === PHP_SESSION_ACTIVE && $this->di !== null && isset($this->di['session'])) {
+            $this->di['session']->save();
+        }
         $this->filesystem->mkdir(PATH_DATA, 0o755);
-        $handle = fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');
+        $shared = is_resource($this->runtimeLock);
+        $handle = $shared ? $this->runtimeLock : fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');
         if ($handle === false) {
             throw new BaseException('Unable to acquire the update finalization lock.');
         }
@@ -277,12 +295,57 @@ class Finalization implements InjectionAwareInterface
         try {
             return $callback();
         } finally {
-            flock($handle, LOCK_UN);
-            fclose($handle);
+            if ($shared) {
+                flock($handle, LOCK_SH);
+            } else {
+                flock($handle, LOCK_UN);
+                fclose($handle);
+            }
+        }
+    }
+
+    public function acquireRuntimeLock(): void
+    {
+        if (is_resource($this->runtimeLock)) {
+            return;
+        }
+        $this->filesystem->mkdir(PATH_DATA, 0o755);
+        $handle = fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');
+        if ($handle === false || !flock($handle, LOCK_SH)) {
+            throw new BaseException('Unable to acquire the application update lock.');
+        }
+        $this->runtimeLock = $handle;
+    }
+
+    public function releaseRuntimeLock(): void
+    {
+        if (is_resource($this->runtimeLock)) {
+            flock($this->runtimeLock, LOCK_UN);
+            fclose($this->runtimeLock);
+            $this->runtimeLock = null;
+        }
+    }
+
+    public function withRuntimeLock(\Closure $callback): mixed
+    {
+        $held = is_resource($this->runtimeLock);
+        $this->acquireRuntimeLock();
+
+        try {
+            return $callback();
+        } finally {
+            if (!$held) {
+                $this->releaseRuntimeLock();
+            }
         }
     }
 
     public function completeFinalization(): void
+    {
+        $this->withFinalizationLock(fn () => $this->completeFinalizationLocked());
+    }
+
+    private function completeFinalizationLocked(): void
     {
         $state = $this->readState();
         if ($state === null || $this->isCompleteForCurrentVersion($state)) {

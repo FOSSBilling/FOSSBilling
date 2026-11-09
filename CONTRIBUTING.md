@@ -202,8 +202,6 @@ We use Crowdin to manage translations. You can take a look at the [getting start
 
 #### Translation lookup in code
 
-<!-- cspell:words msgfmt -->
-
 Twig templates under `src/modules/<Module>/` look up translations in that module, then core, then return the original English. Layouts, includes, and macros use their own file's module. Templates elsewhere, including database-stored templates, use core by default.
 
 Use `from` to override the detected source:
@@ -224,6 +222,8 @@ throw new InformationException('Unable to save settings.', from: 'cookieconsent'
 Sources use lowercase module IDs. Module translations load from `src/modules/<Module>/locale/<locale>/LC_MESSAGES/<id>.mo`. Missing files and missing or empty entries fall back; intentional translations identical to English are preserved. Lookups keep the current language and global translation source unchanged.
 
 MoTranslator selects plural forms; empty forms fall back individually. Validate translation files with `msgfmt --check --check-format` before distributing them.
+
+See [translation tooling](tools/README.md) for extraction, validation, and compilation with `tools/bin/console`. Module PO files must translate every plural form or leave the whole entry untranslated; partially translated non-fuzzy plural entries fail validation.
 
 MoTranslator is temporarily pinned to [upstream fix `1ba5f557`](https://github.com/phpmyadmin/motranslator/commit/1ba5f5579f0f1ba5befd9c975610b304d5494a87) for boolean plural rules such as `n != 1`. When a stable 6.x release includes it, require that release or newer and update the lockfile.
 

@@ -19,8 +19,6 @@ use Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
@@ -157,7 +155,7 @@ class Service implements InjectionAwareInterface
 
     public function attachOrderConfig(Product $product, array $data): array
     {
-        $config = json_decode($product->getConfig() ?? '', true) ?? [];
+        $config = $product->getConfig() ?? [];
         $files = $this->validateFileDefinitions($config[self::FILES_CONFIG_KEY] ?? null);
         if ($files === []) {
             throw new \FOSSBilling\Core\Exception\BaseException('Product is not configured completely.');
@@ -181,7 +179,7 @@ class Service implements InjectionAwareInterface
 
     public function action_create(Order $order): ServiceDownloadable
     {
-        $config = json_decode($order->getConfig() ?? '', true);
+        $config = $order->getConfig();
         if (!is_array($config)) {
             throw new \FOSSBilling\Core\Exception\BaseException(sprintf('Order #%s config is missing', $order->getId()));
         }
@@ -323,16 +321,18 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $count = (int) $this->di['em']->getConnection()->fetchOne(
-            'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
+        $connection = $this->di['em']->getConnection();
+        $config = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\PostgreSQLPlatform ? 'CAST(config AS TEXT)' : 'config';
+        $count = (int) $connection->fetchOne(
+            "SELECT COUNT(*) FROM product WHERE $config LIKE :pattern",
             ['pattern' => '%' . $storedFilename . '%']
         );
         if ($count > 0) {
             return true;
         }
 
-        $count = (int) $this->di['em']->getConnection()->fetchOne(
-            'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
+        $count = (int) $connection->fetchOne(
+            "SELECT COUNT(*) FROM client_order WHERE $config LIKE :pattern",
             ['pattern' => '%' . $storedFilename . '%']
         );
 
@@ -360,10 +360,10 @@ class Service implements InjectionAwareInterface
         $fileDefinition = $this->createUploadedFileDefinition($file, $data);
 
         $this->di['em']->wrapInTransaction(function () use ($productModel, $fileDefinition): void {
-            $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
+            $config = $productModel->getConfig() ?? [];
             $config[self::FILES_CONFIG_KEY] ??= [];
             $config[self::FILES_CONFIG_KEY][] = $fileDefinition;
-            $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
+            $productModel->setConfig($config);
             $productModel->setUpdatedAt(new \DateTime());
 
             if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
@@ -378,13 +378,13 @@ class Service implements InjectionAwareInterface
     public function updateProductFile(Product $product, array $data): bool
     {
         $fileKey = $this->validateFileKey($data['file_id'] ?? null);
-        $config = json_decode($product->getConfig() ?? '', true) ?: [];
+        $config = $product->getConfig() ?: [];
         $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
         $config[self::FILES_CONFIG_KEY][$index]['label'] = $this->normalizeLabel($data['label'] ?? null);
         $config[self::FILES_CONFIG_KEY][$index]['description'] = $this->normalizeDescription($data['description'] ?? null);
 
         $this->di['em']->wrapInTransaction(function () use ($product, $config, $index): void {
-            $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
+            $product->setConfig($config);
 
             if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->updateFileInExistingOrders($product, $config[self::FILES_CONFIG_KEY][$index]);
@@ -397,13 +397,13 @@ class Service implements InjectionAwareInterface
     public function removeProductFile(Product $product, mixed $fileKey): bool
     {
         $fileKey = $this->validateFileKey($fileKey);
-        $config = json_decode($product->getConfig() ?? '', true) ?: [];
+        $config = $product->getConfig() ?: [];
         $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
         $storedFilename = $config[self::FILES_CONFIG_KEY][$index]['stored_filename'];
         array_splice($config[self::FILES_CONFIG_KEY], $index, 1);
 
         $this->di['em']->wrapInTransaction(function () use ($product, $config, $fileKey): void {
-            $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
+            $product->setConfig($config);
 
             if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->removeFileFromExistingOrders($product, $fileKey);
@@ -421,7 +421,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->wrapInTransaction(function () use ($service, $order, $definition): void {
             $service->addFile($this->createServiceFile($definition, $service->getFiles()->count()));
 
-            $config = json_decode($order->getConfig() ?? '', true) ?: [];
+            $config = $order->getConfig() ?: [];
             $config[self::FILES_CONFIG_KEY] ??= [];
             $config[self::FILES_CONFIG_KEY][] = $definition;
             $this->saveOrderConfig($order, $config);
@@ -441,7 +441,7 @@ class Service implements InjectionAwareInterface
         $fileKey = $file->getFileKey();
         $this->di['em']->wrapInTransaction(function () use ($service, $order, $file, $fileKey): void {
             $service->removeFile($file);
-            $config = json_decode($order->getConfig() ?? '', true) ?: [];
+            $config = $order->getConfig() ?: [];
             $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
                 $config[self::FILES_CONFIG_KEY] ?? [],
                 static fn (array $definition): bool => ($definition['id'] ?? null) !== $fileKey,
@@ -479,27 +479,17 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         }
 
-        $response = new BinaryFileResponse($filePath);
-
-        $disposition = $response->headers->makeDisposition(
-            HeaderUtils::DISPOSITION_ATTACHMENT,
-            $file->getFilename()
-        );
-
-        $response->headers->set('Content-Type', 'application/octet-stream');
-        $response->headers->set('Content-Disposition', $disposition);
-
         $this->di['logger']->info('Downloaded service file {file_id}', ['file_id' => $file->getId()]);
 
-        return $response;
+        return $this->di['response_factory']->download($file->getFilename(), $filePath);
     }
 
     public function saveProductConfig(Product $productModel, $data): bool
     {
-        $config = json_decode($productModel->getConfig() ?? '', true) ?: [];
+        $config = $productModel->getConfig() ?: [];
         $config['update_orders'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['update_orders'] ?? false);
         $updatedAt = new \DateTime();
-        $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
+        $productModel->setConfig($config);
         $productModel->setUpdatedAt($updatedAt);
         $this->di['em']->flush();
 
@@ -508,7 +498,7 @@ class Service implements InjectionAwareInterface
 
     public function sendProductFile(Product $product, mixed $fileKey): Response
     {
-        $config = json_decode($product->getConfig() ?? '', true) ?: [];
+        $config = $product->getConfig() ?: [];
         $fileKey = $this->validateFileKey($fileKey);
         $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
         $definition = $config[self::FILES_CONFIG_KEY][$index];
@@ -518,19 +508,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        $response = new BinaryFileResponse($filePath);
-
-        $disposition = $response->headers->makeDisposition(
-            HeaderUtils::DISPOSITION_ATTACHMENT,
-            $definition['filename']
-        );
-
-        $response->headers->set('Content-Type', 'application/octet-stream');
-        $response->headers->set('Content-Disposition', $disposition);
-
         $this->di['logger']->info('Downloaded product {product_id} file by admin.', ['product_id' => $product->getId()]);
 
-        return $response;
+        return $this->di['response_factory']->download($definition['filename'], $filePath);
     }
 
     private function getUploadedFile(): \Symfony\Component\HttpFoundation\File\UploadedFile
@@ -670,7 +650,7 @@ class Service implements InjectionAwareInterface
     private function addFileToExistingOrders(Product $product, array $definition): void
     {
         $this->forEachProductOrder($product, function (Order $order, ?ServiceDownloadable $service) use ($definition): void {
-            $config = json_decode($order->getConfig() ?? '', true) ?: [];
+            $config = $order->getConfig() ?: [];
             $config[self::FILES_CONFIG_KEY] ??= [];
             $config[self::FILES_CONFIG_KEY][] = $definition;
             $this->saveOrderConfig($order, $config);
@@ -681,7 +661,7 @@ class Service implements InjectionAwareInterface
     private function updateFileInExistingOrders(Product $product, array $definition): void
     {
         $this->forEachProductOrder($product, function (Order $order, ?ServiceDownloadable $service) use ($definition): void {
-            $config = json_decode($order->getConfig() ?? '', true) ?: [];
+            $config = $order->getConfig() ?: [];
             foreach ($config[self::FILES_CONFIG_KEY] ?? [] as $index => $file) {
                 if (($file['id'] ?? null) === $definition['id']) {
                     $config[self::FILES_CONFIG_KEY][$index] = $definition;
@@ -701,7 +681,7 @@ class Service implements InjectionAwareInterface
     private function removeFileFromExistingOrders(Product $product, string $fileKey): void
     {
         $this->forEachProductOrder($product, function (Order $order, ?ServiceDownloadable $service) use ($fileKey): void {
-            $config = json_decode($order->getConfig() ?? '', true) ?: [];
+            $config = $order->getConfig() ?: [];
             $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
                 $config[self::FILES_CONFIG_KEY] ?? [],
                 static fn (array $file): bool => ($file['id'] ?? null) !== $fileKey,
@@ -727,14 +707,13 @@ class Service implements InjectionAwareInterface
 
     private function saveOrderConfig(Order $order, array $config): void
     {
-        $configValue = json_encode($config, JSON_THROW_ON_ERROR);
         $updatedAt = date('Y-m-d H:i:s');
-        $order->setConfig($configValue);
+        $order->setConfig($config);
         $order->setUpdatedAt(new \DateTime($updatedAt));
         $this->di['em']->getConnection()->update('client_order', [
-            'config' => $configValue,
+            'config' => $config,
             'updated_at' => $updatedAt,
-        ], ['id' => $order->getId()]);
+        ], ['id' => $order->getId()], ['config' => \Doctrine\DBAL\Types\Types::JSON]);
     }
 
     private function getFileRepository(): ServiceDownloadableFileRepository

@@ -6,7 +6,6 @@ use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Version;
 use FOSSBilling\Core\Update\Finalization;
 use FOSSBilling\Core\Update\Updater;
-use PhpZip\ZipFile;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -34,9 +33,7 @@ test('does not finalize an update in the request that extracts it', function ():
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
 
-    $zip = new ZipFile();
-    $zip->addFromString($entryName, 'update handoff test');
-    $archiveContent = $zip->outputAsString();
+    $archiveContent = Tests\Helpers\zipArchive([$entryName => 'update handoff test']);
 
     $releaseInfo = [
         'version' => $latestVersion,
@@ -123,9 +120,7 @@ test('resets the opcode cache after extracting the update archive', function ():
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
 
-    $zip = new ZipFile();
-    $zip->addFromString($entryName, 'opcode cache reset test');
-    $archiveContent = $zip->outputAsString();
+    $archiveContent = Tests\Helpers\zipArchive([$entryName => 'opcode cache reset test']);
 
     $releaseInfo = [
         'version' => $latestVersion,
@@ -135,7 +130,7 @@ test('resets the opcode cache after extracting the update archive', function ():
         'update_type' => 0,
     ];
 
-    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization = Mockery::mock(Finalization::class);
     $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->andReturn(['status' => 'pending']);
 

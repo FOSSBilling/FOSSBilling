@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 function container(): Container
 {
     $di = new Container();
+    $di['crypt'] = fn (): \FOSSBilling\Core\Security\Crypt => new \FOSSBilling\Core\Security\Crypt();
     $di['config'] = [
         'salt' => 'test_salt_' . uniqid(),
         'url' => 'http://localhost/',
@@ -80,7 +81,7 @@ function container(): Container
 
         return $session;
     };
-    $di['dbal'] = static function (): object {
+    $defaultConnection = static function (): object {
         $dbal = \Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
         $result = \Mockery::mock(\Doctrine\DBAL\Result::class)->shouldIgnoreMissing();
         $result->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
@@ -174,7 +175,7 @@ function container(): Container
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['cookie_queue'] = fn (): \FOSSBilling\Core\Http\CookieQueue => new \FOSSBilling\Core\Http\CookieQueue();
-    $di['em'] = static function () use ($di): object {
+    $di['em'] = static function () use ($defaultConnection): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
         $adminPasswordResetRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminPasswordResetRepository::class)->shouldIgnoreMissing();
@@ -304,7 +305,7 @@ function container(): Container
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
-        $em->shouldReceive('getConnection')->byDefault()->andReturn($di['dbal']);
+        $em->shouldReceive('getConnection')->byDefault()->andReturn($defaultConnection());
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
             \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,

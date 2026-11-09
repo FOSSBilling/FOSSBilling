@@ -1021,7 +1021,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return null;
         }
 
-        $gatewayId = $this->di['dbal']->fetchOne(
+        $gatewayId = $this->di['em']->getConnection()->fetchOne(
             'SELECT gateway_id FROM invoice WHERE id = :id',
             ['id' => (int) $invoiceId]
         );
@@ -1035,7 +1035,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return null;
         }
 
-        $gatewayId = $this->di['dbal']->fetchOne(
+        $gatewayId = $this->di['em']->getConnection()->fetchOne(
             'SELECT pay_gateway_id FROM subscription WHERE sid = :sid',
             ['sid' => $subscriptionId]
         );
@@ -1326,7 +1326,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $objectId), 0, 54);
         $waitStartedAt = hrtime(true);
 
-        if (!NamedLock::acquire($this->di['dbal'], $lockName, 10)) {
+        if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 10)) {
             $waitDurationMs = (hrtime(true) - $waitStartedAt) / 1_000_000;
             $this->di['logger']->warning(
                 'Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}',
@@ -1339,7 +1339,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         try {
             return $callback();
         } finally {
-            NamedLock::release($this->di['dbal'], $lockName);
+            NamedLock::release($this->di['em']->getConnection(), $lockName);
         }
     }
 

@@ -78,8 +78,8 @@ class Transaction implements TimestampInterface
     #[ORM\Column(name: 'error_code', type: Types::INTEGER, nullable: true)]
     private ?int $errorCode = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $ipn = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $ipn = null;
 
     #[ORM\Column(name: 'ipn_hash', type: Types::STRING, length: 64, nullable: true)]
     private ?string $ipnHash = null;
@@ -251,12 +251,12 @@ class Transaction implements TimestampInterface
         return $this;
     }
 
-    public function getIpn(): ?string
+    public function getIpn(): ?array
     {
         return $this->ipn;
     }
 
-    public function setIpn(?string $ipn): self
+    public function setIpn(?array $ipn): self
     {
         $this->ipn = $ipn;
 
