@@ -127,7 +127,7 @@ test('requires review of orphaned templates instead of deleting them', function 
 test('extracts without GNU gettext on PATH', function (): void {
     $f = $this->fixture;
     $f->setupModules();
-    $result = $f->cli(['extract-modules', $f->modules, $f->core, $f->templates], env: ['PATH' => '']);
+    $result = $f->cli(['i18n:extract-modules', $f->modules, $f->core, $f->templates], env: ['PATH' => '']);
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
 });
 
@@ -137,26 +137,26 @@ test('preserves combined extraction, date-insensitive checks and diff diagnostic
     $f->write('input/Service.php', $source);
     $f->write('input/modules/Example/page.twig', "{{ 'Module'|trans }}");
     $pot = $f->root . '/messages.pot';
-    expect($f->cli(['extract', $f->root . '/input', $pot])->getExitCode())->toBe(0);
+    expect($f->cli(['i18n:extract', $f->root . '/input', $pot])->getExitCode())->toBe(0);
     expect(TranslationCatalog::entries($pot))->toHaveKeys(['Original', 'One', 'Module']);
     $f->fs->dumpFile($pot, str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', $f->fs->readFile($pot)));
     $before = $f->fs->readFile($pot);
-    expect($f->cli(['extract', $f->root . '/input', $pot, '--check'])->getExitCode())->toBe(0)->and($f->fs->readFile($pot))->toBe($before);
+    expect($f->cli(['i18n:extract', $f->root . '/input', $pot, '--check'])->getExitCode())->toBe(0)->and($f->fs->readFile($pot))->toBe($before);
     foreach ([str_replace('Original', 'Changed', $source), str_replace('Many', 'Changed plurals', $source), str_replace('<?php ', "<?php\n\n", $source)] as $changed) {
         $f->write('input/Service.php', $changed);
-        $result = $f->cli(['extract', $f->root . '/input', $pot, '--check']);
+        $result = $f->cli(['i18n:extract', $f->root . '/input', $pot, '--check']);
         expect($result->getExitCode())->toBe(1)->and($f->fs->readFile($pot))->toBe($before);
     }
     $new = $f->root . '/new.pot';
     TranslationCatalog::write([['original', null, 'new.php:1', 'core'], ['One', 'More', 'new.php:2', 'core']], $new);
-    $diff = $f->cli(['diff', $pot, $new]);
+    $diff = $f->cli(['i18n:diff', $pot, $new]);
     expect($diff->getExitCode())->toBe(0)->and($diff->getOutput())->toContain('casing-only: 1', 'Casing-only changes', 'Changed plural forms');
 });
 
 test('does not generate empty templates for missing source roots', function (): void {
     $f = $this->fixture;
     $target = $f->root . '/messages.pot';
-    expect($f->cli(['extract', $f->root . '/missing', $target])->getExitCode())->toBe(1)->and($f->fs->exists($target))->toBeFalse();
+    expect($f->cli(['i18n:extract', $f->root . '/missing', $target])->getExitCode())->toBe(1)->and($f->fs->exists($target))->toBeFalse();
 });
 
 test('reads CRLF core templates and checks catalogues without newline-only changes', function (): void {
@@ -175,11 +175,11 @@ test('reads CRLF core templates and checks catalogues without newline-only chang
     expect($f->snapshot($f->templates))->toBe($before);
     $f->write('input/Service.php', "<?php __trans('Hello');");
     $target = $f->root . '/messages.pot';
-    expect($f->cli(['extract', $f->root . '/input', $target])->getExitCode())->toBe(0);
+    expect($f->cli(['i18n:extract', $f->root . '/input', $target])->getExitCode())->toBe(0);
     $lf = $f->fs->readFile($target);
     $f->fs->dumpFile($target, str_replace("\n", "\r\n", $lf));
     $before = $f->fs->readFile($target);
-    expect($f->cli(['extract', $f->root . '/input', $target, '--check'])->getExitCode())->toBe(0);
+    expect($f->cli(['i18n:extract', $f->root . '/input', $target, '--check'])->getExitCode())->toBe(0);
     expect($f->fs->readFile($target))->toBe($before);
 });
 
@@ -228,7 +228,7 @@ test('accepts a dot path inside a single module and preserves sibling templates'
     $f->setupModules();
     expect($f->extract()->getExitCode())->toBe(0);
     $before = $f->fs->readFile($f->template('Other'));
-    $result = $f->cli(['extract-modules', '.', $f->core, $f->templates], cwd: $f->modules . '/Example');
+    $result = $f->cli(['i18n:extract-modules', '.', $f->core, $f->templates], cwd: $f->modules . '/Example');
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
     expect(TranslationCatalog::entries($f->template()))->toHaveKey('Hello :name');
     expect($f->fs->readFile($f->template('Other')))->toBe($before);
@@ -243,7 +243,7 @@ test('keeps diff values on one line and preserves literal console tags', functio
         ['Item', "New\nitems", 'new.php:1', 'core'],
         ["<info>First\nEOF\nSecond</info>", null, 'new.php:2', 'core'],
     ], $new);
-    $result = $f->cli(['diff', $old, $new]);
+    $result = $f->cli(['i18n:diff', $old, $new]);
     $this->assertSame(0, $result->getExitCode(), $result->getErrorOutput());
     expect($result->getOutput())->toContain('"<info>First\\nEOF\\nSecond</info>"', '"Old\\nitems" -> "New\\nitems"')->not->toContain("\nEOF\n");
 });
@@ -258,12 +258,12 @@ test('exports template comparisons as JSON without counting metadata changes', f
     $blocks = explode("\n\n", $f->fs->readFile($old));
     $header = str_replace('POT-Creation-Date:', 'POT-Creation-Date: old', array_shift($blocks));
     $f->fs->dumpFile($old, $header . "\n\n" . implode("\n\n", array_reverse($blocks)));
-    $json = $f->cli(['diff', $old, $new, '--format=json']);
+    $json = $f->cli(['i18n:diff', $old, $new, '--format=json']);
     $this->assertSame(0, $json->getExitCode(), $json->getErrorOutput());
     $diff = json_decode($json->getOutput(), true, flags: JSON_THROW_ON_ERROR);
-    $text = $f->cli(['diff', $old, $new]);
+    $text = $f->cli(['i18n:diff', $old, $new]);
     $this->assertSame(0, $text->getExitCode(), $text->getErrorOutput());
-    $invalid = $f->cli(['diff', $old, $new, '--format=invalid']);
+    $invalid = $f->cli(['i18n:diff', $old, $new, '--format=invalid']);
     expect($invalid->getExitCode())->not->toBe(0);
     expect($diff['report'])->toBe($text->getOutput());
     unset($diff['report']);
