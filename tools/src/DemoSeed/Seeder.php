@@ -360,14 +360,16 @@ final class Seeder
 
         // products
         $existingProducts = $this->fetchAll('admin/product/get_list');
-        $productIds = [];
         // Titles are not unique, so keep every candidate: a title may be
         // carried by a foreign product of a different type.
         $existingByTitle = [];
         foreach ($existingProducts as $p) {
-            $productIds[(string) $p['title']] = (int) $p['id'];
             $existingByTitle[(string) $p['title']][] = ['id' => (int) $p['id'], 'type' => (string) ($p['type'] ?? ''), 'config' => is_array($p['config'] ?? null) ? $p['config'] : []];
         }
+        // Ids of products this run owns: resolved existing matches or ones it
+        // creates. Rejections release any would-be id so later phases never
+        // address a wrong-type product.
+        $productIds = [];
         $recurrent = static function (array $periods): array {
             $out = ['type' => 'recurrent', 'recurrent' => []];
             foreach ($periods as $code => [$price, $setup]) {
@@ -408,7 +410,6 @@ final class Seeder
                 if ($existing === null) {
                     $extra = $def['type'] === 'hosting' ? ' attached to the demo server' : '';
                     $this->recordError('product ' . $def['title'], "no existing product titled '{$def['title']}' of type '{$def['type']}'$extra; not reused, manifest entry not written");
-                    unset($productIds[$def['title']]);
 
                     continue;
                 }
@@ -460,10 +461,9 @@ final class Seeder
             $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $pid];
         }
         // domain product already exists (only one allowed) — reuse it
-        if (!isset($productIds['Domains registration and transfer'])) {
+        if (!isset($existingByTitle['Domains registration and transfer'])) {
             foreach ($existingProducts as $p) {
                 if (($p['type'] ?? '') === 'domain') {
-                    $productIds[$p['title']] = (int) $p['id'];
                     $this->manifest['products'][] = ['title' => $p['title'], 'type' => 'domain', 'id' => (int) $p['id'], 'existing' => true];
                 }
             }
