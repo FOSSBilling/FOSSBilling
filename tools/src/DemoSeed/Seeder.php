@@ -460,12 +460,12 @@ final class Seeder
             $productIds[$def['title']] = $pid;
             $this->manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $pid];
         }
-        // domain product already exists (only one allowed) — reuse it
-        if (!isset($existingByTitle['Domains registration and transfer'])) {
-            foreach ($existingProducts as $p) {
-                if (($p['type'] ?? '') === 'domain') {
-                    $this->manifest['products'][] = ['title' => $p['title'], 'type' => 'domain', 'id' => (int) $p['id'], 'existing' => true];
-                }
+        // Record existing domain products; FOSSBilling allows a single domain
+        // product, but record whatever exists for an accurate manifest, so a
+        // non-domain product with a matching title cannot omit it.
+        foreach ($existingProducts as $p) {
+            if (($p['type'] ?? '') === 'domain') {
+                $this->manifest['products'][] = ['title' => $p['title'], 'type' => 'domain', 'id' => (int) $p['id'], 'existing' => true];
             }
         }
 
