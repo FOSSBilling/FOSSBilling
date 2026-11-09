@@ -197,6 +197,9 @@ class Session implements InjectionAwareInterface
             } catch (\Doctrine\DBAL\Exception) {
                 // The cookie is still expired below so the unusable session is not reused.
             }
+            // Sent directly rather than queued: it must be emitted before the
+            // Set-Cookie PHP sends when session_start() creates the replacement
+            // session, or the browser would apply the expiration last and drop it.
             setcookie($sessionName, '', $this->getSessionCookieOptions(time() - 3600));
             unset($_COOKIE[$sessionName]);
         }
@@ -288,11 +291,11 @@ class Session implements InjectionAwareInterface
 
     private function expireLegacySessionCookies(): void
     {
-        if ($this->legacySessionCookie === null || headers_sent()) {
+        if ($this->legacySessionCookie === null) {
             return;
         }
 
-        setcookie($this->legacySessionCookie, '', $this->getSessionCookieOptions(time() - 3600));
+        $this->queueCookie($this->legacySessionCookie, '', time() - 3600);
         unset($_COOKIE[$this->legacySessionCookie]);
     }
 
@@ -318,10 +321,29 @@ class Session implements InjectionAwareInterface
         $sessionName = $this->session->getName();
         $sessionId = $this->session->getId();
         if ($sessionId !== '') {
-            setcookie($sessionName, $sessionId, $this->getSessionCookieOptions(0));
+            $this->queueCookie($sessionName, $sessionId, 0);
 
             $_COOKIE[$sessionName] = $sessionId;
         }
+    }
+
+    /**
+     * Queues a session-related cookie so it is emitted with the response via CookieQueue.
+     */
+    private function queueCookie(string $name, string $value, int $expires): void
+    {
+        $options = $this->getSessionCookieOptions($expires);
+        $this->di['cookie_queue']->queue(
+            $name,
+            $value,
+            $options['expires'],
+            $options['path'],
+            $options['domain'],
+            $options['secure'],
+            $options['httponly'],
+            // Symfony's Cookie rejects an empty SameSite attribute; null omits it.
+            $options['samesite'] !== '' ? $options['samesite'] : null,
+        );
     }
 
     /**

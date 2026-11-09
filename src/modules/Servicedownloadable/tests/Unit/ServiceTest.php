@@ -18,6 +18,7 @@ use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use Box\Mod\Servicedownloadable\Service;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Core\Http\ResponseFactory;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
@@ -332,4 +333,61 @@ test('product file upload rejects a request without the expected file field', fu
 
     expect(fn (): bool => $service->uploadProductFile($productModel))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'File upload failed: no files in request.');
+});
+
+test('sendFile streams the stored file as an attachment download', function (): void {
+    $storedName = str_repeat('a1b2c3d4', 8);
+    $storedPath = Symfony\Component\Filesystem\Path::join(PATH_UPLOADS, $storedName);
+    file_put_contents($storedPath, 'download-me');
+
+    try {
+        $file = createEntity(ServiceDownloadableFile::class, [
+            'id' => 5,
+            'filename' => 'product-file.zip',
+            'storedFilename' => $storedName,
+        ]);
+
+        $di = container();
+        $di['response_factory'] = fn (): ResponseFactory => new ResponseFactory();
+
+        $service = new Service();
+        $service->setDi($di);
+
+        $response = $service->sendFile($file);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($response->headers->get('Content-Type'))->toBe('application/octet-stream')
+            ->and($response->headers->get('Content-Disposition'))->toBe('attachment; filename=product-file.zip');
+    } finally {
+        @unlink($storedPath);
+    }
+});
+
+test('sendProductFile streams the configured product file as an attachment download', function (): void {
+    $fileKey = str_repeat('b2c3d4e5', 4);
+    $storedName = str_repeat('a1b2c3d4', 8);
+    $storedPath = Symfony\Component\Filesystem\Path::join(PATH_UPLOADS, $storedName);
+    file_put_contents($storedPath, 'download-me');
+
+    try {
+        $product = serviceDownloadableCreateProductEntity(3, [
+            'files' => [
+                ['id' => $fileKey, 'filename' => 'product-file.zip', 'stored_filename' => $storedName],
+            ],
+        ]);
+
+        $di = container();
+        $di['response_factory'] = fn (): ResponseFactory => new ResponseFactory();
+
+        $service = new Service();
+        $service->setDi($di);
+
+        $response = $service->sendProductFile($product, $fileKey);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($response->headers->get('Content-Type'))->toBe('application/octet-stream')
+            ->and($response->headers->get('Content-Disposition'))->toBe('attachment; filename=product-file.zip');
+    } finally {
+        @unlink($storedPath);
+    }
 });

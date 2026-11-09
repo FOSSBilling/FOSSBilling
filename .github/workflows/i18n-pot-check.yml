@@ -14,7 +14,9 @@ permissions:
 
 jobs:
   pot-diff:
-    runs-on: ubuntu-slim
+    # ubuntu-latest rather than ubuntu-slim: setup-php fetching PHP 8.5 on the
+    # slim image is slow and intermittently times out before the job even runs.
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: 'Checkout PR head'

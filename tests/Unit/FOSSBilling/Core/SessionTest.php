@@ -6,12 +6,16 @@ use Doctrine\DBAL\Connection;
 use FOSSBilling\Core\Http\CookieNames;
 use FOSSBilling\Core\Security\Fingerprint;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
-function createSession(?SymfonySession $httpSession = null): FOSSBilling\Core\Security\Session
+function createSession(?SymfonySession $httpSession = null, ?Pimple\Container $di = null): FOSSBilling\Core\Security\Session
 {
-    return new FOSSBilling\Core\Security\Session($httpSession ?? new SymfonySession(new MockArraySessionStorage('PHPSESSID')));
+    $session = new FOSSBilling\Core\Security\Session($httpSession ?? new SymfonySession(new MockArraySessionStorage('PHPSESSID')));
+    $session->setDi($di ?? Tests\Helpers\container());
+
+    return $session;
 }
 
 /**
@@ -62,7 +66,8 @@ afterEach(function (): void {
 test('session cookie name migrates and expires the previous session cookie', function (): void {
     $_COOKIE['PHPSESSID'] = 'legacy-session';
     $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
-    $session = createSession($httpSession);
+    $di = Tests\Helpers\container();
+    $session = createSession($httpSession, $di);
 
     invokePrivate($session, 'configureCookieName');
 
@@ -72,6 +77,43 @@ test('session cookie name migrates and expires the previous session cookie', fun
     invokePrivate($session, 'expireLegacySessionCookies');
 
     expect($_COOKIE)->not->toHaveKey('PHPSESSID');
+
+    // The expiry cookie is emitted via CookieQueue with the response, not setcookie().
+    $response = new Response();
+    $di['cookie_queue']->applyToResponse($response);
+    $queued = [];
+    foreach ($response->headers->getCookies() as $cookie) {
+        $queued[$cookie->getName()] = $cookie;
+    }
+
+    expect($queued)->toHaveKey('PHPSESSID')
+        ->and($queued['PHPSESSID']->getExpiresTime())->toBeLessThan(time());
+});
+
+test('session id rotation queues the new session cookie', function (): void {
+    $di = Tests\Helpers\container();
+    $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
+    $session = createSession($httpSession, $di);
+
+    $httpSession->start();
+    $oldId = $httpSession->getId();
+
+    invokePrivate($session, 'rotateSessionId');
+
+    $newId = $httpSession->getId();
+    expect($newId)->not->toBe($oldId)->not->toBe('');
+
+    $response = new Response();
+    $di['cookie_queue']->applyToResponse($response);
+    $queued = [];
+    foreach ($response->headers->getCookies() as $cookie) {
+        $queued[$cookie->getName()] = $cookie;
+    }
+
+    $sessionName = $httpSession->getName();
+    expect($queued)->toHaveKey($sessionName)
+        ->and($queued[$sessionName]->getValue())->toBe($newId)
+        ->and($queued[$sessionName]->getExpiresTime())->toBe(0);
 });
 
 test('session validation ignores a missing database record', function (): void {

@@ -693,7 +693,7 @@ class Service
     {
         $request = $this->di['request'];
 
-        return $request->getSchemeAndHttpHost() . strtok($request->getRequestUri(), '?');
+        return $request->getSchemeAndHttpHost() . explode('?', $request->getRequestUri(), 2)[0];
     }
 
     public function getPeriod($code)

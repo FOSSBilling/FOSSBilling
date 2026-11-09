@@ -85,69 +85,39 @@ class I18n
     /**
      * Retrieves the user's preferred language/locale based on the browser's Accept-Language header.
      *
+     * Delegates to Request::getPreferredLanguage(), which honors the q-values of every
+     * header entry and prefix-matches language-only requests against the enabled locales
+     * (e.g. "en" matches "en_US").
+     *
      * @return string|null the user's preferred language/locale or null if not found
      */
     private static function getBrowserLocale(Request $request, ?CookieQueue $cookies = null): ?string
     {
-        // ext-intl is optional on some hosts. Without the Locale class these
-        // calls error fatally, so bail out and use the default locale.
-        if (!class_exists(\Locale::class)) {
-            return null;
-        }
-
-        $header = trim((string) $request->headers->get('Accept-Language', ''));
-
         // CLI/cron requests and header-less clients send no Accept-Language.
-        // Without this guard, Locale::lookup() with an empty detected locale
-        // returns the first enabled locale (e.g. en_US) instead of null,
-        // overriding the configured i18n.locale default.
-        if ($header === '') {
+        // Without this guard, getPreferredLanguage() returns the first passed
+        // locale instead of null, overriding the configured i18n.locale default.
+        if (trim((string) $request->headers->get('Accept-Language', '')) === '') {
             return null;
         }
 
-        try {
-            $acceptedLocale = @\Locale::acceptFromHttp($header);
-            if (empty($acceptedLocale)) {
-                return null;
-            }
-            $detectedLocale = @\Locale::canonicalize($acceptedLocale . '.utf8');
-        } catch (\Throwable) {
+        // The configured default goes first so an unsupported browser locale falls back to it.
+        $locales = array_values(array_unique([
+            Config::getProperty('i18n.locale', 'en_US'),
+            ...self::getLocales(),
+        ]));
+
+        $detectedLocale = $request->getPreferredLanguage($locales);
+
+        // A match that resolves to the configured default returns null without queueing a
+        // cookie: the resulting page locale is identical, and staying cookie-free keeps
+        // auto-detection responsive when the enabled locales change.
+        if ($detectedLocale === null || $detectedLocale === $locales[0]) {
             return null;
         }
 
-        if (empty($detectedLocale)) {
-            return null;
-        }
+        $cookies?->queue(CookieNames::LOCALE, $detectedLocale, strtotime('+1 month'), '/');
 
-        try {
-            $matchingLocale = \Locale::lookup(self::getLocales(), $detectedLocale, false, null);
-        } catch (\Throwable) {
-            return null;
-        }
-
-        /* The system was unable to match the browser locale to one of our local ones.
-         * This is most likely because Locale::lookup will not match en with en_US. It will only match en_US with en.
-         * As a workaround, let's see if one of the available locales starts with the detected locale.
-         * If it does, return that.
-         */
-        if (empty($matchingLocale)) {
-            if (strlen($detectedLocale) < 2) {
-                return null;
-            }
-            foreach (self::getLocales() as $locale) {
-                if (str_starts_with((string) $locale, substr($detectedLocale, 0, 2))) {
-                    $cookies?->queue(CookieNames::LOCALE, (string) $locale, strtotime('+1 month'), '/');
-
-                    return $locale;
-                }
-            }
-
-            return null;
-        }
-
-        $cookies?->queue(CookieNames::LOCALE, $matchingLocale, strtotime('+1 month'), '/');
-
-        return $matchingLocale;
+        return $detectedLocale;
     }
 
     /**

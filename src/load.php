@@ -28,7 +28,12 @@ function emitResponse(Response $response): never
 
 function sendResponse(Response $response): void
 {
-    global $request;
+    global $request, $di;
+
+    // Queued cookies (session rotation, locale detection) must ride every emission path, including error responses.
+    if (isset($di) && $di instanceof Pimple\Container) {
+        $di['cookie_queue']->applyToResponse($response);
+    }
 
     $currentRequest = $request instanceof Request ? $request : Request::createFromGlobals();
     $response->prepare($currentRequest)->send();
