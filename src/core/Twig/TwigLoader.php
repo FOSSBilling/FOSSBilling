@@ -76,8 +76,22 @@ class TwigLoader extends FilesystemLoader
             return $this->cache[$name];
         }
 
-        // Handle module icons: mod_ModuleName_icon.svg -> PATH_MODS/ModuleName/icon.svg
-        // Also handles mod_ModuleName_filename.svg -> PATH_MODS/ModuleName/filename.svg
+        // Handle module icons by their fixed names. Module ids may contain
+        // underscores, so the icon branch anchors on the known icon file
+        // names to stay unambiguous; the generic branch below keeps handling
+        // other module svg assets without underscores in the module name.
+        // Handles mod_ModuleName_icon.svg -> PATH_MODS/ModuleName/icon.svg,
+        // also for icon.png, icon.webp and icon.avif.
+        if (preg_match('/^mod_([A-Za-z0-9_]+)_(icon\.(?:svg|png|webp|avif))$/', (string) $name, $matches)) {
+            $moduleName = $matches[1];
+            $iconFile = $matches[2];
+            $iconPath = Path::join(PATH_MODS, $moduleName, $iconFile);
+            if ($this->filesystem->exists($iconPath)) {
+                return $this->cache[$name] = $iconPath;
+            }
+        }
+
+        // Handles mod_ModuleName_filename.svg -> PATH_MODS/ModuleName/filename.svg
         if (preg_match('/^mod_([A-Za-z0-9]+)_(.+\.svg)$/', (string) $name, $matches)) {
             $moduleName = $matches[1];
             $iconFile = $matches[2];
