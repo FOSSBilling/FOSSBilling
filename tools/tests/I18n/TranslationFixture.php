@@ -73,7 +73,7 @@ final readonly class TranslationFixture
     public function cli(array $arguments, array $env = [], ?string $cwd = null): Process
     {
         $repo = dirname(__DIR__, 3);
-        $process = new Process([PHP_BINARY, Path::join($repo, 'tools/i18n/bin/console'), ...$arguments], $cwd ?? $repo, ['COLUMNS' => '1000', ...$env]);
+        $process = new Process([PHP_BINARY, Path::join($repo, 'tools/bin/console'), ...$arguments], $cwd ?? $repo, ['COLUMNS' => '1000', ...$env]);
         $process->run();
 
         return $process;
@@ -81,12 +81,12 @@ final readonly class TranslationFixture
 
     public function extract(array $extra = [], ?string $root = null): Process
     {
-        return $this->cli(['extract-modules', $root ?? $this->modules, $this->core, $this->templates, ...$extra]);
+        return $this->cli(['i18n:extract-modules', $root ?? $this->modules, $this->core, $this->templates, ...$extra]);
     }
 
     public function translate(string $command, array $env = []): Process
     {
-        $arguments = [$command, $this->modules, $this->templates];
+        $arguments = ['i18n:' . $command, $this->modules, $this->templates];
         if ($command === 'compile') {
             $arguments[] = $this->build;
         }

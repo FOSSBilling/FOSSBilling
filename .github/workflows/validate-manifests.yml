@@ -22,7 +22,7 @@ jobs:
           php-version: '8.5'
 
       - name: 'Install PHP Dependencies'
-        run: composer install --no-progress --no-interaction --working-dir=tools/manifest
+        run: composer install --no-progress --no-interaction --working-dir=tools
 
       - name: 'Validate Module Manifests'
-        run: php tools/manifest/validate.php
+        run: tools/bin/console manifest:validate
