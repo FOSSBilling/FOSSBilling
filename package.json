@@ -30,7 +30,7 @@
     "src/themes/default/admin"
   ],
   "devDependencies": {
-    "@playwright/test": "1.64.1",
+    "@playwright/test": "1.65.0",
     "@types/node": "26.6.6",
     "autoprefixer": "10.6.2",
     "ckeditor5": "49.1.0",
