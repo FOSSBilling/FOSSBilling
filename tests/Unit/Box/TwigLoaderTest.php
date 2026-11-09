@@ -32,6 +32,49 @@ test('exception', function (): void {
         ->toThrow(LoaderError::class);
 });
 
+test('module icon assets resolve for ids containing underscores', function (): void {
+    $name = 'Foo_' . bin2hex(random_bytes(4));
+    $directory = PATH_MODS . '/' . $name;
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $filesystem->dumpFile($directory . '/icon.svg', 'underscore icon fixture');
+
+        $loader = new TwigLoader(AppArea::ADMIN, PATH_THEMES . DIRECTORY_SEPARATOR . 'default' . DIRECTORY_SEPARATOR . 'admin');
+        $source = $loader->getSourceContext('mod_' . $name . '_icon.svg');
+
+        expect($source->getCode())->toBe('underscore icon fixture');
+    } finally {
+        $filesystem->remove($directory);
+    }
+});
+
+test('module icon assets resolve for raster icon formats', function (): void {
+    $name = 'Png' . bin2hex(random_bytes(4));
+    $directory = PATH_MODS . '/' . $name;
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory);
+
+    try {
+        $filesystem->dumpFile($directory . '/icon.png', 'png icon fixture');
+
+        $loader = new TwigLoader(AppArea::ADMIN, PATH_THEMES . DIRECTORY_SEPARATOR . 'default' . DIRECTORY_SEPARATOR . 'admin');
+        $source = $loader->getSourceContext('mod_' . $name . '_icon.png');
+
+        expect($source->getCode())->toBe('png icon fixture');
+    } finally {
+        $filesystem->remove($directory);
+    }
+});
+
+test('module icon assets still fail cleanly when the icon file is missing', function (): void {
+    $loader = new TwigLoader(AppArea::ADMIN, PATH_THEMES . DIRECTORY_SEPARATOR . 'default' . DIRECTORY_SEPARATOR . 'admin');
+
+    expect(fn (): Twig\Source => $loader->getSourceContext('mod_NonExisting_icon.svg'))
+        ->toThrow(LoaderError::class);
+});
+
 function makeFixturePackage(string $areaName, bool $withShared): array
 {
     $root = Path::join(sys_get_temp_dir(), 'fossbilling-twig-loader-test-' . bin2hex(random_bytes(8)));
