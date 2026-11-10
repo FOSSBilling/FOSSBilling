@@ -137,9 +137,10 @@ class Currency implements ArrayInterface, TimestampInterface
     public function setConversionRate(string|float $conversionRate): self
     {
         // Use sprintf to ensure consistent decimal format (avoids scientific notation)
-        // and matches the database column precision of 6 decimal places
-        if (is_float($conversionRate)) {
-            $this->conversionRate = sprintf('%.6f', $conversionRate);
+        // and matches the database column precision of 6 decimal places.
+        // Numeric strings are normalized too, so the in-memory value matches DECIMAL(13,6).
+        if (is_float($conversionRate) || is_numeric($conversionRate)) {
+            $this->conversionRate = sprintf('%.6f', (float) $conversionRate);
         } else {
             $this->conversionRate = $conversionRate;
         }
