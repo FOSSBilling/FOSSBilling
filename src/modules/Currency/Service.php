@@ -270,7 +270,7 @@ class Service implements InjectionAwareInterface
 
             try {
                 $conversionRate = $this->normalizeConversionRate($conversionRate);
-            } catch (InformationException $e) {
+            } catch (InformationException) {
                 // A fetched rate that would round to zero is unusable, so fall back to 1.0 rather than persisting zero.
                 $this->di['logger']->warning('Fetched conversion rate for {currency_code} would round to zero. Using default rate of 1.0.', ['currency_code' => $currencyCode]);
                 $conversionRate = 1.0;
@@ -555,7 +555,7 @@ class Service implements InjectionAwareInterface
             } else {
                 $rate = $this->getRate($defaultCurrency->getCode(), $currency->getCode());
 
-                if ((float) sprintf('%.6f', (float) $rate) <= 0) {
+                if ((float) sprintf('%.6f', $rate) <= 0) {
                     $this->di['logger']->warning('Skipped currency rate update for {currency_code}: fetched rate would round to zero.', ['currency_code' => $currency->getCode()]);
 
                     continue;
