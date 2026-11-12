@@ -307,6 +307,23 @@ test('income and refund stats count unresolved refund tax separately from zero t
         ->and((int) $result['refund_tax_unresolved'])->toBe(1);
 });
 
+test('income and refund stats return zeros, not nulls, with no matching invoices', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL)');
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    $result = $service->incomeAndRefundStats([]);
+    expect((float) $result['refund'])->toBe(0.0)
+        ->and((float) $result['income'])->toBe(0.0)
+        ->and((float) $result['refund_tax'])->toBe(0.0)
+        ->and((float) $result['refund_gross'])->toBe(0.0)
+        ->and((int) $result['refund_tax_unresolved'])->toBe(0);
+});
+
 test('gets refunds', function (): void {
     $service = new Box\Mod\Stats\Service();
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);

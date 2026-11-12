@@ -486,8 +486,10 @@ class Service implements InjectionAwareInterface
         }
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
         $result['refund'] = $row['refund'] ?? 0;
-        // Unknown when the backfill could not classify the refund (null), as opposed
-        // to a known zero-tax refund: consumers must not treat the two the same.
+        // Tax portion of the refund, in base currency like `income` (unlike
+        // invoice-currency `refund`/`refunded_total`): do not subtract it from
+        // `refund`. Null when the backfill could not classify the refund, as
+        // opposed to a known zero-tax refund.
         $result['refund_tax'] = $row['base_refund_tax'] ?? null;
         $result['credit'] = $row['credit'] ?? 0;
 
