@@ -485,6 +485,7 @@
         "pwreset",
         "pagebottom",
         "forceable",
+        "phpdoc",
         "phpstan",
         "progressbar",
         "valuenow",
@@ -672,15 +673,15 @@
     ],
     "overrides": [
         {
-            "filename": "tools/i18n/bin/console",
+            "filename": "tools/bin/console",
             "languageId": "php"
         },
         {
-            "filename": "tools/i18n/tests/GettextTest.php",
+            "filename": "tools/tests/I18n/GettextTest.php",
             "words": ["objets", "Profil", "Salut", "Supprimé", "Valeur"]
         },
         {
-            "filename": "tools/i18n/tests/fixtures/extraction.php",
+            "filename": "tools/tests/I18n/fixtures/extraction.php",
             "words": ["mple"]
         }
     ],

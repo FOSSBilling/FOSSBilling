@@ -5,10 +5,14 @@ declare(strict_types=1);
 use Symfony\Component\Filesystem\Path;
 
 test('the demo seeder does not accept API keys as command-line arguments', function (): void {
-    $script = file_get_contents(Path::join(dirname(PATH_ROOT), 'tools', 'demo-seed', 'demo-seed.php'));
-    $readme = file_get_contents(Path::join(dirname(PATH_ROOT), 'tools', 'demo-seed', 'README.md'));
+    $command = file_get_contents(Path::join(dirname(PATH_ROOT), 'tools', 'src', 'DemoSeed', 'Command', 'SeedCommand.php'));
+    $client = file_get_contents(Path::join(dirname(PATH_ROOT), 'tools', 'src', 'DemoSeed', 'ApiClient.php'));
+    $readme = file_get_contents(Path::join(dirname(PATH_ROOT), 'tools', 'README.md'));
 
-    expect($script)
+    expect($command)
+        ->not->toBeFalse()
+        ->not->toContain('--key')
+        ->and($client)
         ->not->toBeFalse()
         ->not->toContain('--key')
         ->and($readme)

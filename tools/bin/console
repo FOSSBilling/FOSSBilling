@@ -1,0 +1,44 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+require dirname(__DIR__) . '/bootstrap.php';
+
+use FOSSBilling\Tools\DemoSeed\Command\SeedCommand;
+use FOSSBilling\Tools\I18n\Command\CompileCommand;
+use FOSSBilling\Tools\I18n\Command\DiffCommand;
+use FOSSBilling\Tools\I18n\Command\ExtractCommand;
+use FOSSBilling\Tools\I18n\Command\ExtractModulesCommand;
+use FOSSBilling\Tools\I18n\Command\ValidateCommand;
+use FOSSBilling\Tools\Manifest\Command\ValidateCommand as ManifestValidateCommand;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Filesystem\Path;
+
+$repoRoot = dirname(__DIR__, 2);
+
+$application = new Application('FOSSBilling tools');
+$application->addCommands([
+    new ExtractCommand(),
+    new ExtractModulesCommand(),
+    new DiffCommand(),
+    new ValidateCommand(),
+    new CompileCommand(),
+    new ManifestValidateCommand(
+        Path::join($repoRoot, 'src', 'modules'),
+        Path::join($repoRoot, 'tools', 'resources', 'manifest.schema.json'),
+    ),
+    new SeedCommand(
+        Path::join($repoRoot, 'tools', 'var', 'demo-seed'),
+        Path::join($repoRoot, 'tools', 'resources', 'demo-seed', 'demo-download.zip'),
+    ),
+]);
+$application->run();

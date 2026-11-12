@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Controller;
 
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
@@ -230,7 +231,7 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
             Response::HTTP_OK,
             ['Content-Type' => 'application/json']
         );
-        $response->headers->set('Content-Disposition', 'attachment; filename="invoice-' . ((int) $id) . '-journal.json"');
+        $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, 'invoice-' . ((int) $id) . '-journal.json'));
 
         return $response;
     }

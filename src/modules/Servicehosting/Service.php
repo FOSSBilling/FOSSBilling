@@ -1631,6 +1631,13 @@ class Service implements InjectionAwareInterface
     public function generateLoginUrl(ServiceHosting $model): string
     {
         [$adapter, $account] = $this->_getAM($model);
+
+        // IP-bound SSO is opt-in: only adapters declaring Server_SsoClientIpInterface
+        // consume the visitor address, whichever flow binds its SSO session to it.
+        if ($adapter instanceof \Server_SsoClientIpInterface) {
+            $adapter->setSsoClientIp($this->di['request']->getClientIp());
+        }
+
         if ($model->isReseller()) {
             return $adapter->getResellerLoginUrl($account);
         }

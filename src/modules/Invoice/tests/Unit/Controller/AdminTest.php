@@ -63,7 +63,7 @@ test('journal download returns the full journal as an attachment', function (): 
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->headers->get('Content-Type'))->toBe('application/json')
-        ->and($response->headers->get('Content-Disposition'))->toBe('attachment; filename="invoice-7-journal.json"')
+        ->and($response->headers->get('Content-Disposition'))->toBe('attachment; filename=invoice-7-journal.json')
         ->and(json_decode($response->getContent(), true))->toBe($journal);
 });
 

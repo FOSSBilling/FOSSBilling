@@ -717,6 +717,8 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
     return $tr;
 });
 
+$di['response_factory'] = fn (): FOSSBilling\Core\Http\ResponseFactory => new FOSSBilling\Core\Http\ResponseFactory();
+
 $di['csv_response_factory'] = fn (): FOSSBilling\Core\Http\CsvResponseFactory => new FOSSBilling\Core\Http\CsvResponseFactory($di['em']->getConnection());
 
 $di['twig_factory'] = fn (): FOSSBilling\Core\Twig\TwigFactory => new FOSSBilling\Core\Twig\TwigFactory($di);

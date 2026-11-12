@@ -1,11 +1,15 @@
 {
-    "name": "fossbilling/i18n-tools",
-    "description": "Standalone translation extraction and GNU gettext validation tooling.",
+    "name": "fossbilling/tools",
+    "description": "FOSSBilling development and CI tooling: translations, manifests, demo seeding.",
     "license": "Apache-2.0",
     "require": {
         "php": "~8.5.0",
+        "ext-curl": "*",
         "ext-mbstring": "*",
         "ext-tokenizer": "*",
+        "composer/semver": "^3.5",
+        "composer/spdx-licenses": "^1.5",
+        "justinrainbow/json-schema": "^6.0",
         "symfony/console": "^8.1",
         "symfony/filesystem": "^8.1",
         "symfony/finder": "^8.1",
@@ -17,7 +21,7 @@
     },
     "autoload": {
         "psr-4": {
-            "FOSSBilling\\Tools\\I18n\\": "src/"
+            "FOSSBilling\\Tools\\": "src/"
         }
     },
     "scripts": {
