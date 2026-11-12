@@ -1901,11 +1901,12 @@ class Patcher implements InjectionAwareInterface
                 $lastId = (int) $row['id'];
 
                 $refund = (float) ($row['refund'] ?? 0);
+                [$guard, $guardParams] = $this->unchangedRefundGuard($row);
                 if ($refund <= 0) {
                     // Nothing refunded: no tax by definition.
                     $updated += (int) (bool) $dbal->executeStatement(
-                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL',
-                        ['value' => '0.00', 'id' => $row['id']]
+                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['value' => '0.00', 'id' => $row['id']], $guardParams)
                     );
 
                     continue;
@@ -1928,8 +1929,8 @@ class Patcher implements InjectionAwareInterface
                     }
                     // Linked notes with zero tax: known zero, mark done.
                     $updated += (int) (bool) $dbal->executeStatement(
-                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL',
-                        ['value' => '0.00', 'id' => $row['id']]
+                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['value' => '0.00', 'id' => $row['id']], $guardParams)
                     );
 
                     continue;
@@ -1946,14 +1947,14 @@ class Patcher implements InjectionAwareInterface
                     // Legacy gross basis: scale the stored base down to net.
                     $newBase = round($storedBase * $net / $refund, 2);
                     $updated += (int) (bool) $dbal->executeStatement(
-                        'UPDATE invoice SET base_refund = :net, base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL',
-                        ['net' => $newBase, 'tax' => round($storedBase - $newBase, 2), 'id' => $row['id']]
+                        'UPDATE invoice SET base_refund = :net, base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['net' => $newBase, 'tax' => round($storedBase - $newBase, 2), 'id' => $row['id']], $guardParams)
                     );
                 } elseif (abs($storedBase - $net) < 0.005) {
                     // Already net (refunded after #4661, before this migration): tax leg only.
                     $updated += (int) (bool) $dbal->executeStatement(
-                        'UPDATE invoice SET base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL',
-                        ['tax' => round($refund - $net, 2), 'id' => $row['id']]
+                        'UPDATE invoice SET base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['tax' => round($refund - $net, 2), 'id' => $row['id']], $guardParams)
                     );
                 } else {
                     $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: stored base matches neither gross nor net basis', $lastId));
@@ -1974,6 +1975,27 @@ class Patcher implements InjectionAwareInterface
         if ($updated > 0) {
             $this->logUpdate('info', sprintf('Backfilled refund income basis for %d invoice(s)', $updated));
         }
+    }
+
+    /**
+     * Optimistic-concurrency guard for backfill writes: only touch the row when `refund`
+     * and `base_refund` still hold the values this scan read. A refund posted concurrently
+     * rewrites both through `countIncome()`, so a mismatch means this page's computation
+     * is stale - the row stays NULL-taxed and is picked up again on a later scan.
+     *
+     * @param array<string, mixed> $row the invoice row as read (binds its snapshot values)
+     *
+     * @return array{string, array<string, mixed>} [AND fragment, bound snapshot values]
+     */
+    private function unchangedRefundGuard(array $row): array
+    {
+        $params = ['refund_snapshot' => $row['refund']];
+        if ($row['base_refund'] === null) {
+            return ['AND refund = :refund_snapshot AND base_refund IS NULL', $params];
+        }
+        $params['base_snapshot'] = $row['base_refund'];
+
+        return ['AND refund = :refund_snapshot AND base_refund = :base_snapshot', $params];
     }
 
     /**

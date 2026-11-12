@@ -4328,3 +4328,61 @@ test('refund backfill bounded runs resume from the stored scan position', functi
         ->and((float) $connection->fetchOne('SELECT base_refund_tax FROM invoice WHERE id = 30'))->toBe(20.0)
         ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'refund_basis_backfill_last_id'"))->toBeFalse();
 });
+
+test('refund backfill writes guard the update with the values read', function (): void {
+    $row = ['id' => 30, 'refund' => '120.00', 'base_refund' => '120.00', 'currency' => 'USD', 'currency_rate' => '1.000000'];
+    $note = ['id' => 31, 'credit_note_for_invoice_id' => 30, 'taxrate' => '20'];
+    $item = ['invoice_id' => 31, 'price' => '-100.00', 'quantity' => 1, 'taxed' => 1];
+
+    $table = Mockery::mock(Doctrine\DBAL\Schema\Table::class);
+    $table->shouldReceive('hasColumn')->with('base_refund_tax')->andReturnTrue();
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('tablesExist')->with(['invoice', 'invoice_item'])->andReturnTrue();
+    $schemaManager->shouldReceive('introspectTableByUnquotedName')->with('invoice')->andReturn($table);
+
+    $statements = [];
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
+    $connection->shouldReceive('fetchAllAssociative')->andReturn([$row], [$note], [$item], []);
+    $connection->shouldReceive('fetchOne')->andReturnFalse();
+    $connection->shouldReceive('insert')->andReturn(1);
+    $connection->shouldReceive('executeStatement')->andReturnUsing(function (string $sql, array $params = []) use (&$statements): int {
+        $statements[] = [$sql, $params];
+
+        return 1;
+    });
+
+    $defaultCurrency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $defaultCurrency->shouldReceive('getCode')->andReturn('USD');
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')->andReturn($defaultCurrency);
+    $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di = new Pimple\Container(['em' => $em, 'logger' => new Tests\Helpers\TestLogger()]);
+    $di['mod_service'] = $di->protect(fn (): Box\Mod\Currency\Service => $currencyService);
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+
+    $patcher->backfillRefundIncomeBasis(1);
+
+    $update = null;
+    foreach ($statements as [$sql, $params]) {
+        if (str_contains($sql, 'SET base_refund = :net')) {
+            $update = [$sql, $params];
+        }
+    }
+    expect($update)->not->toBeNull();
+    [$sql, $params] = $update;
+    // A refund posted concurrently rewrites refund/base_refund: the guard binds the
+    // read snapshots so that write is left for a later scan instead of applying
+    // stale math.
+    expect($sql)->toContain('AND refund = :refund_snapshot AND base_refund = :base_snapshot')
+        ->and($params['refund_snapshot'])->toBe('120.00')
+        ->and($params['base_snapshot'])->toBe('120.00')
+        ->and((float) $params['net'])->toBe(100.0)
+        ->and((float) $params['tax'])->toBe(20.0)
+        ->and((int) $params['id'])->toBe(30);
+});

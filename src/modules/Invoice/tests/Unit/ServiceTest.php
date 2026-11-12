@@ -177,6 +177,69 @@ test('converts to api array', function (): void {
     expect($result['paid_at'])->toBeNull();
 });
 
+test('reports unknown income for refunds with unknown tax', function (?string $refund, ?string $baseRefundTax, ?string $baseRefund, mixed $expectedIncome): void {
+    $service = new Service();
+    $invoiceModel = createEntity(Invoice::class);
+
+    $invoiceModel->hash = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4';
+    $invoiceModel->base_income = '100.00';
+    $invoiceModel->base_refund = $baseRefund;
+    $invoiceModel->base_refund_tax = $baseRefundTax;
+    $invoiceModel->refund = $refund;
+
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getCompany')
+        ->atLeast()->once();
+    $systemService->shouldReceive('getParamValue')
+        ->atLeast()->once()
+        ->andReturn(5);
+
+    $subscriptionServiceMock = Mockery::mock(ServiceSubscription::class);
+    $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')
+        ->byDefault()
+        ->andReturn('1W');
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')
+        ->atLeast()->once()
+        ->andReturn([$invoiceItemModel]);
+
+    $periodMock = Mockery::mock(FOSSBilling\Core\Period::class);
+    $periodMock->shouldReceive('getUnit');
+    $periodMock->shouldReceive('getQty');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
+        $service = null;
+        if ($sub == 'InvoiceItem') {
+            $service = $invoiceItemServiceMock;
+        }
+        if (is_string($serviceName) && strtolower($serviceName) === 'system') {
+            $service = $systemService;
+        }
+        if ($sub === 'Subscription') {
+            $service = $subscriptionServiceMock;
+        }
+
+        return $service;
+    });
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+
+    $service->setDi($di);
+
+    $result = $service->toApiArray($invoiceModel);
+    expect($result['income'])->toBe($expectedIncome);
+    expect($result['refund_tax'])->toBe($baseRefundTax);
+})->with([
+    'unknown tax leaves income unknown' => ['120.00', null, '120.00', null],
+    'known tax nets out of income' => ['120.00', '20.00', '100.00', 0.0],
+    'no refund keeps income whole' => [null, null, null, 100.0],
+]);
+
 test('issued invoices show the frozen seller snapshot, drafts show live settings', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class, [
