@@ -1895,7 +1895,7 @@ class Patcher implements InjectionAwareInterface
             }
             ++$pages;
 
-            $refundedTaxByInvoice = $this->refundedTaxByInvoice($dbal, array_map(static fn (array $row): int => (int) $row['id'], $rows));
+            $linkedTotalsByInvoice = $this->linkedRefundTotalsByInvoice($dbal, array_map(static fn (array $row): int => (int) $row['id'], $rows));
 
             foreach ($rows as $row) {
                 $lastId = (int) $row['id'];
@@ -1911,13 +1911,19 @@ class Patcher implements InjectionAwareInterface
                     continue;
                 }
 
-                $hasNotes = isset($refundedTaxByInvoice[$lastId]);
-                $net = $hasNotes ? round(max(0.0, $refund - $refundedTaxByInvoice[$lastId]), 2) : $refund;
+                $linked = $linkedTotalsByInvoice[$lastId] ?? null;
+                // `refund` accumulates each note's rounded gross, so allow a couple of
+                // cents of rounding dust. Anything beyond that is refunded money with
+                // no linked document: the cumulative tax basis cannot be established.
+                $covered = $linked !== null && $refund - $linked['gross'] <= 0.02;
+                $net = $covered ? round(max(0.0, $refund - $linked['tax']), 2) : $refund;
 
                 if (abs($net - $refund) < 0.005) {
-                    if (!$hasNotes) {
-                        // No linked note establishes the tax: unknown, leave NULL rather
-                        // than recording a zero that would read as known.
+                    if (!$covered) {
+                        // No linked note (or only partial coverage) establishes the tax:
+                        // unknown, leave NULL rather than recording a zero that reads as known.
+                        $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: linked notes do not cover the full refund', $lastId));
+
                         continue;
                     }
                     // Linked notes with zero tax: known zero, mark done.
@@ -2047,14 +2053,15 @@ class Patcher implements InjectionAwareInterface
     }
 
     /**
-     * Refunded tax per invoice in invoice currency, mirroring `Invoice\Service::getTax()`
-     * (rounded per credit note, taxed lines only). Invoices without linked notes are absent.
+     * Linked refund totals per invoice in invoice currency, mirroring `Invoice\Service` math:
+     * per-note rounded tax on taxed lines, and absolute credit-note totals for the gross
+     * share. Invoices without linked notes are absent.
      *
      * @param list<int> $invoiceIds
      *
-     * @return array<int, float>
+     * @return array<int, array{tax: float, gross: float}>
      */
-    private function refundedTaxByInvoice(\Doctrine\DBAL\Connection $dbal, array $invoiceIds): array
+    private function linkedRefundTotalsByInvoice(\Doctrine\DBAL\Connection $dbal, array $invoiceIds): array
     {
         if ($invoiceIds === []) {
             return [];
@@ -2076,29 +2083,35 @@ class Patcher implements InjectionAwareInterface
             $noteIds
         );
 
+        $subtotalByNote = [];
         $taxableByNote = [];
         foreach ($items as $item) {
-            if (empty($item['taxed'])) {
-                continue;
-            }
             $noteId = (int) $item['invoice_id'];
-            $taxableByNote[$noteId] = ($taxableByNote[$noteId] ?? 0.0) + ((float) ($item['price'] ?? 0) * ((float) ($item['quantity'] ?? 1)));
+            $lineTotal = ((float) ($item['price'] ?? 0) * ((float) ($item['quantity'] ?? 1)));
+            $subtotalByNote[$noteId] = ($subtotalByNote[$noteId] ?? 0.0) + $lineTotal;
+            if (!empty($item['taxed'])) {
+                $taxableByNote[$noteId] = ($taxableByNote[$noteId] ?? 0.0) + $lineTotal;
+            }
         }
 
         $taxByNote = [];
+        $grossByNote = [];
         foreach ($notes as $note) {
             $rate = (float) ($note['taxrate'] ?? 0);
             $taxable = $taxableByNote[(int) $note['id']] ?? 0.0;
             $taxByNote[(int) $note['id']] = ($rate > 0 && $taxable != 0.0) ? round($taxable * $rate / 100, 2) : 0.0;
+            $grossByNote[(int) $note['id']] = abs(($subtotalByNote[(int) $note['id']] ?? 0.0) + $taxByNote[(int) $note['id']]);
         }
 
-        $refundedTax = [];
+        $totals = [];
         foreach ($notes as $note) {
+            $invoiceId = (int) $note['credit_note_for_invoice_id'];
             // Credit note amounts are negated, so their tax is too: negate back to a positive share.
-            $refundedTax[(int) $note['credit_note_for_invoice_id']] = ($refundedTax[(int) $note['credit_note_for_invoice_id']] ?? 0.0) - $taxByNote[(int) $note['id']];
+            $totals[$invoiceId]['tax'] = ($totals[$invoiceId]['tax'] ?? 0.0) - $taxByNote[(int) $note['id']];
+            $totals[$invoiceId]['gross'] = ($totals[$invoiceId]['gross'] ?? 0.0) + $grossByNote[(int) $note['id']];
         }
 
-        return $refundedTax;
+        return $totals;
     }
 
     /**

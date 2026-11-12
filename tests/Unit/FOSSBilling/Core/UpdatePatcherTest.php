@@ -4226,6 +4226,12 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (80, '120.00', '120.00', NULL, '20', 'USD', '0.850000')");
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (81, NULL, NULL, NULL, '20', 'USD', '0.850000', 80)");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (81, '-100.00', 1, 1)");
+    // Partially covered refund: the linked note accounts for 120 of the 180 refund,
+    // so the cumulative tax basis cannot be established - leave it unresolved even
+    // though a basis match alone would rewrite it.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (100, '180.00', '180.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (101, NULL, NULL, NULL, '20', 'USD', '1.000000', 100)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (101, '-100.00', 1, 1)");
 
     // USD is the default currency; its conversions are the 1:1 identity.
     $defaultCurrency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
@@ -4251,6 +4257,7 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
     $row70 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 70');
     $row80 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 80');
     $row90 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 90');
+    $row100 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 100');
     expect((float) $row30['base_refund'])->toBe(100.0)
         ->and((float) $row30['base_refund_tax'])->toBe(20.0)
         ->and((float) $row40['base_refund'])->toBe(60.0)
@@ -4264,7 +4271,9 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
         ->and((float) $row80['base_refund'])->toBe(120.0)
         ->and($row80['base_refund_tax'])->toBeNull()
         ->and((float) $row90['base_refund'])->toBe(50.0)
-        ->and((float) $row90['base_refund_tax'])->toBe(0.0);
+        ->and((float) $row90['base_refund_tax'])->toBe(0.0)
+        ->and((float) $row100['base_refund'])->toBe(180.0)
+        ->and($row100['base_refund_tax'])->toBeNull();
 
     $patcher->backfillRefundIncomeBasis();
 
