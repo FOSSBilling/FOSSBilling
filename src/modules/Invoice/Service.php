@@ -1221,35 +1221,40 @@ class Service implements InjectionAwareInterface
 
                 $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
                 $invoiceTotal = $this->getTotalWithTax($invoice);
-                if (!$this->isInvoiceTypeDeposit($invoice)) {
+                $isDeposit = $this->isInvoiceTypeDeposit($invoice);
+                if (!$isDeposit) {
                     // A partly paid invoice is paid with what was recorded plus the rest received now.
                     $invoiceTotal = max(0.0, round($invoiceTotal - min($this->getAmountPaid($invoice), round($invoiceTotal, 2)), 2));
                 }
-                $newtx = $transactionService->create([
-                    'invoice_id' => $invoice->getId(),
-                    'gateway_id' => $invoice->getGateway()?->getId(),
-                    'currency' => $invoice->getCurrency(),
-                    'status' => 'received',
-                    'source' => 'admin',
-                    'post' => [
+                $transaction = null;
+                if ($isDeposit || $invoiceTotal > 0) {
+                    $newtx = $transactionService->create([
                         'invoice_id' => $invoice->getId(),
+                        'gateway_id' => $invoice->getGateway()?->getId(),
+                        'currency' => $invoice->getCurrency(),
+                        'status' => 'received',
+                        'source' => 'admin',
+                        'post' => [
+                            'invoice_id' => $invoice->getId(),
+                            'txn_id' => $transactionId,
+                        ],
                         'txn_id' => $transactionId,
-                    ],
-                    'txn_id' => $transactionId,
-                ]);
-                $transaction = $this->di['em']->getRepository(Transaction::class)->find((int) $newtx);
-                if ($transaction === null) {
-                    throw new InformationException('Transaction not found');
-                }
-                if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
-                    throw new InformationException('Transaction ID is already associated with another invoice.');
+                    ]);
+                    $transaction = $this->di['em']->getRepository(Transaction::class)->find((int) $newtx);
+                    if ($transaction === null) {
+                        throw new InformationException('Transaction not found');
+                    }
+                    if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
+                        throw new InformationException('Transaction ID is already associated with another invoice.');
+                    }
                 }
 
                 $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
                 if ($actuallyPaid ?? $result) {
                     $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId, $invoiceTotal);
+                    $this->consumeAppliedCredit($invoice);
                 }
-                if ($result) {
+                if ($result && $transaction instanceof Transaction) {
                     $transaction->setAmount((string) $invoiceTotal);
                     $transaction->setCurrency($invoice->getCurrency());
                     $transaction->setStatus(Transaction::STATUS_PROCESSED);
@@ -1294,6 +1299,7 @@ class Service implements InjectionAwareInterface
             $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
             if ($actuallyPaid ?? $result) {
                 $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId);
+                $this->consumeAppliedCredit($invoice);
             }
 
             return $result;
@@ -1682,6 +1688,12 @@ class Service implements InjectionAwareInterface
                 return false;
             }
             if ($state['status'] === Invoice::STATUS_PAID) {
+                return false;
+            }
+
+            // Account credit never pays an Add funds invoice: the deposit
+            // would be deducted without ever topping the wallet up.
+            if ($this->isInvoiceTypeDeposit($invoice)) {
                 return false;
             }
 
@@ -2532,6 +2544,34 @@ class Service implements InjectionAwareInterface
         $debit->setDescription('Reversal of deposit credit for refunded invoice #' . ($invoice->getNr() ?: $invoice->getId()) . '.');
         $debit->setAmount((string) (-$amount));
         $this->di['em']->persist($debit);
+        $this->di['em']->flush();
+    }
+
+    /**
+     * Spends the credit applied to an invoice once it is paid: the earmarked
+     * amount leaves the client's balance, so it cannot be spent a second time.
+     * Runs inside the payment transaction.
+     */
+    private function consumeAppliedCredit(Invoice $invoice): void
+    {
+        $applied = $this->getInvoiceCreditRepository()->getSumByInvoiceId((int) $invoice->getId());
+        if ($applied > 0) {
+            $applied = min($applied, round($this->getTotalWithTax($invoice), 2));
+        }
+        if ($applied <= 0) {
+            return;
+        }
+
+        $balance = new ClientBalance();
+        $balance->setClient($this->di['em']->getReference(Client::class, (int) $invoice->getClientId()));
+        $balance->setType('invoice');
+        $balance->setRelId((string) $invoice->getId());
+
+        $invoice_identifier = $invoice->getNr() ?: $invoice->getId();
+        $balance->setDescription("Payment for invoice #{$invoice_identifier} using account credit.");
+
+        $balance->setAmount((string) (-$applied));
+        $this->di['em']->persist($balance);
         $this->di['em']->flush();
     }
 

@@ -1260,6 +1260,9 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo = Mockery::mock(TransactionRepository::class));
+
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->byDefault()->andReturn(0.0);
     $transactionRepo->shouldReceive('find')->once()->with(20)->andReturn($transactionModel);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class));
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->once()->with(10)->andReturn([$invoiceItemModel = createEntity(InvoiceItem::class)]);
@@ -1354,6 +1357,9 @@ test('admin mark as paid credits client balance for a deposit invoice with custo
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo = Mockery::mock(TransactionRepository::class));
+
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->byDefault()->andReturn(0.0);
     $transactionRepo->shouldReceive('find')->once()->with(21)->andReturn($transactionModel);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class));
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->once()->with(11)->andReturn([createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_DEPOSIT])]);
@@ -1451,6 +1457,8 @@ test('admin mark as paid credits client balance for a deposit invoice with a non
         }
     };
 
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->byDefault()->andReturn(0.0);
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService([
@@ -1537,6 +1545,8 @@ test('admin mark as paid credits only deposit lines on a mixed invoice', functio
         }
     };
 
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->byDefault()->andReturn(0.0);
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService([
@@ -1598,6 +1608,8 @@ test('admin mark as paid threads the paid_at override into the payment transacti
     $em->shouldNotReceive('persist');
     $em->shouldNotReceive('flush');
 
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->byDefault()->andReturn(0.0);
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1656,6 +1668,9 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo = Mockery::mock(TransactionRepository::class));
+
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->byDefault()->andReturn(0.0);
     $transactionRepo->shouldReceive('find')->once()->with(20)->andReturn($transactionModel);
     $em->shouldNotReceive('flush');
 
@@ -1711,6 +1726,8 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
     $em->shouldNotReceive('persist');
     $em->shouldNotReceive('flush');
 
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->byDefault()->andReturn(0.0);
     $di = container();
     $di['em'] = $em;
 
@@ -10211,6 +10228,7 @@ test('tryPayWithCredits leaves reserved credit for other invoices alone', functi
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.00);
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
     $service->shouldReceive('getReservedCredit')->once()->with(20, 10)->andReturn(60.00);
     $service->shouldNotReceive('markAsPaid');
 
@@ -10234,7 +10252,7 @@ test('admin mark as paid with custom gateway records only the balance due', func
         ->with(Mockery::type(Invoice::class), false, false, true, null, Mockery::any())
         ->andReturn(true);
     $serviceMock->shouldReceive('getTotalWithTax')
-        ->once()
+        ->twice()
         ->with(Mockery::type(Invoice::class))
         ->andReturn(42.50);
     $serviceMock->shouldReceive('isInvoiceTypeDeposit')
@@ -10274,10 +10292,18 @@ test('admin mark as paid with custom gateway records only the balance due', func
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo = Mockery::mock(TransactionRepository::class));
+
+    $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo = Mockery::mock(InvoiceCreditRepository::class));
+    $creditRepo->shouldReceive('getSumByInvoiceId')->once()->with(10)->andReturn(12.50);
+    $em->shouldReceive('getReference')->with(Client::class, 0)->andReturn(createEntity(Client::class, ['id' => 3]));
+    $em->shouldReceive('persist')->once()->with(Mockery::on(fn (ClientBalance $balance): bool => $balance->getAmount() === '-12.5'
+        && $balance->getType() === 'invoice'
+        && $balance->getRelId() === '10'
+        && $balance->getClient()?->getId() === 3));
     $transactionRepo->shouldReceive('find')->once()->with(20)->andReturn($transactionModel);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class));
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->once()->with(10)->andReturn([$invoiceItemModel = createEntity(InvoiceItem::class)]);
-    $em->shouldReceive('flush')->once();
+    $em->shouldReceive('flush')->twice();
 
     $eventDispatcher = new class {
         public array $events = [];
@@ -10505,3 +10531,31 @@ test('resolveRenewalLine bills a free domain renewal at zero while its hosting l
     'billed' => [false, 24.0],
     'free' => [true, 0.0],
 ]);
+
+test('tryPayWithCredits refuses deposit invoices', function (): void {
+    $invoice = createEntity(Invoice::class);
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->issued = 1;
+    $invoice->status = Invoice::STATUS_UNPAID;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldNotReceive('getClientBalanceForUpdate');
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(true);
+    $service->shouldNotReceive('getTotalWithTax');
+    $service->shouldNotReceive('markAsPaid');
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('refresh')->byDefault();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): object => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeFalse();
+});
