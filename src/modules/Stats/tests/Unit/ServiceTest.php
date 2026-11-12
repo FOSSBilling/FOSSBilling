@@ -285,7 +285,7 @@ test('gets income and refund stats', function (): void {
 });
 
 test('income and refund stats count unresolved refund tax separately from zero tax', function (): void {
-    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL)');
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'refunded', 100.0, 100.0, 20.0, 120.0)");
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'paid', 50.0, 0.0, 0.0, 0.0)");
