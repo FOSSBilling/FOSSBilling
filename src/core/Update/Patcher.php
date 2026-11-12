@@ -1969,7 +1969,7 @@ class Patcher implements InjectionAwareInterface
         if ($row['base_refund'] === null || $defaultCode === null) {
             return false;
         }
-        if ((string) ($row['currency'] ?? '') !== (string) $defaultCode) {
+        if ((string) ($row['currency'] ?? '') !== $defaultCode) {
             return false;
         }
         if (!is_numeric($row['currency_rate'] ?? null) || abs((float) $row['currency_rate'] - 1.0) >= 0.000001) {

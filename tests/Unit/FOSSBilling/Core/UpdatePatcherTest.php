@@ -4303,7 +4303,7 @@ test('refund backfill bounded runs resume from the stored scan position', functi
         ->and((float) $connection->fetchOne('SELECT base_refund_tax FROM invoice WHERE id = 40'))->toBe(20.0)
         ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'refund_basis_backfill_last_id'"))->toBe('40');
 
-    // The unbounded finalization run rescans from zero, converts the skipped row,
+    // The unbounded finalization run scans again from zero, converts the skipped row,
     // and clears the marker.
     $patcher->backfillRefundIncomeBasis();
 
