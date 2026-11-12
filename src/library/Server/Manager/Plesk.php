@@ -11,9 +11,10 @@ use Symfony\Component\HttpFoundation\Request;
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Server_Manager_Plesk extends Server_Manager
+class Server_Manager_Plesk extends Server_Manager implements Server_SsoClientIpInterface
 {
     private ?Client $_client = null;
+    private ?string $_clientIp = null;
 
     /**
      * Returns an array with a single key-value pair, where the key is 'label' and the value is 'Plesk'.
@@ -58,8 +59,21 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
+     * Sets the visitor IP address the SSO session should be bound to.
+     *
+     * @param string|null $value the visitor IP address
+     */
+    public function setSsoClientIp(?string $value): static
+    {
+        $this->_clientIp = $value;
+
+        return $this;
+    }
+
+    /**
      * Returns the login URL for a given account.
      * If an account is provided, a session is created for the account and the session ID is appended to the URL.
+     * The session is bound to the visitor IP set via setSsoClientIp() when available.
      *
      * @param Server_Account|null $account the account for which the login URL should be retrieved
      *
@@ -70,7 +84,7 @@ class Server_Manager_Plesk extends Server_Manager
         $protocol = $this->_config['secure'] ? 'https' : 'http';
         $url = $protocol . '://' . $this->_config['host'] . ':' . $this->_config['port'];
         if ($account) {
-            $clientIp = Request::createFromGlobals()->getClientIp() ?? '';
+            $clientIp = $this->_clientIp ?? Request::createFromGlobals()->getClientIp() ?? '';
             $sessionId = $this->_client->session()->create($account->getUsername(), $clientIp);
             $url .= '/enterprise/rsession_init.php?PHPSESSID=' . $sessionId;
         }

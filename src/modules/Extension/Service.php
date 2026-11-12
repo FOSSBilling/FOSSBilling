@@ -232,22 +232,14 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($result as $key => $value) {
-            $iconPath = 'assets/icons/cog.svg';
-            $icon_url = $value['icon_url'] ?? null;
-            if ($icon_url) {
-                $iconPath = SYSTEM_URL . $icon_url;
-            }
-            $result[$key]['icon_url'] = $iconPath;
-        }
-
-        foreach ($result as $key => $value) {
-            $icon_url = $value['icon_url'] ?? null;
-            if ($icon_url && isset($value['id'])) {
-                $iconFilename = pathinfo((string) $icon_url, PATHINFO_BASENAME);
-                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), $iconFilename);
-                if ($this->filesystem->exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . $iconFilename;
-                }
+            $iconUrl = $value['icon_url'] ?? null;
+            $result[$key]['icon_url'] = $iconUrl !== null ? SYSTEM_URL . $iconUrl : 'assets/icons/cog.svg';
+            if ($iconUrl !== null && isset($value['id'])) {
+                // getManifest() only sets icon_url when <Module>/<basename>
+                // exists as a real file, so the local asset key is safe to
+                // derive unconditionally; the templates ignore missing ones.
+                $iconFilename = pathinfo($iconUrl, PATHINFO_BASENAME);
+                $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . $iconFilename;
             }
         }
 

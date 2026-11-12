@@ -267,12 +267,20 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->warning('Failed to fetch conversion rate for {currency_code}: {exception}. Using default rate of 1.0.', ['currency_code' => $currencyCode, 'exception' => $e]);
                 $conversionRate = 1.0;
             }
+
+            try {
+                $conversionRate = $this->normalizeConversionRate($conversionRate);
+            } catch (InformationException) {
+                // A fetched rate that would round to zero is unusable, so fall back to 1.0 rather than persisting zero.
+                $this->di['logger']->warning('Fetched conversion rate for {currency_code} would round to zero. Using default rate of 1.0.', ['currency_code' => $currencyCode]);
+                $conversionRate = 1.0;
+            }
         } else {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
                 throw new \FOSSBilling\Core\Exception\BaseException('Currency conversion rate must be a positive number.');
             }
 
-            $conversionRate = (float) $conversionRate;
+            $conversionRate = $this->normalizeConversionRate($conversionRate);
         }
 
         $currency = new Currency($currencyCode);
@@ -360,7 +368,7 @@ class Service implements InjectionAwareInterface
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
                 throw new InformationException('Currency conversion rate is invalid.', null, 151);
             }
-            $model->setConversionRate($conversionRate);
+            $model->setConversionRate($this->normalizeConversionRate($conversionRate));
         }
 
         if ($updateFormatPattern) {
@@ -414,6 +422,19 @@ class Service implements InjectionAwareInterface
         $intl = $this->intlExtension ??= new IntlExtension();
 
         return $intl->formatNumber($amount, $attributes, 'decimal', 'default', $locale);
+    }
+
+    // Rejects positive rates that would persist as zero: the column is
+    // DECIMAL(13,6) and setters format with '%.6f' (e.g. 0.0000001 -> 0.0).
+    private function normalizeConversionRate(string|float $conversionRate): float
+    {
+        $rate = (float) $conversionRate;
+
+        if ((float) sprintf('%.6f', $rate) <= 0) {
+            throw new InformationException('Currency conversion rate is too small and would round to zero.', null, 151);
+        }
+
+        return $rate;
     }
 
     private function normalizeFormatPattern(mixed $formatPattern): ?string
@@ -533,6 +554,12 @@ class Service implements InjectionAwareInterface
                 continue;
             } else {
                 $rate = $this->getRate($defaultCurrency->getCode(), $currency->getCode());
+
+                if ((float) sprintf('%.6f', $rate) <= 0) {
+                    $this->di['logger']->warning('Skipped currency rate update for {currency_code}: fetched rate would round to zero.', ['currency_code' => $currency->getCode()]);
+
+                    continue;
+                }
             }
 
             $currency->setConversionRate($rate);

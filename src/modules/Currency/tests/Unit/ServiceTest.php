@@ -862,3 +862,120 @@ test('removeCurrency throws exception when currency not found by code', function
     expect(fn (): bool => $service->removeCurrency($code))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
+
+dataset('subPrecisionRates', fn (): array => [
+    [0.0000001],
+    ['0.0000001'],
+    ['1e-7'],
+    [0.0000005],
+]);
+
+test('createCurrency rejects rates that would round to zero', function (string|float $rate): void {
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
+    $emMock->shouldReceive('getRepository')
+        ->atLeast()->once()
+        ->andReturn($repositoryMock);
+    $emMock->shouldNotReceive('persist');
+    $emMock->shouldNotReceive('flush');
+
+    $di = new Pimple\Container();
+    $di['em'] = $emMock;
+
+    $service = new Box\Mod\Currency\Service();
+    $service->setDi($di);
+
+    expect(fn (): string => $service->createCurrency('EUR', $rate))
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'round to zero');
+})->with('subPrecisionRates');
+
+test('updateCurrency rejects rates that would round to zero without mutating the currency', function (string|float $rate): void {
+    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $model->shouldNotReceive('setConversionRate');
+
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+    $repositoryMock->shouldReceive('findOneByCode')
+        ->atLeast()->once()
+        ->with('EUR')
+        ->andReturn($model);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
+    $emMock->shouldReceive('getRepository')
+        ->atLeast()->once()
+        ->andReturn($repositoryMock);
+    $emMock->shouldNotReceive('persist');
+    $emMock->shouldNotReceive('flush');
+
+    $di = new Pimple\Container();
+    $di['em'] = $emMock;
+
+    $service = new Box\Mod\Currency\Service();
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateCurrency('EUR', $rate))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'round to zero');
+})->with('subPrecisionRates');
+
+test('createCurrency accepts the smallest storable rate', function (): void {
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
+    $emMock->shouldReceive('getRepository')
+        ->atLeast()->once()
+        ->andReturn($repositoryMock);
+    $emMock->shouldReceive('persist')
+        ->once()
+        ->with(Mockery::on(static fn (mixed $currency): bool => $currency instanceof Box\Mod\Currency\Entity\Currency && $currency->getConversionRate() === 1.0E-6));
+    $emMock->shouldReceive('flush')
+        ->once();
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['em'] = $emMock;
+
+    $service = new Box\Mod\Currency\Service();
+    $service->setDi($di);
+
+    expect($service->createCurrency('EUR', 0.000001))->toBe('EUR');
+});
+
+test('numeric string conversion rates are normalized to six decimals', function (): void {
+    $currency = (new Box\Mod\Currency\Entity\Currency('EUR'))->setConversionRate('0.92');
+
+    expect($currency->getConversionRateRaw())->toBe('0.920000')
+        ->and($currency->getConversionRate())->toBe(0.92);
+});
+
+test('updateCurrencyRates skips fetched rates that would round to zero', function (): void {
+    $defaultModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $defaultModel->shouldReceive('getCode')->byDefault()->andReturn('USD');
+    $defaultModel->shouldReceive('isDefault')->byDefault()->andReturn(true);
+    $defaultModel->shouldReceive('setConversionRate')->once()->with(1.0);
+
+    $tinyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $tinyModel->shouldReceive('getCode')->byDefault()->andReturn('EUR');
+    $tinyModel->shouldReceive('isDefault')->byDefault()->andReturn(false);
+    $tinyModel->shouldReceive('isRateManual')->byDefault()->andReturn(false);
+    $tinyModel->shouldNotReceive('setConversionRate');
+
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock->shouldReceive('findDefault')->once()->andReturn($defaultModel);
+    $repositoryMock->shouldReceive('findAll')->once()->andReturn([$defaultModel, $tinyModel]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
+    $emMock->shouldReceive('getRepository')->andReturn($repositoryMock);
+    $emMock->shouldReceive('flush')->once();
+
+    $service = Mockery::mock(Box\Mod\Currency\Service::class)
+        ->makePartial()
+        ->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('getRate')->once()->with('USD', 'EUR')->andReturn(1e-7);
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->updateCurrencyRates())->toBeTrue();
+});
