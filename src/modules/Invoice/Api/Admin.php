@@ -185,6 +185,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional string $note - note for refund
      * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      * @optional bool $gateway_refund - also return the money through the payment gateway when it supports refunds (default true). Pass false to record an offline-only refund.
+     * @optional bool $to_credit - add the refunded amount to the client's account credit instead of returning it
      *
      * @return int $id - newly generated refund document ID
      */
@@ -203,6 +204,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $options = [];
         if (array_key_exists('gateway_refund', $data)) {
             $options['gateway_refund'] = $gatewayRefund;
+        }
+        $toCredit = array_key_exists('to_credit', $data) && \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['to_credit'], false);
+        if ($toCredit) {
+            // Adding funds to the balance needs the same permission as crediting it directly.
+            $this->checkPermissions('client', 'manage_balance');
+            $options['to_credit'] = true;
+            // The credit is the refund destination instead of the gateway.
+            $options['gateway_refund'] = false;
         }
 
         // Refunding a deposit returns wallet credit as card money, so it

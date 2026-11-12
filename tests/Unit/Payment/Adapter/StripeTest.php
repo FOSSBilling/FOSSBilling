@@ -3282,3 +3282,115 @@ test('getAmountInCents keeps the full total for subscription pricing', function 
 
     expect($this->adapter->getAmountInCents($invoice))->toBe(10000);
 });
+
+describe('setup first charge recording', function (): void {
+    test('an unpaid first charge records nothing on the setup transaction', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 94, 'client_id' => 5, 'currency' => 'USD', 'issued' => true]);
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_unpaid_first',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_unpaid',
+            'customer' => 'cus_unpaid',
+            'metadata' => ['invoice_id' => '94', 'gateway_id' => '1', 'price_id' => 'price_unpaid'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_unpaid_first', [])->andReturn($setupIntent);
+
+        // The first charge is still open at Stripe: nothing has moved.
+        $latestInvoice = Stripe\Invoice::constructFrom(['id' => 'in_unpaid', 'status' => 'open', 'amount_paid' => 0, 'currency' => 'usd']);
+        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_unpaid', 'latest_invoice' => $latestInvoice]);
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 703;
+
+        ['em' => $em] = buildEntityManagerMocks();
+        $di = container();
+        $di['em'] = $em;
+        $this->adapter->setDi($di);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $invoice,
+            ['get' => ['setup_intent' => 'seti_unpaid_first']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Transaction::STATUS_PROCESSED)
+            ->and($tx->amount)->toBe('0');
+    });
+
+    test('a paid first charge records what Stripe collected', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 95, 'client_id' => 5, 'currency' => 'USD', 'issued' => true]);
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_paid_first',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_paid',
+            'customer' => 'cus_paid',
+            'metadata' => ['invoice_id' => '95', 'gateway_id' => '1', 'price_id' => 'price_paid'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_paid_first', [])->andReturn($setupIntent);
+
+        $latestInvoice = Stripe\Invoice::constructFrom(['id' => 'in_paid', 'status' => 'paid', 'amount_paid' => 1500, 'currency' => 'usd']);
+        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_paid', 'latest_invoice' => $latestInvoice]);
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 704;
+
+        ['em' => $em] = buildEntityManagerMocks();
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+        $invoiceService->shouldReceive('getTotalWithTax')->with($invoice)->andReturn(100.00);
+        $invoiceService->shouldReceive('issueInvoice')->never();
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
+
+        $subscriptionService = Mockery::mock();
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
+
+        $di = container();
+        $di['em'] = $em;
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $service === 'Subscription' ? $subscriptionService : $invoiceService);
+        $this->adapter->setDi($di);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
+        $apiAdmin->shouldReceive('client_balance_add_funds')
+            ->once()
+            ->with(Mockery::on(fn (array $bd): bool => (float) $bd['amount'] === 15.0));
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $invoice,
+            ['get' => ['setup_intent' => 'seti_paid_first']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Transaction::STATUS_PROCESSED)
+            ->and($tx->amount)->toBe('15');
+    });
+});

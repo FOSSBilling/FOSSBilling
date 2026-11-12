@@ -344,6 +344,14 @@
                                     </label>
                                     <small class="form-text">{{ 'Uncheck to record an offline-only refund and return the money manually.'|trans }}</small>
                                 </div>
+                                <div class="mt-3">
+                                    <input type="hidden" name="to_credit" value="0">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="to_credit" value="1">
+                                        <span class="form-check-label">{{ 'Add the amount to the client\'s credit instead'|trans }}</span>
+                                    </label>
+                                    <small class="form-text">{{ 'Checking this ignores the gateway refund above; the money stays as account credit instead of being returned.'|trans }}</small>
+                                </div>
                             </div>
                             <div class="modal-footer">
                                 <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
@@ -386,6 +394,14 @@
                                         <span class="form-check-label">{{ 'Also refund in the payment gateway when supported'|trans }}</span>
                                     </label>
                                     <small class="form-text">{{ 'Uncheck to record an offline-only refund and return the money manually.'|trans }}</small>
+                                </div>
+                                <div class="mt-3">
+                                    <input type="hidden" name="to_credit" value="0">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="to_credit" value="1">
+                                        <span class="form-check-label">{{ 'Add the amount to the client\'s credit instead'|trans }}</span>
+                                    </label>
+                                    <small class="form-text">{{ 'Checking this ignores the gateway refund above; the money stays as account credit instead of being returned.'|trans }}</small>
                                 </div>
                             </div>
                             <div class="modal-footer">

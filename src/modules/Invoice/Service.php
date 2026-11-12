@@ -700,7 +700,7 @@ class Service implements InjectionAwareInterface
     /**
      * Notify the client that their paid invoice was refunded as a credit note.
      */
-    private function sendRefundEmail(Invoice $original, Invoice $creditNote): void
+    private function sendRefundEmail(Invoice $original, Invoice $creditNote, bool $toCredit = false): void
     {
         $creditNoteData = $this->toApiArray($creditNote);
         if (($creditNoteData['total'] ?? 0) >= 0 || $original->getClientId() === null) {
@@ -712,7 +712,7 @@ class Service implements InjectionAwareInterface
             $creditNoteData,
             'mod_invoice_refunded',
             null,
-            ['original_invoice' => $this->toApiArray($original)]
+            ['original_invoice' => $this->toApiArray($original), 'to_credit' => $toCredit]
         );
         $this->extendInvoiceHashLifetime($creditNote);
     }
@@ -2010,10 +2010,15 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Only paid invoices can be refunded');
         }
 
+        $toCredit = !empty($options['to_credit']);
+        if ($toCredit && ((bool) ($options['gateway_refund'] ?? true) || !empty($options['gateway_returned']))) {
+            throw new InformationException('Return the money through the payment gateway or add it as account credit, not both.');
+        }
+
         $new = $this->withInvoiceRefundLock($invoice, fn (): Invoice => $this->createRefundDocument($invoice, $note, $items, $options));
 
         try {
-            $this->sendRefundEmail($invoice, $new);
+            $this->sendRefundEmail($invoice, $new, !empty($options['to_credit']));
         } catch (\Throwable $exception) {
             $this->di['logger']->withChannel('email')->error('Failed to send refund email', [
                 'invoice_id' => $invoice->getId(),
@@ -2087,6 +2092,11 @@ class Service implements InjectionAwareInterface
         // no card money moves, so there is no credit to reverse.
         $reverseDeposit = ($gatewayPlan !== [] || $gatewayReturned) && $this->isInvoiceTypeDeposit($invoice);
 
+        $toCredit = !empty($options['to_credit']);
+        if ($toCredit && $this->isInvoiceTypeDeposit($invoice)) {
+            throw new InformationException('A deposit refund returns wallet credit as card money; it cannot go to account credit.');
+        }
+
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
 
@@ -2097,7 +2107,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -2197,6 +2207,10 @@ class Service implements InjectionAwareInterface
                     $this->reverseDepositCredit($invoice, $creditAmount);
                 }
 
+                if ($toCredit) {
+                    $this->addRefundToCredit($invoice, $new, $creditAmount);
+                }
+
                 // The deposit credit above is locked and debited before the
                 // gateway moves money: a concurrent spend either committed
                 // first (and this locked recheck already threw) or waits on
@@ -2232,13 +2246,17 @@ class Service implements InjectionAwareInterface
                     $this->addNote($new, "Gateway refund {$gatewayRefundId} issued via {$gatewayLabel} for {$creditAmount} {$invoice->getCurrency()}.");
                     $this->addNote($invoice, "Gateway refund {$gatewayRefundId} issued via {$gatewayLabel}.");
                     $this->recordGatewayRefundTransaction($invoice, $gatewayRefundId, $creditAmount);
+                } elseif ($toCredit) {
+                    $this->addNote($new, "Refund of {$creditAmount} {$invoice->getCurrency()} added to account credit.");
+                    $this->addNote($invoice, "Refund of {$creditAmount} {$invoice->getCurrency()} added to account credit, credit note #{$new->getId()}.");
                 } elseif ($offline) {
                     $this->addNote($new, 'Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
                 }
 
                 // Commits atomically with the credit note above.
                 $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
-                    'offline' => $offline && $gatewayRefundId === null ? true : null,
+                    'offline' => $offline && $gatewayRefundId === null && !$toCredit ? true : null,
+                    'to_credit' => $toCredit ? true : null,
                     'gateway_refund_id' => $gatewayRefundId,
                     'credit_note_id' => (int) $new->getId(),
                 ]));
@@ -2514,6 +2532,25 @@ class Service implements InjectionAwareInterface
         $debit->setDescription('Reversal of deposit credit for refunded invoice #' . ($invoice->getNr() ?: $invoice->getId()) . '.');
         $debit->setAmount((string) (-$amount));
         $this->di['em']->persist($debit);
+        $this->di['em']->flush();
+    }
+
+    /**
+     * Adds a refund to the client's account credit instead of returning it.
+     * Runs inside the credit-note transaction so the credit never exists
+     * without its paper trail.
+     */
+    private function addRefundToCredit(Invoice $invoice, Invoice $creditNote, float $amount): void
+    {
+        $clientId = (int) $invoice->getClientId();
+
+        $credit = new ClientBalance();
+        $credit->setClient($this->di['em']->getReference(Client::class, $clientId));
+        $credit->setType('invoice');
+        $credit->setRelId((string) $creditNote->getId());
+        $credit->setDescription('Refund of invoice ' . $invoice->getSerie() . $invoice->getNr() . ' to account credit');
+        $credit->setAmount((string) $amount);
+        $this->di['em']->persist($credit);
         $this->di['em']->flush();
     }
 

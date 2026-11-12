@@ -2057,3 +2057,30 @@ test('gets an invoice with the client free credit', function (): void {
     $result = $api->get(['id' => 1]);
     expect($result['client_credit'])->toBe(42.50);
 });
+
+test('refunds an invoice to account credit instead of the gateway', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'to_credit' => true,
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('refundInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), null, null, ['to_credit' => true, 'gateway_refund' => false])
+        ->andReturn(3);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->once()
+        ->andReturn(false);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->refund($data))->toBeInt()->toBe(3);
+});

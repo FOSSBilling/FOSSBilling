@@ -779,7 +779,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
             $tx->setSId($subscription->id);
             $tx->setSPeriod($this->getSubscriptionPeriodForInvoice($invoice));
-            $tx->setAmount((string) $this->getAmountFromMinorUnits($this->getAmountInCents($invoice), $invoice->getCurrency()));
             $tx->setCurrency($invoice->getCurrency());
             $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
             $tx->setStatus(Transaction::STATUS_PROCESSED);
@@ -793,7 +792,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             // sees a paid invoice on redirect. Stripe charges the first invoice
             // synchronously during subscription creation when using
             // charge_automatically with a default_payment_method.
-            $this->processInitialSubscriptionPayment($api_admin, $tx, $invoice, $subscription);
+            $firstCharge = $this->processInitialSubscriptionPayment($api_admin, $tx, $invoice, $subscription);
+            $tx->setAmount((string) $firstCharge);
         } else {
             $tx->setStatus(Transaction::STATUS_ERROR);
         }
@@ -828,18 +828,25 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      * retrieves that invoice and applies the payment to FOSSBilling right
      * away, rather than waiting for the invoice.paid webhook to arrive.
      */
-    private function processInitialSubscriptionPayment($api_admin, Transaction $tx, Invoice $invoice, Stripe\Subscription $subscription): void
+    /**
+     * Records the subscription's first charge, returning what Stripe actually
+     * collected. An unpaid first charge records nothing: the invoice counts
+     * processed transactions as payments, so a full-total placeholder here
+     * would show money that never moved.
+     */
+    private function processInitialSubscriptionPayment($api_admin, Transaction $tx, Invoice $invoice, Stripe\Subscription $subscription): float
     {
         // Already-paid guard — reload from DB to narrow the TOCTOU window when
         // the redirect flow and webhook handler race on the same subscription.
+        // The winning flow recorded the charge on its own transaction.
         $fresh = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
         if ($fresh instanceof Invoice && $fresh->getStatus() === Invoice::STATUS_PAID) {
-            return;
+            return 0.0;
         }
 
         $latestInvoiceId = $subscription->latest_invoice ?? null;
         if (empty($latestInvoiceId)) {
-            return;
+            return 0.0;
         }
 
         $latestInvoice = is_string($latestInvoiceId)
@@ -847,15 +854,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             : $latestInvoiceId;
 
         if (($latestInvoice->status ?? '') !== 'paid') {
-            return;
+            return 0.0;
         }
 
+        $firstCharge = $this->getAmountFromMinorUnits(
+            (int) ($latestInvoice->amount_paid ?? 0),
+            (string) ($latestInvoice->currency ?? '')
+        );
         $bd = [
             'id' => $invoice->getClientId(),
-            'amount' => $this->getAmountFromMinorUnits(
-                (int) ($latestInvoice->amount_paid ?? 0),
-                (string) ($latestInvoice->currency ?? '')
-            ),
+            'amount' => $firstCharge,
             'description' => 'Stripe subscription initial payment ' . $latestInvoice->id,
             'type' => 'transaction',
             'rel_id' => $tx->getId(),
@@ -870,6 +878,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             }
             $invoiceService->payInvoiceWithCredits($invoice);
         }
+
+        return $firstCharge;
     }
 
     public function authenticateJsonWebhook(array $data): void
@@ -1434,7 +1444,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         $tx->setSId($subscription->id);
         $tx->setSPeriod($this->getSubscriptionPeriodForInvoice($invoice));
-        $tx->setAmount((string) $this->getAmountFromMinorUnits($this->getAmountInCents($invoice), $invoice->getCurrency()));
         $tx->setCurrency($invoice->getCurrency());
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
         $tx->setUpdatedAt(new DateTime());
@@ -1445,7 +1454,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         // Process the initial payment immediately so the invoice is paid
         // even if the redirect flow hasn't completed yet.
-        $this->processInitialSubscriptionPayment($api_admin, $tx, $invoice, $subscription);
+        $firstCharge = $this->processInitialSubscriptionPayment($api_admin, $tx, $invoice, $subscription);
+        $tx->setAmount((string) $firstCharge);
 
         return true;
     }
