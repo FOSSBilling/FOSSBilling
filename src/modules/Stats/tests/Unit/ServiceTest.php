@@ -298,13 +298,35 @@ test('income and refund stats count unresolved refund tax separately from zero t
     $service->setDi($di);
 
     $result = $service->incomeAndRefundStats([]);
-    // Unresolved tax contributes 0 to the sums but is counted, so consumers can
-    // tell unknown tax apart from zero tax instead of overstating gross cash.
-    expect((float) $result['refund'])->toBe(220.0)
+    // Unresolved rows stay out of the net/gross sums: only the classified refund
+    // contributes, while the count flags the pending legacy row.
+    expect((float) $result['refund'])->toBe(100.0)
         ->and((float) $result['income'])->toBe(250.0)
         ->and((float) $result['refund_tax'])->toBe(20.0)
-        ->and((float) $result['refund_gross'])->toBe(240.0)
+        ->and((float) $result['refund_gross'])->toBe(120.0)
         ->and((int) $result['refund_tax_unresolved'])->toBe(1);
+});
+
+test('income and refund stats return zeros, not nulls, with no matching invoices', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL)');
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    $result = $service->incomeAndRefundStats([]);
+    expect($result['refund'])->not->toBeNull()
+        ->and($result['income'])->not->toBeNull()
+        ->and($result['refund_tax'])->not->toBeNull()
+        ->and($result['refund_gross'])->not->toBeNull()
+        ->and($result['refund_tax_unresolved'])->not->toBeNull()
+        ->and((float) $result['refund'])->toBe(0.0)
+        ->and((float) $result['income'])->toBe(0.0)
+        ->and((float) $result['refund_tax'])->toBe(0.0)
+        ->and((float) $result['refund_gross'])->toBe(0.0)
+        ->and((int) $result['refund_tax_unresolved'])->toBe(0);
 });
 
 test('income and refund stats return zeros, not nulls, with no matching invoices', function (): void {
