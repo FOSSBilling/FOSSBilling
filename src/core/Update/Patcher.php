@@ -1836,11 +1836,12 @@ class Patcher implements InjectionAwareInterface
     /**
      * Backfill pre-#4661 tax-inclusive `base_refund` rows to the net basis, preserving the tax
      * portion in `base_refund_tax`. Only `base_refund_tax IS NULL` rows are touched, so reruns
-     * never double-apply. Classification uses the default currency's identity conversion, which
-     * is exact at any point in time; foreign-currency rows are left for a later run since
-     * current rates cannot reliably distinguish a gross basis at an old rate from a net basis
-     * at today's rate. Also runs bounded from ensureSchemaInSync() and the admin cron so a
-     * column added by drift healing still converges.
+     * never double-apply. A row is only rewritten when its refund-time base currency is
+     * established: its currency must be the current default (whose conversions are the 1:1
+     * identity, exact at any point in time) and its payment-time `currency_rate` snapshot must
+     * be 1.0, pinning the same base across the payment-to-refund window. Anything else is left
+     * for a later run or manual fix. Bounded runs resume from a stored scan position so they
+     * converge across requests; unbounded runs rescan from zero and clear it.
      */
     public function backfillRefundIncomeBasis(int $maxPages = 0): void
     {
@@ -1870,13 +1871,21 @@ class Patcher implements InjectionAwareInterface
             $defaultCode = null;
         }
 
-        $updated = 0;
+        $marker = 'refund_basis_backfill_last_id';
         $lastId = 0;
+        if ($maxPages !== 0) {
+            $stored = $this->refundBackfillPosition($dbal, $marker);
+            if ($stored !== null) {
+                $lastId = $stored;
+            }
+        }
+
+        $updated = 0;
         $pages = 0;
 
         do {
             $rows = $dbal->fetchAllAssociative(
-                'SELECT id, refund, base_refund, currency FROM invoice WHERE id > :last AND refund IS NOT NULL AND base_refund_tax IS NULL ORDER BY id LIMIT 200',
+                'SELECT id, refund, base_refund, currency, currency_rate FROM invoice WHERE id > :last AND refund IS NOT NULL AND base_refund_tax IS NULL ORDER BY id LIMIT 200',
                 ['last' => $lastId]
             );
             if ($rows === []) {
@@ -1905,8 +1914,8 @@ class Patcher implements InjectionAwareInterface
                     continue;
                 }
 
-                if ($row['base_refund'] === null || $defaultCode === null || (string) ($row['currency'] ?? '') !== (string) $defaultCode) {
-                    $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: cannot reliably classify gross vs net basis', $lastId));
+                if (!$this->isEstablishedDefaultBasis($row, $defaultCode)) {
+                    $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: cannot establish its refund-time base currency', $lastId));
 
                     continue;
                 }
@@ -1929,10 +1938,96 @@ class Patcher implements InjectionAwareInterface
                     $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: stored base matches neither gross nor net basis', $lastId));
                 }
             }
+
+            if ($maxPages !== 0) {
+                $this->storeRefundBackfillPosition($dbal, $marker, $lastId);
+            }
         } while ($maxPages === 0 || $pages < $maxPages);
+
+        if ($maxPages === 0 || $rows === []) {
+            // Unbounded runs always scan to exhaustion; bounded runs clear the marker
+            // once they reach the end so later refunds start fresh from zero.
+            $this->clearRefundBackfillPosition($dbal, $marker);
+        }
 
         if ($updated > 0) {
             $this->logUpdate('info', sprintf('Backfilled refund income basis for %d invoice(s)', $updated));
+        }
+    }
+
+    /**
+     * Whether the row's refund-time base currency is established well enough to rewrite it:
+     * its currency is the current default (1:1 identity conversion, exact at any point in
+     * time) and its payment-time `currency_rate` snapshot is 1.0, pinning the same base
+     * across the payment-to-refund window. The default currency's own rate is pinned at 1.0
+     * by the rate updater, so a mismatch means the base moved and the row stays unresolved.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function isEstablishedDefaultBasis(array $row, ?string $defaultCode): bool
+    {
+        if ($row['base_refund'] === null || $defaultCode === null) {
+            return false;
+        }
+        if ((string) ($row['currency'] ?? '') !== (string) $defaultCode) {
+            return false;
+        }
+        if (!is_numeric($row['currency_rate'] ?? null) || abs((float) $row['currency_rate'] - 1.0) >= 0.000001) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Resumable scan position for bounded backfill runs, so pages of unresolvable rows
+     * cannot stall convergence: each bounded run continues where the previous stopped.
+     * Best-effort only - correctness never depends on it thanks to the IS NULL guard -
+     * so storage failures are swallowed after logging.
+     */
+    private function refundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): ?int
+    {
+        try {
+            $stored = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', sprintf('Refund basis backfill position unreadable: %s', $e->getMessage()));
+
+            return null;
+        }
+
+        return is_numeric($stored) ? (int) $stored : null;
+    }
+
+    private function storeRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker, int $lastId): void
+    {
+        try {
+            $exists = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
+            if ($exists === false) {
+                $now = date('Y-m-d H:i:s');
+                $dbal->insert('setting', [
+                    'param' => $marker,
+                    'value' => (string) $lastId,
+                    'public' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                $dbal->executeStatement(
+                    'UPDATE setting SET value = :value, updated_at = :updated WHERE param = :param',
+                    ['value' => (string) $lastId, 'updated' => date('Y-m-d H:i:s'), 'param' => $marker]
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', sprintf('Refund basis backfill position not stored: %s', $e->getMessage()));
+        }
+    }
+
+    private function clearRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): void
+    {
+        try {
+            $dbal->executeStatement('DELETE FROM setting WHERE param = :param', ['param' => $marker]);
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', sprintf('Refund basis backfill position not cleared: %s', $e->getMessage()));
         }
     }
 
