@@ -910,20 +910,19 @@ class Service implements InjectionAwareInterface
         // Bounded to one page per run: invoices that never got any journal row (a lost
         // write, or a table created after its invoices by drift healing) converge over
         // runs instead of stalling this one. Failures stay local to the cron log.
+        // Legacy tax-inclusive refunds converge the same way, independently of the
+        // schema-hash gate: a finalization whose sync failed leaves these rows for
+        // drift healing, which only runs one bounded page per request.
+        $patcher = new \FOSSBilling\Core\Update\Patcher();
+        $patcher->setDi($di);
+
         try {
-            $patcher = new \FOSSBilling\Core\Update\Patcher();
-            $patcher->setDi($di);
             $patcher->healInvoiceJournal();
         } catch (\Throwable $e) {
             $di['logger']->warning('Invoice journal healing failed: {message}', ['message' => $e->getMessage()]);
         }
 
-        // Legacy tax-inclusive refunds converge the same way, independently of the
-        // schema-hash gate: a finalization whose sync failed leaves these rows for
-        // drift healing, which only runs one bounded page per request.
         try {
-            $patcher = new \FOSSBilling\Core\Update\Patcher();
-            $patcher->setDi($di);
             $patcher->backfillRefundIncomeBasis(1);
         } catch (\Throwable $e) {
             $di['logger']->warning('Refund income basis healing failed: {message}', ['message' => $e->getMessage()]);
