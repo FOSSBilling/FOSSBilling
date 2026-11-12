@@ -201,6 +201,16 @@
                             <td><strong>{{ 'Total'|trans }}</strong></td>
                             <td><strong>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</strong></td>
                         </tr>
+                        {% if invoice.status == 'unpaid' and invoice.amount_paid|default(0) > 0 %}
+                            <tr class="text-end">
+                                <td>{{ 'Amount paid'|trans }}</td>
+                                <td>−{{ invoice.amount_paid|format_currency(invoice.currency ?? default_currency) }}</td>
+                            </tr>
+                            <tr class="text-end">
+                                <td><strong>{{ 'Balance due'|trans }}</strong></td>
+                                <td><strong>{{ invoice.balance_due|format_currency(invoice.currency ?? default_currency) }}</strong></td>
+                            </tr>
+                        {% endif %}
                     </table>
                 </div>
             </div>

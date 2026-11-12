@@ -383,7 +383,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
@@ -447,7 +447,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('I-ABC123', 9)->andReturn($renewal);
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
 
@@ -679,7 +679,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
 
@@ -734,7 +734,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
@@ -1212,7 +1212,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $stored->shouldReceive('getRelId')->byDefault()->andReturn(16);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
@@ -1494,7 +1494,7 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
 
@@ -1583,7 +1583,7 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
 
@@ -1743,7 +1743,7 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
 
@@ -1858,4 +1858,38 @@ describe('processTransaction payload handling', function (): void {
                 ->and($e->getCode())->toBe(7021);
         }
     });
+});
+
+test('one-time payment form asks the balance due of a part-paid invoice', function (): void {
+    $di = container();
+    $di['em'] = paypalEmMocks();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $adapter = new Payment_Adapter_PayPalEmail([
+        'email' => 'merchant@example.com',
+        'test_mode' => false,
+        'gateway_id' => 2,
+        'thankyou_url' => 'https://example.com/thank-you',
+        'cancel_url' => 'https://example.com/cancel',
+        'notify_url' => 'https://example.com/ipn.php?gateway_id=2&invoice_id=16',
+    ]);
+    $adapter->setDi($di);
+
+    $invoice = [
+        'id' => 16,
+        'nr' => '00042',
+        'serie' => 'FB',
+        'currency' => 'USD',
+        'subtotal' => '100.00',
+        'tax' => '20.00',
+        'status' => 'unpaid',
+        'amount_paid' => 70.00,
+        'balance_due' => 50.00,
+        'lines' => [['title' => 'Test product']],
+    ];
+
+    $fields = $adapter->getOneTimePaymentFields($invoice);
+
+    expect($fields['amount'])->toBe('50.00')
+        ->and($fields['tax'])->toBe('0.00');
 });

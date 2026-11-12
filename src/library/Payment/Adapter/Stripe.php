@@ -435,18 +435,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         return null;
     }
 
+    // The subscription price: the full invoice total.
     public function getAmountInCents(Invoice $invoice): int
     {
-        return $this->getAmountInMinorUnits($invoice);
+        return (int) round($this->di['mod_service']('Invoice')->getTotalWithTax($invoice) * 10 ** $this->getCurrencyFractionDigits((string) $invoice->getCurrency()));
     }
 
+    // A one-time payment charges the balance due: received payments and
+    // applied credit are already on the invoice.
     public function getAmountInMinorUnits(Invoice $invoice): int
     {
-        $invoiceService = $this->di['mod_service']('Invoice');
-        $amount = $invoiceService->getTotalWithTax($invoice);
-        $multiplier = 10 ** $this->getCurrencyFractionDigits($invoice->getCurrency());
-
-        return (int) round($amount * $multiplier);
+        return (int) round($this->di['mod_service']('Invoice')->getBalanceDue($invoice) * 10 ** $this->getCurrencyFractionDigits((string) $invoice->getCurrency()));
     }
 
     private function getAmountFromMinorUnits(int $amount, string $currency): float
@@ -687,7 +686,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                     ?? throw new FOSSBilling\Core\Exception\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
 
             if ($invoice) {
-                $expected = $invoiceService->getTotalWithTax($invoice);
+                $expected = $invoiceService->getBalanceDue($invoice);
 
                 try {
                     $invoiceService->validatePaymentAmount((float) $tx->getAmount(), $expected);
@@ -1734,7 +1733,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 ?? throw new FOSSBilling\Core\Exception\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
 
         if ($invoice) {
-            $expected = $invoiceService->getTotalWithTax($invoice);
+            $expected = $invoiceService->getBalanceDue($invoice);
 
             try {
                 $invoiceService->validatePaymentAmount((float) $tx->getAmount(), $expected);

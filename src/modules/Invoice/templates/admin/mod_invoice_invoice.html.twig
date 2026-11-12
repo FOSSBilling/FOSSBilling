@@ -120,6 +120,22 @@
                                     <td>{{ invoice.refunded_total|format_currency(invoice.currency ?? default_currency) }}</td>
                                 </tr>
                                 {% endif %}
+                                {% if invoice.status == 'unpaid' and invoice.amount_paid > 0 %}
+                                <tr>
+                                    <td class="text-end">{{ 'Amount paid'|trans }}:</td>
+                                    <td>
+                                        {{ invoice.amount_paid|format_currency(invoice.currency ?? default_currency) }}
+                                        {% if invoice.credit_applied > 0 %}
+                                            ({{ 'credit :amount'|trans({ ':amount': invoice.credit_applied|format_currency(invoice.currency ?? default_currency) }) }},
+                                            <a href="#" {{ fb_api_link({href: 'invoice/remove_credit'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Remove the credit applied to this invoice?'|trans}, reload: true}) }}>{{ 'Remove credit'|trans }}</a>)
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Balance due'|trans }}:</td>
+                                    <td><strong>{{ invoice.balance_due|format_currency(invoice.currency ?? default_currency) }}</strong></td>
+                                </tr>
+                                {% endif %}
                                 <tr>
                                     <td class="text-end">{{ 'Currency'|trans }}:</td>
                                     <td>{{ invoice.currency|currency_name }}</td>
@@ -204,6 +220,35 @@
                             </svg>
                             <span>{{ 'Send Reminder'|trans }}</span>
                         </a>
+                        {% set client_credit = invoice.client_credit|default(0) %}
+                        {% if client_credit > 0 and invoice.balance_due > 0 and 'deposit' not in invoice.lines|map(l => l.type) %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#creditModal">
+                            <svg class="icon" width="24" height="24">
+                                <use href="#currency-dollar" />
+                            </svg>
+                            <span>{{ 'Apply Credit'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="creditModal" tabindex="-1" aria-labelledby="creditModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/apply_credit'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="creditModalLabel">{{ 'Apply Credit'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <label class="form-label" for="credit-amount">{{ 'Amount'|trans }}</label>
+                                <input class="form-control" type="number" name="amount" id="credit-amount" min="0.01" step="0.01" max="{{ min(client_credit, invoice.balance_due) }}" value="{{ min(client_credit, invoice.balance_due) }}" required>
+                                <p class="text-secondary mb-0 mt-2">{{ 'The client has :amount of credit.'|trans({ ':amount': client_credit|format_currency(invoice.currency ?? default_currency) }) }}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Apply Credit'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
+                        {% endif %}
                         <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
                             <svg class="icon" width="24" height="24">
                                 <use href="#check" />

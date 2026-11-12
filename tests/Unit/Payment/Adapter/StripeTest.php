@@ -1265,7 +1265,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->andReturn(29.99);
+        $invoiceService->shouldReceive('getBalanceDue')->andReturn(29.99);
         $invoiceService->shouldReceive('validatePaymentAmount')
             ->once()
             ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
@@ -1333,7 +1333,7 @@ describe('processPaymentIntent', function (): void {
         ];
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(29.99);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->with($invoice)->andReturn(29.99);
         $invoiceService->shouldReceive('validatePaymentAmount')
             ->once()
             ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
@@ -2469,7 +2469,7 @@ describe('Stripe webhook gateway ownership', function (): void {
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([['title' => 'Hosting']]);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(15.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(15.00);
 
         $di = container();
         $di['em']->shouldReceive('getConnection')->andReturn($connection);
@@ -2664,17 +2664,17 @@ describe('processTransaction payload handling', function (): void {
     });
 });
 
-describe('getAmountInMinorUnits follows Stripe currency rules', function (): void {
+describe('getAmountInMinorUnits charges the balance due in Stripe currency rules', function (): void {
     // Stripe lists "BIF CLP DJF GNF JPY KMF KRW MGA PYG RWF UGX VND VUV XAF XOF XPF" as zero-decimal, but its
     // special-cases row requires UGX charges ×100, like ISK (https://docs.stripe.com/currencies). Symfony Intl
     // reports COP, HUF, IDR, ISK, PKR, UGX and others with no decimals, but Stripe expects them ×100.
-    test('sends the invoice total in the unit Stripe expects', function (string $currency, int $expected): void {
+    test('sends the invoice balance due in the unit Stripe expects', function (string $currency, int $expected): void {
         $invoice = createEntity(Invoice::class);
         $invoice->id = 5;
         $invoice->currency = $currency;
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->with($invoice)->andReturn(1000.0);
+        $invoiceService->shouldReceive('getBalanceDue')->with($invoice)->andReturn(1000.0);
         $di = container();
         $di['mod_service'] = $di->protect(fn ($module) => $invoiceService);
         $this->adapter->setDi($di);
@@ -3266,4 +3266,19 @@ describe('handleRefundCreatedWebhook invoice payment fallback', function (): voi
 
         expect(invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]))->toBeFalse();
     });
+});
+
+test('getAmountInCents keeps the full total for subscription pricing', function (): void {
+    $invoice = createEntity(Invoice::class);
+    $invoice->id = 5;
+    $invoice->currency = 'USD';
+
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(100.00);
+    $invoiceService->shouldNotReceive('getBalanceDue');
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($module) => $invoiceService);
+    $this->adapter->setDi($di);
+
+    expect($this->adapter->getAmountInCents($invoice))->toBe(10000);
 });
