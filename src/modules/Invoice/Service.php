@@ -485,6 +485,13 @@ class Service implements InjectionAwareInterface
             );
         }
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
+        // A refund whose tax was never classified leaves the net basis unknown: report
+        // null rather than netting an income from a gross base_refund. No in-repo
+        // consumer reads this key (dashboards use the Stats endpoints), so no
+        // separate gross-subtraction field is needed.
+        if (($row['refund'] ?? null) !== null && ($row['base_refund_tax'] ?? null) === null) {
+            $result['income'] = null;
+        }
         $result['refund'] = $row['refund'] ?? 0;
         // Tax portion of the refund, in base currency like `income` (unlike
         // invoice-currency `refund`/`refunded_total`): do not subtract it from
