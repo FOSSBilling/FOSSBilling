@@ -4168,7 +4168,6 @@ class Service implements InjectionAwareInterface
                 $renewalLine = $productService->getProductRenewalLineConfig($product, $config);
                 $price = $renewalLine['price'] * $rate;
                 if ($productService->hasFreeDomainRenewal((int) $order->getId())) {
-                    // A free domain renews free while its hosting lasts.
                     $price = 0.0;
                 }
                 $line = [
