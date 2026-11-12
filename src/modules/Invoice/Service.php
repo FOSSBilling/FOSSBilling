@@ -1403,9 +1403,13 @@ class Service implements InjectionAwareInterface
         if ($invoice->getRefund() !== null) {
             // base_income excludes tax, so the refund it is netted against must exclude it too.
             // base_refund_tax preserves the cash tax portion so gross cash remains derivable.
+            // Round the converted legs first so the stored pair always sums to the converted gross.
             [$netRefund, $taxPortion] = $this->getRefundBreakdown($invoice);
-            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), $netRefund));
-            $invoice->setBaseRefundTax($table->toBaseCurrency($invoice->getCurrency(), $taxPortion));
+            $currencyCode = $invoice->getCurrency();
+            $netBase = round($table->toBaseCurrency($currencyCode, $netRefund), 2);
+            $grossBase = round($table->toBaseCurrency($currencyCode, $netRefund + $taxPortion), 2);
+            $invoice->setBaseRefund($netBase);
+            $invoice->setBaseRefundTax(round($grossBase - $netBase, 2));
         } else {
             $invoice->setBaseRefund(null);
             $invoice->setBaseRefundTax(null);
@@ -1425,8 +1429,8 @@ class Service implements InjectionAwareInterface
             : (float) $invoice->getBaseRefundTax() !== (float) $oldRefundTax;
         if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged || $refundTaxChanged)) {
             $this->di['logger']->info(
-                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income})',
-                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome()]
+                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income}, refund tax {old_tax} -> {new_tax})',
+                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome(), 'old_tax' => $oldRefundTax, 'new_tax' => $invoice->getBaseRefundTax()]
             );
         }
 

@@ -1202,6 +1202,15 @@ class Patcher implements InjectionAwareInterface
                 $this->logUpdate('error', 'Invoice journal healing failed: ' . $e->getMessage());
             }
 
+            // Same bounded healing for legacy tax-inclusive refunds: a finalization that
+            // ran before base_refund_tax existed leaves those rows for the drift sync
+            // above to add the column for - converge them a page at a time here.
+            try {
+                $this->backfillRefundIncomeBasis(1);
+            } catch (\Throwable $e) {
+                $this->logUpdate('error', 'Refund income basis healing failed: ' . $e->getMessage());
+            }
+
             return true;
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Ambient schema sync failed: ' . $e->getMessage());
@@ -1827,7 +1836,11 @@ class Patcher implements InjectionAwareInterface
     /**
      * Backfill pre-#4661 tax-inclusive `base_refund` rows to the net basis, preserving the tax
      * portion in `base_refund_tax`. Only `base_refund_tax IS NULL` rows are touched, so reruns
-     * never double-discount; FX rates are preserved by scaling the stored base by net/gross.
+     * never double-apply; FX rates are preserved by scaling the stored base by net/gross.
+     * Rows already on the net basis (refunded after #4661, before this migration) are detected
+     * via the currency service and get only the tax leg; ambiguous rows are skipped for a later
+     * run rather than risked. Also runs bounded from ensureSchemaInSync() so a column added by
+     * drift healing still converges.
      */
     public function backfillRefundIncomeBasis(int $maxPages = 0): void
     {
@@ -1846,13 +1859,20 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
+        $currencyService = null;
+        try {
+            $currencyService = $this->di['mod_service']('currency');
+        } catch (\Throwable) {
+            $currencyService = null;
+        }
+
         $updated = 0;
         $lastId = 0;
         $pages = 0;
 
         do {
             $rows = $dbal->fetchAllAssociative(
-                'SELECT id, refund, base_refund FROM invoice WHERE id > :last AND refund IS NOT NULL AND base_refund_tax IS NULL ORDER BY id LIMIT 200',
+                'SELECT id, refund, base_refund, currency FROM invoice WHERE id > :last AND refund IS NOT NULL AND base_refund_tax IS NULL ORDER BY id LIMIT 200',
                 ['last' => $lastId]
             );
             if ($rows === []) {
@@ -1872,7 +1892,7 @@ class Patcher implements InjectionAwareInterface
                 }
 
                 if (abs($net - $refund) < 0.005) {
-                    // Untaxed, or no linked note to split the tax from: keep base_refund, mark done.
+                    // Untaxed, or no linked note to split the tax from: basis-independent, mark done.
                     $updated += (int) (bool) $dbal->executeStatement(
                         'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL',
                         ['value' => '0.00', 'id' => $row['id']]
@@ -1881,16 +1901,37 @@ class Patcher implements InjectionAwareInterface
                     continue;
                 }
 
-                if ($row['base_refund'] === null) {
+                if ($row['base_refund'] === null || $currencyService === null) {
                     continue;
                 }
 
-                $oldBase = (float) $row['base_refund'];
-                $newBase = round($oldBase * $net / $refund, 2);
-                $updated += (int) (bool) $dbal->executeStatement(
-                    'UPDATE invoice SET base_refund = :net, base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL',
-                    ['net' => $newBase, 'tax' => round($oldBase - $newBase, 2), 'id' => $row['id']]
-                );
+                try {
+                    $storedBase = (float) $row['base_refund'];
+                    $currencyCode = (string) ($row['currency'] ?? '');
+                    $grossBase = $currencyService->toBaseCurrency($currencyCode, $refund);
+                    $netBaseHypothesis = $currencyService->toBaseCurrency($currencyCode, $net);
+                } catch (\Throwable) {
+                    continue;
+                }
+
+                if (abs($storedBase - $grossBase) < 0.01) {
+                    // Legacy gross basis: scale the stored base down to net, preserving its FX rate.
+                    $newBase = round($storedBase * $net / $refund, 2);
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund = :net, base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL',
+                        ['net' => $newBase, 'tax' => round($storedBase - $newBase, 2), 'id' => $row['id']]
+                    );
+                } elseif (abs($storedBase - $netBaseHypothesis) < 0.01) {
+                    // Already net (refunded after #4661, before this migration): tax leg only.
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL',
+                        ['tax' => round($currencyService->toBaseCurrency($currencyCode, $refund - $net), 2), 'id' => $row['id']]
+                    );
+                } else {
+                    // Rates moved since the refund (or unexpected data): leave for a later
+                    // run or manual fix rather than rewriting a value we cannot attribute.
+                    $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: stored base matches neither gross nor net basis', $lastId));
+                }
             }
         } while ($maxPages === 0 || $pages < $maxPages);
 

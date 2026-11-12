@@ -233,8 +233,8 @@ class Service implements InjectionAwareInterface
     {
         $dbal = $this->di['em']->getConnection();
 
-        // `refund` stays net of tax so `income` remains base_income - base_refund;
-        // gross cash returned is refund + refund_tax.
+        // `refund` stays net of tax. `income` is the raw SUM(base_income) and
+        // does not subtract `refund`; gross cash returned is refund + refund_tax.
         $query = 'SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income, COALESCE(SUM(base_refund_tax), 0) AS refund_tax, (COALESCE(SUM(base_refund), 0) + COALESCE(SUM(base_refund_tax), 0)) AS refund_gross
                 FROM invoice
                 WHERE issued = true
