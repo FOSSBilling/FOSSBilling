@@ -17,6 +17,7 @@ use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceCredit;
 use Box\Mod\Invoice\Entity\InvoiceEvent;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
@@ -45,8 +46,10 @@ use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendReminderEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendRemindersEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\BeforeInvoiceIsDueEvent;
+use Box\Mod\Invoice\Repository\InvoiceCreditRepository;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -115,6 +118,8 @@ class Service implements InjectionAwareInterface
     private ?int $invoiceNumberPadding = null;
     private ?InvoiceItemRepository $invoiceItemRepository = null;
     private ?InvoiceRepository $invoiceRepository = null;
+    private ?TransactionRepository $transactionRepository = null;
+    private ?InvoiceCreditRepository $invoiceCreditRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -141,6 +146,20 @@ class Service implements InjectionAwareInterface
         $this->invoiceRepository ??= $this->di['em']->getRepository(Invoice::class);
 
         return $this->invoiceRepository;
+    }
+
+    public function getTransactionRepository(): TransactionRepository
+    {
+        $this->transactionRepository ??= $this->di['em']->getRepository(Transaction::class);
+
+        return $this->transactionRepository;
+    }
+
+    public function getInvoiceCreditRepository(): InvoiceCreditRepository
+    {
+        $this->invoiceCreditRepository ??= $this->di['em']->getRepository(InvoiceCredit::class);
+
+        return $this->invoiceCreditRepository;
     }
 
     protected function resetEntityManager(): void
@@ -383,6 +402,10 @@ class Service implements InjectionAwareInterface
         $result['subtotal'] = $total;
         $result['total'] = $total + $tax;
         $result['status'] = $row['status'];
+        $unpaid = $row['status'] === Invoice::STATUS_UNPAID;
+        $result['amount_paid'] = $unpaid ? min($this->getAmountPaid($invoice), round($result['total'], 2)) : (in_array($row['status'], [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true) ? $result['total'] : 0.0);
+        $result['balance_due'] = $unpaid ? max(0.0, round($result['total'] - $result['amount_paid'], 2)) : 0.0;
+        $result['credit_applied'] = $unpaid ? $this->getInvoiceCreditRepository()->getSumByInvoiceId((int) $row['id']) : 0.0;
         $result['notes'] = $row['notes'];
         $result['text_1'] = $row['text_1'] ?? null;
         $result['text_2'] = $row['text_2'] ?? null;
@@ -1198,6 +1221,10 @@ class Service implements InjectionAwareInterface
 
                 $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
                 $invoiceTotal = $this->getTotalWithTax($invoice);
+                if (!$this->isInvoiceTypeDeposit($invoice)) {
+                    // A partly paid invoice is paid with what was recorded plus the rest received now.
+                    $invoiceTotal = max(0.0, round($invoiceTotal - min($this->getAmountPaid($invoice), round($invoiceTotal, 2)), 2));
+                }
                 $newtx = $transactionService->create([
                     'invoice_id' => $invoice->getId(),
                     'gateway_id' => $invoice->getGateway()?->getId(),
@@ -1669,6 +1696,9 @@ class Service implements InjectionAwareInterface
             // spend the same credit.
             $balance = $cbrepo->getClientBalanceForUpdate($clientId);
 
+            // What other unpaid invoices have received waits for them.
+            $balance -= $this->getReservedCredit($clientId, (int) $invoice->getId());
+
             $required = $this->getTotalWithTax($invoice);
             // Compare at two-decimal monetary scale: balances are DECIMAL(18,2) sums while the
             // total is float arithmetic, so e.g. 0.30 and 0.1 * 3 differ as raw floats.
@@ -1790,6 +1820,184 @@ class Service implements InjectionAwareInterface
         }
 
         return (float) $total;
+    }
+
+    /**
+     * What an invoice has received: processed payments plus applied account
+     * credit. Either waits on the invoice until it is paid.
+     */
+    public function getAmountPaid(Invoice $invoice): float
+    {
+        $id = (int) $invoice->getId();
+        $transactions = $this->getTransactionRepository()->getProcessedSumsByInvoiceIds([$id]);
+        $credits = $this->getInvoiceCreditRepository()->getSumsByInvoiceIds([$id]);
+
+        return round(($transactions[$id] ?? 0.0) + ($credits[$id] ?? 0.0), 2);
+    }
+
+    public function getBalanceDue(Invoice $invoice): float
+    {
+        return max(0.0, round($this->getTotalWithTax($invoice) - $this->getAmountPaid($invoice), 2));
+    }
+
+    /**
+     * The part of each client's balance set aside for their unpaid invoices:
+     * received payments and applied credit wait on their invoice instead of
+     * staying spendable.
+     *
+     * @param list<int> $clientIds
+     *
+     * @return array<int, float> reserved amounts keyed by client id
+     */
+    public function getReservedCreditForClients(array $clientIds): array
+    {
+        $rows = $this->getInvoiceRepository()->findUnpaidNonDepositRowsByClientIds($clientIds);
+
+        return $this->sumReservedCredit($rows);
+    }
+
+    /**
+     * The part of a client's balance set aside for their unpaid invoices
+     * (other than $exceptInvoiceId).
+     */
+    public function getReservedCredit(int $clientId, int $exceptInvoiceId = 0): float
+    {
+        $rows = $this->getInvoiceRepository()->findUnpaidNonDepositRowsByClientIds([$clientId], $exceptInvoiceId);
+        $reserved = $this->sumReservedCredit($rows);
+
+        return $reserved[$clientId] ?? 0.0;
+    }
+
+    /**
+     * @param list<array{id: int, client_id: int, taxrate: float}> $rows
+     *
+     * @return array<int, float> reserved amounts keyed by client id
+     */
+    private function sumReservedCredit(array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        $invoiceIds = array_column($rows, 'id');
+        $totals = $this->getInvoiceRepository()->getInvoiceTotals($invoiceIds);
+        $transactions = $this->getTransactionRepository()->getProcessedSumsByInvoiceIds($invoiceIds);
+        $credits = $this->getInvoiceCreditRepository()->getSumsByInvoiceIds($invoiceIds);
+
+        $reserved = [];
+        foreach ($rows as $row) {
+            $id = $row['id'];
+            $subtotal = $totals[$id]['subtotal'] ?? 0.0;
+            $taxable = $totals[$id]['taxable_subtotal'] ?? 0.0;
+            $total = $subtotal;
+            if ($row['taxrate'] > 0 && $taxable != 0) {
+                $total += round($taxable * $row['taxrate'] / 100, 2);
+            }
+            $paid = ($transactions[$id] ?? 0.0) + ($credits[$id] ?? 0.0);
+            $reserved[$row['client_id']] = ($reserved[$row['client_id']] ?? 0.0) + min($paid, round($total, 2));
+        }
+
+        foreach ($reserved as $clientId => $amount) {
+            $reserved[$clientId] = round($amount, 2);
+        }
+
+        return $reserved;
+    }
+
+    /**
+     * The credit a client can spend: the balance less what is set aside for
+     * unpaid invoices.
+     */
+    public function getFreeCredit(int $clientId): float
+    {
+        $balance = $this->di['mod_service']('Client', 'Balance')->getBalanceSumByClientId($clientId);
+
+        return round($balance - $this->getReservedCredit($clientId), 2);
+    }
+
+    /**
+     * Applies any part of the client's free credit to an unpaid invoice, up
+     * to its balance due. A fully covered invoice is paid from credit.
+     */
+    public function applyCredit(Invoice $invoice, float $amount): bool
+    {
+        $amount = round($amount, 2);
+        if ($amount <= 0) {
+            throw new InformationException('Enter an amount greater than zero.');
+        }
+
+        $clientId = (int) $invoice->getClientId();
+        $lockName = 'fb:credit_payment:client:' . $clientId;
+        if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 30)) {
+            throw new InformationException('Another credit operation for this client is already in progress. Please retry.');
+        }
+
+        try {
+            $covered = $this->di['em']->wrapInTransaction(function () use ($invoice, $clientId, $amount): bool {
+                $state = $this->lockAndRefreshInvoice($invoice);
+                if ($state['status'] !== Invoice::STATUS_UNPAID) {
+                    throw new InformationException('Credit can only be applied to an unpaid invoice.');
+                }
+                if ($this->isInvoiceTypeDeposit($invoice)) {
+                    throw new InformationException('Account credit cannot pay a deposit invoice.');
+                }
+                $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+                if (!$client instanceof Client) {
+                    throw new InformationException('Client not found');
+                }
+                if (strtoupper((string) $client->getCurrency()) !== strtoupper((string) $invoice->getCurrency())) {
+                    throw new InformationException('The credit is in :currency and cannot pay an invoice in another currency.', [':currency' => (string) $client->getCurrency()]);
+                }
+                $due = $this->getBalanceDue($invoice);
+                $max = min($due, $this->getFreeCredit($clientId));
+                if ($amount > $max) {
+                    throw new InformationException('You can apply at most :amount.', [':amount' => number_format(max(0.0, $max), 2) . ' ' . $invoice->getCurrency()]);
+                }
+
+                $credit = new InvoiceCredit();
+                $credit->setInvoice($invoice);
+                $credit->setClient($client);
+                $credit->setAmount((string) $amount);
+                $this->di['em']->persist($credit);
+                $this->di['em']->flush();
+
+                return $amount >= $due;
+            });
+        } finally {
+            NamedLock::release($this->di['em']->getConnection(), $lockName);
+        }
+
+        if ($covered) {
+            $this->tryPayWithCredits($invoice);
+        }
+
+        return true;
+    }
+
+    /**
+     * Takes the credit applied to an unpaid invoice back to the client's
+     * free credit.
+     */
+    public function removeCredit(Invoice $invoice): bool
+    {
+        $lockName = 'fb:credit_payment:client:' . (int) $invoice->getClientId();
+        if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 30)) {
+            throw new InformationException('Another credit operation for this client is already in progress. Please retry.');
+        }
+
+        try {
+            $this->di['em']->wrapInTransaction(function () use ($invoice): void {
+                $state = $this->lockAndRefreshInvoice($invoice);
+                if ($state['status'] !== Invoice::STATUS_UNPAID) {
+                    throw new InformationException('Credit can only be removed from an unpaid invoice.');
+                }
+                $this->getInvoiceCreditRepository()->deleteByInvoiceId((int) $invoice->getId());
+            });
+        } finally {
+            NamedLock::release($this->di['em']->getConnection(), $lockName);
+        }
+
+        return true;
     }
 
     public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null, array $options = []): int
@@ -3740,6 +3948,9 @@ class Service implements InjectionAwareInterface
             // failing (e.g. removing the invoice itself) would leave these transactions
             // permanently detached from an invoice that was never actually deleted.
             $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId(), $anonymizeTransactions);
+
+            // Applied credit is an internal earmark, not a payment record: it dies with the invoice.
+            $this->getInvoiceCreditRepository()->deleteByInvoiceId((int) $model->getId());
 
             $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
             foreach ($invoiceItems as $item) {

@@ -346,3 +346,59 @@ test('gets tax rate for client', function (): void {
     $result = $api->get_tax_rate();
     expect($result)->toBe($taxRate);
 });
+
+test('applies credit to an unpaid invoice', function (): void {
+    $api = apiEndpoint(new Client());
+
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+    $model = createEntity(Invoice::class, ['id' => 1]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findOneBy')
+        ->once()
+        ->with(['hash' => 'abc123', 'clientId' => 7])
+        ->andReturn($model);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getInvoiceRepository')
+        ->once()
+        ->andReturn($invoiceRepo);
+    $serviceMock->shouldReceive('applyCredit')
+        ->once()
+        ->with($model, 25.50)
+        ->andReturn(true);
+
+    $di = container();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity($identity);
+
+    expect($api->apply_credit(['hash' => 'abc123', 'amount' => 25.50]))->toBeTrue();
+});
+
+test('applying credit to a missing invoice throws', function (): void {
+    $api = apiEndpoint(new Client());
+
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findOneBy')
+        ->once()
+        ->andReturn(null);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getInvoiceRepository')
+        ->once()
+        ->andReturn($invoiceRepo);
+    $serviceMock->shouldNotReceive('applyCredit');
+
+    $di = container();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity($identity);
+
+    expect(fn () => $api->apply_credit(['hash' => 'nope', 'amount' => 5.00]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invoice was not found');
+});

@@ -48,6 +48,11 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->clientBalanceRepository->getClientBalanceSum((int) $c->getId());
     }
 
+    public function getBalanceSumByClientId(int $clientId): float
+    {
+        return $this->clientBalanceRepository->getClientBalanceSum($clientId);
+    }
+
     public function rmByClient(Client $client): void
     {
         $balances = $this->clientBalanceRepository->findBy(['client' => $client]);

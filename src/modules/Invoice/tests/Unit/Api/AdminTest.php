@@ -1982,3 +1982,78 @@ test('ignores the gateway_returned flag from API callers', function (): void {
 
     expect($api->refund($data))->toBe(3);
 });
+
+test('applies credit to an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1, 'amount' => 25.5];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('applyCredit')
+        ->once()
+        ->with(Mockery::type(Invoice::class), 25.5)
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->apply_credit($data))->toBeTrue();
+});
+
+test('removes credit from an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('removeCredit')
+        ->once()
+        ->with(Mockery::type(Invoice::class))
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->remove_credit($data))->toBeTrue();
+});
+
+test('gets an invoice with the client free credit', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->andReturn(['id' => 1]);
+    $serviceMock->shouldReceive('getInvoicePromoApplications')
+        ->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getDebitingInvoiceIds')
+        ->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getFreeCredit')
+        ->once()
+        ->with(7)
+        ->andReturn(42.50);
+
+    $model = createEntity(Invoice::class, ['client_id' => 7]);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $result = $api->get(['id' => 1]);
+    expect($result['client_credit'])->toBe(42.50);
+});

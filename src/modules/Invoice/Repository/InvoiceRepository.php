@@ -166,6 +166,49 @@ class InvoiceRepository extends EntityRepository
     }
 
     /**
+     * Unpaid, non-deposit invoices of the given clients, oldest first.
+     *
+     * Deposit (Add funds) invoices are excluded: their payments top up the
+     * balance itself rather than wait on the invoice.
+     *
+     * @param list<int> $clientIds
+     *
+     * @return list<array{id: int, client_id: int, taxrate: float}>
+     */
+    public function findUnpaidNonDepositRowsByClientIds(array $clientIds, int $exceptInvoiceId = 0): array
+    {
+        if ($clientIds === []) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('i')
+            ->select('i.id AS id, i.clientId AS client_id, i.taxrate AS taxrate')
+            ->where('i.clientId IN (:client_ids)')
+            ->andWhere('i.status = :unpaid')
+            ->andWhere('NOT EXISTS (SELECT 1 FROM ' . InvoiceItem::class . ' ii WHERE ii.invoice = i AND ii.type = :deposit)')
+            ->setParameter('client_ids', $clientIds)
+            ->setParameter('unpaid', Invoice::STATUS_UNPAID)
+            ->setParameter('deposit', InvoiceItem::TYPE_DEPOSIT)
+            ->orderBy('i.id', 'ASC');
+
+        if ($exceptInvoiceId > 0) {
+            $qb->andWhere('i.id != :except_id')
+                ->setParameter('except_id', $exceptInvoiceId);
+        }
+
+        $rows = [];
+        foreach ($qb->getQuery()->getScalarResult() as $row) {
+            $rows[] = [
+                'id' => (int) $row['id'],
+                'client_id' => (int) $row['client_id'],
+                'taxrate' => (float) ($row['taxrate'] ?? 0),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
      * Aggregate invoice-item totals for the given invoice ids.
      *
      * Replaces the correlated subqueries (`list_subtotal`,

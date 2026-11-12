@@ -81,6 +81,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         // toApiArray, where per-invoice promo lookups would be N+1 queries.
         $result = $this->getService()->toApiArray($model, true, $this->getIdentity());
         $result['promo_applications'] = $this->getService()->getInvoicePromoApplications($model);
+        $result['client_credit'] = $model->getClientId() ? $this->getService()->getFreeCredit((int) $model->getClientId()) : 0.0;
         $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
 
         if (!empty($result['lines'])) {
@@ -473,6 +474,32 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $invoice = $this->_getInvoice($data);
 
         return $this->getService()->payInvoiceWithCredits($invoice);
+    }
+
+    /**
+     * Apply part or all of the client's credit to an unpaid invoice.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing', 'amount' => 'Amount is missing'])]
+    public function apply_credit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->applyCredit($this->_getInvoice($data), (float) $data['amount']);
+    }
+
+    /**
+     * Take the credit applied to an unpaid invoice back to the client's credit.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function remove_credit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->removeCredit($this->_getInvoice($data));
     }
 
     /**
