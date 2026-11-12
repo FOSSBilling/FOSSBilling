@@ -4210,10 +4210,11 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (60, '120.00', '999.00', NULL, '20', 'USD', '1.000000')");
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (61, NULL, NULL, NULL, '20', 'USD', '1.000000', 60)");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (61, '-100.00', 1, 1)");
-    // Foreign currency at a changed rate (reviewer's scenario: 100 EUR net recorded at
-    // 1.2 now looks like a 120 gross at 1.0): classification would need the refund-time
-    // rate, which is not stored, so the row must stay untouched.
-    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (70, '120.00', '100.00', NULL, '20', 'EUR', '1.000000')");
+    // Foreign currency at a changed rate: 100 EUR net recorded at 1.2 stores
+    // base_refund = 120, numerically matching the invoice-currency gross refund.
+    // Classification would need the refund-time rate, which is not stored, so the
+    // row must stay untouched.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (70, '120.00', '120.00', NULL, '20', 'EUR', '1.000000')");
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (71, NULL, NULL, NULL, '20', 'EUR', '1.000000', 70)");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (71, '-100.00', 1, 1)");
     // Current default but a payment-time rate proving the base moved since: the
@@ -4253,7 +4254,7 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
         ->and((float) $row50['base_refund_tax'])->toBe(20.0)
         ->and((float) $row60['base_refund'])->toBe(999.0)
         ->and($row60['base_refund_tax'])->toBeNull()
-        ->and((float) $row70['base_refund'])->toBe(100.0)
+        ->and((float) $row70['base_refund'])->toBe(120.0)
         ->and($row70['base_refund_tax'])->toBeNull()
         ->and((float) $row80['base_refund'])->toBe(120.0)
         ->and($row80['base_refund_tax'])->toBeNull();

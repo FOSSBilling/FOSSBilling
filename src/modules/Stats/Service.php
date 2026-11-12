@@ -235,7 +235,10 @@ class Service implements InjectionAwareInterface
 
         // `refund` stays net of tax. `income` is the raw SUM(base_income) and
         // does not subtract `refund`; gross cash returned is refund + refund_tax.
-        $query = 'SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income, COALESCE(SUM(base_refund_tax), 0) AS refund_tax, (COALESCE(SUM(base_refund), 0) + COALESCE(SUM(base_refund_tax), 0)) AS refund_gross
+        // Unresolved rows (refunded but never classified, so base_refund_tax IS NULL)
+        // contribute 0 to the tax sums by construction of SUM; refund_tax_unresolved
+        // counts them so consumers can tell unknown tax apart from zero tax.
+        $query = 'SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income, COALESCE(SUM(base_refund_tax), 0) AS refund_tax, (COALESCE(SUM(base_refund), 0) + COALESCE(SUM(base_refund_tax), 0)) AS refund_gross, SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN 1 ELSE 0 END) AS refund_tax_unresolved
                 FROM invoice
                 WHERE issued = true
                 AND (status = :status1 OR status = :status2)
