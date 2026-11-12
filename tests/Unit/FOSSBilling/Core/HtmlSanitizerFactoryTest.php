@@ -161,3 +161,29 @@ test('sanitize markdown content preserves markdown inline code', function (): vo
     $result = HtmlSanitizerFactory::sanitizeMarkdownContent($input);
     expect($result)->toBe($input);
 });
+
+test('theme settings sanitizer does not truncate input over the default length limit', function (): void {
+    // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4664:
+    // translated theme settings pages can exceed Symfony's default 20,000-byte
+    // input limit, which truncated the rendered form and made the page report
+    // the theme as not configurable.
+    $field = '<input type="text" name="setting" value="' . str_repeat('a', 200) . '" />';
+    $html = str_repeat($field, 200) . '<input type="hidden" name="last_field" value="end" />';
+    expect(strlen($html))->toBeGreaterThan(20000);
+
+    $result = HtmlSanitizerFactory::sanitize($html, 'theme_settings');
+
+    expect($result)->not->toBe('')
+        ->and($result)->toContain('last_field');
+});
+
+test('content sanitizer does not truncate input over the default length limit', function (): void {
+    $paragraph = '<p>' . str_repeat('a', 500) . '</p>';
+    $html = str_repeat($paragraph, 100) . '<p>final_paragraph_marker</p>';
+    expect(strlen($html))->toBeGreaterThan(20000);
+
+    $result = HtmlSanitizerFactory::sanitize($html);
+
+    expect($result)->not->toBe('')
+        ->and($result)->toContain('final_paragraph_marker');
+});

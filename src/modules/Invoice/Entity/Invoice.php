@@ -68,6 +68,9 @@ class Invoice implements TimestampInterface
     #[ORM\Column(name: 'base_refund', type: Types::DECIMAL, precision: 18, scale: 2, nullable: true)]
     private ?string $baseRefund = null;
 
+    #[ORM\Column(name: 'base_refund_tax', type: Types::DECIMAL, precision: 18, scale: 2, nullable: true)]
+    private ?string $baseRefundTax = null;
+
     #[ORM\Column(type: Types::DECIMAL, precision: 18, scale: 2, nullable: true)]
     private ?string $refund = null;
 
@@ -283,6 +286,18 @@ class Invoice implements TimestampInterface
     public function setBaseRefund(string|int|float|null $baseRefund): self
     {
         $this->baseRefund = $baseRefund === null ? null : (string) $baseRefund;
+
+        return $this;
+    }
+
+    public function getBaseRefundTax(): ?string
+    {
+        return $this->baseRefundTax;
+    }
+
+    public function setBaseRefundTax(string|int|float|null $baseRefundTax): self
+    {
+        $this->baseRefundTax = $baseRefundTax === null ? null : (string) $baseRefundTax;
 
         return $this;
     }
