@@ -269,6 +269,7 @@ class Patcher implements InjectionAwareInterface
         // an unreachable database is skipped, already recorded by syncPortableSchema.
         try {
             $this->backfillInvoiceJournal();
+            $this->backfillRefundIncomeBasis();
             $this->checkInvoiceNumberCounter();
         } catch (\Doctrine\DBAL\Exception\ConnectionException) {
             return;
@@ -1821,6 +1822,136 @@ class Patcher implements InjectionAwareInterface
     public function healInvoiceJournal(int $maxPages = 1): void
     {
         $this->backfillInvoiceJournal($maxPages);
+    }
+
+    /**
+     * Backfill pre-#4661 tax-inclusive `base_refund` rows to the net basis, preserving the tax
+     * portion in `base_refund_tax`. Only `base_refund_tax IS NULL` rows are touched, so reruns
+     * never double-discount; FX rates are preserved by scaling the stored base by net/gross.
+     */
+    public function backfillRefundIncomeBasis(int $maxPages = 0): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return;
+        }
+
+        try {
+            $dbal = $this->di['em']->getConnection();
+            $schemaManager = $dbal->createSchemaManager();
+            if (!$schemaManager->tablesExist(['invoice', 'invoice_item'])
+                || !$schemaManager->introspectTableByUnquotedName('invoice')->hasColumn('base_refund_tax')) {
+                return;
+            }
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            return;
+        }
+
+        $updated = 0;
+        $lastId = 0;
+        $pages = 0;
+
+        do {
+            $rows = $dbal->fetchAllAssociative(
+                'SELECT id, refund, base_refund FROM invoice WHERE id > :last AND refund IS NOT NULL AND base_refund_tax IS NULL ORDER BY id LIMIT 200',
+                ['last' => $lastId]
+            );
+            if ($rows === []) {
+                break;
+            }
+            ++$pages;
+
+            $refundedTaxByInvoice = $this->refundedTaxByInvoice($dbal, array_map(static fn (array $row): int => (int) $row['id'], $rows));
+
+            foreach ($rows as $row) {
+                $lastId = (int) $row['id'];
+
+                $refund = (float) ($row['refund'] ?? 0);
+                $net = $refund;
+                if ($refund > 0 && isset($refundedTaxByInvoice[$lastId])) {
+                    $net = round(max(0.0, $refund - $refundedTaxByInvoice[$lastId]), 2);
+                }
+
+                if (abs($net - $refund) < 0.005) {
+                    // Untaxed, or no linked note to split the tax from: keep base_refund, mark done.
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL',
+                        ['value' => '0.00', 'id' => $row['id']]
+                    );
+
+                    continue;
+                }
+
+                if ($row['base_refund'] === null) {
+                    continue;
+                }
+
+                $oldBase = (float) $row['base_refund'];
+                $newBase = round($oldBase * $net / $refund, 2);
+                $updated += (int) (bool) $dbal->executeStatement(
+                    'UPDATE invoice SET base_refund = :net, base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL',
+                    ['net' => $newBase, 'tax' => round($oldBase - $newBase, 2), 'id' => $row['id']]
+                );
+            }
+        } while ($maxPages === 0 || $pages < $maxPages);
+
+        if ($updated > 0) {
+            $this->logUpdate('info', sprintf('Backfilled refund income basis for %d invoice(s)', $updated));
+        }
+    }
+
+    /**
+     * Refunded tax per invoice in invoice currency, mirroring `Invoice\Service::getTax()`
+     * (rounded per credit note, taxed lines only). Invoices without linked notes are absent.
+     *
+     * @param list<int> $invoiceIds
+     *
+     * @return array<int, float>
+     */
+    private function refundedTaxByInvoice(\Doctrine\DBAL\Connection $dbal, array $invoiceIds): array
+    {
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($invoiceIds), '?'));
+        $notes = $dbal->fetchAllAssociative(
+            "SELECT id, credit_note_for_invoice_id, taxrate FROM invoice WHERE credit_note_for_invoice_id IN ({$placeholders})",
+            $invoiceIds
+        );
+        if ($notes === []) {
+            return [];
+        }
+
+        $noteIds = array_map(static fn (array $note): int => (int) $note['id'], $notes);
+        $placeholders = implode(',', array_fill(0, count($noteIds), '?'));
+        $items = $dbal->fetchAllAssociative(
+            "SELECT invoice_id, price, quantity, taxed FROM invoice_item WHERE invoice_id IN ({$placeholders})",
+            $noteIds
+        );
+
+        $taxableByNote = [];
+        foreach ($items as $item) {
+            if (empty($item['taxed'])) {
+                continue;
+            }
+            $noteId = (int) $item['invoice_id'];
+            $taxableByNote[$noteId] = ($taxableByNote[$noteId] ?? 0.0) + ((float) ($item['price'] ?? 0) * ((float) ($item['quantity'] ?? 1)));
+        }
+
+        $taxByNote = [];
+        foreach ($notes as $note) {
+            $rate = (float) ($note['taxrate'] ?? 0);
+            $taxable = $taxableByNote[(int) $note['id']] ?? 0.0;
+            $taxByNote[(int) $note['id']] = ($rate > 0 && $taxable != 0.0) ? round($taxable * $rate / 100, 2) : 0.0;
+        }
+
+        $refundedTax = [];
+        foreach ($notes as $note) {
+            // Credit note amounts are negated, so their tax is too: negate back to a positive share.
+            $refundedTax[(int) $note['credit_note_for_invoice_id']] = ($refundedTax[(int) $note['credit_note_for_invoice_id']] ?? 0.0) - $taxByNote[(int) $note['id']];
+        }
+
+        return $refundedTax;
     }
 
     /**

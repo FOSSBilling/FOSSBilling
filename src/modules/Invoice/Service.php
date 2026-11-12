@@ -83,7 +83,7 @@ class Service implements InjectionAwareInterface
      */
     private const array EXPORTABLE_COLUMNS = [
         'id', 'client_id', 'serie', 'nr', 'currency', 'currency_rate',
-        'credit', 'base_income', 'base_refund', 'refund', 'notes',
+        'credit', 'base_income', 'base_refund', 'base_refund_tax', 'refund', 'notes',
         'text_1', 'text_2', 'status', 'seller_company', 'seller_company_vat',
         'seller_company_number', 'seller_address', 'seller_phone', 'seller_email',
         'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat',
@@ -96,7 +96,7 @@ class Service implements InjectionAwareInterface
     /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
     private const array DEFAULT_EXPORT_COLUMNS = [
         'id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund',
-        'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
+        'base_refund_tax', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
         'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address',
         'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone',
         'buyer_email', 'issued', 'taxname', 'taxrate',
@@ -282,6 +282,7 @@ class Service implements InjectionAwareInterface
             'credit' => $invoice->getCredit(),
             'base_income' => $invoice->getBaseIncome(),
             'base_refund' => $invoice->getBaseRefund(),
+            'base_refund_tax' => $invoice->getBaseRefundTax(),
             'refund' => $invoice->getRefund(),
             'notes' => $invoice->getNotes(),
             'text_1' => $invoice->getText1(),
@@ -485,6 +486,8 @@ class Service implements InjectionAwareInterface
         }
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
         $result['refund'] = $row['refund'] ?? 0;
+        // Cash tax portion in base currency; gross cash returned is base_refund + refund_tax.
+        $result['refund_tax'] = $row['base_refund_tax'] ?? 0;
         $result['credit'] = $row['credit'] ?? 0;
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -1394,13 +1397,18 @@ class Service implements InjectionAwareInterface
 
         $oldIncome = $invoice->getBaseIncome();
         $oldRefund = $invoice->getBaseRefund();
+        $oldRefundTax = $invoice->getBaseRefundTax();
 
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
             // base_income excludes tax, so the refund it is netted against must exclude it too.
-            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), $this->getRefundExcludingTax($invoice)));
+            // base_refund_tax preserves the cash tax portion so gross cash remains derivable.
+            [$netRefund, $taxPortion] = $this->getRefundBreakdown($invoice);
+            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), $netRefund));
+            $invoice->setBaseRefundTax($table->toBaseCurrency($invoice->getCurrency(), $taxPortion));
         } else {
             $invoice->setBaseRefund(null);
+            $invoice->setBaseRefundTax(null);
         }
 
         // Base-currency rewrites on issued invoices (e.g. after an FX rate move) touch locked
@@ -1412,7 +1420,10 @@ class Service implements InjectionAwareInterface
         $refundChanged = $oldRefund === null
             ? $invoice->getBaseRefund() !== null
             : (float) $invoice->getBaseRefund() !== (float) $oldRefund;
-        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged)) {
+        $refundTaxChanged = $oldRefundTax === null
+            ? $invoice->getBaseRefundTax() !== null
+            : (float) $invoice->getBaseRefundTax() !== (float) $oldRefundTax;
+        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged || $refundTaxChanged)) {
             $this->di['logger']->info(
                 'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income})',
                 ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome()]
@@ -1424,26 +1435,59 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * The refunded amount without the tax returned with it. `refund` holds what
-     * was paid back (tax included); the tax part is read from the credit notes
-     * issued against the invoice.
+     * Split the refunded amount into its net (without tax) and tax portions, in invoice currency.
+     *
+     * `refund` holds what was paid back (tax included); the tax part is read from the credit notes
+     * issued against the invoice. Returns [net, tax] with gross === net + tax, except the legacy
+     * fallback below where no linked note exists and the whole refund is treated as net.
+     *
+     * @return array{0: float, 1: float}
      */
-    private function getRefundExcludingTax(Invoice $invoice): float
+    private function getRefundBreakdown(Invoice $invoice): array
     {
         $refund = (float) $invoice->getRefund();
         if ($refund <= 0) {
-            return $refund;
+            return [$refund, 0.0];
+        }
+
+        $creditNotes = $this->findRefundingInvoices($invoice);
+        if ($creditNotes === []) {
+            // Older refunds recorded before `credit_note_for_invoice_id` existed, or notes
+            // deleted since: without a link the tax split is unknowable, so keep the
+            // pre-#4661 behaviour (whole refund as net) rather than guessing.
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->debug(
+                    'Refund without linked credit note for invoice #{invoice_id}: keeping tax-inclusive base_refund',
+                    ['invoice_id' => $invoice->getId()]
+                );
+            }
+
+            return [$refund, 0.0];
         }
 
         // Credit note amounts are negated, so their tax is too. Keep the sign:
         // a refunded negative taxable subtotal (a taxed discount) gives back
         // negative tax, which adds to the refund without tax.
         $refundedTax = 0.0;
-        foreach ($this->findRefundingInvoices($invoice) as $creditNote) {
+        foreach ($creditNotes as $creditNote) {
             $refundedTax -= $this->getTax($creditNote);
         }
 
-        return round(max(0.0, $refund - $refundedTax), 2);
+        $unclamped = $refund - $refundedTax;
+        if ($unclamped < 0) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning(
+                    'Refund tax {tax} exceeds refund {refund} for invoice #{invoice_id}: clamping base_refund to 0',
+                    ['invoice_id' => $invoice->getId(), 'tax' => $refundedTax, 'refund' => $refund]
+                );
+            }
+
+            return [0.0, round($refund, 2)];
+        }
+
+        $net = round($unclamped, 2);
+
+        return [$net, round($refund - $net, 2)];
     }
 
     public function prepareInvoice(Client $client, array $data): Invoice

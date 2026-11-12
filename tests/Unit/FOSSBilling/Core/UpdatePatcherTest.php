@@ -4190,3 +4190,34 @@ test('JSON migration bootstrap probe does not suppress programming errors', func
 
     expect(fn () => $patcher->isJsonMigrationPending())->toThrow(LogicException::class, 'Broken connection factory');
 });
+
+test('refund income backfill nets out tax and preserves gross cash', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, refund NUMERIC, base_refund NUMERIC, base_refund_tax NUMERIC, taxrate TEXT, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, price NUMERIC, quantity NUMERIC, taxed INTEGER)');
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate) VALUES (30, '120.00', '120.00', NULL, '20')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, credit_note_for_invoice_id) VALUES (31, NULL, NULL, NULL, '20', 30)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (31, '-100.00', 1, 1)");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate) VALUES (40, '60.00', '60.00', NULL, '20')");
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di = new Pimple\Container(['em' => $em, 'logger' => new Tests\Helpers\TestLogger()]);
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+
+    $patcher->backfillRefundIncomeBasis();
+
+    $row30 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 30');
+    $row40 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 40');
+    expect((float) $row30['base_refund'])->toBe(100.0)
+        ->and((float) $row30['base_refund_tax'])->toBe(20.0)
+        ->and((float) $row40['base_refund'])->toBe(60.0)
+        ->and((float) $row40['base_refund_tax'])->toBe(0.0);
+
+    $patcher->backfillRefundIncomeBasis();
+
+    $row30Again = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 30');
+    expect((float) $row30Again['base_refund'])->toBe(100.0)
+        ->and((float) $row30Again['base_refund_tax'])->toBe(20.0);
+});

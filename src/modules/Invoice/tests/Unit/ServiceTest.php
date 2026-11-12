@@ -2048,7 +2048,7 @@ test('stays silent when base-currency values are unchanged', function (): void {
     expect($infoCalls)->toBe([]);
 });
 
-test('counts the refund without tax so income nets out on a refunded invoice', function (string $refund, array $lines, array $creditNotes, float $expectedIncome, float $expectedRefund): void {
+test('counts the refund without tax so income nets out on a refunded invoice', function (string $refund, array $lines, array $creditNotes, float $expectedIncome, float $expectedRefund, float $expectedRefundTax): void {
     $service = new Service();
 
     $makeLines = function (array $rows): array {
@@ -2100,12 +2100,13 @@ test('counts the refund without tax so income nets out on a refunded invoice', f
     $service->countIncome($invoice);
 
     expect((float) $invoice->getBaseIncome())->toBe($expectedIncome)
-        ->and((float) $invoice->getBaseRefund())->toBe($expectedRefund);
+        ->and((float) $invoice->getBaseRefund())->toBe($expectedRefund)
+        ->and((float) $invoice->getBaseRefundTax())->toBe($expectedRefundTax);
 })->with([
-    'full refund of a taxed line' => ['120.00', [['100.00', true]], [[['-100.00', true]]], 100.0, 100.0],
-    'partial refund over two credit notes, taxed and untaxed lines' => ['110.00', [['100.00', true], ['50.00', false]], [[['-50.00', true]], [['-50.00', false]]], 150.0, 100.0],
-    'full refund with a taxed discount' => ['78.00', [['90.00', false], ['-10.00', true]], [[['-90.00', false], ['10.00', true]]], 80.0, 80.0],
-    'older refund with no linked credit note' => ['60.00', [['100.00', true]], [], 100.0, 60.0],
+    'full refund of a taxed line' => ['120.00', [['100.00', true]], [[['-100.00', true]]], 100.0, 100.0, 20.0],
+    'partial refund over two credit notes, taxed and untaxed lines' => ['110.00', [['100.00', true], ['50.00', false]], [[['-50.00', true]], [['-50.00', false]]], 150.0, 100.0, 10.0],
+    'full refund with a taxed discount' => ['78.00', [['90.00', false], ['-10.00', true]], [[['-90.00', false], ['10.00', true]]], 80.0, 80.0, -2.0],
+    'older refund with no linked credit note' => ['60.00', [['100.00', true]], [], 100.0, 60.0, 0.0],
 ]);
 
 test('prepares invoice with undefined currency', function (): void {
