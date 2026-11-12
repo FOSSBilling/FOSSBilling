@@ -12,8 +12,11 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Api\Guest;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Service;
+use Box\Mod\Invoice\ServiceGatewayFees;
 use Box\Mod\Invoice\ServicePayGateway;
+use Box\Mod\Invoice\ServiceSubscription;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -91,6 +94,78 @@ test('gets active gateways', function (): void {
 
     $result = $api->gateways([]);
     expect($result)->toBeArray();
+});
+
+test('lists per-gateway fees for an unpaid invoice', function (): void {
+    $api = apiEndpoint(new Guest());
+
+    $model = createEntity(Invoice::class, ['status' => Invoice::STATUS_UNPAID, 'currency' => 'USD', 'client_id' => 7, 'taxrate' => 0]);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('checkInvoiceAuth')->atLeast()->once();
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn(
+        Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class, function (Mockery\MockInterface $repo) use ($model): void {
+            $repo->shouldReceive('findByHash')->atLeast()->once()->andReturn($model);
+        })
+    );
+
+    $withFee = createEntity(PayGateway::class, ['id' => 1, 'enabled' => true, 'allowSingle' => true]);
+    $withoutFee = createEntity(PayGateway::class, ['id' => 2, 'enabled' => true, 'allowSingle' => false, 'allowRecurrent' => false]);
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getAcceptedCurrencies')->byDefault()->andReturn(['USD']);
+    $payGatewayService->shouldReceive('getPayGatewayRepository')->once()->andReturn(
+        Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class, function (Mockery\MockInterface $repo) use ($withFee, $withoutFee): void {
+            $repo->shouldReceive('findEnabledOrderedByIdDesc')->atLeast()->once()->andReturn([$withFee, $withoutFee]);
+        })
+    );
+
+    $di = container();
+
+    $feesService = Mockery::mock(ServiceGatewayFees::class);
+    $feesService->shouldReceive('base')->once()->with($model)->andReturn(100.00);
+    $feesService->shouldReceive('charge')->once()->with($model, $withFee, 100.00)->andReturn(2.50);
+
+    $subscribeService = Mockery::mock(ServiceSubscription::class);
+    $subscribeService->shouldReceive('isSubscribable')->once()->andReturn(false);
+
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice:gatewayfees' => $feesService,
+        'invoice:paygateway' => $payGatewayService,
+        'invoice:subscription' => $subscribeService,
+    ]));
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $result = $api->gateway_fees(['hash' => md5('1')]);
+
+    expect($result['base'])->toEqual(100.00)
+        ->and($result['fees'][1])->toBe(['fee' => 2.50, 'total' => 102.50])
+        ->and($result['fees'])->not->toHaveKey(2);
+});
+
+test('lists no fees for a paid invoice', function (): void {
+    $api = apiEndpoint(new Guest());
+
+    $model = createEntity(Invoice::class, ['status' => Invoice::STATUS_PAID, 'currency' => 'USD', 'client_id' => 7]);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('checkInvoiceAuth')->atLeast()->once();
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn(
+        Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class, function (Mockery\MockInterface $repo) use ($model): void {
+            $repo->shouldReceive('findByHash')->atLeast()->once()->andReturn($model);
+        })
+    );
+
+    $di = container();
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $result = $api->gateway_fees(['hash' => md5('1')]);
+
+    expect($result)->toBe(['base' => 0.0, 'fees' => []]);
 });
 
 test('processes payment', function (): void {

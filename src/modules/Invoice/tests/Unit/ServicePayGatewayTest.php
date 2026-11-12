@@ -18,6 +18,7 @@ use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
+use Box\Mod\Invoice\ServiceGatewayFees;
 use Box\Mod\Invoice\ServicePayGateway;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -220,6 +221,145 @@ test('updates a gateway', function (): void {
     expect($result)->toBeTrue();
     expect($payGateway->getName())->toBe('New title');
     expect($payGateway->isEnabled())->toBeTrue();
+});
+
+test('update sanitizes the gateway fee into its bounds', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Custom',
+        'gateway' => 'Custom',
+        'config' => null,
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->atLeast()->once();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $service->update($payGateway, ['config' => ['fee' => ['percent' => 150, 'fixed' => '1.20', 'taxable' => '1', 'exempt_groups' => ['2', 'x']]]]);
+
+    expect($payGateway->getConfig()['fee'])->toBe(['percent' => 100.0, 'fixed' => 1.2, 'taxable' => true, 'exempt_groups' => [2]]);
+});
+
+test('moveUnpaidInvoices does nothing when the gateway has none', function (): void {
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $service = payGatewayService(null, $em);
+
+    expect($service->moveUnpaidInvoices(7, null))->toBeNull();
+});
+
+test('moveUnpaidInvoices throws without an enabled replacement', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 11]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([$invoice]);
+
+    $payGatewayRepo = Mockery::mock(PayGatewayRepository::class);
+    $payGatewayRepo->shouldReceive('find')->once()->with(9)->andReturn(null);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
+
+    $service = payGatewayService($payGatewayRepo, $em);
+
+    expect(fn () => $service->moveUnpaidInvoices(7, 9))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Choose an enabled gateway');
+});
+
+test('moveUnpaidInvoices moves invoices and reprices their fees', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 11]);
+    $replacement = createEntity(PayGateway::class, ['id' => 9, 'enabled' => true]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([$invoice]);
+
+    $payGatewayRepo = Mockery::mock(PayGatewayRepository::class);
+    $payGatewayRepo->shouldReceive('find')->once()->with(9)->andReturn($replacement);
+
+    $feesService = Mockery::mock(ServiceGatewayFees::class);
+    $feesService->shouldReceive('apply')->once()->with($invoice, $replacement)->andReturnNull();
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
+    $em->shouldReceive('persist')->once()->with($invoice);
+    $em->shouldReceive('flush')->once();
+
+    $service = payGatewayService($payGatewayRepo, $em);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): object => $feesService);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $service->moveUnpaidInvoices(7, 9);
+
+    expect($invoice->getGateway())->toBe($replacement);
+});
+
+test('disabling a gateway with no unpaid invoices needs no replacement', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7, 'name' => 'Custom', 'gateway' => 'Custom', 'enabled' => true]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect($service->update($payGateway, ['enabled' => false]))->toBeTrue()
+        ->and($payGateway->isEnabled())->toBeFalse();
+});
+
+test('disabling a gateway moves its unpaid invoices to the replacement', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7, 'name' => 'Custom', 'gateway' => 'Custom', 'enabled' => true]);
+    $replacement = createEntity(PayGateway::class, ['id' => 9, 'enabled' => true]);
+    $invoice = createEntity(Invoice::class, ['id' => 11]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([$invoice]);
+
+    $payGatewayRepo = Mockery::mock(PayGatewayRepository::class);
+    $payGatewayRepo->shouldReceive('find')->once()->with(9)->andReturn($replacement);
+
+    $feesService = Mockery::mock(ServiceGatewayFees::class);
+    $feesService->shouldReceive('apply')->once()->with($invoice, $replacement)->andReturnNull();
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('refresh')->byDefault();
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['crypt'] = cryptMock();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (): object => $feesService);
+    $service->setDi($di);
+
+    expect($service->update($payGateway, ['enabled' => false, 'replacement_id' => 9]))->toBeTrue()
+        ->and($invoice->getGateway())->toBe($replacement);
 });
 
 test('converts to api array masks secrets for an admin', function (): void {

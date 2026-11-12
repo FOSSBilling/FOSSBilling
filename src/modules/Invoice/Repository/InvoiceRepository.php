@@ -319,6 +319,23 @@ class InvoiceRepository extends EntityRepository
     }
 
     /**
+     * Unpaid invoices currently set to the given payment gateway. Used when
+     * a gateway is turned off to move them to a replacement.
+     *
+     * @return Invoice[]
+     */
+    public function findUnpaidByGatewayId(int $gatewayId): array
+    {
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.status = :status')
+            ->andWhere('IDENTITY(i.gateway) = :gateway_id')
+            ->setParameter('status', Invoice::STATUS_UNPAID)
+            ->setParameter('gateway_id', $gatewayId)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Latest invoice that has a non-null nr — fallback for invoice
      * number generation.
      */

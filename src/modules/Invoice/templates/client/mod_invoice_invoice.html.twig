@@ -340,6 +340,29 @@
                 placement: 'top'
             });
         });
+
+        const feeUrl = "{{ 'invoice/gateway_fees'|api_url(role: 'guest') }}";        const invoiceHash = "{{ invoice.hash }}";
+        const invoiceCurrency = "{{ invoice.currency }}";
+        fetch(`${feeUrl}?hash=${encodeURIComponent(invoiceHash)}`, {
+            headers: { 'Accept': 'application/json' },
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                const fees = data && data.result && data.result.fees;
+                if (!fees) {
+                    return;
+                }
+                document.querySelectorAll('.invoice-gateway input[name="gateway_id"]').forEach(input => {
+                    const entry = fees[input.getAttribute('gateway_id')];
+                    if (entry && Number(entry.fee) > 0) {
+                        const badge = document.createElement('div');
+                        badge.className = 'small text-muted text-center';
+                        badge.textContent = `+ ${entry.fee} ${invoiceCurrency} {{ 'fee'|trans }}`;
+                        input.closest('.invoice-gateway').appendChild(badge);
+                    }
+                });
+            })
+            .catch(() => {});
     });
 
     function paymentPrompt(id, supportsSubscription, supportsOneTime, title){

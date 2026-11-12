@@ -272,6 +272,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function update(PayGateway $model, array $data, ?UploadedFile $file = null): bool
     {
+        $wasEnabled = $model->isEnabled();
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
         $existingConfig = $model->getConfig() ?? [];
@@ -283,6 +284,9 @@ class ServicePayGateway implements InjectionAwareInterface
                 $mergedConfig[$key] = in_array($key, $secretFields, true)
                     ? $this->normalizeSecretValue($key, $value, $existingConfig[$key] ?? null, $model)
                     : $value;
+            }
+            if (array_key_exists('fee', $data['config'])) {
+                $mergedConfig['fee'] = ServiceGatewayFees::clean(is_array($data['config']['fee']) ? $data['config']['fee'] : []);
             }
         }
 
@@ -315,9 +319,47 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->setAllowRecurrent((bool) ($data['allow_recurrent'] ?? $model->isAllowRecurrent()));
         $model->setTestMode($newTestMode);
         $this->di['em']->flush();
+
+        // Turning a gateway off moves its unpaid invoices to a replacement,
+        // with the replacement's fee. Paid history stays untouched.
+        if ($wasEnabled && !$newEnabled) {
+            $replacementId = isset($data['replacement_id']) && $data['replacement_id'] !== '' ? (int) $data['replacement_id'] : null;
+            $this->moveUnpaidInvoices((int) $model->getId(), $replacementId);
+        }
+
         $this->di['logger']->info('Updated payment gateway {model_gateway}', ['model_gateway' => $model->getGateway()]);
 
         return true;
+    }
+
+    /**
+     * Move a gateway's unpaid invoices to an enabled replacement, re-pricing
+     * each one's fee line. Throws when unpaid invoices exist without a valid
+     * replacement.
+     */
+    public function moveUnpaidInvoices(int $gatewayId, ?int $replacementId): void
+    {
+        $invoices = $this->di['em']->getRepository(Invoice::class)->findUnpaidByGatewayId($gatewayId);
+        if ($invoices === []) {
+            return;
+        }
+
+        $replacement = $replacementId !== null && $replacementId !== $gatewayId
+            ? $this->di['em']->getRepository(PayGateway::class)->find($replacementId)
+            : null;
+        if (!$replacement instanceof PayGateway || !$replacement->isEnabled()) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Choose an enabled gateway for the unpaid invoices of this gateway.');
+        }
+
+        $feesService = $this->di['mod_service']('Invoice', 'GatewayFees');
+        foreach ($invoices as $invoice) {
+            $invoice->setGateway($replacement);
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+            $feesService->apply($invoice, $replacement);
+        }
+
+        $this->di['logger']->info('Moved {count} unpaid invoices from gateway #{gateway_id} to gateway #{replacement_id}', ['count' => count($invoices), 'gateway_id' => $gatewayId, 'replacement_id' => $replacementId]);
     }
 
     /**

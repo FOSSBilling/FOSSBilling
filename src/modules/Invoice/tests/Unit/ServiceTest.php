@@ -2462,7 +2462,7 @@ test('pays a zero-total invoice without recording a balance transaction', functi
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
     $di['em']->shouldNotReceive('flush');
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeTrue();
@@ -2498,7 +2498,7 @@ test('records a balance transaction for a one-cent invoice', function (): void {
             && $balance->getAmount() === '-0.01')
     );
     $di['em']->shouldReceive('flush')->once();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeTrue();
@@ -2535,7 +2535,7 @@ test('pays an invoice with credits and records a balance transaction', function 
             && $balance->getAmount() === '-50')
     );
     $di['em']->shouldReceive('flush')->once();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeTrue();
@@ -2564,7 +2564,7 @@ test('locks the invoice before checking the client balance', function (): void {
     // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
     $service->shouldNotReceive('recordJournalEvent');
 
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeTrue();
@@ -2588,7 +2588,7 @@ test('does not deduct credits when the invoice was paid concurrently before the 
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetState')->with(10)
         ->andReturn(['status' => Invoice::STATUS_PAID, 'issued' => true]);
     $di['em']->shouldNotReceive('persist');
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeFalse();
@@ -2613,7 +2613,7 @@ test('does not deduct credits when the locked balance is insufficient', function
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetState')->with(10)
         ->andReturn(['status' => Invoice::STATUS_UNPAID, 'issued' => true]);
     $di['em']->shouldNotReceive('persist');
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeFalse();
@@ -2649,7 +2649,7 @@ test('pays a fully funded invoice despite floating-point rounding dust', functio
             && round((float) $balance->getAmount(), 2) === -0.30)
     );
     $di['em']->shouldReceive('flush')->once();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeTrue();
@@ -2673,7 +2673,7 @@ test('does not pay a one-cent invoice with a zero credit balance', function (): 
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetState')->with(10)
         ->andReturn(['status' => Invoice::STATUS_UNPAID, 'issued' => true]);
     $di['em']->shouldNotReceive('persist');
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeFalse();
@@ -5160,6 +5160,9 @@ test('processes an invoice', function (): void {
         }
         if ($sub == 'Subscription') {
             return $subscribeService;
+        }
+        if ($sub == 'GatewayFees') {
+            return Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing();
         }
     });
     $di['api_admin'] = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
@@ -7891,6 +7894,9 @@ test('updateInvoice changing the tax rate moves the computed total', function ()
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemServiceMock, $systemMock) {
         if ($serviceName == 'system') {
             return $systemMock;
+        }
+        if (strtolower((string) $sub) === 'gatewayfees') {
+            return Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing();
         }
 
         return $itemServiceMock;

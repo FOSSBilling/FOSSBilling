@@ -953,6 +953,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional array $config - gateway config array
      * @optional array $accepted_currencies - list of currencies this gateway supports
      * @optional bool $enabled - flag to enable or disable gateway
+     * @optional int $replacement_id - when disabling, move unpaid invoices to this enabled gateway
      * @optional bool $allow_single - flag to enable or disable single payment option
      * @optional bool $allow_recurrent - flag to enable or disable recurrent payment option
      * @optional bool $test_mode - flag to enable or disable test mode for gateway

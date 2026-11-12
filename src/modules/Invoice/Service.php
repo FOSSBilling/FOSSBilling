@@ -1658,6 +1658,10 @@ class Service implements InjectionAwareInterface
                 return false;
             }
 
+            // Credit pays without the gateway fee. Remove it before measuring
+            // what the credit must cover.
+            $this->di['mod_service']('Invoice', 'GatewayFees')->remove($invoice);
+
             $clientId = (int) $invoice->getClientId();
             $cbrepo = $this->di['mod_service']('Client', 'Balance');
 
@@ -1714,6 +1718,10 @@ class Service implements InjectionAwareInterface
                 $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
                 $this->di['mod_service']('Invoice', 'InvoiceItem')
             );
+        } elseif ($invoice->getStatus() === Invoice::STATUS_UNPAID && $invoice->getGateway() instanceof PayGateway) {
+            // Credit did not cover the invoice: what it leaves due gets the
+            // gateway fee again.
+            $this->di['mod_service']('Invoice', 'GatewayFees')->apply($invoice, $invoice->getGateway());
         }
 
         return $paid;
@@ -3308,6 +3316,11 @@ class Service implements InjectionAwareInterface
             $this->recordJournalEvent($model, InvoiceEvent::TYPE_UPDATED, ['changed_fields' => $changedFields]);
         });
 
+        // The fee follows a new gateway: changing it re-prices the fee line.
+        if ($model->getStatus() === Invoice::STATUS_UNPAID) {
+            $this->di['mod_service']('Invoice', 'GatewayFees')->apply($model, $model->getGateway());
+        }
+
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceUpdateEvent((int) $model->getId()));
 
         $this->di['logger']->info('Updated invoice #{invoice_id}', ['invoice_id' => $model->getId()]);
@@ -4454,6 +4467,10 @@ class Service implements InjectionAwareInterface
         if (!$subscribe && !$payGatewayService->canPerformSinglePayment($gtw)) {
             throw new \FOSSBilling\Core\Exception\BaseException('One-time payments are not enabled for the selected payment gateway', null, 815);
         }
+
+        // Paying with a gateway applies its fee to the invoice; switching
+        // gateways replaces it. Credit payments carry no fee.
+        $this->di['mod_service']('Invoice', 'GatewayFees')->apply($invoice, $gtw);
 
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice, $data);
         if (method_exists($adapter, 'setDi')) {

@@ -361,7 +361,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string
     {
-        $query = 'SELECT period, price, quantity, type, rel_id
+        $query = 'SELECT period, price, quantity, type, rel_id, task
             FROM invoice_item
             WHERE invoice_id = :id
             ORDER BY id ASC';
@@ -376,6 +376,10 @@ class ServiceSubscription implements InjectionAwareInterface
         $positiveTotal = 0.0;
         $orderIds = [];
         foreach ($items as $item) {
+            // The gateway fee is part of each payment, not a line of its own period.
+            if (($item['task'] ?? null) === ServiceGatewayFees::TASK) {
+                continue;
+            }
             $lineTotal = (float) ($item['price'] ?? 0) * (float) ($item['quantity'] ?? 0);
             $period = $item['period'] ?? null;
 

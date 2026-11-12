@@ -301,9 +301,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         });
     }
 
-    public function remove(InvoiceItem $model): bool
+    public function remove(InvoiceItem $model, bool $skipEditableCheck = false): bool
     {
-        return $this->runInvoiceMutation($model->getInvoice(), false, function () use ($model): bool {
+        return $this->runInvoiceMutation($model->getInvoice(), $skipEditableCheck, function () use ($model): bool {
             $id = $model->getId();
             $this->di['em']->remove($model);
             $this->di['em']->flush();
