@@ -16,7 +16,6 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;
-use Box\Mod\Invoice\ServiceInvoiceItem;
 use Box\Mod\Invoice\ServiceTax;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -154,7 +153,7 @@ test('gets tax for an invoice', function (): void {
 
     $invoiceModel->setTaxrate(15);
 
-    $invoiceItem = createEntity(InvoiceItem::class, ['quantity' => 1]);
+    $invoiceItem = createEntity(InvoiceItem::class, ['quantity' => 1, 'price' => 140, 'taxed' => true]);
 
     $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItem]);
@@ -165,13 +164,28 @@ test('gets tax for an invoice', function (): void {
     $taxRepo = Mockery::mock(TaxRepository::class);
     $service = taxService($taxRepo, $em);
 
-    $invoiceItemService = Mockery::mock(ServiceInvoiceItem::class);
-    $invoiceItemService->shouldReceive('getTax')->andReturn(21);
+    // 140 * 15% = 21.00, single line so per-unit and invoice-level agree.
+    expect($service->getTax($invoiceModel))->toEqual(21.0);
+});
 
-    $di = $service->getDi();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemService);
+test('rounds invoice tax once on the subtotal', function (): void {
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->setTaxrate(10);
 
-    expect($service->getTax($invoiceModel))->toBeInt();
+    // Classic 1c drift: per-unit rounding gives 0.03 * 3 = 0.09,
+    // invoice-level rounding gives round(0.99 * 10%) = 0.10.
+    $item = createEntity(InvoiceItem::class, ['quantity' => 3, 'price' => 0.33, 'taxed' => true]);
+
+    $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$item]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo, $em);
+
+    expect($service->getTax($invoiceModel))->toEqual(0.10);
 });
 
 test('deletes a tax', function (): void {

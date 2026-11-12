@@ -198,6 +198,9 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function get_pdf(\FOSSBilling\Core\Http\App $app, $hash): Response
     {
+        // Staff without invoice view must not open invoices/PDFs through direct links.
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+
         $api = $this->di['api_guest'];
         $data = [
             'hash' => $hash,

@@ -181,7 +181,7 @@
                     {% endblock %}
 
                     {% block summary_actions %}
-                        <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
+                        <a href='{{ "client/login/#{client.id}"|url(query: { CSRFToken: CSRFToken }) }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
                                 <use href="#login" />
                             </svg>

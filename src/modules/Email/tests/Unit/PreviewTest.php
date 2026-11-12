@@ -71,7 +71,7 @@ test('custom action editor variables match actual delivery inputs under strict T
     if ($requiresInvoice) {
         $service->shouldNotReceive('sendMail');
     } else {
-        $service->shouldReceive('sendMail')->once()->with('recipient@example.com', 'sender@example.com', 'Custom message', 'Generic custom message', null, 'Example', null, null, false, false, null)->andReturnTrue();
+        $service->shouldReceive('sendMail')->once()->with('recipient@example.com', 'sender@example.com', 'Custom message', 'Generic custom message', null, 'Example', null, null, false, false, null, false)->andReturnTrue();
     }
     $di['api_guest'] = new class {
         public function system_company(): array

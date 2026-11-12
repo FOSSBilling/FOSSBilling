@@ -100,6 +100,14 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function get_login(\FOSSBilling\Core\Http\App $app, $id): Response
     {
+        // Switching client identity via a plain GET link is CSRF-able,
+        // so require the session's CSRF token.
+        $token = $this->di['request']->query->get('CSRFToken');
+        $sessionToken = $this->di['session']->get('csrf_token');
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('CSRF token invalid', null, 403);
+        }
+
         $api = $this->di['api_admin'];
         $api->client_login(['id' => $id]);
 

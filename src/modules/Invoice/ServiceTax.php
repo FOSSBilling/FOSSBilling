@@ -80,14 +80,22 @@ class ServiceTax implements InjectionAwareInterface
             return 0;
         }
 
-        $tax = 0;
+        // Invoice-level rounding to match Service::getTax (the invoice total):
+        // sum the taxable subtotal first, round once. Summing per-unit rounded
+        // taxes drifts by a cent on multi-line / multi-quantity invoices.
         $invoiceItems = $this->di['em']->getRepository(Entity\InvoiceItem::class)->findByInvoiceId((int) $invoice->getId());
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        $taxableSubtotal = 0.0;
         foreach ($invoiceItems as $item) {
-            $tax += $invoiceItemService->getTax($item) * ($item->getQuantity() ?? 1);
+            if ($item->getTaxed()) {
+                $taxableSubtotal += (($item->getPrice() ?? 0) * ($item->getQuantity() ?? 1));
+            }
         }
 
-        return $tax;
+        if ($taxableSubtotal == 0) {
+            return 0;
+        }
+
+        return round($taxableSubtotal * (float) $invoice->getTaxrate() / 100, 2);
     }
 
     public function delete(Tax $model): bool
