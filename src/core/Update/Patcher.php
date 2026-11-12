@@ -1860,6 +1860,7 @@ class Patcher implements InjectionAwareInterface
         }
 
         $currencyService = null;
+
         try {
             $currencyService = $this->di['mod_service']('currency');
         } catch (\Throwable) {
