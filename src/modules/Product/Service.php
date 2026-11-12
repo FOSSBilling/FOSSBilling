@@ -3070,6 +3070,73 @@ class Service implements InjectionAwareInterface
         return 0;
     }
 
+    /**
+     * Whether a domain order renews free: it was ordered with a hosting
+     * order (same order group) whose product offers it free with "Free
+     * Domain Renewals" on, by the same rules as at checkout, and that
+     * hosting is still active or suspended.
+     */
+    public function hasFreeDomainRenewal(int $orderId): bool
+    {
+        $orderRepository = $this->di['em']->getRepository(Order::class);
+        $order = $orderRepository->find($orderId);
+        if (!$order instanceof Order) {
+            return false;
+        }
+        $config = $order->getConfig() ?? [];
+        $action = $config['action'] ?? null;
+        if (!in_array($action, ['register', 'transfer'], true)) {
+            return false;
+        }
+        $groupId = $order->getGroupId();
+        if ($groupId === null || $groupId === '') {
+            return false;
+        }
+        $sld = (string) ($config[$action . '_sld'] ?? '');
+        $tld = (string) ($config[$action . '_tld'] ?? '');
+        if ($sld === '' || $tld === '') {
+            return false;
+        }
+
+        $candidates = $orderRepository->findBy([
+            'groupId' => $groupId,
+            'clientId' => $order->getClientId(),
+            'status' => [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED],
+        ]);
+        foreach ($candidates as $hosting) {
+            if ((int) $hosting->getId() === $orderId) {
+                continue;
+            }
+            $product = $this->getProductRepository()->find((int) $hosting->getProductId());
+            if (!$product instanceof Product || $product->getType() !== self::HOSTING) {
+                continue;
+            }
+            $settings = $product->getConfig() ?? [];
+            if (empty($settings['free_domain_renewals'])) {
+                continue;
+            }
+            $domain = $hosting->getConfig()['domain'] ?? null;
+            if (!is_array($domain) || ($domain['action'] ?? null) !== $action) {
+                continue;
+            }
+            if (($domain[$action . '_sld'] ?? null) !== $sld || ($domain[$action . '_tld'] ?? null) !== $tld) {
+                continue;
+            }
+            if ($action === 'transfer') {
+                if (!empty($settings['free_transfer'])) {
+                    return true;
+                }
+            } elseif (!empty($settings['free_domain'])
+                && (($settings['free_tlds'] ?? []) === [] || in_array($tld, (array) $settings['free_tlds'], true))
+                && in_array($hosting->getPeriod(), (array) ($settings['free_domain_periods'] ?? []), true)
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function isDomainActionNameSet(array $item, string $actionName): bool
     {
         return isset($item['config']['domain']['action']) && $item['config']['domain']['action'] === $actionName;
