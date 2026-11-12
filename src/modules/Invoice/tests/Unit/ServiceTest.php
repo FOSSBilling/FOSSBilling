@@ -1455,10 +1455,12 @@ test('admin mark as paid credits only deposit lines on a mixed invoice', functio
         ->once()
         ->with(Mockery::type(Invoice::class))
         ->andReturn(true);
-    // Full invoice total covers both lines; only the deposit line is credited.
+    // Deposit portion derived as invoice total minus non-deposit lines so
+    // per-item rounding cannot drift it from what the client was shown.
     $serviceMock->shouldReceive('getTotalWithTax')
-        ->never()
-        ->with(Mockery::type(Invoice::class));
+        ->once()
+        ->with(Mockery::type(Invoice::class))
+        ->andReturn(25.00);
 
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 6,
@@ -1482,8 +1484,8 @@ test('admin mark as paid credits only deposit lines on a mixed invoice', functio
     $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $invoiceItemServiceMock->shouldReceive('getTotalWithTax')
         ->once()
-        ->with($depositItem)
-        ->andReturn(10.00);
+        ->with($otherItem)
+        ->andReturn(15.00);
 
     $clientServiceMock = Mockery::mock(ClientService::class);
     $clientServiceMock->shouldReceive('addFunds')

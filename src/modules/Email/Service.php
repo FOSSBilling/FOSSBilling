@@ -47,6 +47,22 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
      */
     private ?array $validatedBccAddresses = null;
 
+    /**
+     * Templates carrying single-use secrets (reset links, confirmation links).
+     * Their rendered bodies must never sit in the queue or the email history
+     * where staff with email access could read them, and they must never be
+     * copied to the BCC address.
+     */
+    private const array SECRET_TEMPLATE_CODES = [
+        'mod_client_password_reset_request',
+        'mod_client_password_reset_information',
+        'mod_client_confirm',
+        'mod_client_signup',
+        'mod_client_signup_admin',
+        'mod_staff_password_reset_request',
+        'mod_staff_password_reset_approve',
+    ];
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
@@ -368,6 +384,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\InformationException('The "from" email address cannot be empty');
         }
 
+        // Single-use secrets must not linger in the queue/history or be BCC'd.
+        // Send them immediately; on failure the caller asks for a new link.
+        $isSecret = in_array($data['code'], self::SECRET_TEMPLATE_CODES, true);
+        if ($isSecret) {
+            $send_now = true;
+        }
+
         if (isset($staff)) {
             foreach ($staff['list'] as $staff) {
                 $staffVars = $vars;
@@ -377,22 +400,22 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
                 $to = $staff['email'];
                 $to_name = $staff['name'];
-                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions, $attachment);
+                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions, $attachment, $isSecret);
             }
         } elseif (isset($oneStaff)) {
             $to = $oneStaff['email'];
             $to_name = $oneStaff['name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $oneStaff['id'], $send_now, $throw_exceptions, $attachment);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $oneStaff['id'], $send_now, $throw_exceptions, $attachment, $isSecret);
         } elseif (isset($customer)) {
             // A generic `to` is ignored for client-bound emails so their
             // rendered data cannot be redirected to an arbitrary recipient.
             $to = $billingRecipient ?? $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions, $attachment);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions, $attachment, $isSecret);
         } else {
             $to = $data['to'];
             $to_name = $data['to_name'] ?? null;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions, $attachment);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions, $attachment, $isSecret);
         }
 
         return $sent;
@@ -435,12 +458,12 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     /**
      * @param array{content: string, name: string, mime?: string}|null $attachment a file to attach to the email, e.g. a generated invoice PDF
      */
-    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false, ?array $attachment = null): bool
+    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false, ?array $attachment = null, bool $skipHistory = false): bool
     {
         // Add the email to the queue
         $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $attachment);
         if ($send_now) {
-            $this->_sendFromQueue($email, $throw_exceptions);
+            $this->_sendFromQueue($email, $throw_exceptions, $skipHistory);
         }
 
         return true;
@@ -1233,7 +1256,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $addresses;
     }
 
-    private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false): bool
+    private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false, bool $skipHistory = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
@@ -1275,7 +1298,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 }
             }
 
-            if (!empty($settings['bcc_email'])) {
+            if (!empty($settings['bcc_email']) && !$skipHistory) {
                 $this->validatedBccAddresses ??= $this->parseBccAddresses((string) $settings['bcc_email']);
                 $bccAddresses = $this->validatedBccAddresses;
                 if ($bccAddresses !== []) {
@@ -1292,7 +1315,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $mail->send($settings);
 
             // It sent without causing an exception (error), so we are safe to log it now
-            if ($log) {
+            // Secret emails are never logged: ask for a new link instead.
+            if ($log && !$skipHistory) {
                 $activityService = $this->di['mod_service']('activity');
                 $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent(), null, $attachment);
             }
@@ -1306,6 +1330,25 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         } catch (\Exception $e) {
             $message = $e->getMessage();
             $this->di['logger']->withChannel('email')->error($e->getMessage());
+
+            // A secret email that fails must not sit in the queue: drop it so
+            // the link cannot be read later; the caller asks for a new one.
+            if ($skipHistory) {
+                try {
+                    $this->di['em']->remove($queue);
+                    $this->di['em']->flush();
+                } catch (\Exception $removeException) {
+                    $this->di['logger']->withChannel('email')->error($removeException->getMessage());
+                }
+
+                if ($throw_exceptions) {
+                    $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message, 0, 350) . '...' : $message;
+
+                    throw new \FOSSBilling\Core\Exception\BaseException($truncated);
+                }
+
+                return false;
+            }
 
             if ($queue->getPriority()) {
                 $queue->setPriority($queue->getPriority() - 1);

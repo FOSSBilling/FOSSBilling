@@ -4060,9 +4060,12 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($order, 'order_deleted');
     $productService->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_deleted');
 
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('cancelForOrder')->once()->with($order)->andReturn(0);
+
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn (string $name): object => $productService);
+    $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => strtolower($name) === 'invoice' ? $subscriptionService : $productService);
 
     $serviceMock->setDi($di);
 

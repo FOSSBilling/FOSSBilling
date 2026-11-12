@@ -564,6 +564,11 @@ class Service implements InjectionAwareInterface
         }
         $data['client'] = $clientService->toApiArray($client, false);
 
+        // Clients must not see staff notes on their orders.
+        if (!$identity instanceof Admin) {
+            unset($data['notes']);
+        }
+
         if ($identity instanceof Admin) {
             $data['config'] = $this->getConfig($model);
             $productService = $this->di['mod_service']('product');
@@ -660,6 +665,10 @@ class Service implements InjectionAwareInterface
                 $data['client'] = [];
             } else {
                 $data['client'] = $clients[$clientId];
+            }
+
+            if (!$identity instanceof Admin) {
+                unset($data['notes']);
             }
 
             if ($identity instanceof Admin) {
@@ -1812,6 +1821,9 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
 
+        // Deleting an order must not leak its gateway subscription.
+        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+
         $orderStatus = $order->getStatus();
         if ($orderStatus == Order::STATUS_PENDING_SETUP) {
             $this->rmInvoiceItemByOrder($order);
@@ -1935,6 +1947,16 @@ class Service implements InjectionAwareInterface
 
         foreach ($list as $order) {
             try {
+                // Re-check under the current state: the order may have been
+                // renewed/paid while earlier orders in this run were processed.
+                $this->di['em']->refresh($order);
+                if ($order->getStatus() !== Order::STATUS_ACTIVE) {
+                    continue;
+                }
+                $expiresAt = $order->getExpiresAt();
+                if (!$expiresAt instanceof \DateTimeInterface || $expiresAt->format('Y-m-d H:i:s') > date('Y-m-d H:i:s')) {
+                    continue;
+                }
                 $this->suspendFromOrder($order, $reason);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
@@ -1981,6 +2003,12 @@ class Service implements InjectionAwareInterface
                 $order = $this->getOrderRepository()->find((int) $orderArr['id']);
                 if (!$order instanceof Order) {
                     throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
+                }
+                // Re-check: the order may have been unsuspended/paid while
+                // earlier orders in this run were processed.
+                $this->di['em']->refresh($order);
+                if ($order->getStatus() !== Order::STATUS_SUSPENDED) {
+                    continue;
                 }
                 $this->cancelFromOrder($order, $reason);
             } catch (\Exception $e) {

@@ -27,6 +27,13 @@ test('register configures routes', function (): void {
 test('get login redirects to default url when r parameter is absent', function (): void {
     $controller = new Admin();
     $di = container();
+    $di['session'] = (function (): object {
+        $session = Mockery::mock(FOSSBilling\Core\Security\Session::class)->shouldIgnoreMissing();
+        $session->shouldReceive('get')->with('csrf_token')->andReturn('test-token');
+
+        return $session;
+    })();
+    $di['request'] = fn (): Request => Request::create('/client/login/5', 'GET', ['CSRFToken' => 'test-token']);
 
     $apiAdmin = Mockery::mock();
     $apiAdmin->shouldReceive('client_login')->once()->with(['id' => '5'])->andReturn(true);
@@ -36,7 +43,7 @@ test('get login redirects to default url when r parameter is absent', function (
 
     $capturedUrl = null;
     $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
-    $boxAppMock->shouldReceive('getRequest')->once()->andReturn(Request::create('/client/login/5'));
+    $boxAppMock->shouldReceive('getRequest')->once()->andReturn(Request::create('/client/login/5', 'GET', ['CSRFToken' => 'test-token']));
     $boxAppMock->shouldReceive('redirectUrl')
         ->once()
         ->andReturnUsing(function (string $url, int $status) use (&$capturedUrl): RedirectResponse {
@@ -55,6 +62,13 @@ test('get login redirects to default url when r parameter is absent', function (
 test('get login redirects to r target when r parameter is present', function (): void {
     $controller = new Admin();
     $di = container();
+    $di['session'] = (function (): object {
+        $session = Mockery::mock(FOSSBilling\Core\Security\Session::class)->shouldIgnoreMissing();
+        $session->shouldReceive('get')->with('csrf_token')->andReturn('test-token');
+
+        return $session;
+    })();
+    $di['request'] = fn (): Request => Request::create('/client/login/5?r=/client/manage/5', 'GET', ['r' => '/client/manage/5', 'CSRFToken' => 'test-token']);
 
     $apiAdmin = Mockery::mock();
     $apiAdmin->shouldReceive('client_login')->once()->with(['id' => '5'])->andReturn(true);
@@ -64,7 +78,7 @@ test('get login redirects to r target when r parameter is present', function ():
 
     $capturedUrl = null;
     $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
-    $boxAppMock->shouldReceive('getRequest')->once()->andReturn(Request::create('/client/login/5?r=/client/manage/5'));
+    $boxAppMock->shouldReceive('getRequest')->once()->andReturn(Request::create('/client/login/5?r=/client/manage/5', 'GET', ['r' => '/client/manage/5', 'CSRFToken' => 'test-token']));
     $boxAppMock->shouldReceive('redirectUrl')
         ->once()
         ->andReturnUsing(function (string $url, int $status) use (&$capturedUrl): RedirectResponse {

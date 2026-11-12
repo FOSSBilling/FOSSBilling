@@ -930,6 +930,20 @@ class Service implements InjectionAwareInterface
                 $id = $invoiceModel->getId();
 
                 try {
+                    // Keep invoices still tied to a live order (first or
+                    // renewal invoice of an active/suspended order): removing
+                    // them here would delete and re-create them on every cron
+                    // run, with an email each time.
+                    $liveOrder = $di['em']->getConnection()->fetchOne(
+                        "SELECT id FROM client_order WHERE unpaid_invoice_id = :id AND status IN ('active', 'suspended') LIMIT 1",
+                        ['id' => $id]
+                    );
+                    if ($liveOrder !== false && $liveOrder !== null) {
+                        $di['logger']->info('Skipped expired unpaid invoice #{id}: linked to a live order', ['id' => $id]);
+
+                        continue;
+                    }
+
                     if ($service->isInvoiceCancellable($invoiceModel)) {
                         $service->cancelInvoice($invoiceModel, ['reason' => "Expired unpaid — automatically voided after {$days} days."]);
                         $di['logger']->info('Voided expired unpaid invoice #{id}', ['id' => $id]);
@@ -1321,13 +1335,16 @@ class Service implements InjectionAwareInterface
         }
 
         if ($hasOtherItems) {
+            // Derive the deposit portion from the invoice total so per-item
+            // rounding cannot drift it a cent from what the client was shown.
             $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-            $amount = 0.0;
+            $nonDepositTotal = 0.0;
             foreach ($items as $item) {
-                if ($item->getType() == InvoiceItem::TYPE_DEPOSIT) {
-                    $amount += $invoiceItemService->getTotalWithTax($item);
+                if ($item->getType() != InvoiceItem::TYPE_DEPOSIT) {
+                    $nonDepositTotal += $invoiceItemService->getTotalWithTax($item);
                 }
             }
+            $amount = ($invoiceTotal ?? $this->getTotalWithTax($invoice)) - $nonDepositTotal;
         } else {
             $amount = $invoiceTotal ?? $this->getTotalWithTax($invoice);
         }
@@ -4408,6 +4425,30 @@ class Service implements InjectionAwareInterface
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         if ($subscribeService->isSubscribable($invoice->getId()) && $payGatewayService->canPerformRecurrentPayment($gtw) && $allowSubscribe) {
             $subscribe = true;
+        }
+
+        // A renewal must not start a second gateway subscription for a service
+        // that already has one — pay it as a one-time payment instead.
+        if ($subscribe) {
+            $orderIds = [];
+            foreach ($this->di['em']->getConnection()->fetchAllAssociative(
+                "SELECT rel_id FROM invoice_item WHERE invoice_id = :id AND type = 'order'",
+                ['id' => $invoice->getId()]
+            ) as $row) {
+                if (is_numeric($row['rel_id'] ?? null)) {
+                    $orderIds[(int) $row['rel_id']] = true;
+                }
+            }
+            if ($orderIds !== []) {
+                $orders = $this->di['em']->getRepository(Order::class)->findBy(['id' => array_keys($orderIds)]);
+                foreach ($orders as $order) {
+                    if ($order instanceof Order && $subscribeService->hasActiveSubscriptionForOrder($order)) {
+                        $subscribe = false;
+
+                        break;
+                    }
+                }
+            }
         }
 
         if (!$subscribe && !$payGatewayService->canPerformSinglePayment($gtw)) {

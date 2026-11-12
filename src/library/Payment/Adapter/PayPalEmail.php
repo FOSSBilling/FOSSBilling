@@ -418,11 +418,30 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             && $ipn['payment_status'] == 'Refunded'
             && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment', 'recurring_payment'], true)
         ) {
-            $refd = [
-                'id' => $invoice['id'],
-                'note' => 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''),
-            ];
-            $api_admin->invoice_refund($refd);
+            // A partial refund must not auto-refund the whole invoice — leave
+            // it for staff instead. Only skip when we positively know it is
+            // partial; unknown totals keep the old behavior.
+            $refundAmount = abs((float) ($ipn['mc_gross'] ?? 0));
+            $invoiceTotal = null;
+
+            try {
+                $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) $invoice['id']);
+                if ($invoiceModel instanceof Invoice) {
+                    $invoiceTotal = (float) $this->di['mod_service']('Invoice')->getTotalWithTax($invoiceModel);
+                }
+            } catch (Throwable $e) {
+                $this->di['logger']->warning('Could not determine invoice total for PayPal refund on invoice #{id}: {message}', ['id' => $invoice['id'], 'message' => $e->getMessage()]);
+            }
+
+            if ($refundAmount > 0 && $invoiceTotal !== null && abs($invoiceTotal - $refundAmount) > 0.01) {
+                $this->di['logger']->warning('Partial PayPal refund {amount} for invoice #{id} (total {total}) left for staff instead of refunding the whole invoice', ['amount' => $refundAmount, 'id' => $invoice['id'], 'total' => $invoiceTotal]);
+            } else {
+                $refd = [
+                    'id' => $invoice['id'],
+                    'note' => 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''),
+                ];
+                $api_admin->invoice_refund($refd);
+            }
         }
 
         if ($awaitingCompletion) {

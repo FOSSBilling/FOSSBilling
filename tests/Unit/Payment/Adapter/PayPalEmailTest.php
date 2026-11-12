@@ -1643,10 +1643,16 @@ describe('PayPal callback invoice binding', function (): void {
             return true;
         });
 
-        $em = paypalEmMocks(null, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(120.00);
+
+        $em = paypalEmMocks($invoiceModel, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
         $di = container();
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
 
         // Refund IPN for a pre-upgrade payment: new txn id, unsigned URL,
         // but parent_txn_id names the original recorded payment.
@@ -1664,6 +1670,47 @@ describe('PayPal callback invoice binding', function (): void {
 
         expect($refunded)->toHaveCount(1)
             ->and($refunded[0]['id'])->toBe(16);
+    });
+
+    test('leaves a partial PayPal refund for staff instead of refunding the whole invoice', function (): void {
+        $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
+        $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
+        $earlier->shouldReceive('getInvoice')->byDefault()->andReturn($earlierInvoice);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+        $apiAdmin->shouldNotReceive('invoice_refund');
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(120.00);
+
+        $em = paypalEmMocks($invoiceModel, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Refunded',
+                'txn_id' => 'REFUND-9',
+                'parent_txn_id' => 'TXN-ORIG',
+                'mc_gross' => '-10.00',
+                'mc_currency' => 'USD',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2);
     });
 
     test('accepts an unsigned delayed completion with a recorded pending payment', function (): void {

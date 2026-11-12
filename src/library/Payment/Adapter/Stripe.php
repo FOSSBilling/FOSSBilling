@@ -646,6 +646,20 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             if ($invoice instanceof Invoice) {
                 $fresh = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
                 if ($fresh instanceof Invoice && $fresh->getStatus() === Invoice::STATUS_PAID) {
+                    // The invoice is already settled, but this is a new charge
+                    // (deduped above), so credit it to the client balance
+                    // instead of dropping it.
+                    $clientId = $invoice->getClientId();
+                    if ($clientId !== null) {
+                        $clientService = $this->di['mod_service']('client');
+                        $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+                        if ($client instanceof Client) {
+                            $clientService->addFunds($client, (float) $tx->getAmount(), 'Stripe transaction ' . $charge->id, [
+                                'type' => 'transaction',
+                                'rel_id' => $tx->getId(),
+                            ]);
+                        }
+                    }
                     $tx->setStatus(Transaction::STATUS_PROCESSED);
                     $tx->setUpdatedAt(new DateTime());
                     $this->di['em']->flush();
@@ -1687,7 +1701,24 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         // Skip if the invoice is already paid — prevents double-crediting
         // when the webhook arrives after the redirect flow.
+        // A new charge for a settled invoice is credited to the client
+        // balance instead of being dropped (matches PayPal behavior).
         if ($invoice instanceof Invoice && $invoice->getStatus() === Invoice::STATUS_PAID) {
+            $clientId = $invoice->getClientId();
+            if ($clientId !== null) {
+                $clientService = $this->di['mod_service']('client');
+                $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+                if ($client instanceof Client) {
+                    $clientService->addFunds($client, (float) $tx->getAmount(), 'Stripe transaction ' . $charge->id, [
+                        'type' => 'transaction',
+                        'rel_id' => $tx->getId(),
+                    ]);
+                }
+            }
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+            $tx->setUpdatedAt(new DateTime());
+            $this->di['em']->flush();
+
             return;
         }
 
