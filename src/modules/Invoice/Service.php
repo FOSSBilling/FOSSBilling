@@ -83,7 +83,7 @@ class Service implements InjectionAwareInterface
      */
     private const array EXPORTABLE_COLUMNS = [
         'id', 'client_id', 'serie', 'nr', 'currency', 'currency_rate',
-        'credit', 'base_income', 'base_refund', 'refund', 'notes',
+        'credit', 'base_income', 'base_refund', 'base_refund_tax', 'refund', 'notes',
         'text_1', 'text_2', 'status', 'seller_company', 'seller_company_vat',
         'seller_company_number', 'seller_address', 'seller_phone', 'seller_email',
         'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat',
@@ -96,7 +96,7 @@ class Service implements InjectionAwareInterface
     /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
     private const array DEFAULT_EXPORT_COLUMNS = [
         'id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund',
-        'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
+        'base_refund_tax', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
         'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address',
         'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone',
         'buyer_email', 'issued', 'taxname', 'taxrate',
@@ -282,6 +282,7 @@ class Service implements InjectionAwareInterface
             'credit' => $invoice->getCredit(),
             'base_income' => $invoice->getBaseIncome(),
             'base_refund' => $invoice->getBaseRefund(),
+            'base_refund_tax' => $invoice->getBaseRefundTax(),
             'refund' => $invoice->getRefund(),
             'notes' => $invoice->getNotes(),
             'text_1' => $invoice->getText1(),
@@ -484,7 +485,19 @@ class Service implements InjectionAwareInterface
             );
         }
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
+        // A refund whose tax was never classified leaves the net basis unknown: report
+        // null rather than netting an income from a gross base_refund. No in-repo
+        // consumer reads this key (dashboards use the Stats endpoints), so no
+        // separate gross-subtraction field is needed.
+        if (($row['refund'] ?? null) !== null && ($row['base_refund_tax'] ?? null) === null) {
+            $result['income'] = null;
+        }
         $result['refund'] = $row['refund'] ?? 0;
+        // Tax portion of the refund, in base currency like `income` (unlike
+        // invoice-currency `refund`/`refunded_total`): do not subtract it from
+        // `refund`. Null when the backfill could not classify the refund, as
+        // opposed to a known zero-tax refund.
+        $result['refund_tax'] = $row['base_refund_tax'] ?? null;
         $result['credit'] = $row['credit'] ?? 0;
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -904,12 +917,22 @@ class Service implements InjectionAwareInterface
         // Bounded to one page per run: invoices that never got any journal row (a lost
         // write, or a table created after its invoices by drift healing) converge over
         // runs instead of stalling this one. Failures stay local to the cron log.
+        // Legacy tax-inclusive refunds converge the same way, independently of the
+        // schema-hash gate: a finalization whose sync failed leaves these rows for
+        // drift healing, which only runs one bounded page per request.
+        $patcher = new \FOSSBilling\Core\Update\Patcher();
+        $patcher->setDi($di);
+
         try {
-            $patcher = new \FOSSBilling\Core\Update\Patcher();
-            $patcher->setDi($di);
             $patcher->healInvoiceJournal();
         } catch (\Throwable $e) {
             $di['logger']->warning('Invoice journal healing failed: {message}', ['message' => $e->getMessage()]);
+        }
+
+        try {
+            $patcher->backfillRefundIncomeBasis(1);
+        } catch (\Throwable $e) {
+            $di['logger']->warning('Refund income basis healing failed: {message}', ['message' => $e->getMessage()]);
         }
     }
 
@@ -1394,13 +1417,28 @@ class Service implements InjectionAwareInterface
 
         $oldIncome = $invoice->getBaseIncome();
         $oldRefund = $invoice->getBaseRefund();
+        $oldRefundTax = $invoice->getBaseRefundTax();
 
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
             // base_income excludes tax, so the refund it is netted against must exclude it too.
-            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), $this->getRefundExcludingTax($invoice)));
+            // base_refund_tax preserves the cash tax portion so gross cash remains derivable.
+            // Round the converted legs first so the stored pair always sums to the converted gross.
+            // A NULL tax portion means the cumulative basis is unresolved: keep base_refund on
+            // the gross amount without classifying unknown tax as known.
+            [$netRefund, $taxPortion] = $this->getRefundBreakdown($invoice);
+            $currencyCode = $invoice->getCurrency();
+            $netBase = round($table->toBaseCurrency($currencyCode, $netRefund), 2);
+            $invoice->setBaseRefund($netBase);
+            if ($taxPortion === null) {
+                $invoice->setBaseRefundTax(null);
+            } else {
+                $grossBase = round($table->toBaseCurrency($currencyCode, $netRefund + $taxPortion), 2);
+                $invoice->setBaseRefundTax(round($grossBase - $netBase, 2));
+            }
         } else {
             $invoice->setBaseRefund(null);
+            $invoice->setBaseRefundTax(null);
         }
 
         // Base-currency rewrites on issued invoices (e.g. after an FX rate move) touch locked
@@ -1412,10 +1450,13 @@ class Service implements InjectionAwareInterface
         $refundChanged = $oldRefund === null
             ? $invoice->getBaseRefund() !== null
             : (float) $invoice->getBaseRefund() !== (float) $oldRefund;
-        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged)) {
+        $refundTaxChanged = $oldRefundTax === null
+            ? $invoice->getBaseRefundTax() !== null
+            : (float) $invoice->getBaseRefundTax() !== (float) $oldRefundTax;
+        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged || $refundTaxChanged)) {
             $this->di['logger']->info(
-                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income})',
-                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome()]
+                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income}, refund tax {old_tax} -> {new_tax})',
+                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome(), 'old_tax' => $oldRefundTax, 'new_tax' => $invoice->getBaseRefundTax()]
             );
         }
 
@@ -1424,26 +1465,77 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * The refunded amount without the tax returned with it. `refund` holds what
-     * was paid back (tax included); the tax part is read from the credit notes
-     * issued against the invoice.
+     * Split the refunded amount into its net (without tax) and tax portions, in invoice currency.
+     *
+     * `refund` holds what was paid back (tax included); the tax part is read from the credit notes
+     * issued against the invoice. Returns [net, tax] with gross === net + tax when every
+     * refunded amount is backed by a linked note. Otherwise the tax is NULL: without a link
+     * the split is unknowable, so the whole refund stays net rather than guessing.
+     *
+     * @return array{0: float, 1: float|null}
      */
-    private function getRefundExcludingTax(Invoice $invoice): float
+    private function getRefundBreakdown(Invoice $invoice): array
     {
         $refund = (float) $invoice->getRefund();
         if ($refund <= 0) {
-            return $refund;
+            return [$refund, 0.0];
+        }
+
+        $creditNotes = $this->findRefundingInvoices($invoice);
+        if ($creditNotes === []) {
+            // Older refunds recorded before `credit_note_for_invoice_id` existed, or notes
+            // deleted since: no linked note establishes the tax, so keep the pre-#4661
+            // gross base_refund and leave the tax unknown rather than recording zero.
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->debug(
+                    'Refund without linked credit note for invoice #{invoice_id}: keeping tax-inclusive base_refund with unknown tax',
+                    ['invoice_id' => $invoice->getId()]
+                );
+            }
+
+            return [$refund, null];
         }
 
         // Credit note amounts are negated, so their tax is too. Keep the sign:
         // a refunded negative taxable subtotal (a taxed discount) gives back
         // negative tax, which adds to the refund without tax.
         $refundedTax = 0.0;
-        foreach ($this->findRefundingInvoices($invoice) as $creditNote) {
+        $linkedGross = 0.0;
+        foreach ($creditNotes as $creditNote) {
             $refundedTax -= $this->getTax($creditNote);
+            $linkedGross += abs($this->getTotalWithTax($creditNote));
         }
 
-        return round(max(0.0, $refund - $refundedTax), 2);
+        // `refund` accumulates each note's rounded gross, so allow a couple of cents of
+        // rounding dust. Anything beyond that is a refunded amount with no linked
+        // document: the cumulative tax basis is unresolved, so keep the gross base
+        // and leave the tax unknown rather than splitting on partial evidence.
+        if ($refund - $linkedGross > 0.02) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning(
+                    'Refund for invoice #{invoice_id} exceeds its linked credit notes ({refund} vs {linked}): keeping tax-inclusive base_refund with unknown tax',
+                    ['invoice_id' => $invoice->getId(), 'refund' => $refund, 'linked' => round($linkedGross, 2)]
+                );
+            }
+
+            return [$refund, null];
+        }
+
+        $unclamped = $refund - $refundedTax;
+        if ($unclamped < 0) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning(
+                    'Refund tax {tax} exceeds refund {refund} for invoice #{invoice_id}: clamping base_refund to 0',
+                    ['invoice_id' => $invoice->getId(), 'tax' => $refundedTax, 'refund' => $refund]
+                );
+            }
+
+            return [0.0, round($refund, 2)];
+        }
+
+        $net = round($unclamped, 2);
+
+        return [$net, round($refund - $net, 2)];
     }
 
     public function prepareInvoice(Client $client, array $data): Invoice
