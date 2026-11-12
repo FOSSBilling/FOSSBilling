@@ -18,6 +18,7 @@ namespace Box\Mod\Order\Api;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
@@ -136,6 +137,48 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         return $order;
+    }
+
+    /**
+     * Asks to cancel the service, with a type (immediate or end_of_period)
+     * and a reason.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['type' => 'Choose when the service ends', 'reason' => 'Please tell us why you want to cancel.'])]
+    public function cancel_request($data)
+    {
+        $this->di['mod_service']('Order', 'CancelRequest')->create($this->_getOrder($data), (string) $data['type'], (string) $data['reason']);
+
+        return true;
+    }
+
+    /**
+     * The waiting cancellation request of the service, or null.
+     *
+     * @return array|null
+     */
+    public function cancel_request_get($data)
+    {
+        $request = $this->di['mod_service']('Order', 'CancelRequest')->pending($this->_getOrder($data));
+
+        return $request === null ? null : $this->di['mod_service']('Order', 'CancelRequest')->toApiArray($request);
+    }
+
+    /**
+     * Takes back the waiting cancellation request of the service.
+     *
+     * @return bool
+     */
+    public function cancel_request_withdraw($data)
+    {
+        $identity = $this->getIdentity();
+        if (!$identity instanceof ClientEntity) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Client identity not found');
+        }
+        $this->di['mod_service']('Order', 'CancelRequest')->withdraw($this->_getOrder($data), $identity);
+
+        return true;
     }
 
     private function getClientId(object $identity): int

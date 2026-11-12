@@ -1338,6 +1338,13 @@ test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellati
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
                     AND pending_invoice.status = :pending_invoice_status
+                )
+                /* No renewal invoice is made while a cancellation request waits. */
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM client_order_cancel_request cancel_request
+                    WHERE cancel_request.client_order_id = co.id
+                    AND cancel_request.status = :cancel_request_status
                 ) AND co.client_id = :client_id AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
 
     $expectedBindings = [
@@ -1349,6 +1356,7 @@ test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellati
         'pending_item_task' => Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
         'pending_item_status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
         'pending_invoice_status' => Invoice::STATUS_PAID,
+        'cancel_request_status' => Box\Mod\Order\Entity\ClientOrderCancelRequest::STATUS_PENDING,
         'status' => Order::STATUS_ACTIVE,
         'invoice_option' => 'issue-invoice',
         'expires_before' => (new DateTimeImmutable('today'))->modify('+' . ($randId + 1) . ' days')->format('Y-m-d H:i:s'),
@@ -1366,6 +1374,7 @@ test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation me
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
     $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, rel_id INTEGER, invoice_id INTEGER, type TEXT, task TEXT, status TEXT)');
     $connection->executeStatement('CREATE TABLE client_order_meta (id INTEGER PRIMARY KEY, client_order_id INTEGER, name TEXT, value TEXT)');
+    $connection->executeStatement('CREATE TABLE client_order_cancel_request (id INTEGER PRIMARY KEY, client_order_id INTEGER, client_id INTEGER, status TEXT)');
 
     $expiresAt = (new DateTimeImmutable('tomorrow'))->format('Y-m-d H:i:s');
     $eligibleOrder = [
@@ -1378,10 +1387,16 @@ test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation me
     ];
     $connection->insert('client_order', ['id' => 1] + $eligibleOrder);
     $connection->insert('client_order', ['id' => 2] + $eligibleOrder);
+    $connection->insert('client_order', ['id' => 3] + $eligibleOrder);
     $connection->insert('client_order_meta', [
         'client_order_id' => 2,
         'name' => Service::META_CANCEL_AT_PERIOD_END,
         'value' => '1',
+    ]);
+    $connection->insert('client_order_cancel_request', [
+        'client_order_id' => 3,
+        'client_id' => 1,
+        'status' => Box\Mod\Order\Entity\ClientOrderCancelRequest::STATUS_PENDING,
     ]);
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
@@ -1405,7 +1420,8 @@ test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation me
     $ids = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $result);
 
     expect($ids)->toContain(1)
-        ->and($ids)->not->toContain(2);
+        ->and($ids)->not->toContain(2)
+        ->and($ids)->not->toContain(3);
 });
 
 test('getRelatedOrderIdByType returns id', function (): void {

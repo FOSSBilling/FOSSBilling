@@ -359,6 +359,73 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
+     * Accept waiting cancellation requests when automatic processing is on.
+     *
+     * @return bool
+     */
+    public function batch_process_cancel_requests($data)
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->di['mod_service']('Order', 'CancelRequest')->runAutoProcess();
+    }
+
+    /**
+     * The waiting cancellation requests, oldest first.
+     *
+     * @return array
+     */
+    public function cancel_request_list($data)
+    {
+        $this->checkPermissions('order', 'view');
+
+        return $this->di['mod_service']('Order', 'CancelRequest')->pendingList();
+    }
+
+    /**
+     * The waiting cancellation request of an order, or null.
+     *
+     * @return array|null
+     */
+    public function cancel_request_get($data)
+    {
+        $this->checkPermissions('order', 'view');
+
+        $request = $this->di['mod_service']('Order', 'CancelRequest')->pending($this->_getOrder($data));
+
+        return $request === null ? null : $this->di['mod_service']('Order', 'CancelRequest')->toApiArray($request);
+    }
+
+    /**
+     * Accepts a cancellation request: the service is cancelled now or at the
+     * end of its period.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Request ID was not passed'])]
+    public function cancel_request_accept($data)
+    {
+        $this->checkPermissions('order', 'manage');
+        $this->di['mod_service']('Order', 'CancelRequest')->accept((int) $data['id']);
+
+        return true;
+    }
+
+    /**
+     * Stops a cancellation request; the service is not cancelled.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Request ID was not passed'])]
+    public function cancel_request_stop($data)
+    {
+        $this->checkPermissions('order', 'manage');
+        $this->di['mod_service']('Order', 'CancelRequest')->stop((int) $data['id']);
+
+        return true;
+    }
+
+    /**
      * Update order config.
      *
      * @return bool

@@ -224,3 +224,44 @@ test('throws exception when order not found', function (): void {
 
     expect(fn () => $api->get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
+
+test('requests cancellation of a service', function (): void {
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
+
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->once()->andReturn($order);
+
+    $cancelService = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancelService->shouldReceive('create')->once()->with($order, 'immediate', 'Leaving')->andReturn(createEntity(Box\Mod\Order\Entity\ClientOrderCancelRequest::class));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancelService]));
+    $apiMock->setDi($di);
+
+    expect($apiMock->cancel_request(['id' => 1, 'type' => 'immediate', 'reason' => 'Leaving']))->toBeTrue();
+});
+
+test('gets and withdraws a waiting cancellation request', function (): void {
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+    $request = createEntity(Box\Mod\Order\Entity\ClientOrderCancelRequest::class, ['id' => 3, 'type' => 'immediate', 'reason' => 'Leaving']);
+
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->times(3)->andReturn($order);
+    $apiMock->setIdentity($client);
+
+    $cancelService = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancelService->shouldReceive('pending')->twice()->with($order)->andReturn($request, null);
+    $cancelService->shouldReceive('toApiArray')->once()->with($request)->andReturn(['id' => 3, 'type' => 'immediate']);
+    $cancelService->shouldReceive('withdraw')->once()->with($order, $client)->andReturnNull();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancelService]));
+    $apiMock->setDi($di);
+
+    expect($apiMock->cancel_request_get(['id' => 1]))->toBe(['id' => 3, 'type' => 'immediate']);
+    expect($apiMock->cancel_request_get(['id' => 1]))->toBeNull();
+    expect($apiMock->cancel_request_withdraw(['id' => 1]))->toBeTrue();
+});
