@@ -914,6 +914,17 @@ class Service implements InjectionAwareInterface
         } catch (\Throwable $e) {
             $di['logger']->warning('Invoice journal healing failed: {message}', ['message' => $e->getMessage()]);
         }
+
+        // Legacy tax-inclusive refunds converge the same way, independently of the
+        // schema-hash gate: a finalization whose sync failed leaves these rows for
+        // drift healing, which only runs one bounded page per request.
+        try {
+            $patcher = new \FOSSBilling\Core\Update\Patcher();
+            $patcher->setDi($di);
+            $patcher->backfillRefundIncomeBasis(1);
+        } catch (\Throwable $e) {
+            $di['logger']->warning('Refund income basis healing failed: {message}', ['message' => $e->getMessage()]);
+        }
     }
 
     #[AsEventListener]

@@ -4207,13 +4207,24 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, credit_note_for_invoice_id) VALUES (51, NULL, NULL, NULL, '20', 'USD', 50)");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (51, '-100.00', 1, 1)");
     // Ambiguous basis: stored base matches neither hypothesis, so it is left for later.
+    // Ambiguous basis: stored base matches neither hypothesis, so it is left for later.
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency) VALUES (60, '120.00', '999.00', NULL, '20', 'EUR')");
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, credit_note_for_invoice_id) VALUES (61, NULL, NULL, NULL, '20', 'EUR', 60)");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (61, '-100.00', 1, 1)");
+    // Foreign net basis at a changed rate (reviewer's scenario: 100 EUR net recorded at
+    // 1.2 now looks like a 120 gross at 1.0): classification would need the refund-time
+    // rate, which is not stored, so the row must stay untouched.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency) VALUES (70, '120.00', '100.00', NULL, '20', 'EUR')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, credit_note_for_invoice_id) VALUES (71, NULL, NULL, NULL, '20', 'EUR', 70)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (71, '-100.00', 1, 1)");
 
-    // Identity conversion: hypotheses are compared at par, so EUR row 60 stays ambiguous.
+    // Default currency converts 1:1, so USD hypotheses are exact; EUR rows are skipped.
+    $defaultCurrency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $defaultCurrency->shouldReceive('getCode')->andReturn('USD');
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')->andReturn($defaultCurrency);
     $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
-    $currencyService->shouldReceive('toBaseCurrency')->andReturnUsing(fn (string $code, float|int $amount): float => (float) $amount);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getConnection')->andReturn($connection);
@@ -4228,6 +4239,7 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
     $row40 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 40');
     $row50 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 50');
     $row60 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 60');
+    $row70 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 70');
     expect((float) $row30['base_refund'])->toBe(100.0)
         ->and((float) $row30['base_refund_tax'])->toBe(20.0)
         ->and((float) $row40['base_refund'])->toBe(60.0)
@@ -4235,7 +4247,9 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
         ->and((float) $row50['base_refund'])->toBe(100.0)
         ->and((float) $row50['base_refund_tax'])->toBe(20.0)
         ->and((float) $row60['base_refund'])->toBe(999.0)
-        ->and($row60['base_refund_tax'])->toBeNull();
+        ->and($row60['base_refund_tax'])->toBeNull()
+        ->and((float) $row70['base_refund'])->toBe(100.0)
+        ->and($row70['base_refund_tax'])->toBeNull();
 
     $patcher->backfillRefundIncomeBasis();
 
