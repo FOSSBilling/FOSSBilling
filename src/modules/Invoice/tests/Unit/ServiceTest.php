@@ -2106,7 +2106,72 @@ test('counts the refund without tax so income nets out on a refunded invoice', f
     'full refund of a taxed line' => ['120.00', [['100.00', true]], [[['-100.00', true]]], 100.0, 100.0, 20.0],
     'partial refund over two credit notes, taxed and untaxed lines' => ['110.00', [['100.00', true], ['50.00', false]], [[['-50.00', true]], [['-50.00', false]]], 150.0, 100.0, 10.0],
     'full refund with a taxed discount' => ['78.00', [['90.00', false], ['-10.00', true]], [[['-90.00', false], ['10.00', true]]], 80.0, 80.0, -2.0],
-    'older refund with no linked credit note' => ['60.00', [['100.00', true]], [], 100.0, 60.0, 0.0],
+    'full refund of untaxed lines' => ['50.00', [['50.00', false]], [[['-50.00', false]]], 50.0, 50.0, 0.0],
+]);
+
+test('leaves refund tax unknown when prior refunds predate linked notes', function (string $refund, array $lines, array $creditNotes, float $expectedIncome, float $expectedRefund): void {
+    $service = new Service();
+
+    $makeLines = function (array $rows): array {
+        $items = [];
+        foreach ($rows as [$price, $taxed]) {
+            $item = new InvoiceItem();
+            $item->setPrice($price);
+            $item->setQuantity(1);
+            $item->setTaxed($taxed);
+            $items[] = $item;
+        }
+
+        return $items;
+    };
+
+    $invoice = setEntityId(new Invoice(), 30);
+    $invoice->setCurrency('USD');
+    $invoice->setTaxrate('20');
+    $invoice->setRefund($refund);
+    // A legacy row already carrying an unknown tax stays unknown on recount.
+    $invoice->setBaseRefund('60.00');
+    $invoice->setBaseRefundTax(null);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('toBaseCurrency')->andReturnUsing(fn (string $code, float|int $amount): float => (float) $amount);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(30)->andReturn($makeLines($lines));
+
+    $creditNoteEntities = [];
+    foreach ($creditNotes as $index => $creditLines) {
+        $creditNote = setEntityId(new Invoice(), 31 + $index);
+        $creditNote->setCurrency('USD');
+        $creditNote->setTaxrate('20');
+        $creditNote->setCreditNoteForInvoiceId(30);
+        $creditNoteEntities[] = $creditNote;
+        $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(31 + $index)->andReturn($makeLines($creditLines));
+    }
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findBy')->with(['creditNoteForInvoiceId' => 30])->andReturn($creditNoteEntities);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'currency' => $currencyService,
+        'invoice:invoiceitem' => new ServiceInvoiceItem(),
+    ]));
+
+    $service->setDi($di);
+    $service->countIncome($invoice);
+
+    expect((float) $invoice->getBaseIncome())->toBe($expectedIncome)
+        ->and((float) $invoice->getBaseRefund())->toBe($expectedRefund)
+        ->and($invoice->getBaseRefundTax())->toBeNull();
+})->with([
+    // No linked note establishes the tax: the gross base is kept, tax stays unknown.
+    'older refund with no linked credit note' => ['60.00', [['100.00', true]], [], 100.0, 60.0],
+    // A new linked refund on top of an unlinked legacy one: only the new note is
+    // covered, so the cumulative tax basis stays unresolved.
+    'new refund on top of an unlinked legacy refund' => ['180.00', [['150.00', true]], [[['-100.00', true]]], 150.0, 180.0],
 ]);
 
 test('prepares invoice with undefined currency', function (): void {

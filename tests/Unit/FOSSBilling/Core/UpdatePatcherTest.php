@@ -4199,8 +4199,12 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (30, '120.00', '120.00', NULL, '20', 'USD', '1.000000')");
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (31, NULL, NULL, NULL, '20', 'USD', '1.000000', 30)");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (31, '-100.00', 1, 1)");
-    // No linked note: keeps its base, records zero tax.
+    // No linked note: the tax is unknown, so it stays NULL rather than recording zero.
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (40, '60.00', '60.00', NULL, '20', 'USD', '1.000000')");
+    // Linked notes with zero tax: known zero.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (90, '50.00', '50.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (91, NULL, NULL, NULL, '20', 'USD', '1.000000', 90)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (91, '-50.00', 1, 0)");
     // Net basis (refunded after #4661, before this migration): base_refund is
     // already net, so only the tax leg may be recorded - never rescaled.
     $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (50, '120.00', '100.00', NULL, '20', 'USD', '1.000000')");
@@ -4246,10 +4250,11 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
     $row60 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 60');
     $row70 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 70');
     $row80 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 80');
+    $row90 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 90');
     expect((float) $row30['base_refund'])->toBe(100.0)
         ->and((float) $row30['base_refund_tax'])->toBe(20.0)
         ->and((float) $row40['base_refund'])->toBe(60.0)
-        ->and((float) $row40['base_refund_tax'])->toBe(0.0)
+        ->and($row40['base_refund_tax'])->toBeNull()
         ->and((float) $row50['base_refund'])->toBe(100.0)
         ->and((float) $row50['base_refund_tax'])->toBe(20.0)
         ->and((float) $row60['base_refund'])->toBe(999.0)
@@ -4257,7 +4262,9 @@ test('refund income backfill nets out tax and preserves gross cash', function ()
         ->and((float) $row70['base_refund'])->toBe(120.0)
         ->and($row70['base_refund_tax'])->toBeNull()
         ->and((float) $row80['base_refund'])->toBe(120.0)
-        ->and($row80['base_refund_tax'])->toBeNull();
+        ->and($row80['base_refund_tax'])->toBeNull()
+        ->and((float) $row90['base_refund'])->toBe(50.0)
+        ->and((float) $row90['base_refund_tax'])->toBe(0.0);
 
     $patcher->backfillRefundIncomeBasis();
 

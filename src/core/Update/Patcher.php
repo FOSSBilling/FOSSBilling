@@ -1839,9 +1839,11 @@ class Patcher implements InjectionAwareInterface
      * never double-apply. A row is only rewritten when its refund-time base currency is
      * established: its currency must be the current default (whose conversions are the 1:1
      * identity, exact at any point in time) and its payment-time `currency_rate` snapshot must
-     * be 1.0, pinning the same base across the payment-to-refund window. Anything else is left
-     * for a later run or manual fix. Bounded runs resume from a stored scan position so they
-     * converge across requests; unbounded runs rescan from zero and clear it.
+     * be 1.0, pinning the same base across the payment-to-refund window. Anything else - a
+     * foreign base, a moved rate, or no linked note establishing the tax - is left NULL
+     * rather than recording a zero that would read as known. Bounded runs resume from a
+     * stored scan position so they converge across requests; unbounded runs rescan from
+     * zero and clear it.
      */
     public function backfillRefundIncomeBasis(int $maxPages = 0): void
     {
@@ -1899,13 +1901,26 @@ class Patcher implements InjectionAwareInterface
                 $lastId = (int) $row['id'];
 
                 $refund = (float) ($row['refund'] ?? 0);
-                $net = $refund;
-                if ($refund > 0 && isset($refundedTaxByInvoice[$lastId])) {
-                    $net = round(max(0.0, $refund - $refundedTaxByInvoice[$lastId]), 2);
+                if ($refund <= 0) {
+                    // Nothing refunded: no tax by definition.
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL',
+                        ['value' => '0.00', 'id' => $row['id']]
+                    );
+
+                    continue;
                 }
 
+                $hasNotes = isset($refundedTaxByInvoice[$lastId]);
+                $net = $hasNotes ? round(max(0.0, $refund - $refundedTaxByInvoice[$lastId]), 2) : $refund;
+
                 if (abs($net - $refund) < 0.005) {
-                    // Untaxed, or no linked note to split the tax from: basis-independent, mark done.
+                    if (!$hasNotes) {
+                        // No linked note establishes the tax: unknown, leave NULL rather
+                        // than recording a zero that would read as known.
+                        continue;
+                    }
+                    // Linked notes with zero tax: known zero, mark done.
                     $updated += (int) (bool) $dbal->executeStatement(
                         'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL',
                         ['value' => '0.00', 'id' => $row['id']]

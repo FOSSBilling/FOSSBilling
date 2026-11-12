@@ -1417,12 +1417,18 @@ class Service implements InjectionAwareInterface
             // base_income excludes tax, so the refund it is netted against must exclude it too.
             // base_refund_tax preserves the cash tax portion so gross cash remains derivable.
             // Round the converted legs first so the stored pair always sums to the converted gross.
+            // A NULL tax portion means the cumulative basis is unresolved: keep base_refund on
+            // the gross amount without classifying unknown tax as known.
             [$netRefund, $taxPortion] = $this->getRefundBreakdown($invoice);
             $currencyCode = $invoice->getCurrency();
             $netBase = round($table->toBaseCurrency($currencyCode, $netRefund), 2);
-            $grossBase = round($table->toBaseCurrency($currencyCode, $netRefund + $taxPortion), 2);
             $invoice->setBaseRefund($netBase);
-            $invoice->setBaseRefundTax(round($grossBase - $netBase, 2));
+            if ($taxPortion === null) {
+                $invoice->setBaseRefundTax(null);
+            } else {
+                $grossBase = round($table->toBaseCurrency($currencyCode, $netRefund + $taxPortion), 2);
+                $invoice->setBaseRefundTax(round($grossBase - $netBase, 2));
+            }
         } else {
             $invoice->setBaseRefund(null);
             $invoice->setBaseRefundTax(null);
@@ -1455,10 +1461,11 @@ class Service implements InjectionAwareInterface
      * Split the refunded amount into its net (without tax) and tax portions, in invoice currency.
      *
      * `refund` holds what was paid back (tax included); the tax part is read from the credit notes
-     * issued against the invoice. Returns [net, tax] with gross === net + tax, except the legacy
-     * fallback below where no linked note exists and the whole refund is treated as net.
+     * issued against the invoice. Returns [net, tax] with gross === net + tax when every
+     * refunded amount is backed by a linked note. Otherwise the tax is NULL: without a link
+     * the split is unknowable, so the whole refund stays net rather than guessing.
      *
-     * @return array{0: float, 1: float}
+     * @return array{0: float, 1: float|null}
      */
     private function getRefundBreakdown(Invoice $invoice): array
     {
@@ -1470,24 +1477,41 @@ class Service implements InjectionAwareInterface
         $creditNotes = $this->findRefundingInvoices($invoice);
         if ($creditNotes === []) {
             // Older refunds recorded before `credit_note_for_invoice_id` existed, or notes
-            // deleted since: without a link the tax split is unknowable, so keep the
-            // pre-#4661 behaviour (whole refund as net) rather than guessing.
+            // deleted since: no linked note establishes the tax, so keep the pre-#4661
+            // gross base_refund and leave the tax unknown rather than recording zero.
             if (isset($this->di['logger'])) {
                 $this->di['logger']->debug(
-                    'Refund without linked credit note for invoice #{invoice_id}: keeping tax-inclusive base_refund',
+                    'Refund without linked credit note for invoice #{invoice_id}: keeping tax-inclusive base_refund with unknown tax',
                     ['invoice_id' => $invoice->getId()]
                 );
             }
 
-            return [$refund, 0.0];
+            return [$refund, null];
         }
 
         // Credit note amounts are negated, so their tax is too. Keep the sign:
         // a refunded negative taxable subtotal (a taxed discount) gives back
         // negative tax, which adds to the refund without tax.
         $refundedTax = 0.0;
+        $linkedGross = 0.0;
         foreach ($creditNotes as $creditNote) {
             $refundedTax -= $this->getTax($creditNote);
+            $linkedGross += abs($this->getTotalWithTax($creditNote));
+        }
+
+        // `refund` accumulates each note's rounded gross, so allow a couple of cents of
+        // rounding dust. Anything beyond that is a refunded amount with no linked
+        // document: the cumulative tax basis is unresolved, so keep the gross base
+        // and leave the tax unknown rather than splitting on partial evidence.
+        if ($refund - $linkedGross > 0.02) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning(
+                    'Refund for invoice #{invoice_id} exceeds its linked credit notes ({refund} vs {linked}): keeping tax-inclusive base_refund with unknown tax',
+                    ['invoice_id' => $invoice->getId(), 'refund' => $refund, 'linked' => round($linkedGross, 2)]
+                );
+            }
+
+            return [$refund, null];
         }
 
         $unclamped = $refund - $refundedTax;
