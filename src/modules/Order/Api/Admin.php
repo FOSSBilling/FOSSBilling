@@ -544,4 +544,28 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         return $this->getService()->exportCSV($data['headers']);
     }
+
+    /**
+     * Get upgrade history for an order.
+     */
+    public function upgrade_history($data): array
+    {
+        $this->checkPermissions('order', 'view');
+        $required = ['id' => 'Order id required'];
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
+
+        return \Box\Mod\Order\Upgrades::history($this->getDi(), (int) $data['id']);
+    }
+
+    /**
+     * Retry applying a failed upgrade.
+     */
+    public function upgrade_retry($data): bool
+    {
+        $this->checkPermissions('order', 'manage');
+        $required = ['id' => 'Upgrade id required'];
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
+
+        return \Box\Mod\Order\Upgrades::apply($this->getDi(), (int) $data['id']);
+    }
 }

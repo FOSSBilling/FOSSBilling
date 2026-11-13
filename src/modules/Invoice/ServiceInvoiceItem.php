@@ -177,6 +177,16 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
                         break;
 
+                    case InvoiceItem::TASK_UPGRADE:
+                        try {
+                            \Box\Mod\Order\Upgrades::onPaid($this->di, (int) $item->getRelId());
+                        } catch (\Exception $e) {
+                            $this->di['logger']->error($e->getMessage());
+                            $taskFailed = true;
+                        }
+
+                        break;
+
                     default:
                         // do nothing for unregistered tasks
                         break;

@@ -62,6 +62,9 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Support'|trans }}</a>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-upgrades" data-bs-toggle="tab" role="tab">{{ 'Upgrades'|trans }}</a>
+                    </li>
     {% endblock %}
 
     {% block detail_tab_content %}
@@ -759,6 +762,77 @@
                                 {% else %}
                                 <tr>
                                     <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-upgrades" role="tabpanel">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Service Upgrades & Downgrades'|trans,
+                subtitle: 'History of package and billing cycle changes requested for this order.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    {% set upgrades = admin.order_upgrade_history({ 'id': order.id }) %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th>{{ 'Type'|trans }}</th>
+                                    <th>{{ 'From'|trans }}</th>
+                                    <th>{{ 'To'|trans }}</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th>{{ 'Invoice'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for up in upgrades %}
+                                <tr>
+                                    <td>#{{ up.id }}</td>
+                                    <td>{{ up.created_at|format_datetime }}</td>
+                                    <td>
+                                        <span class="badge {{ up.kind == 'downgrade' ? 'bg-info-lt' : 'bg-success-lt' }}">{{ up.kind|capitalize }}</span>
+                                    </td>
+                                    <td>{{ up.from_title }} ({{ up.from_period }})</td>
+                                    <td><strong>{{ up.to_title }} ({{ up.to_period }})</strong></td>
+                                    <td>{{ up.amount|format_currency(up.currency) }}</td>
+                                    <td>
+                                        {% if up.status == 'applied' %}
+                                            <span class="badge bg-success-lt">{{ 'Applied'|trans }}</span>
+                                        {% elseif up.status == 'pending' %}
+                                            <span class="badge bg-warning-lt">{{ 'Pending'|trans }}</span>
+                                        {% elseif up.status == 'failed' %}
+                                            <span class="badge bg-danger-lt" title="{{ up.error }}">{{ 'Failed'|trans }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-lt">{{ up.status|capitalize }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if up.invoice_id %}
+                                            <a href="{{ 'invoice/manage'|url }}/{{ up.invoice_id }}">#{{ up.invoice_id }}</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if up.status == 'failed' %}
+                                            <a class="btn btn-sm btn-outline-danger api-link" href="{{ 'api/admin/order/upgrade_retry'|link({ 'id': up.id }) }}" data-api-reload="1">{{ 'Retry'|trans }}</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="9">{{ 'No upgrade history found for this order.'|trans }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
