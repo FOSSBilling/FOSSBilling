@@ -568,6 +568,34 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
+     * Charges the saved payment methods of invoices whose next automatic
+     * try is due (see ServiceSavedCards). Run from the cron.
+     *
+     * @return bool
+     */
+    public function batch_charge_saved_cards($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'SavedCards')->runDue();
+
+        return true;
+    }
+
+    /**
+     * Updates the automatic saved-method charge schedule (days before the
+     * due date, retries, days between retries).
+     *
+     * @return bool
+     */
+    public function card_settings_update($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'SavedCards')->saveSettings($data);
+
+        return true;
+    }
+
+    /**
      * Send payment reminder notification for client.
      * Dispatches typed reminder events for custom notification code.
      *

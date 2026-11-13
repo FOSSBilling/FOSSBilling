@@ -1959,6 +1959,83 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
     }
 
+    public function gatewayId(): int
+    {
+        return (int) $this->config['gateway_id'];
+    }
+
+    public function testMode(): bool
+    {
+        return !empty($this->config['test_mode']);
+    }
+
+    /**
+     * The client's saved method for automatic charges, if they kept one:
+     * {payment_method, card, auto_pay_at}. Saved while paying or on the
+     * Payment methods page; charged by the cron, the client, or staff.
+     *
+     * @return array{payment_method: string, card: string, auto_pay_at: string}|null
+     */
+    public function savedCard(int $clientId): ?array
+    {
+        return $this->di['mod_service']('Invoice', 'SavedCards')->saved($this->gatewayId(), $this->testMode(), $clientId);
+    }
+
+    /** The Stripe customer that holds the client's saved cards, or null. */
+    private function ownedCustomer(int $clientId): ?string
+    {
+        $row = $this->di['em']->getRepository(PayGatewayCustomer::class)->findOneByGatewayAndClient($this->gatewayId(), $clientId, $this->testMode());
+        $customerId = $row?->hasSavedCards() ? $row->getExternalCustomerId() : null;
+
+        return $customerId !== null && $customerId !== '' ? $customerId : null;
+    }
+
+    /**
+     * Charges the client's saved card for an invoice's balance (the cron or staff), off session.
+     * $attempt names the try, so each one is its own idempotent charge. Returns the PaymentIntent id;
+     * a declined card throws InformationException with Stripe's reason.
+     */
+    public function chargeSavedCard(Invoice $invoice, string $attempt): string
+    {
+        $card = $this->savedCard((int) $invoice->getClientId());
+        $customerId = $this->ownedCustomer((int) $invoice->getClientId());
+        if ($card === null || $customerId === null) {
+            throw new FOSSBilling\Core\Exception\InformationException('The client has no saved card.');
+        }
+        $params = [
+            'amount' => $this->getAmountInMinorUnits($invoice),
+            'currency' => strtolower((string) $invoice->getCurrency()),
+            'customer' => $customerId,
+            'payment_method' => $card['payment_method'],
+            'off_session' => true,
+            'confirm' => true,
+            // A saved method needs no redirect; without this Stripe asks for a return_url and refuses.
+            'automatic_payment_methods' => ['enabled' => true, 'allow_redirects' => 'never'],
+            'description' => $this->getInvoiceTitle($invoice),
+            'receipt_email' => $invoice->getBuyerEmail(),
+            'metadata' => [
+                'client_id' => (string) $invoice->getClientId(),
+                'invoice_id' => (string) $invoice->getId(),
+                'gateway_id' => (string) $this->config['gateway_id'],
+                // Marks the payment as automatic (a bank debit that fails days later emails the client once webhooks handle it).
+                'auto_pay' => '1',
+            ],
+        ];
+
+        try {
+            $intent = $this->stripe->paymentIntents->create($params, ['idempotency_key' => sprintf('saved_card_invoice_%d_%s_%s', $invoice->getId(), $attempt, hash('sha256', json_encode($params, JSON_THROW_ON_ERROR)))]);
+        } catch (Stripe\Exception\CardException $e) {
+            throw new FOSSBilling\Core\Exception\InformationException('The card was declined: :reason', [':reason' => $e->getMessage()]);
+        }
+        // A bank debit stays processing until it clears; the gateway's answer then marks the invoice paid.
+        if (!in_array($intent->status, ['succeeded', 'processing'], true)) {
+            // Off session there is nobody to complete a bank check (3-D Secure): the client pays by hand.
+            throw new FOSSBilling\Core\Exception\InformationException('The card needs the client to confirm the payment.');
+        }
+
+        return $intent->id;
+    }
+
     private function createStripeSubscription(string $customerId, string $priceId, Stripe\SetupIntent $setupIntent, Invoice $invoice): Stripe\Subscription
     {
         $subscriptionParams = [

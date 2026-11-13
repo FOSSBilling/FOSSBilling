@@ -2084,3 +2084,29 @@ test('refunds an invoice to account credit instead of the gateway', function ():
 
     expect($api->refund($data))->toBeInt()->toBe(3);
 });
+
+test('charges saved cards in batch', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('runDue')->once();
+
+    $di = $api->getDi();
+    $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+    $api->setDi($di);
+
+    expect($api->batch_charge_saved_cards([]))->toBeTrue();
+});
+
+test('updates saved card charge settings', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('saveSettings')->once()->with(['card_days_before' => '3']);
+
+    $di = $api->getDi();
+    $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+    $api->setDi($di);
+
+    expect($api->card_settings_update(['card_days_before' => '3']))->toBeTrue();
+});

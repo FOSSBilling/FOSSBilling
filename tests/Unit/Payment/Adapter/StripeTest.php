@@ -16,6 +16,7 @@ use Stripe\StripeClient;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\moduleService;
 use function Tests\Helpers\setEntityId;
 
 const TEST_WEBHOOK_SECRET = 'whsec_test_dummy';
@@ -3392,5 +3393,162 @@ describe('setup first charge recording', function (): void {
 
         expect($tx->status)->toBe(Transaction::STATUS_PROCESSED)
             ->and($tx->amount)->toBe('15');
+    });
+});
+
+describe('saved cards', function (): void {
+    test('exposes its gateway identity from the config', function (): void {
+        expect($this->adapter->gatewayId())->toBe(1)
+            ->and($this->adapter->testMode())->toBeTrue();
+    });
+
+    test('reads the saved method through the saved-cards service', function (): void {
+        $saved = ['payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00'];
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('saved')->once()->with(1, true, 9)->andReturn($saved);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->savedCard(9))->toBe($saved);
+    });
+
+    test('charging without a saved method refuses', function (): void {
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('saved')->once()->andReturn(null);
+
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn(null);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9]);
+
+        expect(fn () => $this->adapter->chargeSavedCard($invoice, 'attempt_1'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'The client has no saved card.');
+    });
+
+    test('charging a declined card reports the decline', function (): void {
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('saved')->once()->andReturn(['payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00']);
+
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+        $decline = Mockery::mock(Stripe\Exception\CardException::class);
+        $decline->shouldReceive('getMessage')->andReturn('Your card was declined.');
+        $paymentIntents = Mockery::mock();
+        $paymentIntents->shouldReceive('create')->once()->andThrow($decline);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntents;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService]));
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+        $this->adapter->setDi($di);
+
+        $invoice = createEntity(Invoice::class, ['id' => 61, 'client_id' => 9, 'currency' => 'USD']);
+
+        expect(fn () => $this->adapter->chargeSavedCard($invoice, 'attempt_1'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'declined');
+    });
+
+    test('charging off session refuses a payment needing client confirmation', function (): void {
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('saved')->once()->andReturn(['payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00']);
+
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+        $paymentIntents = Mockery::mock();
+        $paymentIntents->shouldReceive('create')->once()->andReturn(Stripe\PaymentIntent::constructFrom(['id' => 'pi_action', 'status' => 'requires_action']));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntents;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService]));
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+        $this->adapter->setDi($di);
+
+        $invoice = createEntity(Invoice::class, ['id' => 62, 'client_id' => 9, 'currency' => 'USD']);
+
+        expect(fn () => $this->adapter->chargeSavedCard($invoice, 'attempt_1'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'confirm the payment');
+    });
+
+    test('charging the saved card returns the payment intent id', function (): void {
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('saved')->once()->andReturn(['payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00']);
+
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+        $captured = null;
+        $paymentIntents = Mockery::mock();
+        $paymentIntents->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(function (array $params): bool {
+                    return $params['customer'] === 'cus_1'
+                        && $params['payment_method'] === 'pm_1'
+                        && $params['off_session'] === true
+                        && $params['confirm'] === true
+                        && ($params['metadata']['auto_pay'] ?? null) === '1';
+                }),
+                Mockery::on(function (array $options) use (&$captured): bool {
+                    $captured = $options['idempotency_key'] ?? null;
+
+                    return str_starts_with((string) $captured, 'saved_card_invoice_63_attempt_2_');
+                })
+            )
+            ->andReturn(Stripe\PaymentIntent::constructFrom(['id' => 'pi_ok', 'status' => 'succeeded']));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntents;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService]));
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+        $this->adapter->setDi($di);
+
+        $invoice = createEntity(Invoice::class, ['id' => 63, 'client_id' => 9, 'currency' => 'USD']);
+
+        expect($this->adapter->chargeSavedCard($invoice, 'attempt_2'))->toBe('pi_ok');
     });
 });

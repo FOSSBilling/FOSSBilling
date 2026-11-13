@@ -230,6 +230,7 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     'invoice generation' => 'invoice_batch_generate',
     'invoice reminders' => 'invoice_batch_send_reminders',
     'invoice due events' => 'invoice_batch_invoke_due_event',
+    'saved card charges' => 'invoice_batch_charge_saved_cards',
     'order suspension warning' => 'order_batch_send_suspension_warnings',
     'order suspension' => 'order_batch_suspend_expired',
     'order cancellation' => 'order_batch_cancel_suspended',
