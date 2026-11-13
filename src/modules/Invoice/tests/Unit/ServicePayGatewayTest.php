@@ -563,6 +563,15 @@ test('deletes a gateway', function (): void {
     $transactionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
 
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM pay_gateway_customer WHERE pay_gateway_id = ?', [7]);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM pay_gateway_product WHERE pay_gateway_id = ?', [7]);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
     $service = new ServicePayGateway();
     $di = container();
     $di['em'] = $em;

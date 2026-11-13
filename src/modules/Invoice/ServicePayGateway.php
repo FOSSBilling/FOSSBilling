@@ -428,6 +428,14 @@ class ServicePayGateway implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove payment gateway with existing transactions');
         }
 
+        // These rows are only caches with no standalone meaning once their
+        // gateway is gone. The entity mappings declare onDelete CASCADE, but
+        // the schema has never had real foreign keys, so nothing cascades
+        // for them - delete them explicitly to avoid orphaned rows.
+        $connection = $this->di['em']->getConnection();
+        $connection->executeStatement('DELETE FROM pay_gateway_customer WHERE pay_gateway_id = ?', [$id]);
+        $connection->executeStatement('DELETE FROM pay_gateway_product WHERE pay_gateway_id = ?', [$id]);
+
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Removed payment gateway {id}', ['id' => $id]);
