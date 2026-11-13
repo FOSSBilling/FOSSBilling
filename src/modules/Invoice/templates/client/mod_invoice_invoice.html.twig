@@ -79,6 +79,9 @@
                         </div>
                         <input type="hidden" name="gateway_id" id="gateway_id">
                     </form>
+                    {% if client and client.invoice_card_available %}
+                        <p class="small text-muted mt-2 mb-0">{{ 'Want this paid automatically next time?'|trans }} <a href="{{ 'payment-methods'|url }}">{{ 'Manage payment methods'|trans }}</a></p>
+                    {% endif %}
                 </div>
             </div>
             {% set free_credit = client ? client.balance_get_total|default(0) : 0 %}

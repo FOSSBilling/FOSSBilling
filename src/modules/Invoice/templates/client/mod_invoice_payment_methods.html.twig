@@ -1,0 +1,153 @@
+{# Saved cards for automatic payments (/payment-methods): the card charged automatically,
+   other saved cards, adding a card with Stripe's card form, and removing one.
+   cards comes from client/invoice/card_list. #}
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'payment-methods' %}
+
+{% block meta_title %}{{ 'Payment methods'|trans }}{% endblock %}
+{% block page_header %}{{ 'Payment methods'|trans }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Payment methods'|trans }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header py-3">
+                <div>
+                    <h1 class="mb-1">{{ 'Payment methods'|trans }}</h1>
+                    <span class="small text-muted">
+                        {{ 'The payment method marked "Pays invoices automatically" pays your invoices when they are due. You can also save one when you pay an invoice.'|trans }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body" data-cards data-return-url="{{ 'payment-methods'|url }}">
+                {% if not cards.available %}
+                    <div class="alert alert-info" role="status">{{ 'Saved payment methods are not available.'|trans }}</div>
+                {% else %}
+                    {% if cards.cards is not empty %}
+                        <ul class="list-group list-group-flush mb-4">
+                            {% for card in cards.cards %}
+                                <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <span dir="ltr">{{ card.card }}</span>
+                                    <span class="d-flex flex-wrap align-items-center gap-2">
+                                        {% if card.default %}
+                                            <span class="badge text-bg-success">{{ 'Pays invoices automatically'|trans }}</span>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-primary" type="button" data-card-call="invoice/card_default" data-id="{{ card.id }}">{{ 'Use for invoices'|trans }}</button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-danger" type="button" data-card-call="invoice/card_remove" data-id="{{ card.id }}" data-confirm="{{ 'Remove this card?'|trans }}">{{ 'Remove'|trans }}</button>
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-info" role="status">{{ 'You have no saved cards yet.'|trans }}</div>
+                    {% endif %}
+                    <div class="mb-2">
+                        <button class="btn btn-primary" type="button" data-card-add>{{ 'Add a card'|trans }}</button>
+                    </div>
+                    <div data-card-element class="mb-2"></div>
+                    <form data-card-form hidden>
+                        <p class="text-secondary">{{ 'Confirm the card below to save it.'|trans }}</p>
+                        <button class="btn btn-primary" type="submit">{{ 'Save card'|trans }}</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const root = document.querySelector('[data-cards]');
+    if (!root) {
+        return;
+    }
+
+    function loadStripe() {
+        if (window.Stripe) {
+            return Promise.resolve(window.Stripe);
+        }
+
+        return new Promise(function (resolve, reject) {
+            const script = document.createElement('script');
+            script.src = 'https://js.stripe.com/v3/';
+            script.onload = function () { resolve(window.Stripe); };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    // A card that needed a bank check comes back here from the bank's page with its setup.
+    const back = new URLSearchParams(window.location.search);
+    if (back.get('setup_intent') && back.get('redirect_status') === 'succeeded') {
+        window.history.replaceState(null, '', root.dataset.returnUrl);
+        FOSSBilling.api.client.post('invoice/card_added', { setup_intent: back.get('setup_intent') },
+            function () { window.location.reload(); },
+            function (res) { FOSSBilling.message(`${res.message} (${res.code})`, 'error'); });
+    }
+
+    root.querySelectorAll('[data-card-call]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (button.dataset.confirm && !window.confirm(button.dataset.confirm)) {
+                return;
+            }
+            button.disabled = true;
+            FOSSBilling.api.client.post(button.dataset.cardCall, { id: button.dataset.id },
+                function () { window.location.reload(); },
+                function (res) {
+                    button.disabled = false;
+                    FOSSBilling.message(`${res.message} (${res.code})`, 'error');
+                });
+        });
+    });
+
+    const add = root.querySelector('[data-card-add]');
+    const form = root.querySelector('[data-card-form]');
+    if (add && form) {
+        add.addEventListener('click', function () {
+            add.disabled = true;
+            Promise.all([
+                new Promise(function (resolve, reject) {
+                    FOSSBilling.api.client.post('invoice/card_setup', {}, resolve, reject);
+                }),
+                loadStripe(),
+            ]).then(function ([setup, Stripe]) {
+                const stripe = Stripe(setup.pub_key);
+                const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                const elements = stripe.elements({ clientSecret: setup.client_secret, appearance: { theme: dark ? 'night' : 'stripe' } });
+                elements.create('payment').mount(root.querySelector('[data-card-element]'));
+                add.hidden = true;
+                form.hidden = false;
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const button = form.querySelector('button[type="submit"]');
+                    button.disabled = true;
+                    stripe.confirmSetup({ elements: elements, redirect: 'if_required', confirmParams: { return_url: root.dataset.returnUrl } })
+                        .then(function (result) {
+                            if (result.error) {
+                                throw result.error;
+                            }
+
+                            return new Promise(function (resolve, reject) {
+                                FOSSBilling.api.client.post('invoice/card_added', { setup_intent: result.setupIntent.id }, resolve, reject);
+                            });
+                        })
+                        .then(function () { window.location.reload(); })
+                        .catch(function (error) {
+                            button.disabled = false;
+                            FOSSBilling.message(error.message || error, 'error');
+                        });
+                });
+            }).catch(function (error) {
+                add.disabled = false;
+                FOSSBilling.message(error.message || error, 'error');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

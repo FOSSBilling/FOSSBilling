@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -118,7 +120,7 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     public function apply_credit($data)
     {
         $model = $this->getService()->getInvoiceRepository()->findOneBy(['hash' => $data['hash'], 'clientId' => $this->getIdentity()->getId()]);
-        if (!$model instanceof \Box\Mod\Invoice\Entity\Invoice) {
+        if (!$model instanceof Invoice) {
             throw new \FOSSBilling\Core\Exception\InformationException('Invoice was not found');
         }
 
@@ -156,5 +158,101 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         $service = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $service->getTaxRateForClient($this->getIdentity());
+    }
+
+    /**
+     * The client's saved payment methods for the Payment methods page:
+     * {available, cards: [{id, card, default}]}. PayPal and other gateways
+     * fill their own keys once ported; default marks the method that pays
+     * the invoices.
+     */
+    public function card_list(): array
+    {
+        $clientId = (int) $this->getIdentity()->getId();
+        $savedCards = $this->getDi()['mod_service']('Invoice', 'SavedCards');
+        $stripe = $savedCards->stripe();
+        $paying = $savedCards->method($clientId)['adapter'] ?? null;
+        $cards = $stripe?->cards($clientId) ?? [];
+        foreach ($cards as &$card) {
+            $card['default'] = $card['default'] && $paying instanceof \Payment_Adapter_Stripe;
+        }
+
+        return [
+            'available' => $stripe !== null,
+            'bank' => false,
+            'cards' => $cards,
+            'paypal' => null,
+            'autopay' => null,
+        ];
+    }
+
+    /** Whether a saved payment method can be used here, for the client menu. */
+    public function card_available(): bool
+    {
+        return $this->getDi()['mod_service']('Invoice', 'SavedCards')->adapters() !== [];
+    }
+
+    /** Starts adding a card: {client_secret, pub_key} for Stripe's card form. */
+    public function card_setup(): array
+    {
+        return $this->cardAdapter()->cardSetup((int) $this->getIdentity()->getId());
+    }
+
+    /** Keeps the card of a confirmed setup, the default one when the client has none. */
+    #[RequiredParams(['setup_intent' => 'Setup ID was not passed'])]
+    public function card_added($data): bool
+    {
+        $this->cardAdapter()->cardAdded((int) $this->getIdentity()->getId(), (string) $data['setup_intent']);
+
+        return true;
+    }
+
+    /** Makes a saved card the one invoices are charged to. */
+    #[RequiredParams(['id' => 'Card ID was not passed'])]
+    public function card_default($data): bool
+    {
+        $this->cardAdapter()->cardDefault((int) $this->getIdentity()->getId(), (string) $data['id']);
+
+        return true;
+    }
+
+    /** Removes a saved card. */
+    #[RequiredParams(['id' => 'Card ID was not passed'])]
+    public function card_remove($data): bool
+    {
+        $this->cardAdapter()->cardRemove((int) $this->getIdentity()->getId(), (string) $data['id']);
+
+        return true;
+    }
+
+    /** The "Save this card" choice (and "Use this card for automatic payments") for the card payment of the client's own unpaid invoice. */
+    #[RequiredParams(['hash' => 'Invoice hash was not passed', 'gateway_id' => 'Payment gateway ID was not passed', 'intent' => 'Payment ID was not passed'])]
+    public function card_save_choice($data): bool
+    {
+        $clientId = (int) $this->getIdentity()->getId();
+        $invoice = $this->getDi()['em']->getRepository(Invoice::class)->findOneBy([
+            'hash' => $data['hash'],
+            'clientId' => $clientId,
+            'status' => Invoice::STATUS_UNPAID,
+        ]);
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Core\Exception\InformationException('This invoice is already paid or cancelled.');
+        }
+        $gateway = $this->getDi()['em']->getRepository(PayGateway::class)->findOneBy(['id' => (int) $data['gateway_id'], 'gateway' => 'Stripe', 'enabled' => true]);
+        $adapter = $gateway instanceof PayGateway
+            ? $this->getDi()['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway)
+            : null;
+        if (!$adapter instanceof \Payment_Adapter_Stripe) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Saved cards are not available.');
+        }
+        $adapter->cardSaveChoice($clientId, (int) $invoice->getId(), (string) $data['intent'], !empty($data['save']), !empty($data['make_default']));
+
+        return true;
+    }
+
+    private function cardAdapter(): \Payment_Adapter_Stripe
+    {
+        return $this->getDi()['mod_service']('Invoice', 'SavedCards')->stripe()
+            ?? throw new \FOSSBilling\Core\Exception\InformationException('Saved cards are not available.');
     }
 }

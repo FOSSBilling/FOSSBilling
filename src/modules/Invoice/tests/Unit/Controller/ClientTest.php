@@ -177,3 +177,27 @@ test('pdf download returns the response, redirects on denial, and rejects garbag
 
     expect($controller->get_pdf($app, 'abc'))->toBeInstanceOf(RedirectResponse::class);
 });
+
+test('payment methods page renders the saved cards', function (): void {
+    $api = new class {
+        public function invoice_card_list(): array
+        {
+            return ['available' => true, 'bank' => false, 'cards' => [], 'paypal' => null, 'autopay' => null];
+        }
+    };
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('render')
+        ->once()
+        ->with('mod_invoice_payment_methods', ['cards' => ['available' => true, 'bank' => false, 'cards' => [], 'paypal' => null, 'autopay' => null]])
+        ->andReturn('rendered');
+
+    $di = container();
+    $di['api_client'] = $api;
+    $di['is_client_logged'] = true;
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_payment_methods($app))->toBe('rendered');
+});

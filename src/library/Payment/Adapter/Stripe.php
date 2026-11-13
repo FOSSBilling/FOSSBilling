@@ -2185,7 +2185,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         try {
             $this->rememberCard($clientId, $method, $makeDefault);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Keeping the card must never stop the payment being recorded; the client can add it again.
             $this->di['logger']->warning('Stripe: the card saved with payment {payment} was not kept: {message}', ['payment' => $paymentIntent->id ?? '', 'message' => $e->getMessage()]);
         }
@@ -2209,7 +2209,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $row->setDefaultPaymentMethod($method->id);
         $row->setDefaultCard($this->cardLabel($method));
         // The card a client saved or chose last pays.
-        $row->setAutoPayAt(new \DateTime());
+        $row->setAutoPayAt(new DateTime());
         $this->di['em']->flush();
     }
 
@@ -2270,6 +2270,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $row->setTestMode($this->testMode());
             $row->setExternalCustomerId($customerId);
             $row->setSavedCards(true);
+
             try {
                 $this->di['em']->persist($row);
                 $this->di['em']->flush();
@@ -2572,6 +2573,35 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
         ];
+        // A signed-in client paying their own invoice may save the card (and use a saved
+        // one), through a customer session.
+        $customerSession = null;
+        $saveCard = null;
+        $autoCard = null;
+        $loggedInClientId = isset($this->di['loggedin_client']) ? (int) $this->di['loggedin_client']->getId() : 0;
+        if ($loggedInClientId > 0 && $loggedInClientId === (int) $invoice->getClientId()) {
+            try {
+                $customerId = $this->clientCustomer((int) $invoice->getClientId());
+                $autoCard = $this->savedCard((int) $invoice->getClientId());
+                $customerSession = $this->stripe->customerSessions->create([
+                    'customer' => $customerId,
+                    'components' => ['payment_element' => ['enabled' => true, 'features' => [
+                        'payment_method_redisplay' => 'enabled',
+                        // Cards saved on the Payment methods page are "unspecified", which Stripe hides by default.
+                        'payment_method_allow_redisplay_filters' => ['always', 'limited', 'unspecified'],
+                        // Our own "Save this card" box: Stripe's box is always unticked.
+                        'payment_method_save' => 'disabled',
+                        'payment_method_remove' => 'disabled',
+                    ]]],
+                ]);
+                $intentParams['customer'] = $customerId;
+                $saveCard = true;
+                $intentParams['payment_method_options'] = ['card' => ['setup_future_usage' => 'off_session']];
+            } catch (Throwable $e) {
+                // Saving a card is extra: the client can always pay without it.
+                $this->di['logger']->warning('Stripe: no saved cards on invoice #{id}: {message}', ['id' => $invoice->getId(), 'message' => $e->getMessage()]);
+            }
+        }
         $idempotencyKey = sprintf(
             'one_time_invoice_%d_gateway_%d_%s',
             $invoice->getId(),
@@ -2592,6 +2622,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                     <div id="payment-element">
                         <!-- Stripe Elements will create form elements here -->
                     </div>
+:save_card
 
                     <button id="submit" class="btn btn-primary mt-2" style="margin-top: 0.5em;">Submit</button>
 
@@ -2607,7 +2638,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
                     var elements = stripe.elements({
                         clientSecret: \':intent_secret\',
-                        appearance: stripeAppearance,
+                        appearance: stripeAppearance,:customer_session
                       });
 
                     var paymentElement = elements.create(\'payment\', {
@@ -2620,9 +2651,41 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                     paymentElement.mount(\'#payment-element\');
 
                     const form = document.getElementById(\'payment-form\');
+                    const saveCard = document.getElementById(\'fb-save-card\');
+                    const cardDefault = document.getElementById(\'fb-card-default\');
+                    let newCard = true;
+                    if (saveCard) {
+                        // The save boxes are for a new card only: not a saved method (payment_method).
+                        paymentElement.on(\'change\', (event) => {
+                            newCard = event.value.type === \'card\' && !event.value.payment_method;
+                            document.getElementById(\'fb-save-card-box\').hidden = !newCard;
+                        });
+                        saveCard.addEventListener(\'change\', () => {
+                            if (cardDefault) {
+                                document.getElementById(\'fb-card-default-box\').hidden = !saveCard.checked;
+                            }
+                        });
+                    }
 
                     form.addEventListener(\'submit\', async (event) => {
                     event.preventDefault();
+
+                    if (saveCard) {
+                        const save = newCard && saveCard.checked;
+                        try {
+                            await new Promise((resolve, reject) => {
+                                FOSSBilling.api.client.post(\'invoice/card_save_choice\', {hash: \':invoice_hash\', gateway_id: \':gateway_id\', intent: \':intent_id\', save: save ? 1 : 0, make_default: save && cardDefault && cardDefault.checked ? 1 : 0}, resolve, reject);
+                            });
+                            const updated = await elements.fetchUpdates();
+                            if (updated.error) {
+                                throw updated.error;
+                            }
+                        } catch (saveError) {
+                            const messageContainer = document.querySelector(\'#error-message\');
+                            messageContainer.innerHTML = `<p class="alert alert-danger">${saveError.message}</p>`;
+                            return;
+                        }
+                    }
 
                     const {error} = await stripe.confirmPayment({
                         elements,
@@ -2649,10 +2712,23 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $bindings = [
             ':pub_key' => $pubKey,
             ':intent_secret' => $intent->client_secret,
+            ':intent_id' => $intent->id,
+            ':gateway_id' => (string) $this->gatewayId(),
+            ':save_card' => $saveCard === null ? '' : sprintf(
+                '<div id="fb-save-card-box" class="mt-2"><div class="form-check"><input class="form-check-input" type="checkbox" id="fb-save-card" checked><label class="form-check-label" for="fb-save-card">%s</label><div class="form-text">%s</div></div>%s</div>',
+                htmlspecialchars(__trans('Save this card for future invoices'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                htmlspecialchars($autoCard === null
+                    ? __trans('This card will pay this account\'s invoices automatically. You can remove it on the Payment methods page.')
+                    : __trans('A saved card can pay this account\'s invoices automatically. You can remove it on the Payment methods page.'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                $autoCard === null ? '' : sprintf(
+                    '<div class="form-check" id="fb-card-default-box"><input class="form-check-input" type="checkbox" id="fb-card-default"><label class="form-check-label" for="fb-card-default">%s</label></div>',
+                    htmlspecialchars(__trans('Use this card for automatic payments instead of :card', [':card' => $autoCard['card']]), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'))
+            ),
             ':buyer_email' => self::encodeJsString((string) $invoice->getBuyerEmail()),
             ':buyer_name' => self::encodeJsString(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName())),
             ':callbackUrl' => $this->config['notify_url'],
             ':invoice_hash' => $invoice->getHash(),
+            ':customer_session' => $customerSession === null ? '' : ' customerSessionClientSecret: ' . self::encodeJsString((string) $customerSession->client_secret) . ',',
         ];
 
         return strtr($form, $bindings);

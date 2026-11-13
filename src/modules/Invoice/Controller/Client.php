@@ -40,6 +40,7 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $app->get('/invoice/thank-you/:hash', 'get_thankyoupage', ['hash' => '[a-z0-9]+'], static::class);
         $app->post('/invoice/thank-you/:hash', 'get_thankyoupage', ['hash' => '[a-z0-9]+'], static::class);
         $app->get('/invoice/pdf/:hash', 'get_pdf', ['hash' => '[a-z0-9]+'], static::class);
+        $app->get('/payment-methods', 'get_payment_methods', [], static::class);
     }
 
     public function get_invoices(\FOSSBilling\Core\Http\App $app): string
@@ -47,6 +48,14 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $this->di['is_client_logged'];
 
         return $app->render('mod_invoice_index');
+    }
+
+    public function get_payment_methods(\FOSSBilling\Core\Http\App $app): string
+    {
+        $this->di['is_client_logged'];
+        $api = $this->di['api_client'];
+
+        return $app->render('mod_invoice_payment_methods', ['cards' => $api->invoice_card_list()]);
     }
 
     public function get_invoice(\FOSSBilling\Core\Http\App $app, $hash): string|Response
