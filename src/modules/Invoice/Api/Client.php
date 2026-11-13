@@ -179,7 +179,7 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
 
         return [
             'available' => $stripe !== null,
-            'bank' => false,
+            'bank' => $stripe?->bankDebit($clientId) ?? false,
             'cards' => $cards,
             'paypal' => null,
             'autopay' => null,

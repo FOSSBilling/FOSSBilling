@@ -406,6 +406,8 @@ class Service implements InjectionAwareInterface
         $result['amount_paid'] = $unpaid ? min($this->getAmountPaid($invoice), round($result['total'], 2)) : (in_array($row['status'], [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true) ? $result['total'] : 0.0);
         $result['balance_due'] = $unpaid ? max(0.0, round($result['total'] - $result['amount_paid'], 2)) : 0.0;
         $result['credit_applied'] = $unpaid ? $this->getInvoiceCreditRepository()->getSumByInvoiceId((int) $row['id']) : 0.0;
+        // A bank debit still clearing shows the invoice as "Payment pending".
+        $result['pending_payment'] = $unpaid ? PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) : null;
         $result['notes'] = $row['notes'];
         $result['text_1'] = $row['text_1'] ?? null;
         $result['text_2'] = $row['text_2'] ?? null;
@@ -888,6 +890,11 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
+            // No reminder before the due date while a bank debit of the invoice is clearing.
+            if (PendingPayments::forInvoice($di['em']->getConnection(), $event->invoiceId) !== null) {
+                return;
+            }
+
             // Atomically claim the invoice before sending anything: this is what stops the same
             // reminder being sent twice when this event is dispatched more than once for the
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
@@ -1011,6 +1018,11 @@ class Service implements InjectionAwareInterface
             }
 
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', $event->daysPassed, '5', $event->reminderIntervals)) {
+                return;
+            }
+
+            // No overdue reminder while a bank debit of the invoice is clearing.
+            if (PendingPayments::forInvoice($di['em']->getConnection(), $event->invoiceId) !== null) {
                 return;
             }
 
@@ -1694,6 +1706,11 @@ class Service implements InjectionAwareInterface
             // Account credit never pays an Add funds invoice: the deposit
             // would be deducted without ever topping the wallet up.
             if ($this->isInvoiceTypeDeposit($invoice)) {
+                return false;
+            }
+
+            // Account credit does not pay an invoice whose bank debit is clearing.
+            if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
                 return false;
             }
 

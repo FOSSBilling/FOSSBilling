@@ -128,6 +128,19 @@ function invoiceLockingRepository(array $state = []): InvoiceRepository
     return $repository;
 }
 
+/**
+ * A connection with no payment still clearing: PendingPayments::forInvoice()
+ * finds nothing, so the credit/reminder paths under test behave as before.
+ */
+function noPendingPaymentConnection(): Mockery\MockInterface
+{
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
+
+    return $connection;
+}
+
 test('gets dependency injection container', function (): void {
     $service = new Service();
     $di = container();
@@ -661,6 +674,8 @@ test('handles event after invoice is due', function (): void {
     $invoiceModel = createEntity(Invoice::class);
 
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
@@ -698,6 +713,8 @@ test('skips overdue invoice reminder when the invoice was already claimed', func
         ->never();
 
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
@@ -745,6 +762,8 @@ test('releases the claim when sending the overdue invoice email fails', function
     $invoiceModel = createEntity(Invoice::class);
 
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
@@ -793,6 +812,8 @@ test('releases the overdue reminder claim when invoice client data is unavailabl
     $invoiceModel = createEntity(Invoice::class);
 
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
@@ -836,6 +857,8 @@ test('handles event before invoice is due', function (): void {
     $invoiceModel = createEntity(Invoice::class);
 
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
@@ -870,6 +893,8 @@ test('releases the claim when sending the before-due invoice reminder fails', fu
     $invoiceModel = createEntity(Invoice::class);
 
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
@@ -908,6 +933,8 @@ test('skips before due invoice reminder when the invoice was already claimed', f
     $eventMock = new BeforeInvoiceIsDueEvent(1, 7, [7]);
 
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->once()
         ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
@@ -2507,6 +2534,7 @@ test('pays a zero-total invoice without recording a balance transaction', functi
     $service->shouldNotReceive('recordJournalEvent');
 
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
     $di['em']->shouldNotReceive('flush');
     $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
@@ -2536,6 +2564,7 @@ test('records a balance transaction for a one-cent invoice', function (): void {
     $client = createEntity(Client::class, ['id' => 20]);
 
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
     $di['em']->shouldReceive('getReference')->with(Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
@@ -2572,6 +2601,7 @@ test('pays an invoice with credits and records a balance transaction', function 
     $client = createEntity(Client::class, ['id' => 20]);
 
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
     $di['em']->shouldReceive('getReference')->with(Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
@@ -2596,6 +2626,7 @@ test('locks the invoice before checking the client balance', function (): void {
     $invoice->status = Invoice::STATUS_UNPAID;
 
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     // The invoice row is the first serialization point; only then is the client balance locked.
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetState')->with(10)
         ->globally()->ordered()->andReturn(['status' => Invoice::STATUS_UNPAID, 'issued' => true]);
@@ -2657,6 +2688,7 @@ test('does not deduct credits when the locked balance is insufficient', function
     $service->shouldNotReceive('markAsPaid');
 
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetState')->with(10)
         ->andReturn(['status' => Invoice::STATUS_UNPAID, 'issued' => true]);
     $di['em']->shouldNotReceive('persist');
@@ -2687,6 +2719,7 @@ test('pays a fully funded invoice despite floating-point rounding dust', functio
     $client = createEntity(Client::class, ['id' => 20]);
 
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
     $di['em']->shouldReceive('getReference')->with(Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
@@ -2717,6 +2750,7 @@ test('does not pay a one-cent invoice with a zero credit balance', function (): 
     $service->shouldNotReceive('markAsPaid');
 
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetState')->with(10)
         ->andReturn(['status' => Invoice::STATUS_UNPAID, 'issued' => true]);
     $di['em']->shouldNotReceive('persist');
@@ -10239,6 +10273,7 @@ test('tryPayWithCredits leaves reserved credit for other invoices alone', functi
 
     $di = container();
     $di['em'] = $em;
+    $em->shouldReceive('getConnection')->andReturn(noPendingPaymentConnection());
     $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'gatewayfees' ? Mockery::mock(ServiceGatewayFees::class)->shouldIgnoreMissing() : $balanceService);
     $service->setDi($di);
 
@@ -10558,4 +10593,110 @@ test('tryPayWithCredits refuses deposit invoices', function (): void {
     $service->setDi($di);
 
     expect($service->tryPayWithCredits($invoice))->toBeFalse();
+});
+
+test('tryPayWithCredits refuses an invoice whose bank debit is clearing', function (): void {
+    $invoice = createEntity(Invoice::class);
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->issued = 1;
+    $invoice->status = Invoice::STATUS_UNPAID;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldNotReceive('getClientBalanceForUpdate');
+
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+    $service->shouldNotReceive('getTotalWithTax');
+    $service->shouldNotReceive('markAsPaid');
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('refresh')->byDefault();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): object => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeFalse();
+});
+
+test('skips before due invoice reminder while a bank debit is clearing', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('isInvoiceReminderIntervalEnabled')->once()->andReturn(true);
+    $serviceMock->shouldNotReceive('sendInvoiceReminder');
+
+    $eventMock = new BeforeInvoiceIsDueEvent(1, 7, [7]);
+
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+    $connection->shouldNotReceive('executeStatement');
+
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+
+    $serviceMock->setDi($di);
+
+    $serviceMock->onEventBeforeInvoiceIsDue($eventMock);
+    expect(true)->toBeTrue();
+});
+
+test('unpaid invoices expose a payment still clearing', function (): void {
+    $service = new Service();
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->hash = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getCompany')->atLeast()->once();
+    $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn(5);
+
+    $subscriptionServiceMock = Mockery::mock(ServiceSubscription::class);
+    $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')->byDefault()->andReturn('1W');
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->atLeast()->once()->andReturn([$invoiceItemModel]);
+
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(['amount' => '25.00', 'currency' => 'EUR', 'created_at' => '2026-01-05 10:00:00']);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $periodMock = Mockery::mock(FOSSBilling\Core\Period::class);
+    $periodMock->shouldReceive('getUnit');
+    $periodMock->shouldReceive('getQty');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
+        $service = null;
+        if ($sub == 'InvoiceItem') {
+            $service = $invoiceItemServiceMock;
+        }
+        if (is_string($serviceName) && strtolower($serviceName) === 'system') {
+            $service = $systemService;
+        }
+        if ($sub === 'Subscription') {
+            $service = $subscriptionServiceMock;
+        }
+
+        return $service;
+    });
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+
+    $service->setDi($di);
+
+    $result = $service->toApiArray($invoiceModel);
+    expect($result['pending_payment'])->toBe(['amount' => '25.00', 'currency' => 'EUR', 'created_at' => '2026-01-05 10:00:00']);
 });

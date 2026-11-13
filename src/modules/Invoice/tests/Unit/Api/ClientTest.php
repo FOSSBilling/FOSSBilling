@@ -409,6 +409,7 @@ describe('saved cards', function (): void {
         $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
 
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('bankDebit')->once()->with(7)->andReturn(false);
         $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
         $savedCards->shouldReceive('stripe')->once()->andReturn($adapter);
         $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter]);

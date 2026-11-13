@@ -3772,3 +3772,146 @@ describe('card management', function (): void {
             ->and($row->getDefaultCard())->toBe('Visa •••• 4242 (12/2028)');
     });
 });
+
+describe('bank debits', function (): void {
+    test('offers only cards when saved bank accounts are off', function (): void {
+        $di = container();
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->bankDebit(9))->toBeFalse();
+    });
+
+    test('offers the bank debit of the client currency when on', function (): void {
+        $this->adapter = new Payment_Adapter_Stripe([
+            'test_mode' => true,
+            'test_api_key' => 'sk_test_dummy',
+            'test_pub_key' => 'pk_test_dummy',
+            'test_webhook_secret' => TEST_WEBHOOK_SECRET,
+            'gateway_id' => 1,
+            'bank_debits' => '1',
+        ]);
+        setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => noOpEntityManagerMock());
+
+        $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 9, 'currency' => 'EUR']);
+        $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+        $clientRepo->shouldReceive('find')->with(9)->andReturn($client);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->bankDebit(9))->toBeTrue();
+    });
+
+    test('falls back to cards when the bank debit is not turned on at Stripe', function (): void {
+        $this->adapter = new Payment_Adapter_Stripe([
+            'test_mode' => true,
+            'test_api_key' => 'sk_test_dummy',
+            'test_pub_key' => 'pk_test_dummy',
+            'test_webhook_secret' => TEST_WEBHOOK_SECRET,
+            'gateway_id' => 1,
+            'bank_debits' => '1',
+        ]);
+        setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => noOpEntityManagerMock());
+
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 9, 'currency' => 'EUR']);
+        $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+        $clientRepo->shouldReceive('find')->with(9)->andReturn($client);
+
+        $setupIntents = Mockery::mock();
+        $setupIntents->shouldReceive('create')->once()->andThrow(
+            Mockery::mock(Stripe\Exception\InvalidRequestException::class)->makePartial()
+        );
+        $setupIntents->shouldReceive('create')->once()->with(Mockery::on(function (array $params): bool {
+            return $params['payment_method_types'] === ['card'];
+        }))->andReturn(Stripe\SetupIntent::constructFrom(['client_secret' => 'secret_card']));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntents;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $di['em']->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->cardSetup(9))->toBe(['client_secret' => 'secret_card', 'pub_key' => 'pk_test_dummy']);
+    });
+
+    test('labels bank debit methods', function (): void {
+        $sepa = Stripe\PaymentMethod::constructFrom(['id' => 'pm_sepa', 'type' => 'sepa_debit', 'sepa_debit' => ['last4' => '1234', 'country' => 'DE']]);
+
+        expect(invokePrivateMethod($this->adapter, 'cardLabel', [$sepa]))->toBe('SEPA Direct Debit •••• 1234 (DE)');
+    });
+
+    test('a failed bank debit that was clearing settles it and emails the client', function (): void {
+        $tx = createEntity(Transaction::class, ['id' => 70, 'txn_id' => 'pi_debit']);
+        $gateway = createEntity(PayGateway::class, ['id' => 1]);
+        $tx->setGateway($gateway);
+
+        $clearing = createEntity(Transaction::class, ['id' => 69, 'txn_id' => 'pi_debit']);
+        $txRepo = Mockery::mock(TransactionRepository::class);
+        $txRepo->shouldReceive('findClearingByTxnId')->once()->with('pi_debit', 1, 70)->andReturn($clearing);
+
+        $invoice = createEntity(Invoice::class, ['id' => 71, 'client_id' => 9]);
+        $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('find')->once()->with(71)->andReturn($invoice);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('emailDebitFailure')->once()->with($invoice, '', 'Stripe payment failed: card declined');
+
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+        $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $em->shouldReceive('flush')->once();
+
+        $di = container();
+        $di['em'] = $em;
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $this->adapter->setDi($di);
+
+        $intent = Stripe\PaymentIntent::constructFrom([
+            'id' => 'pi_debit', 'status' => 'requires_payment_method',
+            'metadata' => ['invoice_id' => '71', 'auto_pay' => '1'],
+            'last_payment_error' => ['message' => 'card declined', 'payment_method' => null],
+        ]);
+
+        expect(invokePrivateMethod($this->adapter, 'handlePaymentIntentFailedWebhook', [null, $tx, (object) ['data' => (object) ['object' => $intent]]]))->toBeTrue()
+            ->and($tx->getTxnStatus())->toBe('requires_payment_method')
+            ->and($tx->getStatus())->toBe(Transaction::STATUS_ERROR)
+            ->and($tx->getInvoice())->toBe($invoice)
+            ->and($clearing->getTxnStatus())->toBe('requires_payment_method');
+    });
+
+    test('a failed payment without a clearing twin sends no email', function (): void {
+        $tx = createEntity(Transaction::class, ['id' => 70, 'txn_id' => 'pi_x']);
+        $gateway = createEntity(PayGateway::class, ['id' => 1]);
+        $tx->setGateway($gateway);
+
+        $txRepo = Mockery::mock(TransactionRepository::class);
+        $txRepo->shouldReceive('findClearingByTxnId')->once()->andReturn(null);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldNotReceive('emailDebitFailure');
+
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+        $em->shouldNotReceive('flush');
+
+        $di = container();
+        $di['em'] = $em;
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $this->adapter->setDi($di);
+
+        $intent = Stripe\PaymentIntent::constructFrom([
+            'id' => 'pi_x', 'status' => 'requires_payment_method', 'metadata' => [],
+        ]);
+
+        expect(invokePrivateMethod($this->adapter, 'handlePaymentIntentFailedWebhook', [null, $tx, (object) ['data' => (object) ['object' => $intent]]]))->toBeTrue();
+    });
+});

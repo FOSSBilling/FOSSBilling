@@ -78,7 +78,12 @@
                                     </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Status'|trans }}:</td>
-                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}
+                                        {% if invoice.pending_payment|default(null) %}
+                                            <span class="badge bg-info-lt">{{ 'Payment pending'|trans }}</span>
+                                            <div class="text-secondary small">{{ 'A bank payment of :amount from :date is clearing.'|trans({':amount': invoice.pending_payment.amount|format_currency(invoice.pending_payment.currency|upper), ':date': invoice.pending_payment.created_at|format_date}) }}</div>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% if invoice.credit_note_for_invoice_id %}
                                 <tr>

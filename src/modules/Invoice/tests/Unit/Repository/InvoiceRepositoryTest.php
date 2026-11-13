@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
@@ -251,7 +253,7 @@ test('findUnpaidOlderThan returns only unpaid invoices whose due date is far eno
 
     $metadata = array_map(
         $entityManager->getClassMetadata(...),
-        [Invoice::class, InvoiceItem::class],
+        [Invoice::class, InvoiceItem::class, Transaction::class, PayGateway::class],
     );
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
 
@@ -259,6 +261,22 @@ test('findUnpaidOlderThan returns only unpaid invoices whose due date is far eno
     $farOverdue->setStatus(Invoice::STATUS_UNPAID);
     $farOverdue->setDueAt(new DateTime('-10 days'));
     $entityManager->persist($farOverdue);
+
+    // A bank debit still clearing keeps an old unpaid invoice out of expiry cleanup.
+    $clearing = new Invoice();
+    $clearing->setStatus(Invoice::STATUS_UNPAID);
+    $clearing->setDueAt(new DateTime('-10 days'));
+    $entityManager->persist($clearing);
+    $entityManager->flush();
+
+    $clearingTx = new Transaction();
+    $clearingTx->setInvoice($clearing);
+    $clearingTx->setStatus(Transaction::STATUS_RECEIVED);
+    $clearingTx->setTxnStatus('processing');
+    $clearingTx->setCreatedAt(new DateTime('-1 day'));
+    $entityManager->persist($clearingTx);
+    $entityManager->flush();
+    $entityManager->clear();
 
     $recentlyOverdue = new Invoice();
     $recentlyOverdue->setStatus(Invoice::STATUS_UNPAID);

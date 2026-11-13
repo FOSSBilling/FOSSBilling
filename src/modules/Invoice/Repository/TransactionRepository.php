@@ -220,6 +220,29 @@ class TransactionRepository extends EntityRepository
     }
 
     /**
+     * Find a bank debit still clearing: a received transaction whose gateway
+     * status is still processing, excluding a given id. Used by the Stripe
+     * adapter to settle a clearing payment once the gateway answers it.
+     */
+    public function findClearingByTxnId(string $txnId, int $gatewayId, int $excludeId): ?Transaction
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.txnId = :txn_id')
+            ->andWhere('IDENTITY(t.gateway) = :gateway_id')
+            ->andWhere('t.id != :exclude_id')
+            ->andWhere('t.status = :status')
+            ->andWhere('t.txnStatus = :txn_status')
+            ->setParameter('txn_id', $txnId)
+            ->setParameter('gateway_id', $gatewayId)
+            ->setParameter('exclude_id', $excludeId)
+            ->setParameter('status', Transaction::STATUS_RECEIVED)
+            ->setParameter('txn_status', 'processing')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * Find an active (received/processing/processed) transaction with the
      * given gateway transaction id and gateway id, excluding a given id.
      *

@@ -14,6 +14,7 @@ namespace Box\Mod\Order;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\PendingPayments;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Entity\OrderMeta;
 use Box\Mod\Order\Entity\OrderStatus;
@@ -1965,6 +1966,11 @@ class Service implements InjectionAwareInterface
                 if (!$expiresAt instanceof \DateTimeInterface || $expiresAt->format('Y-m-d H:i:s') > date('Y-m-d H:i:s')) {
                     continue;
                 }
+                // A bank debit still clearing keeps the order: suspending it
+                // for non-payment it is already paying would be wrong.
+                if (PendingPayments::forOrder($this->di['em']->getConnection(), (int) $order->getId())) {
+                    continue;
+                }
                 $this->suspendFromOrder($order, $reason);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
@@ -2016,6 +2022,10 @@ class Service implements InjectionAwareInterface
                 // earlier orders in this run were processed.
                 $this->di['em']->refresh($order);
                 if ($order->getStatus() !== Order::STATUS_SUSPENDED) {
+                    continue;
+                }
+                // A bank debit still clearing keeps the order, as in suspension.
+                if (PendingPayments::forOrder($this->di['em']->getConnection(), (int) $order->getId())) {
                     continue;
                 }
                 $this->cancelFromOrder($order, $reason);
@@ -2091,6 +2101,9 @@ class Service implements InjectionAwareInterface
                         if ($status === Invoice::STATUS_PAID) {
                             // Paid since getStaleUnpaid() ran - leave every order tied
                             // to it alone instead of deleting one out from under that.
+                            $invoiceHandled[$invoiceId] = false;
+                        } elseif ($status === Invoice::STATUS_UNPAID && PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoiceId) !== null) {
+                            // A bank debit is still clearing: the invoice is kept, with its orders.
                             $invoiceHandled[$invoiceId] = false;
                         } else {
                             if ($status === Invoice::STATUS_UNPAID) {

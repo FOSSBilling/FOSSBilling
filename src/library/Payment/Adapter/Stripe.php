@@ -25,6 +25,9 @@ use Stripe\StripeClient;
 
 class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwareInterface, FOSSBilling\Core\Payment\JsonWebhookAuthenticatorInterface
 {
+    /** The bank debit clients can save for each currency, besides cards (Stripe needs it on in the dashboard). */
+    private const array BANK_DEBITS = ['aud' => 'au_becs_debit', 'eur' => 'sepa_debit', 'gbp' => 'bacs_debit'];
+
     /**
      * Stripe's zero-decimal currencies for charges (https://docs.stripe.com/currencies).
      * UGX is on Stripe's published zero-decimal list, but its special-case row requires charge amounts ×100,
@@ -201,6 +204,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                         'label' => 'Test Webhook signing secret:',
                         'required_when' => ['enabled' => true, 'test_mode' => true],
                         'secret' => true,
+                    ],
+                ],
+                'bank_debits' => [
+                    'radio', [
+                        'label' => 'Saved bank accounts:',
+                        'description' => 'Besides cards, clients can save a bank account for automatic payments: BECS Direct Debit for AUD, SEPA Direct Debit for EUR and Bacs Direct Debit for GBP. Turn the method on in your Stripe dashboard first. A bank payment takes a few days to clear: meanwhile the invoice shows "Payment pending".',
+                        'multiOptions' => ['1' => __trans('On'), '0' => __trans('Off')],
                     ],
                 ],
             ],
@@ -1372,7 +1382,43 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $tx->setTxnId($paymentIntent->id);
         $tx->setTxnStatus($paymentIntent->status);
         $tx->setStatus(Transaction::STATUS_ERROR);
-        $tx->setError('Payment failed via webhook');
+        $tx->setError($this->failureReason($paymentIntent));
+        $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
+        if ($invoiceId) {
+            $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
+        }
+        // A bank debit that was clearing failed: the invoice is unpaid again, and an automatic one emails the client.
+        if ($this->settleClearing($paymentIntent, $tx) && $invoiceId && ($paymentIntent->metadata->auto_pay ?? '') === '1') {
+            $invoice = $tx->getInvoice();
+            $method = $paymentIntent->last_payment_error->payment_method ?? null;
+            if ($invoice instanceof Invoice) {
+                $this->di['mod_service']('Invoice', 'SavedCards')->emailDebitFailure($invoice, is_object($method) ? $this->cardLabel($method) : '', (string) $tx->getError());
+            }
+        }
+
+        return true;
+    }
+
+    /** As the gateway log, a failed attempt keeps Stripe's answer. */
+    private function failureReason(object $paymentIntent): string
+    {
+        return 'Stripe payment failed: ' . ($paymentIntent->last_payment_error->message ?? $paymentIntent->status ?? 'unknown');
+    }
+
+    /** Stripe answered for a payment still clearing: ends the wait, true when there was one. */
+    private function settleClearing(object $paymentIntent, Transaction $tx): bool
+    {
+        $clearing = $this->di['em']->getRepository(Transaction::class)->findClearingByTxnId(
+            (string) $paymentIntent->id,
+            (int) $tx->getGateway()?->getId(),
+            (int) $tx->getId()
+        );
+        if (!$clearing instanceof Transaction) {
+            return false;
+        }
+        $clearing->setTxnStatus((string) $paymentIntent->status);
+        $clearing->setUpdatedAt(new DateTime());
+        $this->di['em']->flush();
 
         return true;
     }
@@ -2050,30 +2096,60 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
         $default = $this->savedCard($clientId)['payment_method'] ?? '';
         $cards = [];
-        foreach ($this->methodTypes() as $type) {
+        foreach ($this->methodTypes($clientId) as $type) {
             foreach ($this->stripe->customers->allPaymentMethods($customerId, ['type' => $type, 'limit' => 20])->data as $method) {
                 $cards[] = ['id' => $method->id, 'card' => $this->cardLabel($method), 'default' => $method->id === $default];
+            }
+        }
+        // A bank account saved before saved bank accounts was turned off still pays: it stays listed, so the client can remove it.
+        if ($default !== '' && !in_array($default, array_column($cards, 'id'), true)) {
+            $method = $this->stripe->paymentMethods->retrieve($default, []);
+            if ($method->customer === $customerId) {
+                $cards[] = ['id' => $method->id, 'card' => $this->cardLabel($method), 'default' => true];
             }
         }
 
         return $cards;
     }
 
-    /** The payment method types a client can save: cards (bank debits arrive with saved bank accounts). */
-    private function methodTypes(): array
+    /** The payment method types a client can save: cards, and with saved bank accounts on, the bank debit of the client's currency. */
+    private function methodTypes(int $clientId): array
     {
-        return ['card'];
+        if ((string) ($this->config['bank_debits'] ?? '') !== '1') {
+            return ['card'];
+        }
+        $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+        $currency = strtolower((string) ($client?->getCurrency() ?? ''));
+
+        return array_filter(['card', self::BANK_DEBITS[$currency] ?? null]);
     }
 
-    /** A Stripe setup for adding a card on the Payment methods page: {client_secret, pub_key}. */
+    /** Whether the client can save a bank account (saved bank accounts on, and a bank debit for the client's currency). */
+    public function bankDebit(int $clientId): bool
+    {
+        return count($this->methodTypes($clientId)) > 1;
+    }
+
+    /** A Stripe setup for adding a card or bank account on the Payment methods page: {client_secret, pub_key}. */
     public function cardSetup(int $clientId): array
     {
-        $intent = $this->stripe->setupIntents->create([
+        $params = [
             'customer' => $this->clientCustomer($clientId),
             'usage' => 'off_session',
-            'payment_method_types' => $this->methodTypes(),
+            'payment_method_types' => $this->methodTypes($clientId),
             'metadata' => ['client_id' => (string) $clientId, 'gateway_id' => (string) $this->config['gateway_id']],
-        ]);
+        ];
+
+        try {
+            $intent = $this->stripe->setupIntents->create($params);
+        } catch (Stripe\Exception\InvalidRequestException $e) {
+            if ($params['payment_method_types'] === ['card']) {
+                throw $e;
+            }
+            // The bank debit is not turned on in the Stripe dashboard: cards only.
+            $this->di['logger']->warning('Stripe: {method} is not available, saving cards only: {message}', ['method' => $params['payment_method_types'][1], 'message' => $e->getMessage()]);
+            $intent = $this->stripe->setupIntents->create(['payment_method_types' => ['card']] + $params);
+        }
 
         return ['client_secret' => $intent->client_secret, 'pub_key' => $this->testMode() ? $this->config['test_pub_key'] : $this->config['pub_key']];
     }
@@ -2223,14 +2299,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
     }
 
-    /** "Visa •••• 4242 (12/2028)". */
+    /** "Visa •••• 4242 (12/2028)", "BECS Direct Debit •••• 3456 (000-000)". */
     private function cardLabel(object $method): string
     {
         $card = $method->card ?? null;
+        $bank = $method->{$method->type} ?? null;
 
-        return $card !== null
-            ? sprintf('%s •••• %s (%02d/%d)', ucfirst((string) $card->brand), (string) $card->last4, (int) $card->exp_month, (int) $card->exp_year)
-            : (string) $method->type;
+        return match (true) {
+            $card !== null => sprintf('%s •••• %s (%02d/%d)', ucfirst((string) $card->brand), (string) $card->last4, (int) $card->exp_month, (int) $card->exp_year),
+            $method->type === 'au_becs_debit' => sprintf('BECS Direct Debit •••• %s (%s)', $bank->last4 ?? '', substr_replace((string) ($bank->bsb_number ?? ''), '-', 3, 0)),
+            $method->type === 'sepa_debit' => sprintf('SEPA Direct Debit •••• %s (%s)', $bank->last4 ?? '', $bank->country ?? ''),
+            $method->type === 'bacs_debit' => sprintf('Bacs Direct Debit •••• %s (%s)', $bank->last4 ?? '', implode('-', str_split((string) ($bank->sort_code ?? ''), 2))),
+            default => (string) $method->type,
+        };
     }
 
     /**

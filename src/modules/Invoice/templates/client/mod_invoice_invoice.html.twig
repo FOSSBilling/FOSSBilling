@@ -34,7 +34,15 @@
 {% set company = guest.system_company %}
     <div class="row mb-3">
         <div class="col-md-12">
-            {% if invoice.status == 'unpaid' %}
+            {% if invoice.status == 'unpaid' and invoice.pending_payment|default(null) %}
+                <div class="card">
+                <div class="card-body">
+                    <h5 class="mb-1">{{ 'Payment pending'|trans }}</h5>
+                    <p class="small text-muted mb-0">{{ 'A bank payment of :amount from :date is clearing. No further action is needed - the invoice is marked paid when it clears.'|trans({':amount': invoice.pending_payment.amount|format_currency(invoice.pending_payment.currency|upper), ':date': invoice.pending_payment.created_at|format_date}) }}</p>
+                </div>
+                </div>
+            {% endif %}
+            {% if invoice.status == 'unpaid' and not invoice.pending_payment|default(null) %}
                 <div class="card">
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>

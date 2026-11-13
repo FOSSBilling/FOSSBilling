@@ -4170,6 +4170,10 @@ test('batchCancelUnpaid removes the linked unpaid invoice before deleting the or
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->once();
+    $noPending = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $noPending->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $noPending->shouldReceive('fetchAssociative')->andReturn(false);
+    $emMock->shouldReceive('getConnection')->andReturn($noPending);
 
     $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepositoryMock->shouldReceive('findBy')
@@ -4220,6 +4224,10 @@ test('batchCancelUnpaid resolves a shared invoice once and still removes every s
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
+    $noPending = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $noPending->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $noPending->shouldReceive('fetchAssociative')->andReturn(false);
+    $emMock->shouldReceive('getConnection')->andReturn($noPending);
 
     $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepositoryMock->shouldReceive('findBy')
@@ -4266,6 +4274,10 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
+    $noPending = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $noPending->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $noPending->shouldReceive('fetchAssociative')->andReturn(false);
+    $emMock->shouldReceive('getConnection')->andReturn($noPending);
 
     $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepositoryMock->shouldReceive('findBy')
@@ -4796,4 +4808,69 @@ test('createOrder applies a promo code and records the discount', function (): v
     expect($capturedOrder->getPromoId())->toBe(7);
     expect($capturedOrder->isPromoRecurring())->toBeTrue();
     expect($capturedOrder->getPromoUsed())->toBe(1);
+});
+
+test('batchSuspendExpired keeps an order whose bank debit is clearing', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $order = createEntity(Order::class, ['id' => 3, 'status' => Order::STATUS_ACTIVE]);
+    $order->setExpiresAt(new DateTime('-10 days'));
+    $service->shouldReceive('getExpiredOrders')->once()->andReturn([$order]);
+    $service->shouldNotReceive('suspendFromOrder');
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchOne')->once()->andReturn('1');
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('refresh')->once()->with($order);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $service->setDi($di);
+
+    expect($service->batchSuspendExpired())->toBeTrue();
+});
+
+test('batchCancelSuspended keeps an order whose bank debit is clearing', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $order = createEntity(Order::class, ['id' => 4, 'status' => Order::STATUS_SUSPENDED]);
+    $service->shouldNotReceive('cancelFromOrder');
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([['id' => 4, 'suspended_at' => '2026-01-01 10:00:00']]);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchOne')->once()->andReturn('1');
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo = Mockery::mock(OrderRepository::class));
+    $orderRepo->shouldReceive('find')->once()->with(4)->andReturn($order);
+    $em->shouldReceive('refresh')->once()->with($order);
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_suspended' => '1', 'batch_cancel_suspended_after_days' => 1];
+        }
+    });
+    $service->setDi($di);
+
+    expect($service->batchCancelSuspended())->toBeTrue();
 });
