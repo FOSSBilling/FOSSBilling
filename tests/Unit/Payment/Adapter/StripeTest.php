@@ -1823,7 +1823,7 @@ describe('getOrCreateCustomer', function (): void {
 
         $cached = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_cached']);
         $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
-        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9)->andReturn($cached);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($cached);
 
         $stripeMock = Mockery::mock(StripeClient::class);
         $stripeMock->customers = Mockery::mock(); // no expectations - must not be called
@@ -1849,7 +1849,7 @@ describe('getOrCreateCustomer', function (): void {
         ]);
 
         $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
-        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 10)->andReturn(null);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 10, true)->andReturn(null);
 
         $customer = Stripe\Customer::constructFrom(['id' => 'cus_fresh']);
         $customersMock = Mockery::mock();
@@ -1889,7 +1889,7 @@ describe('getOrCreateCustomer', function (): void {
         ]);
 
         $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
-        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 11)->andReturn(null);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 11, true)->andReturn(null);
 
         $customer = Stripe\Customer::constructFrom(['id' => 'cus_this_request']);
         $customersMock = Mockery::mock();
@@ -1902,7 +1902,7 @@ describe('getOrCreateCustomer', function (): void {
 
         $winningRow = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_other_request_won']);
         $isolatedEmRepo = Mockery::mock(PayGatewayCustomerRepository::class);
-        $isolatedEmRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 11)->andReturn($winningRow);
+        $isolatedEmRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 11, true)->andReturn($winningRow);
         $isolatedEm = noOpEntityManagerMock();
         $isolatedEm->shouldReceive('flush')->once()->andThrow(uniqueConstraintViolationException());
         $isolatedEm->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($isolatedEmRepo);

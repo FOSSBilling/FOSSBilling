@@ -1863,15 +1863,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return $this->resolveCustomerIdFromStripe($invoice);
         }
 
+        // Test and live keys are separate Stripe customer namespaces sharing
+        // one PayGateway row: the lookup must stay in this request's mode.
+        $testMode = !empty($this->config['test_mode']);
         $cached = $this->di['em']->getRepository(PayGatewayCustomer::class)
-            ->findOneByGatewayAndClient($gatewayId, $clientId);
+            ->findOneByGatewayAndClient($gatewayId, $clientId, $testMode);
         if ($cached instanceof PayGatewayCustomer) {
             return $cached->getExternalCustomerId();
         }
 
         $customerId = $this->resolveCustomerIdFromStripe($invoice);
 
-        return $this->cacheGatewayCustomer($gatewayId, $clientId, $customerId);
+        return $this->cacheGatewayCustomer($gatewayId, $clientId, $customerId, $testMode);
     }
 
     /**
@@ -1923,12 +1926,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      * Two requests for the same (gateway, client) can both miss the cache
      * read in getOrCreateCustomer() and each resolve their own Stripe
      * customer before either persists here. The unique constraint on
-     * (pay_gateway_id, client_id) stops both rows from existing; the
+     * (pay_gateway_id, client_id, test_mode) stops both rows from existing; the
      * loser re-reads and returns the winner's ID instead of its own, so
      * every caller converges on one customer - the loser's own Stripe
      * customer just ends up orphaned, unused but harmless.
      */
-    private function cacheGatewayCustomer(int $gatewayId, int $clientId, string $externalCustomerId): string
+    private function cacheGatewayCustomer(int $gatewayId, int $clientId, string $externalCustomerId, bool $testMode): string
     {
         $em = $this->newIsolatedEntityManager();
 
@@ -1936,6 +1939,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $record = new PayGatewayCustomer();
             $record->setPayGateway($em->getReference(PayGateway::class, $gatewayId));
             $record->setClientId($clientId);
+            $record->setTestMode($testMode);
             $record->setExternalCustomerId($externalCustomerId);
 
             $em->persist($record);
@@ -1949,7 +1953,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             // newIsolatedEntityManager() to hand out a fresh one.
             /** @var Box\Mod\Invoice\Repository\PayGatewayCustomerRepository $repository */
             $repository = $em->getRepository(PayGatewayCustomer::class);
-            $winner = $repository->findOneByGatewayAndClient($gatewayId, $clientId);
+            $winner = $repository->findOneByGatewayAndClient($gatewayId, $clientId, $testMode);
 
             return $winner instanceof PayGatewayCustomer ? $winner->getExternalCustomerId() : $externalCustomerId;
         }
