@@ -1698,6 +1698,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      */
     private function applyOneTimePayment(Transaction $tx, ?Invoice $invoice, object $charge): void
     {
+        // A payment the client chose to save the card with keeps it (default
+        // when none, or when the client chose it). Runs before anything is
+        // recorded; a replay never undoes a default chosen since.
+        $this->rememberPaidCard($charge, (int) ($invoice?->getClientId() ?? ($charge->metadata->client_id ?? 0)));
+
         // Reload the invoice from the database to get the freshest status.
         // This narrows the TOCTOU race window when the redirect flow and
         // webhook process the same payment concurrently.
@@ -2034,6 +2039,251 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
 
         return $intent->id;
+    }
+
+    /** The client's saved cards at Stripe for the Payment methods page: {id, card, default} each. */
+    public function cards(int $clientId): array
+    {
+        $customerId = $this->ownedCustomer($clientId);
+        if ($customerId === null) {
+            return [];
+        }
+        $default = $this->savedCard($clientId)['payment_method'] ?? '';
+        $cards = [];
+        foreach ($this->methodTypes() as $type) {
+            foreach ($this->stripe->customers->allPaymentMethods($customerId, ['type' => $type, 'limit' => 20])->data as $method) {
+                $cards[] = ['id' => $method->id, 'card' => $this->cardLabel($method), 'default' => $method->id === $default];
+            }
+        }
+
+        return $cards;
+    }
+
+    /** The payment method types a client can save: cards (bank debits arrive with saved bank accounts). */
+    private function methodTypes(): array
+    {
+        return ['card'];
+    }
+
+    /** A Stripe setup for adding a card on the Payment methods page: {client_secret, pub_key}. */
+    public function cardSetup(int $clientId): array
+    {
+        $intent = $this->stripe->setupIntents->create([
+            'customer' => $this->clientCustomer($clientId),
+            'usage' => 'off_session',
+            'payment_method_types' => $this->methodTypes(),
+            'metadata' => ['client_id' => (string) $clientId, 'gateway_id' => (string) $this->config['gateway_id']],
+        ]);
+
+        return ['client_secret' => $intent->client_secret, 'pub_key' => $this->testMode() ? $this->config['test_pub_key'] : $this->config['pub_key']];
+    }
+
+    /** After the page confirmed a setup: keeps its card, the default one when the client has none. */
+    public function cardAdded(int $clientId, string $setupIntentId): void
+    {
+        $intent = $this->stripe->setupIntents->retrieve($setupIntentId, []);
+        $customerId = $this->ownedCustomer($clientId);
+        if (!in_array($intent->status, ['succeeded', 'processing'], true) || $customerId === null || $intent->customer !== $customerId || empty($intent->payment_method)) {
+            throw new FOSSBilling\Core\Exception\InformationException('The payment method was not saved. Please try again.');
+        }
+        $this->rememberCard($clientId, (string) $intent->payment_method, false);
+    }
+
+    /** Makes one of the client's cards the one charged automatically. */
+    public function cardDefault(int $clientId, string $paymentMethodId): void
+    {
+        $this->clientMethod($clientId, $paymentMethodId);
+        $this->rememberCard($clientId, $paymentMethodId, true);
+    }
+
+    /** Removes a card from the client's Stripe customer (and as the default card). */
+    public function cardRemove(int $clientId, string $paymentMethodId): void
+    {
+        $this->clientMethod($clientId, $paymentMethodId);
+        $this->stripe->paymentMethods->detach($paymentMethodId, []);
+        $row = $this->di['em']->getRepository(PayGatewayCustomer::class)->findOneByGatewayAndClient($this->gatewayId(), $clientId, $this->testMode());
+        if ($row instanceof PayGatewayCustomer && $row->getDefaultPaymentMethod() === $paymentMethodId) {
+            $row->setDefaultPaymentMethod(null);
+            $row->setDefaultCard(null);
+            $this->di['em']->flush();
+        }
+    }
+
+    /**
+     * Finds saved cards at Stripe for clients who have none here (a move from
+     * another system, which saved them in the same Stripe account): the Stripe
+     * customer with the client's email, and its default card or else its newest
+     * one. Checks up to $limit clients after $afterId: {checked, found, next}
+     * (next: the id to continue after, or null when all were checked).
+     */
+    public function findCards(int $afterId, int $limit): array
+    {
+        $connection = $this->di['em']->getConnection();
+        $rows = $connection->fetchAllAssociative(
+            'SELECT c.id, c.email FROM client c LEFT JOIN pay_gateway_customer g ON g.client_id = c.id AND g.pay_gateway_id = ? AND g.test_mode = ?
+              WHERE c.id > ? AND (g.default_payment_method IS NULL OR g.default_payment_method = ?) ORDER BY c.id LIMIT ' . max(1, $limit),
+            [$this->gatewayId(), (int) $this->testMode(), $afterId, '']
+        );
+        $found = 0;
+        foreach ($rows as $row) {
+            $clientId = (int) $row['id'];
+            $customerId = $this->ownedCustomer($clientId);
+            if ($customerId === null) {
+                $email = filter_var((string) ($row['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+                $match = $email === false ? [] : $this->stripe->customers->search(['query' => "email:'" . $this->escapeStripeSearchValue($email) . "'", 'limit' => 1])->data;
+                // A customer another client here already uses is theirs, whatever its email says now.
+                if (count($match) === 0 || $connection->fetchOne(
+                    'SELECT 1 FROM pay_gateway_customer WHERE pay_gateway_id = ? AND test_mode = ? AND external_customer_id = ? AND client_id <> ?',
+                    [$this->gatewayId(), (int) $this->testMode(), $match[0]->id, $clientId]
+                ) !== false) {
+                    continue;
+                }
+                $customerId = $match[0]->id;
+                $this->linkCustomer($clientId, $customerId);
+            }
+            $customer = $this->stripe->customers->retrieve($customerId, []);
+            $default = $customer->invoice_settings->default_payment_method ?? null;
+            $method = is_string($default) ? $default : ($default->id ?? null);
+            $method ??= $this->stripe->customers->allPaymentMethods($customerId, ['type' => 'card', 'limit' => 1])->data[0]->id ?? null;
+            if ($method !== null) {
+                $this->rememberCard($clientId, $method, false);
+                ++$found;
+            }
+        }
+
+        return ['checked' => count($rows), 'found' => $found, 'next' => count($rows) < $limit ? null : (int) end($rows)['id']];
+    }
+
+    /** The client's "Save this card" choice (and "Use this card for automatic payments") on invoice $invoiceId's card form, set on the payment before it is confirmed. */
+    public function cardSaveChoice(int $clientId, int $invoiceId, string $paymentIntentId, bool $save, bool $makeDefault): void
+    {
+        $intent = $this->stripe->paymentIntents->retrieve($paymentIntentId, []);
+        $customerId = $this->ownedCustomer($clientId);
+        if (($intent->metadata['invoice_id'] ?? null) !== (string) $invoiceId || ($intent->metadata['gateway_id'] ?? null) !== (string) $this->gatewayId()
+            || $customerId === null || $intent->customer !== $customerId
+            || !in_array($intent->status, ['requires_payment_method', 'requires_confirmation', 'requires_action'], true)) {
+            throw new FOSSBilling\Core\Exception\InformationException('This payment cannot be changed. Reload the page and try again.');
+        }
+        // The metadata only the server sets tells rememberPaidCard() to make the paid card the automatic one.
+        $this->stripe->paymentIntents->update($paymentIntentId, ['payment_method_options' => ['card' => ['setup_future_usage' => $save ? 'off_session' : '']], 'metadata' => ['make_default' => $makeDefault ? '1' : '']]);
+    }
+
+    /** A successful payment the client chose to save the card with: keeps the card (default when none, or when the client chose it). */
+    private function rememberPaidCard(object $paymentIntent, int $clientId): void
+    {
+        $save = ($paymentIntent->setup_future_usage ?? null) === 'off_session' || ($paymentIntent->payment_method_options->card->setup_future_usage ?? null) === 'off_session';
+        if (($paymentIntent->status ?? '') !== 'succeeded' || !$save
+            || empty($paymentIntent->payment_method) || $clientId <= 0
+            || ($paymentIntent->customer ?? null) === null || $paymentIntent->customer !== $this->ownedCustomer($clientId)) {
+            return;
+        }
+        $method = is_string($paymentIntent->payment_method) ? $paymentIntent->payment_method : $paymentIntent->payment_method->id;
+
+        // A payment already recorded is a replay (webhook retry, old return link): it must not undo a default chosen since.
+        $makeDefault = ($paymentIntent->metadata->make_default ?? '') === '1'
+            && !$this->di['em']->getRepository(Transaction::class)->findProcessingOrProcessedByTxnId($paymentIntent->id, $this->gatewayId());
+
+        try {
+            $this->rememberCard($clientId, $method, $makeDefault);
+        } catch (\Throwable $e) {
+            // Keeping the card must never stop the payment being recorded; the client can add it again.
+            $this->di['logger']->warning('Stripe: the card saved with payment {payment} was not kept: {message}', ['payment' => $paymentIntent->id ?? '', 'message' => $e->getMessage()]);
+        }
+    }
+
+    /** Keeps a card as the client's default: always with $makeDefault, else only when there is none. */
+    private function rememberCard(int $clientId, string $paymentMethodId, bool $makeDefault): void
+    {
+        $method = $this->stripe->paymentMethods->retrieve($paymentMethodId, []);
+        // A method Stripe did not save (paid with another way than the card the client chose to save) cannot be charged later.
+        if ($method->customer !== $this->ownedCustomer($clientId)) {
+            return;
+        }
+        $row = $this->di['em']->getRepository(PayGatewayCustomer::class)->findOneByGatewayAndClient($this->gatewayId(), $clientId, $this->testMode());
+        if (!$row instanceof PayGatewayCustomer || !$row->hasSavedCards()) {
+            return;
+        }
+        if (!$makeDefault && $row->getDefaultPaymentMethod() !== null && $row->getDefaultPaymentMethod() !== '') {
+            return;
+        }
+        $row->setDefaultPaymentMethod($method->id);
+        $row->setDefaultCard($this->cardLabel($method));
+        // The card a client saved or chose last pays.
+        $row->setAutoPayAt(new \DateTime());
+        $this->di['em']->flush();
+    }
+
+    /** The client's payment method, or an error when it is not on the client's Stripe customer. */
+    private function clientMethod(int $clientId, string $paymentMethodId): void
+    {
+        $customerId = $this->ownedCustomer($clientId);
+        $method = $customerId === null ? null : $this->stripe->paymentMethods->retrieve($paymentMethodId, []);
+        if ($method === null || $method->customer !== $customerId) {
+            throw new FOSSBilling\Core\Exception\InformationException('Payment method not found.');
+        }
+    }
+
+    /** "Visa •••• 4242 (12/2028)". */
+    private function cardLabel(object $method): string
+    {
+        $card = $method->card ?? null;
+
+        return $card !== null
+            ? sprintf('%s •••• %s (%02d/%d)', ucfirst((string) $card->brand), (string) $card->last4, (int) $card->exp_month, (int) $card->exp_year)
+            : (string) $method->type;
+    }
+
+    /**
+     * The client's saved-card customer, made at Stripe when there is none. Never one found by email:
+     * a client could take another person's old email and so their cards. A customer cached for a
+     * subscription (possibly found by email) is replaced by the new one.
+     */
+    private function clientCustomer(int $clientId): string
+    {
+        $customerId = $this->ownedCustomer($clientId);
+        if ($customerId !== null) {
+            return $customerId;
+        }
+        $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+        if (!$client instanceof Client) {
+            throw new FOSSBilling\Core\Exception\InformationException('Client not found');
+        }
+        $customerId = $this->stripe->customers->create([
+            'email' => $client->getEmail(),
+            'name' => trim($client->getFirstName() . ' ' . $client->getLastName()),
+            'metadata' => ['client_id' => (string) $clientId],
+        ])->id;
+        $this->linkCustomer($clientId, $customerId);
+
+        return $this->ownedCustomer($clientId) ?? $customerId;
+    }
+
+    /** Makes $customerId the client's saved-card customer (kept with the subscription customer cache). */
+    private function linkCustomer(int $clientId, string $customerId): void
+    {
+        $repository = $this->di['em']->getRepository(PayGatewayCustomer::class);
+        $row = $repository->findOneByGatewayAndClient($this->gatewayId(), $clientId, $this->testMode());
+        if ($row === null) {
+            $row = new PayGatewayCustomer();
+            $row->setPayGateway($this->di['em']->getReference(PayGateway::class, $this->gatewayId()));
+            $row->setClientId($clientId);
+            $row->setTestMode($this->testMode());
+            $row->setExternalCustomerId($customerId);
+            $row->setSavedCards(true);
+            try {
+                $this->di['em']->persist($row);
+                $this->di['em']->flush();
+            } catch (UniqueConstraintViolationException) {
+                $row = $repository->findOneByGatewayAndClient($this->gatewayId(), $clientId, $this->testMode());
+            }
+        }
+        if ($row instanceof PayGatewayCustomer && !$row->hasSavedCards()) {
+            $row->setExternalCustomerId($customerId);
+            $row->setSavedCards(true);
+            $row->setDefaultPaymentMethod(null);
+            $row->setDefaultCard(null);
+            $this->di['em']->flush();
+        }
     }
 
     private function createStripeSubscription(string $customerId, string $priceId, Stripe\SetupIntent $setupIntent, Invoice $invoice): Stripe\Subscription

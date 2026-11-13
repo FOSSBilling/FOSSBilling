@@ -3552,3 +3552,223 @@ describe('saved cards', function (): void {
         expect($this->adapter->chargeSavedCard($invoice, 'attempt_2'))->toBe('pi_ok');
     });
 });
+
+describe('card management', function (): void {
+    test('lists no cards without a saved-card customer', function (): void {
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn(null);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->cards(9))->toBe([]);
+    });
+
+    test('lists the saved cards with the default marked', function (): void {
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->byDefault()->with(1, 9, true)->andReturn($row);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('saved')->with(1, true, 9)->andReturn(['payment_method' => 'pm_default', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00']);
+
+        $methods = Mockery::mock();
+        $methods->shouldReceive('allPaymentMethods')->once()->with('cus_1', ['type' => 'card', 'limit' => 20])->andReturn(Stripe\Collection::constructFrom(['data' => [
+            Stripe\PaymentMethod::constructFrom(['id' => 'pm_default', 'type' => 'card', 'card' => ['brand' => 'visa', 'last4' => '4242', 'exp_month' => 12, 'exp_year' => 2028]]),
+            Stripe\PaymentMethod::constructFrom(['id' => 'pm_other', 'type' => 'card', 'card' => ['brand' => 'mastercard', 'last4' => '5555', 'exp_month' => 1, 'exp_year' => 2027]]),
+        ]]));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->customers = $methods;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->cards(9))->toBe([
+            ['id' => 'pm_default', 'card' => 'Visa •••• 4242 (12/2028)', 'default' => true],
+            ['id' => 'pm_other', 'card' => 'Mastercard •••• 5555 (01/2027)', 'default' => false],
+        ]);
+    });
+
+    test('starts a card setup for the client customer', function (): void {
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $setupIntents = Mockery::mock();
+        $setupIntents->shouldReceive('create')->once()->with(Mockery::on(function (array $params): bool {
+            return $params['customer'] === 'cus_1'
+                && $params['usage'] === 'off_session'
+                && $params['payment_method_types'] === ['card'];
+        }))->andReturn(Stripe\SetupIntent::constructFrom(['client_secret' => 'secret_x']));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntents;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->cardSetup(9))->toBe(['client_secret' => 'secret_x', 'pub_key' => 'pk_test_dummy']);
+    });
+
+    test('keeping a confirmed setup card refuses a foreign setup', function (): void {
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $setupIntents = Mockery::mock();
+        $setupIntents->shouldReceive('retrieve')->once()->with('seti_x', [])->andReturn(Stripe\SetupIntent::constructFrom([
+            'status' => 'canceled', 'customer' => 'cus_1', 'payment_method' => 'pm_x',
+        ]));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntents;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        expect(fn () => $this->adapter->cardAdded(9, 'seti_x'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'not saved');
+    });
+
+    test('making another client card the default refuses a foreign card', function (): void {
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $paymentMethods = Mockery::mock();
+        $paymentMethods->shouldReceive('retrieve')->once()->with('pm_evil', [])->andReturn(
+            Stripe\PaymentMethod::constructFrom(['id' => 'pm_evil', 'customer' => 'cus_other'])
+        );
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentMethods = $paymentMethods;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        expect(fn () => $this->adapter->cardDefault(9, 'pm_evil'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'not found');
+    });
+
+    test('removing a card detaches it and clears it as the default', function (): void {
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $row->setDefaultPaymentMethod('pm_gone');
+        $row->setDefaultCard('Visa •••• 4242');
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->twice()->with(1, 9, true)->andReturn($row);
+
+        $paymentMethods = Mockery::mock();
+        $paymentMethods->shouldReceive('retrieve')->once()->with('pm_gone', [])->andReturn(
+            Stripe\PaymentMethod::constructFrom(['id' => 'pm_gone', 'customer' => 'cus_1'])
+        );
+        $paymentMethods->shouldReceive('detach')->once()->with('pm_gone', []);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentMethods = $paymentMethods;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $em->shouldReceive('flush')->once();
+
+        $di = container();
+        $di['em'] = $em;
+        $this->adapter->setDi($di);
+
+        $this->adapter->cardRemove(9, 'pm_gone');
+
+        expect($row->getDefaultPaymentMethod())->toBeNull()
+            ->and($row->getDefaultCard())->toBeNull();
+    });
+
+    test('recording the save choice refuses a payment that cannot be changed', function (): void {
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
+
+        $paymentIntents = Mockery::mock();
+        $paymentIntents->shouldReceive('retrieve')->once()->with('pi_x', [])->andReturn(
+            Stripe\PaymentIntent::constructFrom(['status' => 'succeeded', 'customer' => 'cus_1', 'metadata' => ['invoice_id' => '60', 'gateway_id' => '1']])
+        );
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntents;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        expect(fn () => $this->adapter->cardSaveChoice(9, 60, 'pi_x', true, false))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'cannot be changed');
+    });
+
+    test('a paid card without a save choice is not kept', function (): void {
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldNotReceive('getRepository');
+
+        $di = container();
+        $di['em'] = $em;
+        $this->adapter->setDi($di);
+
+        $intent = Stripe\PaymentIntent::constructFrom(['id' => 'pi_nosave', 'status' => 'succeeded', 'customer' => 'cus_1', 'payment_method' => 'pm_x']);
+
+        invokePrivateMethod($this->adapter, 'rememberPaidCard', [$intent, 9]);
+        expect(true)->toBeTrue();
+    });
+
+    test('a paid card with a save choice is kept as the default only once', function (): void {
+        $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+        $row->setSavedCards(true);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->times(3)->with(1, 9, true)->andReturn($row);
+
+        $txRepo = Mockery::mock(TransactionRepository::class);
+        $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->once()->with('pi_save', 1)->andReturn(null);
+
+        $paymentMethods = Mockery::mock();
+        $paymentMethods->shouldReceive('retrieve')->once()->with('pm_x', [])->andReturn(
+            Stripe\PaymentMethod::constructFrom(['id' => 'pm_x', 'customer' => 'cus_1', 'type' => 'card', 'card' => ['brand' => 'visa', 'last4' => '4242', 'exp_month' => 12, 'exp_year' => 2028]])
+        );
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentMethods = $paymentMethods;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+        $em->shouldReceive('flush')->once();
+
+        $di = container();
+        $di['em'] = $em;
+        $this->adapter->setDi($di);
+
+        $intent = Stripe\PaymentIntent::constructFrom([
+            'id' => 'pi_save', 'status' => 'succeeded', 'customer' => 'cus_1', 'payment_method' => 'pm_x',
+            'setup_future_usage' => 'off_session', 'metadata' => ['make_default' => '1'],
+        ]);
+
+        invokePrivateMethod($this->adapter, 'rememberPaidCard', [$intent, 9]);
+
+        expect($row->getDefaultPaymentMethod())->toBe('pm_x')
+            ->and($row->getDefaultCard())->toBe('Visa •••• 4242 (12/2028)');
+    });
+});
