@@ -77,6 +77,7 @@ return [
     ],
     // Provider-issued customer, product, price, transaction and subscription IDs.
     'provider_identifiers' => [
+        'pay_gateway_customer.default_payment_method',
         'pay_gateway_customer.external_customer_id',
         'pay_gateway_product.external_price_id',
         'pay_gateway_product.external_product_id',
