@@ -233,4 +233,85 @@
             </div>
         </form>
     </div>
+
+    {% set cards = admin.extension_config_get({ 'ext': 'mod_invoice' }) %}
+    <div class="card mt-3" id="saved-cards">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Automatic payments'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Clients can save a card with Stripe when they pay or on their Payment methods page. The method they saved or chose last is charged automatically for unpaid invoices that have no payment method or one of these.'|trans }}</p>
+            </div>
+        </div>
+        <form method="post" action="{{ 'invoice/card_settings_update'|api_url }}" {{ fb_api_form({ message: 'Settings Updated'|trans, reload: true }) }}>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <label class="form-label" for="card_days_before">{{ 'Charge days before the due date'|trans }}</label>
+                        <input class="form-control" type="number" min="0" max="30" id="card_days_before" name="card_days_before" value="{{ cards.card_days_before|default(0) }}">
+                        <small class="form-text">{{ '0 charges the card on the due date.'|trans }}</small>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label" for="card_retry_count">{{ 'Retries after a failed charge'|trans }}</label>
+                        <input class="form-control" type="number" min="0" max="5" id="card_retry_count" name="card_retry_count" value="{{ cards.card_retry_count|default((cards.card_retries|default('1') == '0' ? 0 : 2)) }}">
+                        <small class="form-text">{{ '0 tries once. The client gets an email after each failed charge.'|trans }}</small>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label" for="card_retry_every">{{ 'Days between retries'|trans }}</label>
+                        <input class="form-control" type="number" min="1" max="30" id="card_retry_every" name="card_retry_every" value="{{ cards.card_retry_every|default(7) }}">
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button class="btn btn-primary" type="submit">{{ 'Update Settings'|trans }}</button>
+            </div>
+        </form>
+        <div class="card-body border-top" data-card-find data-done-text="{{ 'Checked :checked clients, found :found saved cards.'|trans }}">
+            <label class="form-label">{{ 'Find saved cards in Stripe'|trans }}</label>
+            <p class="text-secondary">{{ 'After a move from another system with the same Stripe account: for each client without a saved card, takes the default card (or the newest card) of the Stripe customer with the client\'s email.'|trans }}</p>
+            <button class="btn btn-outline-primary" type="button">{{ 'Find saved cards'|trans }}</button>
+            <div class="form-text" role="status" data-card-find-status></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const finder = document.querySelector('[data-card-find]');
+            if (!finder) {
+                return;
+            }
+            const button = finder.querySelector('button[type="button"]');
+            const status = finder.querySelector('[data-card-find-status]');
+            const doneText = finder.dataset.doneText;
+            let afterId = 0;
+            let running = false;
+            button.addEventListener('click', function () {
+                if (running) {
+                    return;
+                }
+                running = true;
+                button.disabled = true;
+                status.textContent = '';
+                const page = function () {
+                    FOSSBilling.api.admin.post('invoice/card_find', { after_id: afterId },
+                        function (result) {
+                            if (status) {
+                                status.textContent = doneText.replace(':checked', result.checked).replace(':found', result.found);
+                            }
+                            if (result.next === null || result.next === undefined) {
+                                running = false;
+                                button.disabled = false;
+                            } else {
+                                afterId = result.next;
+                                page();
+                            }
+                        },
+                        function (error) {
+                            running = false;
+                            button.disabled = false;
+                            FOSSBilling.message(error.message || error, 'error');
+                        });
+                };
+                page();
+            });
+        });
+    </script>
 {% endblock %}

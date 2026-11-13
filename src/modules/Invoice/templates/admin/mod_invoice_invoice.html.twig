@@ -313,6 +313,16 @@
                         </script>
                         {% endif %}
 
+                        {% set saved_card = admin.invoice_card_get({ id: invoice.id }) %}
+                        {% if saved_card %}
+                        <a class="btn btn-primary" title="{{ saved_card }}" {{ fb_api_link({href: 'invoice/card_charge'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Charge :card?'|trans({':card': saved_card})}, message: 'The payment was taken.'|trans, reload: true}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use href="#credit-card" />
+                            </svg>
+                            <span>{{ 'Charge saved method'|trans }}</span>
+                        </a>
+                        {% endif %}
+
                         {% if invoice.status == 'paid' %}
                         <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#fullRefundModal">
                             <svg class="icon" width="24" height="24">

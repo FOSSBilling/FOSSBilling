@@ -2110,3 +2110,132 @@ test('updates saved card charge settings', function (): void {
 
     expect($api->card_settings_update(['card_days_before' => '3']))->toBeTrue();
 });
+
+describe('saved cards', function (): void {
+    test('shows the invoice client saved method', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('card')->once()->with(7)->andReturn(['payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00']);
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(false);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_get(['id' => 21]))->toBe('Visa •••• 4242');
+    });
+
+    test('hides the saved method while a payment is still clearing', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldNotReceive('card');
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_get(['id' => 21]))->toBeNull();
+    });
+
+    test('charges the saved method for an invoice', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter, 'payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => 'x']);
+        $savedCards->shouldReceive('charge')->once()->with($invoice, $adapter, true)->andReturn(['paid' => true, 'error' => null]);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_charge(['id' => 21]))->toBeTrue();
+    });
+
+    test('refuses to charge without a saved method', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(null);
+        $savedCards->shouldNotReceive('charge');
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect(fn () => $api->card_charge(['id' => 21]))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no saved payment method');
+    });
+
+    test('refuses to charge when the charge fails', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter]);
+        $savedCards->shouldReceive('charge')->once()->andReturn(['paid' => false, 'error' => 'The card was declined.']);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect(fn () => $api->card_charge(['id' => 21]))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'declined');
+    });
+
+    test('finds saved cards at Stripe for clients without one', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('findCards')->once()->with(0, 25)->andReturn(['checked' => 25, 'found' => 3, 'next' => 40]);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_find([]))->toBe(['checked' => 25, 'found' => 3, 'next' => 40]);
+    });
+});
