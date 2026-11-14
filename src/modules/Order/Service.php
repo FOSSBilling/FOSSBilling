@@ -1925,16 +1925,16 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function scheduleCancellationFromOrder(Order $order, $reason = null): bool
+    public function scheduleCancellationFromOrder(Order $order, $reason = null, bool $allowWithoutSubscription = false): bool
     {
-        return $this->withCancellationScheduleLock($order, function () use ($order, $reason): bool {
+        return $this->withCancellationScheduleLock($order, function () use ($order, $reason, $allowWithoutSubscription): bool {
             $this->di['em']->refresh($order);
 
-            return $this->scheduleCancellationUnderLock($order, $reason);
-        });
+            return $this->scheduleCancellationUnderLock($order, $reason, $allowWithoutSubscription);
+        }, $allowWithoutSubscription ? 0 : 30);
     }
 
-    private function scheduleCancellationUnderLock(Order $order, $reason): bool
+    private function scheduleCancellationUnderLock(Order $order, $reason, bool $allowWithoutSubscription): bool
     {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
@@ -1947,17 +1947,28 @@ class Service implements InjectionAwareInterface
         }
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
-            throw new InformationException('No active gateway subscription that supports cancellation at period end is linked to this order.');
-        }
+        if ($allowWithoutSubscription && !$subscriptionService->hasActiveSubscriptionForOrder($order)) {
+            if ($order->getExpiresAt() === null) {
+                throw new InformationException('This service cannot be cancelled at the end of its period.');
+            }
+            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
+        } else {
+            if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
+                if ($allowWithoutSubscription) {
+                    throw new InformationException('Cancel the subscription at the payment provider and mark it canceled here before accepting this request.');
+                }
 
-        // Commit a review hold before provider I/O. A crash or ambiguous
-        // response must not leave a provider cancellation with no local marker.
-        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1']);
-        if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
-            throw new InformationException('No active gateway subscription is linked to this order.');
+                throw new InformationException('No active gateway subscription that supports cancellation at period end is linked to this order.');
+            }
+
+            // Commit a review hold before provider I/O. A crash or ambiguous
+            // response must not leave a provider cancellation with no local marker.
+            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1']);
+            if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
+                throw new InformationException('No active gateway subscription is linked to this order.');
+            }
+            $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
         }
-        $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
 
         $order->setReason($reason);
         $order->setUpdatedAt(new \DateTime());
@@ -2072,6 +2083,7 @@ class Service implements InjectionAwareInterface
     {
         $connection = $this->di['em']->getConnection();
         $connection->beginTransaction();
+
         try {
             $this->completeCancellation($order, $reason, false);
             $productService = $this->di['mod_service']('Product');

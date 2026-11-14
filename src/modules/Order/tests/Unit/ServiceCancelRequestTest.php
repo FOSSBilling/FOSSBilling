@@ -27,6 +27,11 @@ function cancelRequestService(?object $em = null): ServiceCancelRequest
     $em->shouldReceive('getRepository')->byDefault()->with(ClientOrderCancelRequest::class)->andReturn(
         Mockery::mock(ClientOrderCancelRequestRepository::class)->shouldIgnoreMissing()
     );
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+    $em->shouldReceive('refresh')->byDefault();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -181,11 +186,10 @@ test('accept schedules end-of-period cancellation without a subscription', funct
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class);
     $orderService->shouldReceive('findByClientIdAndOrderId')->once()->andReturn($order);
-    $orderService->shouldReceive('updateOrderMeta')->once()->with($order, [Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END => '1'])->andReturn(1);
+    $orderService->shouldReceive('scheduleCancellationFromOrder')->once()->with($order, 'Cancellation request #6', true)->andReturnTrue();
     $orderService->shouldNotReceive('cancelFromOrder');
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->once()->with($order)->andReturn(false);
 
     $query = Mockery::mock(Doctrine\ORM\Query::class);
     $query->shouldReceive('execute')->once()->andReturn(1);
@@ -310,9 +314,9 @@ test('accept leaves an unsupported gateway subscription for staff to cancel', fu
     $orders = Mockery::mock(Box\Mod\Order\Service::class);
     $orders->shouldReceive('findByClientIdAndOrderId')->once()->andReturn($order);
     $orders->shouldNotReceive('updateOrderMeta');
+    $orders->shouldReceive('scheduleCancellationFromOrder')->once()->with($order, 'Cancellation request #6', true)->andThrow(new FOSSBilling\Core\Exception\InformationException('Cancel the subscription at the payment provider.'));
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->with($order)->andReturn(true);
-    $subscriptions->shouldReceive('canCancelAtPeriodEndForOrder')->with($order)->andReturn(false);
+
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(ClientOrderCancelRequest::class)->andReturn($requestRepo);
     $em->shouldNotReceive('createQueryBuilder');

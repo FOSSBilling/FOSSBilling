@@ -16,6 +16,7 @@ use Box\Mod\Order\Entity\ClientOrderCancelRequest;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\ClientOrderCancelRequestRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Exception\InformationException;
 
 class ServiceCancelRequest implements InjectionAwareInterface
@@ -113,14 +114,21 @@ class ServiceCancelRequest implements InjectionAwareInterface
             throw new InformationException('This service has no cancellation request waiting.');
         }
 
-        $this->close($request, ClientOrderCancelRequest::STATUS_WITHDRAWN);
+        $this->withRequestLock((int) $request->getId(), function () use ($request): void {
+            $this->di['em']->refresh($request);
+            if ($request->getStatus() !== ClientOrderCancelRequest::STATUS_PENDING) {
+                throw new InformationException('This cancellation request is no longer waiting.');
+            }
+            $this->close($request, ClientOrderCancelRequest::STATUS_WITHDRAWN);
+        });
         $this->di['logger']->info('Client withdrew the cancellation request of order #{order_id}', ['order_id' => $order->getId()]);
     }
 
     public function stop(int $id): void
     {
-        $request = $this->find($id);
-        $this->close($request, ClientOrderCancelRequest::STATUS_STOPPED);
+        $this->withRequestLock($id, function () use ($id): void {
+            $this->close($this->find($id), ClientOrderCancelRequest::STATUS_STOPPED);
+        });
         $this->di['logger']->info('Stopped cancellation request #{id}', ['id' => $id]);
     }
 
@@ -129,6 +137,11 @@ class ServiceCancelRequest implements InjectionAwareInterface
      */
     public function accept(int $id): void
     {
+        $this->withRequestLock($id, fn () => $this->acceptLocked($id));
+    }
+
+    private function acceptLocked(int $id): void
+    {
         $request = $this->find($id);
         $orderService = $this->di['mod_service']('Order');
         $order = $orderService->findByClientIdAndOrderId((int) $request->getClient()?->getId(), (int) $request->getOrder()?->getId());
@@ -136,15 +149,7 @@ class ServiceCancelRequest implements InjectionAwareInterface
         if ($order instanceof Order && $order->getStatus() !== Order::STATUS_CANCELED) {
             $reason = 'Cancellation request #' . $request->getId();
             if ($request->getType() === ClientOrderCancelRequest::TYPE_END_OF_PERIOD) {
-                $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-                if ($subscriptionService->hasActiveSubscriptionForOrder($order)) {
-                    if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
-                        throw new InformationException('Cancel the subscription at the payment provider and mark it canceled here before accepting this request.');
-                    }
-                    $orderService->scheduleCancellationFromOrder($order, $reason);
-                } else {
-                    $orderService->updateOrderMeta($order, [Service::META_CANCEL_AT_PERIOD_END => '1']);
-                }
+                $orderService->scheduleCancellationFromOrder($order, $reason, true);
             } else {
                 $orderService->cancelFromOrder($order, $reason);
             }
@@ -229,9 +234,27 @@ class ServiceCancelRequest implements InjectionAwareInterface
         }
     }
 
+    private function withRequestLock(int $id, callable $operation): mixed
+    {
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new InformationException('Cancellation requests require a committed transaction before processing.');
+        }
+        $name = 'fb:cancel-request:' . $id;
+        if (!NamedLock::acquire($connection, $name, 0)) {
+            throw new InformationException('This cancellation request is already being processed.');
+        }
+
+        try {
+            return $operation();
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
     private function close(ClientOrderCancelRequest $request, string $status): void
     {
-        $this->di['em']->createQueryBuilder()
+        $changed = $this->di['em']->createQueryBuilder()
             ->update(ClientOrderCancelRequest::class, 'r')
             ->set('r.status', ':status')
             ->set('r.updatedAt', ':now')
@@ -243,5 +266,8 @@ class ServiceCancelRequest implements InjectionAwareInterface
             ->setParameter('pending', ClientOrderCancelRequest::STATUS_PENDING)
             ->getQuery()
             ->execute();
+        if ($changed !== 1) {
+            throw new InformationException('This cancellation request is no longer waiting.');
+        }
     }
 }
