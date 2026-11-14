@@ -2763,3 +2763,35 @@ test('closing a ticket purges its secrets', function (): void {
     expect($service->closeTicket($ticket, Tests\Helpers\admin()))->toBeTrue();
     expect($deleted)->toContain('support_ticket_secret');
 });
+
+test('removing a ticket cleans its pins, assignment, ratings, feedback and merge rows', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $model = new SupportTicket();
+    setEntityId($model, 60);
+
+    $deleted = [];
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('delete')->andReturnUsing(function (string $table, array $where) use (&$deleted): int {
+        $deleted[] = $table . ':' . json_encode($where);
+
+        return 0;
+    });
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+    $emMock->shouldReceive('remove')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect($service->rm($model))->toBeTrue();
+    foreach (['support_ticket_pin', 'support_ticket_assignment', 'support_ticket_message_rating', 'support_ticket_feedback', 'support_ticket_feedback_request'] as $table) {
+        expect($deleted)->toContain($table . ':{"ticket_id":60}');
+    }
+    expect($deleted)->toContain('support_ticket_merge:{"ticket_id":60}');
+    expect($deleted)->toContain('support_ticket_merge:{"merged_into":60}');
+});

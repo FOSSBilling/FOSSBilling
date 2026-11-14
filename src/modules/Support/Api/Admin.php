@@ -269,6 +269,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             $this->getDi()['logger']->error('Support: removing old ticket files failed: {error}', ['error' => $e->getMessage()]);
         }
 
+        try {
+            TicketSecrets::prune($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: expiring old ticket secrets failed: {error}', ['error' => $e->getMessage()]);
+        }
+
         return true;
     }
 

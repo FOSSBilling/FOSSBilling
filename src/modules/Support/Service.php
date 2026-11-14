@@ -440,6 +440,21 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $em->remove($message);
         }
 
+        try {
+            // Side rows the cron sweeps would orphan-clean anyway; removed
+            // here so a deleted ticket leaves nothing behind immediately.
+            $db = $em->getConnection();
+            $db->delete('support_ticket_pin', ['ticket_id' => $id]);
+            $db->delete('support_ticket_assignment', ['ticket_id' => $id]);
+            $db->delete('support_ticket_message_rating', ['ticket_id' => $id]);
+            $db->delete('support_ticket_feedback', ['ticket_id' => $id]);
+            $db->delete('support_ticket_feedback_request', ['ticket_id' => $id]);
+            $db->delete('support_ticket_merge', ['ticket_id' => $id]);
+            $db->delete('support_ticket_merge', ['merged_into' => $id]);
+        } catch (\Throwable) {
+            // Tables arrive with the update patches; the cron sweeps stragglers.
+        }
+
         $em->remove($ticket);
     }
 
