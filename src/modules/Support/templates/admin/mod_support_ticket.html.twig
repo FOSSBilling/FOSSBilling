@@ -118,6 +118,23 @@
                 {% endembed %}
 
                 {% if ticket.client_id %}{{ include('mod_support_ticket_secrets.html.twig', { ticket: ticket }) }}{% endif %}
+                {% if ticket.feedback|default(null) %}
+                <div class="card mb-3" id="ticket-feedback">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">{{ 'Client Feedback'|trans }}</h5>
+                        <p class="text-secondary mb-3">{{ 'Given on :date from the feedback email.'|trans({ ':date': ticket.feedback.created_at|format_datetime }) }}</p>
+                        {% for item in ticket.feedback.staff %}
+                        <div class="mb-3">
+                            <strong>{{ item.name }}</strong>: <span class="badge {{ item.rating >= 8 ? 'bg-green-lt' : (item.rating >= 5 ? 'bg-yellow-lt' : 'bg-red-lt') }}">{{ item.rating }}/10</span>
+                            {% if item.comments %}<div class="text-wrap mt-1" dir="auto">{{ item.comments|nl2br }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                        {% if ticket.feedback.comments %}
+                        <div><strong>{{ 'How we can improve'|trans }}</strong><div class="text-wrap mt-1" dir="auto">{{ ticket.feedback.comments|nl2br }}</div></div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
                 <div class="card">
                     <div class="card-body pb-3">
                         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
@@ -165,6 +182,9 @@
                                     <article class="markdown-body bg-transparent text-reset">
                                         {{ (message.content ?? '')|markdown_to_html }}
                                     </article>
+                                    {% if ticket.message_ratings[message.id]|default(null) %}
+                                    <div class="small text-muted mt-1" title="{{ 'Rated :stars of 5 by the client'|trans({ ':stars': ticket.message_ratings[message.id] }) }}">★ {{ ticket.message_ratings[message.id] }}/5</div>
+                                    {% endif %}
                                     {{ include('mod_support_ticket_message_files.html.twig', { message: message }) }}
                                 </div>
                             </div>

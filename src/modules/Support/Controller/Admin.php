@@ -49,6 +49,13 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
                     'index' => 400,
                     'class' => '',
                 ],
+                [
+                    'location' => 'support',
+                    'label' => __trans('Ratings & Feedback'),
+                    'uri' => $this->di['url']->adminLink('support/ratings'),
+                    'index' => 450,
+                    'class' => '',
+                ],
             ],
         ];
 
@@ -74,6 +81,7 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $app->get('/support/ticket/:id', 'get_ticket', ['id' => '[0-9]+'], static::class);
         $app->get('/support/ticket/:id/message/:messageid', 'get_ticket', ['id' => '[0-9]+', 'messageid' => '[0-9]+'], static::class);
         $app->get('/support/ticket-file/:id', 'get_ticket_file', ['id' => '[a-f0-9]{32}'], static::class);
+        $app->get('/support/ratings', 'get_ratings', [], static::class);
         $app->get('/support/helpdesks', 'get_helpdesks', [], static::class);
         $app->get('/support/helpdesk/:id', 'get_helpdesk', ['id' => '[0-9]+'], static::class);
         $app->get('/support/canned-responses', 'get_canned_list', [], static::class);
@@ -127,6 +135,13 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $helpdesk = $api->support_helpdesk_get(['id' => $id]);
 
         return $app->render('mod_support_helpdesk', ['helpdesk' => $helpdesk]);
+    }
+
+    public function get_ratings(\FOSSBilling\Core\Http\App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_support_ratings');
     }
 
     public function get_ticket_file(\FOSSBilling\Core\Http\App $app, string $id): \Symfony\Component\HttpFoundation\Response

@@ -177,6 +177,16 @@
                             </div>
                         </div>
                         <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Ticket Ratings'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Let clients rate staff replies 1-5 stars. Results show in Ratings & Feedback; closing feedback is requested per help desk.'|trans }}</p>
+                            {% set ticket_ratings_on = params.ticket_rating is not defined or params.ticket_rating is same as(true) or params.ticket_rating in [1, '1', 'true', 'on', 'yes'] %}
+                            <label class="form-check form-switch form-switch-2">
+                                <input name="ticket_rating" type="hidden" value="false">
+                                <input class="form-check-input" name="ticket_rating" type="checkbox" value="true" {% if ticket_ratings_on %} checked="checked"{% endif %}>
+                                <span class="form-check-label">{{ 'Reply ratings'|trans }}</span>
+                            </label>
+                        </div>
+                        <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Knowledge Base'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Control whether the knowledge base is visible to clients and available throughout the support area.'|trans }}</p>
                             {% set kb_enabled = params.kb_enable is not defined or params.kb_enable is same as(true) or params.kb_enable in [1, '1', 'true', 'on', 'yes'] %}

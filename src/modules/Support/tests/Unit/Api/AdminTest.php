@@ -1719,3 +1719,95 @@ test('ticket secrets list flags open and delete rights separately', function ():
     expect(fn (): array => $api->ticket_secret_open(['id' => $secretId]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'permission');
 });
+
+test('ticket update to closed asks for closing feedback', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, subject VARCHAR(255), status VARCHAR(30), client_id INTEGER, author_name VARCHAR(255), author_email VARCHAR(255), access_hash VARCHAR(255), support_helpdesk_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback_request (
+        ticket_id BIGINT NOT NULL, token CHAR(64) NOT NULL, sent_at DATETIME NOT NULL,
+        answered_at DATETIME DEFAULT NULL, PRIMARY KEY (ticket_id))');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, admin_id BIGINT DEFAULT NULL,
+        rating SMALLINT DEFAULT NULL, comments TEXT NOT NULL, ip VARCHAR(45) NOT NULL DEFAULT \'\',
+        created_at DATETIME NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_helpdesk_feedback (
+        helpdesk_id BIGINT NOT NULL, feedback_request TINYINT(1) NOT NULL DEFAULT 1,
+        updated_at DATETIME NOT NULL, PRIMARY KEY (helpdesk_id))');
+    $connection->insert('support_ticket', ['id' => 60, 'subject' => 'H', 'status' => 'open', 'client_id' => 5, 'author_name' => 'A', 'author_email' => 'a@x.test', 'access_hash' => '', 'support_helpdesk_id' => 1]);
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('flush')->andReturnNull();
+    $di['em'] = $em;
+    $di['mod_config'] = $di->protect(fn (): array => []);
+    $emails = [];
+    $email = Mockery::mock();
+    $email->shouldReceive('sendTemplate')->andReturnUsing(function (array $data) use (&$emails): bool {
+        $emails[] = $data;
+
+        return true;
+    });
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['email' => $email]));
+    $url = Mockery::mock(FOSSBilling\Core\Url::class);
+    $url->shouldReceive('link')->andReturnUsing(fn (string $path): string => 'https://billing.example/' . $path);
+    $di['url'] = $url;
+    $api->setDi($di);
+    $api->setIdentity(Tests\Helpers\admin(['id' => 1]));
+
+    $service = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $ticketModel = new SupportTicket();
+    Tests\Helpers\setEntityId($ticketModel, 60);
+    $ticketModel->setStatus(SupportTicket::STATUS_OPEN);
+    $service->shouldReceive('getTicketById')->with(60)->andReturn($ticketModel);
+    $service->shouldReceive('ticketUpdate')->andReturnUsing(function (SupportTicket $model) use ($connection): bool {
+        $model->setStatus(SupportTicket::STATUS_CLOSED);
+        $connection->update('support_ticket', ['status' => SupportTicket::STATUS_CLOSED], ['id' => 60]);
+
+        return true;
+    });
+    $api->setService($service);
+
+    $ticket = new SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 60);
+    $ticket->setStatus(SupportTicket::STATUS_OPEN);
+
+    expect($api->ticket_update(['id' => 60, 'status' => SupportTicket::STATUS_CLOSED]))->toBeTrue();
+    expect($emails)->toHaveCount(1);
+    expect($emails[0]['code'])->toBe('mod_support_ticket_feedback_request');
+});
+
+test('feedback report lists ratings and comments', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, name VARCHAR(255), status VARCHAR(30), system_name VARCHAR(100) DEFAULT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, subject VARCHAR(255), status VARCHAR(30))');
+    $connection->executeStatement('CREATE TABLE support_ticket_message_rating (
+        message_id BIGINT NOT NULL, ticket_id BIGINT NOT NULL, admin_id BIGINT NOT NULL,
+        rating SMALLINT NOT NULL, rated_by_kind VARCHAR(10) NOT NULL, rated_by_id BIGINT NOT NULL,
+        ip VARCHAR(45) NOT NULL DEFAULT \'\', rated_at DATETIME NOT NULL, PRIMARY KEY (message_id))');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, admin_id BIGINT DEFAULT NULL,
+        rating SMALLINT DEFAULT NULL, comments TEXT NOT NULL, ip VARCHAR(45) NOT NULL DEFAULT \'\',
+        created_at DATETIME NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback_request (
+        ticket_id BIGINT NOT NULL, token CHAR(64) NOT NULL, sent_at DATETIME NOT NULL,
+        answered_at DATETIME DEFAULT NULL, PRIMARY KEY (ticket_id))');
+    $connection->insert('admin', ['id' => 3, 'name' => 'Agent', 'status' => 'active', 'system_name' => null]);
+    $connection->insert('support_ticket', ['id' => 60]);
+    $connection->insert('support_ticket_message_rating', ['message_id' => 70, 'ticket_id' => 60, 'admin_id' => 3, 'rating' => 5, 'rated_by_kind' => 'client', 'rated_by_id' => 1, 'ip' => '', 'rated_at' => date('Y-m-d H:i:s')]);
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $api->setDi($di);
+
+    $report = $api->ticket_feedback_report(['period' => 'bogus']);
+    expect($report['period'])->toBe('90');
+    expect($report['ratings'][0]['admin_id'])->toBe(3);
+    expect($report['ratings'][0]['average'])->toBe(5.0);
+});

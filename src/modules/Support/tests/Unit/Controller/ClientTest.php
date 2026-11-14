@@ -59,3 +59,52 @@ test('client downloads their own ticket file', function (): void {
     expect(fn (): Symfony\Component\HttpFoundation\Response => $controller->get_ticket_file($app, str_repeat('b', 32)))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'File not found.');
 });
+
+test('feedback page renders the form for an open link', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, name VARCHAR(255), status VARCHAR(30), system_name VARCHAR(100) DEFAULT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, subject VARCHAR(255), status VARCHAR(30), client_id INTEGER, created_at DATETIME)');
+    $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER, admin_id INTEGER, created_at DATETIME)');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback_request (
+        ticket_id BIGINT NOT NULL, token CHAR(64) NOT NULL, sent_at DATETIME NOT NULL,
+        answered_at DATETIME DEFAULT NULL, PRIMARY KEY (ticket_id))');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, admin_id BIGINT DEFAULT NULL,
+        rating SMALLINT DEFAULT NULL, comments TEXT NOT NULL, ip VARCHAR(45) NOT NULL DEFAULT \'\',
+        created_at DATETIME NOT NULL)');
+    $connection->insert('admin', ['id' => 3, 'name' => 'Agent', 'status' => 'active', 'system_name' => null]);
+    $connection->insert('support_ticket', ['id' => 60, 'subject' => 'H', 'status' => 'closed', 'client_id' => 1, 'created_at' => '2026-10-01 10:00:00']);
+    $connection->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'admin_id' => 3, 'created_at' => '2026-10-03 13:00:00']);
+    $token = str_repeat('a', 64);
+    $connection->insert('support_ticket_feedback_request', ['ticket_id' => 60, 'token' => $token, 'sent_at' => date('Y-m-d H:i:s'), 'answered_at' => null]);
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('render')->once()->with('mod_support_feedback', Mockery::on(function (array $params) use ($token): bool {
+        return $params['feedback_token'] === $token && $params['feedback']['state'] === 'form' && $params['feedback']['staff'] === [3 => 'Agent'];
+    }))->andReturn('feedback-html');
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_feedback($app, $token))->toBe('feedback-html');
+});
+
+test('feedback page degrades on a bad link', function (): void {
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('render')->once()->with('mod_support_feedback', ['feedback' => ['ticket' => [], 'staff' => [], 'state' => 'invalid'], 'feedback_token' => 'nope'])->andReturn('invalid-html');
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andThrow(new RuntimeException('no such table'));
+    $di['em'] = $em;
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_feedback($app, 'nope'))->toBe('invalid-html');
+});

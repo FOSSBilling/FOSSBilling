@@ -1,0 +1,83 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'support' %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Feedback'|trans }}{% endblock %}
+{% block page_header %}{{ 'Feedback'|trans }}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Feedback'|trans }}</li>{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header py-3">
+                <h1 class="mb-1">{{ 'Ticket Feedback'|trans }}</h1>
+                <span class="small text-muted">{{ feedback.ticket.subject|default('') }}</span>
+            </div>
+            <div class="card-body">
+                {% if feedback.state == 'invalid' %}
+                    <div class="alert alert-danger" role="alert">{{ 'This feedback link is not valid.'|trans }}</div>
+                {% elseif feedback.state == 'open' %}
+                    <div class="alert alert-info" role="alert">{{ 'Feedback can be given once the ticket is closed.'|trans }}</div>
+                {% elseif feedback.state == 'done' %}
+                    <div class="alert alert-success" role="alert">{{ 'Thank you, your feedback was recorded.'|trans }}</div>
+                {% else %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <table class="table">
+                                <tbody>
+                                    <tr><td>{{ 'Ticket'|trans }}</td><td>#{{ feedback.ticket.id }} {{ feedback.ticket.subject }}</td></tr>
+                                    <tr><td>{{ 'Opened'|trans }}</td><td>{{ feedback.ticket.opened_at|format_date }}</td></tr>
+                                    <tr><td>{{ 'Last reply'|trans }}</td><td>{{ feedback.ticket.last_reply_at|format_date }}</td></tr>
+                                    <tr><td>{{ 'Staff involved'|trans }}</td><td>{{ feedback.staff|join(', ')|default('No staff member replied'|trans) }}</td></tr>
+                                    <tr><td>{{ 'Duration'|trans }}</td><td>{{ ':%days% days, %hours% hours, %minutes% minutes'|trans({ '%days%': feedback.ticket.duration.days, '%hours%': feedback.ticket.duration.hours, '%minutes%': feedback.ticket.duration.minutes }) }}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <form id="ticket-feedback-form">
+                        {% for staff_id, staff_name in feedback.staff %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Rate :name'|trans({ ':name': staff_name }) }}</label>
+                            <div class="d-flex gap-2" role="radiogroup" aria-label="{{ staff_name }}">
+                                {% for score in 1..10 %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="rate[{{ staff_id }}]" id="rate-{{ staff_id }}-{{ score }}" value="{{ score }}" required>
+                                    <label class="form-check-label" for="rate-{{ staff_id }}-{{ score }}">{{ score }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <label class="form-label mt-2" for="comment-{{ staff_id }}">{{ 'Comment (optional)'|trans }}</label>
+                            <textarea class="form-control" name="comments[{{ staff_id }}]" id="comment-{{ staff_id }}" rows="2" maxlength="5000"></textarea>
+                        </div>
+                        {% endfor %}
+                        <div class="mb-3">
+                            <label class="form-label" for="comment-generic">{{ 'How can we improve?'|trans }}</label>
+                            <textarea class="form-control" name="comments[generic]" id="comment-generic" rows="3" maxlength="5000"{% if feedback.staff is empty %} required{% endif %}></textarea>
+                        </div>
+                        <button class="btn btn-primary" type="submit">{{ 'Send Feedback'|trans }}</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{% if feedback.state == 'form' %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById('ticket-feedback-form');
+        form?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const data = FOSSBilling.tools.serializeFormDataToObject(new FormData(form));
+            FOSSBilling.api.guest.post('support/ticket_feedback_submit', { token: '{{ feedback_token }}', rate: data.rate || {}, comments: data.comments || {} },
+                () => window.location.reload(),
+                (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'));
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

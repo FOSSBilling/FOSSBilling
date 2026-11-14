@@ -18,6 +18,7 @@ namespace Box\Mod\Support\Api;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\TicketFeedback;
 use Box\Mod\Support\TicketFiles;
 use Box\Mod\Support\TicketLimit;
 use Box\Mod\Support\TicketSecrets;
@@ -208,5 +209,23 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         $ticket = $this->getService()->findOneByClient($client, (int) $data['id']);
 
         return $this->getService()->closeTicket($ticket, $this->getIdentity());
+    }
+
+    /**
+     * Rate a staff reply 1-5 stars.
+     */
+    #[RequiredParams(['id' => 'Ticket ID was not passed', 'message_id' => 'Message ID was not passed', 'rating' => 'Rating was not passed'])]
+    public function ticket_message_rate(array $data): bool
+    {
+        $client = $this->getIdentity();
+        $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
+
+        if (!$ticket instanceof SupportTicket) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found', [], 404);
+        }
+
+        TicketFeedback::rate($this->getDi(), (int) $ticket->getId(), (int) $data['message_id'], $data['rating'], 'client', (int) $client->getId(), $this->getIp());
+
+        return true;
     }
 }

@@ -31,6 +31,7 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $app->get('/support', 'get_tickets', [], static::class);
         $app->get('/support/ticket-file/:id', 'get_ticket_file', ['id' => '[a-f0-9]{32}'], static::class);
+        $app->get('/support/feedback/:token', 'get_feedback', ['token' => '[a-f0-9]{64}'], static::class);
         $app->get('/support/ticket/:id', 'get_ticket', [], static::class);
         $app->get('/support/contact-us', 'get_contact_us', [], static::class);
         $app->get('/support/contact-us/conversation/:hash', 'get_ticket_redirect', ['hash' => '[a-z0-9]+'], static::class);
@@ -79,6 +80,17 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
     public function get_ticket_redirect(\FOSSBilling\Core\Http\App $app, $hash): Response
     {
         return $app->redirect('support/ticket/' . $hash);
+    }
+
+    public function get_feedback(\FOSSBilling\Core\Http\App $app, string $token): string
+    {
+        try {
+            $page = \Box\Mod\Support\TicketFeedback::page($this->di, $token);
+        } catch (\FOSSBilling\Core\Exception\InformationException) {
+            $page = ['ticket' => [], 'staff' => [], 'state' => 'invalid'];
+        }
+
+        return $app->render('mod_support_feedback', ['feedback' => $page, 'feedback_token' => (string) $token]);
     }
 
     public function get_ticket_file(\FOSSBilling\Core\Http\App $app, string $id): Response

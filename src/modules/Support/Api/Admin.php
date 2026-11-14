@@ -26,6 +26,7 @@ use Box\Mod\Support\HiddenKbCategories;
 use Box\Mod\Support\TicketAssign;
 use Box\Mod\Support\TicketBulk;
 use Box\Mod\Support\TicketEscalation;
+use Box\Mod\Support\TicketFeedback;
 use Box\Mod\Support\TicketFiles;
 use Box\Mod\Support\TicketSecrets;
 use FOSSBilling\Core\HtmlSanitizerFactory;
@@ -98,6 +99,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getService()->getTicketById((int) $data['id']);
+        $wasClosed = $model->getStatus() === SupportTicket::STATUS_CLOSED;
+        $closesTicket = isset($data['status']) && $data['status'] === SupportTicket::STATUS_CLOSED;
 
         // Sanitize subject if provided — plain text, no HTML
         if (isset($data['subject'])) {
@@ -105,6 +108,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         $result = $this->getService()->ticketUpdate($model, $data);
+
+        if (!$wasClosed && $closesTicket) {
+            TicketFeedback::afterClose($this->getDi(), (int) $model->getId());
+        }
 
         if (array_key_exists('assigned_to', $data)) {
             TicketAssign::assign($this->getDi(), (int) $model->getId(), (int) $data['assigned_to'] > 0 ? (int) $data['assigned_to'] : null, (int) $this->getIdentity()->getId());
@@ -240,6 +247,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
         TicketBulk::sweep($this->getDi());
         TicketAssign::sweep($this->getDi());
+        TicketFeedback::sweep($this->getDi());
 
         try {
             TicketEscalation::run($this->getDi());
@@ -320,7 +328,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Help desk not found');
         }
 
-        return $model->toApiArray($this->getIdentity()) + ['hidden' => HiddenHelpdesks::isHidden($this->getDi(), (int) $model->getId())];
+        return $model->toApiArray($this->getIdentity())
+            + ['hidden' => HiddenHelpdesks::isHidden($this->getDi(), (int) $model->getId())]
+            + ['feedback_request' => TicketFeedback::helpdeskOn($this->getDi(), (int) $model->getId())];
     }
 
     /**
@@ -843,6 +853,16 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /*
      * Support ticket escalation rules.
      */
+    /**
+     * Staff report on reply ratings, feedback scores and recent comments.
+     */
+    public function ticket_feedback_report(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketFeedback::report($this->getDi(), $data['period'] ?? '90');
+    }
+
     /**
      * List escalation rules, by name.
      */

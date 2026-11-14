@@ -15,6 +15,7 @@ use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\HiddenHelpdesks;
 use Box\Mod\Support\HiddenKbCategories;
+use Box\Mod\Support\TicketFeedback;
 use Box\Mod\Support\TicketFiles;
 use Box\Mod\Support\TicketPriority;
 use FOSSBilling\Core\HtmlSanitizerFactory;
@@ -129,6 +130,30 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
     public function ticket_priorities(): array
     {
         return TicketPriority::titles();
+    }
+
+    /**
+     * Rate a staff reply 1-5 stars.
+     */
+    #[RequiredParams(['hash' => 'Ticket hash required', 'message_id' => 'Message ID required', 'rating' => 'Rating required'])]
+    public function ticket_message_rate(array $data): bool
+    {
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
+
+        TicketFeedback::rate($this->getDi(), (int) $guestTicket->getId(), (int) $data['message_id'], $data['rating'], 'guest', 0, $this->getIp());
+
+        return true;
+    }
+
+    /**
+     * Submit closing feedback with a link from the email.
+     */
+    #[RequiredParams(['token' => 'Feedback token required'])]
+    public function ticket_feedback_submit(array $data): bool
+    {
+        TicketFeedback::submit($this->getDi(), (string) $data['token'], $data['rate'] ?? [], $data['comments'] ?? [], $this->getIp());
+
+        return true;
     }
 
     /**

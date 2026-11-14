@@ -339,6 +339,9 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         };
         $this->di['event_dispatcher']->dispatch(new AfterTicketClosedEvent((int) $ticket->getId(), $actor));
 
+        // Ask for closing feedback once the ticket closed.
+        TicketFeedback::afterClose($this->di, (int) $ticket->getId());
+
         $this->di['logger']->info('Closed ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
         return true;
@@ -350,6 +353,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $this->di['em']->flush();
         // Auto-closing bypasses the close events but not the secret purge.
         TicketSecrets::forgetTicket($this->di['em']->getConnection(), (int) $model->getId());
+        TicketFeedback::afterClose($this->di, (int) $model->getId());
         $this->di['logger']->info('Ticket {model_id} was closed', ['model_id' => $model->getId()]);
 
         return true;
@@ -459,6 +463,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             foreach ($messages as $msg) {
                 $data['messages'][] = $this->messageToApiArray($msg, true, $identity);
             }
+            $data['ratings_on'] = TicketFeedback::ratingsOn($this->di);
+            $data['message_ratings'] = TicketFeedback::ratings($this->di, (int) $model->getId());
             // Attachments ride with the messages for staff and the owning client.
             $isOwner = $identity instanceof Client && (int) $model->getClientId() === (int) $identity->getId();
             if ($identity instanceof \Box\Mod\Staff\Entity\Admin || $isOwner) {
@@ -476,6 +482,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             foreach ($supportTicketNotes as $note) {
                 $data['notes'][] = $this->noteToApiArray($note);
             }
+
+            if ($deep) {
+                $data['feedback'] = TicketFeedback::forTicket($this->di, (int) $model->getId());
+            }
+        } elseif ($deep && $model->getStatus() === SupportTicket::STATUS_CLOSED) {
+            // Client and guest views of a closed ticket link the feedback form.
+            $data['feedback_url'] = TicketFeedback::openLink($this->di, (int) $model->getId());
         }
 
         return $data;
@@ -871,6 +884,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         }
 
         HiddenHelpdesks::forget($this->di, (int) $id);
+        TicketFeedback::deleteHelpdesk($this->di, (int) $id);
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Deleted helpdesk #{id}', ['id' => $id]);
@@ -1371,6 +1385,9 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         }
         if (array_key_exists('hidden', $data)) {
             HiddenHelpdesks::save($this->di, (int) $model->getId(), $data['hidden']);
+        }
+        if (array_key_exists('feedback_request', $data)) {
+            TicketFeedback::saveHelpdesk($this->di, (int) $model->getId(), $data['feedback_request']);
         }
 
         $this->di['em']->flush();
