@@ -2239,3 +2239,72 @@ describe('saved cards', function (): void {
         expect($api->card_find([]))->toBe(['checked' => 25, 'found' => 3, 'next' => 40]);
     });
 });
+
+describe('paypal balances', function (): void {
+    test('returns the cached balances of enabled PayPal gateways', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $autopay = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'PayPalAutoPay', 'name' => 'PayPalAutoPay']);
+        $stripe = createEntity(PayGateway::class, ['id' => 1, 'gateway' => 'Stripe', 'name' => 'Stripe']);
+
+        $repo = Mockery::mock(PayGatewayRepository::class);
+        $repo->shouldReceive('findEnabledOrderedByIdDesc')->once()->andReturn([$autopay, $stripe]);
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('balances')->once()->andReturn([['currency' => 'USD', 'amount' => 10.0]]);
+        $payGatewayService = Mockery::mock(ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($autopay)->andReturn($adapter);
+
+        $item = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+        $item->shouldReceive('isHit')->once()->andReturn(false);
+        $item->shouldReceive('set')->once();
+        $item->shouldReceive('expiresAfter')->once()->with(600);
+        $item->shouldReceive('get')->andReturn(['balances' => [['currency' => 'USD', 'amount' => 10.0]], 'error' => null]);
+        $cache = Mockery::mock(Psr\Cache\CacheItemPoolInterface::class);
+        $cache->shouldReceive('getItem')->once()->with('fossbilling_paypal_balance_5_0')->andReturn($item);
+        $cache->shouldReceive('save')->once()->with($item);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $payGatewayService]));
+        $di['cache'] = $cache;
+        $api->setDi($di);
+
+        expect($api->paypal_balances())->toBe([
+            ['gateway' => 'PayPal Auto-Pay', 'test_mode' => false, 'balances' => [['currency' => 'USD', 'amount' => 10.0]], 'error' => null],
+        ]);
+    });
+
+    test('a gateway that fails to answer reports the error', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $gateway = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'PayPalAutoPay', 'name' => 'Shop PayPal']);
+
+        $repo = Mockery::mock(PayGatewayRepository::class);
+        $repo->shouldReceive('findEnabledOrderedByIdDesc')->once()->andReturn([$gateway]);
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('balances')->once()->andThrow(new FOSSBilling\Core\Exception\InformationException('nope'));
+        $payGatewayService = Mockery::mock(ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+
+        $item = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+        $item->shouldReceive('isHit')->once()->andReturn(false);
+        $item->shouldReceive('set')->once();
+        $item->shouldReceive('expiresAfter')->once()->with(600);
+        $item->shouldReceive('get')->andReturn(['balances' => [], 'error' => 'nope']);
+        $cache = Mockery::mock(Psr\Cache\CacheItemPoolInterface::class);
+        $cache->shouldReceive('getItem')->once()->andReturn($item);
+        $cache->shouldReceive('save')->once();
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $payGatewayService]));
+        $di['cache'] = $cache;
+        $api->setDi($di);
+
+        expect($api->paypal_balances())->toBe([
+            ['gateway' => 'Shop PayPal', 'test_mode' => false, 'balances' => [], 'error' => 'nope'],
+        ]);
+    });
+});

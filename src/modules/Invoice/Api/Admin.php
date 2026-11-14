@@ -649,6 +649,40 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return $result;
     }
 
+    /** The balance of each enabled PayPal gateway whose dashboard balance is on, as the gateway balance widget. PayPal is asked at most every 10 minutes. */
+    public function paypal_balances(): array
+    {
+        $this->checkPermissions('invoice', 'view');
+        $di = $this->getDi();
+        $result = [];
+        foreach ($di['em']->getRepository(PayGateway::class)->findEnabledOrderedByIdDesc() as $gateway) {
+            if (!in_array($gateway->getGateway(), ['PayPalEmail', 'PayPalAutoPay'], true)) {
+                continue;
+            }
+            if ((string) (($gateway->getConfig() ?? [])['balance'] ?? '1') === '0') {
+                continue;
+            }
+            $name = (string) $gateway->getName() === $gateway->getGateway()
+                ? ($gateway->getGateway() === 'PayPalAutoPay' ? 'PayPal Auto-Pay' : 'PayPal')
+                : (string) $gateway->getName();
+            $key = 'fossbilling_paypal_balance_' . $gateway->getId() . '_' . (int) $gateway->isTestMode();
+            $item = $di['cache']->getItem($key);
+            if (!$item->isHit()) {
+                try {
+                    $balances = ['balances' => $di['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway)->balances(), 'error' => null];
+                } catch (\Throwable $e) {
+                    $balances = ['balances' => [], 'error' => $e instanceof InformationException ? $e->getMessage() : 'PayPal did not answer. Please try again later.'];
+                }
+                $item->set($balances);
+                $item->expiresAfter(600);
+                $di['cache']->save($item);
+            }
+            $result[] = ['gateway' => $name, 'test_mode' => $gateway->isTestMode()] + (is_array($item->get()) ? $item->get() : []);
+        }
+
+        return $result;
+    }
+
     /**
      * Send payment reminder notification for client.
      * Dispatches typed reminder events for custom notification code.
