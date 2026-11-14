@@ -1110,14 +1110,14 @@ document.addEventListener('DOMContentLoaded', function() {
     {
         $path = '/v2/checkout/orders/' . rawurlencode($orderId);
         // The full reply: the short one leaves out the purchase unit's custom_id.
-        [$status, $body] = $this->rest('POST', $path . '/capture', null, ['PayPal-Request-Id' => 'cf-capture-' . $orderId, 'Prefer' => 'return=representation']);
+        [$status, $body] = $this->rest('POST', $path . '/capture', null, ['PayPal-Request-Id' => 'fb-capture-' . $orderId, 'Prefer' => 'return=representation']);
         // Captured already (the client came back twice): the order says how.
         if ($status === 422) {
             [$status, $body] = $this->rest('GET', $path);
         }
         $unit = $body['purchase_units'][0] ?? [];
         $capture = $unit['payments']['captures'][0] ?? [];
-        if (!in_array($status, [200, 201], true) || empty($capture['id']) || (string) ($unit['custom_id'] ?? '') !== 'cf-invoice-' . $invoice->getId()) {
+        if (!in_array($status, [200, 201], true) || empty($capture['id']) || (string) ($unit['custom_id'] ?? '') !== 'fb-invoice-' . $invoice->getId()) {
             throw new FOSSBilling\Core\Exception\InformationException('PayPal did not take the payment: :error', [':error' => $this->restError($body, $status)]);
         }
         $vault = $body['payment_source']['paypal']['attributes']['vault'] ?? [];
@@ -1139,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'intent' => 'CAPTURE',
             'purchase_units' => [$this->purchaseUnit($invoice)],
             'payment_source' => ['paypal' => ['vault_id' => $saved['payment_method']]],
-        ], ['PayPal-Request-Id' => 'cf-invoice-' . $invoice->getId() . '-' . $attempt]);
+        ], ['PayPal-Request-Id' => 'fb-invoice-' . $invoice->getId() . '-' . $attempt]);
         $capture = $body['purchase_units'][0]['payments']['captures'][0] ?? [];
         if (in_array($status, [200, 201], true) && in_array($capture['status'] ?? '', ['DECLINED', 'FAILED'], true)) {
             throw new FOSSBilling\Core\Exception\InformationException('PayPal refused the payment: :error', [':error' => $capture['status']]);
@@ -1162,7 +1162,7 @@ document.addEventListener('DOMContentLoaded', function() {
             throw new Payment_Exception('PayPal payment :id was not found', [':id' => $captureId]);
         }
         // Only orders made here name an invoice: a payment of another shop on the same PayPal account pays nothing.
-        if (preg_match('/^cf-invoice-(\d+)$/', (string) ($capture['custom_id'] ?? ''), $match) !== 1) {
+        if (preg_match('/^fb-invoice-(\d+)$/', (string) ($capture['custom_id'] ?? ''), $match) !== 1) {
             throw new Payment_Exception('PayPal payment :id is not for a FOSSBilling invoice', [':id' => $captureId]);
         }
         $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $match[1]);
@@ -1197,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $invoiceService = $this->di['mod_service']('Invoice');
 
         return [
-            'custom_id' => 'cf-invoice-' . $invoice->getId(),
+            'custom_id' => 'fb-invoice-' . $invoice->getId(),
             'description' => mb_substr($this->getInvoiceTitle($invoiceService->toApiArray($invoice)), 0, 127),
             'amount' => ['currency_code' => (string) $invoice->getCurrency(), 'value' => $this->moneyFormat($invoiceService->getBalanceDue($invoice), (string) $invoice->getCurrency())],
         ];

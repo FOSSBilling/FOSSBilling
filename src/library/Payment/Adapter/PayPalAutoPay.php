@@ -192,7 +192,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         return $this->startCheckout([
             'PAYMENTREQUEST_0_AMT' => '0',
             'PAYMENTREQUEST_0_CURRENCYCODE' => $this->convertTo() ?: (string) $this->di['mod_service']('Currency')->getCurrencyByClientId($clientId)->getCode(),
-            'PAYMENTREQUEST_0_CUSTOM' => 'cf-client-' . $clientId,
+            'PAYMENTREQUEST_0_CUSTOM' => 'fb-client-' . $clientId,
         ] + $this->agreementFields() + $this->pageFields($clientId, $returnUrl, $cancelUrl), false);
     }
 
@@ -200,7 +200,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
     public function agreementSaved(int $clientId, string $token): void
     {
         $details = $this->call('GetExpressCheckoutDetails', ['TOKEN' => $token]);
-        if (!$this->ok($details) || ($details['PAYMENTREQUEST_0_CUSTOM'] ?? $details['CUSTOM'] ?? '') !== 'cf-client-' . $clientId) {
+        if (!$this->ok($details) || ($details['PAYMENTREQUEST_0_CUSTOM'] ?? $details['CUSTOM'] ?? '') !== 'fb-client-' . $clientId) {
             throw new FOSSBilling\Core\Exception\InformationException('PayPal did not set up automatic payments: :error', [':error' => $this->error($details)]);
         }
         $reply = $this->call('CreateBillingAgreement', ['TOKEN' => $token]);
@@ -217,7 +217,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
     public function checkoutPaid(Invoice $invoice, string $token): string
     {
         $details = $this->call('GetExpressCheckoutDetails', ['TOKEN' => $token]);
-        if (!$this->ok($details) || preg_match('/^cf-invoice-' . (int) $invoice->getId() . '(-|$)/', (string) ($details['PAYMENTREQUEST_0_CUSTOM'] ?? '')) !== 1) {
+        if (!$this->ok($details) || preg_match('/^fb-invoice-' . (int) $invoice->getId() . '(-|$)/', (string) ($details['PAYMENTREQUEST_0_CUSTOM'] ?? '')) !== 1) {
             throw new FOSSBilling\Core\Exception\InformationException('PayPal did not take the payment: :error', [':error' => $this->error($details)]);
         }
         // Taken already (the client came back twice): PayPal names the payment.
@@ -232,7 +232,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
             'PAYMENTREQUEST_0_CUSTOM' => (string) $details['PAYMENTREQUEST_0_CUSTOM'],
             'PAYMENTREQUEST_0_NOTIFYURL' => $this->notifyUrl((int) $invoice->getId()),
-            'MSGSUBID' => 'cf-' . $token,
+            'MSGSUBID' => 'fb-' . $token,
         ]);
         if (!$this->ok($reply) || empty($reply['PAYMENTINFO_0_TRANSACTIONID'])) {
             throw new FOSSBilling\Core\Exception\InformationException('PayPal did not take the payment: :error', [':error' => $this->error($reply)]);
@@ -261,7 +261,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             'DESC' => $this->description($invoice),
             'CUSTOM' => $custom,
             'NOTIFYURL' => $this->notifyUrl((int) $invoice->getId()),
-            'MSGSUBID' => 'cf-invoice-' . $invoice->getId() . '-' . $attempt,
+            'MSGSUBID' => 'fb-invoice-' . $invoice->getId() . '-' . $attempt,
         ]);
         if ($this->ok($reply) && !empty($reply['TRANSACTIONID'])) {
             return (string) $reply['TRANSACTIONID'];
@@ -294,6 +294,9 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
                 'SELECT amount FROM ' . $this->di['em']->getConnection()->quoteSingleIdentifier('transaction') . ' WHERE txn_id = ? AND gateway_id = ? AND status = ? AND txn_status = ? ORDER BY id LIMIT 1',
                 [$transactionId, $this->gatewayId(), Transaction::STATUS_PROCESSED, 'Completed']
             );
+            if ($recorded <= 0) {
+                throw new FOSSBilling\Core\Exception\InformationException('PayPal did not record this payment here: return the money in the PayPal dashboard.');
+            }
             $amount = min((float) $payment['AMT'], (float) $payment['AMT'] * $amount / $recorded);
             $currency = (string) $payment['CURRENCYCODE'];
         }
@@ -384,7 +387,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             throw new Payment_Exception('PayPal payment :id was not found: :error', [':id' => $txnId, ':error' => $this->error($payment)]);
         }
         // Only payments made here name an invoice: another shop's payment on the same PayPal account pays nothing.
-        if (preg_match('/^cf-invoice-(\d+)(?:-(\d+\.\d+)-([0-9a-f]{16}))?$/', (string) ($payment['CUSTOM'] ?? ''), $match) !== 1) {
+        if (preg_match('/^fb-invoice-(\d+)(?:-(\d+\.\d+)-([0-9a-f]{16}))?$/', (string) ($payment['CUSTOM'] ?? ''), $match) !== 1) {
             throw new Payment_Exception('PayPal payment :id is not for a FOSSBilling invoice', [':id' => $txnId]);
         }
         $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $match[1]);
@@ -484,6 +487,9 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         if ($currency !== '' && strtoupper($currency) !== strtoupper((string) $invoice->getCurrency())) {
             // Converted for processing: the same share of the payment as recorded here (all of it if PayPal does not say).
             $paid = (float) ($this->call('GetTransactionDetails', ['TRANSACTIONID' => $paymentId])['AMT'] ?? 0) ?: $amount;
+            if ($paid <= 0) {
+                return sprintf('PayPal reversed payment %s (%s): the reversed amount is unknown, settle it by hand.', $paymentId, $reversalId);
+            }
             $amount = round((float) $payment['amount'] * $amount / $paid, 2);
         }
         $service = $this->di['mod_service']('Invoice');
@@ -519,8 +525,11 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         );
         foreach ($items as $item) {
             $orderRow = $connection->fetchAssociative('SELECT id, expires_at, period FROM client_order WHERE id = ?', [(int) $item['rel_id']]);
+            if ($orderRow === false || empty($orderRow['expires_at'])) {
+                continue;
+            }
             $code = (string) ($item['period'] ?: ($orderRow['period'] ?? ''));
-            if ($orderRow === false || empty($orderRow['expires_at']) || $code === '') {
+            if ($code === '') {
                 continue;
             }
             $period = new FOSSBilling\Core\Period($code);
@@ -688,12 +697,12 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
 
     /**
      * An amount of the invoice's currency as PayPal charges it: [amount, currency, CUSTOM]. CUSTOM names the invoice and,
-     * when converted, the invoice amount asked for with its signature (cf-invoice-5-500.00-<16 hex>).
+     * when converted, the invoice amount asked for with its signature (fb-invoice-5-500.00-<16 hex>).
      */
     private function charged(Invoice $invoice, float $amount): array
     {
         $to = $this->convertTo();
-        $custom = 'cf-invoice-' . $invoice->getId();
+        $custom = 'fb-invoice-' . $invoice->getId();
         if ($to === '' || $to === strtoupper((string) $invoice->getCurrency())) {
             return [$this->moneyFormat($amount, (string) $invoice->getCurrency()), (string) $invoice->getCurrency(), $custom];
         }

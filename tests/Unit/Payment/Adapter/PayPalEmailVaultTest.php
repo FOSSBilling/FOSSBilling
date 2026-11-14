@@ -290,7 +290,7 @@ describe('REST capture recording', function (): void {
         $adapter->setDi(paypalDi(['invoice' => $invoiceService], $em));
         $adapter->getDi()['http_client'] = paypalRest([
             [200, ['access_token' => 'tok']],
-            [200, ['id' => 'C-9', 'status' => 'COMPLETED', 'custom_id' => 'cf-invoice-60', 'amount' => ['value' => '25.00', 'currency_code' => 'USD']]],
+            [200, ['id' => 'C-9', 'status' => 'COMPLETED', 'custom_id' => 'fb-invoice-60', 'amount' => ['value' => '25.00', 'currency_code' => 'USD']]],
         ]);
 
         $adapter->processTransaction($api, 70, ['source' => 'saved_card', 'get' => ['paypal_capture' => 'C-9']], 6);
@@ -313,7 +313,7 @@ describe('REST capture recording', function (): void {
         $adapter->setDi(paypalDi([], $em));
         $adapter->getDi()['http_client'] = paypalRest([
             [200, ['access_token' => 'tok']],
-            [200, ['id' => 'C-9', 'status' => 'PENDING', 'custom_id' => 'cf-invoice-60', 'amount' => ['value' => '25.00', 'currency_code' => 'USD']]],
+            [200, ['id' => 'C-9', 'status' => 'PENDING', 'custom_id' => 'fb-invoice-60', 'amount' => ['value' => '25.00', 'currency_code' => 'USD']]],
         ]);
 
         $adapter->processTransaction($api, 70, ['source' => 'saved_card', 'get' => ['paypal_capture' => 'C-9']], 6);

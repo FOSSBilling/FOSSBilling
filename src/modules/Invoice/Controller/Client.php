@@ -72,7 +72,6 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function get_autopay_save(\FOSSBilling\Core\Http\App $app): Response
     {
-        $this->di['is_client_logged'];
         $adapter = $this->di['mod_service']('Invoice', 'SavedCards')->autopay();
         if ($adapter === null || !$adapter->option('save_only')) {
             throw new InformationException('Automatic payments with PayPal are not available.');
@@ -245,11 +244,31 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
             return $this->movesOn('invoice/' . $invoice->getHash());
         }
-        $captureId = $adapter->vaultCapture($invoice, $orderId);
+        // Checked again and held under the charge lock, so a cron charge of the saved account and this payment never both happen.
+        $connection = $this->di['em']->getConnection();
+        $lockName = 'fb:card-charge:' . (int) $invoice->getId();
+        if (!NamedLock::acquire($connection, $lockName, 10)) {
+            return $this->movesOn('invoice/' . $invoice->getHash());
+        }
+
+        try {
+            $state = $connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [(int) $invoice->getId()]);
+            $pending = PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null;
+            if ($state !== Invoice::STATUS_UNPAID || $pending) {
+                $captureId = null;
+            } else {
+                $captureId = $adapter->vaultCapture($invoice, $orderId);
+                // Taken: the cron never charges the saved account for it, also while PayPal holds the payment.
+                $this->di['mod_service']('Invoice', 'SavedCards')->hold((int) $invoice->getId(), 'Payment ' . $captureId . ' is not completed yet.');
+            }
+        } finally {
+            NamedLock::release($connection, $lockName);
+        }
         // Kept until PayPal took the payment, so that the client can come back again after an error.
         $this->di['cache']->deleteItem(self::paypalKey($orderId));
-        // Taken: the cron never charges the saved account for it, also while PayPal holds the payment.
-        $this->di['mod_service']('Invoice', 'SavedCards')->hold((int) $invoice->getId(), 'Payment ' . $captureId . ' is not completed yet.');
+        if (!isset($captureId)) {
+            return $this->movesOn('invoice/' . $invoice->getHash());
+        }
         $this->di['mod_service']('Invoice', 'Transaction')->createAndProcess([
             'invoice_id' => (int) $invoice->getId(),
             'gateway_id' => $adapter->gatewayId(),

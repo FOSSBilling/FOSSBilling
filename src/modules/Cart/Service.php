@@ -950,9 +950,10 @@ class Service implements InjectionAwareInterface
         // A free order that renews sends a client without a saved payment
         // method to PayPal to set up automatic payments ("Free orders").
         if (!$invoice instanceof Invoice) {
-            $autopay = $this->di['mod_service']('Invoice', 'SavedCards')->autopay();
+            $savedCards = $this->di['mod_service']('Invoice', 'SavedCards');
+            $autopay = $savedCards->autopay();
             if ($autopay !== null && $autopay->option('free_orders') && $autopay->option('save_only')
-                && $order->getPeriod() && $this->di['mod_service']('Invoice', 'SavedCards')->method((int) $client->getId()) === null) {
+                && $order->getPeriod() && $savedCards->method((int) $client->getId()) === null) {
                 $result['redirect'] = $this->di['url']->link('payment-methods/paypal-autopay', ['next' => 'order/service/manage/' . $order->getId()]);
             }
         }

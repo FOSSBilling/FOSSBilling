@@ -162,9 +162,8 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * The client's saved payment methods for the Payment methods page:
-     * {available, cards: [{id, card, default}]}. PayPal and other gateways
-     * fill their own keys once ported; default marks the method that pays
-     * the invoices.
+     * {available, bank, cards: [{id, card, default}], paypal: {account, default} or null,
+     * autopay: {account, default, add} or null}. default marks the method that pays the invoices.
      */
     public function card_list(): array
     {
@@ -190,7 +189,7 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         ];
     }
 
-    /** Whether a saved payment method can be used here, for the client menu. */
+    /** Whether a saved payment method can be used here (shown on the invoice page when true). */
     public function card_available(): bool
     {
         return $this->getDi()['mod_service']('Invoice', 'SavedCards')->adapters() !== [];

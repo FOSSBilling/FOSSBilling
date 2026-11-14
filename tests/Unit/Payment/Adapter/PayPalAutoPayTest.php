@@ -234,7 +234,7 @@ describe('checkout and agreement setup', function (): void {
         $adapter = autopayAdapter();
         $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards], $em));
         $adapter->getDi()['http_client'] = autopayNvpResponder([
-            'ACK=Success&PAYMENTREQUEST_0_CUSTOM=cf-invoice-60&PAYERID=PAYER1&PAYMENTREQUEST_0_AMT=25.00&PAYMENTREQUEST_0_CURRENCYCODE=USD&EMAIL=buyer@example.com',
+            'ACK=Success&PAYMENTREQUEST_0_CUSTOM=fb-invoice-60&PAYERID=PAYER1&PAYMENTREQUEST_0_AMT=25.00&PAYMENTREQUEST_0_CURRENCYCODE=USD&EMAIL=buyer@example.com',
             'ACK=Success&PAYMENTINFO_0_TRANSACTIONID=P-2&BILLINGAGREEMENTID=B-new',
         ]);
 
@@ -251,7 +251,7 @@ describe('checkout and agreement setup', function (): void {
         $adapter = autopayAdapter();
         $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards], $em));
         $adapter->getDi()['http_client'] = autopayNvpResponder([
-            'ACK=Success&PAYMENTREQUEST_0_CUSTOM=cf-client-9&EMAIL=buyer@example.com',
+            'ACK=Success&PAYMENTREQUEST_0_CUSTOM=fb-client-9&EMAIL=buyer@example.com',
             'ACK=Success&BILLINGAGREEMENTID=B-setup',
         ]);
 
@@ -295,7 +295,7 @@ describe('payment notices', function (): void {
         $adapter = autopayAdapter();
         $adapter->setDi(autopayDi(['invoice' => $invoiceService], $em));
         $adapter->getDi()['http_client'] = autopayNvpResponder([
-            'ACK=Success&AMT=25.00&CURRENCYCODE=USD&PAYMENTSTATUS=Completed&CUSTOM=cf-invoice-60',
+            'ACK=Success&AMT=25.00&CURRENCYCODE=USD&PAYMENTSTATUS=Completed&CUSTOM=fb-invoice-60',
         ]);
 
         $adapter->processTransaction($api, 70, ['source' => 'saved_card', 'get' => ['paypal_txn' => 'P-9']], 5);
@@ -463,4 +463,52 @@ describe('payment notices', function (): void {
         expect(fn () => withAppEnv('prod', fn () => $adapter->processTransaction(Mockery::mock(), 70, ['source' => 'ipn', 'post' => ['txn_id' => 'x'], 'http_raw_post_data' => 'txn_id=x'], 5)))
             ->toThrow(Payment_Exception::class, 'not genuine');
     });
+});
+
+describe('converted amounts without a local record', function (): void {
+    test('a refund without a recorded payment goes back to the dashboard', function (): void {
+        $adapter = autopayAdapter();
+        $adapter->setDi(autopayDi());
+        $adapter->getDi()['http_client'] = autopayNvpResponder([
+            'ACK=Success&CURRENCYCODE=EUR&AMT=25.00',
+        ]);
+        $adapter->getDi()['em']->shouldReceive('getConnection')->andReturn($connection = Mockery::mock(Doctrine\DBAL\Connection::class));
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchOne')->once()->andReturn(false);
+
+        expect(fn () => $adapter->refundPayment('P-9', 20.00, 'USD'))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'dashboard');
+    });
+});
+
+test('a reversal with an unknown amount is left for staff', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD']);
+    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn(['invoice_id' => 60, 'amount' => '25.00']);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_transaction_update')->once()->with(Mockery::on(function (array $data): bool {
+        return str_contains((string) ($data['note'] ?? ''), 'unknown, settle it by hand');
+    }));
+
+    $adapter = autopayAdapter();
+    $adapter->setDi(autopayDi([], $em));
+    $adapter->getDi()['http_client'] = autopayNvpResponder([
+        'ACK=Success',
+    ]);
+
+    $adapter->processTransaction($api, 70, [
+        'source' => 'ipn',
+        'http_raw_post_data' => 'payment_status=Reversed&parent_txn_id=P-old&txn_id=R-1&mc_currency=EUR',
+        'post' => ['payment_status' => 'Reversed', 'parent_txn_id' => 'P-old', 'txn_id' => 'R-1', 'mc_currency' => 'EUR'],
+    ], 5);
+    expect(true)->toBeTrue();
 });

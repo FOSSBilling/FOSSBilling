@@ -385,3 +385,111 @@ test('paying and saving a PayPal account starts an order for the invoice', funct
 
     expect($controller->get_invoice_paypal_save($app, str_repeat('a', 32))->getTargetUrl())->toBe('https://paypal.example/checkout');
 });
+
+test('invoice vault return records the approved order', function (): void {
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
+    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
+
+    $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+    $adapter->shouldReceive('gatewayId')->andReturn(6);
+    $adapter->shouldReceive('vaultCapture')->once()->with($invoice, 'O-1')->andReturn('C-1');
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+    $savedCards->shouldReceive('hold')->once();
+
+    $txService = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
+    $txService->shouldReceive('createAndProcess')->once()->with([
+        'invoice_id' => 60,
+        'gateway_id' => 6,
+        'source' => 'paypal_return',
+        'get' => ['paypal_capture' => 'C-1', 'invoice_id' => 60],
+    ])->andReturn(70);
+
+    $request = Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-paid?token=O-1', cookies: ['paypal_return' => 'bind', session_name() => 'x']);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
+    $connection->shouldReceive('fetchOne')->andReturn(1, 'unpaid');
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(false);
+    $connection->shouldReceive('executeStatement')->andReturn(1);
+
+    $cacheItem = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+    $cacheItem->shouldReceive('isHit')->andReturn(true);
+    $cacheItem->shouldReceive('get')->andReturn(['invoice' => 60, 'bind' => hash('sha256', 'bind')]);
+    $cache = Mockery::mock(Psr\SimpleCache\CacheInterface::class);
+    $cache->shouldReceive('getItem')->andReturn($cacheItem);
+    $cache->shouldReceive('deleteItem')->once();
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($invoiceRepo);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards, 'invoice:transaction' => $txService]));
+    $di['url'] = $url;
+    $di['cache'] = $cache;
+    $di['request'] = $request;
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_invoice_paypal_paid($app))->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
+});
+
+test('invoice vault return waits when another payment is clearing', function (): void {
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
+    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
+
+    $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+    $adapter->shouldNotReceive('vaultCapture');
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+    $savedCards->shouldNotReceive('hold');
+
+    $txService = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
+    $txService->shouldNotReceive('createAndProcess');
+
+    $request = Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-paid?token=O-1', cookies: ['paypal_return' => 'bind', session_name() => 'x']);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
+    $connection->shouldReceive('fetchOne')->andReturn(1, 'unpaid');
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01']);
+    $connection->shouldReceive('executeStatement')->andReturn(1);
+
+    $cacheItem = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+    $cacheItem->shouldReceive('isHit')->andReturn(true);
+    $cacheItem->shouldReceive('get')->andReturn(['invoice' => 60, 'bind' => hash('sha256', 'bind')]);
+    $cache = Mockery::mock(Psr\SimpleCache\CacheInterface::class);
+    $cache->shouldReceive('getItem')->andReturn($cacheItem);
+    $cache->shouldReceive('deleteItem')->once();
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($invoiceRepo);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards, 'invoice:transaction' => $txService]));
+    $di['url'] = $url;
+    $di['cache'] = $cache;
+    $di['request'] = $request;
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_invoice_paypal_paid($app))->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
+});
