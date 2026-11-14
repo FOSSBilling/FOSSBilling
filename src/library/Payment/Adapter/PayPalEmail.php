@@ -1012,7 +1012,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // saves their account on the Payment methods page (a setup token they approve at PayPal) or with "Pay and save my
     // PayPal account" (an order stored in the vault when it is paid); the cron then charges it as a saved card.
 
-    /** Whether clients can save their PayPal account here: the setting is on and the REST API keys are set. */
     /** The PayPal account's balances through the REST API: [{currency, amount}]. */
     public function balances(): array
     {
@@ -1030,6 +1029,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ], $body['balances'] ?? []);
     }
 
+    /** Whether clients can save their PayPal account here: the setting is on and the REST API keys are set. */
     public function canVault(): bool
     {
         return (string) ($this->config['vault'] ?? '') === '1' && $this->hasApiKeys();

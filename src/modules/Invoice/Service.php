@@ -4799,6 +4799,13 @@ class Service implements InjectionAwareInterface
             throw new InformationException('This invoice is already paid', [], 403);
         }
 
+        // A bank debit still clearing pays this invoice: starting another
+        // payment now would charge the client twice. Matches the invoice
+        // page, which hides the payment form while a payment is pending.
+        if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+            throw new InformationException('A payment for this invoice is still clearing', [], 403);
+        }
+
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
         if (!$gtw instanceof PayGateway) {
             throw new InformationException('Payment method not found', null, 813);

@@ -493,3 +493,66 @@ test('invoice vault return waits when another payment is clearing', function ():
 
     expect($controller->get_invoice_paypal_paid($app))->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
 });
+
+test('invoice autopay start waits while another payment is clearing', function (): void {
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
+    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findOneBy')->once()->andReturn($invoice);
+
+    $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+    $adapter->shouldNotReceive('checkout');
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn(Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-autopay/' . str_repeat('a', 32)));
+    $app->shouldReceive('redirect')->once()->with('invoice/' . str_repeat('a', 32))->andReturn(new RedirectResponse('/invoice/' . str_repeat('a', 32)));
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($invoiceRepo);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards]));
+    $di['is_client_logged'] = true;
+    $di['loggedin_client'] = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_invoice_autopay($app, str_repeat('a', 32))->getTargetUrl())->toBe('/invoice/' . str_repeat('a', 32));
+});
+
+test('pay and save waits while another payment is clearing', function (): void {
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
+    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findOneBy')->once()->andReturn($invoice);
+
+    $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+    $adapter->shouldNotReceive('vaultOrder');
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('redirect')->once()->with('invoice/' . str_repeat('a', 32))->andReturn(new RedirectResponse('/invoice/' . str_repeat('a', 32)));
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($invoiceRepo);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards]));
+    $di['is_client_logged'] = true;
+    $di['loggedin_client'] = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_invoice_paypal_save($app, str_repeat('a', 32))->getTargetUrl())->toBe('/invoice/' . str_repeat('a', 32));
+});

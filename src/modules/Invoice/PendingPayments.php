@@ -44,7 +44,7 @@ final class PendingPayments
             "SELECT amount, currency, created_at FROM {$table} WHERE invoice_id = ? AND status = 'received' AND txn_status = 'processing' AND created_at > ? ORDER BY id DESC LIMIT 1",
             [$invoiceId, self::since()]
         );
-        if ($row === false) {
+        if ($row === false || $row === []) {
             return null;
         }
 

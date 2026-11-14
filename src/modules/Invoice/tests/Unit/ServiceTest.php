@@ -10994,3 +10994,26 @@ test('unpaid invoices expose a payment still clearing', function (): void {
     $result = $service->toApiArray($invoiceModel);
     expect($result['pending_payment'])->toBe(['amount' => '25.00', 'currency' => 'EUR', 'created_at' => '2026-01-05 10:00:00']);
 });
+
+test('processInvoice refuses a new payment while one is still clearing', function (): void {
+    $service = new Service();
+    $invoice = createEntity(Invoice::class, ['id' => 70, 'status' => Invoice::STATUS_UNPAID, 'client_id' => 20]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findByHash')->once()->with('abc123')->andReturn($invoice);
+
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+
+    expect(fn () => $service->processInvoice(['hash' => 'abc123', 'gateway_id' => 5]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'still clearing');
+});

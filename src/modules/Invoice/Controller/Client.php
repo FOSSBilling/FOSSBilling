@@ -113,6 +113,10 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         if (!$invoice instanceof Invoice || (!$once && (int) $invoice->getClientId() !== $this->clientId())) {
             return $app->redirect('invoice');
         }
+        // A bank debit still clearing pays this invoice: starting another payment now would charge twice.
+        if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+            return $app->redirect('invoice/' . $invoice->getHash());
+        }
         $checkout = $adapter->checkout($invoice, !$once, (string) $this->di['url']->link('invoice/paypal-autopay-paid'), (string) $this->di['url']->link('invoice/' . $invoice->getHash()));
         $this->paypalBind($checkout['token'], ['invoice' => (int) $invoice->getId()]);
 
@@ -215,6 +219,10 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['hash' => $hash, 'clientId' => $this->clientId(), 'status' => Invoice::STATUS_UNPAID]);
         if (!$invoice instanceof Invoice) {
             return $app->redirect('invoice');
+        }
+        // A bank debit still clearing pays this invoice: starting another payment now would charge twice.
+        if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+            return $app->redirect('invoice/' . $invoice->getHash());
         }
         $order = $adapter->vaultOrder($invoice, (string) $this->di['url']->link('invoice/paypal-paid'), (string) $this->di['url']->link('invoice/' . $invoice->getHash()));
         $this->paypalBind($order['id'], ['invoice' => (int) $invoice->getId()]);
