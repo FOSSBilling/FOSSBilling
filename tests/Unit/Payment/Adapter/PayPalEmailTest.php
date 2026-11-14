@@ -243,11 +243,15 @@ function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscripti
     $subRepo = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
     $subRepo->shouldReceive('findOneBy')->byDefault()->andReturn($existingSubscription);
     $transactionRepo = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
+    $transactionRepo->shouldReceive('find')->byDefault()->andReturnNull();
+    $transactionRepo->shouldReceive('findBy')->byDefault()->andReturn([]);
     $transactionRepo->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturnUsing(
         $findActiveByTxn ?? static fn (): ?object => null
     );
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
     $connection->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {

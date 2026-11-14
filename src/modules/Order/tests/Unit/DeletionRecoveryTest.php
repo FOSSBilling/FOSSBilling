@@ -18,6 +18,8 @@ use FOSSBilling\Core\Exception\InformationException;
 
 use function Tests\Helpers\container;
 
+require_once PATH_TESTS . '/Helpers/DeferredPayPal.php';
+
 function deletionRecoveryContext(?string $databasePath = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
@@ -321,9 +323,9 @@ test('MySQL current reads detect deletion holds committed after a billing snapsh
     }
 })->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
 
-function deletionPaymentContext(): array
+function deletionPaymentContext(?string $databasePath = null): array
 {
-    $c = deletionRecoveryContext();
+    $c = deletionRecoveryContext($databasePath);
     $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
     $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('PayPalEmail')->setEnabled(true);
     $c['em']->persist($client);
@@ -376,46 +378,6 @@ test('manual payment rejects deletion holds without changing gateway or recordin
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
 })->with(['Custom', 'PayPalEmail'])->with([false, true]);
 
-function deletionPayPalApi(array $c, int $transactionId): object
-{
-    return new class($c, $transactionId) {
-        public bool $crash = false;
-
-        public function __construct(private array $c, private int $transactionId)
-        {
-        }
-
-        public function invoice_transaction_get(array $data): array
-        {
-            return $this->c['connection']->fetchAssociative('SELECT invoice_id, type, txn_id, txn_status, amount, currency, status FROM "transaction" WHERE id = ?', [$this->transactionId]);
-        }
-
-        public function invoice_transaction_update(array $data): bool
-        {
-            if ($this->crash && ($data['status'] ?? '') === 'processed') {
-                throw new Error('Interrupted before receipt completion');
-            }
-            $service = new Box\Mod\Invoice\ServiceTransaction();
-            $service->setDi($this->c['di']);
-
-            return $service->update($this->c['em']->find(Box\Mod\Invoice\Entity\Transaction::class, $this->transactionId), $data);
-        }
-
-        public function invoice_get(array $data): array
-        {
-            return ['client' => ['id' => $this->c['client']->getId()], 'currency' => 'USD'];
-        }
-
-        public function client_balance_add_funds(array $data): bool
-        {
-            $service = new Box\Mod\Client\Service();
-            $service->setDi($this->c['di']);
-
-            return $service->addFunds($this->c['client'], $data['amount'], $data['description'], $data);
-        }
-    };
-}
-
 test('verified PayPal renewal receipts remain credit during deletion recovery, including retries', function (string $txnType, bool $crash, string $gross): void {
     $c = deletionPaymentContext();
     $c['invoice']->setStatus(Invoice::STATUS_PAID);
@@ -429,7 +391,7 @@ test('verified PayPal renewal receipts remain credit during deletion recovery, i
         'get' => ['invoice_id' => $c['invoice']->getId(), 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId())],
         'post' => ['txn_type' => $txnType, 'payment_status' => 'Completed', 'txn_id' => 'held-paypal-receipt', 'subscr_id' => 'held-subscription', 'mc_gross' => $gross, 'mc_currency' => 'USD'],
     ];
-    $api = deletionPayPalApi($c, $transaction->getId());
+    $api = deletionPayPalApi($c);
     $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
     $adapter->setDi($c['di']);
     if ($crash) {
@@ -442,7 +404,7 @@ test('verified PayPal renewal receipts remain credit during deletion recovery, i
         $c['em'] = new EntityManager($c['connection'], $c['config']);
         $c['di']['em'] = $c['em'];
         $c['client'] = $c['em']->find(Box\Mod\Client\Entity\Client::class, $c['client']->getId());
-        $api = deletionPayPalApi($c, $transaction->getId());
+        $api = deletionPayPalApi($c);
     }
     $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId());
     // Even if staff recover deletion between callbacks, replay must not renew.
@@ -526,7 +488,7 @@ test('deferred PayPal renewal credits reject invalid amounts and currencies befo
     ];
     $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
     $adapter->setDi($c['di']);
-    $api = deletionPayPalApi($c, $transaction->getId());
+    $api = deletionPayPalApi($c);
     expect(fn () => $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId()))->toThrow(Exception::class);
     expect($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0)
         ->and($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processing');
@@ -536,3 +498,179 @@ test('deferred PayPal renewal credits reject invalid amounts and currencies befo
     'nonfinite' => ['1e999', 'USD'],
     'wrong currency' => ['10', 'EUR'],
 ]);
+
+function deferredPayPalReceiptContext(?string $databasePath = null, bool $earlierAttempt = false): array
+{
+    $c = deletionPaymentContext($databasePath);
+    $c['invoice']->setStatus(Invoice::STATUS_PAID);
+    $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('held-subscription')->setRelType('invoice')->setRelId($c['invoice']->getId());
+    $receipt = (new Box\Mod\Invoice\Entity\Transaction())->setInvoice($c['invoice'])->setGateway($c['gateway'])->setStatus('processing')->setTxnId('PAYPAL-DEFERRED')->setTxnStatus('Completed')->setType('subscr_payment')->setAmount('3')->setCurrency('USD');
+    if ($earlierAttempt) {
+        $uncredited = (clone $receipt)->setAmount(null)->setType(null)->setTxnStatus(null);
+        $c['em']->persist($uncredited);
+        $c['em']->flush();
+    }
+    $c['em']->persist($subscription);
+    $c['em']->persist($receipt);
+    $c['em']->flush();
+    DeletionRecovery::setState($c['connection'], $c['order']->getId(), DeletionRecovery::STARTED);
+    $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
+    $adapter->setDi($c['di']);
+    $api = deletionPayPalApi($c);
+    $payload = [
+        'get' => ['invoice_id' => $c['invoice']->getId()],
+        'post' => ['txn_type' => 'subscr_payment', 'payment_status' => 'Completed', 'txn_id' => 'PAYPAL-DEFERRED', 'subscr_id' => 'held-subscription', 'mc_gross' => '3', 'mc_currency' => 'USD'],
+    ];
+
+    return $c + compact('receipt', 'adapter', 'api', 'payload');
+}
+
+test('overlapping PayPal workers credit an expired claim only once and refresh stale receipt state', function (string $mode): void {
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $path = $filesystem->tempnam(sys_get_temp_dir(), 'paypal-overlap-');
+    $c = deferredPayPalReceiptContext($path);
+    $input = new Symfony\Component\Process\InputStream();
+    $worker = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/paypal-receipt-worker.php', $path, PATH_DATA, (string) $c['receipt']->getId(), $mode]);
+    $worker->setInput($input);
+
+    try {
+        if ($mode === 'claim') {
+            $c['api']->beforeInvoiceRead = function () use ($c, $worker): void {
+                // This worker still owns the receipt mutex, but its persisted
+                // processing claim can expire while it is stalled.
+                $c['connection']->executeStatement('UPDATE "transaction" SET updated_at = ? WHERE id = ?', [date('Y-m-d H:i:s', time() - 600), $c['receipt']->getId()]);
+                $worker->start();
+                expect($worker->waitUntil(fn ($type, $output): bool => str_contains($output, 'ready')))->toBeTrue();
+            };
+        } else {
+            // The old worker loads processing state before the winner commits.
+            $worker->start();
+            expect($worker->waitUntil(fn ($type, $output): bool => str_contains($output, 'ready')))->toBeTrue();
+        }
+        $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+        if ($mode === 'wait') {
+            // Recovery must not let the stale processor generate a new invoice.
+            $c['connection']->delete('client_order_meta', ['client_order_id' => $c['order']->getId()]);
+            $input->write("go\n");
+        }
+        $input->close();
+        $worker->wait();
+        expect($worker->getExitCode())->toBe(0)
+            ->and($worker->getOutput())->toContain('processed')
+            ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0)
+            ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+            ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
+            ->and($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processed');
+    } finally {
+        $worker->stop();
+        $input->close();
+        $c['connection']->close();
+        $filesystem->remove([$path, $path . '-wal', $path . '-shm']);
+    }
+})->with(['claim', 'wait']);
+
+function deferredPayPalRefund(array $c, string $externalId, string $amount, string $currency = 'USD'): array
+{
+    $refund = (new Box\Mod\Invoice\Entity\Transaction())->setInvoice($c['invoice'])->setGateway($c['gateway'])->setStatus('processing');
+    $c['em']->persist($refund);
+    $c['em']->flush();
+    $payload = $c['payload'];
+    $payload['post'] = ['txn_type' => 'subscr_payment', 'payment_status' => 'Refunded', 'txn_id' => $externalId, 'parent_txn_id' => 'PAYPAL-DEFERRED', 'subscr_id' => 'held-subscription', 'mc_gross' => $amount, 'mc_currency' => $currency];
+
+    return [$refund, $payload];
+}
+
+test('deferred PayPal refunds reverse only received credit across partials and duplicate receipts', function (bool $spent, bool $earlierAttempt): void {
+    $c = deferredPayPalReceiptContext(earlierAttempt: $earlierAttempt);
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    if ($spent) {
+        $debit = (new Box\Mod\Client\Entity\ClientBalance())->setClient($c['client'])->setType('invoice')->setAmount('-3');
+        $c['em']->persist($debit);
+        $c['em']->flush();
+    }
+    foreach ([['REFUND-1', '-1'], ['REFUND-1', '-1'], ['REFUND-2', '-2']] as [$externalId, $amount]) {
+        [$refund, $payload] = deferredPayPalRefund($c, $externalId, $amount);
+        $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+        // Replay the same row as well as the distinct row with the same PayPal ID.
+        $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+        expect($refund->getStatus())->toBe('processed');
+    }
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe($spent ? -3.0 : 0.0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance WHERE amount < 0'))->toBe($spent ? 3 : 2)
+        ->and($c['invoice']->getStatus())->toBe(Invoice::STATUS_PAID)
+        ->and((float) $c['invoice']->getRefund())->toBe(0.0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1);
+})->with([false, true])->with([false, true]);
+
+test('deferred PayPal refund debit and receipt completion recover atomically after interruption', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-CRASH', '-3');
+    $c['api']->crash = true;
+    expect(fn () => $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId()))
+        ->toThrow(Error::class, 'Interrupted before receipt completion');
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0)
+        ->and($c['connection']->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe('processing');
+    $c['em'] = new EntityManager($c['connection'], $c['config']);
+    $c['di']['em'] = $c['em'];
+    $c['client'] = $c['em']->find(Box\Mod\Client\Entity\Client::class, $c['client']->getId());
+    $c['api'] = deletionPayPalApi($c);
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(2)
+        ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_PAID);
+});
+
+test('deferred PayPal refunds reject over-refunds and invalid amounts or currencies', function (string $amount, string $currency): void {
+    $c = deferredPayPalReceiptContext();
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-INVALID', $amount, $currency);
+    expect(fn () => $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId()))->toThrow(Exception::class);
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0)
+        ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_PAID)
+        ->and($c['connection']->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe('processing');
+})->with([['-4', 'USD'], ['3', 'USD'], ['-3', 'EUR'], ['-1e999', 'USD'], ['bad', 'USD']]);
+
+test('deferred PayPal ledger checkpoints cannot be removed through balance deletion', function (bool $refundEntry): void {
+    $c = deferredPayPalReceiptContext();
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    if ($refundEntry) {
+        [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-DELETE', '-1');
+        $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    }
+    $entryId = (int) $c['connection']->fetchOne('SELECT MAX(id) FROM client_balance');
+    $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once();
+    $c['di']['mod_service'] = $c['di']->protect(fn (): object => $staff);
+    $api = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $api->setDi($c['di']);
+    expect(fn () => $api->balance_delete(['id' => $entryId]))->toThrow(InformationException::class, 'cannot be deleted')
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe($refundEntry ? 2.0 : 3.0);
+})->with([false, true]);
+
+test('deferred PayPal refund totals and identities cannot be changed by later callbacks', function (bool $sameRefundId): void {
+    $c = deferredPayPalReceiptContext();
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    [$first, $payload] = deferredPayPalRefund($c, 'REFUND-PARTIAL', '-1');
+    $c['adapter']->processTransaction($c['api'], $first->getId(), $payload, $c['gateway']->getId());
+    [$second, $payload] = deferredPayPalRefund($c, $sameRefundId ? 'REFUND-PARTIAL' : 'REFUND-EXCESS', '-3');
+    expect(fn () => $c['adapter']->processTransaction($c['api'], $second->getId(), $payload, $c['gateway']->getId()))->toThrow(Payment_Exception::class);
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(2.0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(2)
+        ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_PAID);
+})->with([false, true]);
+
+test('a stale PayPal error status cannot replay retained credit after deletion recovery', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    // A competing processor can time out on the mutex and record its old
+    // failure after the winner's durable credit/completion commit.
+    $c['connection']->executeStatement('UPDATE "transaction" SET status = ?, error = ? WHERE id = ?', ['error', 'Old worker timed out', $c['receipt']->getId()]);
+    $c['connection']->delete('client_order_meta', ['client_order_id' => $c['order']->getId()]);
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
+        ->and($c['receipt']->getStatus())->toBe('processed');
+});

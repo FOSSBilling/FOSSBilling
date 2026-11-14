@@ -9,8 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\Transaction;
+use FOSSBilling\Core\Doctrine\NamedLock;
+use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\System\Environment;
+use FOSSBilling\Core\Validation\PriceValidator;
 use Pimple\Container;
 
 class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Core\Container\InjectionAwareInterface
@@ -93,6 +98,21 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             throw new Payment_Exception('IPN is invalid');
         }
 
+        // A processing claim may expire while its worker is still alive.
+        // Serialize the whole receipt, including renewal generation, and refresh
+        // ORM state after waiting so a resumed worker sees durable completion.
+        $this->withReceiptLock($id, function () use ($api_admin, $id, $data, $gateway_id): void {
+            $receipt = $this->di['em']->getRepository(Transaction::class)->find($id);
+            if ($receipt instanceof Transaction) {
+                $this->di['em']->refresh($receipt);
+            }
+            $this->processVerifiedTransaction($api_admin, $id, $data, $gateway_id);
+        });
+    }
+
+    private function processVerifiedTransaction($api_admin, int $id, array $data, int $gateway_id): void
+    {
+        $post = $data['post'];
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
         // The invoice binding arrives through a buyer-editable callback URL,
@@ -159,12 +179,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'recurring_payment':
                 if (($ipn['payment_status'] ?? '') === 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
-                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
+                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
                         $d = [
                             'id' => $id,
                             'error' => '',
                             'error_code' => null,
-                            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
+                            'status' => Transaction::STATUS_PROCESSED,
                             'updated_at' => date('Y-m-d H:i:s'),
                         ];
                         $api_admin->invoice_transaction_update($d);
@@ -189,13 +209,35 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                             throw new Payment_Exception('PayPal subscription ' . $ipn['subscr_id'] . ' is not linked to invoice ' . $tx['invoice_id']);
                         }
                     }
+                    // A stale claim/error handler can overwrite receipt status
+                    // after the credit committed. The ledger checkpoint remains
+                    // authoritative, including after the deletion hold is gone.
+                    $retained = $this->di['em']->getConnection()->fetchAssociative(
+                        'SELECT client_id, amount FROM client_balance WHERE type = :type AND rel_id = :id',
+                        ['type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $id],
+                    );
+                    if ($retained !== false) {
+                        $received = PriceValidator::validateAmount($ipn['mc_gross'], 'PayPal payment amount');
+                        if ((int) $retained['client_id'] !== (int) $client_id || abs(round($received, 2) - (float) $retained['amount']) > 0.005) {
+                            throw new Payment_Exception('PayPal payment differs from its retained credit');
+                        }
+                        $api_admin->invoice_transaction_update([
+                            'id' => $id,
+                            'error' => '',
+                            'error_code' => null,
+                            'status' => Transaction::STATUS_PROCESSED,
+                            'updated_at' => date('Y-m-d H:i:s'),
+                        ]);
+
+                        return;
+                    }
                 } elseif (($ipn['payment_status'] ?? '') === 'Refunded') {
                     break;
                 } else {
                     $api_admin->invoice_transaction_update([
                         'id' => $id,
                         'txn_status' => (string) ($ipn['payment_status'] ?? ''),
-                        'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_RECEIVED,
+                        'status' => Transaction::STATUS_RECEIVED,
                         'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
@@ -245,7 +287,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                             // The receipt is verified money even when renewal is held or
                             // cannot be invoiced. Keep its original binding and retain
                             // the funds as credit without settling another invoice.
-                            FOSSBilling\Core\Validation\PriceValidator::validateAmount($ipn['mc_gross'], 'PayPal payment amount');
+                            PriceValidator::validateAmount($ipn['mc_gross'], 'PayPal payment amount');
                             $invoiceDbModel = null;
                             $deferredRenewal = true;
                         } else {
@@ -272,13 +314,15 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if ($deferredRenewal) {
                     // Credit and receipt completion must commit together: a
                     // worker interrupted here can retry without crediting twice.
+                    $bd['type'] = ClientBalance::TYPE_PAYPAL_DEFERRED;
+                    $bd['rel_id'] = (string) $id;
                     $this->di['em']->wrapInTransaction(function () use ($api_admin, $bd, $id): void {
                         $api_admin->client_balance_add_funds($bd);
                         $api_admin->invoice_transaction_update([
                             'id' => $id,
                             'error' => '',
                             'error_code' => null,
-                            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
+                            'status' => Transaction::STATUS_PROCESSED,
                             'updated_at' => date('Y-m-d H:i:s'),
                         ]);
                     });
@@ -441,6 +485,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             && $ipn['payment_status'] == 'Refunded'
             && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment', 'recurring_payment'], true)
         ) {
+            if ($this->refundDeferredCredit($api_admin, $id, $ipn, $gateway_id, (int) $tx['invoice_id'], (int) $client_id)) {
+                return;
+            }
             $refd = [
                 'id' => $invoice['id'],
                 'note' => 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''),
@@ -456,10 +503,114 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'id' => $id,
             'error' => '',
             'error_code' => null,
-            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
+            'status' => Transaction::STATUS_PROCESSED,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);
+    }
+
+    private function withReceiptLock(int $id, callable $callback): mixed
+    {
+        $connection = $this->di['em']->getConnection();
+        $name = 'paypal_receipt_' . $id;
+        if (!NamedLock::acquire($connection, $name, 10)) {
+            throw new Payment_Exception('Another worker is processing this PayPal receipt. Please retry.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    /** Return false only when the parent payment was not a deferred credit. */
+    private function refundDeferredCredit($api, int $id, array $ipn, int $gatewayId, int $invoiceId, int $clientId): bool
+    {
+        $parentId = $ipn['parent_txn_id'] ?? null;
+        if (!is_string($parentId) || $parentId === '') {
+            throw new Payment_Exception('PayPal refund is missing its original payment ID');
+        }
+        $parents = $this->di['em']->getRepository(Transaction::class)->findBy(['txnId' => $parentId, 'gateway' => $gatewayId]);
+        // Earlier failed deliveries can share the external ID. Find the receipt
+        // whose ledger entry actually retained the money, not an arbitrary row.
+        foreach ($parents as $parent) {
+            if ($parent->getId() === $id) {
+                continue;
+            }
+
+            // Wait for the original credit to commit, and serialize distinct or
+            // repeated refund callbacks against that same credit.
+            $handled = $this->withReceiptLock($parent->getId(), function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId): bool {
+                return $this->di['em']->wrapInTransaction(function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId): bool {
+                    $connection = $this->di['em']->getConnection();
+                    // Match settlement's lock order: client mutex before ledger rows.
+                    $this->di['em']->getRepository(ClientBalance::class)->getClientBalanceSumForUpdate($clientId);
+                    $credit = $connection->fetchAssociative(
+                        'SELECT client_id, amount FROM client_balance WHERE type = :type AND rel_id = :id' . RowLock::suffix($connection),
+                        ['type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $parent->getId()],
+                    );
+                    if ($credit === false) {
+                        return false;
+                    }
+                    $this->di['em']->refresh($parent);
+                    if ($parent->getInvoice()?->getId() !== $invoiceId || (int) $credit['client_id'] !== $clientId) {
+                        throw new Payment_Exception('PayPal refund does not match the deferred payment owner');
+                    }
+                    $this->validateCurrency($ipn['mc_currency'] ?? null, $parent->getCurrency());
+                    $amount = PriceValidator::validateSignedAmount($ipn['mc_gross'] ?? null, 'PayPal refund amount');
+                    $refundId = $ipn['txn_id'] ?? null;
+                    if ($amount >= 0 || round(-$amount, 2) <= 0 || !is_string($refundId) || $refundId === '' || strlen($refundId) > 20 || $refundId === $parent->getTxnId()) {
+                        throw new Payment_Exception('PayPal refund details are invalid');
+                    }
+                    $amount = round(-$amount, 2);
+                    $type = ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $parent->getId();
+                    $refunds = $connection->fetchAllAssociative(
+                        'SELECT rel_id, amount FROM client_balance WHERE type = :type' . RowLock::suffix($connection),
+                        ['type' => $type],
+                    );
+                    $refunded = 0.0;
+                    $duplicate = false;
+                    foreach ($refunds as $refund) {
+                        $refunded -= (float) $refund['amount'];
+                        if ($refund['rel_id'] === $refundId) {
+                            if (abs((float) $refund['amount'] + $amount) > 0.005) {
+                                throw new Payment_Exception('PayPal refund amount differs from the recorded refund');
+                            }
+                            $duplicate = true;
+                        }
+                    }
+                    if (!$duplicate) {
+                        if ($refunded + $amount - (float) $credit['amount'] > 0.005) {
+                            throw new Payment_Exception('PayPal refunds exceed the deferred payment');
+                        }
+                        // The gateway already returned this money. Record the debt
+                        // even if the credit was spent; never refund the old invoice.
+                        $api->client_balance_add_funds([
+                            'id' => $clientId,
+                            'amount' => -$amount,
+                            'description' => 'PayPal refund ' . $refundId . ' for deferred payment ' . $parent->getTxnId(),
+                            'type' => $type,
+                            'rel_id' => $refundId,
+                        ]);
+                    }
+                    $api->invoice_transaction_update([
+                        'id' => $id,
+                        'error' => '',
+                        'error_code' => null,
+                        'status' => Transaction::STATUS_PROCESSED,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+
+                    return true;
+                });
+            });
+            if ($handled) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -533,7 +684,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if (!is_string($candidateTxnId) || $candidateTxnId === '') {
                     continue;
                 }
-                $earlier = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->findActiveByTxnIdAndGatewayId($candidateTxnId, $gatewayId, $currentTxId);
+                $earlier = $this->di['em']->getRepository(Transaction::class)->findActiveByTxnIdAndGatewayId($candidateTxnId, $gatewayId, $currentTxId);
                 $earlierInvoice = $earlier?->getInvoice();
                 if ($earlierInvoice instanceof Invoice && (int) $earlierInvoice->getId() === $invoiceId) {
                     $this->di['logger']->info('Accepted unsigned PayPal callback continuing transaction ' . $candidateTxnId . ' on invoice ' . $invoiceId);
