@@ -11,6 +11,7 @@ use Box\Mod\Order\Entity\OrderStatus;
 use Box\Mod\Order\Service;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -292,7 +293,7 @@ test('received gateway funds remain credit without settling or fulfilling a held
         ->and($c['backend']->calls)->toBe(1);
 })->with([false, true]);
 
-test('MySQL current reads detect deletion holds committed after a billing snapshot', function (): void {
+test('MySQL and MariaDB snapshot conflicts roll back billing and preserve deletion holds on transaction retry', function (): void {
     $params = [
         'driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) getenv('DELETION_HOLD_MYSQL_PORT'),
         'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
@@ -303,20 +304,52 @@ test('MySQL current reads detect deletion holds committed after a billing snapsh
     try {
         $deletion->executeStatement('CREATE TABLE client_order (id BIGINT PRIMARY KEY) ENGINE=InnoDB');
         $deletion->executeStatement('CREATE TABLE client_order_meta (id BIGINT AUTO_INCREMENT PRIMARY KEY, client_order_id BIGINT, name VARCHAR(255), value TEXT, INDEX (client_order_id)) ENGINE=InnoDB');
+        $deletion->executeStatement('CREATE TABLE billing_snapshot_probe (id BIGINT PRIMARY KEY) ENGINE=InnoDB');
         $deletion->insert('client_order', ['id' => 1]);
         $billing->executeStatement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
-        $billing->beginTransaction();
-        // Model the invoice-item lookup that starts a consistent snapshot.
-        expect($billing->fetchOne('SELECT COUNT(*) FROM client_order_meta'))->toBe(0);
-        DeletionRecovery::setState($deletion, 1, DeletionRecovery::STARTED);
-        expect(DeletionRecovery::getState($billing, 1))->toBeNull();
-        expect(fn () => DeletionRecovery::assertNotHeld($billing, 1, true))
-            ->toThrow(InformationException::class, 'awaiting recovery');
+        $strictSnapshot = str_contains((string) $billing->fetchOne('SELECT VERSION()'), 'MariaDB')
+            && (bool) $billing->fetchOne('SELECT @@innodb_snapshot_isolation'); // cspell:ignore innodb
+        $failure = null;
+
+        try {
+            $billing->transactional(function () use ($billing, $deletion): void {
+                // Start a snapshot before another worker commits the hold.
+                expect($billing->fetchOne('SELECT COUNT(*) FROM client_order_meta'))->toBe(0);
+                DeletionRecovery::setState($deletion, 1, DeletionRecovery::STARTED);
+                expect(DeletionRecovery::getState($billing, 1))->toBeNull();
+                $billing->insert('billing_snapshot_probe', ['id' => 1]);
+                DeletionRecovery::assertNotHeld($billing, 1, true);
+            });
+        } catch (InformationException|RetryableException $e) {
+            $failure = $e;
+        }
+
+        // Strict snapshot isolation rejects the locking read before the
+        // application can inspect the hold. Both outcomes must abort all writes.
+        expect($failure)->toBeInstanceOf($strictSnapshot ? RetryableException::class : InformationException::class);
+        if ($failure instanceof InformationException) {
+            expect($failure->getMessage())->toContain('awaiting recovery');
+        }
+        expect($billing->isTransactionActive())->toBeFalse()
+            ->and($deletion->fetchOne('SELECT COUNT(*) FROM billing_snapshot_probe'))->toBe(0)
+            ->and(DeletionRecovery::getState($deletion, 1))->toBe(DeletionRecovery::STARTED);
+
+        // Retry the entire transaction with a new snapshot, not just the read
+        // that failed. The committed hold must still prevent billing.
+        expect(fn () => $billing->transactional(function () use ($billing): void {
+            expect(DeletionRecovery::getState($billing, 1))->toBe(DeletionRecovery::STARTED);
+            $billing->insert('billing_snapshot_probe', ['id' => 2]);
+            DeletionRecovery::assertNotHeld($billing, 1, true);
+        }))->toThrow(InformationException::class, 'awaiting recovery');
+        expect($billing->isTransactionActive())->toBeFalse()
+            ->and($deletion->fetchOne('SELECT COUNT(*) FROM billing_snapshot_probe'))->toBe(0)
+            ->and(DeletionRecovery::getState($deletion, 1))->toBe(DeletionRecovery::STARTED);
     } finally {
         if ($billing->isTransactionActive()) {
             $billing->rollBack();
         }
         $billing->close();
+        $deletion->executeStatement('DROP TABLE IF EXISTS billing_snapshot_probe');
         $deletion->executeStatement('DROP TABLE IF EXISTS client_order_meta');
         $deletion->executeStatement('DROP TABLE IF EXISTS client_order');
         $deletion->close();
