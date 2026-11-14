@@ -726,6 +726,12 @@ test('removes tickets by client', function (): void {
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getConnection')->atLeast()->once()->andReturnUsing(function (): object {
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('delete')->once()->andReturn(0);
+
+        return $connection;
+    });
 
     $di = container();
     $di['em'] = $emMock;
@@ -783,6 +789,12 @@ test('rmByClient removes tickets with their notes, messages, and history', funct
             return true;
         }));
     $emMock->shouldReceive('flush')->once();
+    $emMock->shouldReceive('getConnection')->once()->andReturnUsing(function (): object {
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('delete')->once()->andReturn(0);
+
+        return $connection;
+    });
 
     $di = container();
     $di['em'] = $emMock;

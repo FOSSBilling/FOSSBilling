@@ -387,6 +387,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $this->removeTicket($ticket);
         }
         $em->flush();
+        TicketFiles::forgetClient($this->di['em']->getConnection(), (int) $client->getId());
     }
 
     public function rm(SupportTicket $model): bool
@@ -444,6 +445,11 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $messages = $this->getSupportTicketMessageRepository()->findByTicketId($model->getId() ?? 0);
             foreach ($messages as $msg) {
                 $data['messages'][] = $this->messageToApiArray($msg, true, $identity);
+            }
+            // Attachments ride with the messages for staff and the owning client.
+            $isOwner = $identity instanceof Client && (int) $model->getClientId() === (int) $identity->getId();
+            if ($identity instanceof \Box\Mod\Staff\Entity\Admin || $isOwner) {
+                $data = TicketFiles::withFiles($this->di, $data);
             }
         }
 
@@ -1019,6 +1025,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         $this->di['logger']->info('Replied to ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
+        TicketFiles::attachFromRequest($this->di, (int) $ticket->getId(), $identity instanceof \Box\Mod\Staff\Entity\Admin);
+
         return (int) $msg->getId();
     }
 
@@ -1056,6 +1064,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterTicketOpenedEvent((int) $ticket->getId(), TicketActorRole::ADMIN));
 
         $this->di['logger']->info('Admin opened new ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
+
+        TicketFiles::attachFromRequest($this->di, (int) $ticket->getId(), true);
 
         return (int) $ticket->getId();
     }
@@ -1128,6 +1138,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterTicketOpenedEvent((int) $ticket->getId(), TicketActorRole::GUEST));
 
         $this->di['logger']->info('"{author_email}" opened guest ticket "{ticket_id}"', ['author_email' => $ticket->getAuthorEmail(), 'ticket_id' => $ticket->getId()]);
+
+        TicketFiles::attachFromRequest($this->di, (int) $ticket->getId(), false);
 
         return $ticket->getAccessHash();
     }
@@ -1256,6 +1268,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         }
 
         $this->di['logger']->info('Submitted new ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
+
+        TicketFiles::attachFromRequest($this->di, (int) $ticket->getId(), false);
 
         return (int) $ticket->getId();
     }

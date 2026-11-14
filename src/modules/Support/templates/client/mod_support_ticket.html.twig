@@ -117,6 +117,7 @@
                                         <article class="markdown-body bg-transparent text-reset" id="message-{{ message.id }}">
                                             {{ (message.content ?? '')|markdown_to_html }}
                                         </article>
+                                        {{ include('mod_support_ticket_files.html.twig', { message: message }) }}
                                     </div>
                                 </div>
                             </div>
@@ -144,6 +145,7 @@
                                     {% endif %}
                                     <textarea name="content" cols="5" rows="10" class="editor-textarea form-control" required="required"
                                               id="ticket-reply-text"></textarea>
+                                    {{ include('mod_support_ticket_upload.html.twig', { ticket_id: ticket.id|default('') }) }}
                                     <button class="mt-2 btn btn-primary" type="submit" id="post-reply-btn"
                                             value="{{ 'Post'|trans }}"
                                             onclick="">{{ 'Post'|trans }}</button>

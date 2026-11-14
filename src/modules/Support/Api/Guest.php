@@ -15,6 +15,7 @@ use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\HiddenHelpdesks;
 use Box\Mod\Support\HiddenKbCategories;
+use Box\Mod\Support\TicketFiles;
 use Box\Mod\Support\TicketPriority;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
@@ -128,6 +129,14 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
     public function ticket_priorities(): array
     {
         return TicketPriority::titles();
+    }
+
+    /**
+     * The attachment rules for ticket forms: extensions, size caps.
+     */
+    public function ticket_file_rules(): array
+    {
+        return TicketFiles::rules();
     }
 
     /*

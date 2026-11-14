@@ -2243,6 +2243,7 @@ class Patcher implements InjectionAwareInterface
             'support_escalation_applied' => [],
             'support_escalation_rule' => ['name', 'reply'],
             'support_helpdesk' => ['name', 'signature', 'email'],
+            'support_ticket_file' => ['name'],
             'support_kb_article' => ['title', 'content'],
             'support_kb_article_category' => ['title', 'description'],
             'support_pr' => ['title', 'content'],

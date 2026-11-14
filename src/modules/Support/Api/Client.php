@@ -18,6 +18,7 @@ namespace Box\Mod\Support\Api;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\TicketFiles;
 use Box\Mod\Support\TicketLimit;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
@@ -73,6 +74,30 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     public function ticket_limit(): ?array
     {
         return TicketLimit::status($this->getDi(), $this->getIdentity());
+    }
+
+    /**
+     * Upload a file for a ticket message (bound to the message on save).
+     *
+     * @return array{id: string, name: string, size: int, size_label: string}
+     */
+    public function ticket_file_upload(array $data): array
+    {
+        $ticketId = isset($data['ticket_id']) && $data['ticket_id'] !== '' ? (int) $data['ticket_id'] : null;
+        $file = $this->getDi()['request']->files->get('file');
+
+        return TicketFiles::uploadForClient($this->getDi(), (int) $this->getIdentity()->getId(), $ticketId, $file);
+    }
+
+    /**
+     * Discard a waiting upload.
+     */
+    #[RequiredParams(['id' => 'File ID was not passed'])]
+    public function ticket_file_discard(array $data): bool
+    {
+        TicketFiles::discard($this->getDi(), (string) $data['id'], 'client', (int) $this->getIdentity()->getId());
+
+        return true;
     }
 
     /**

@@ -141,7 +141,18 @@
                             </div>
                         </div>
                         <div class="card-body border-top">
-                            <h4 class="card-title mb-2">{{ 'Knowledge Base'|trans }}</h4>
+                            <h4 class="card-title mb-2">{{ 'Ticket Files'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Clients and staff can attach files to ticket messages. Attached files are kept this long; files uploaded but never sent are deleted a day later. 0 keeps them forever.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="ticket_files_days">{{ 'Keep attached files (days)'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="ticket_files_days" type="number" min="0" max="3650" name="ticket_files_days" value="{{ params.ticket_files_days|default('180') }}">
+                                        <span class="input-group-text">{{ 'days'|trans }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                             <p class="text-secondary mb-3">{{ 'Control whether the knowledge base is visible to clients and available throughout the support area.'|trans }}</p>
                             {% set kb_enabled = params.kb_enable is not defined or params.kb_enable is same as(true) or params.kb_enable in [1, '1', 'true', 'on', 'yes'] %}
                             <label class="form-check form-switch form-switch-2">

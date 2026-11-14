@@ -26,6 +26,7 @@ use Box\Mod\Support\HiddenKbCategories;
 use Box\Mod\Support\TicketAssign;
 use Box\Mod\Support\TicketBulk;
 use Box\Mod\Support\TicketEscalation;
+use Box\Mod\Support\TicketFiles;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -245,6 +246,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             $this->getDi()['logger']->error('Support: escalation rules failed: {error}', ['error' => $e->getMessage()]);
         }
         TicketEscalation::sweep($this->getDi());
+
+        try {
+            TicketFiles::prune($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: removing old ticket files failed: {error}', ['error' => $e->getMessage()]);
+        }
 
         return true;
     }
@@ -699,6 +706,65 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('support', 'view');
 
         return TicketBulk::pinnedIds($this->getDi());
+    }
+
+    /**
+     * Upload a file for a ticket reply (bound to the message on save).
+     *
+     * @return array{id: string, name: string, size: int, size_label: string}
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID is missing'])]
+    public function ticket_file_upload(array $data): array
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $file = $this->getDi()['request']->files->get('file');
+        $adminId = $this->getIdentity() instanceof \Box\Mod\Staff\Entity\Admin ? (int) $this->getIdentity()->getId() : 0;
+
+        return TicketFiles::uploadForStaff($this->getDi(), $adminId, (int) $data['ticket_id'], $file);
+    }
+
+    /**
+     * Discard a waiting upload.
+     */
+    #[RequiredParams(['id' => 'File ID is missing'])]
+    public function ticket_file_discard(array $data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $adminId = $this->getIdentity() instanceof \Box\Mod\Staff\Entity\Admin ? (int) $this->getIdentity()->getId() : 0;
+        TicketFiles::discard($this->getDi(), (string) $data['id'], 'admin', $adminId);
+
+        return true;
+    }
+
+    /**
+     * Remove an attached file (the message keeps a removed marker).
+     */
+    #[RequiredParams(['id' => 'File ID is missing'])]
+    public function ticket_file_remove(array $data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $adminId = $this->getIdentity() instanceof \Box\Mod\Staff\Entity\Admin ? (int) $this->getIdentity()->getId() : null;
+        TicketFiles::remove($this->getDi(), (string) $data['id'], $adminId);
+
+        return true;
+    }
+
+    /**
+     * How long attached files are kept (days, 0: forever).
+     */
+    public function ticket_files_update(array $data): bool
+    {
+        $this->getDi()['mod_service']('extension')->hasManagePermission('mod_support');
+
+        $days = (int) ($data['ticket_files_days'] ?? TicketFiles::KEEP_DAYS);
+        if ($days < 0 || $days > 3650) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Keep attached files between 0 and 3650 days.');
+        }
+
+        return $this->getDi()['mod_service']('extension')->setConfig(['ext' => 'mod_support', 'ticket_files_days' => (string) $days]);
     }
 
     /**

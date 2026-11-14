@@ -117,6 +117,7 @@
                         <label for="message" class="form-label">{{ 'Message'|trans }}</label>
                         <textarea name="content" class="editor-textarea form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
                     </div>
+                    {{ include('mod_support_ticket_upload.html.twig') }}
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">{{ 'Submit'|trans }}</button>

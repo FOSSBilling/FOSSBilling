@@ -244,3 +244,12 @@ test('ticket reply to another client ticket is a 404', function (): void {
         expect($e->getCode())->toBe(404);
     }
 });
+
+test('ticket file rules are public', function (): void {
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
+    $guestApi->setDi(container());
+
+    $rules = $guestApi->ticket_file_rules();
+    expect($rules['max_files'])->toBe(5);
+    expect($rules['extensions'])->toContain('pdf');
+});

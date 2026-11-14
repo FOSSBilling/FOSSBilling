@@ -1614,3 +1614,62 @@ test('batch ticket close closes only open tickets', function (): void {
 
     expect($api->batch_ticket_close(['ids' => [60, 61]]))->toBe(1);
 });
+
+test('ticket files upload, list and remove round-trip', function (): void {
+    $dir = sys_get_temp_dir() . '/fb-ticket-files-' . bin2hex(random_bytes(4));
+    putenv('FOSSBILLING_TICKET_FILES_DIR=' . $dir);
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER, admin_id INTEGER, client_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE support_ticket_file (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, token CHAR(32) NOT NULL, ticket_id BIGINT DEFAULT NULL,
+        message_id BIGINT DEFAULT NULL, client_id BIGINT NOT NULL, uploader_kind VARCHAR(10) NOT NULL,
+        uploader_id BIGINT NOT NULL, session_hash CHAR(64) NOT NULL, name VARCHAR(191) NOT NULL,
+        mime VARCHAR(100) NOT NULL, size INT NOT NULL, created_at DATETIME NOT NULL,
+        attached_at DATETIME DEFAULT NULL, removed_at DATETIME DEFAULT NULL,
+        removed_by BIGINT DEFAULT NULL, removed_reason VARCHAR(20) DEFAULT NULL,
+        UNIQUE (token))');
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 7]);
+    $connection->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'admin_id' => 1, 'client_id' => null]);
+
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+
+    $path = tempnam(sys_get_temp_dir(), 'tftest');
+    file_put_contents($path, 'staff notes');
+    $request = Symfony\Component\HttpFoundation\Request::create('http://localhost/', 'POST', [], [], [], ['HTTP_CONTENT_TYPE' => 'multipart/form-data']);
+    $request->files->set('file', new Symfony\Component\HttpFoundation\File\UploadedFile($path, 'notes.txt', 'text/plain', null, true));
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $di['request'] = $request;
+    $api->setDi($di);
+    $api->setIdentity(Tests\Helpers\admin(['id' => 1]));
+
+    $uploaded = $api->ticket_file_upload(['ticket_id' => 60]);
+    expect($uploaded['name'])->toBe('notes.txt');
+
+    // Bind then remove.
+    $request->request->set('ticket_files', [$uploaded['id']]);
+    expect(Box\Mod\Support\TicketFiles::attachFromRequest($di, 60, true))->toBe(1);
+    expect($api->ticket_file_remove(['id' => $uploaded['id']]))->toBeTrue();
+    expect(fn (): bool => $api->ticket_file_remove(['id' => $uploaded['id']]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'File not found');
+});
+
+test('ticket files update validates the keep period', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+    $extension = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extension->shouldReceive('hasManagePermission')->atLeast()->once()->with('mod_support');
+    $extension->shouldReceive('setConfig')->once()->with(['ext' => 'mod_support', 'ticket_files_days' => '30'])->andReturn(true);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name): object => $extension);
+    $api->setDi($di);
+
+    expect($api->ticket_files_update(['ticket_files_days' => 30]))->toBeTrue();
+    expect(fn (): bool => $api->ticket_files_update(['ticket_files_days' => 99999]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'between 0 and 3650');
+});

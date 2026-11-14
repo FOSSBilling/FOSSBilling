@@ -1,0 +1,63 @@
+{# Attachment widget for the staff reply form: uploads first, binds on save. #}
+<div class="mb-2" data-ticket-files>
+    <label class="form-label" for="ticket-file-input">{{ 'Attachments'|trans }}</label>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <input class="form-control w-auto" type="file" id="ticket-file-input" multiple>
+        <span class="form-text" data-ticket-files-hint></span>
+    </div>
+    <div class="list-group mt-2" data-ticket-files-list></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const widget = document.querySelector('[data-ticket-files]');
+        if (!widget) {
+            return;
+        }
+        const form = widget.closest('form');
+        const input = widget.querySelector('#ticket-file-input');
+        const list = widget.querySelector('[data-ticket-files-list]');
+        const hint = widget.querySelector('[data-ticket-files-hint]');
+        let uploading = 0;
+
+        FOSSBilling.api.guest.get('support/ticket_file_rules', {}, (rules) => {
+            hint.textContent = "{{ 'Up to :files files, :mb MB each: :types'|trans({ ':files': '__FILES__', ':mb': '__MB__', ':types': '__TYPES__' }) }}".replace('__FILES__', rules.max_files).replace('__MB__', rules.max_mb).replace('__TYPES__', rules.extensions.join(', '));
+            input.setAttribute('accept', rules.accept);
+        });
+
+        function setUploading(delta) {
+            uploading += delta;
+            form.querySelectorAll('[type=submit]').forEach((btn) => { btn.disabled = uploading > 0; });
+        }
+
+        input.addEventListener('change', () => {
+            Array.from(input.files || []).forEach((file) => {
+                const data = new FormData();
+                data.append('file', file);
+                data.append('ticket_id', '{{ ticket.id }}');
+                setUploading(1);
+                FOSSBilling.api.admin.post('support/ticket_file_upload', data, (res) => {
+                    setUploading(-1);
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item d-flex justify-content-between align-items-center py-1';
+                    const label = document.createElement('span');
+                    label.textContent = res.name + ' (' + res.size_label + ')';
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'ticket_files[]';
+                    hidden.value = res.id;
+                    const remove = document.createElement('button');
+                    remove.type = 'button';
+                    remove.className = 'btn btn-sm btn-link link-danger';
+                    remove.textContent = "{{ 'Remove'|trans }}";
+                    remove.addEventListener('click', () => {
+                        FOSSBilling.api.admin.post('support/ticket_file_discard', { id: res.id }, () => item.remove());
+                    });
+                    item.append(label, hidden, remove);
+                    list.append(item);
+                }, () => setUploading(-1));
+            });
+            input.value = '';
+        }, { once: false });
+    });
+</script>

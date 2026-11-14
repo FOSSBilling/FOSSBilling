@@ -165,6 +165,7 @@
                                     <article class="markdown-body bg-transparent text-reset">
                                         {{ (message.content ?? '')|markdown_to_html }}
                                     </article>
+                                    {{ include('mod_support_ticket_message_files.html.twig', { message: message }) }}
                                 </div>
                             </div>
 
@@ -225,6 +226,7 @@
 
 {{ profile.signature }}
 {{ ticket.helpdesk.signature|default('') }}</textarea>
+                            {{ include('mod_support_ticket_reply_files.html.twig') }}
                         </div>
                         <div class="card-footer d-flex flex-wrap align-items-center gap-2">
                             <input type="hidden" name="id" value="{{ ticket.id }}">
