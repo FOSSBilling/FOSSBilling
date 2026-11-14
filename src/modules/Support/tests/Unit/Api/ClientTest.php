@@ -253,3 +253,40 @@ test('ticket file rules are public', function (): void {
     expect($rules['max_files'])->toBe(5);
     expect($rules['extensions'])->toContain('pdf');
 });
+
+test('client secrets add, list and delete their own', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, name VARCHAR(255))');
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER, status VARCHAR(30))');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, kind VARCHAR(10) NOT NULL,
+        label VARCHAR(100) NOT NULL, data TEXT NOT NULL, added_by_client_id BIGINT DEFAULT NULL,
+        created_at DATETIME NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret_event (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, secret_label VARCHAR(100) NOT NULL,
+        action VARCHAR(10) NOT NULL, admin_id BIGINT DEFAULT NULL, client_id BIGINT DEFAULT NULL,
+        created_at DATETIME NOT NULL)');
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 1, 'status' => 'open']);
+
+    $api = apiEndpoint(new Box\Mod\Support\Api\Client());
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $di['crypt'] = new FOSSBilling\Core\Security\Crypt();
+    $di['mod_config'] = $di->protect(fn (): array => []);
+    $api->setDi($di);
+    $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]));
+
+    $kinds = $api->ticket_secret_kinds();
+    expect($kinds)->toBe(['server' => true, 'other' => true, 'days' => 7]);
+
+    $added = $api->ticket_secret_add(['ticket_id' => 60, 'kind' => 'other', 'label' => 'Key', 'value' => 'v']);
+    expect($added['id'])->toBeGreaterThan(0);
+
+    $list = $api->ticket_secret_list(['ticket_id' => 60]);
+    expect($list['secrets'])->toHaveCount(1);
+
+    expect($api->ticket_secret_delete(['id' => $added['id']]))->toBeTrue();
+    expect($api->ticket_secret_list(['ticket_id' => 60])['secrets'])->toBe([]);
+});

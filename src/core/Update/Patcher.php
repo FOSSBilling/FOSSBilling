@@ -2244,6 +2244,8 @@ class Patcher implements InjectionAwareInterface
             'support_escalation_rule' => ['name', 'reply'],
             'support_helpdesk' => ['name', 'signature', 'email'],
             'support_ticket_file' => ['name'],
+            'support_ticket_secret' => ['label'],
+            'support_ticket_secret_event' => ['secret_label'],
             'support_kb_article' => ['title', 'content'],
             'support_kb_article_category' => ['title', 'description'],
             'support_pr' => ['title', 'content'],

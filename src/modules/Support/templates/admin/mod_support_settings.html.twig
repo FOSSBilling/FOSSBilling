@@ -153,6 +153,31 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Ticket Secrets'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Let clients attach encrypted logins to tickets. Values open one by one for staff with the right permission, are recorded, and vanish when the ticket closes.'|trans }}</p>
+                            <label class="form-check form-switch form-switch-2">
+                                <input name="secrets_server" type="hidden" value="0">
+                                <input class="form-check-input" name="secrets_server" type="checkbox" value="1"{% if params.secrets_server|default(true) %} checked="checked"{% endif %}>
+                                <span class="form-check-label">{{ 'Server logins'|trans }}</span>
+                            </label>
+                            <label class="form-check form-switch form-switch-2">
+                                <input name="secrets_other" type="hidden" value="0">
+                                <input class="form-check-input" name="secrets_other" type="checkbox" value="1"{% if params.secrets_other|default(true) %} checked="checked"{% endif %}>
+                                <span class="form-check-label">{{ 'Other secrets'|trans }}</span>
+                            </label>
+                            <div class="row g-3 mt-1">
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="secrets_days">{{ 'Delete untouched secrets after (days)'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="secrets_days" type="number" min="1" max="90" name="secrets_days" value="{{ params.secrets_days|default('7') }}">
+                                        <span class="input-group-text">{{ 'days'|trans }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Knowledge Base'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Control whether the knowledge base is visible to clients and available throughout the support area.'|trans }}</p>
                             {% set kb_enabled = params.kb_enable is not defined or params.kb_enable is same as(true) or params.kb_enable in [1, '1', 'true', 'on', 'yes'] %}
                             <label class="form-check form-switch form-switch-2">

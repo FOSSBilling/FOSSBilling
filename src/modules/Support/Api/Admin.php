@@ -27,6 +27,7 @@ use Box\Mod\Support\TicketAssign;
 use Box\Mod\Support\TicketBulk;
 use Box\Mod\Support\TicketEscalation;
 use Box\Mod\Support\TicketFiles;
+use Box\Mod\Support\TicketSecrets;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -787,6 +788,56 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         return $closed;
+    }
+
+    /*
+     * Support ticket secrets.
+     */
+    /**
+     * A ticket's secrets (metadata only) and their audit history.
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID is missing'])]
+    public function ticket_secret_list(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        $identity = $this->getIdentity();
+        $canOpen = $identity instanceof \Box\Mod\Staff\Entity\Admin
+            && $this->getDi()['mod_service']('staff')->hasPermission($identity, 'support', 'open_secrets');
+        $canDelete = $identity instanceof \Box\Mod\Staff\Entity\Admin
+            && $this->getDi()['mod_service']('staff')->hasPermission($identity, 'support', 'manage_tickets');
+
+        return TicketSecrets::listForTicket($this->getDi(), (int) $data['ticket_id'])
+            + ['can_open' => $canOpen, 'can_delete' => $canDelete];
+    }
+
+    /**
+     * Open a secret (audited). Needs the open_secrets permission.
+     */
+    #[RequiredParams(['id' => 'Secret ID is missing'])]
+    public function ticket_secret_open(array $data): array
+    {
+        $this->checkPermissions('support', 'open_secrets');
+
+        $identity = $this->getIdentity();
+        $adminId = $identity instanceof \Box\Mod\Staff\Entity\Admin ? (int) $identity->getId() : 0;
+
+        return TicketSecrets::openForStaff($this->getDi(), (int) $data['id'], $adminId);
+    }
+
+    /**
+     * Delete a secret (audited).
+     */
+    #[RequiredParams(['id' => 'Secret ID is missing'])]
+    public function ticket_secret_delete(array $data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $identity = $this->getIdentity();
+        $adminId = $identity instanceof \Box\Mod\Staff\Entity\Admin ? (int) $identity->getId() : null;
+        TicketSecrets::delete($this->getDi(), (int) $data['id'], $adminId, null);
+
+        return true;
     }
 
     /*

@@ -1673,3 +1673,49 @@ test('ticket files update validates the keep period', function (): void {
     expect(fn (): bool => $api->ticket_files_update(['ticket_files_days' => 99999]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'between 0 and 3650');
 });
+
+test('ticket secrets list flags open and delete rights separately', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, name VARCHAR(255))');
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER, status VARCHAR(30))');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, kind VARCHAR(10) NOT NULL,
+        label VARCHAR(100) NOT NULL, data TEXT NOT NULL, added_by_client_id BIGINT DEFAULT NULL,
+        created_at DATETIME NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret_event (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, secret_label VARCHAR(100) NOT NULL,
+        action VARCHAR(10) NOT NULL, admin_id BIGINT DEFAULT NULL, client_id BIGINT DEFAULT NULL,
+        created_at DATETIME NOT NULL)');
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 5, 'status' => 'open']);
+
+    $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staff->shouldReceive('hasPermission')->with(Mockery::any(), 'support', 'open_secrets')->andReturn(false);
+    $staff->shouldReceive('hasPermission')->with(Mockery::any(), 'support', 'view')->andReturn(true);
+    $staff->shouldReceive('hasPermission')->with(Mockery::any(), 'support', 'manage_tickets')->andReturn(true);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturnTrue();
+    $staff->shouldReceive('checkPermissionsAndThrowException')->with('support', 'open_secrets', Mockery::any(), Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You do not have the permission to perform this action', [], 403));
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $di['crypt'] = new FOSSBilling\Core\Security\Crypt();
+    $di['mod_config'] = $di->protect(fn (): array => []);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['staff' => $staff]));
+    $api->setDi($di);
+    $api->setIdentity(Tests\Helpers\admin(['id' => 1]));
+
+    $secretId = Box\Mod\Support\TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'Key', 'value' => 'v'])['id'];
+
+    $list = $api->ticket_secret_list(['ticket_id' => 60]);
+    expect($list['can_open'])->toBeFalse();
+    expect($list['can_delete'])->toBeTrue();
+    expect($list['secrets'])->toHaveCount(1);
+
+    // Without the open permission the values stay closed.
+    expect(fn (): array => $api->ticket_secret_open(['id' => $secretId]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'permission');
+});

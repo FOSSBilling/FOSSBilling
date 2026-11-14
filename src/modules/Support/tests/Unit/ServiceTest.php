@@ -168,6 +168,14 @@ function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleReposit
         ->with(SupportTicketMessageHistory::class)
         ->byDefault()
         ->andReturn($supportTicketMessageHistoryRepo);
+    $em->shouldReceive('getConnection')
+        ->byDefault()
+        ->andReturnUsing(function (): object {
+            $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+            $connection->shouldReceive('delete')->byDefault()->andReturn(0);
+
+            return $connection;
+        });
 }
 
 /*
@@ -726,12 +734,6 @@ test('removes tickets by client', function (): void {
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
-    $emMock->shouldReceive('getConnection')->atLeast()->once()->andReturnUsing(function (): object {
-        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-        $connection->shouldReceive('delete')->once()->andReturn(0);
-
-        return $connection;
-    });
 
     $di = container();
     $di['em'] = $emMock;
@@ -789,12 +791,6 @@ test('rmByClient removes tickets with their notes, messages, and history', funct
             return true;
         }));
     $emMock->shouldReceive('flush')->once();
-    $emMock->shouldReceive('getConnection')->once()->andReturnUsing(function (): object {
-        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-        $connection->shouldReceive('delete')->once()->andReturn(0);
-
-        return $connection;
-    });
 
     $di = container();
     $di['em'] = $emMock;
@@ -2738,4 +2734,32 @@ test('close ticket is idempotent without resending events', function (): void {
 
     expect($service->closeTicket($ticket, Tests\Helpers\admin()))->toBeTrue();
     expect($dispatched)->toBeEmpty();
+});
+
+test('closing a ticket purges its secrets', function (): void {
+    $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $deleted = [];
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('delete')->andReturnUsing(function (string $table) use (&$deleted): int {
+        $deleted[] = $table;
+
+        return 0;
+    });
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['event_dispatcher'] = new EventDispatcher();
+    $service->setDi($di);
+
+    $ticket = new SupportTicket();
+    setEntityId($ticket, 1);
+
+    expect($service->closeTicket($ticket, Tests\Helpers\admin()))->toBeTrue();
+    expect($deleted)->toContain('support_ticket_secret');
 });

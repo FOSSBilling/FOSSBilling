@@ -98,6 +98,7 @@ return [
         'client_order.referred_by',
         'service_license.config',
         'setting.hash',
+        'support_ticket_secret.data',
     ],
     // IP/MIME/country/currency/phone/period/quantity codes. This classification does not validate API input.
     'protocol_values' => [
@@ -219,6 +220,8 @@ return [
         'support_ticket.status',
         'support_ticket_file.removed_reason',
         'support_ticket_file.uploader_kind',
+        'support_ticket_secret.kind',
+        'support_ticket_secret_event.action',
         'tld_registrar.registrar',
         'transaction.status',
         'transaction.type',

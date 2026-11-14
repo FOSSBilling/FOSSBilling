@@ -148,6 +148,11 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 'description' => __trans('Allows the staff member to create, update, and delete knowledge base articles and categories.'),
             ],
             'manage_settings' => [],
+            'open_secrets' => [
+                'type' => 'bool',
+                'display_name' => __trans('Open ticket secrets'),
+                'description' => __trans('Allows the staff member to open the encrypted secrets clients attached to tickets. Ticket access alone does not reveal them.'),
+            ],
         ];
     }
 
@@ -324,6 +329,9 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $ticket->close();
         $this->di['em']->flush();
 
+        // Closing discards secrets before either close event can email them.
+        TicketSecrets::forgetTicket($this->di['em']->getConnection(), (int) $ticket->getId());
+
         $actor = match (true) {
             $identity instanceof \Box\Mod\Staff\Entity\Admin => TicketActorRole::ADMIN,
             $identity instanceof Client => TicketActorRole::CLIENT,
@@ -340,6 +348,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $model->close();
         $this->di['em']->flush();
+        // Auto-closing bypasses the close events but not the secret purge.
+        TicketSecrets::forgetTicket($this->di['em']->getConnection(), (int) $model->getId());
         $this->di['logger']->info('Ticket {model_id} was closed', ['model_id' => $model->getId()]);
 
         return true;
@@ -385,6 +395,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $em = $this->di['em'];
         foreach ($this->getSupportTicketRepository()->findByClientId((int) $client->getId()) as $ticket) {
             $this->removeTicket($ticket);
+            // Secrets and their audit go with the erased tickets.
+            TicketSecrets::forgetTicket($em->getConnection(), (int) $ticket->getId(), true);
         }
         $em->flush();
         TicketFiles::forgetClient($this->di['em']->getConnection(), (int) $client->getId());
@@ -396,6 +408,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $id = $model->getId();
 
         $this->removeTicket($model);
+        TicketSecrets::forgetTicket($em->getConnection(), (int) $id, true);
         $em->flush();
 
         $this->di['logger']->info('Removed ticket "{id}"', ['id' => $id]);
@@ -921,6 +934,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function ticketUpdate(SupportTicket $model, array $data): bool
     {
+        $wasClosed = $model->getStatus() === SupportTicket::STATUS_CLOSED;
         if (isset($data['support_helpdesk_id'])) {
             $helpdesk = $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id']);
             if ($helpdesk instanceof Helpdesk) {
@@ -939,6 +953,11 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $model->setUpdatedAt(new \DateTime());
 
         $this->di['em']->flush();
+
+        if (!$wasClosed && $model->getStatus() === SupportTicket::STATUS_CLOSED) {
+            // Closed through the update: values go, like a regular close.
+            TicketSecrets::forgetTicket($this->di['em']->getConnection(), (int) $model->getId());
+        }
 
         $this->di['logger']->info('Updated ticket #{model_id}', ['model_id' => $model->getId()]);
 

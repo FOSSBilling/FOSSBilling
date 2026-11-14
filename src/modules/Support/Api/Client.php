@@ -20,6 +20,7 @@ use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\HiddenHelpdesks;
 use Box\Mod\Support\TicketFiles;
 use Box\Mod\Support\TicketLimit;
+use Box\Mod\Support\TicketSecrets;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -96,6 +97,44 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     public function ticket_file_discard(array $data): bool
     {
         TicketFiles::discard($this->getDi(), (string) $data['id'], 'client', (int) $this->getIdentity()->getId());
+
+        return true;
+    }
+
+    /**
+     * Which secret kinds the client may add, and after how many days untouched
+     * secrets expire: {server, other, days}.
+     */
+    public function ticket_secret_kinds(): array
+    {
+        return TicketSecrets::kinds($this->getDi());
+    }
+
+    /**
+     * Add a secret to the client's own ticket; returns its id.
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID was not passed', 'kind' => 'Secret kind was not passed'])]
+    public function ticket_secret_add(array $data): array
+    {
+        return TicketSecrets::addForClient($this->getDi(), (int) $this->getIdentity()->getId(), (int) $data['ticket_id'], (string) $data['kind'], $data);
+    }
+
+    /**
+     * The client's secrets on a ticket (metadata only) and their history.
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID was not passed'])]
+    public function ticket_secret_list(array $data): array
+    {
+        return TicketSecrets::listForTicket($this->getDi(), (int) $data['ticket_id'], (int) $this->getIdentity()->getId());
+    }
+
+    /**
+     * Delete the client's own secret.
+     */
+    #[RequiredParams(['id' => 'Secret ID was not passed'])]
+    public function ticket_secret_delete(array $data): bool
+    {
+        TicketSecrets::delete($this->getDi(), (int) $data['id'], null, (int) $this->getIdentity()->getId());
 
         return true;
     }

@@ -77,6 +77,9 @@
             </div>
         </div>
         <div class="d-flex flex-column gap-3">
+            {% if not is_guest_ticket %}
+                {{ include('mod_support_ticket_secrets.html.twig') }}
+            {% endif %}
             {% for i, message in ticket.messages %}
                 <div class="row">
                     <div class="col-md-12">
