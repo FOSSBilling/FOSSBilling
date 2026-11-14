@@ -83,6 +83,33 @@
                         {% endif %}
                     </div>
                     {% endif %}
+                    {% if cards.paypal %}
+                    <div class="card mt-4">
+                        <div class="card-header py-3">
+                            <h2 class="mb-0">PayPal</h2>
+                        </div>
+                        {% if cards.paypal.account %}
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <span dir="ltr">{{ cards.paypal.account }}</span>
+                                    <span class="d-flex flex-wrap align-items-center gap-2">
+                                        {% if cards.paypal.default %}
+                                            <span class="badge text-bg-success">{{ 'Pays invoices automatically'|trans }}</span>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-primary" type="button" data-card-call="invoice/paypal_default">{{ 'Use for invoices'|trans }}</button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-danger" type="button" data-card-call="invoice/paypal_remove" data-confirm="{{ 'Remove this PayPal account?'|trans }}">{{ 'Remove'|trans }}</button>
+                                    </span>
+                                </li>
+                            </ul>
+                        {% else %}
+                            <div class="card-body">
+                                <p class="text-secondary">{{ 'Save your PayPal account to pay your invoices automatically.'|trans }}</p>
+                                <a class="btn btn-primary" href="{{ 'payment-methods/paypal'|url }}">{{ 'Save my PayPal account'|trans }}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>

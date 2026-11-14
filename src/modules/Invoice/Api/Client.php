@@ -178,12 +178,14 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         }
         $autopay = $savedCards->autopay();
         $agreement = $autopay?->savedCard($clientId);
+        $paypal = $savedCards->paypal();
+        $account = $paypal?->savedCard($clientId);
 
         return [
             'available' => $stripe !== null,
             'bank' => $stripe?->bankDebit($clientId) ?? false,
             'cards' => $cards,
-            'paypal' => null,
+            'paypal' => $paypal === null ? null : ['account' => $account['card'] ?? null, 'default' => $account !== null && $paying instanceof \Payment_Adapter_PayPalEmail],
             'autopay' => $autopay === null ? null : ['account' => $agreement['card'] ?? null, 'default' => $agreement !== null && $paying instanceof \Payment_Adapter_PayPalAutoPay, 'add' => $autopay->option('save_only')],
         ];
     }
@@ -298,6 +300,54 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     {
         return $this->getDi()['mod_service']('Invoice', 'SavedCards')->autopay()
             ?? throw new \FOSSBilling\Core\Exception\InformationException('Automatic payments with PayPal are not available.');
+    }
+
+    /** Makes the saved PayPal account the method that pays the client's invoices. */
+    public function paypal_default(): bool
+    {
+        $adapter = $this->paypalAdapter();
+        if ($adapter->savedCard((int) $this->getIdentity()->getId()) === null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('You have no saved PayPal account.');
+        }
+        $this->getDi()['mod_service']('Invoice', 'SavedCards')->choose($adapter->gatewayId(), $adapter->testMode(), (int) $this->getIdentity()->getId());
+
+        return true;
+    }
+
+    /** Removes the client's saved PayPal account, here and at PayPal. */
+    public function paypal_remove(): bool
+    {
+        $this->paypalAdapter()->vaultRemove((int) $this->getIdentity()->getId());
+
+        return true;
+    }
+
+    /** Pays the client's own unpaid invoice at once with their saved PayPal account. */
+    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
+    public function paypal_pay($data): array
+    {
+        $adapter = $this->paypalAdapter();
+        $clientId = (int) $this->getIdentity()->getId();
+        if ($adapter->savedCard($clientId) === null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('You cannot pay this invoice with a saved PayPal account.');
+        }
+        $invoice = $this->getDi()['em']->getRepository(Invoice::class)->findOneBy([
+            'hash' => $data['hash'],
+            'clientId' => $clientId,
+            'status' => Invoice::STATUS_UNPAID,
+        ]);
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Core\Exception\InformationException('This invoice is already paid or cancelled.');
+        }
+        $result = $this->getDi()['mod_service']('Invoice', 'SavedCards')->charge($invoice, $adapter, true, true);
+
+        return ['paid' => $result['paid'], 'message' => (string) ($result['error'] ?? '')];
+    }
+
+    private function paypalAdapter(): \Payment_Adapter_PayPalEmail
+    {
+        return $this->getDi()['mod_service']('Invoice', 'SavedCards')->paypal()
+            ?? throw new \FOSSBilling\Core\Exception\InformationException('Saved PayPal accounts are not available.');
     }
 
     private function cardAdapter(): \Payment_Adapter_Stripe

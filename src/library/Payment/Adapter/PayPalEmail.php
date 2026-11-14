@@ -124,8 +124,33 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         }
 
         $url = $this->serviceUrl();
+        // On their own invoice, a signed-in client may pay and save their PayPal account,
+        // so the page waits for their choice instead of going to PayPal at once.
+        $loggedInClientId = isset($this->di['loggedin_client']) ? (int) $this->di['loggedin_client']->getId() : 0;
+        $save = !$subscription && $this->canVault() && $loggedInClientId > 0 && $loggedInClientId === (int) $invoiceModel->getClientId();
+        if ($save) {
+            $this->config['auto_redirect'] = false;
+        }
+        $form = $this->_generateForm($url, $data);
+        $saved = $save ? $this->savedCard((int) $invoiceModel->getClientId()) : null;
+        if ($saved !== null) {
+            // The saved PayPal account pays at once.
+            $form .= '<p class="mt-3"><button type="button" class="btn btn-primary" data-paypal-pay>' . htmlspecialchars(__trans('Pay now with :account', [':account' => $saved['card']]), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</button></p>'
+                . '<script>document.querySelector("[data-paypal-pay]").addEventListener("click", function (event) {'
+                . ' var button = event.currentTarget; button.disabled = true;'
+                . ' FOSSBilling.api.client.post("invoice/paypal_pay", ' . json_encode(['hash' => $invoiceModel->getHash()], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ', function (result) {'
+                . ' if (result.paid) { location.assign(' . json_encode((string) $this->di['url']->link('invoice/thank-you/' . $invoiceModel->getHash()), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) . '); } else { FOSSBilling.message(result.message, "info"); }'
+                . ' }, function (error) { button.disabled = false; FOSSBilling.message(error.message, "error"); });'
+                . ' });</script>';
+        } elseif ($save) {
+            $form .= sprintf(
+                '<p class="mt-3"><a class="btn btn-outline-primary" href="%s">%s</a></p>',
+                htmlspecialchars((string) $this->di['url']->link('invoice/paypal-save/' . $invoiceModel->getHash()), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+                htmlspecialchars(__trans('Pay and save my PayPal account'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            );
+        }
 
-        return $this->_generateForm($url, $data);
+        return $form;
     }
 
     public function processTransaction($api_admin, int $id, array $data, int $gateway_id): void
@@ -212,12 +237,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'recurring_payment':
                 if (($ipn['payment_status'] ?? '') === 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
-                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
+                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
                         $d = [
                             'id' => $id,
                             'error' => '',
                             'error_code' => null,
-                            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
+                            'status' => Transaction::STATUS_PROCESSED,
                             'updated_at' => date('Y-m-d H:i:s'),
                         ];
                         $api_admin->invoice_transaction_update($d);
@@ -248,7 +273,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $api_admin->invoice_transaction_update([
                         'id' => $id,
                         'txn_status' => (string) ($ipn['payment_status'] ?? ''),
-                        'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_RECEIVED,
+                        'status' => Transaction::STATUS_RECEIVED,
                         'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
@@ -506,7 +531,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'id' => $id,
             'error' => '',
             'error_code' => null,
-            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
+            'status' => Transaction::STATUS_PROCESSED,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);
@@ -583,7 +608,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if (!is_string($candidateTxnId) || $candidateTxnId === '') {
                     continue;
                 }
-                $earlier = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->findActiveByTxnIdAndGatewayId($candidateTxnId, $gatewayId, $currentTxId);
+                $earlier = $this->di['em']->getRepository(Transaction::class)->findActiveByTxnIdAndGatewayId($candidateTxnId, $gatewayId, $currentTxId);
                 $earlierInvoice = $earlier?->getInvoice();
                 if ($earlierInvoice instanceof Invoice && (int) $earlierInvoice->getId() === $invoiceId) {
                     $this->di['logger']->info('Accepted unsigned PayPal callback continuing transaction ' . $candidateTxnId . ' on invoice ' . $invoiceId);
@@ -902,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
     {
         try {
             [$status, $body] = $this->rest('GET', '/v1/billing/subscriptions/' . rawurlencode($subscriptionId));
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false;
         }
 
@@ -1192,7 +1217,7 @@ document.addEventListener('DOMContentLoaded', function() {
     {
         try {
             $this->rest('DELETE', '/v3/vault/payment-tokens/' . rawurlencode($tokenId));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->di['logger']->warning('PayPal: the saved account {token} was not removed at PayPal: {message}', ['token' => $tokenId, 'message' => $e->getMessage()]);
         }
     }
@@ -1223,5 +1248,4 @@ document.addEventListener('DOMContentLoaded', function() {
             $api_admin->invoice_pay_with_credits(['id' => $invoice->getId()]);
         }
     }
-
 }

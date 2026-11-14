@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
-use Box\Mod\Invoice\Entity\PayGatewayCustomer;
 use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\ORM\EntityManagerInterface;
 

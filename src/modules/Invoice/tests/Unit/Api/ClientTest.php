@@ -413,6 +413,7 @@ describe('saved cards', function (): void {
         $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
         $savedCards->shouldReceive('stripe')->once()->andReturn($adapter);
         $savedCards->shouldReceive('autopay')->once()->andReturn(null);
+        $savedCards->shouldReceive('paypal')->once()->andReturn(null);
         $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter]);
         $adapter->shouldReceive('cards')->once()->with(7)->andReturn([
             ['id' => 'pm_1', 'card' => 'Visa •••• 4242', 'default' => true],
@@ -443,6 +444,7 @@ describe('saved cards', function (): void {
         $savedCards->shouldReceive('stripe')->once()->andReturn(null);
         $savedCards->shouldReceive('method')->once()->with(7)->andReturn(null);
         $savedCards->shouldReceive('autopay')->once()->andReturn(null);
+        $savedCards->shouldReceive('paypal')->once()->andReturn(null);
         $savedCards->shouldReceive('adapters')->once()->andReturn([]);
 
         $di = $api->getDi();
@@ -566,6 +568,7 @@ describe('paypal autopay', function (): void {
         $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
         $savedCards->shouldReceive('stripe')->once()->andReturn($stripe);
         $savedCards->shouldReceive('autopay')->once()->andReturn($autopay);
+        $savedCards->shouldReceive('paypal')->once()->andReturn(null);
         $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $autopay]);
 
         $di = $api->getDi();
@@ -678,5 +681,92 @@ describe('paypal autopay', function (): void {
 
         expect(fn () => $api->autopay_pay(['hash' => 'abc']))
             ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'cannot pay');
+    });
+});
+
+describe('saved paypal accounts', function (): void {
+    test('lists the saved PayPal account with the automatic one marked', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn(null);
+        $savedCards->shouldReceive('autopay')->once()->andReturn(null);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $paypal = Mockery::mock(Payment_Adapter_PayPalEmail::class)]);
+
+        $paypal->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'T-1', 'card' => 'PayPal buyer@example.com', 'auto_pay_at' => '2026-01-05 10:00:00']);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($paypal);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_list())->toBe([
+            'available' => false,
+            'bank' => false,
+            'cards' => [],
+            'paypal' => ['account' => 'PayPal buyer@example.com', 'default' => true],
+            'autopay' => null,
+        ]);
+    });
+
+    test('makes the saved PayPal account the automatic method', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'T-1', 'card' => 'x', 'auto_pay_at' => 'x']);
+        $adapter->shouldReceive('gatewayId')->once()->andReturn(6);
+        $adapter->shouldReceive('testMode')->once()->andReturn(true);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+        $savedCards->shouldReceive('choose')->once()->with(6, true, 7);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->paypal_default())->toBeTrue();
+    });
+
+    test('removes the saved PayPal account', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+        $adapter->shouldReceive('vaultRemove')->once()->with(7);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->paypal_remove())->toBeTrue();
+    });
+
+    test('pays an invoice at once with the saved PayPal account', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'T-1', 'card' => 'x', 'auto_pay_at' => 'x']);
+
+        $invoice = createEntity(Invoice::class, ['id' => 60]);
+        $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('findOneBy')->once()->with(['hash' => 'abc', 'clientId' => 7, 'status' => Invoice::STATUS_UNPAID])->andReturn($invoice);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+        $savedCards->shouldReceive('charge')->once()->with($invoice, $adapter, true, true)->andReturn(['paid' => true, 'error' => null]);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->paypal_pay(['hash' => 'abc']))->toBe(['paid' => true, 'message' => '']);
     });
 });

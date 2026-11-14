@@ -293,6 +293,7 @@ class ServiceSavedCards implements InjectionAwareInterface
             if (!$subscription instanceof Subscription) {
                 continue;
             }
+
             try {
                 $this->di['mod_service']('Invoice', 'Subscription')->cancel($subscription);
                 $this->di['logger']->info('Subscription #{id} ({sid}): cancelled at PayPal, the saved PayPal account pays from now on', ['id' => $id, 'sid' => $subscription->getSid()]);

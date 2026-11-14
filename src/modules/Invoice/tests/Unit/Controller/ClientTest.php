@@ -306,3 +306,82 @@ test('invoice autopay return records the approved payment', function (): void {
 
     expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
 });
+
+test('payment methods setup starts saving a PayPal account', function (): void {
+    $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+    $adapter->shouldReceive('vaultSetup')->once()->with('https://billing.example/payment-methods/paypal/saved', 'https://billing.example/payment-methods')->andReturn(['id' => 'ST-1', 'url' => 'https://paypal.example/approve']);
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+
+    $cacheItem = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+    $cacheItem->shouldReceive('set')->once();
+    $cacheItem->shouldReceive('expiresAfter')->once();
+    $cache = Mockery::mock(Psr\SimpleCache\CacheInterface::class);
+    $cache->shouldReceive('getItem')->once()->andReturn($cacheItem);
+    $cache->shouldReceive('save')->once()->with($cacheItem);
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn(Symfony\Component\HttpFoundation\Request::create('/payment-methods/paypal'));
+    $app->shouldReceive('redirectUrl')->once()->with('https://paypal.example/approve')->andReturn(new RedirectResponse('https://paypal.example/approve'));
+
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards]));
+    $di['url'] = $url;
+    $di['cache'] = $cache;
+    $di['request'] = Symfony\Component\HttpFoundation\Request::create('/payment-methods/paypal');
+    $di['is_client_logged'] = true;
+    $di['loggedin_client'] = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+    $di['cookie_queue'] = Mockery::mock(FOSSBilling\Core\Cookie\CookieQueue::class);
+    $di['cookie_queue']->shouldReceive('queue')->once();
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_paypal_save($app))->toBeInstanceOf(RedirectResponse::class);
+});
+
+test('paying and saving a PayPal account starts an order for the invoice', function (): void {
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
+    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findOneBy')->once()->andReturn($invoice);
+
+    $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+    $adapter->shouldReceive('vaultOrder')->once()->andReturn(['id' => 'O-1', 'url' => 'https://paypal.example/checkout']);
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+
+    $cacheItem = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+    $cacheItem->shouldReceive('set')->once();
+    $cacheItem->shouldReceive('expiresAfter')->once();
+    $cache = Mockery::mock(Psr\SimpleCache\CacheInterface::class);
+    $cache->shouldReceive('getItem')->once()->andReturn($cacheItem);
+    $cache->shouldReceive('save')->once()->with($cacheItem);
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn(Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-save/' . str_repeat('a', 32)));
+    $app->shouldReceive('redirectUrl')->once()->with('https://paypal.example/checkout')->andReturn(new RedirectResponse('https://paypal.example/checkout'));
+
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($invoiceRepo);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards]));
+    $di['url'] = $url;
+    $di['cache'] = $cache;
+    $di['request'] = Symfony\Component\HttpFoundation\Request::create('/x');
+    $di['is_client_logged'] = true;
+    $di['loggedin_client'] = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+    $di['cookie_queue'] = Mockery::mock(FOSSBilling\Core\Cookie\CookieQueue::class);
+    $di['cookie_queue']->shouldReceive('queue')->once();
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_invoice_paypal_save($app, str_repeat('a', 32))->getTargetUrl())->toBe('https://paypal.example/checkout');
+});

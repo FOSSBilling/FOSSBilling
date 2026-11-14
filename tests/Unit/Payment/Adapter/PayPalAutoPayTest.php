@@ -11,8 +11,6 @@ declare(strict_types=1);
  */
 
 use Box\Mod\Invoice\Entity\Invoice;
-use Box\Mod\Invoice\Entity\PayGatewayCustomer;
-use Box\Mod\Invoice\Repository\PayGatewayCustomerRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -162,14 +160,10 @@ describe('saved agreements', function (): void {
         $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
         $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
 
-        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
-        $customerRepo->shouldReceive('clearSavedMethod')->once()->with(5, true, 'B-gone');
-
-        $em = Mockery::mock(EntityManagerInterface::class);
-        $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $savedCards->shouldReceive('forget')->once()->with(5, true, 'B-gone');
 
         $adapter = autopayAdapter();
-        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService, 'system' => Mockery::mock()->shouldIgnoreMissing()], $em));
+        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService, 'system' => Mockery::mock()->shouldIgnoreMissing()]));
         $adapter->getDi()['http_client'] = autopayNvpResponder(['ACK=Failure&L_ERRORCODE0=10201&L_LONGMESSAGE0=Billing agreement cancelled']);
 
         $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD', 'serie' => 'INV-', 'nr' => '00060']);
@@ -182,14 +176,10 @@ describe('saved agreements', function (): void {
         $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
         $savedCards->shouldReceive('saved')->once()->with(5, true, 9)->andReturn(['payment_method' => 'B-1', 'card' => 'PayPal x@y.zz', 'auto_pay_at' => 'x']);
 
-        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
-        $customerRepo->shouldReceive('clearSavedMethod')->once()->with(5, true, 'B-1');
-
-        $em = Mockery::mock(EntityManagerInterface::class);
-        $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $savedCards->shouldReceive('forget')->once()->with(5, true, 'B-1');
 
         $adapter = autopayAdapter();
-        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards], $em));
+        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards]));
         $adapter->getDi()['http_client'] = autopayNvpResponder(['ACK=Success']);
 
         $adapter->agreementRemove(9);
@@ -314,17 +304,14 @@ describe('payment notices', function (): void {
     });
 
     test('a cancelled agreement is removed without touching invoices', function (): void {
-        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
-        $customerRepo->shouldReceive('clearSavedMethod')->once()->with(5, true, 'B-1');
-
-        $em = Mockery::mock(EntityManagerInterface::class);
-        $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('forget')->once()->with(5, true, 'B-1');
 
         $api = Mockery::mock();
         $api->shouldReceive('invoice_transaction_update')->once();
 
         $adapter = autopayAdapter();
-        $adapter->setDi(autopayDi([], $em));
+        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards]));
 
         $adapter->processTransaction($api, 70, [
             'source' => 'ipn',

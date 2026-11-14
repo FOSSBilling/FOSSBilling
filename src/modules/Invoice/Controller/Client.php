@@ -49,6 +49,10 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $app->get('/payment-methods/paypal-autopay/saved', 'get_autopay_saved', [], static::class);
         $app->get('/invoice/paypal-autopay/:hash', 'get_invoice_autopay', ['hash' => '[a-z0-9]+'], static::class);
         $app->get('/invoice/paypal-autopay-paid', 'get_invoice_autopay_paid', [], static::class);
+        $app->get('/payment-methods/paypal', 'get_paypal_save', [], static::class);
+        $app->get('/payment-methods/paypal/saved', 'get_paypal_saved', [], static::class);
+        $app->get('/invoice/paypal-save/:hash', 'get_invoice_paypal_save', ['hash' => '[a-z0-9]+'], static::class);
+        $app->get('/invoice/paypal-paid', 'get_invoice_paypal_paid', [], static::class);
     }
 
     public function get_invoices(\FOSSBilling\Core\Http\App $app): string
@@ -178,6 +182,90 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $this->di['is_client_logged'];
 
         return (int) $this->di['loggedin_client']->getId();
+    }
+
+    public function get_paypal_save(\FOSSBilling\Core\Http\App $app): Response
+    {
+        $adapter = $this->paypalForClient();
+        $setup = $adapter->vaultSetup((string) $this->di['url']->link('payment-methods/paypal/saved'), (string) $this->di['url']->link('payment-methods'));
+        $this->paypalBind($setup['id'], ['client' => $this->clientId()]);
+
+        return $app->redirectUrl($setup['url']);
+    }
+
+    /** Back from PayPal: keeps the approved account for the client who started saving it, in this browser. */
+    public function get_paypal_saved(\FOSSBilling\Core\Http\App $app): Response
+    {
+        $this->keepSessionCookie();
+        $setupId = (string) $app->getRequest()->query->get('approval_token_id');
+        $flow = $this->paypalFlow($setupId);
+        $adapter = $this->di['mod_service']('Invoice', 'SavedCards')->paypal();
+        if ($flow === null || $adapter === null) {
+            throw new InformationException('Your PayPal account was not saved. Please try again.');
+        }
+        $adapter->vaultSaved((int) $flow['client'], $setupId);
+        $this->di['cache']->deleteItem(self::paypalKey($setupId));
+
+        return $this->movesOn('payment-methods');
+    }
+
+    /** "Pay and save my PayPal account" on the client's own unpaid invoice. */
+    public function get_invoice_paypal_save(\FOSSBilling\Core\Http\App $app, string $hash): Response
+    {
+        $adapter = $this->paypalForClient();
+        $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['hash' => $hash, 'clientId' => $this->clientId(), 'status' => Invoice::STATUS_UNPAID]);
+        if (!$invoice instanceof Invoice) {
+            return $app->redirect('invoice');
+        }
+        $order = $adapter->vaultOrder($invoice, (string) $this->di['url']->link('invoice/paypal-paid'), (string) $this->di['url']->link('invoice/' . $invoice->getHash()));
+        $this->paypalBind($order['id'], ['invoice' => (int) $invoice->getId()]);
+
+        return $app->redirectUrl($order['url']);
+    }
+
+    /** Back from PayPal: takes the payment of the approved order, records it and keeps the account. */
+    public function get_invoice_paypal_paid(\FOSSBilling\Core\Http\App $app): Response
+    {
+        $this->keepSessionCookie();
+        $orderId = (string) $app->getRequest()->query->get('token');
+        $flow = $this->paypalFlow($orderId);
+        $adapter = $this->di['mod_service']('Invoice', 'SavedCards')->paypal();
+        if ($flow === null || $adapter === null) {
+            return $this->movesOn('invoice');
+        }
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $flow['invoice']);
+        if (!$invoice instanceof Invoice) {
+            $this->di['cache']->deleteItem(self::paypalKey($orderId));
+
+            return $this->movesOn('invoice');
+        }
+        // Paid another way meanwhile: the approved order is left to expire, never taken as well.
+        if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
+            $this->di['cache']->deleteItem(self::paypalKey($orderId));
+
+            return $this->movesOn('invoice/' . $invoice->getHash());
+        }
+        $captureId = $adapter->vaultCapture($invoice, $orderId);
+        // Kept until PayPal took the payment, so that the client can come back again after an error.
+        $this->di['cache']->deleteItem(self::paypalKey($orderId));
+        // Taken: the cron never charges the saved account for it, also while PayPal holds the payment.
+        $this->di['mod_service']('Invoice', 'SavedCards')->hold((int) $invoice->getId(), 'Payment ' . $captureId . ' is not completed yet.');
+        $this->di['mod_service']('Invoice', 'Transaction')->createAndProcess([
+            'invoice_id' => (int) $invoice->getId(),
+            'gateway_id' => $adapter->gatewayId(),
+            'source' => 'paypal_return',
+            'get' => ['paypal_capture' => $captureId, 'invoice_id' => (int) $invoice->getId()],
+        ]);
+
+        return $this->movesOn('invoice/thank-you/' . $invoice->getHash());
+    }
+
+    private function paypalForClient(): \Payment_Adapter_PayPalEmail
+    {
+        $this->clientId();
+
+        return $this->di['mod_service']('Invoice', 'SavedCards')->paypal()
+            ?? throw new InformationException('Saved PayPal accounts are not available.');
     }
 
     private const string PAYPAL_COOKIE = 'paypal_return';

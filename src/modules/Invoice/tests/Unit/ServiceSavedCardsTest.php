@@ -119,6 +119,7 @@ describe('gateway resolution', function (): void {
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->twice()->with('Stripe')->andReturn(null);
         $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn(null);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalEmail')->andReturn(null);
 
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -133,6 +134,7 @@ describe('gateway resolution', function (): void {
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->twice()->with('Stripe')->andReturn($gateway);
         $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn(null);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalEmail')->andReturn(null);
 
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $payGatewayService = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
@@ -289,6 +291,7 @@ describe('runDue', function (): void {
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->once()->with('Stripe')->andReturn(null);
         $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn(null);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalEmail')->andReturn(null);
 
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -304,6 +307,7 @@ describe('runDue', function (): void {
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->with('Stripe')->andReturn($gateway);
         $repo->shouldReceive('findEnabledByGateway')->with('PayPalAutoPay')->andReturn(null);
+        $repo->shouldReceive('findEnabledByGateway')->with('PayPalEmail')->andReturn(null);
 
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $adapter->shouldReceive('gatewayId')->byDefault()->andReturn(4);
@@ -429,6 +433,7 @@ describe('runDue charges', function (): void {
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->with('Stripe')->andReturn($gateway);
         $repo->shouldReceive('findEnabledByGateway')->with('PayPalAutoPay')->andReturn(null);
+        $repo->shouldReceive('findEnabledByGateway')->with('PayPalEmail')->andReturn(null);
 
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $adapter->shouldReceive('gatewayId')->byDefault()->andReturn(5);
