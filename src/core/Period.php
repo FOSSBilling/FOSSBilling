@@ -143,11 +143,20 @@ class Period
     {
         $now ??= time();
 
+        if ($this->unit === self::UNIT_MONTH || $this->unit === self::UNIT_YEAR) {
+            // Keep the day inside the target month: one month after 31 January is
+            // 28 February, not 3 March (which strtotime gives).
+            $months = $this->unit === self::UNIT_YEAR ? $this->qty * 12 : $this->qty;
+            $date = (new \DateTimeImmutable('@' . $now))->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+            $target = $date->modify('first day of this month')->modify("+$months months");
+            $day = min((int) $date->format('j'), (int) $target->format('t'));
+
+            return $target->setDate((int) $target->format('Y'), (int) $target->format('n'), $day)->getTimestamp();
+        }
+
         $shift = match ($this->unit) {
             self::UNIT_DAY => 'days',
             self::UNIT_WEEK => 'weeks',
-            self::UNIT_MONTH => 'months',
-            self::UNIT_YEAR => 'years',
             default => throw new Exception('Unit not defined'),
         };
 
