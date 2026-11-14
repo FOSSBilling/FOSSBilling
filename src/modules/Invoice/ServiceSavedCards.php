@@ -98,12 +98,22 @@ class ServiceSavedCards implements InjectionAwareInterface
         return $adapter instanceof \Payment_Adapter_Stripe ? $adapter : null;
     }
 
-    /** @return list<\Payment_Adapter_Stripe> the gateways that charge saved methods */
+    /** @return list<\Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay> the gateways that charge saved methods */
     public function adapters(): array
     {
-        $stripe = $this->stripe();
+        return array_values(array_filter([$this->stripe(), $this->autopay()]));
+    }
 
-        return $stripe === null ? [] : [$stripe];
+    /** The enabled PayPal Auto-Pay gateway's adapter (billing agreements), or null. */
+    public function autopay(): ?\Payment_Adapter_PayPalAutoPay
+    {
+        $gateway = $this->di['em']->getRepository(PayGateway::class)->findEnabledByGateway('PayPalAutoPay');
+        if (!$gateway instanceof PayGateway) {
+            return null;
+        }
+        $adapter = $this->di['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway);
+
+        return $adapter instanceof \Payment_Adapter_PayPalAutoPay ? $adapter : null;
     }
 
     /**
@@ -245,7 +255,7 @@ class ServiceSavedCards implements InjectionAwareInterface
      *
      * @return array{paid: bool, error: string|null}
      */
-    public function charge(Invoice $invoice, \Payment_Adapter_Stripe $adapter, bool $byStaff, bool $byClient = false): array
+    public function charge(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay $adapter, bool $byStaff, bool $byClient = false): array
     {
         $lockName = 'fb:card-charge:' . (int) $invoice->getId();
         if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 10)) {
@@ -260,7 +270,7 @@ class ServiceSavedCards implements InjectionAwareInterface
     }
 
     /** @return array{paid: bool, error: string|null} */
-    private function chargeUnderLock(Invoice $invoice, \Payment_Adapter_Stripe $adapter, bool $byStaff, bool $byClient = false): array
+    private function chargeUnderLock(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay $adapter, bool $byStaff, bool $byClient = false): array
     {
         $connection = $this->di['em']->getConnection();
         $row = $connection->fetchAssociative('SELECT status, gateway_id FROM invoice WHERE id = ?', [(int) $invoice->getId()]) ?: [];

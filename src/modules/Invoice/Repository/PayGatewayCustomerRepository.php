@@ -31,6 +31,30 @@ class PayGatewayCustomerRepository extends EntityRepository
     }
 
     /**
+     * Removes every saved-method reference to a gateway payment method (the
+     * agreement was cancelled): the client's customer row stays for its
+     * cached customer ID, but no longer pays anything automatically.
+     */
+    public function clearSavedMethod(int $gatewayId, bool $testMode, string $paymentMethod): void
+    {
+        $rows = $this->createQueryBuilder('c')
+            ->andWhere('IDENTITY(c.payGateway) = :gateway_id')
+            ->andWhere('c.testMode = :test_mode')
+            ->andWhere('c.defaultPaymentMethod = :payment_method')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setParameter('test_mode', $testMode)
+            ->setParameter('payment_method', $paymentMethod)
+            ->getQuery()
+            ->getResult();
+        foreach ($rows as $row) {
+            assert($row instanceof PayGatewayCustomer);
+            $row->setDefaultPaymentMethod(null);
+            $row->setDefaultCard(null);
+        }
+        $this->getEntityManager()->flush();
+    }
+
+    /**
      * The client's saved payment method on a gateway: a row whose method was
      * kept for automatic charges with a usable method reference. Null when
      * the client never saved one (or it was removed).
