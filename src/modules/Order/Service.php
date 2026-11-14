@@ -49,6 +49,7 @@ use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Logging\Logger;
@@ -92,6 +93,11 @@ class Service implements InjectionAwareInterface
     ];
 
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
+
+    public const META_DELETION_STATE = DeletionRecovery::META_NAME;
+
+    /** @var array<int, true> */
+    private array $lifecycleLocks = [];
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
     public const META_MERGE_RENEWALS = 'merge_renewals';
@@ -453,6 +459,11 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
                 WHERE co.status = :status
                 AND co.invoice_option = :invoice_option
+                AND NOT EXISTS (
+                    SELECT 1 FROM client_order_meta deletion_meta
+                    WHERE deletion_meta.client_order_id = co.id
+                    AND deletion_meta.name = :deletion_meta_name
+                )
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
                 AND i.id IS NULL
@@ -498,6 +509,7 @@ class Service implements InjectionAwareInterface
         $bindings['status'] = Order::STATUS_ACTIVE;
         $bindings['invoice_option'] = 'issue-invoice';
         $bindings['unpaid_invoice_status'] = Invoice::STATUS_UNPAID;
+        $bindings['deletion_meta_name'] = self::META_DELETION_STATE;
         $bindings['cancellation_meta_name'] = self::META_CANCEL_AT_PERIOD_END;
         $bindings['cancellation_meta_value'] = '1';
         $bindings['pending_item_type'] = \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER;
@@ -1205,6 +1217,7 @@ class Service implements InjectionAwareInterface
 
     public function activateOrder(Order $order, $data = []): bool
     {
+        $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
         $order = $this->getOrderRepository()->find($orderId);
         if (!$order instanceof Order) {
@@ -1238,6 +1251,7 @@ class Service implements InjectionAwareInterface
 
     public function createFromOrder(Order $order)
     {
+        $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
         $serviceType = $order->getServiceType();
 
@@ -1328,6 +1342,17 @@ class Service implements InjectionAwareInterface
      */
     protected function _callOnService(Order $order, $action, mixed ...$arguments)
     {
+        return $this->withLifecycleLock($order, function () use ($order, $action, $arguments) {
+            if ($action !== Order::ACTION_DELETE) {
+                $this->assertOrderNotDeleting($order, true);
+            }
+
+            return $this->dispatchToService($order, $action, ...$arguments);
+        });
+    }
+
+    private function dispatchToService(Order $order, $action, mixed ...$arguments)
+    {
         $serviceType = $order->getServiceType();
         $serviceId = $order->getServiceId();
         $orderId = $this->orderId($order);
@@ -1412,9 +1437,12 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
 
         if (empty($meta)) {
-            $this->getOrderMetaRepository()->deleteByOrderId($orderId);
+            $this->getOrderMetaRepository()->deleteEditableByOrderId($orderId);
 
             return 1;
+        }
+        if (array_key_exists(self::META_DELETION_STATE, $meta)) {
+            throw new InformationException('Deletion recovery state cannot be edited. Retry order deletion instead.');
         }
         foreach ($meta as $k => $v) {
             $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
@@ -1538,6 +1566,8 @@ class Service implements InjectionAwareInterface
 
     public function renewFromOrder(Order $order): void
     {
+        $this->assertOrderNotDeleting($order);
+
         try {
             $this->_callOnService($order, Order::ACTION_RENEW);
         } catch (\Exception $e) {
@@ -1618,6 +1648,7 @@ class Service implements InjectionAwareInterface
 
     public function unsuspendFromOrder(Order $order): bool
     {
+        $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUnsuspendEvent($orderId));
 
@@ -1749,6 +1780,7 @@ class Service implements InjectionAwareInterface
 
     public function uncancelFromOrder(Order $order): bool
     {
+        $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUncancelEvent($orderId));
 
@@ -1818,36 +1850,86 @@ class Service implements InjectionAwareInterface
 
     public function deleteFromOrder(Order $order, bool $forceDelete = false): bool
     {
+        if ($this->di['em']->getConnection()->isTransactionActive()) {
+            throw new InformationException('Order deletion cannot run inside a database transaction.');
+        }
+
+        return $this->withLifecycleLock($order, fn (): bool => $this->deleteHeldOrder($order, $forceDelete));
+    }
+
+    private function deleteHeldOrder(Order $order, bool $forceDelete): bool
+    {
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
 
-        try {
-            $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
-        } catch (\Exception $e) {
-            if (!$forceDelete) {
-                throw $e;
+        $state = DeletionRecovery::getState($this->di['em']->getConnection(), $orderId);
+        if ($state !== null && $state !== DeletionRecovery::SERVICE_DELETED && !$forceDelete) {
+            throw new InformationException('A previous deletion was interrupted. Staff must review the service before retrying with force_delete.');
+        }
+        if ($state !== DeletionRecovery::SERVICE_DELETED) {
+            DeletionRecovery::setState($this->di['em']->getConnection(), $orderId, DeletionRecovery::STARTED);
+
+            try {
+                $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
+            } catch (\Exception $e) {
+                if (!$forceDelete) {
+                    // A timeout can mean the remote deletion succeeded. Keep the
+                    // hold until staff review; do not cancel billing on refusal.
+                    throw $e;
+                }
+                $this->di['logger']->info('Backend deletion failed during forced removal: {message}', ['message' => $e->getMessage()]);
             }
-            $this->di['logger']->info("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
+            DeletionRecovery::setState($this->di['em']->getConnection(), $orderId, DeletionRecovery::SERVICE_DELETED);
         }
 
-        // A rejected backend deletion must leave billing active. Keep invoice
-        // links until cancellation succeeds so a failed gateway call can retry.
+        // Keep subscription links until cancellation succeeds. A failure must
+        // leave both the hold and the confirmed backend outcome available.
         $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order, $forceDelete);
         if ($order->getStatus() === Order::STATUS_PENDING_SETUP) {
             $this->rmInvoiceItemByOrder($order);
         }
 
-        $productService = $this->di['mod_service']('Product');
-        $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
-        $productService->releaseReservedStockForOrder($order, 'order_deleted');
-        $this->rmClientOrderStatusByOrder($order);
-        $this->getOrderMetaRepository()->deleteByOrderId($orderId);
-        $this->rmOrder($order);
+        // Keep the recovery hold until the order is removed in the same commit.
+        $this->di['em']->wrapInTransaction(function () use ($order, $orderId): void {
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
+            $productService->releaseReservedStockForOrder($order, 'order_deleted');
+            $this->rmClientOrderStatusByOrder($order);
+            $this->getOrderMetaRepository()->deleteByOrderId($orderId);
+            $this->rmOrder($order);
+        });
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminOrderDeleteEvent($orderId));
         $this->di['logger']->info('Deleted order #{order_id}', ['order_id' => $orderId]);
 
         return true;
+    }
+
+    public function assertOrderNotDeleting(Order|int $order, bool $lockRow = false): void
+    {
+        $orderId = $order instanceof Order ? $this->orderId($order) : $order;
+        DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId, $lockRow);
+    }
+
+    private function withLifecycleLock(Order $order, \Closure $operation): mixed
+    {
+        $id = $this->orderId($order);
+        if (isset($this->lifecycleLocks[$id])) {
+            return $operation();
+        }
+        $connection = $this->di['em']->getConnection();
+        $name = 'order_lifecycle_' . $id;
+        if (!NamedLock::acquire($connection, $name, 10)) {
+            throw new InformationException('Another worker is changing this order. Please retry.');
+        }
+        $this->lifecycleLocks[$id] = true;
+
+        try {
+            return $operation();
+        } finally {
+            unset($this->lifecycleLocks[$id]);
+            NamedLock::release($connection, $name);
+        }
     }
 
     public function getExpiredOrders()

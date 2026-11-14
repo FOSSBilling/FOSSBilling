@@ -160,12 +160,12 @@ test('secret rendering failures cannot expose tokens through stored errors or lo
         $service->sendTemplate(['code' => $code, 'to' => 'client@example.com', 'link' => ['hash' => $token]]);
         $this->fail('The malicious template must fail to render');
     } catch (FOSSBilling\Core\Exception\InformationException $e) {
-        expect($e->getMessage())->toBe('Email template rendering failed')
+        expect($e->getMessage())->toBe('An error occurred while processing sensitive data')
             ->and($e->getPrevious())->toBeNull();
     }
     $em->clear();
     $stored = $em->getRepository(EmailTemplate::class)->findOneBy([]);
-    expect($stored->getLastError())->toBe('Email template rendering failed')
+    expect($stored->getLastError())->toBe('An error occurred while processing sensitive data')
         ->and(json_encode($stored->toApiArray()))->not->toContain($token)
         ->and(json_encode($di['logger']->calls))->not->toContain($token)
         ->and($em->getConnection()->fetchOne('SELECT COUNT(*) FROM email_queue'))->toBe(0);
@@ -258,3 +258,24 @@ test('protected diagnostic scopes restore ordinary errors after success and fail
     }
     expect((new FOSSBilling\Core\Exception\BaseException('ordinary diagnostic'))->getMessage())->toBe('ordinary diagnostic');
 })->with([false, true]);
+
+test('secret transport and setup diagnostics never retain secrets in production debug mode', function (string $failure, string $entry, bool $throw): void {
+    $process = new Symfony\Component\Process\Process([
+        PHP_BINARY, '-d', 'error_log=/dev/stderr', '-d', 'zend.exception_ignore_args=0', '-d', 'zend.exception_string_param_max_len=1024', PATH_TESTS . '/Fixtures/secret-transport-diagnostics.php', $failure, $entry, $throw ? '1' : '0',
+    ]);
+    $process->mustRun();
+    $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+    expect($process->getOutput() . $process->getErrorOutput())->not->toContain(str_repeat('abcdef12', 8))
+        ->not->toContain('private-attachment-marker')
+        ->and($process->getErrorOutput())->toContain('ordinary-body-control')
+        ->and($result['ignore_args_after_secret'])->toBe('0')
+        ->and($result['secret_queue_count'])->toBe(0)
+        ->and($result['ordinary_accepted'])->toBeTrue()
+        ->and($result['ordinary_queue_count'])->toBe(1)
+        ->and($result['ordinary_logs'])->toContain('Unknown mail transport');
+    if ($throw || $failure === 'setup' || ($failure === 'sender' && $entry === 'template')) {
+        expect($result['error'])->toBe('An error occurred while processing sensitive data');
+    } else {
+        expect($result['result'])->toBeFalse()->and($result['error'])->toBeNull();
+    }
+})->with(['unknown', 'dsn', 'setup', 'sender'])->with(['direct', 'template'])->with([false, true]);

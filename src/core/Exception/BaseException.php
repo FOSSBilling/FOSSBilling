@@ -25,12 +25,19 @@ class BaseException extends \Exception
     public static function withProtectedDiagnostics(\Closure $callback): mixed
     {
         $previous = self::$protectDiagnostics;
+        $previousIgnoreArgs = ini_get('zend.exception_ignore_args');
         self::$protectDiagnostics = true;
+        // Callers may log the exception object later. Its native trace must
+        // not retain secret arguments, even when PHP is configured to do so.
+        ini_set('zend.exception_ignore_args', '1');
 
         try {
             return $callback();
         } finally {
             self::$protectDiagnostics = $previous;
+            if ($previousIgnoreArgs !== false) {
+                ini_set('zend.exception_ignore_args', $previousIgnoreArgs);
+            }
         }
     }
 

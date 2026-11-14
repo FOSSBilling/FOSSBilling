@@ -1081,8 +1081,8 @@ class Service implements InjectionAwareInterface
         });
         $actuallyPaid = $paid;
 
-        // Another payment request may have acquired the row lock first and completed the payment.
-        // Treat that as an idempotent success, but do not send duplicate events or execute tasks.
+        // Replays and deletion holds do not settle another payment. Accept the
+        // receipt without sending payment events or executing service tasks.
         if (!$paid) {
             return true;
         }
@@ -1119,6 +1119,12 @@ class Service implements InjectionAwareInterface
         }
         if ($state['status'] === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
             throw new InformationException('This invoice was canceled and cannot be marked as paid');
+        }
+
+        // A gateway may already have credited incoming funds. Keep those funds
+        // available for staff reconciliation without settling a held invoice.
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            return false;
         }
 
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
@@ -1687,7 +1693,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceIssueEvent((int) $invoice->getId()));
 
-        $this->di['em']->wrapInTransaction(function () use ($invoice): void {
+        $issued = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
             $this->lockAndRefreshInvoice($invoice);
 
             // First issuance is only valid from the unpaid state. Re-issuing
@@ -1695,6 +1701,9 @@ class Service implements InjectionAwareInterface
             // canceled rows keep their state); this guard is about drafts.
             if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Only unpaid draft invoices can be issued.');
+            }
+            if ($this->invoiceHasDeletionHold($invoice)) {
+                return false;
             }
 
             // Freeze the parties from the live records and claim the number
@@ -1714,7 +1723,12 @@ class Service implements InjectionAwareInterface
             // Commits atomically with the issuance above: a crash can no
             // longer leave an issued invoice without its journal entry.
             $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
+
+            return true;
         });
+        if (!$issued) {
+            return false;
+        }
 
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
@@ -1754,6 +1768,10 @@ class Service implements InjectionAwareInterface
                 return false;
             }
             if ($state['status'] === Invoice::STATUS_PAID) {
+                return false;
+            }
+
+            if ($this->invoiceHasDeletionHold($invoice)) {
                 return false;
             }
 
@@ -3919,7 +3937,7 @@ class Service implements InjectionAwareInterface
         if ($paid) {
             $this->di['logger']->info('Covered invoice #{id} with client credits.', ['id' => $model->getId()]);
         } else {
-            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued or already paid.', ['id' => $model->getId()]);
+            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued, already paid, or awaiting order deletion recovery.', ['id' => $model->getId()]);
         }
 
         return $paid;
@@ -3940,6 +3958,9 @@ class Service implements InjectionAwareInterface
      */
     public function resolveRenewalLine(Order $order): array
     {
+        if ($order->getId() !== null) {
+            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+        }
         $price = $order->getPrice();
         $line = [
             'price' => $order->getPrice(),
@@ -3992,6 +4013,9 @@ class Service implements InjectionAwareInterface
      */
     public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
     {
+        if ($order->getId() !== null) {
+            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+        }
         // check if we do have invoice prepared already
         if ($order->getUnpaidInvoiceId() !== null) {
             $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
@@ -4111,6 +4135,12 @@ class Service implements InjectionAwareInterface
         $first = reset($orders);
         if (!$first instanceof Order) {
             throw new InformationException('No orders were provided for the merged renewal invoice.');
+        }
+
+        foreach ($orders as $order) {
+            if ($order->getId() !== null) {
+                \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+            }
         }
 
         $client = $this->di['em']->getRepository(Client::class)->find($first->getClientId())
@@ -4491,6 +4521,25 @@ class Service implements InjectionAwareInterface
         return $proforma;
     }
 
+    private function invoiceHasDeletionHold(Invoice $invoice): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        $orderIds = $connection->fetchFirstColumn(
+            'SELECT DISTINCT rel_id FROM invoice_item WHERE invoice_id = :invoice_id AND type = :type AND rel_id IS NOT NULL ORDER BY rel_id',
+            ['invoice_id' => $invoice->getId(), 'type' => InvoiceItem::TYPE_ORDER],
+        );
+        // Consistent lock order for multi-order invoices.
+        $orderIds = array_unique(array_map(intval(...), $orderIds));
+        sort($orderIds);
+        foreach ($orderIds as $orderId) {
+            if (\Box\Mod\Order\DeletionRecovery::isHeld($connection, $orderId, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function processInvoice(array $data): array
     {
         $allowSubscribe = $data['allow_subscription'] ?? true;
@@ -4509,6 +4558,10 @@ class Service implements InjectionAwareInterface
 
         if ($invoice->getStatus() === Invoice::STATUS_PAID) {
             throw new InformationException('This invoice is already paid', [], 403);
+        }
+
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            throw new InformationException('Order deletion is awaiting recovery. Retry deletion before billing or changing the service.');
         }
 
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);

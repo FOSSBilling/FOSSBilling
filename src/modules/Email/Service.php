@@ -282,6 +282,15 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function sendTemplate($data)
     {
+        $send = fn () => $this->sendTemplateMessage($data);
+
+        return in_array($data['code'] ?? null, self::SECRET_TEMPLATE_CODES, true)
+            ? \FOSSBilling\Core\Exception\BaseException::withProtectedDiagnostics($send)
+            : $send();
+    }
+
+    private function sendTemplateMessage($data)
+    {
         $required = [
             'code' => 'Template code not passed',
         ];
@@ -460,17 +469,23 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
      */
     public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false, ?array $attachment = null, bool $skipHistory = false): bool
     {
-        $email = $this->createMessage($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $attachment);
-        // Secret bodies must never reach persistent storage, even briefly.
-        if (!$skipHistory) {
-            $this->di['em']->persist($email);
-            $this->di['em']->flush();
-        }
-        if ($send_now || $skipHistory) {
-            return $this->_sendFromQueue($email, $throw_exceptions, $skipHistory);
-        }
+        $send = function () use ($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $send_now, $throw_exceptions, $attachment, $skipHistory): bool {
+            $email = $this->createMessage($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $attachment);
+            // Secret bodies must never reach persistent storage, even briefly.
+            if (!$skipHistory) {
+                $this->di['em']->persist($email);
+                $this->di['em']->flush();
+            }
+            if ($send_now || $skipHistory) {
+                return $this->_sendFromQueue($email, $throw_exceptions, $skipHistory);
+            }
 
-        return true;
+            return true;
+        };
+
+        return $skipHistory
+            ? \FOSSBilling\Core\Exception\BaseException::withProtectedDiagnostics($send)
+            : $send();
     }
 
     private function _getDefaults($data): array

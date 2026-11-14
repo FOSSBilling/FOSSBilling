@@ -39,6 +39,14 @@ class OrderMetaRepository extends EntityRepository
         );
     }
 
+    public function deleteEditableByOrderId(int $orderId): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND (name IS NULL OR name <> :reserved)',
+            ['order_id' => $orderId, 'reserved' => \Box\Mod\Order\Service::META_DELETION_STATE],
+        );
+    }
+
     public function deleteByOrderIdAndName(int $orderId, string $name): int
     {
         return $this->getEntityManager()->getConnection()->executeStatement(

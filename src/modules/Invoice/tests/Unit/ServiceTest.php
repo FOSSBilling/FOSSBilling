@@ -1802,6 +1802,7 @@ test('markAsPaid records the paid journal inside the payment transaction', funct
             $journalPaidAt = [$inTransaction, $invoice->getPaidAt()?->format('Y-m-d')];
         });
 
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService([
@@ -1858,6 +1859,7 @@ test('issueInvoice still issues when the journal snapshot fails', function (): v
         'email' => '',
     ]);
 
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
     $di['em'] = $em;
     $di['event_dispatcher'] = $eventDispatcher;
@@ -3764,7 +3766,7 @@ test('pay with credits reports failure instead of claiming success', function ()
     expect($result)->toBeFalse()
         ->and($logger->calls)->toContain([
             'method' => 'warning',
-            'params' => ['Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued or already paid.', ['id' => 1]],
+            'params' => ['Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued, already paid, or awaiting order deletion recovery.', ['id' => 1]],
         ]);
 });
 
@@ -4442,6 +4444,7 @@ test('merged renewal invoice carries exactly one line per order and falls due wi
     $serviceMock->shouldReceive('setInvoiceDefaults')->once();
     $serviceMock->shouldReceive('recordJournalEvent')->once();
 
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
@@ -4489,6 +4492,7 @@ test('merged renewal invoice resolves every line before persisting anything', fu
     $em->shouldNotReceive('persist', 'wrapInTransaction');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
