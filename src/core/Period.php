@@ -143,14 +143,6 @@ class Period
     {
         $now ??= time();
 
-        $shift = match ($this->unit) {
-            self::UNIT_DAY => 'days',
-            self::UNIT_WEEK => 'weeks',
-            self::UNIT_MONTH => 'months',
-            self::UNIT_YEAR => 'years',
-            default => throw new Exception('Unit not defined'),
-        };
-
         if ($this->unit === self::UNIT_MONTH || $this->unit === self::UNIT_YEAR) {
             // Keep the day inside the target month: one month after 31 January is
             // 28 February, not 3 March (which strtotime gives).
@@ -161,6 +153,12 @@ class Period
 
             return $target->setDate((int) $target->format('Y'), (int) $target->format('n'), $day)->getTimestamp();
         }
+
+        $shift = match ($this->unit) {
+            self::UNIT_DAY => 'days',
+            self::UNIT_WEEK => 'weeks',
+            default => throw new Exception('Unit not defined'),
+        };
 
         return strtotime("+$this->qty $shift", $now);
     }
