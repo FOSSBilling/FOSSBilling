@@ -533,3 +533,23 @@ test('kb category get not found by slug', function (): void {
 
     expect(fn (): array => $guestApi->kb_category_get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
+
+test('guest ticket reply on a closed ticket is refused', function (): void {
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
+    $serviceMock = guestSupportServiceMock();
+    $ticket = new Box\Mod\Support\Entity\SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 1);
+    $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
+        ->andReturn($ticket);
+    $serviceMock->shouldReceive('canBeReopened')->atLeast()->once()
+        ->andReturn(false);
+    $serviceMock->shouldNotReceive('ticketReply');
+
+    $di = container();
+    $guestApi->setDi($di);
+
+    $guestApi->setService($serviceMock);
+
+    expect(fn (): int => $guestApi->ticket_reply(['hash' => sha1('closed'), 'content' => 'Message']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'reopened');
+});

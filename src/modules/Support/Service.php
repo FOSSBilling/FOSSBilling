@@ -315,6 +315,12 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function closeTicket(SupportTicket $ticket, \Box\Mod\Staff\Entity\Admin|Client|\FOSSBilling\Core\Identity\Guest $identity): bool
     {
+        // Repeat closes change nothing: the close event (and any mail it
+        // sends) fires only on the open -> closed transition.
+        if ($ticket->getStatus() === SupportTicket::STATUS_CLOSED) {
+            return true;
+        }
+
         $ticket->close();
         $this->di['em']->flush();
 
@@ -929,6 +935,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function ticketMessageUpdate(SupportTicketMessage $model, string $content, \Box\Mod\Staff\Entity\Admin $identity): bool
     {
+        SupportTicketValidator::validateContent($content);
+
         if ($model->getAdminId() === null) {
             throw new InformationException('Only admin replies can be edited');
         }
@@ -973,6 +981,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function ticketReply(SupportTicket $ticket, \Box\Mod\Staff\Entity\Admin|Client|\FOSSBilling\Core\Identity\Guest $identity, string $content): int
     {
+        SupportTicketValidator::validateContent($content);
+
         $em = $this->di['em'];
         $msg = new SupportTicketMessage();
         $msg->setSupportTicket($ticket);
@@ -1010,6 +1020,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $status = $data['status'] ?? SupportTicket::STATUS_ONHOLD;
 
+        SupportTicketValidator::validateContent($data['content'] ?? null);
+
         $this->di['event_dispatcher']->dispatch(new BeforeTicketCreateEvent(TicketActorRole::ADMIN, $clientId, $data));
 
         $em = $this->di['em'];
@@ -1018,16 +1030,22 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $ticket->setStatus($status);
         $ticket->setSubject($data['subject']);
         $ticket->setSupportHelpdesk($helpdesk);
-        $em->persist($ticket);
-        $em->flush();
 
-        $msg = new SupportTicketMessage();
-        $msg->setAdminId((int) $identity->getId());
-        $msg->setSupportTicket($ticket);
-        $msg->setContent($data['content']);
-        $msg->setIp($this->di['request']->getClientIp());
-        $em->persist($msg);
-        $em->flush();
+        // The ticket and its first message are saved together, so a failed
+        // message leaves no empty ticket behind.
+        $em->wrapInTransaction(function () use ($ticket, $identity, $data): void {
+            $em = $this->di['em'];
+            $em->persist($ticket);
+            $em->flush();
+
+            $msg = new SupportTicketMessage();
+            $msg->setAdminId((int) $identity->getId());
+            $msg->setSupportTicket($ticket);
+            $msg->setContent($data['content']);
+            $msg->setIp($this->di['request']->getClientIp());
+            $em->persist($msg);
+            $em->flush();
+        });
 
         $this->di['event_dispatcher']->dispatch(new AfterTicketOpenedEvent((int) $ticket->getId(), TicketActorRole::ADMIN));
 
@@ -1066,6 +1084,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('Helpdesk invalid');
         }
 
+        SupportTicketValidator::validateContent($ticketEvent->getMessage());
+
         $em = $this->di['em'];
         $ticket = new SupportTicket();
         $ticket->setAccessHash(bin2hex(random_bytes(random_int(15, 30))));
@@ -1074,15 +1094,20 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $ticket->setAuthorEmail($data['email']);
         $ticket->setSubject($ticketEvent->getSubject());
         $ticket->setStatus($ticketEvent->getStatus());
-        $em->persist($ticket);
-        $em->flush();
+        // The ticket and its first message are saved together, so a failed
+        // message leaves no empty ticket behind.
+        $em->wrapInTransaction(function () use ($ticket, $ticketEvent): void {
+            $em = $this->di['em'];
+            $em->persist($ticket);
+            $em->flush();
 
-        $msg = new SupportTicketMessage();
-        $msg->setSupportTicket($ticket);
-        $msg->setContent($ticketEvent->getMessage());
-        $msg->setIp($this->di['request']->getClientIp());
-        $em->persist($msg);
-        $em->flush();
+            $msg = new SupportTicketMessage();
+            $msg->setSupportTicket($ticket);
+            $msg->setContent($ticketEvent->getMessage());
+            $msg->setIp($this->di['request']->getClientIp());
+            $em->persist($msg);
+            $em->flush();
+        });
 
         $this->di['event_dispatcher']->dispatch(new AfterTicketOpenedEvent((int) $ticket->getId(), TicketActorRole::GUEST));
 
@@ -1193,10 +1218,14 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $ticket->setRelNewValue($rel_new_value);
         $ticket->setRelStatus($rel_status);
 
-        $this->di['em']->persist($ticket);
-        $this->di['em']->flush();
+        // The ticket and its first message are saved together, so a failed
+        // message leaves no empty ticket behind.
+        $this->di['em']->wrapInTransaction(function () use ($ticket, $client, $data): void {
+            $this->di['em']->persist($ticket);
+            $this->di['em']->flush();
 
-        $this->messageCreateForTicket($ticket, $client, $data['content']);
+            $this->messageCreateForTicket($ticket, $client, $data['content']);
+        });
 
         $this->di['event_dispatcher']->dispatch(new AfterTicketOpenedEvent((int) $ticket->getId(), TicketActorRole::CLIENT));
 
@@ -1243,6 +1272,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
      */
     public function messageCreateForTicket(SupportTicket $ticket, \Box\Mod\Staff\Entity\Admin|Client $identity, string $content): int
     {
+        SupportTicketValidator::validateContent($content);
+
         $em = $this->di['em'];
         $msg = new SupportTicketMessage();
         $msg->setSupportTicket($ticket);

@@ -196,7 +196,9 @@ class SupportTicketRepository extends EntityRepository
     {
         $ticket = $this->findOneByClient($clientId, $id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
+            // Coded so a client probing another client's ticket id gets a
+            // 404 rather than a generic error.
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found', [], 404);
         }
 
         return $ticket;

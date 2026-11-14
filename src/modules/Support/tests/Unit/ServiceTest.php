@@ -2107,6 +2107,8 @@ test('ticket create for admin', function (): void {
         'content' => 'Content',
     ];
 
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $fn) => $fn());
+
     $result = $service->ticketCreateForAdmin(1, $helpdesk, $data, $admin);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
@@ -2198,6 +2200,8 @@ test('ticket create for client', function (): void {
         'content' => 'content',
     ];
 
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $fn) => $fn());
+
     $result = $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
@@ -2272,6 +2276,8 @@ test('guest ticket creation uses values from the typed before event', function (
         'subject' => 'Original subject',
         'content' => 'Original message',
     ];
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $fn) => $fn());
+
     $accessHash = $service->ticketCreateForGuest($data);
 
     expect($accessHash)->toBeString()->not->toBeEmpty();
@@ -2688,4 +2694,34 @@ test('batch ticket list falls back to a guest author when the client is missing'
         'email' => 'gone@example.com',
         'role' => 'guest',
     ]);
+});
+
+test('ticket reply rejects content over the length limit', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    $ticket = new SupportTicket();
+
+    expect(fn (): int => $service->ticketReply($ticket, new FOSSBilling\Core\Identity\Guest(), str_repeat('x', 100001)))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most');
+});
+
+test('close ticket is idempotent without resending events', function (): void {
+    $service = new Service();
+
+    $ticket = new SupportTicket();
+    $ticket->setStatus(SupportTicket::STATUS_CLOSED);
+
+    $dispatcher = new EventDispatcher();
+    $dispatched = [];
+    $dispatcher->addListener(AfterTicketClosedEvent::class, function () use (&$dispatched): void {
+        $dispatched[] = true;
+    });
+
+    $di = container();
+    $di['event_dispatcher'] = $dispatcher;
+    $service->setDi($di);
+
+    expect($service->closeTicket($ticket, Tests\Helpers\admin()))->toBeTrue();
+    expect($dispatched)->toBeEmpty();
 });

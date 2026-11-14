@@ -139,3 +139,31 @@ test('logs out client', function (): void {
     $result = $api->logout();
     expect($result)->toBeTrue();
 });
+
+test('update strips staff notes', function (): void {
+    $api = apiEndpoint(new Client());
+    $service = Mockery::mock(Service::class);
+    $service->shouldReceive('updateClient')->once()
+        ->with(Mockery::on(fn ($client): bool => $client instanceof Box\Mod\Client\Entity\Client), Mockery::on(fn (array $data): bool => !array_key_exists('notes', $data)))
+        ->andReturn(true);
+
+    $api->setService($service);
+    $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class));
+
+    expect($api->update(['notes' => 'staff only']))->toBeTrue();
+});
+
+test('update requires the current password for an email change', function (): void {
+    $api = apiEndpoint(new Client());
+    $service = Mockery::mock(Service::class);
+    $service->shouldNotReceive('updateClient');
+
+    $di = container();
+    $di['password'] = new FOSSBilling\Core\Security\PasswordManager();
+    $api->setDi($di);
+    $api->setService($service);
+    $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['email' => 'old@example.com']));
+
+    expect(fn (): bool => $api->update(['email' => 'new@example.com']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'current password');
+});

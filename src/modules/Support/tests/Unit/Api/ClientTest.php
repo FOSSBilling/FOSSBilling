@@ -217,3 +217,30 @@ test('ticket close', function (): void {
 
     expect($result)->toBeTrue();
 });
+
+test('ticket reply to another client ticket is a 404', function (): void {
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldNotReceive('ticketReply');
+
+    $ticketRepoMock = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $ticketRepoMock->shouldReceive('findOneByClient')->atLeast()->once()
+        ->andReturn(null);
+    $serviceMock->shouldReceive('getSupportTicketRepository')->atLeast()->once()
+        ->andReturn($ticketRepoMock);
+
+    $di = container();
+    $clientApi->setDi($di);
+
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $clientApi->setService($serviceMock);
+    $clientApi->setIdentity($client);
+
+    try {
+        $clientApi->ticket_reply(['content' => 'Content', 'id' => 999]);
+        expect(false)->toBeTrue('expected a 404 InformationException');
+    } catch (FOSSBilling\Core\Exception\InformationException $e) {
+        expect($e->getCode())->toBe(404);
+    }
+});

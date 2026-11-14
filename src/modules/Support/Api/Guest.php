@@ -13,6 +13,7 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -39,7 +40,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', $this->getIp());
         $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
-        $data['content'] = trim(str_replace("\0", '', $content));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($content);
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -75,6 +76,13 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
     public function ticket_reply(array $data): int
     {
         $guestTicket = $this->getService()->findOneByHash($data['hash']);
+
+        // A closed ticket whose helpdesk forbids reopening stays closed,
+        // same as for signed-in clients.
+        if (!$this->getService()->canBeReopened($guestTicket)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket cannot be reopened.');
+        }
+
         // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
         $message = $data['content'] ?? $data['message'] ?? null;
 
@@ -82,7 +90,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Message cannot be empty');
         }
 
-        $message = trim(str_replace("\0", '', $message));
+        $message = HtmlSanitizerFactory::sanitizeMarkdownContent($message);
 
         return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Core\Identity\Guest(), $message);
     }

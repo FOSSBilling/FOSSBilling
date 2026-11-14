@@ -17,6 +17,7 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
+use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -81,7 +82,7 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     ])]
     public function ticket_create(array $data): int
     {
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
@@ -102,13 +103,13 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID was not passed', 'content' => 'Ticket content required'])]
     public function ticket_reply(array $data): bool
     {
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found', [], 404);
         }
 
         if (!$this->getService()->canBeReopened($ticket)) {

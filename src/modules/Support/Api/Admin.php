@@ -21,6 +21,7 @@ use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
+use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -92,7 +93,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         $model = $this->getService()->getTicketMessageById((int) $data['id']);
 
@@ -135,7 +136,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         $ticket = $this->getService()->getTicketById((int) $data['id']);
 
@@ -172,7 +173,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
@@ -199,9 +200,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $expiredArr = $this->getService()->getExpired();
 
         foreach ($expiredArr as $ticketArr) {
-            $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
-            if (!$this->getService()->autoClose($ticketModel)) {
-                $this->getDi()['logger']->info('Ticket {ticket_id} was not closed', ['ticket_id' => $ticketModel->getId()]);
+            try {
+                $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
+                if (!$this->getService()->autoClose($ticketModel)) {
+                    $this->getDi()['logger']->info('Ticket {ticket_id} was not closed', ['ticket_id' => $ticketModel->getId()]);
+                }
+            } catch (\Throwable $e) {
+                // One broken ticket must not stop the cron from closing the rest.
+                $this->getDi()['logger']->error('Support: auto-closing ticket {ticket_id} failed: {error}', ['ticket_id' => $ticketArr['id'] ?? '?', 'error' => $e->getMessage()]);
             }
         }
 
@@ -563,7 +569,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $ticket = $this->getService()->getTicketById((int) $data['ticket_id']);
 
-        $data['note'] = \FOSSBilling\Core\HtmlSanitizerFactory::sanitizePlainText($data['note']);
+        $data['note'] = HtmlSanitizerFactory::sanitizePlainText($data['note']);
 
         if ($data['note'] === '') {
             throw new \FOSSBilling\Core\Exception\InformationException('Note is empty');
@@ -683,7 +689,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $status = $data['status'] ?? KbArticle::DRAFT;
 
         $title = trim(strip_tags(str_replace("\0", '', $data['title'])));
-        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
+        $content = isset($data['content']) ? HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -707,7 +713,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $title = isset($data['title']) ? trim(strip_tags(str_replace("\0", '', $data['title']))) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
+        $content = isset($data['content']) ? HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']) : null;
         $views = isset($data['views']) ? (int) $data['views'] : null;
 
         return $this->getService()->kbUpdateArticle((int) $data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
