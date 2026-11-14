@@ -46,6 +46,7 @@ class InvoiceItem implements ArrayInterface, TimestampInterface
     final public const string TASK_VOID = 'void';
     final public const string TASK_ACTIVATE = 'activate';
     final public const string TASK_RENEW = 'renew';
+    final public const string TASK_UPGRADE = 'upgrade';
 
     final public const string STATUS_PENDING_PAYMENT = 'pending_payment';
     final public const string STATUS_PENDING_SETUP = 'pending_setup';

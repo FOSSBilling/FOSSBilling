@@ -15,6 +15,7 @@
 
 {% set service_partial = "mod_service" ~ order.service_type ~ "_manage.html.twig" %}
 {% set upgradables = client.order_upgradables({ 'id': order.id }) %}
+{% set upgrade_info = order.status == 'active' ? client.order_upgrade_options({ 'id': order.id }) : { 'available': false } %}
 
 {% block head %}
     {{ wysiwyg('.editor-textarea') }}
@@ -123,7 +124,11 @@
                            {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'This will generate new invoice. Are you sure you want to continue?'|trans}, callback: 'onRenewalInvoiceCreated'}) }}>{{ 'Renew Now'|trans }}</a>
                         <script>window.onRenewalInvoiceCreated = (hash) => { window.location = "{{ 'invoice'|url }}/" + hash; };</script>
                     {% endif %}
-                    {% if upgradables %}
+                    {% if upgrade_info.available %}
+                        <button class="btn btn-success btn-sm" type="button" id="btn-upgrade-modal" data-bs-toggle="modal" data-bs-target="#upgrade-modal">{{ 'Upgrade / Downgrade'|trans }}</button>
+                    {% elseif upgrade_info.waiting %}
+                        <a class="btn btn-warning btn-sm" href="{{ 'invoice'|url }}/{{ upgrade_info.waiting.invoice_hash }}">{{ 'Pay Upgrade Invoice'|trans }}</a>
+                    {% elseif upgradables %}
                         <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
                     {% endif %}
                     <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open Ticket'|trans }}</button>
@@ -292,6 +297,72 @@
                     </div>
                 </div>
             </div>
+
+            {% if upgrade_info.available %}
+            <div class="modal fade" id="upgrade-modal" tabindex="-1" role="dialog" aria-labelledby="upgrade-modal-title" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="upgrade-modal-title">{{ 'Upgrade or Downgrade Plan'|trans }}</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                        </div>
+                        <form action="" method="post" id="upgrade-form">
+                            <div class="modal-body">
+                                {% set cur = upgrade_info.current %}
+                                <div class="alert alert-light border mb-3">
+                                    <div class="fw-bold">{{ 'Current Plan'|trans }}: {{ cur.title }}</div>
+                                    <div class="small text-secondary">{{ cur.price|format_currency(cur.currency) }} / {{ cur.period|period_title }} ({{ 'Expires'|trans }}: {{ cur.expires_at|format_date }})</div>
+                                </div>
+
+                                <p class="text-secondary small mb-3">
+                                    {{ 'Select a new package or billing cycle below. The value of your unused days will be credited against the new plan.'|trans }}
+                                </p>
+
+                                <input type="hidden" name="id" value="{{ order.id }}">
+                                <div class="list-group mb-3">
+                                    {% for opt in upgrade_info.options %}
+                                        <label class="list-group-item list-group-item-action d-flex gap-3 align-items-start py-3 cursor-pointer">
+                                            <input class="form-check-input flex-shrink-0 mt-1" type="radio" name="choice" value="{{ opt.product_id }}|{{ opt.period }}" {{ loop.first ? 'checked' : '' }} required>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="fw-bold">
+                                                        {{ opt.title }} - {{ opt.period|period_title }}
+                                                        <span class="badge {{ opt.kind == 'downgrade' ? 'bg-info' : 'bg-success' }} ms-1">
+                                                            {{ opt.kind == 'downgrade' ? 'Downgrade'|trans : 'Upgrade'|trans }}
+                                                        </span>
+                                                    </span>
+                                                    <span class="fw-bold fs-6 text-primary">
+                                                        {% if opt.amount > 0 %}
+                                                            +{{ opt.amount|format_currency(cur.currency) }}
+                                                        {% elseif opt.amount < 0 %}
+                                                            {{ opt.amount|format_currency(cur.currency) }} ({{ 'Credit'|trans }})
+                                                        {% else %}
+                                                            {{ 0|format_currency(cur.currency) }}
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                                <div class="text-secondary small">
+                                                    {{ opt.price|format_currency(cur.currency) }} / {{ opt.period|period_title }}.
+                                                    {% if opt.same_cycle %}
+                                                        {{ 'Renewal date stays %date%: %charge% for %left% days left, less %credit% unused credit.'|trans({ '%date%': opt.new_expires_at|format_date, '%charge%': opt.charge|format_currency(cur.currency), '%left%': opt.days_left, '%credit%': opt.credit|format_currency(cur.currency) }) }}
+                                                    {% else %}
+                                                        {{ 'New period starts today and renews on %date%: %charge% less %credit% unused credit.'|trans({ '%date%': opt.new_expires_at|format_date, '%charge%': opt.charge|format_currency(cur.currency), '%credit%': opt.credit|format_currency(cur.currency) }) }}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                                <button type="submit" class="btn btn-primary" id="upgrade-submit">{{ 'Confirm Change'|trans }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -302,7 +373,36 @@
         document.addEventListener("DOMContentLoaded", function() {
             const cancelRequestForm = document.getElementById('cancel-request-form');
             const upgradeRequestForm = document.getElementById('upgrade-request-form');
+            const upgradeForm = document.getElementById('upgrade-form');
             const openTicketForm = document.getElementById('open-ticket-form');
+
+            if (upgradeForm) {
+                upgradeForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const choice = upgradeForm.querySelector('input[name="choice"]:checked');
+                    if (!choice) return;
+
+                    const [productId, period] = choice.value.split('|');
+                    const submitBtn = document.getElementById('upgrade-submit');
+                    if (submitBtn) submitBtn.disabled = true;
+
+                    FOSSBilling.api.client.post('order/upgrade', {
+                        id: upgradeForm.elements.id.value,
+                        product_id: productId,
+                        period: period
+                    }, (res) => {
+                        if (res.invoice_hash) {
+                            window.location = "{{ 'invoice'|url }}/" + res.invoice_hash;
+                            return;
+                        }
+                        FOSSBilling.message(res.status === 'applied' ? "{{ 'Your service was changed successfully'|trans }}" : "{{ 'Your request was processed'|trans }}");
+                        setTimeout(() => window.location.reload(), 1500);
+                    }, (err) => {
+                        if (submitBtn) submitBtn.disabled = false;
+                        FOSSBilling.message(err.message, 'error');
+                    });
+                });
+            }
 
             cancelRequestForm.addEventListener('submit', function(event) {
                 event.preventDefault();

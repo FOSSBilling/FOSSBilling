@@ -110,6 +110,37 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
+     * Get upgrade and downgrade options for an active order with prorated calculations.
+     *
+     * @return array
+     */
+    public function upgrade_options($data): array
+    {
+        $model = $this->_getOrder($data);
+
+        return \Box\Mod\Order\Upgrades::options($this->getDi(), $model);
+    }
+
+    /**
+     * Requests an upgrade or downgrade for an order.
+     *
+     * @return array
+     */
+    public function upgrade($data): array
+    {
+        $required = [
+            'id' => 'Order id required',
+            'product_id' => 'Choose the new product',
+            'period' => 'Choose the billing cycle',
+        ];
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
+
+        $model = $this->_getOrder($data);
+
+        return \Box\Mod\Order\Upgrades::request($this->getDi(), $model, (int) $data['product_id'], (string) $data['period']);
+    }
+
+    /**
      * Can delete only pending setup and failed setup orders.
      */
     public function delete($data)
