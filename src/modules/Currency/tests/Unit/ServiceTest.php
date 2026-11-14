@@ -979,3 +979,96 @@ test('updateCurrencyRates skips fetched rates that would round to zero', functio
 
     expect($service->updateCurrencyRates())->toBeTrue();
 });
+
+test('currencylayer rates are requested from the currencylayer API with an access key', function (): void {
+    $capturedRequests = [];
+    $quotes = [];
+    foreach (['EUR' => 0.9, 'GBP' => 0.8] as $currency => $rate) {
+        $quotes['USD' . $currency] = $rate;
+    }
+    $httpClient = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$capturedRequests, $quotes): Symfony\Component\HttpClient\Response\MockResponse {
+        $capturedRequests[] = ['url' => $url, 'options' => $options];
+
+        return new Symfony\Component\HttpClient\Response\MockResponse(
+            json_encode([
+                'success' => true,
+                'timestamp' => 1_760_000_000,
+                'source' => 'USD',
+                'quotes' => $quotes,
+            ], JSON_THROW_ON_ERROR),
+            ['response_headers' => ['content-type: application/json']]
+        );
+    });
+
+    $repositoryStub = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
+    $emMock->shouldReceive('getRepository')
+        ->atLeast()->once()
+        ->andReturn($repositoryStub);
+
+    $di = new Pimple\Container();
+    $di['em'] = $emMock;
+    $di['cache'] = static fn (): Symfony\Component\Cache\Adapter\ArrayAdapter => new Symfony\Component\Cache\Adapter\ArrayAdapter();
+    $di['http_client'] = static fn (): Symfony\Component\HttpClient\MockHttpClient => $httpClient;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = new Box\Mod\Currency\Service();
+    $service->setDi($di);
+
+    $provider = new ReflectionMethod($service, 'getCurrencyLayerRates');
+    $rates = $provider->invoke($service, 'USD', 3600, 'test-key');
+
+    expect($capturedRequests)->toHaveCount(1)
+        ->and($capturedRequests[0]['url'])->toStartWith('https://api.currencylayer.com/live')
+        ->and($capturedRequests[0]['url'])->toContain('access_key=test-key')
+        ->and($capturedRequests[0]['url'])->toContain('source=USD')
+        ->and($rates)->toBe(['EUR' => 0.9, 'GBP' => 0.8]);
+});
+
+test('Currency Data API rates keep using the APILayer marketplace endpoint and apikey header', function (): void {
+    $capturedRequests = [];
+    $quotes = [];
+    foreach (['EUR' => 0.9, 'GBP' => 0.8] as $currency => $rate) {
+        $quotes['USD' . $currency] = $rate;
+    }
+    $httpClient = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$capturedRequests, $quotes): Symfony\Component\HttpClient\Response\MockResponse {
+        $capturedRequests[] = ['url' => $url, 'options' => $options];
+
+        return new Symfony\Component\HttpClient\Response\MockResponse(
+            json_encode([
+                'success' => true,
+                'timestamp' => 1_760_000_000,
+                'source' => 'USD',
+                'quotes' => $quotes,
+            ], JSON_THROW_ON_ERROR),
+            ['response_headers' => ['content-type: application/json']]
+        );
+    });
+
+    $repositoryStub = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
+    $emMock->shouldReceive('getRepository')
+        ->atLeast()->once()
+        ->andReturn($repositoryStub);
+
+    $di = new Pimple\Container();
+    $di['em'] = $emMock;
+    $di['cache'] = static fn (): Symfony\Component\Cache\Adapter\ArrayAdapter => new Symfony\Component\Cache\Adapter\ArrayAdapter();
+    $di['http_client'] = static fn (): Symfony\Component\HttpClient\MockHttpClient => $httpClient;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = new Box\Mod\Currency\Service();
+    $service->setDi($di);
+
+    $provider = new ReflectionMethod($service, 'getCurrencyDataRates');
+    $rates = $provider->invoke($service, 'USD', 3600, 'test-key');
+
+    $headers = json_encode($capturedRequests[0]['options']['headers'] ?? [], JSON_THROW_ON_ERROR);
+
+    expect($capturedRequests)->toHaveCount(1)
+        ->and($capturedRequests[0]['url'])->toStartWith('https://api.apilayer.com/currency_data/live')
+        ->and($capturedRequests[0]['url'])->toContain('source=USD')
+        ->and($headers)->toContain('apikey')
+        ->and($headers)->toContain('test-key')
+        ->and($rates)->toBe(['EUR' => 0.9, 'GBP' => 0.8]);
+});
