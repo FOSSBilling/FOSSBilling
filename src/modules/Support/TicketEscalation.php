@@ -16,18 +16,18 @@ use Doctrine\DBAL\Connection;
 use FOSSBilling\Core\Utils\Normalizer;
 
 /**
- * Ticket escalation rules, as WHMCS (Support settings > Escalation Rules).
+ * Ticket escalation rules (Support settings > Escalation Rules).
  *
  * A rule matches tickets of the chosen help desks, statuses and priorities
  * (none chosen: any) that got no reply for the set time. It then, in this
  * order: adds a reply (posted by the system and emailed to the client like a
- * staff reply; [NAME], [FIRSTNAME] and [EMAIL] as WHMCS), moves the ticket to
+ * staff reply, with [NAME], [FIRSTNAME] and [EMAIL] merge fields), moves the ticket to
  * a help desk, sets its priority and status, assigns it to a staff member
  * (TicketAssign, who is emailed) and emails the chosen staff members
  * (mod_staff_ticket_escalated).
  *
- * As WHMCS, the time counts from the ticket's last reply (the system's own
- * replies, such as the autoresponder or a rule's reply, do not count); a rule
+ * The time counts from the ticket's last reply (the system's own replies,
+ * such as the autoresponder or a rule's reply, do not count); a rule
  * acts once on a ticket for each such reply (support_escalation_applied keeps
  * the reply it acted on); and it acts only when the time ran out after the
  * rule was made, so tickets already waiting longer when it was made are left
@@ -303,7 +303,7 @@ final class TicketEscalation
         $di['logger']->info('Escalation rule "{name}" acted on ticket #{id}', ['name' => $rule['name'], 'id' => $ticketId]);
     }
 
-    /** WHMCS's reply merge fields: [NAME], [FIRSTNAME] and [EMAIL] of the ticket's sender. */
+    /** Reply merge fields: [NAME], [FIRSTNAME] and [EMAIL] of the ticket's sender. */
     private static function mergeFields(\Pimple\Container $di, int $ticketId, string $reply): string
     {
         $row = self::db($di)->fetchAssociative(

@@ -52,8 +52,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $repo = $this->getService()->getSupportTicketRepository();
         // Pinned tickets first; the assignee filter ('assigned': me, none,
         // any or a staff id) narrows the list.
-        $data['bf_pinned_first'] = TicketBulk::pinnedIds($this->getDi());
-        $data['bf_assigned'] = TicketAssign::listFilter($this->getDi(), $data['assigned'] ?? '', (int) $this->getIdentity()->getId());
+        $data['pinned_first'] = TicketBulk::pinnedIds($this->getDi());
+        $data['assigned_filter'] = TicketAssign::listFilter($this->getDi(), $data['assigned'] ?? '', (int) $this->getIdentity()->getId());
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),

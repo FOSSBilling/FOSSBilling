@@ -238,7 +238,7 @@
                     </div>
                 </form>
             </section>
-            {% set bf_pins = admin.support_ticket_pinned_ids() %}
+            {% set ticket_pins = admin.support_ticket_pinned_ids() %}
             <div class="px-3 pt-3">
                 {{ include('mod_support_tickets_bulk.html.twig') }}
             </div>
@@ -294,7 +294,7 @@
                         <td>
                             <div>
                                 <a href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
-                                {% if ticket.id in bf_pins %}<span class="badge bg-yellow-lt ms-1">{{ 'Pinned'|trans }}</span>{% endif %}
+                                {% if ticket.id in ticket_pins %}<span class="badge bg-yellow-lt ms-1">{{ 'Pinned'|trans }}</span>{% endif %}
                             </div>
                             {% if ticket.notes is defined and ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">

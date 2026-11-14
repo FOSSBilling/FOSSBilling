@@ -322,7 +322,7 @@
                         {% endblock %}
                     {% endembed %}
                 </form>
-                <form method="post" action="{{ 'support/ticket_merge'|api_url }}" class="mt-3" data-bf-merge-form="{{ ticket.id }}" data-bf-merge-url="{{ 'support/ticket'|url }}" data-bf-merge-title="{{ 'Merge tickets?'|trans }}" data-bf-merge-text="{{ 'Tickets %list% will be merged into this ticket. The oldest stays and gets all their messages, notes and attachments, and the others are deleted. This cannot be undone.'|trans }}" data-bf-merge-confirm="{{ 'Merge'|trans }}" data-bf-merge-cancel="{{ 'Cancel'|trans }}">
+                <form method="post" action="{{ 'support/ticket_merge'|api_url }}" class="mt-3" data-merge-form="{{ ticket.id }}" data-merge-url="{{ 'support/ticket'|url }}" data-merge-title="{{ 'Merge tickets?'|trans }}" data-merge-text="{{ 'Tickets %list% will be merged into this ticket. The oldest stays and gets all their messages, notes and attachments, and the others are deleted. This cannot be undone.'|trans }}" data-merge-confirm="{{ 'Merge'|trans }}" data-merge-cancel="{{ 'Cancel'|trans }}">
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Merge Tickets'|trans,
                         subtitle: 'Merge other tickets into this one. The oldest ticket stays and gets all their messages, notes and attachments.'|trans
@@ -331,7 +331,7 @@
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="merge-ticket-ids">{{ 'Other ticket ids'|trans }}</label>
-                                    <input class="form-control" type="text" id="merge-ticket-ids" name="ids" placeholder="12, 15" data-bf-merge-ids>
+                                    <input class="form-control" type="text" id="merge-ticket-ids" name="ids" placeholder="12, 15" data-merge-ids>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="merge-ticket-subject">{{ 'Subject (optional)'|trans }}</label>

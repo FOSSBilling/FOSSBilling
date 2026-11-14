@@ -37,11 +37,7 @@ final class TicketSecrets
      */
     public static function kinds(\Pimple\Container $di): array
     {
-        try {
-            $config = $di['mod_config']('support');
-        } catch (\Throwable) {
-            $config = [];
-        }
+        $config = $di['mod_config']('support');
 
         return [
             'server' => Normalizer::normalizeBoolean($config['secrets_server'] ?? true, true),

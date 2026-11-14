@@ -147,25 +147,25 @@ class SupportTicketRepository extends EntityRepository
         ]);
 
         // Assignee filter (staff list): ['in'|'not_in', ids] from TicketAssign::listFilter().
-        if (isset($data['bf_assigned']) && is_array($data['bf_assigned']) && count($data['bf_assigned']) === 2) {
-            [$mode, $assignedIds] = $data['bf_assigned'];
+        if (isset($data['assigned_filter']) && is_array($data['assigned_filter']) && count($data['assigned_filter']) === 2) {
+            [$mode, $assignedIds] = $data['assigned_filter'];
             $assignedIds = array_values(array_filter(array_map(intval(...), (array) $assignedIds)));
             if ($mode === 'in' && $assignedIds === []) {
                 $qb->andWhere('1 = 0');
             } elseif ($mode === 'in') {
-                $qb->andWhere('t.id IN (:bf_assigned)')
-                    ->setParameter('bf_assigned', $assignedIds);
+                $qb->andWhere('t.id IN (:assigned_ids)')
+                    ->setParameter('assigned_ids', $assignedIds);
             } elseif ($mode === 'not_in' && $assignedIds !== []) {
-                $qb->andWhere('t.id NOT IN (:bf_assigned)')
-                    ->setParameter('bf_assigned', $assignedIds);
+                $qb->andWhere('t.id NOT IN (:assigned_ids)')
+                    ->setParameter('assigned_ids', $assignedIds);
             }
         }
 
         // Pinned tickets first (staff list): the "With Selected" pin action.
         // Applies to the default newest-first order; an explicit column sort
         // wins so the sort headers keep working.
-        $pinned = !empty($data['bf_pinned_first'])
-            ? array_slice(array_values(array_filter(array_map(intval(...), (array) $data['bf_pinned_first']))), 0, 500)
+        $pinned = !empty($data['pinned_first'])
+            ? array_slice(array_values(array_filter(array_map(intval(...), (array) $data['pinned_first']))), 0, 500)
             : [];
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
@@ -173,9 +173,9 @@ class SupportTicketRepository extends EntityRepository
                 $qb->addOrderBy('t.id', $sort->direction);
             }
         } elseif ($pinned !== []) {
-            $qb->addSelect('(CASE WHEN t.id IN (:bf_pinned) THEN 0 ELSE 1 END) AS HIDDEN bf_pin')
-                ->setParameter('bf_pinned', $pinned)
-                ->orderBy('bf_pin', 'ASC')
+            $qb->addSelect('(CASE WHEN t.id IN (:pinned_ids) THEN 0 ELSE 1 END) AS HIDDEN pin_first')
+                ->setParameter('pinned_ids', $pinned)
+                ->orderBy('pin_first', 'ASC')
                 ->addOrderBy('t.id', 'DESC');
         } else {
             $qb->orderBy('t.id', \SortDirection::Descending);

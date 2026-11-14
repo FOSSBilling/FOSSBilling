@@ -1,4 +1,4 @@
-{# Support settings > Escalation Rules, as WHMCS. The list, and the form for a new rule or the one in ?escalation=<id> (then this tab opens). Saved with support/escalation_rule_save, deleted with support/escalation_rule_delete. #}
+{# Support settings > Escalation Rules. The list, and the form for a new rule or the one in ?escalation=<id> (then this tab opens). Saved with support/escalation_rule_save, deleted with support/escalation_rule_delete. #}
 {% set rules = admin.support_escalation_rule_get_list %}
 {% set editing = rules|filter(r => r.id ~ '' == request.escalation|default(''))|first %}
 {% set rule = editing ?: { 'id': 0, 'name': '', 'active': true, 'helpdesks': [], 'statuses': ['open'], 'priorities': [], 'minutes': 240, 'new_helpdesk_id': null, 'new_status': '', 'new_priority': '', 'assign_to': null, 'notify': [], 'reply': '' } %}

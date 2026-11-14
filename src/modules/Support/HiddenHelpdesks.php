@@ -15,7 +15,7 @@ use Doctrine\DBAL\Connection;
 use FOSSBilling\Core\Utils\Normalizer;
 
 /**
- * Help desks hidden from clients, as WHMCS's "Hide from clients" department setting.
+ * Help desks hidden from clients.
  *
  * A hidden help desk is left out of the help desks clients and guests choose from
  * when they open a ticket (client and guest helpdesk_get_pairs, so the ticket and

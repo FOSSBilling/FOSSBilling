@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Support;
 
 /**
- * Ticket priority as WHMCS: Low, Medium or High. Clients pick it when they open
+ * Ticket priority: Low, Medium or High. Clients pick it when they open
  * a ticket ("Urgency", Medium by default) and staff change it on the ticket.
  *
  * Stored in support_ticket.priority, whose default (100) is Medium, so existing

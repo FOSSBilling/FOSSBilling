@@ -15,7 +15,7 @@ use Doctrine\DBAL\Connection;
 use FOSSBilling\Core\Utils\Normalizer;
 
 /**
- * Knowledge base categories hidden from clients, as WHMCS's "Hidden" category setting.
+ * Knowledge base categories hidden from clients.
  *
  * Clients and guests do not see a hidden category or its articles: the knowledge
  * base lists and search leave them out, and its page and its articles' pages are

@@ -16,8 +16,8 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 
 /**
- * Ticket merging, as WHMCS's "Merge Tickets" (ticket list bulk action, the
- * ticket page's Manage tab, API support/ticket_merge).
+ * Ticket merging (ticket list bulk action, the ticket page's Manage tab,
+ * API support/ticket_merge).
  *
  * The oldest ticket (lowest id) stays and gets every message, note, file,
  * rating and feedback entry of the others, which are deleted. Its subject gets

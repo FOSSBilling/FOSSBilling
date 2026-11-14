@@ -15,7 +15,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 
 /**
- * Tickets assigned to a staff member, as WHMCS's "Flag" (Assigned To). Staff
+ * Tickets assigned to a staff member, shown as "Assigned To". Staff
  * assign a ticket on its page (Manage tab); the assignee gets an email unless
  * they assigned it to themselves. The ticket list shows the assignee and
  * filters by it (assigned to me, to nobody, to someone). Clients never see it.

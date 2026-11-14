@@ -256,7 +256,7 @@ final class TicketFiles
                 $sql .= ' AND uploader_kind = ? AND uploader_id = (SELECT admin_id FROM support_ticket_message WHERE id = ?)';
                 array_push($params, 'admin', (int) $messageId);
             } else {
-                $sql .= " AND uploader_kind IN ('client', 'user')";
+                $sql .= " AND uploader_kind = 'client'";
             }
             $attached += (int) $db->executeStatement($sql, $params);
         }

@@ -14,7 +14,7 @@ namespace Box\Mod\Support;
 use Box\Mod\Client\Entity\Client;
 
 /**
- * A ticket limit per client, as WHMCS hosts add with a hook.
+ * A ticket limit per client.
  *
  * Support settings: "Tickets a client may open" (ticket_limit_max) "in this many
  * days" (ticket_limit_days), 0 or empty for no limit, and the client groups

@@ -65,11 +65,11 @@
             });
         });
 
-        document.querySelectorAll('[data-bf-merge-form]').forEach((form) => {
+        document.querySelectorAll('[data-merge-form]').forEach((form) => {
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const own = parseInt(form.getAttribute('data-bf-merge-form'), 10);
-                const raw = form.querySelector('[data-bf-merge-ids]').value || '';
+                const own = parseInt(form.getAttribute('data-merge-form'), 10);
+                const raw = form.querySelector('[data-merge-ids]').value || '';
                 const others = Array.from(new Set(String(raw).split(/[\s,#]+/).map((id) => parseInt(id, 10)).filter((id) => id > 0 && id !== own))).sort((a, b) => a - b);
                 if (!others.length) {
                     Modals.create({
@@ -83,13 +83,13 @@
                 const survivor = ids[0];
                 Modals.create({
                     type: 'danger',
-                    title: form.getAttribute('data-bf-merge-title'),
-                    content: form.getAttribute('data-bf-merge-text').replace('%list%', '#' + others.join(', #')).replace('%id%', '#' + survivor),
+                    title: form.getAttribute('data-merge-title'),
+                    content: form.getAttribute('data-merge-text').replace('%list%', '#' + others.join(', #')).replace('%id%', '#' + survivor),
                     confirmCallback: () => {
                         const data = { id: own, ids: others.join(','), subject: form.querySelector('[name=subject]').value };
                         FOSSBilling.api.admin.post('support/ticket_merge', data,
                             (result) => {
-                                window.location = form.getAttribute('data-bf-merge-url') + '/' + result + '?merged=' + others.join(',');
+                                window.location = form.getAttribute('data-merge-url') + '/' + result + '?merged=' + others.join(',');
                             });
                     }
                 });
