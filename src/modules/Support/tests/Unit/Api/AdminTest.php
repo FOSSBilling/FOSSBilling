@@ -22,6 +22,7 @@ use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use function Tests\Helpers\container;
 
@@ -1810,4 +1811,49 @@ test('feedback report lists ratings and comments', function (): void {
     expect($report['period'])->toBe('90');
     expect($report['ratings'][0]['admin_id'])->toBe(3);
     expect($report['ratings'][0]['average'])->toBe(5.0);
+});
+
+test('ticket merge merges into the oldest and fires the event', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER, author_email VARCHAR(255), subject VARCHAR(255), status VARCHAR(30), rel_type VARCHAR(30) DEFAULT NULL, rel_id INTEGER DEFAULT NULL, rel_task VARCHAR(30) DEFAULT NULL, rel_new_value VARCHAR(255) DEFAULT NULL, rel_status VARCHAR(30) DEFAULT NULL, access_hash VARCHAR(255) DEFAULT NULL, updated_at DATETIME)');
+    $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER, created_at DATETIME)');
+    $connection->executeStatement('CREATE TABLE support_ticket_note (id INTEGER PRIMARY KEY, support_ticket_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE support_ticket_file (token CHAR(32) NOT NULL, ticket_id BIGINT DEFAULT NULL, message_id BIGINT DEFAULT NULL, PRIMARY KEY (token))');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret (id INTEGER PRIMARY KEY, ticket_id BIGINT NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret_event (id INTEGER PRIMARY KEY, ticket_id BIGINT NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket_message_rating (message_id BIGINT NOT NULL, ticket_id BIGINT NOT NULL, PRIMARY KEY (message_id))');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback (id INTEGER PRIMARY KEY, ticket_id BIGINT NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket_feedback_request (ticket_id BIGINT NOT NULL, token CHAR(64) NOT NULL, sent_at DATETIME NOT NULL, answered_at DATETIME DEFAULT NULL, PRIMARY KEY (ticket_id))');
+    $connection->executeStatement('CREATE TABLE support_ticket_merge (
+        ticket_id BIGINT NOT NULL, merged_into BIGINT NOT NULL, access_hash VARCHAR(255) DEFAULT NULL,
+        subject VARCHAR(255) NOT NULL DEFAULT \'\', merged_by BIGINT DEFAULT NULL, merged_at DATETIME NOT NULL,
+        PRIMARY KEY (ticket_id))');
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 1, 'author_email' => '', 'subject' => 'Old', 'status' => 'open', 'access_hash' => '', 'updated_at' => '2026-01-01 10:00:00']);
+    $connection->insert('support_ticket', ['id' => 61, 'client_id' => 1, 'author_email' => '', 'subject' => 'New', 'status' => 'open', 'access_hash' => '', 'updated_at' => '2026-01-01 11:00:00']);
+
+    $events = [];
+    $dispatcher = new EventDispatcher();
+    $dispatcher->addListener(Box\Mod\Support\Event\AfterTicketMergedEvent::class, function (Box\Mod\Support\Event\AfterTicketMergedEvent $event) use (&$events): void {
+        $events[] = $event;
+    });
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $dispatcher;
+    $api->setDi($di);
+    $api->setIdentity(Tests\Helpers\admin(['id' => 1]));
+
+    expect($api->ticket_merge(['ids' => [61, 60]]))->toBe(60);
+    expect($events)->toHaveCount(1);
+    expect($events[0]->ticketId)->toBe(60);
+    expect($events[0]->mergedIds)->toBe([61]);
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket'))->toBe(1);
+
+    // Text ids and the single-id form work too.
+    expect(fn (): int => $api->ticket_merge(['ids' => '60']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at least two');
 });

@@ -50,11 +50,14 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $app->render('mod_support_tickets');
     }
 
-    public function get_ticket(\FOSSBilling\Core\Http\App $app, $id): string
+    public function get_ticket(\FOSSBilling\Core\Http\App $app, $id): string|Response
     {
         $id = (string) $id;
         if (ctype_digit($id) && strlen($id) < 30) {
             $this->di['is_client_logged'];
+            if (($merged = \Box\Mod\Support\TicketMerge::targetForClient($this->di, (int) $id, (int) $this->di['loggedin_client']->getId())) !== null) {
+                return $app->redirect('support/ticket/' . $merged);
+            }
             $ticket = $this->di['api_client']->support_ticket_get(['id' => $id]);
         } else {
             $ticket = $this->di['api_guest']->support_ticket_get(['hash' => $id]);

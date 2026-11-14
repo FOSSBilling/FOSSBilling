@@ -46,6 +46,7 @@ test('toApiArray conditional fields remain intentional', function (): void {
             'assigned_to' => ['if (with elseifs)'],
             'notes' => ['if (with elseifs)', 'loop'],
             'feedback' => ['if'],
+            'merged_tickets' => ['if'],
             'feedback_url' => ['if (with elseifs)'],
         ],
     ]);

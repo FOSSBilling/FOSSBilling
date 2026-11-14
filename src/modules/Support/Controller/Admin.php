@@ -102,8 +102,11 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $app->render('mod_support_tickets');
     }
 
-    public function get_ticket(\FOSSBilling\Core\Http\App $app, $id, $messageid = ''): string
+    public function get_ticket(\FOSSBilling\Core\Http\App $app, $id, $messageid = ''): string|\Symfony\Component\HttpFoundation\Response
     {
+        if (($merged = \Box\Mod\Support\TicketMerge::target($this->di, (int) $id)) !== null) {
+            return $app->redirectUrl($this->di['url']->adminLink('support/ticket/' . $merged, ['merged' => (int) $id]));
+        }
         $api = $this->di['api_admin'];
         $ticket = $api->support_ticket_get(['id' => $id]);
 

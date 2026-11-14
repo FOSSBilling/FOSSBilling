@@ -108,3 +108,26 @@ test('feedback page degrades on a bad link', function (): void {
 
     expect($controller->get_feedback($app, 'nope'))->toBe('invalid-html');
 });
+
+test('client ticket page redirects a merged ticket to its survivor', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE support_ticket_merge (ticket_id BIGINT NOT NULL, merged_into BIGINT NOT NULL, PRIMARY KEY (ticket_id))');
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 1]);
+    $connection->insert('support_ticket_merge', ['ticket_id' => 61, 'merged_into' => 60]);
+
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('redirect')->once()->with('support/ticket/60')->andReturn(new Symfony\Component\HttpFoundation\RedirectResponse('/support/ticket/60'));
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $di['is_client_logged'] = true;
+    $di['loggedin_client'] = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $controller = new Client();
+    $controller->setDi($di);
+
+    expect($controller->get_ticket($app, '61'))->toBeInstanceOf(Symfony\Component\HttpFoundation\RedirectResponse::class);
+});

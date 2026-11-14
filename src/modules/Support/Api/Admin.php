@@ -28,6 +28,7 @@ use Box\Mod\Support\TicketBulk;
 use Box\Mod\Support\TicketEscalation;
 use Box\Mod\Support\TicketFeedback;
 use Box\Mod\Support\TicketFiles;
+use Box\Mod\Support\TicketMerge;
 use Box\Mod\Support\TicketSecrets;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
@@ -248,6 +249,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         TicketBulk::sweep($this->getDi());
         TicketAssign::sweep($this->getDi());
         TicketFeedback::sweep($this->getDi());
+
+        try {
+            TicketMerge::sweep($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: moving replies of merged tickets failed: {error}', ['error' => $e->getMessage()]);
+        }
 
         try {
             TicketEscalation::run($this->getDi());
@@ -905,6 +912,30 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         TicketEscalation::delete($this->getDi(), (int) $data['id']);
 
         return true;
+    }
+
+    /**
+     * Merge tickets into the oldest one; returns its id. Cannot be undone.
+     */
+    public function ticket_merge(array $data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $ids = $data['ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = preg_split('/[\s,#]+/', (string) $ids) ?: [];
+        }
+        if (isset($data['id']) && (is_int($data['id']) || ctype_digit((string) $data['id']))) {
+            $ids[] = (int) $data['id'];
+        }
+        $subject = isset($data['subject']) ? trim(strip_tags((string) $data['subject'])) : null;
+
+        $merged = TicketMerge::merge($this->getDi(), $ids, $subject === '' ? null : $subject, (int) $this->getIdentity()->getId());
+
+        $this->di['event_dispatcher']->dispatch(new \Box\Mod\Support\Event\AfterTicketMergedEvent($merged['id'], $merged['merged']));
+        $this->di['logger']->info('Merged tickets #{ids} into ticket #{id}', ['ids' => implode(',', $merged['merged']), 'id' => $merged['id']]);
+
+        return $merged['id'];
     }
 
     /*

@@ -80,6 +80,7 @@ return [
         'support_ticket_file.session_hash',
         'support_ticket_file.token',
         'support_ticket_feedback_request.token',
+        'support_ticket_merge.access_hash',
         'transaction.ipn_hash',
     ],
     // Provider-issued customer, product, price, transaction and subscription IDs.

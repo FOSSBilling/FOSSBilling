@@ -26,6 +26,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  */
 final class TicketFiles
 {
+    public const TABLE = 'support_ticket_file';
     /** Attached files are kept this long unless the settings say otherwise. */
     public const KEEP_DAYS = 180;
     public const MAX_FILES = 5;

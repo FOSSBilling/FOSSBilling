@@ -61,6 +61,9 @@
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_content %}
+                        {% if request.merged|default('') matches '/^[0-9]{1,18}$/' %}
+                            <div class="alert alert-info mb-0">{{ 'Ticket #%old% was merged into this ticket.'|trans({ '%old%': request.merged }) }}</div>
+                        {% endif %}
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <tbody>
@@ -79,6 +82,9 @@
                                     <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
                                     <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>
                                     <tr><td>{{ 'Assigned To'|trans }}</td><td>{{ ticket.assigned_to.name|default('Nobody'|trans) }}</td></tr>
+                                    {% if ticket.merged_tickets|default([]) is not empty %}
+                                        <tr><td>{{ 'Merged Tickets'|trans }}</td><td class="text-wrap">{% for merged in ticket.merged_tickets %}#{{ merged.id }} {{ merged.subject|truncate(40) }} ({{ merged.merged_at|format_date }}){% if not loop.last %}<br>{% endif %}{% endfor %}</td></tr>
+                                    {% endif %}
                                     <tr><td>{{ 'Priority'|trans }}</td><td>{{ include('mod_support_ticket_priority.html.twig', { level: ticket.priority_level|default('medium') }) }}</td></tr>
                                     <tr><td>{{ 'Time Opened'|trans }}</td><td>{{ ticket.created_at|format_date }}</td></tr>
                                     {% if task.task %}<tr><td>{{ 'Task'|trans }}</td><td>{{ mf.status_name(task.task) }}</td></tr>{% endif %}
@@ -313,6 +319,30 @@
 
                         {% block form_actions %}
                             <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
+                </form>
+                <form method="post" action="{{ 'support/ticket_merge'|api_url }}" class="mt-3" data-bf-merge-form="{{ ticket.id }}" data-bf-merge-url="{{ 'support/ticket'|url }}" data-bf-merge-title="{{ 'Merge tickets?'|trans }}" data-bf-merge-text="{{ 'Tickets %list% will be merged into this ticket. The oldest stays and gets all their messages, notes and attachments, and the others are deleted. This cannot be undone.'|trans }}" data-bf-merge-confirm="{{ 'Merge'|trans }}" data-bf-merge-cancel="{{ 'Cancel'|trans }}">
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Merge Tickets'|trans,
+                        subtitle: 'Merge other tickets into this one. The oldest ticket stays and gets all their messages, notes and attachments.'|trans
+                    } %}
+                        {% block form_content %}
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="merge-ticket-ids">{{ 'Other ticket ids'|trans }}</label>
+                                    <input class="form-control" type="text" id="merge-ticket-ids" name="ids" placeholder="12, 15" data-bf-merge-ids>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="merge-ticket-subject">{{ 'Subject (optional)'|trans }}</label>
+                                    <input class="form-control" type="text" id="merge-ticket-subject" name="subject" maxlength="255">
+                                </div>
+                            </div>
+                            <input type="hidden" name="id" value="{{ ticket.id }}">
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-outline-danger" type="submit">{{ 'Merge'|trans }}</button>
                         {% endblock %}
                     {% endembed %}
                 </form>

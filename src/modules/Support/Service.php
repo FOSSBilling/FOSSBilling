@@ -485,6 +485,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
             if ($deep) {
                 $data['feedback'] = TicketFeedback::forTicket($this->di, (int) $model->getId());
+                $data['merged_tickets'] = TicketMerge::mergedInto($this->di, (int) $model->getId());
             }
         } elseif ($deep && $model->getStatus() === SupportTicket::STATUS_CLOSED) {
             // Client and guest views of a closed ticket link the feedback form.
