@@ -701,6 +701,25 @@ test('typed order cancel listener logs exceptions', function (): void {
     $serviceMock->sendOrderCancellationEmail($eventMock);
 });
 
+test('scheduled cancellation listener propagates queue failures for cleanup retry', function (): void {
+    $event = new Box\Mod\Order\Event\AfterAdminOrderCancelEvent(1, true);
+    $order = createEntity(Order::class, ['id' => 1]);
+    $email = Mockery::mock(Box\Mod\Email\Service::class);
+    $email->shouldReceive('sendTemplate')->once()->andThrow(new RuntimeException('queue unavailable'));
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('toApiArray')->once()->with($order, true)->andReturn([
+        'id' => 1,
+        'client' => ['id' => 1],
+        'service_type' => 'domain',
+    ]);
+    $di = container();
+    $di['em']->getRepository(Order::class)->shouldReceive('find')->once()->with(1)->andReturn($order);
+    $di['mod_service'] = $di->protect(fn (): object => $email);
+    $service->setDi($di);
+
+    expect(fn () => $service->sendOrderCancellationEmail($event))->toThrow(RuntimeException::class, 'queue unavailable');
+});
+
 test('typed order uncancel listener fires template', function (): void {
     $eventMock = new Box\Mod\Order\Event\AfterAdminOrderUncancelEvent(1);
 
@@ -2673,7 +2692,10 @@ test('activateOrder force re-activates an already active order', function (): vo
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->with(1)->andReturn($orderEntity);
 
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $emMock->shouldIgnoreMissing();
 
@@ -2687,6 +2709,9 @@ test('activateOrder force re-activates an already active order', function (): vo
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->with(1)->andReturn([]);
+    $serviceMock->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
     $serviceMock->shouldReceive('createFromOrder')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('activateOrderAddons')->atLeast()->once();
 
@@ -3032,12 +3057,11 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
         ->with($clientOrderModel, 'order_canceled');
 
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connectionMock->shouldReceive('executeStatement')
-        ->once()
-        ->with(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
-            ['order_id' => $clientOrderModel->getId(), 'name' => Service::META_CANCEL_AT_PERIOD_END],
-        );
+    $connectionMock->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connectionMock->shouldReceive('executeStatement')->once()->with(
+        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name)',
+        ['order_id' => $clientOrderModel->getId(), 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM],
+    );
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldIgnoreMissing();
 
@@ -3056,6 +3080,9 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     });
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $metaRepository = Mockery::mock(OrderMetaRepository::class);
+    $metaRepository->shouldReceive('getPairsForOrder')->with(10)->andReturn([]);
+    $serviceMock->shouldReceive('getOrderMetaRepository')->andReturn($metaRepository);
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_callOnService')
         ->once()
@@ -3082,12 +3109,12 @@ test('gateway finalized cancellation dispatches both lifecycle events', function
     ]);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('executeStatement')
-        ->once()
-        ->with(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
-            ['order_id' => 10, 'name' => Service::META_CANCEL_AT_PERIOD_END],
-        );
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $connection->shouldReceive('executeStatement')->once()->with(
+        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name)',
+        ['order_id' => 10, 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM],
+    );
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
     $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')
@@ -3104,6 +3131,9 @@ test('gateway finalized cancellation dispatches both lifecycle events', function
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldAllowMockingProtectedMethods();
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->with(10)->andReturn([]);
+    $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
     $service->shouldReceive('_callOnService')->once();
     $service->shouldReceive('saveStatusChange')->once()->with($order, 'Canceled order for Subscription ended');
     $service->setDi($di);
@@ -3134,10 +3164,17 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldAllowMockingProtectedMethods();
     $service->shouldNotReceive('_callOnService');
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->once()->with(10)->andReturn([]);
+    $service->shouldReceive('getOrderMetaRepository')->once()->andReturn($metadata);
     $service->shouldReceive('updateOrderMeta')
         ->once()
-        ->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1'])
+        ->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1'])
         ->andReturn(2);
+    $service->shouldReceive('updateOrderMeta')
+        ->once()
+        ->with($order, [Service::META_SCHEDULED_CANCEL_CLAIM => '0'])
+        ->andReturn(1);
     $service->shouldReceive('saveStatusChange')
         ->once()
         ->with($order, 'Cancellation scheduled at the end of the current billing period');
@@ -3148,7 +3185,7 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
         ->and($order->getReason())->toBe('Customer request');
 });
 
-test('scheduleCancellationFromOrder does not mark the order when no subscription was scheduled', function (): void {
+test('scheduleCancellationFromOrder holds the order for review when the provider returns no subscription', function (): void {
     $order = createEntity(Order::class, [
         'status' => Order::STATUS_ACTIVE,
     ]);
@@ -3161,7 +3198,10 @@ test('scheduleCancellationFromOrder does not mark the order when no subscription
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
 
     $service = Mockery::mock(Service::class)->makePartial();
-    $service->shouldNotReceive('updateOrderMeta');
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->once()->andReturn([]);
+    $service->shouldReceive('getOrderMetaRepository')->once()->andReturn($metadata);
+    $service->shouldReceive('updateOrderMeta')->once()->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1'])->andReturn(2);
     $service->setDi($di);
 
     expect(fn () => $service->scheduleCancellationFromOrder($order))
@@ -4849,3 +4889,137 @@ test('order deletion coordinates backend and gateway failures before local clean
         expect($calls)->toBe(['backend', 'gateway', 'invoice items', 'status', 'meta', 'order']);
     }
 })->with(['none', 'backend', 'gateway'])->with([false, true]);
+test('batchSuspendExpired cancels scheduled orders at expiry instead of suspending them', function (): void {
+    $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $orders = Mockery::mock(OrderRepository::class);
+    $orders->shouldReceive('find')->with(42)->andReturn($order);
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->with(42)->andReturn([Service::META_CANCEL_AT_PERIOD_END => '1']);
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getOrderRepository')->andReturn($orders);
+    $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
+    $service->shouldReceive('getExpiredOrders')->andReturn([]);
+    $service->shouldReceive('processScheduledCancellation')->once()->with($order)->andReturn(true);
+    $service->shouldNotReceive('suspendFromOrder');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([42]);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = new OrderServiceTestEventRecorder();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (): object => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $service->setDi($di);
+
+    expect($service->batchSuspendExpired())->toBeTrue();
+});
+
+test('interrupted scheduled cancellation is held until staff reviews it', function (): void {
+    $order = createEntity(Order::class, ['id' => 821, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $state = [Service::META_CANCEL_AT_PERIOD_END => '1'];
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->with(821)->andReturnUsing(function () use (&$state): array { return $state; });
+    $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('cancelForOrder')->once()->with($order)->andReturn(1);
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
+    $service->shouldReceive('updateOrderMeta')->twice()->andReturnUsing(function ($unused, array $values) use (&$state): int {
+        $state = array_replace($state, $values);
+
+        return 2;
+    });
+    $service->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('finalizeCancellationAfterClaim')->once()->andThrow(new RuntimeException('service response lost'));
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $connection->shouldReceive('beginTransaction')->once();
+    $connection->shouldReceive('fetchOne')->once()->andReturn(821);
+    $connection->shouldReceive('commit')->once();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('refresh')->with($order);
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (): object => $subscription);
+    $service->setDi($di);
+    expect(fn () => $service->processScheduledCancellation($order))->toThrow(RuntimeException::class, 'service response lost');
+    expect($state[Service::META_SCHEDULED_CANCEL_CLAIM])->toBe('1');
+    expect($service->processScheduledCancellation($order))->toBeFalse();
+    expect(fn () => $service->finalizeCancellationFromGateway($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'staff review');
+    expect($service->reviewScheduledCancellation($order, 'retry'))->toBeTrue();
+    expect($state[Service::META_SCHEDULED_CANCEL_CLAIM])->toBe('0');
+});
+
+test('a gateway failure leaves scheduled cancellation held for review', function (): void {
+    $order = createEntity(Order::class, ['id' => 822, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $state = [Service::META_CANCEL_AT_PERIOD_END => '1'];
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->with(822)->andReturnUsing(function () use (&$state): array { return $state; });
+    $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('cancelForOrder')->once()->andThrow(new RuntimeException('gateway unavailable'));
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
+    $service->shouldReceive('updateOrderMeta')->once()->andReturnUsing(function ($unused, array $values) use (&$state): int {
+        $state = array_replace($state, $values);
+
+        return 2;
+    });
+    $service->shouldAllowMockingProtectedMethods();
+    $service->shouldNotReceive('finalizeCancellationAfterClaim');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $connection->shouldReceive('beginTransaction')->once();
+    $connection->shouldReceive('fetchOne')->once()->andReturn(822);
+    $connection->shouldReceive('commit')->once();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('refresh')->with($order);
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): object => $subscription);
+    $service->setDi($di);
+    expect(fn () => $service->processScheduledCancellation($order))->toThrow(RuntimeException::class, 'gateway unavailable');
+    expect($state[Service::META_SCHEDULED_CANCEL_CLAIM])->toBe('1');
+});
+
+test('staff can confirm an interrupted scheduled cancellation without repeating the service action', function (): void {
+    $order = createEntity(Order::class, ['id' => 823, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $metadata = Mockery::mock(OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->with(823)->andReturn([Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1']);
+    $product = Mockery::mock(Box\Mod\Product\Service::class);
+    $product->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($order, 'order_canceled');
+    $product->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_canceled');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('executeStatement')->once()->andReturn(1);
+    $connection->shouldReceive('beginTransaction')->once();
+    $connection->shouldReceive('commit')->once();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('refresh')->once()->with($order);
+    $em->shouldReceive('persist')->with($order);
+    $em->shouldReceive('flush');
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
+    $service->shouldReceive('updateOrderMeta')->once()->with($order, [Service::META_SCHEDULED_CANCEL_CLAIM => '2'])->andReturn(2);
+    $service->shouldNotReceive('_callOnService');
+    $service->shouldReceive('saveStatusChange')->once();
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = new OrderServiceTestEventRecorder();
+    $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('hasUncanceledSubscriptionForOrder')->once()->with($order)->andReturn(false);
+    $di['mod_service'] = $di->protect(fn (string $module, string $service = ''): object => $module === 'Invoice' && $service === 'Subscription' ? $subscription : $product);
+    $service->setDi($di);
+    expect($service->reviewScheduledCancellation($order, 'completed'))->toBeTrue()
+        ->and($order->getStatus())->toBe(Order::STATUS_CANCELED);
+});

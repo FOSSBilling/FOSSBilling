@@ -81,6 +81,26 @@
                     </form>
                 </div>
             </div>
+            {% set free_credit = client ? client.balance_get_total|default(0) : 0 %}
+            {% if free_credit > 0 and invoice.balance_due > 0 and 'deposit' not in invoice.lines|map(l => l.type) %}
+                {% set credit = min(free_credit, invoice.balance_due) %}
+                <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="mb-1">{{ 'Apply credit'|trans }}</h5>
+                    <p class="small text-muted">{{ 'You have :amount of credit. Apply all or part of it to this invoice.'|trans({ ':amount': free_credit|format_currency(invoice.currency ?? default_currency) }) }}</p>
+                    <form method="post" action="{{ 'invoice/apply_credit'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                        <input type="hidden" name="hash" value="{{ invoice.hash }}">
+                        <div class="d-flex gap-2 align-items-end">
+                            <div>
+                                <label class="form-label" for="credit-amount">{{ 'Amount'|trans }}</label>
+                                <input class="form-control" type="number" name="amount" id="credit-amount" min="0.01" step="0.01" max="{{ credit }}" value="{{ credit }}" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">{{ 'Apply credit'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+                </div>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -298,6 +318,16 @@
                                         <td><strong>{{ 'Total'|trans }}</strong></td>
                                         <td><strong>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</strong></td>
                                     </tr>
+                                    {% if invoice.status == 'unpaid' and invoice.amount_paid > 0 %}
+                                        <tr class="text-end">
+                                            <td>{{ 'Amount paid'|trans }}</td>
+                                            <td>{{ invoice.amount_paid|format_currency(invoice.currency ?? default_currency) }}</td>
+                                        </tr>
+                                        <tr class="text-end">
+                                            <td><strong>{{ 'Balance due'|trans }}</strong></td>
+                                            <td><strong>{{ invoice.balance_due|format_currency(invoice.currency ?? default_currency) }}</strong></td>
+                                        </tr>
+                                    {% endif %}
                                 </table>
                             </div>
                         </div>
@@ -340,6 +370,29 @@
                 placement: 'top'
             });
         });
+
+        const feeUrl = "{{ 'invoice/gateway_fees'|api_url(role: 'guest') }}";        const invoiceHash = "{{ invoice.hash }}";
+        const invoiceCurrency = "{{ invoice.currency }}";
+        fetch(`${feeUrl}?hash=${encodeURIComponent(invoiceHash)}`, {
+            headers: { 'Accept': 'application/json' },
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                const fees = data && data.result && data.result.fees;
+                if (!fees) {
+                    return;
+                }
+                document.querySelectorAll('.invoice-gateway input[name="gateway_id"]').forEach(input => {
+                    const entry = fees[input.getAttribute('gateway_id')];
+                    if (entry && Number(entry.fee) > 0) {
+                        const badge = document.createElement('div');
+                        badge.className = 'small text-muted text-center';
+                        badge.textContent = `+ ${entry.fee} ${invoiceCurrency} {{ 'fee'|trans }}`;
+                        input.closest('.invoice-gateway').appendChild(badge);
+                    }
+                });
+            })
+            .catch(() => {});
     });
 
     function paymentPrompt(id, supportsSubscription, supportsOneTime, title){

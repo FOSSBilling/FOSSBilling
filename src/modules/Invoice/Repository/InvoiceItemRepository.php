@@ -26,6 +26,23 @@ class InvoiceItemRepository extends EntityRepository
         return $this->findBy(['invoice' => $this->getEntityManager()->getReference(Invoice::class, $invoiceId)]);
     }
 
+    public function findPaidPendingRenewal(int $orderId): ?InvoiceItem
+    {
+        $item = $this->createQueryBuilder('ii')
+            ->join('ii.invoice', 'i')
+            ->where('ii.type = :type AND ii.task = :task AND ii.relId = :orderId')
+            ->andWhere('ii.status IN (:statuses) AND i.status = :paid')
+            ->setParameter('type', InvoiceItem::TYPE_ORDER)
+            ->setParameter('task', InvoiceItem::TASK_RENEW)
+            ->setParameter('orderId', (string) $orderId)
+            ->setParameter('statuses', [InvoiceItem::STATUS_PENDING_SETUP, InvoiceItem::STATUS_FAILED])
+            ->setParameter('paid', Invoice::STATUS_PAID)
+            ->setMaxResults(1)
+            ->getQuery()->getOneOrNullResult();
+
+        return $item instanceof InvoiceItem ? $item : null;
+    }
+
     /**
      * First invoice item of the given type for an invoice (legacy
      * RedBeanPHP `findOne` first-match semantics).

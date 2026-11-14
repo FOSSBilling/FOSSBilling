@@ -15,13 +15,12 @@ class OrderMetaRepository extends EntityRepository
      */
     public function getPairsForOrder(int $orderId): array
     {
-        $metadata = $this->findBy(['order' => $this->getEntityManager()->getReference(Order::class, $orderId)]);
-        $pairs = [];
-        foreach ($metadata as $meta) {
-            $pairs[$meta->getName()] = $meta->getValue();
-        }
-
-        return $pairs;
+        // Scalar reads bypass the identity map: claims must reflect what the
+        // preceding lock holder committed, even in a long-running worker.
+        return $this->getEntityManager()->getConnection()->fetchAllKeyValue(
+            'SELECT name, value FROM client_order_meta WHERE client_order_id = ?',
+            [$orderId]
+        );
     }
 
     public function findOneByOrderIdAndName(int $orderId, string $name): ?OrderMeta

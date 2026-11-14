@@ -1987,3 +1987,140 @@ test('ignores the gateway_returned flag from API callers', function (): void {
 
     expect($api->refund($data))->toBe(3);
 });
+
+test('applies credit to an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1, 'amount' => 25.5];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('applyCredit')
+        ->once()
+        ->with(Mockery::type(Invoice::class), 25.5)
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->apply_credit($data))->toBeTrue();
+});
+
+test('removes credit from an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('removeCredit')
+        ->once()
+        ->with(Mockery::type(Invoice::class))
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->remove_credit($data))->toBeTrue();
+});
+
+test('gets an invoice with the client free credit', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->andReturn(['id' => 1]);
+    $serviceMock->shouldReceive('getInvoicePromoApplications')
+        ->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getDebitingInvoiceIds')
+        ->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getFreeCredit')
+        ->once()
+        ->with(7)
+        ->andReturn(42.50);
+
+    $model = createEntity(Invoice::class, ['client_id' => 7]);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $result = $api->get(['id' => 1]);
+    expect($result['client_credit'])->toBe(42.50);
+});
+
+test('refunds an invoice to account credit instead of the gateway', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'to_credit' => true,
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('refundInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), null, null, ['to_credit' => true, 'gateway_refund' => false])
+        ->andReturn(3);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->once()
+        ->andReturn(false);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->refund($data))->toBeInt()->toBe(3);
+});
+
+test('domain renewal review requires permission to manage invoices', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $staff = $di['mod_service']('staff');
+    $staff->shouldReceive('checkPermissionsAndThrowException')
+        ->once()->with('invoice', 'manage_invoices', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+
+    expect(fn () => $api->item_review_domain_renewal(['id' => 11, 'decision' => 'retry_zero']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('paid renewal review requires permission to manage invoices', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $di['mod_service']('staff')->shouldReceive('checkPermissionsAndThrowException')
+        ->once()->with('invoice', 'manage_invoices', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+    expect(fn () => $api->item_review_paid_renewal(['id' => 11, 'decision' => 'retry']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('receipt reconciliation requires permission to manage both invoices and client balances', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $staff = $di['mod_service']('staff');
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('invoice', 'manage_invoices', null, Mockery::any())->andReturn(true);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('client', 'manage_balance', null, Mockery::any())->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+    expect(fn () => $api->transaction_reconcile_receipt(['receipt_id' => 1, 'transaction_id' => 2, 'provider_object_id' => 'pi_1']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});

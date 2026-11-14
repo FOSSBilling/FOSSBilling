@@ -1073,3 +1073,43 @@ test('exposes gateway capability flags in api arrays', function (): void {
     expect($listRow['gateway_code'])->toBe('Stripe')
         ->and($listRow['requires_manual_approval'])->toBeFalse();
 });
+
+test('transaction repository follows a replaced entity manager', function (): void {
+    $first = Mockery::mock(TransactionRepository::class);
+    $second = Mockery::mock(TransactionRepository::class);
+    $old = Mockery::mock(EntityManagerInterface::class);
+    $new = Mockery::mock(EntityManagerInterface::class);
+    $old->shouldReceive('getRepository')->with(Transaction::class)->andReturn($first);
+    $new->shouldReceive('getRepository')->with(Transaction::class)->andReturn($second);
+    $di = container();
+    $di['em'] = $old;
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+    expect($service->getTransactionRepository())->toBe($first);
+    unset($di['em']);
+    $di['em'] = $new;
+    expect($service->getTransactionRepository())->toBe($second);
+});
+
+test('transaction errors are recorded through the replacement manager', function (): void {
+    $oldRepo = Mockery::mock(TransactionRepository::class);
+    $newRepo = Mockery::mock(TransactionRepository::class);
+    $old = Mockery::mock(EntityManagerInterface::class);
+    $new = Mockery::mock(EntityManagerInterface::class);
+    $old->shouldReceive('getRepository')->with(Transaction::class)->andReturn($oldRepo);
+    $new->shouldReceive('getRepository')->with(Transaction::class)->andReturn($newRepo);
+    $transaction = createEntity(Transaction::class, ['id' => 3, 'status' => Transaction::STATUS_PROCESSING]);
+    $newRepo->shouldReceive('find')->once()->with(3)->andReturn($transaction);
+    $new->shouldReceive('refresh')->once()->with($transaction);
+    $new->shouldReceive('flush')->once();
+    $di = container();
+    $di['em'] = $old;
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+    $service->getTransactionRepository();
+    unset($di['em']);
+    $di['em'] = $new;
+    (new ReflectionClass($service))->getMethod('markTransactionError')->invoke($service, 3, new RuntimeException('receipt failed'));
+    expect($transaction->getStatus())->toBe(Transaction::STATUS_ERROR)
+        ->and($transaction->getError())->toBe('receipt failed');
+});

@@ -14,7 +14,7 @@ use FOSSBilling\Core\Events\Event;
 /** Dispatched after an order has been canceled. */
 final class AfterAdminOrderCancelEvent extends Event
 {
-    public function __construct(public readonly int $orderId)
+    public function __construct(public readonly int $orderId, public readonly bool $retryOnEmailFailure = false)
     {
     }
 }

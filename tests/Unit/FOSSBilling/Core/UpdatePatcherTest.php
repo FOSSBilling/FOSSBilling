@@ -4191,6 +4191,57 @@ test('JSON migration bootstrap probe does not suppress programming errors', func
     expect(fn () => $patcher->isJsonMigrationPending())->toThrow(LogicException::class, 'Broken connection factory');
 });
 
+test('upstream refund tax migration remains patch 140', function (bool $exists): void {
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableHasColumn')->once()->with('invoice', 'base_refund_tax')->andReturn($exists);
+    if ($exists) {
+        $patcher->shouldNotReceive('executeSql');
+    } else {
+        $patcher->shouldReceive('executeSql')->once()->with('ALTER TABLE `invoice` ADD COLUMN `base_refund_tax` decimal(18,2) DEFAULT NULL AFTER `base_refund`');
+    }
+    (new FOSSBilling\Core\Update\Patch\Patch140())->apply($patcher);
+})->with([true, false]);
+
+test('gateway receipt migration adds both columns and the unique index', function (): void {
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    $patcher->shouldReceive('tableHasColumn')->once()->with('client_balance', 'gateway_receipt_key')->andReturn(false);
+    $patcher->shouldReceive('tableHasIndex')->once()->with('client_balance', 'uniq_gateway_receipt_key')->andReturn(false);
+    $patcher->shouldReceive('tableHasColumn')->once()->with('transaction', 'original_invoice_id')->andReturn(false);
+    $patcher->shouldReceive('executeSql')->once()->with('ALTER TABLE `client_balance` ADD COLUMN `gateway_receipt_key` VARCHAR(64) DEFAULT NULL');
+    $patcher->shouldReceive('executeSql')->once()->with('ALTER TABLE `client_balance` ADD UNIQUE INDEX `uniq_gateway_receipt_key` (`gateway_receipt_key`)');
+    $patcher->shouldReceive('executeSql')->once()->with('ALTER TABLE `transaction` ADD COLUMN `original_invoice_id` BIGINT DEFAULT NULL');
+    (new FOSSBilling\Core\Update\Patch\Patch142())->apply($patcher);
+});
+
+test('gateway receipt migration is a no-op after it has been applied', function (): void {
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    $patcher->shouldReceive('tableHasColumn')->twice()->andReturn(true);
+    $patcher->shouldReceive('tableHasIndex')->once()->andReturn(true);
+    $patcher->shouldNotReceive('executeSql');
+    (new FOSSBilling\Core\Update\Patch\Patch142())->apply($patcher);
+});
+
+test('patch 143 adds the gateway receipt transaction link once', function (): void {
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableHasColumn')->once()->with('client_balance', 'gateway_transaction_id')->andReturn(false);
+    $patcher->shouldReceive('executeSql')->once()->with('ALTER TABLE `client_balance` ADD COLUMN `gateway_transaction_id` BIGINT DEFAULT NULL');
+    (new FOSSBilling\Core\Update\Patch\Patch143())->apply($patcher);
+});
+
+test('patch 143 tolerates an existing gateway receipt transaction link', function (): void {
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableHasColumn')->once()->with('client_balance', 'gateway_transaction_id')->andReturn(true);
+    $patcher->shouldNotReceive('executeSql');
+    (new FOSSBilling\Core\Update\Patch\Patch143())->apply($patcher);
+});
+
+test('patch 144 installs the deferred issuance notification state', function (): void {
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableHasColumn')->once()->with('invoice', 'issue_notification_state')->andReturn(false);
+    $patcher->shouldReceive('executeSql')->once()->with('ALTER TABLE `invoice` ADD COLUMN `issue_notification_state` SMALLINT NOT NULL DEFAULT 0');
+    (new FOSSBilling\Core\Update\Patch\Patch144())->apply($patcher);
+});
+
 test('refund income backfill nets out tax and preserves gross cash', function (): void {
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, refund NUMERIC, base_refund NUMERIC, base_refund_tax NUMERIC, taxrate TEXT, currency TEXT, currency_rate TEXT, credit_note_for_invoice_id INTEGER)');

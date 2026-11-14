@@ -51,6 +51,9 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\Core\Container\Inject
         $sumInBalance = $clientBalanceService->getClientBalance($clientModel);
 
         $invoiceService = $this->di['mod_service']('Invoice');
+        // What other unpaid invoices have received is not spendable.
+        $sumInBalance -= $invoiceService->getReservedCredit((int) $invoice->getClientId(), (int) $invoice->getId());
+
         $totalSumWithTaxes = $invoiceService->getTotalWithTax($invoice);
         if ($totalSumWithTaxes > $sumInBalance) {
             return false;
