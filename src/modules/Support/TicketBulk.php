@@ -98,6 +98,40 @@ final class TicketBulk
         }
     }
 
+    /**
+     * The senders of the tickets (lower case, unique): a guest's address; for a client ticket the
+     * authorized user who wrote its first message (support_ticket_author), else the client's.
+     *
+     * @return list<string>
+     */
+    public static function senders(\Pimple\Container $di, array $ids): array
+    {
+        $db = self::db($di);
+
+        try {
+            $db->fetchOne('SELECT 1 FROM support_ticket_author WHERE 1 = 0');
+            $db->fetchOne('SELECT 1 FROM client_user WHERE 1 = 0');
+            $hasAuthors = true;
+        } catch (\Doctrine\DBAL\Exception) {
+            $hasAuthors = false;
+        }
+        $user = $hasAuthors
+            ? '(SELECT u.email FROM support_ticket_author a JOIN client_user u ON u.id = a.user_id WHERE a.ticket_id = t.id ORDER BY a.message_id LIMIT 1)'
+            : 'NULL';
+        // Only when the first message is the user's: a later reply by a user does not make them the sender.
+        $first = $hasAuthors
+            ? ' AND (SELECT MIN(a2.message_id) FROM support_ticket_author a2 WHERE a2.ticket_id = t.id) = (SELECT MIN(m.id) FROM support_ticket_message m WHERE m.support_ticket_id = t.id)'
+            : '';
+        $rows = $db->fetchFirstColumn(
+            "SELECT COALESCE(CASE WHEN t.client_id IS NOT NULL{$first} THEN {$user} END, c.email, t.author_email)"
+            . ' FROM support_ticket t LEFT JOIN client c ON c.id = t.client_id WHERE t.id IN (?)',
+            [$ids],
+            [ArrayParameterType::INTEGER]
+        );
+
+        return array_values(array_unique(array_filter(array_map(static fn ($e): string => strtolower(trim((string) $e)), $rows))));
+    }
+
     private static function db(\Pimple\Container $di): Connection
     {
         return $di['em']->getConnection();

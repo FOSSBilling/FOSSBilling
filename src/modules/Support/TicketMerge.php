@@ -95,8 +95,9 @@ final class TicketMerge
             $db->executeStatement('UPDATE support_ticket_note SET support_ticket_id = :master WHERE support_ticket_id IN (:ids)', ['master' => $masterId] + $list, $types);
             $db->executeStatement('UPDATE ' . TicketFiles::TABLE . ' SET ticket_id = :master WHERE ticket_id IN (:ids)', ['master' => $masterId] + $list, $types);
             // Tables the mail import ships later; merged away rows follow the survivor once they exist.
-            if (self::tablesExist($db, ['support_ticket_author', 'support_ticket_file_author'])) {
+            if (self::tablesExist($db, ['support_ticket_author', 'support_mail_import'])) {
                 $db->executeStatement('UPDATE support_ticket_author SET ticket_id = :master WHERE ticket_id IN (:ids)', ['master' => $masterId] + $list, $types);
+                $db->executeStatement('UPDATE support_mail_import SET ticket_id = :master WHERE ticket_id IN (:ids)', ['master' => $masterId] + $list, $types);
             }
             // Tickets merged before into one of these now lead to the oldest.
             $db->executeStatement('UPDATE ' . self::TABLE . ' SET merged_into = :master WHERE merged_into IN (:ids)', ['master' => $masterId] + $list, $types);
@@ -153,8 +154,9 @@ final class TicketMerge
             TicketFeedback::RATINGS => 'ticket_id',
             TicketFeedback::FEEDBACK => 'ticket_id',
         ];
-        if (self::tablesExist($db, ['support_ticket_author'])) {
+        if (self::tablesExist($db, ['support_ticket_author', 'support_mail_import'])) {
             $tables['support_ticket_author'] = 'ticket_id';
+            $tables['support_mail_import'] = 'ticket_id';
         }
         foreach ($tables as $table => $column) {
             try {

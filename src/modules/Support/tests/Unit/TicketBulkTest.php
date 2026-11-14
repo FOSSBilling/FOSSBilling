@@ -70,3 +70,16 @@ test('bulk reads degrade to unpinned without the table', function (): void {
     expect(TicketBulk::pinnedIds($di))->toBe([]);
     expect(TicketBulk::sweep($di))->toBe(0);
 });
+
+test('bulk senders lists guest and client addresses lowercased', function (): void {
+    [$di, $connection] = ticketBulkConnection();
+    $connection->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, email VARCHAR(255))');
+    $connection->executeStatement('ALTER TABLE support_ticket ADD COLUMN client_id INTEGER DEFAULT NULL');
+    $connection->executeStatement('ALTER TABLE support_ticket ADD COLUMN author_email VARCHAR(255) DEFAULT NULL');
+    $connection->insert('support_ticket', ['id' => 10, 'status' => 'open', 'client_id' => null, 'author_email' => 'Guest@X.test']);
+    $connection->insert('support_ticket', ['id' => 11, 'status' => 'open', 'client_id' => 1, 'author_email' => '']);
+    $connection->insert('client', ['id' => 1, 'email' => 'Alice@Example.com']);
+
+    // Without the author table the first message is not author-attributed: falls back cleanly.
+    expect(TicketBulk::senders($di, [10, 11, 10]))->toBe(['guest@x.test', 'alice@example.com']);
+});
