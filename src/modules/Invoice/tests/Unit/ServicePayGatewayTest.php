@@ -287,10 +287,11 @@ test('moveUnpaidInvoices throws without an enabled replacement', function (): vo
 });
 
 test('moveUnpaidInvoices moves invoices and reprices their fees', function (): void {
-    $invoice = createEntity(Invoice::class, ['id' => 11]);
+    $invoice = createEntity(Invoice::class, ['id' => 11, 'gateway' => createEntity(PayGateway::class, ['id' => 7])]);
     $replacement = createEntity(PayGateway::class, ['id' => 9, 'enabled' => true]);
 
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetState')->once()->with(11)->andReturn(['status' => 'unpaid', 'issued' => true]);
     $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([$invoice]);
 
     $payGatewayRepo = Mockery::mock(PayGatewayRepository::class);
@@ -305,6 +306,7 @@ test('moveUnpaidInvoices moves invoices and reprices their fees', function (): v
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
     $em->shouldReceive('persist')->once()->with($invoice);
     $em->shouldReceive('flush')->once();
+    $em->shouldReceive('refresh')->once()->with($invoice, Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
 
     $service = payGatewayService($payGatewayRepo, $em);
     $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): object => $feesService);
@@ -341,9 +343,10 @@ test('disabling a gateway with no unpaid invoices needs no replacement', functio
 test('disabling a gateway moves its unpaid invoices to the replacement', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 7, 'name' => 'Custom', 'gateway' => 'Custom', 'enabled' => true]);
     $replacement = createEntity(PayGateway::class, ['id' => 9, 'enabled' => true]);
-    $invoice = createEntity(Invoice::class, ['id' => 11]);
+    $invoice = createEntity(Invoice::class, ['id' => 11, 'gateway' => createEntity(PayGateway::class, ['id' => 7])]);
 
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetState')->once()->with(11)->andReturn(['status' => 'unpaid', 'issued' => true]);
     $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([$invoice]);
 
     $payGatewayRepo = Mockery::mock(PayGatewayRepository::class);
