@@ -164,6 +164,8 @@ return [
         'client_order.period',
         'client_order.service_type',
         'client_order.status',
+        'client_order_cancel_request.status',
+        'client_order_cancel_request.type',
         'client_order_meta.name',
         'client_order_status.status',
         'email_queue.status',

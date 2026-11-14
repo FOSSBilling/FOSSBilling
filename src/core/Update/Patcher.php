@@ -2512,6 +2512,7 @@ class Patcher implements InjectionAwareInterface
             'client_group' => ['title'],
             'client_group_members' => [],
             'client_order' => ['title', 'reason', 'notes', 'unit'],
+            'client_order_cancel_request' => ['reason'],
             'client_order_meta' => ['value'],
             'client_order_status' => ['notes'],
             'client_password_reset' => [],

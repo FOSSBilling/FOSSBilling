@@ -4202,6 +4202,18 @@ test('upstream refund tax migration remains patch 140', function (bool $exists):
     (new FOSSBilling\Core\Update\Patch\Patch140())->apply($patcher);
 })->with([true, false]);
 
+test('cancellation table migration runs after main patch 140 and is idempotent', function (bool $exists): void {
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableExists')->once()->with('client_order_cancel_request')->andReturn($exists);
+    if ($exists) {
+        $patcher->shouldNotReceive('executeSql');
+    } else {
+        $patcher->shouldReceive('executeSql')->once()->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `client_order_cancel_request`') && str_contains($sql, '`id` BIGINT NOT NULL AUTO_INCREMENT')));
+    }
+    (new FOSSBilling\Core\Update\Patch\Patch145())->apply($patcher);
+    expect((new Patcher())->latestPatchLevel())->toBe(145);
+})->with([true, false]);
+
 test('gateway receipt migration adds both columns and the unique index', function (): void {
     $patcher = Mockery::mock(Patcher::class)->makePartial();
     $patcher->shouldReceive('tableHasColumn')->once()->with('client_balance', 'gateway_receipt_key')->andReturn(false);

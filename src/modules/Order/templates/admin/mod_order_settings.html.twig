@@ -91,6 +91,16 @@
                         <label class="form-label" for="suspend_reason_list">{{ 'Suspension Reasons'|trans }}</label>
                         <textarea class="form-control" id="suspend_reason_list" name="suspend_reason_list" rows="3">{{ params.suspend_reason_list|default('') }}</textarea>
                     </div>
+                    <div class="col-lg-6">
+                        <label class="form-label" for="cancel_requests_auto">{{ 'Cancellation Requests'|trans }}</label>
+                        <select class="form-select" id="cancel_requests_auto" name="cancel_requests_auto">
+                            <option value="0"{% if not params.cancel_requests_auto|default(false) %} selected{% endif %}>{{ 'Processed by staff'|trans }}</option>
+                            <option value="1"{% if params.cancel_requests_auto|default(false) %} selected{% endif %}>{{ 'Processed automatically'|trans }}</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-6 d-flex align-items-end">
+                        <small class="form-hint">{{ 'Automatically: once a day, the daily cron cancels a service with an Immediate request, and schedules one with an End of billing period request to be cancelled at the end of its paid period.'|trans }}</small>
+                    </div>
                 </div>
             </div>
             <div class="card-body border-top">

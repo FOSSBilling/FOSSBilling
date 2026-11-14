@@ -234,6 +234,7 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     'order suspension' => 'order_batch_suspend_expired',
     'order cancellation' => 'order_batch_cancel_suspended',
     'order cancellation (unpaid)' => 'order_batch_cancel_unpaid',
+    'order cancellation requests' => 'order_batch_process_cancel_requests',
     'support ticket auto-close' => 'support_batch_ticket_auto_close',
     'password reminder expiry' => 'client_batch_expire_password_reminders',
     'cart expiry' => 'cart_batch_expire',

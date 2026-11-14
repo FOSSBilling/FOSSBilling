@@ -128,7 +128,13 @@
                     {% endif %}
                     <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open Ticket'|trans }}</button>
                     {% if order.status == 'active' %}
-                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
+                        {% set cancel_request = client.order_cancel_request_get({ 'id': order.id }) %}
+                        {% if cancel_request %}
+                            <span class="text-muted small d-block mb-2">{{ 'Cancellation requested. The service will be cancelled.'|trans }}</span>
+                            <a class="btn btn-secondary btn-sm" {{ fb_api_link({href: 'order/cancel_request_withdraw'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Withdraw the cancellation request?'|trans}, reload: true}) }}>{{ 'Withdraw Cancellation Request'|trans }}</a>
+                        {% else %}
+                            <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
+                        {% endif %}
                     {% endif %}
                     {{ render_widgets('client.order.manage.actions.end', { 'order': order }) }}
                 </div>
@@ -198,22 +204,25 @@
                             <h1 class="modal-title fs-5">{{ 'Submit Cancellation Request'|trans }}</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                         </div>
-                        <form action="" method="post" id="cancel-request-form" class="request-cancellation">
+                        <form method="post" action="{{ 'order/cancel_request'|api_url }}" id="cancel-request-form" {{ fb_api_form({message: 'Cancellation request received'|trans, reload: true}) }}>
                             <div class="modal-body">
-                                <input type="hidden" name="rel_type" value="order">
-                                <input type="hidden" name="rel_id" value="{{ order.id }}">
-                                <input type="hidden" name="rel_task" value="cancel">
+                                <input type="hidden" name="id" value="{{ order.id }}">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
-                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                                    <label class="form-label">{{ 'When should the service end?'|trans }}</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="cancel-type-immediate" value="immediate" checked>
+                                        <label class="form-check-label" for="cancel-type-immediate">{{ 'Immediately'|trans }}</label>
+                                    </div>
+                                    {% if order.expires_at %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="cancel-type-period" value="end_of_period">
+                                        <label class="form-check-label" for="cancel-type-period">{{ 'At the end of the billing period (%date%)'|trans({'%date%': order.expires_at|format_date}) }}</label>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <div class="mb-3">
-                                    <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                                    <input class="form-control" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required/>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="content" class="form-label">{{ 'Reason'|trans }}</label>
-                                    <textarea class="form-control" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
+                                    <label for="cancel-reason" class="form-label">{{ 'Reason'|trans }}</label>
+                                    <textarea class="form-control" id="cancel-reason" name="reason" rows="5" required></textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -300,23 +309,8 @@
 {% autoescape "js" %}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const cancelRequestForm = document.getElementById('cancel-request-form');
             const upgradeRequestForm = document.getElementById('upgrade-request-form');
             const openTicketForm = document.getElementById('open-ticket-form');
-
-            cancelRequestForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-
-                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(cancelRequestForm)),
-                    () => {
-                        FOSSBilling.message('Service cancellation request received');
-                        const cancelRequestModal = bootstrap.Modal.getInstance(document.getElementById('cancel-request-modal'))
-                        cancelRequestModal.hide();
-                    },
-                    (res) => {
-                        FOSSBilling.message(`${res.message} (${res.code})`, 'error');
-                    });
-            });
 
             upgradeRequestForm.addEventListener('submit', function(event) {
                 event.preventDefault();

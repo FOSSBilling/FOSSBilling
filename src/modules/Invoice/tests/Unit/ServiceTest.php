@@ -4024,6 +4024,10 @@ test('generates domain renewal invoice with renewal title containing the domain'
         ->with($product)
         ->once()
         ->andReturn($domainService);
+    $productService->shouldReceive('hasFreeDomainRenewal')
+        ->once()
+        ->andReturn(false);
+    $productService->shouldReceive('isFreeDomainRenewalOffered')->once()->andReturn(false);
 
     $currencyServiceMock = Mockery::mock(CurrencyService::class);
     $currencyRepository = Mockery::mock(CurrencyRepository::class);
@@ -10735,6 +10739,42 @@ test('refundInvoice refuses account credit for a deposit invoice', function (): 
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'account credit');
 });
 
+test('resolveRenewalLine bills a free domain renewal at zero while its hosting lasts', function (bool $free, float $price): void {
+    $service = new Service();
+
+    $order = createEntity(Order::class, ['id' => 20, 'clientId' => 7, 'productId' => 2, 'currency' => 'EUR', 'price' => '8.00', 'quantity' => 1, 'status' => Order::STATUS_ACTIVE]);
+
+    $product = createEntity(Product::class, ['id' => 2, 'type' => ProductService::DOMAIN]);
+
+    $productService = Mockery::mock(ProductService::class)->makePartial();
+    $productService->shouldReceive('findProductById')->once()->with(2)->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')->once()->andReturn(['price' => 12.0, 'quantity' => 1]);
+    $productService->shouldReceive('hasFreeDomainRenewal')->once()->with(20)->andReturn($free);
+    $productService->shouldReceive('isFreeDomainRenewalOffered')->zeroOrMoreTimes()->andReturn(false);
+    $productService->shouldReceive('getProductModuleService')->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService([
+        'product' => $productService,
+        'currency' => $currencyService,
+    ]));
+    $service->setDi($di);
+
+    $resolved = $service->resolveRenewalLine($order);
+
+    expect($resolved['price'])->toBe($price)
+        ->and($resolved['line']['price'])->toBe($price)
+        ->and($resolved['line']['quantity'])->toBe(1);
+})->with([
+    'billed' => [false, 24.0],
+    'free' => [true, 0.0],
+]);
+
 test('tryPayWithCredits refuses deposit invoices', function (): void {
     $invoice = createEntity(Invoice::class);
     $invoice->id = 10;
@@ -10992,6 +11032,40 @@ test('partly paid recurring invoices are not offered as subscribable', function 
     expect($result['subscribable'])->toBeFalse();
     expect($result['balance_due'])->toBe(80.0);
     expect($result['credit_applied'])->toBe(0.0);
+});
+
+test('a linked domain is quoted free while its hosting payment is pending', function (): void {
+    $service = new Service();
+
+    $order = createEntity(Order::class, ['id' => 20, 'clientId' => 7, 'productId' => 2, 'currency' => 'EUR', 'price' => '8.00', 'quantity' => 1, 'status' => Order::STATUS_ACTIVE]);
+
+    $product = createEntity(Product::class, ['id' => 2, 'type' => ProductService::DOMAIN]);
+
+    $productService = Mockery::mock(ProductService::class)->makePartial();
+    $productService->shouldReceive('findProductById')->once()->with(2)->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')->once()->andReturn(['price' => 12.0, 'quantity' => 1]);
+    $productService->shouldReceive('hasFreeDomainRenewal')->once()->with(20)->andReturn(false);
+    $productService->shouldReceive('isFreeDomainRenewalOffered')->once()->andReturn(true);
+    $productService->shouldReceive('getProductModuleService')->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService([
+        'product' => $productService,
+        'currency' => $currencyService,
+    ]));
+    $service->setDi($di);
+
+    $resolved = $service->resolveRenewalLine($order);
+
+    expect($resolved['price'])->toBe(0.0)
+        ->and($resolved['line']['price'])->toBe(0.0)
+        ->and($resolved['line']['free_domain_waiting_hosting'])->toBeTrue()
+        ->and($resolved['line']['quantity'])->toBe(1);
 });
 
 test('a paid pending free renewal invoice is reused after hosting payment', function (): void {

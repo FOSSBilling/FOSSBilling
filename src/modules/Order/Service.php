@@ -485,6 +485,13 @@ class Service implements InjectionAwareInterface
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
                     AND pending_invoice.status = :pending_invoice_status
+                )
+                /* No renewal invoice is made while a cancellation request waits. */
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM client_order_cancel_request cancel_request
+                    WHERE cancel_request.client_order_id = co.id
+                    AND cancel_request.status = :cancel_request_status
                 )';
 
         $where = [];
@@ -516,6 +523,7 @@ class Service implements InjectionAwareInterface
         $bindings['pending_item_task'] = \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW;
         $bindings['pending_item_status'] = \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED;
         $bindings['pending_invoice_status'] = Invoice::STATUS_PAID;
+        $bindings['cancel_request_status'] = Entity\ClientOrderCancelRequest::STATUS_PENDING;
         $bindings['expires_before'] = (new \DateTimeImmutable('today'))
             ->modify('+' . ((int) $days_until_expiration + 1) . ' days')
             ->format('Y-m-d H:i:s');
