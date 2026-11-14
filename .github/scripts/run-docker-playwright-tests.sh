@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-image="${1:?Usage: run-docker-playwright-tests.sh <test-image>}"
+image="${1:?Usage: run-docker-playwright-tests.sh <test-image> [playwright arguments...]}"
+shift
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 compose_file="${repo_root}/.github/docker/live-tests.compose.yml"
 project="fossbilling-playwright-${GITHUB_RUN_ID:-local}-$$"
-playwright_version="1.62.1"
+playwright_version="$(node -p 'require(process.argv[1]).devDependencies["@playwright/test"]' "${repo_root}/package.json")"
 playwright_image="${PLAYWRIGHT_DOCKER_IMAGE:-mcr.microsoft.com/playwright:v${playwright_version}-noble}"
 app_host="fossbilling-app"
 app_url="http://${app_host}/"
@@ -125,6 +126,9 @@ docker run --rm \
   --env ADMIN_EMAIL="${test_email}" \
   --env ADMIN_PASSWORD="${test_pass}" \
   --env GITHUB_ACTIONS \
+  --env PLAYWRIGHT_JUNIT_OUTPUT_FILE=/workspace/tests/E2E/Playwright/artifacts/junit/results.xml \
+  --env PLAYWRIGHT_HTML_OUTPUT_DIR=/workspace/tests/E2E/Playwright/artifacts/report \
+  --env PLAYWRIGHT_HTML_OPEN=never \
   --volume "${repo_root}:/workspace" \
   --workdir /workspace \
   "${playwright_image}" \
@@ -136,5 +140,5 @@ docker run --rm \
     npm install --no-audit --no-fund "@playwright/test@'"${playwright_version}"'" >/dev/null
     ln -sn "$runner/node_modules/@playwright/test" /workspace/node_modules/@playwright/test
     cd /workspace
-    exec "$runner/node_modules/.bin/playwright" test
-  '
+    exec "$runner/node_modules/.bin/playwright" test "$@"
+  ' bash "$@"
