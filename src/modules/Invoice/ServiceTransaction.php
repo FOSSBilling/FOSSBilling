@@ -34,7 +34,6 @@ class ServiceTransaction implements InjectionAwareInterface
 
     protected ?\Pimple\Container $di = null;
     private ?bool $transactionIpnHashColumnExists = null;
-    private ?TransactionRepository $transactionRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -43,9 +42,9 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function getTransactionRepository(): TransactionRepository
     {
-        $this->transactionRepository ??= $this->di['em']->getRepository(Transaction::class);
-
-        return $this->transactionRepository;
+        // Another service can replace a closed entity manager during recovery.
+        // Repositories belong to their manager and must not outlive it.
+        return $this->di['em']->getRepository(Transaction::class);
     }
 
     public function getDi(): ?\Pimple\Container

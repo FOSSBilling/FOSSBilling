@@ -238,15 +238,24 @@ function signedPayPalGet(int $invoiceId, int $gatewayId = 1, array $extra = []):
 
 function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscription = null, ?callable $findActiveByTxn = null): Mockery\MockInterface
 {
+    if ($invoiceModel instanceof Mockery\MockInterface) {
+        $invoiceModel->shouldReceive('getClientId')->byDefault()->andReturn(9);
+    }
     $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepo->shouldReceive('find')->byDefault()->andReturn($invoiceModel);
     $subRepo = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
     $subRepo->shouldReceive('findOneBy')->byDefault()->andReturn($existingSubscription);
     $transactionRepo = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
+    $transaction = new Box\Mod\Invoice\Entity\Transaction();
+    $transactionRepo->shouldReceive('find')->byDefault()->andReturn($transaction);
+    $client = Tests\Helpers\createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 9, 'currency' => 'USD']);
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->byDefault()->andReturn($client);
     $transactionRepo->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturnUsing(
         $findActiveByTxn ?? static fn (): ?object => null
     );
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\AbstractPlatform::class));
     $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -254,9 +263,12 @@ function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscripti
         Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepo,
         Box\Mod\Invoice\Entity\Subscription::class => $subRepo,
         Box\Mod\Invoice\Entity\Transaction::class => $transactionRepo,
+        Box\Mod\Client\Entity\Client::class => $clientRepo,
         default => Mockery::mock(Doctrine\ORM\EntityRepository::class)->shouldIgnoreMissing(),
     });
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+    $em->shouldReceive('flush')->byDefault();
+    $em->shouldReceive('remove')->byDefault();
 
     return $em;
 }
@@ -375,17 +387,19 @@ describe('PayPal subscription IPN handling', function (): void {
 
             return true;
         });
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
-            $funds[] = $data;
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function ($transaction) use (&$funds): bool {
+            $funds[] = ['amount' => $transaction->getAmount()];
 
             return true;
         });
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
-
-        $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
@@ -435,21 +449,25 @@ describe('PayPal subscription IPN handling', function (): void {
 
             return true;
         });
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 99]);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         $paidInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $paidInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
         $paidInvoice->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
         $renewal = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $renewal->shouldReceive('getId')->byDefault()->andReturn(99);
+        $renewal->shouldReceive('getClientId')->byDefault()->andReturn(9);
+        $renewal->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
         $renewal->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->byDefault()->andReturn(true);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
         $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('I-ABC123', 9)->andReturn($renewal);
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($paidInvoice);
         $di = container();
@@ -470,7 +488,8 @@ describe('PayPal subscription IPN handling', function (): void {
         ], 2);
 
         $reassigned = array_values(array_filter($updates, fn (array $u): bool => isset($u['invoice_id']) && (int) $u['invoice_id'] === 99));
-        expect($reassigned)->toHaveCount(1);
+        expect($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getOriginalInvoiceId())->toBe(16)
+            ->and($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getInvoice()->getId())->toBe(99);
     });
 
     test('non-completed payments keep their error instead of being marked processed', function (): void {
@@ -670,8 +689,7 @@ describe('PayPal subscription IPN handling', function (): void {
             return true;
         });
         $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
@@ -679,9 +697,12 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->byDefault()->andReturn(true);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($invoiceModel);
         $di = container();
@@ -721,12 +742,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
             return true;
         });
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
-            $funds[] = $data;
-
-            return true;
-        });
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
@@ -734,9 +750,16 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function ($transaction) use (&$funds): bool {
+            $funds[] = ['amount' => $transaction->getAmount()];
+
+            return true;
+        });
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
 
         $em = paypalEmMocks($invoiceModel);
@@ -1199,8 +1222,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
             return true;
         });
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
@@ -1212,9 +1234,12 @@ describe('PayPal subscription IPN handling', function (): void {
         $stored->shouldReceive('getRelId')->byDefault()->andReturn(16);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->byDefault()->andReturn(true);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
 
         $em = paypalEmMocks($invoiceModel, $stored);
@@ -1480,12 +1505,7 @@ describe('PayPal callback invoice binding', function (): void {
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
-            $funds[] = $data;
-
-            return true;
-        });
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
@@ -1494,9 +1514,16 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function ($transaction) use (&$funds): bool {
+            $funds[] = ['amount' => $transaction->getAmount()];
+
+            return true;
+        });
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $di = container();
         $di['em'] = paypalEmMocks($invoiceModel);
@@ -1569,12 +1596,7 @@ describe('PayPal callback invoice binding', function (): void {
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
-            $funds[] = $data;
-
-            return true;
-        });
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
@@ -1583,9 +1605,16 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function ($transaction) use (&$funds): bool {
+            $funds[] = ['amount' => $transaction->getAmount()];
+
+            return true;
+        });
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $di = container();
         $di['em'] = paypalEmMocks($invoiceModel);
@@ -1643,10 +1672,17 @@ describe('PayPal callback invoice binding', function (): void {
             return true;
         });
 
-        $em = paypalEmMocks(null, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(120.00);
+
+        $em = paypalEmMocks($invoiceModel, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
         $di = container();
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
 
         // Refund IPN for a pre-upgrade payment: new txn id, unsigned URL,
         // but parent_txn_id names the original recorded payment.
@@ -1666,6 +1702,48 @@ describe('PayPal callback invoice binding', function (): void {
             ->and($refunded[0]['id'])->toBe(16);
     });
 
+    test('leaves a partial PayPal refund for staff instead of refunding the whole invoice', function (): void {
+        $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
+        $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
+        $earlier->shouldReceive('getInvoice')->byDefault()->andReturn($earlierInvoice);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+        $apiAdmin->shouldNotReceive('invoice_refund');
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(120.00);
+
+        $em = paypalEmMocks($invoiceModel, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Refunded',
+                'txn_id' => 'REFUND-9',
+                'parent_txn_id' => 'TXN-ORIG',
+                'mc_gross' => '-10.00',
+                'mc_currency' => 'USD',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+    });
+
     test('accepts an unsigned delayed completion with a recorded pending payment', function (): void {
         $funds = [];
         $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
@@ -1683,12 +1761,7 @@ describe('PayPal callback invoice binding', function (): void {
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
-            $funds[] = $data;
-
-            return true;
-        });
-        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
@@ -1696,9 +1769,16 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function ($transaction) use (&$funds): bool {
+            $funds[] = ['amount' => $transaction->getAmount()];
+
+            return true;
+        });
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
+        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($invoiceModel, null, static fn (): ?object => $earlier);
         $di = container();
@@ -1811,4 +1891,95 @@ describe('processTransaction payload handling', function (): void {
                 ->and($e->getCode())->toBe(7021);
         }
     });
+});
+
+test('one-time payment form asks the balance due of a part-paid invoice', function (): void {
+    $di = container();
+    $di['em'] = paypalEmMocks();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $adapter = new Payment_Adapter_PayPalEmail([
+        'email' => 'merchant@example.com',
+        'test_mode' => false,
+        'gateway_id' => 2,
+        'thankyou_url' => 'https://example.com/thank-you',
+        'cancel_url' => 'https://example.com/cancel',
+        'notify_url' => 'https://example.com/ipn.php?gateway_id=2&invoice_id=16',
+    ]);
+    $adapter->setDi($di);
+
+    $invoice = [
+        'id' => 16,
+        'nr' => '00042',
+        'serie' => 'FB',
+        'currency' => 'USD',
+        'subtotal' => '100.00',
+        'tax' => '20.00',
+        'status' => 'unpaid',
+        'amount_paid' => 70.00,
+        'balance_due' => 50.00,
+        'lines' => [['title' => 'Test product']],
+    ];
+
+    $fields = $adapter->getOneTimePaymentFields($invoice);
+
+    expect($fields['amount'])->toBe('50.00')
+        ->and($fields['tax'])->toBe('0.00');
+});
+
+test('a duplicate PayPal subscription payment does not generate another renewal invoice', function (): void {
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn([
+        'invoice_id' => 16, 'type' => 'subscr_payment', 'txn_id' => 'TXN-REPLAY',
+        'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing',
+    ]);
+    $api->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn(['id' => 16, 'currency' => 'USD', 'client' => ['id' => 9]]);
+    $invoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+    $invoice->shouldReceive('getId')->byDefault()->andReturn(16);
+    $invoice->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldReceive('gatewayReceiptExists')->once()->with(2, 'TXN-REPLAY', Mockery::type(Box\Mod\Client\Entity\Client::class), 120.0, 'PayPal transaction TXN-REPLAY', 'PayPal')->andReturn(true);
+    $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
+    $invoiceService->shouldNotReceive('recordGatewayPayment');
+    $di = container();
+    $di['em'] = paypalEmMocks($invoice);
+    $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
+
+    paypalProcessAdapter($di)->processTransaction($api, 42, [
+        'post' => ['txn_type' => 'subscr_payment', 'payment_status' => 'Completed', 'txn_id' => 'TXN-REPLAY', 'mc_gross' => '120.00', 'mc_currency' => 'USD', 'subscr_id' => 'I-ABC123'],
+        'get' => signedPayPalGet(16, 2),
+    ], 2);
+});
+
+test('a PayPal subscription retry retains the signed original and selected renewal invoices', function (): void {
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn([
+        'invoice_id' => 99, 'type' => 'subscr_payment', 'txn_id' => 'TXN-RETRY',
+        'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing',
+    ]);
+    $api->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn(['id' => 16, 'currency' => 'USD', 'client' => ['id' => 9]]);
+    $api->shouldReceive('invoice_transaction_update')->once()->with(Mockery::on(fn (array $data): bool => ($data['status'] ?? null) === 'processed'));
+    $original = Tests\Helpers\createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 16, 'client_id' => 9, 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_PAID]);
+    $renewal = Tests\Helpers\createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 99, 'client_id' => 9, 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID, 'issued' => true]);
+    $em = paypalEmMocks($original);
+    $invoiceRepo = $em->getRepository(Box\Mod\Invoice\Entity\Invoice::class);
+    $invoiceRepo->shouldReceive('find')->with(16)->andReturn($original);
+    $invoiceRepo->shouldReceive('find')->with(99)->andReturn($renewal);
+    $transaction = $em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42);
+    $transaction->setOriginalInvoiceId(16)->setInvoice($renewal);
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
+    $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
+    $invoiceService->shouldReceive('getBalanceDue')->with($renewal)->andReturn(120.0);
+    $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.0, 120.0);
+    $invoiceService->shouldReceive('recordGatewayPayment')->once()->with($transaction, Mockery::type(Box\Mod\Client\Entity\Client::class), 'TXN-RETRY', 'PayPal transaction TXN-RETRY', 'PayPal', 'TXN-RETRY')->andReturn(true);
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
+
+    paypalProcessAdapter($di)->processTransaction($api, 42, [
+        'post' => ['txn_type' => 'subscr_payment', 'payment_status' => 'Completed', 'txn_id' => 'TXN-RETRY', 'mc_gross' => '120.00', 'mc_currency' => 'USD', 'subscr_id' => 'I-ABC123'],
+        'get' => signedPayPalGet(16, 2),
+    ], 2);
+    expect($transaction->getOriginalInvoiceId())->toBe(16)->and($transaction->getInvoice())->toBe($renewal);
 });

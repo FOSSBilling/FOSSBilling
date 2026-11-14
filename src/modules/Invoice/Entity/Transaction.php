@@ -45,6 +45,9 @@ class Transaction implements TimestampInterface
     #[ORM\JoinColumn(name: 'gateway_id', referencedColumnName: 'id', nullable: true)]
     private ?PayGateway $gateway = null;
 
+    #[ORM\Column(name: 'original_invoice_id', type: Types::BIGINT, nullable: true)]
+    private ?int $originalInvoiceId = null;
+
     #[ORM\Column(name: 'txn_id', type: Types::STRING, length: 255, nullable: true)]
     private ?string $txnId = null;
 
@@ -93,6 +96,18 @@ class Transaction implements TimestampInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getOriginalInvoiceId(): ?int
+    {
+        return $this->originalInvoiceId;
+    }
+
+    public function setOriginalInvoiceId(?int $id): self
+    {
+        $this->originalInvoiceId = $id;
+
+        return $this;
     }
 
     public function getInvoice(): ?Invoice

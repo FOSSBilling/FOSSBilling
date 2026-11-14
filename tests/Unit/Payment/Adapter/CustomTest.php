@@ -56,8 +56,13 @@ function customApprovalDi(Transaction $tx, float $total = 25.0): Pimple\Containe
     $clientService->shouldReceive('addFunds')->byDefault()->andReturn(true);
 
     $invoiceService = Mockery::mock();
-    $invoiceService->shouldReceive('getTotalWithTax')->byDefault()->andReturn($total);
-    $invoiceService->shouldReceive('markAsPaid')->byDefault()->andReturn(true);
+    $invoiceService->shouldReceive('approveOfflineTransaction')->byDefault()->with($tx)->andReturnUsing(function (Transaction $transaction) use ($total): bool {
+        $transaction->setStatus(Transaction::STATUS_PROCESSED);
+        $transaction->setAmount((string) $total);
+        $transaction->setCurrency($transaction->getInvoice()->getCurrency());
+
+        return true;
+    });
 
     $di = container();
     $di['em'] = $em;

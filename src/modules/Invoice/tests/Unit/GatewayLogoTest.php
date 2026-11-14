@@ -53,6 +53,7 @@ function gatewayLogoService(MockHttpClient $client, Filesystem $filesystem): Ser
     $di = container();
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $em->shouldReceive('flush')->byDefault();
     $di['em'] = $em;
@@ -193,6 +194,7 @@ test('active gateways keep the adapter display size for custom logos', function 
     $service = Mockery::mock(ServicePayGateway::class)->makePartial();
     $di = container();
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $repo = Mockery::mock(PayGatewayRepository::class);
     $repo->shouldReceive('findEnabledOrderedByIdDesc')->once()->andReturn([$gateway]);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);

@@ -216,6 +216,9 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $canceledSubscriptions = 0;
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
+            if ($subscription->getStatus() === 'canceled') {
+                continue;
+            }
             $this->cancel($subscription);
             ++$canceledSubscriptions;
         }
@@ -241,7 +244,11 @@ class ServiceSubscription implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
         }
 
-        if ($subscription->getStatus() === self::STATUS_PENDING_CANCELLATION && $subscription->getRelType() === 'invoice') {
+        // A status update may arrive before the deletion webhook and already
+        // mark this row canceled. The deletion event still has to finish any
+        // order with an outstanding scheduled-cancellation marker.
+        if (in_array($subscription->getStatus(), [self::STATUS_PENDING_CANCELLATION, 'canceled'], true)
+            && $subscription->getRelType() === 'invoice') {
             $query = $this->di['em']->getConnection()->createQueryBuilder();
             $orderIds = $query
                 ->select('DISTINCT ii.rel_id')
@@ -325,6 +332,19 @@ class ServiceSubscription implements InjectionAwareInterface
         return false;
     }
 
+    /** A pending cancellation remains live at the gateway until it ends there. */
+    public function hasUncanceledSubscriptionForOrder(Order $order): bool
+    {
+        foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
+            if (in_array($subscription->getStatus(), ['active', self::STATUS_PENDING_CANCELLATION], true)
+                && trim((string) $subscription->getSid()) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * @return list<Subscription>
      */
@@ -361,7 +381,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string
     {
-        $query = 'SELECT period, price, quantity, type, rel_id
+        $query = 'SELECT period, price, quantity, type, rel_id, task
             FROM invoice_item
             WHERE invoice_id = :id
             ORDER BY id ASC';
@@ -376,6 +396,10 @@ class ServiceSubscription implements InjectionAwareInterface
         $positiveTotal = 0.0;
         $orderIds = [];
         foreach ($items as $item) {
+            // The gateway fee is part of each payment, not a line of its own period.
+            if (($item['task'] ?? null) === ServiceGatewayFees::TASK) {
+                continue;
+            }
             $lineTotal = (float) ($item['price'] ?? 0) * (float) ($item['quantity'] ?? 0);
             $period = $item['period'] ?? null;
 

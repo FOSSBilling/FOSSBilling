@@ -20,6 +20,35 @@ use FOSSBilling\Core\SortOptions;
 
 class TransactionRepository extends EntityRepository
 {
+    /**
+     * @param list<int> $invoiceIds
+     *
+     * @return array<int, float> processed-transaction sums keyed by invoice id
+     */
+    public function getProcessedSumsByInvoiceIds(array $invoiceIds): array
+    {
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('t')
+            ->select('IDENTITY(t.invoice) AS invoice_id, SUM(t.amount) AS amount')
+            ->where('IDENTITY(t.invoice) IN (:invoice_ids)')
+            ->andWhere('t.status = :status')
+            ->setParameter('invoice_ids', $invoiceIds)
+            ->setParameter('status', Transaction::STATUS_PROCESSED)
+            ->groupBy('t.invoice')
+            ->getQuery()
+            ->getScalarResult();
+
+        $sums = [];
+        foreach ($rows as $row) {
+            $sums[(int) $row['invoice_id']] = round((float) $row['amount'], 2);
+        }
+
+        return $sums;
+    }
+
     public function existsByGatewayId(int $gatewayId): bool
     {
         return (bool) $this->createQueryBuilder('t')

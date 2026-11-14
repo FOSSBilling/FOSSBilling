@@ -49,6 +49,7 @@ use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Logging\Logger;
@@ -91,7 +92,15 @@ class Service implements InjectionAwareInterface
         'price', 'status', 'notes', 'reason', 'suspension_grace_days',
     ];
 
+    public const string META_PAID_RENEWAL_OUTCOME_PREFIX = 'paid_renewal_outcome_';
+    public const string META_FREE_RENEWAL_CLAIM_PREFIX = 'free_domain_renewal_claim_';
+    public const string META_FREE_RENEWAL_RETRY_PREFIX = 'free_domain_renewal_retry_';
+    public const string RENEWAL_OUTCOME_PENDING = 'pending';
+    public const string RENEWAL_OUTCOME_COMPLETED = 'completed';
+    public const string RENEWAL_OUTCOME_RETRY = 'retry';
+
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
+    public const META_SCHEDULED_CANCEL_CLAIM = 'scheduled_cancel_claim';
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
     public const META_MERGE_RENEWALS = 'merge_renewals';
@@ -236,7 +245,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    private function sendOrderLifecycleEmail(int $orderId, string $templateSuffix, string $logAction, bool $includeService = true): void
+    private function sendOrderLifecycleEmail(int $orderId, string $templateSuffix, string $logAction, bool $includeService = true, bool $retryOnFailure = false): void
     {
         $di = $this->di ?? throw new \LogicException('Order service must be initialized before handling events.');
 
@@ -261,6 +270,9 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
+            if ($retryOnFailure) {
+                throw $exc;
+            }
             $di['logger']->withChannel('email')->error('Failed to send order {action} email', ['action' => $logAction, 'exception' => $exc]);
         }
     }
@@ -286,7 +298,7 @@ class Service implements InjectionAwareInterface
     #[AsEventListener]
     public function sendOrderCancellationEmail(AfterAdminOrderCancelEvent $event): void
     {
-        $this->sendOrderLifecycleEmail($event->orderId, 'canceled', 'cancellation', false);
+        $this->sendOrderLifecycleEmail($event->orderId, 'canceled', 'cancellation', false, $event->retryOnEmailFailure);
     }
 
     #[AsEventListener]
@@ -1205,6 +1217,31 @@ class Service implements InjectionAwareInterface
 
     public function activateOrder(Order $order, $data = []): bool
     {
+        if (!empty($data['force']) && $order->getId() !== null) {
+            $connection = $this->di['em']->getConnection();
+            $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+            if (!NamedLock::acquire($connection, $name, 30)) {
+                throw new InformationException('Scheduled cancellation is already being processed.');
+            }
+
+            try {
+                $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+                if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)
+                    || ($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+                    throw new InformationException('Finish or review the scheduled cancellation before reactivating this order.');
+                }
+
+                return $this->activateOrderLocked($order, $data);
+            } finally {
+                NamedLock::release($connection, $name);
+            }
+        }
+
+        return $this->activateOrderLocked($order, $data);
+    }
+
+    private function activateOrderLocked(Order $order, $data): bool
+    {
         $orderId = $this->orderId($order);
         $order = $this->getOrderRepository()->find($orderId);
         if (!$order instanceof Order) {
@@ -1418,6 +1455,9 @@ class Service implements InjectionAwareInterface
         }
         foreach ($meta as $k => $v) {
             $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
+            if ($mm instanceof OrderMeta && $k === self::META_SCHEDULED_CANCEL_CLAIM) {
+                $this->di['em']->refresh($mm);
+            }
             if (!$mm instanceof OrderMeta) {
                 $mm = new OrderMeta();
                 $mm->setOrder($order);
@@ -1434,6 +1474,66 @@ class Service implements InjectionAwareInterface
     }
 
     public function updateOrder(Order $order, array $data): bool
+    {
+        if ($order->getId() === null || (!array_key_exists('expires_at', $data) && !array_key_exists('status', $data) && !array_key_exists('meta', $data))) {
+            return $this->updateOrderLocked($order, $data);
+        }
+
+        return $this->withCancellationScheduleLock($order, fn (): bool => $this->updateOrderWithRowLock($order, $data), 0);
+    }
+
+    private function isRenewalCheckpointKey(string $key): bool
+    {
+        foreach ([self::META_PAID_RENEWAL_OUTCOME_PREFIX, self::META_FREE_RENEWAL_CLAIM_PREFIX, self::META_FREE_RENEWAL_RETRY_PREFIX] as $prefix) {
+            if (str_starts_with($key, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function updateOrderWithRowLock(Order $order, array $data): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $connection->fetchOne('SELECT id FROM client_order WHERE id = ?' . RowLock::suffix($connection), [$order->getId()]);
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            $metaInput = $data['meta'] ?? null;
+            if (is_array($metaInput)) {
+                foreach ($metaInput === [] ? array_keys($meta) : array_keys($metaInput) as $key) {
+                    if ($this->isRenewalCheckpointKey((string) $key)) {
+                        throw new InformationException('Renewal outcome checkpoints must be resolved through renewal review.');
+                    }
+                }
+            }
+            if (is_array($metaInput) && (array_key_exists(self::META_SCHEDULED_CANCEL_CLAIM, $metaInput)
+                || array_key_exists(self::META_CANCEL_AT_PERIOD_END, $metaInput))) {
+                throw new InformationException('Scheduled cancellation metadata cannot be changed through order updates.');
+            }
+            if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)
+                && (array_key_exists('expires_at', $data) || array_key_exists('status', $data) || $metaInput === [])) {
+                throw new InformationException('This order is being canceled and its status or expiration cannot be changed.');
+            }
+            if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1'
+                && (array_key_exists('expires_at', $data) || array_key_exists('status', $data) || $metaInput === [])) {
+                throw new InformationException('This order is being canceled and its status or expiration cannot be changed.');
+            }
+            $result = $this->updateOrderLocked($order, $data);
+            $connection->commit();
+
+            return $result;
+        } catch (\Throwable $e) {
+            $connection->rollBack();
+
+            throw $e;
+        }
+    }
+
+    private function updateOrderLocked(Order $order, array $data): bool
     {
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUpdateEvent(
@@ -1510,12 +1610,31 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function renewOrder(Order $order): bool
+    public function renewOrder(Order $order, array $data = []): bool
+    {
+        return $this->renewOrderWithCheckpoint($order, null);
+    }
+
+    public function renewInvoiceItem(Order $order, int $itemId): bool
+    {
+        return $this->renewOrderWithCheckpoint($order, self::META_PAID_RENEWAL_OUTCOME_PREFIX . $itemId);
+    }
+
+    public function renewFreeDomainInvoiceItem(Order $order, int $itemId): bool
+    {
+        return $this->renewOrderWithCheckpoint($order, self::META_FREE_RENEWAL_CLAIM_PREFIX . $itemId);
+    }
+
+    private function renewOrderWithCheckpoint(Order $order, ?string $checkpoint): bool
     {
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderRenewEvent($orderId));
 
-        $this->renewFromOrder($order);
+        if ($checkpoint === null) {
+            $this->renewFromOrder($order);
+        } else {
+            $this->renewFromOrderWithCheckpoint($order, $checkpoint);
+        }
 
         $isGroupMaster = $order->isGroupMaster();
         $orderStatus = $order->getStatus();
@@ -1538,9 +1657,116 @@ class Service implements InjectionAwareInterface
 
     public function renewFromOrder(Order $order): void
     {
+        $this->renewFromOrderWithCheckpoint($order, null);
+    }
+
+    private function renewFromOrderWithCheckpoint(Order $order, ?string $checkpoint): void
+    {
+        if ($order->getId() === null) {
+            $this->renewFromOrderLocked($order);
+
+            return;
+        }
+
+        $this->withCancellationScheduleLock($order, function () use ($order, $checkpoint): void {
+            $this->renewFromOrderWithRowLock($order, $checkpoint);
+        }, 0);
+    }
+
+    /**
+     * A retry approval belongs to its original item; all entry points share these holds.
+     *
+     * @param array<string, string> $meta
+     */
+    private function assertOrderCanRenew(Order $order, array $meta, ?string $checkpoint): void
+    {
+        $connection = $this->di['em']->getConnection();
+        foreach ($meta as $name => $outcome) {
+            if (str_starts_with((string) $name, self::META_PAID_RENEWAL_OUTCOME_PREFIX)
+                && ($outcome === self::RENEWAL_OUTCOME_PENDING || ($outcome === self::RENEWAL_OUTCOME_RETRY && $name !== $checkpoint))) {
+                throw new InformationException('This order has an unresolved renewal outcome. Review it or execute its approved invoice-item retry before starting another renewal.');
+            }
+            foreach ([self::META_FREE_RENEWAL_CLAIM_PREFIX, self::META_FREE_RENEWAL_RETRY_PREFIX] as $prefix) {
+                if (!str_starts_with((string) $name, $prefix) || $outcome !== '1') {
+                    continue;
+                }
+                $itemId = substr((string) $name, strlen($prefix));
+                if ($checkpoint === self::META_FREE_RENEWAL_CLAIM_PREFIX . $itemId) {
+                    // Only the shared executor supplies this context after
+                    // validating eligibility and consuming retry approval.
+                    continue;
+                }
+                // Historical successful free renewals kept claim 1. An
+                // executed item is evidence that its local work finished.
+                $status = $connection->fetchOne('SELECT status FROM invoice_item WHERE id = ? AND rel_id = ? AND type = ? AND task = ?', [$itemId, (string) $order->getId(), 'order', 'renew']);
+                if ($status !== 'executed') {
+                    throw new InformationException('This order has an unresolved domain renewal. Review it or execute its approved invoice-item retry before starting another renewal.');
+                }
+            }
+        }
+        if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)
+            || ($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1'
+            || $order->getStatus() === Order::STATUS_CANCELED) {
+            throw new InformationException('This order is being canceled and cannot be renewed.');
+        }
+    }
+
+    private function renewFromOrderWithRowLock(Order $order, ?string $checkpoint): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $connection->beginTransaction();
+        $serviceFailed = false;
+
+        try {
+            $connection->fetchOne('SELECT id FROM client_order WHERE id = ?' . RowLock::suffix($connection), [$order->getId()]);
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if ($checkpoint !== null && ($meta[$checkpoint] ?? null) === self::RENEWAL_OUTCOME_COMPLETED) {
+                $connection->commit();
+
+                return;
+            }
+            $this->assertOrderCanRenew($order, $meta, $checkpoint);
+            if ($checkpoint !== null && str_starts_with($checkpoint, self::META_PAID_RENEWAL_OUTCOME_PREFIX)) {
+                // Persist the attempt before provider I/O. If the process stops
+                // before the outcome commits, never repeat it without review.
+                $this->updateOrderMeta($order, [$checkpoint => self::RENEWAL_OUTCOME_PENDING]);
+                $connection->commit();
+                $connection->beginTransaction();
+                $connection->fetchOne('SELECT id FROM client_order WHERE id = ?' . RowLock::suffix($connection), [$order->getId()]);
+                $this->di['em']->refresh($order);
+            }
+            // Both provider actions must stay under the cancellation lock and
+            // follow the refreshed hold check, including for suspended orders.
+            if ($order->getStatus() === Order::STATUS_SUSPENDED) {
+                $this->unsuspendFromOrder($order);
+            }
+            $this->renewFromOrderLocked($order, $serviceFailed);
+            if ($checkpoint !== null) {
+                // The local term and completed outcome commit together before
+                // lifecycle listeners run or the invoice item is acknowledged.
+                $this->updateOrderMeta($order, [$checkpoint => self::RENEWAL_OUTCOME_COMPLETED]);
+            }
+            $connection->commit();
+        } catch (\Throwable $e) {
+            $connection->rollBack();
+            if ($serviceFailed && $this->di['em']->isOpen()) {
+                $this->di['em']->refresh($order);
+                $order->setStatus(Order::STATUS_FAILED_RENEW);
+                $this->persistOrder($order);
+                $this->saveStatusChange($order, $e->getMessage());
+            }
+
+            throw $e;
+        }
+    }
+
+    private function renewFromOrderLocked(Order $order, ?bool &$serviceFailed = null): void
+    {
         try {
             $this->_callOnService($order, Order::ACTION_RENEW);
         } catch (\Exception $e) {
+            $serviceFailed = true;
             $order->setStatus(Order::STATUS_FAILED_RENEW);
             $this->persistOrder($order);
 
@@ -1641,6 +1867,31 @@ class Service implements InjectionAwareInterface
 
     public function cancelFromOrder(Order $order, $reason = null, $skipEvent = false): bool
     {
+        $this->assertOrderCanBeCanceled($order);
+        if ($order->getId() === null) {
+            return $this->cancelFromOrderLocked($order, $reason, $skipEvent);
+        }
+        $connection = $this->di['em']->getConnection();
+        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+        if (!NamedLock::acquire($connection, $name, 30)) {
+            throw new InformationException('Scheduled cancellation is already being processed.');
+        }
+
+        try {
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
+                throw new InformationException('The service cancellation requires staff review.');
+            }
+
+            return $this->cancelFromOrderLocked($order, $reason, $skipEvent);
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    private function cancelFromOrderLocked(Order $order, $reason = null, $skipEvent = false): bool
+    {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
         $this->beginCancellation($order, $skipEvent);
@@ -1668,18 +1919,37 @@ class Service implements InjectionAwareInterface
 
     public function scheduleCancellationFromOrder(Order $order, $reason = null): bool
     {
+        return $this->withCancellationScheduleLock($order, function () use ($order, $reason): bool {
+            $this->di['em']->refresh($order);
+
+            return $this->scheduleCancellationUnderLock($order, $reason);
+        });
+    }
+
+    private function scheduleCancellationUnderLock(Order $order, $reason): bool
+    {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
+        $meta = $this->getOrderMetaRepository()->getPairsForOrder($orderId);
+        if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
+            throw new InformationException('The scheduled cancellation requires staff review before another provider action.');
+        }
+        if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+            return true;
+        }
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
             throw new InformationException('No active gateway subscription that supports cancellation at period end is linked to this order.');
         }
 
+        // Commit a review hold before provider I/O. A crash or ambiguous
+        // response must not leave a provider cancellation with no local marker.
+        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1']);
         if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
             throw new InformationException('No active gateway subscription is linked to this order.');
         }
-        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
+        $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
 
         $order->setReason($reason);
         $order->setUpdatedAt(new \DateTime());
@@ -1690,11 +1960,90 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /** Serialize provider scheduling with local renewal and expiry edits. */
+    private function withCancellationScheduleLock(Order $order, callable $operation, int $timeoutSeconds = 30): mixed
+    {
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new InformationException('Order scheduling and renewal require a committed transaction before external actions.');
+        }
+        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+        if (!NamedLock::acquire($connection, $name, $timeoutSeconds)) {
+            throw new InformationException('Scheduled cancellation is already being processed.');
+        }
+
+        try {
+            return $operation();
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
     public function finalizeCancellationFromGateway(Order $order, $reason = null): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new InformationException('Scheduled cancellation requires a committed claim before external actions.');
+        }
+        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+        if (!NamedLock::acquire($connection, $name, 30)) {
+            throw new InformationException('Scheduled cancellation is already being processed.');
+        }
+
+        try {
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '2') {
+                if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1') {
+                    return $this->clearOrphanedCancellationClaim($order);
+                }
+
+                return $this->finishScheduledCancellation($order, $reason);
+            }
+            if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '1') {
+                throw new InformationException('The service cancellation requires staff review.');
+            }
+            if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+                $connection->beginTransaction();
+
+                try {
+                    $connection->fetchOne('SELECT id FROM client_order WHERE id = ?' . RowLock::suffix($connection), [$order->getId()]);
+                    $this->di['em']->refresh($order);
+                    $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+                    if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
+                        || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)
+                        || $order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
+                        $connection->commit();
+
+                        return false;
+                    }
+                    $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '1']);
+                    $connection->commit();
+                } catch (\Throwable $e) {
+                    $connection->rollBack();
+
+                    throw $e;
+                }
+            }
+
+            return $this->finalizeCancellationAfterClaim($order, $reason);
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    protected function finalizeCancellationAfterClaim(Order $order, $reason = null): bool
     {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
         $this->beginCancellation($order, false);
+
+        $meta = $this->getOrderMetaRepository()->getPairsForOrder($orderId);
+        if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+            $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '2']);
+
+            return $this->finishScheduledCancellation($order, $reason);
+        }
 
         $this->completeCancellation($order, $reason, false);
 
@@ -1706,6 +2055,31 @@ class Service implements InjectionAwareInterface
         $this->saveStatusChange($order, $note);
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($orderId));
+
+        return true;
+    }
+
+    /** Finish local cancellation and its queued lifecycle notification atomically. */
+    protected function finishScheduledCancellation(Order $order, ?string $reason): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        $connection->beginTransaction();
+        try {
+            $this->completeCancellation($order, $reason, false);
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
+            $productService->releaseReservedStockForOrder($order, 'order_canceled');
+            $this->saveStatusChange($order, $reason === null ? 'Order canceled' : 'Canceled order for ' . $reason);
+            $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($this->orderId($order), true));
+            $connection->commit();
+        } catch (\Throwable $e) {
+            $connection->rollBack();
+            if ($this->di['em']->isOpen()) {
+                $this->di['em']->refresh($order);
+            }
+
+            throw $e;
+        }
 
         return true;
     }
@@ -1741,13 +2115,40 @@ class Service implements InjectionAwareInterface
         $order->setSuspendedAt(null);
         $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
+        // Remove both checkpoints in one statement. If this process stops
+        // before it, claim 2 remains discoverable for cleanup recovery.
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
-            ['order_id' => $orderId, 'name' => self::META_CANCEL_AT_PERIOD_END],
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name)',
+            ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM],
         );
     }
 
     public function uncancelFromOrder(Order $order): bool
+    {
+        if ($order->getId() === null) {
+            return $this->uncancelFromOrderLocked($order);
+        }
+        $connection = $this->di['em']->getConnection();
+        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+        if (!NamedLock::acquire($connection, $name, 30)) {
+            throw new InformationException('Scheduled cancellation is already being processed.');
+        }
+
+        try {
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)
+                || ($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+                throw new InformationException('Finish or review the scheduled cancellation before reactivating this order.');
+            }
+
+            return $this->uncancelFromOrderLocked($order);
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    private function uncancelFromOrderLocked(Order $order): bool
     {
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUncancelEvent($orderId));
@@ -1933,6 +2334,130 @@ class Service implements InjectionAwareInterface
         ]);
     }
 
+    /** Process a scheduled cancellation once; an interrupted external action requires staff review. */
+    public function processScheduledCancellation(Order $order): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new InformationException('Scheduled cancellation requires a committed claim before external actions.');
+        }
+        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+        if (!NamedLock::acquire($connection, $name, 30)) {
+            throw new InformationException('Scheduled cancellation is already being processed.');
+        }
+
+        try {
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1') {
+                // Older interrupted acknowledgements could remove the schedule
+                // marker before the claim. Cleanup had already completed by
+                // then, so a canceled order only needs the orphan removed.
+                if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '2') {
+                    return $this->clearOrphanedCancellationClaim($order);
+                }
+
+                return false;
+            }
+            if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '2'
+                && in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_CANCELED], true)) {
+                return $this->finishScheduledCancellation($order, 'Cancellation requested at end of period');
+            }
+            if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+                return false;
+            }
+            if ($order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
+                return false;
+            }
+            if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '1') {
+                $this->di['logger']->error('Scheduled cancellation for order #{id} requires staff review before retrying the service action.', ['id' => $order->getId()]);
+
+                return false;
+            }
+            // Commit the uncertain-action claim before any gateway I/O. A
+            // renewal or staff expiry change then sees the claim and cannot
+            // invalidate the cancellation while the gateway is responding.
+            $connection->beginTransaction();
+
+            try {
+                $connection->fetchOne('SELECT id FROM client_order WHERE id = ?' . RowLock::suffix($connection), [$order->getId()]);
+                $this->di['em']->refresh($order);
+                $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+                if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
+                    || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)
+                    || $order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
+                    $connection->commit();
+
+                    return false;
+                }
+                $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '1']);
+                $connection->commit();
+            } catch (\Throwable $e) {
+                $connection->rollBack();
+
+                throw $e;
+            }
+            // If a gateway call fails or the process stops here, staff must
+            // verify its outcome before another external attempt.
+            $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+
+            return $this->finalizeCancellationAfterClaim($order, 'Cancellation requested at end of period');
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    /** The old split acknowledgement could leave claim 2 after its schedule
+     * marker was removed. That removal only happened after local cleanup. */
+    private function clearOrphanedCancellationClaim(Order $order): bool
+    {
+        if ($order->getStatus() !== Order::STATUS_CANCELED) {
+            throw new InformationException('The cancellation claim needs staff review before this order can be changed.');
+        }
+        $this->di['em']->getConnection()->executeStatement(
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :claim_name AND value = :claim_value',
+            ['order_id' => $order->getId(), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'claim_value' => '2'],
+        );
+
+        return true;
+    }
+
+    /** Staff must check the gateway and service provider before resolving an interrupted claim. */
+    public function reviewScheduledCancellation(Order $order, string $decision): bool
+    {
+        if (!in_array($decision, ['retry', 'completed'], true)) {
+            throw new InformationException('Choose retry or completed after checking the gateway and service provider.');
+        }
+        $connection = $this->di['em']->getConnection();
+        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+        if (!NamedLock::acquire($connection, $name, 30)) {
+            throw new InformationException('Scheduled cancellation is already being processed.');
+        }
+
+        try {
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
+                || ($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) !== '1'
+                || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+                throw new InformationException('This order has no scheduled cancellation awaiting review.');
+            }
+            if ($decision === 'retry') {
+                $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
+
+                return true;
+            }
+            if ($this->di['mod_service']('Invoice', 'Subscription')->hasUncanceledSubscriptionForOrder($order)) {
+                throw new InformationException('Cancel or reconcile the gateway subscription before confirming the service cancellation.');
+            }
+            $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '2']);
+
+            return $this->finishScheduledCancellation($order, 'Scheduled cancellation confirmed by staff');
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
     public function batchSuspendExpired(): bool
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminBatchSuspendOrdersEvent());
@@ -1942,6 +2467,24 @@ class Service implements InjectionAwareInterface
 
         $configuredReason = trim((string) ($c['batch_suspend_reason'] ?? ''));
         $reason = $configuredReason !== '' ? $configuredReason : 'Non-payment';
+
+        // Scheduled cancellations take effect at expiry, independently of
+        // suspension grace periods and gateway webhook delivery.
+        $ids = $this->di['em']->getConnection()->fetchFirstColumn(
+            "SELECT DISTINCT o.id FROM client_order o LEFT JOIN client_order_meta m ON m.client_order_id = o.id AND m.name = :name AND m.value = :value WHERE (m.id IS NOT NULL AND ((o.status IN (:active, :suspended) AND o.expires_at <= :now) OR (o.status IN (:active2, :suspended2, :canceled) AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2')))) OR (o.status = :orphan_canceled AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2'))",
+            ['name' => self::META_CANCEL_AT_PERIOD_END, 'value' => '1', 'active' => Order::STATUS_ACTIVE, 'suspended' => Order::STATUS_SUSPENDED, 'active2' => Order::STATUS_ACTIVE, 'suspended2' => Order::STATUS_SUSPENDED, 'canceled' => Order::STATUS_CANCELED, 'orphan_canceled' => Order::STATUS_CANCELED, 'now' => date('Y-m-d H:i:s'), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM]
+        );
+        foreach ($ids as $id) {
+            try {
+                $order = $this->getOrderRepository()->find((int) $id);
+                if (!$order instanceof Order) {
+                    continue;
+                }
+                $this->processScheduledCancellation($order);
+            } catch (\Throwable $e) {
+                $this->di['logger']->error('Could not process scheduled cancellation for order #{id}: {message}', ['id' => $id, 'message' => $e->getMessage()]);
+            }
+        }
 
         $list = $this->getExpiredOrders();
 
@@ -1955,6 +2498,9 @@ class Service implements InjectionAwareInterface
                 }
                 $expiresAt = $order->getExpiresAt();
                 if (!$expiresAt instanceof \DateTimeInterface || $expiresAt->format('Y-m-d H:i:s') > date('Y-m-d H:i:s')) {
+                    continue;
+                }
+                if (($this->getOrderMetaRepository()->getPairsForOrder((int) $order->getId())[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
                     continue;
                 }
                 $this->suspendFromOrder($order, $reason);
@@ -2010,7 +2556,25 @@ class Service implements InjectionAwareInterface
                 if ($order->getStatus() !== Order::STATUS_SUSPENDED) {
                     continue;
                 }
-                $this->cancelFromOrder($order, $reason);
+                // Scheduled cancellations, including uncertain attempts, are
+                // handled by their dedicated locked recovery path.
+                $name = 'fb:scheduled-cancel:' . $this->orderId($order);
+                $connection = $this->di['em']->getConnection();
+                if (!NamedLock::acquire($connection, $name, 30)) {
+                    continue;
+                }
+
+                try {
+                    $this->di['em']->refresh($order);
+                    $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+                    if ($order->getStatus() === Order::STATUS_SUSPENDED
+                        && ($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
+                        && !in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
+                        $this->cancelFromOrderLocked($order, $reason);
+                    }
+                } finally {
+                    NamedLock::release($connection, $name);
+                }
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
             }

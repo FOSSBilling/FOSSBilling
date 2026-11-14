@@ -557,7 +557,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($deep) {
-            $details['balance'] = $this->getClientBalance($client);
+            // The credit the client can spend; what unpaid invoices received waits on them.
+            $details['balance'] = $this->di['mod_service']('Invoice')->getFreeCredit((int) $client->getId());
         }
 
         if ($isAdmin) {

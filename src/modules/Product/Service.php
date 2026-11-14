@@ -3070,6 +3070,109 @@ class Service implements InjectionAwareInterface
         return 0;
     }
 
+    /**
+     * Whether a domain order renews free: it was ordered with a hosting
+     * order (same order group) whose product offers it free with "Free
+     * Domain Renewals" on, by the same rules as at checkout, and that
+     * hosting is still active or suspended.
+     */
+    public function freeDomainRenewalUntil(int $orderId, bool $requirePaidTerm = true): ?int
+    {
+        $orderRepository = $this->di['em']->getRepository(Order::class);
+        $order = $orderRepository->find($orderId);
+        if (!$order instanceof Order) {
+            return null;
+        }
+        $config = $order->getConfig() ?? [];
+        $action = $config['action'] ?? null;
+        if (!in_array($action, ['register', 'transfer'], true)) {
+            return null;
+        }
+        $groupId = $order->getGroupId();
+        if ($groupId === null || $groupId === '') {
+            return null;
+        }
+        $sld = (string) ($config[$action . '_sld'] ?? '');
+        $tld = (string) ($config[$action . '_tld'] ?? '');
+        if ($sld === '' || $tld === '') {
+            return null;
+        }
+
+        $expiresAt = $order->getExpiresAt();
+        $period = $order->getPeriod();
+        if (!$expiresAt instanceof \DateTimeInterface || !$period) {
+            return null;
+        }
+        // A free renewal consumes a term even when the order renewal policy
+        // resets its visible expiration to today. Keep that entitlement
+        // independent of the order's display date.
+        $consumedUntil = (int) $this->di['em']->getConnection()->fetchOne(
+            'SELECT value FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
+            ['order_id' => $orderId, 'name' => 'free_domain_paid_through']
+        );
+        $from = max($expiresAt->getTimestamp(), $consumedUntil);
+        $logic = $this->di['mod_config']('order')['order_renewal_logic'] ?? '';
+        if ($logic === 'from_today' || $logic === 'from_greater') {
+            $from = max($from, time());
+        }
+        $renewedUntil = $this->di['period']($period)->getExpirationTime($from);
+
+        $candidates = $orderRepository->findBy([
+            'groupId' => $groupId,
+            'clientId' => $order->getClientId(),
+            'status' => [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED],
+        ]);
+        foreach ($candidates as $hosting) {
+            if ((int) $hosting->getId() === $orderId) {
+                continue;
+            }
+            $hostingExpiry = $hosting->getExpiresAt();
+            // Domain and hosting dates represent calendar terms. A hosting
+            // renewal performed moments before a from-today domain renewal
+            // must not lose eligibility merely because the seconds differ.
+            if ($requirePaidTerm && (!$hostingExpiry instanceof \DateTimeInterface || date('Y-m-d', $hostingExpiry->getTimestamp()) < date('Y-m-d', $renewedUntil))) {
+                continue;
+            }
+            $product = $this->getProductRepository()->find((int) $hosting->getProductId());
+            if (!$product instanceof Product || $product->getType() !== self::HOSTING) {
+                continue;
+            }
+            $settings = $product->getConfig() ?? [];
+            if (empty($settings['free_domain_renewals'])) {
+                continue;
+            }
+            $domain = $hosting->getConfig()['domain'] ?? null;
+            if (!is_array($domain) || ($domain['action'] ?? null) !== $action) {
+                continue;
+            }
+            if (($domain[$action . '_sld'] ?? null) !== $sld || ($domain[$action . '_tld'] ?? null) !== $tld) {
+                continue;
+            }
+            if ($action === 'transfer') {
+                if (!empty($settings['free_transfer'])) {
+                    return $requirePaidTerm ? min($renewedUntil, $hostingExpiry->getTimestamp()) : $renewedUntil;
+                }
+            } elseif (!empty($settings['free_domain'])
+                && (($settings['free_tlds'] ?? []) === [] || in_array($tld, (array) $settings['free_tlds'], true))
+                && in_array($hosting->getPeriod(), (array) ($settings['free_domain_periods'] ?? []), true)
+            ) {
+                return $requirePaidTerm ? min($renewedUntil, $hostingExpiry->getTimestamp()) : $renewedUntil;
+            }
+        }
+
+        return null;
+    }
+
+    public function isFreeDomainRenewalOffered(int $orderId): bool
+    {
+        return $this->freeDomainRenewalUntil($orderId, false) !== null;
+    }
+
+    public function hasFreeDomainRenewal(int $orderId): bool
+    {
+        return $this->freeDomainRenewalUntil($orderId) !== null;
+    }
+
     private function isDomainActionNameSet(array $item, string $actionName): bool
     {
         return isset($item['config']['domain']['action']) && $item['config']['domain']['action'] === $actionName;

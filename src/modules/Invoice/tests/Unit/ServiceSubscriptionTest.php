@@ -254,9 +254,9 @@ test('cancels subscriptions linked to an order', function (): void {
     $service->cancelForOrder($orderModel);
 });
 
-test('finalizes a scheduled cancellation by canceling its order and service', function (): void {
+test('finalizes a scheduled cancellation after subscription deletion regardless of update ordering', function (string $status): void {
     $subscription = createEntity(Subscription::class, ['id' => 7]);
-    $subscription->setStatus(ServiceSubscription::STATUS_PENDING_CANCELLATION);
+    $subscription->setStatus($status);
     $subscription->setRelType('invoice');
     $subscription->setRelId(25);
 
@@ -298,7 +298,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
 
     expect($service->finalizeCancellationFromGateway(7))->toBeTrue()
         ->and($subscription->getStatus())->toBe('canceled');
-});
+})->with([ServiceSubscription::STATUS_PENDING_CANCELLATION, 'canceled']);
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
     $order = createEntity(Order::class, ['id' => 10]);
@@ -343,6 +343,21 @@ test('detects orders paid through an active gateway subscription', function (): 
     // Order 99 has no subscription rows at all.
     expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeTrue()
         ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 99])))->toBeFalse();
+});
+
+test('staff cancellation review still sees a subscription pending at the gateway', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('sub_123')->setStatus(ServiceSubscription::STATUS_PENDING_CANCELLATION);
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
+    $dbal = createSubscriptionDbal();
+    $dbal->executeStatement("UPDATE subscription SET status = 'pending_cancellation' WHERE id = 7");
+    $service = subscriptionService(subRepo: $subRepo);
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($dbal);
+    $order = createEntity(Order::class, ['id' => 10]);
+
+    expect($service->hasActiveSubscriptionForOrder($order))->toBeFalse()
+        ->and($service->hasUncanceledSubscriptionForOrder($order))->toBeTrue();
 });
 
 test('ignores subscriptions without a gateway sid', function (): void {
@@ -620,3 +635,22 @@ test('subscribes an invoice whose discount comes from a recurring promo', functi
         [discountedOrder(10)], [10 => [['discount_amount' => 2.50]]],
     ],
 ]);
+
+
+test('cancelForOrder does not contact gateways for canceled historical subscriptions', function (): void {
+    $canceled = createEntity(Subscription::class, ['id' => 7]);
+    $canceled->setStatus('canceled');
+    $order = createEntity(Order::class, ['id' => 10]);
+    $repo = Mockery::mock(SubscriptionRepository::class);
+    $repo->shouldReceive('find')->once()->with(7)->andReturn($canceled);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($repo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getConnection')->andReturn(createSubscriptionDbal());
+    $service = Mockery::mock(ServiceSubscription::class)->makePartial();
+    $service->shouldNotReceive('cancel');
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+    expect($service->cancelForOrder($order))->toBe(0);
+});

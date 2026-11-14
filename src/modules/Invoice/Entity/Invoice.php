@@ -159,6 +159,10 @@ class Invoice implements TimestampInterface
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $issued = false;
 
+    // 0: no pending event; 1: retry credit first; 2: event only; bit 4: email queued.
+    #[ORM\Column(name: 'issue_notification_state', type: Types::SMALLINT, options: ['default' => 0])]
+    private int $issueNotificationState = 0;
+
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $taxname = null;
 
@@ -646,6 +650,18 @@ class Invoice implements TimestampInterface
     public function setIssued(bool $issued): self
     {
         $this->issued = $issued;
+
+        return $this;
+    }
+
+    public function getIssueNotificationState(): int
+    {
+        return $this->issueNotificationState;
+    }
+
+    public function setIssueNotificationState(int $state): self
+    {
+        $this->issueNotificationState = $state;
 
         return $this;
     }
