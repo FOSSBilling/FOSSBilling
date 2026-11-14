@@ -385,7 +385,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         }
         // Only payments made here name an invoice: another shop's payment on the same PayPal account pays nothing.
         if (preg_match('/^cf-invoice-(\d+)(?:-(\d+\.\d+)-([0-9a-f]{16}))?$/', (string) ($payment['CUSTOM'] ?? ''), $match) !== 1) {
-            throw new Payment_Exception('PayPal payment :id is not for a ClientFence invoice', [':id' => $txnId]);
+            throw new Payment_Exception('PayPal payment :id is not for a FOSSBilling invoice', [':id' => $txnId]);
         }
         $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $match[1]);
         if (!$invoice instanceof Invoice) {
