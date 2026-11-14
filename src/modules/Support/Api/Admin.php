@@ -25,6 +25,7 @@ use Box\Mod\Support\HiddenHelpdesks;
 use Box\Mod\Support\HiddenKbCategories;
 use Box\Mod\Support\TicketAssign;
 use Box\Mod\Support\TicketBulk;
+use Box\Mod\Support\TicketEscalation;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -237,6 +238,13 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
         TicketBulk::sweep($this->getDi());
         TicketAssign::sweep($this->getDi());
+
+        try {
+            TicketEscalation::run($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: escalation rules failed: {error}', ['error' => $e->getMessage()]);
+        }
+        TicketEscalation::sweep($this->getDi());
 
         return true;
     }
@@ -713,6 +721,53 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         return $closed;
+    }
+
+    /*
+     * Support ticket escalation rules.
+     */
+    /**
+     * List escalation rules, by name.
+     */
+    public function escalation_rule_get_list(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketEscalation::rules($this->getDi());
+    }
+
+    /**
+     * Get an escalation rule.
+     */
+    #[RequiredParams(['id' => 'Rule ID was not passed'])]
+    public function escalation_rule_get(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketEscalation::get($this->getDi(), (int) $data['id']);
+    }
+
+    /**
+     * Create or update an escalation rule; returns its id.
+     */
+    public function escalation_rule_save(array $data): int
+    {
+        $this->getDi()['mod_service']('extension')->hasManagePermission('mod_support');
+
+        return TicketEscalation::save($this->getDi(), $data);
+    }
+
+    /**
+     * Delete an escalation rule.
+     */
+    #[RequiredParams(['id' => 'Rule ID was not passed'])]
+    public function escalation_rule_delete(array $data): bool
+    {
+        $this->getDi()['mod_service']('extension')->hasManagePermission('mod_support');
+
+        TicketEscalation::delete($this->getDi(), (int) $data['id']);
+
+        return true;
     }
 
     /*

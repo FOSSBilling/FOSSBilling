@@ -2240,6 +2240,8 @@ class Patcher implements InjectionAwareInterface
             'session' => [],
             'setting' => ['value'],
             'subscription' => [],
+            'support_escalation_applied' => [],
+            'support_escalation_rule' => ['name', 'reply'],
             'support_helpdesk' => ['name', 'signature', 'email'],
             'support_kb_article' => ['title', 'content'],
             'support_kb_article_category' => ['title', 'description'],

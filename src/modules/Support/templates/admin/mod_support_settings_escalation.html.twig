@@ -1,0 +1,140 @@
+{# Support settings > Escalation Rules, as WHMCS. The list, and the form for a new rule or the one in ?escalation=<id> (then this tab opens). Saved with support/escalation_rule_save, deleted with support/escalation_rule_delete. #}
+{% set rules = admin.support_escalation_rule_get_list %}
+{% set editing = rules|filter(r => r.id ~ '' == request.escalation|default(''))|first %}
+{% set rule = editing ?: { 'id': 0, 'name': '', 'active': true, 'helpdesks': [], 'statuses': ['open'], 'priorities': [], 'minutes': 240, 'new_helpdesk_id': null, 'new_status': '', 'new_priority': '', 'assign_to': null, 'notify': [], 'reply': '' } %}
+{% set helpdesks = admin.support_helpdesk_get_pairs %}
+{% set statuses = admin.support_ticket_get_statuses({ 'titles': true }) %}
+{% set priorities = guest.support_ticket_priorities %}
+{% set staff = admin.support_ticket_assignable_staff %}
+<div class="card-body">
+    <h4 class="card-title mb-1">{{ 'Escalation Rules'|trans }}</h4>
+    <p class="text-secondary mb-3">{{ 'A rule acts on tickets of the chosen help desks, statuses and priorities that got no reply for the set time: it can add a reply, move the ticket, change its priority and status, assign it and email staff. It acts once for each reply, and only when the time runs out after the rule was made. The cron runs the rules.'|trans }}</p>
+    <div class="table-responsive mb-3">
+        <table class="table card-table table-vcenter text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ 'Name'|trans }}</th>
+                    <th class="text-end">{{ 'No reply for (minutes)'|trans }}</th>
+                    <th>{{ 'Actions'|trans }}</th>
+                    <th>{{ 'Status'|trans }}</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in rules %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td class="text-end">{{ item.minutes }}</td>
+                        <td class="text-wrap">
+                            {% set done = [] %}
+                            {% if item.reply %}{% set done = done|merge(['Reply'|trans]) %}{% endif %}
+                            {% if item.new_helpdesk_id %}{% set done = done|merge(['Help desk: %name%'|trans({ '%name%': helpdesks[item.new_helpdesk_id]|default('#' ~ item.new_helpdesk_id) })]) %}{% endif %}
+                            {% if item.new_priority %}{% set done = done|merge(['Priority: %name%'|trans({ '%name%': priorities[item.new_priority]|default(item.new_priority) })]) %}{% endif %}
+                            {% if item.new_status %}{% set done = done|merge(['Status: %name%'|trans({ '%name%': statuses[item.new_status]|default(item.new_status) })]) %}{% endif %}
+                            {% if item.assign_to %}{% set done = done|merge(['Assign: %name%'|trans({ '%name%': staff[item.assign_to]|default('#' ~ item.assign_to) })]) %}{% endif %}
+                            {% if item.notify %}{% set done = done|merge(['Email %count% staff'|trans({ '%count%': item.notify|length })]) %}{% endif %}
+                            {{ done|join(', ') }}
+                        </td>
+                        <td>{% if item.active %}<span class="badge bg-green-lt">{{ 'Active'|trans }}</span>{% else %}<span class="badge bg-secondary-lt">{{ 'Paused'|trans }}</span>{% endif %}</td>
+                        <td class="text-nowrap">
+                            <a class="btn btn-icon" href="{{ 'extension/settings/support'|url(query: { 'escalation': item.id }) }}#tab-escalation" data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}"><svg class="icon"><use href="#edit" /></svg></a>
+                            <a class="btn btn-icon" href="{{ 'support/escalation_rule_delete'|api_url(query: { 'id': item.id }) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                               {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/support'|url ~ '#tab-escalation' }) }}><svg class="icon"><use href="#trash" /></svg></a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-secondary">{{ 'No escalation rules yet.'|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <form method="post" action="{{ 'support/escalation_rule_save'|api_url }}" id="escalation-rule-form" {{ fb_api_form({ message: 'Escalation rule saved'|trans, redirect: 'extension/settings/support'|url ~ '#tab-escalation' }) }}>
+        <input type="hidden" name="id" value="{{ rule.id }}">
+        <h4 class="card-title mb-3">{{ rule.id ? 'Edit rule: %name%'|trans({ '%name%': rule.name }) : 'New Rule'|trans }}</h4>
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <label class="form-label" for="esc-name">{{ 'Name'|trans }}</label>
+                <input class="form-control" id="esc-name" type="text" name="name" maxlength="100" value="{{ rule.name }}" required>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label" for="esc-minutes">{{ 'No reply for (minutes)'|trans }}</label>
+                <input class="form-control" id="esc-minutes" type="number" min="1" max="525600" name="minutes" value="{{ rule.minutes }}" required>
+            </div>
+            <div class="col-lg-3 d-flex align-items-end">
+                <label class="form-check form-switch form-switch-2 mb-2">
+                    <input name="active" type="hidden" value="0">
+                    <input class="form-check-input" name="active" type="checkbox" value="1"{% if rule.active %} checked{% endif %}>
+                    <span class="form-check-label">{{ 'Active'|trans }}</span>
+                </label>
+            </div>
+
+            <div class="col-12"><h5 class="mb-0">{{ 'Conditions'|trans }}</h5><div class="form-hint">{{ 'None ticked in a group: any.'|trans }}</div></div>
+            <div class="col-lg-4">
+                <div class="form-label">{{ 'Help desks'|trans }}</div>
+                {% for id, name in helpdesks %}
+                    <label class="form-check"><input class="form-check-input" type="checkbox" name="helpdesks[]" value="{{ id }}"{% if id in rule.helpdesks %} checked{% endif %}><span class="form-check-label">{{ name }}</span></label>
+                {% endfor %}
+            </div>
+            <div class="col-lg-4">
+                <div class="form-label">{{ 'Statuses'|trans }}</div>
+                {% for key, name in statuses %}
+                    <label class="form-check"><input class="form-check-input" type="checkbox" name="statuses[]" value="{{ key }}"{% if key in rule.statuses %} checked{% endif %}><span class="form-check-label">{{ name }}</span></label>
+                {% endfor %}
+            </div>
+            <div class="col-lg-4">
+                <div class="form-label">{{ 'Priorities'|trans }}</div>
+                {% for key, name in priorities %}
+                    <label class="form-check"><input class="form-check-input" type="checkbox" name="priorities[]" value="{{ key }}"{% if key in rule.priorities %} checked{% endif %}><span class="form-check-label">{{ name }}</span></label>
+                {% endfor %}
+            </div>
+
+            <div class="col-12"><h5 class="mb-0">{{ 'Actions'|trans }}</h5></div>
+            <div class="col-lg-3">
+                <label class="form-label" for="esc-helpdesk">{{ 'Move to help desk'|trans }}</label>
+                <select class="form-select" id="esc-helpdesk" name="new_helpdesk_id">
+                    <option value="0">{{ 'No change'|trans }}</option>
+                    {% for id, name in helpdesks %}<option value="{{ id }}"{% if id == rule.new_helpdesk_id %} selected{% endif %}>{{ name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label" for="esc-priority">{{ 'Set priority'|trans }}</label>
+                <select class="form-select" id="esc-priority" name="new_priority">
+                    <option value="">{{ 'No change'|trans }}</option>
+                    {% for key, name in priorities %}<option value="{{ key }}"{% if key == rule.new_priority %} selected{% endif %}>{{ name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label" for="esc-status">{{ 'Set status'|trans }}</label>
+                <select class="form-select" id="esc-status" name="new_status">
+                    <option value="">{{ 'No change'|trans }}</option>
+                    {% for key, name in statuses %}<option value="{{ key }}"{% if key == rule.new_status %} selected{% endif %}>{{ name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label" for="esc-assign">{{ 'Assign to'|trans }}</label>
+                <select class="form-select" id="esc-assign" name="assign_to">
+                    <option value="0">{{ 'No change'|trans }}</option>
+                    {% for id, name in staff %}<option value="{{ id }}"{% if id == rule.assign_to %} selected{% endif %}>{{ name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
+                <div class="form-label">{{ 'Email these staff members'|trans }}</div>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for id, name in staff %}
+                        <label class="form-check mb-0"><input class="form-check-input" type="checkbox" name="notify[]" value="{{ id }}"{% if id in rule.notify %} checked{% endif %}><span class="form-check-label">{{ name }}</span></label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="esc-reply">{{ 'Add a reply'|trans }}</label>
+                <textarea class="form-control" id="esc-reply" name="reply" rows="4" maxlength="10000">{{ rule.reply }}</textarea>
+                <div class="form-hint">{{ 'Posted by the system and emailed to the client like a staff reply. [NAME], [FIRSTNAME] and [EMAIL] merge in the client\'s details. Leave empty for no reply.'|trans }}</div>
+            </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary" type="submit">{{ rule.id ? 'Save Rule'|trans : 'Add Rule'|trans }}</button>
+            {% if rule.id %}<a class="btn btn-secondary" href="{{ 'extension/settings/support'|url }}#tab-escalation">{{ 'Cancel'|trans }}</a>{% endif %}
+        </div>
+    </form>
+</div>
