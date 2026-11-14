@@ -460,9 +460,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
      */
     public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false, ?array $attachment = null, bool $skipHistory = false): bool
     {
-        // Add the email to the queue
-        $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $attachment);
-        if ($send_now) {
+        $email = $this->createMessage($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $attachment);
+        // Secret bodies must never reach persistent storage, even briefly.
+        if (!$skipHistory) {
+            $this->di['em']->persist($email);
+            $this->di['em']->flush();
+        }
+        if ($send_now || $skipHistory) {
             $this->_sendFromQueue($email, $throw_exceptions, $skipHistory);
         }
 
@@ -685,10 +689,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return [$template->getSubject() ?? '', $template->getContent() ?? ''];
     }
 
-    private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, ?array $attachment = null): QueuedEmail
+    private function createMessage($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, ?array $attachment = null): QueuedEmail
     {
-        $em = $this->di['em'];
-
         $queue = new QueuedEmail();
         $queue->setRecipient((string) $to);
         $queue->setSender((string) $from);
@@ -707,9 +709,6 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $queue->setAttachmentContent((string) $attachment['content']);
             $queue->setAttachmentMime((string) ($attachment['mime'] ?? 'application/octet-stream'));
         }
-
-        $em->persist($queue);
-        $em->flush();
 
         return $queue;
     }
@@ -1263,7 +1262,9 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             return false;
         }
         $queue->setStatus('sending');
-        $this->di['em']->flush();
+        if (!$skipHistory) {
+            $this->di['em']->flush();
+        }
 
         $queue->setContent($queue->getContent() . PHP_EOL);
 
@@ -1321,26 +1322,20 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent(), null, $attachment);
             }
 
-            try {
-                $this->di['em']->remove($queue);
-                $this->di['em']->flush();
-            } catch (\Exception $e) {
-                $this->di['logger']->withChannel('email')->error($e->getMessage());
+            if (!$skipHistory) {
+                try {
+                    $this->di['em']->remove($queue);
+                    $this->di['em']->flush();
+                } catch (\Exception $e) {
+                    $this->di['logger']->withChannel('email')->error($e->getMessage());
+                }
             }
         } catch (\Exception $e) {
             $message = $e->getMessage();
             $this->di['logger']->withChannel('email')->error($e->getMessage());
 
-            // A secret email that fails must not sit in the queue: drop it so
-            // the link cannot be read later; the caller asks for a new one.
+            // Secret messages exist only in memory; failure cannot queue a retry.
             if ($skipHistory) {
-                try {
-                    $this->di['em']->remove($queue);
-                    $this->di['em']->flush();
-                } catch (\Exception $removeException) {
-                    $this->di['logger']->withChannel('email')->error($removeException->getMessage());
-                }
-
                 if ($throw_exceptions) {
                     $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message, 0, 350) . '...' : $message;
 
