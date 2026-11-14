@@ -409,22 +409,22 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
                 $to = $staff['email'];
                 $to_name = $staff['name'];
-                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions, $attachment, $isSecret);
+                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions, $attachment, sensitiveDelivery: $isSecret);
             }
         } elseif (isset($oneStaff)) {
             $to = $oneStaff['email'];
             $to_name = $oneStaff['name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $oneStaff['id'], $send_now, $throw_exceptions, $attachment, $isSecret);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $oneStaff['id'], $send_now, $throw_exceptions, $attachment, sensitiveDelivery: $isSecret);
         } elseif (isset($customer)) {
             // A generic `to` is ignored for client-bound emails so their
             // rendered data cannot be redirected to an arbitrary recipient.
             $to = $billingRecipient ?? $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions, $attachment, $isSecret);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions, $attachment, sensitiveDelivery: $isSecret);
         } else {
             $to = $data['to'];
             $to_name = $data['to_name'] ?? null;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions, $attachment, $isSecret);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions, $attachment, sensitiveDelivery: $isSecret);
         }
 
         return $sent;
@@ -465,25 +465,26 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     }
 
     /**
-     * @param array{content: string, name: string, mime?: string}|null $attachment a file to attach to the email, e.g. a generated invoice PDF
+     * @param array{content: string, name: string, mime?: string}|null $attachment        a file to attach to the email, e.g. a generated invoice PDF
+     * @param bool                                                     $sensitiveDelivery send synchronously without persistence or BCC and protect diagnostics
      */
-    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false, ?array $attachment = null, bool $skipHistory = false): bool
+    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false, ?array $attachment = null, bool $sensitiveDelivery = false): bool
     {
-        $send = function () use ($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $send_now, $throw_exceptions, $attachment, $skipHistory): bool {
+        $send = function () use ($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $send_now, $throw_exceptions, $attachment, $sensitiveDelivery): bool {
             $email = $this->createMessage($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $attachment);
             // Secret bodies must never reach persistent storage, even briefly.
-            if (!$skipHistory) {
+            if (!$sensitiveDelivery) {
                 $this->di['em']->persist($email);
                 $this->di['em']->flush();
             }
-            if ($send_now || $skipHistory) {
-                return $this->_sendFromQueue($email, $throw_exceptions, $skipHistory);
+            if ($send_now || $sensitiveDelivery) {
+                return $this->_sendFromQueue($email, $throw_exceptions, sensitiveDelivery: $sensitiveDelivery);
             }
 
             return true;
         };
 
-        return $skipHistory
+        return $sensitiveDelivery
             ? \FOSSBilling\Core\Exception\BaseException::withProtectedDiagnostics($send)
             : $send();
     }
@@ -1271,14 +1272,14 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $addresses;
     }
 
-    private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false, bool $skipHistory = false): bool
+    private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false, bool $sensitiveDelivery = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive(ExtensionType::Module->value, 'demo')) {
             return false;
         }
         $queue->setStatus('sending');
-        if (!$skipHistory) {
+        if (!$sensitiveDelivery) {
             $this->di['em']->flush();
         }
 
@@ -1315,7 +1316,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 }
             }
 
-            if (!empty($settings['bcc_email']) && !$skipHistory) {
+            if (!empty($settings['bcc_email']) && !$sensitiveDelivery) {
                 $this->validatedBccAddresses ??= $this->parseBccAddresses((string) $settings['bcc_email']);
                 $bccAddresses = $this->validatedBccAddresses;
                 if ($bccAddresses !== []) {
@@ -1333,12 +1334,12 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
             // It sent without causing an exception (error), so we are safe to log it now
             // Secret emails are never logged: ask for a new link instead.
-            if ($log && !$skipHistory) {
+            if ($log && !$sensitiveDelivery) {
                 $activityService = $this->di['mod_service']('activity');
                 $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent(), null, $attachment);
             }
 
-            if (!$skipHistory) {
+            if (!$sensitiveDelivery) {
                 try {
                     $this->di['em']->remove($queue);
                     $this->di['em']->flush();
@@ -1347,11 +1348,11 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 }
             }
         } catch (\Exception $e) {
-            $message = $skipHistory ? 'Secret email delivery failed; request a new link' : $e->getMessage();
+            $message = $sensitiveDelivery ? 'Secret email delivery failed; request a new link' : $e->getMessage();
             $this->di['logger']->withChannel('email')->error($message);
 
             // Secret messages exist only in memory; failure cannot queue a retry.
-            if ($skipHistory) {
+            if ($sensitiveDelivery) {
                 if ($throw_exceptions) {
                     throw new \FOSSBilling\Core\Exception\BaseException($message, protected: true);
                 }

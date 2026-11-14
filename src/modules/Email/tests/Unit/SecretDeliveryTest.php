@@ -78,7 +78,7 @@ test('secret templates never persist a body or attachment during successful deli
 test('secret direct mail is synchronous even when send_now is false', function (): void {
     [$service, $em, $flushes, $activity] = secretDeliveryContext();
     $activity->shouldNotReceive('logEmail');
-    $service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', send_now: false, skipHistory: true);
+    $service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', send_now: false, sensitiveDelivery: true);
     expect($em->getConnection()->fetchOne('SELECT COUNT(*) FROM email_queue'))->toBe(0)->and($flushes->count)->toBe(0);
 });
 
@@ -87,7 +87,7 @@ test('interrupted secret setup cannot leave an ordinary queued retry', function 
         throw new RuntimeException('interrupted before transport');
     });
     $activity->shouldNotReceive('logEmail');
-    expect(fn () => $service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', send_now: true, skipHistory: true))->toThrow(RuntimeException::class, 'interrupted');
+    expect(fn () => $service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', send_now: true, sensitiveDelivery: true))->toThrow(RuntimeException::class, 'interrupted');
     expect($em->getRepository(QueuedEmail::class)->findDueBatch())->toBeEmpty()
         ->and($em->getConnection()->fetchOne('SELECT COUNT(*) FROM email_queue'))->toBe(0)
         ->and($flushes->count)->toBe(0);
@@ -95,7 +95,7 @@ test('interrupted secret setup cannot leave an ordinary queued retry', function 
 
 test('demo mode does not retain secret messages', function (): void {
     [$service, $em, $flushes] = secretDeliveryContext(beforeSend: static fn (): bool => true);
-    expect($service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', skipHistory: true))->toBeFalse();
+    expect($service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', sensitiveDelivery: true))->toBeFalse();
     expect($em->getConnection()->fetchOne('SELECT COUNT(*) FROM email_queue'))->toBe(0)->and($flushes->count)->toBe(0);
 });
 
@@ -106,7 +106,7 @@ test('failed secret transport cannot persist a retry or history', function (bool
     try {
         [$service, $em, $flushes, $activity] = secretDeliveryContext(settings: ['mailer' => 'invalid']);
         $activity->shouldNotReceive('logEmail');
-        $send = fn () => $service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', throw_exceptions: $throw, skipHistory: true);
+        $send = fn () => $service->sendMail('client@example.com', 'sender@example.com', 'Reset', 'private-reset-token', throw_exceptions: $throw, sensitiveDelivery: true);
         if ($throw) {
             expect($send)->toThrow(FOSSBilling\Core\Exception\BaseException::class);
         } else {

@@ -1888,22 +1888,7 @@ class Service implements InjectionAwareInterface
 
         $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
 
-        if (empty($items)) {
-            return 0.0;
-        }
-
-        $taxable_subtotal = 0.0;
-        foreach ($items as $item) {
-            if ($item->getTaxed()) {
-                $taxable_subtotal += (($item->getPrice() ?? 0) * ($item->getQuantity() ?? 1));
-            }
-        }
-
-        if ($taxable_subtotal == 0) {
-            return 0.0;
-        }
-
-        return round($taxable_subtotal * (float) $invoice->getTaxrate() / 100, 2);
+        return (float) ServiceTax::calculateInvoiceTax($invoice, $items);
     }
 
     public function getTotal(Invoice $invoice): float

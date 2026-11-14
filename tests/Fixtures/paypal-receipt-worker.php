@@ -38,7 +38,7 @@ if ($argv[4] === 'wait') {
     fgets(STDIN);
 }
 $c = compact('connection', 'em', 'di', 'client');
-$api = deletionPayPalApi($c);
+$api = deferredPayPalApi($c);
 $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
 $adapter->setDi($di);
 $adapter->processTransaction($api, $receipt->getId(), [

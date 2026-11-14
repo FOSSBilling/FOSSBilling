@@ -36,7 +36,7 @@ $invoice = $receipt->getInvoice();
 $client = $em->find(Box\Mod\Client\Entity\Client::class, $invoice->getClientId());
 $di = Tests\Helpers\container();
 $di['em'] = $em;
-$api = deletionPayPalApi(compact('connection', 'em', 'di', 'client'));
+$api = deferredPayPalApi(compact('connection', 'em', 'di', 'client'));
 $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
 $adapter->setDi($di);
 $adapter->processTransaction($api, $receipt->getId(), [

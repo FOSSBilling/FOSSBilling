@@ -21,7 +21,11 @@ class BaseException extends \Exception
 {
     private static bool $protectDiagnostics = false;
 
-    /** Protect nested exceptions while processing single-use secrets. */
+    /**
+     * Protect nested exceptions while processing single-use secrets.
+     *
+     * @throws \Throwable exceptions from the callback propagate after diagnostics are restored
+     */
     public static function withProtectedDiagnostics(\Closure $callback): mixed
     {
         $previous = self::$protectDiagnostics;

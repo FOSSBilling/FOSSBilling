@@ -180,14 +180,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if (($ipn['payment_status'] ?? '') === 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
                     if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
-                        $d = [
-                            'id' => $id,
-                            'error' => '',
-                            'error_code' => null,
-                            'status' => Transaction::STATUS_PROCESSED,
-                            'updated_at' => date('Y-m-d H:i:s'),
-                        ];
-                        $api_admin->invoice_transaction_update($d);
+                        $this->completeReceipt($api_admin, $id);
 
                         return;
                     }
@@ -221,13 +214,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         if ((int) $retained['client_id'] !== (int) $client_id || abs(round($received, 2) - (float) $retained['amount']) > 0.005) {
                             throw new Payment_Exception('PayPal payment differs from its retained credit');
                         }
-                        $api_admin->invoice_transaction_update([
-                            'id' => $id,
-                            'error' => '',
-                            'error_code' => null,
-                            'status' => Transaction::STATUS_PROCESSED,
-                            'updated_at' => date('Y-m-d H:i:s'),
-                        ]);
+                        $this->completeReceipt($api_admin, $id);
 
                         return;
                     }
@@ -318,13 +305,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $bd['rel_id'] = (string) $id;
                     $this->di['em']->wrapInTransaction(function () use ($api_admin, $bd, $id): void {
                         $api_admin->client_balance_add_funds($bd);
-                        $api_admin->invoice_transaction_update([
-                            'id' => $id,
-                            'error' => '',
-                            'error_code' => null,
-                            'status' => Transaction::STATUS_PROCESSED,
-                            'updated_at' => date('Y-m-d H:i:s'),
-                        ]);
+                        $this->completeReceipt($api_admin, $id);
                     });
 
                     return;
@@ -499,14 +480,18 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             return;
         }
 
-        $d = [
+        $this->completeReceipt($api_admin, $id);
+    }
+
+    private function completeReceipt($api, int $id): void
+    {
+        $api->invoice_transaction_update([
             'id' => $id,
             'error' => '',
             'error_code' => null,
             'status' => Transaction::STATUS_PROCESSED,
             'updated_at' => date('Y-m-d H:i:s'),
-        ];
-        $api_admin->invoice_transaction_update($d);
+        ]);
     }
 
     private function withReceiptLock(int $id, callable $callback): mixed
@@ -603,17 +588,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                             'rel_id' => $refundId,
                         ]);
                     }
-                    $api->invoice_transaction_update([
-                        'id' => $id,
-                        'error' => '',
-                        'error_code' => null,
-                        'status' => Transaction::STATUS_PROCESSED,
-                        'updated_at' => date('Y-m-d H:i:s'),
-                    ]);
+                    $this->completeReceipt($api, $id);
 
                     return true;
                 });
-                if (!$handled && $parent->getStatus() === Transaction::STATUS_PROCESSED && $parent->getTxnStatus() === 'Completed' && $parent->getInvoice()?->getId() === $invoiceId && $parent->getInvoice()?->getStatus() === Invoice::STATUS_PAID) {
+                if (!$handled && $parent->getStatus() === Transaction::STATUS_PROCESSED && $parent->getTxnStatus() === 'Completed' && $parent->getInvoice()?->getId() === $invoiceId && $parent->getInvoice()->getStatus() === Invoice::STATUS_PAID) {
                     $settledInvoicePayment = true;
                 }
 

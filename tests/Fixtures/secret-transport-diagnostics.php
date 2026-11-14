@@ -38,7 +38,7 @@ $extension = new class($argv[1]) {
         return false;
     }
 };
-$system = new class($argv[1]) {
+$system = new readonly class($argv[1]) {
     public function __construct(private string $mode)
     {
     }
@@ -82,7 +82,7 @@ try {
     $sendTemplate = static fn (string $hash) => $email->sendTemplate(['code' => $code, 'to' => 'client@example.com', 'hash' => $hash, 'throw_exceptions' => $argv[3] === '1', 'attachment' => $attachment]);
     $result = $argv[2] === 'template'
         ? $sendTemplate($token)
-        : $email->sendMail('client@example.com', 'sender@example.com', 'Reset ' . $token, 'Reset ' . $token, throw_exceptions: $argv[3] === '1', attachment: $attachment, skipHistory: true);
+        : $email->sendMail('client@example.com', 'sender@example.com', 'Reset ' . $token, 'Reset ' . $token, throw_exceptions: $argv[3] === '1', attachment: $attachment, sensitiveDelivery: true);
 } catch (FOSSBilling\Core\Exception\BaseException $e) {
     $error = $e->getMessage();
     $formatter = new Monolog\Formatter\LineFormatter(null, null, true, true, true);
