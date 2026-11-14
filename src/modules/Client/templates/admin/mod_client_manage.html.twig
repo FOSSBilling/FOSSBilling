@@ -181,12 +181,15 @@
                     {% endblock %}
 
                     {% block summary_actions %}
-                        <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
-                            <svg class="icon" width="24" height="24">
-                                <use href="#login" />
-                            </svg>
-                            <span>{{ 'Login to Client Area'|trans }}</span>
-                        </a>
+                        <form method="post" action="{{ "client/login/#{client.id}"|url }}" class="d-inline" target="_blank" rel="noopener">
+                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+                            <button type="submit" class="btn btn-primary">
+                                <svg class="icon" width="24" height="24">
+                                    <use href="#login" />
+                                </svg>
+                                <span>{{ 'Login to Client Area'|trans }}</span>
+                            </button>
+                        </form>
                         {% if can_delete_client %}
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>

@@ -2068,6 +2068,7 @@ test('hosting provisioning retries failed steps without saving passwords', funct
         }
     };
     $manager->setLog(new Psr\Log\NullLogger());
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
     $di['em'] = $em;
     $orderService = Mockery::mock(OrderService::class)->makePartial()->shouldAllowMockingProtectedMethods();

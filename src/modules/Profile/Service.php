@@ -170,6 +170,8 @@ class Service implements InjectionAwareInterface
                 // still has its original false value after a concurrent confirmation.
                 $this->di['em']->getConnection()->executeStatement('UPDATE client SET email_approved = false WHERE id = :id', ['id' => $clientId]);
                 $clientService->revokeEmailConfirmations($clientId);
+                // An email change must also invalidate outstanding password-reset links.
+                $this->di['em']->getConnection()->delete('client_password_reset', ['client_id' => $clientId]);
                 $client->setEmail($email);
                 $client->setEmailApproved(false);
 

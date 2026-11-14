@@ -60,7 +60,7 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     {
         $model = $this->_getOrder($data);
 
-        return $this->getService()->toApiArray($model);
+        return $this->getService()->toApiArray($model, true, $this->getIdentity());
     }
 
     /**
@@ -72,7 +72,7 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         $list = $this->getService()->getOrderAddonsList($model);
         $result = [];
         foreach ($list as $order) {
-            $result[] = $this->getService()->toApiArray($order);
+            $result[] = $this->getService()->toApiArray($order, true, $this->getIdentity());
         }
 
         return $result;

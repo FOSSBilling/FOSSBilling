@@ -549,6 +549,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientBalance::class)->find($data['id']) ?? throw new InformationException('Balance line not found');
 
+        if ($model->getType() === ClientBalance::TYPE_PAYPAL_DEFERRED || str_starts_with($model->getType() ?? '', ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX)) {
+            throw new InformationException('Gateway receipt balance entries cannot be deleted. Add a separate adjustment instead.');
+        }
+
         $id = $model->getId();
         $client_id = $model->getClient()?->getId();
         $amount = $model->getAmount();

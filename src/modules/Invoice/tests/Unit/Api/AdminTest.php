@@ -329,17 +329,22 @@ test('issues an invoice', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('refunds an invoice', function (): void {
+test('refunds an invoice', function (?float $expectedAmount): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
         'items' => [5 => 2],
     ];
+    $options = [];
+    if ($expectedAmount !== null) {
+        $data['expected_amount'] = $expectedAmount;
+        $options['expected_amount'] = $expectedAmount;
+    }
     $newNegativeInvoiceId = 2;
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('refundInvoice')
         ->once()
-        ->with(Mockery::type(Invoice::class), null, [5 => 2], [])
+        ->with(Mockery::type(Invoice::class), null, [5 => 2], $options)
         ->andReturn($newNegativeInvoiceId);
     $serviceMock->shouldReceive('isInvoiceTypeDeposit')
         ->once()
@@ -356,7 +361,7 @@ test('refunds an invoice', function (): void {
 
     $result = $api->refund($data);
     expect($result)->toBeInt()->toBe($newNegativeInvoiceId);
-});
+})->with([null, 3.0]);
 
 test('refunds an invoice without a gateway refund when requested', function (): void {
     $api = apiEndpoint(new Admin());
