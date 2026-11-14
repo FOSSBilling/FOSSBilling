@@ -182,6 +182,16 @@ test('transaction cannot be re-pointed to a canceled invoice', function (): void
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'canceled, refunded, or replaced');
 });
 
+function transactionDeletionConnection(EntityManagerInterface $em, int $id): void
+{
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, status TEXT)');
+    $connection->executeStatement('CREATE TABLE client_balance (id INTEGER PRIMARY KEY, type TEXT, rel_id TEXT)');
+    $connection->insert($connection->quoteSingleIdentifier('transaction'), ['id' => $id, 'status' => 'received']);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('refresh')->once();
+}
+
 test('processed transactions cannot be deleted', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldNotReceive('remove', 'flush');
@@ -208,6 +218,8 @@ test('deleting a transaction removes its orphaned balance rows', function (): vo
     $em->shouldReceive('getRepository')->with(ClientBalance::class)->andReturn($balanceRepository);
     $em->shouldReceive('remove')->twice();
     $em->shouldReceive('flush')->once();
+
+    transactionDeletionConnection($em, 1);
 
     $service = transactionService(em: $em);
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
@@ -373,6 +385,8 @@ test('deletes a transaction', function (): void {
     $em->shouldReceive('getRepository')->with(ClientBalance::class)->andReturn($balanceRepository);
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
+
+    transactionDeletionConnection($em, 7);
 
     $service = transactionService(em: $em);
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();

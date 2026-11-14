@@ -25,6 +25,9 @@ class ClientBalance implements TimestampInterface
 {
     use TimestampTrait;
 
+    public const string TYPE_PAYPAL_DEFERRED = 'paypal_deferred';
+    public const string TYPE_PAYPAL_DEFERRED_REFUND_PREFIX = 'paypal_deferred_refund_';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]

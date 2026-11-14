@@ -19,6 +19,32 @@ use FOSSBilling\Core\System\Environment;
  */
 class BaseException extends \Exception
 {
+    private static bool $protectDiagnostics = false;
+
+    /**
+     * Protect nested exceptions while processing single-use secrets.
+     *
+     * @throws \Throwable exceptions from the callback propagate after diagnostics are restored
+     */
+    public static function withProtectedDiagnostics(\Closure $callback): mixed
+    {
+        $previous = self::$protectDiagnostics;
+        $previousIgnoreArgs = ini_get('zend.exception_ignore_args');
+        self::$protectDiagnostics = true;
+        // Callers may log the exception object later. Its native trace must
+        // not retain secret arguments, even when PHP is configured to do so.
+        ini_set('zend.exception_ignore_args', '1');
+
+        try {
+            return $callback();
+        } finally {
+            self::$protectDiagnostics = $previous;
+            if ($previousIgnoreArgs !== false) {
+                ini_set('zend.exception_ignore_args', $previousIgnoreArgs);
+            }
+        }
+    }
+
     /**
      * Creates a new translated exception.
      *
@@ -30,6 +56,12 @@ class BaseException extends \Exception
      */
     public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false, ?string $from = null)
     {
+        if (self::$protectDiagnostics) {
+            $message = 'An error occurred while processing sensitive data';
+            $variables = null;
+            $protected = true;
+        }
+
         $logStack = Config::getProperty('debug_and_monitoring.log_stacktrace', true);
         $stackLength = Config::getProperty('debug_and_monitoring.stacktrace_length', 25);
 
