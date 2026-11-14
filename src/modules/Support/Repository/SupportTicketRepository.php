@@ -145,11 +145,38 @@ class SupportTicketRepository extends EntityRepository
             'created_at' => 't.createdAt',
             'updated_at' => 't.updatedAt',
         ]);
+
+        // Assignee filter (staff list): ['in'|'not_in', ids] from TicketAssign::listFilter().
+        if (isset($data['bf_assigned']) && is_array($data['bf_assigned']) && count($data['bf_assigned']) === 2) {
+            [$mode, $assignedIds] = $data['bf_assigned'];
+            $assignedIds = array_values(array_filter(array_map(intval(...), (array) $assignedIds)));
+            if ($mode === 'in' && $assignedIds === []) {
+                $qb->andWhere('1 = 0');
+            } elseif ($mode === 'in') {
+                $qb->andWhere('t.id IN (:bf_assigned)')
+                    ->setParameter('bf_assigned', $assignedIds);
+            } elseif ($mode === 'not_in' && $assignedIds !== []) {
+                $qb->andWhere('t.id NOT IN (:bf_assigned)')
+                    ->setParameter('bf_assigned', $assignedIds);
+            }
+        }
+
+        // Pinned tickets first (staff list): the "With Selected" pin action.
+        // Applies to the default newest-first order; an explicit column sort
+        // wins so the sort headers keep working.
+        $pinned = !empty($data['bf_pinned_first'])
+            ? array_slice(array_values(array_filter(array_map(intval(...), (array) $data['bf_pinned_first']))), 0, 500)
+            : [];
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
             if ($sort->expression !== 't.id') {
                 $qb->addOrderBy('t.id', $sort->direction);
             }
+        } elseif ($pinned !== []) {
+            $qb->addSelect('(CASE WHEN t.id IN (:bf_pinned) THEN 0 ELSE 1 END) AS HIDDEN bf_pin')
+                ->setParameter('bf_pinned', $pinned)
+                ->orderBy('bf_pin', 'ASC')
+                ->addOrderBy('t.id', 'DESC');
         } else {
             $qb->orderBy('t.id', \SortDirection::Descending);
         }

@@ -23,6 +23,8 @@ use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\HiddenHelpdesks;
 use Box\Mod\Support\HiddenKbCategories;
+use Box\Mod\Support\TicketAssign;
+use Box\Mod\Support\TicketBulk;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -43,12 +45,26 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('support', 'view');
 
         $repo = $this->getService()->getSupportTicketRepository();
+        // Pinned tickets first; the assignee filter ('assigned': me, none,
+        // any or a staff id) narrows the list.
+        $data['bf_pinned_first'] = TicketBulk::pinnedIds($this->getDi());
+        $data['bf_assigned'] = TicketAssign::listFilter($this->getDi(), $data['assigned'] ?? '', (int) $this->getIdentity()->getId());
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
             Options::fromArray($data),
             fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, false, $this->getIdentity()),
         );
+    }
+
+    /**
+     * Staff members a ticket can be assigned to: id => name.
+     */
+    public function ticket_assignable_staff(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketAssign::staff($this->getDi());
     }
 
     /**
@@ -71,6 +87,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional string $status - ticket status
      * @optional string $subject - ticket subject
      * @optional string $priority - ticket priority: low, medium or high
+     * @optional int $assigned_to - assignee staff id (0: nobody)
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_update(array $data): bool
@@ -84,7 +101,13 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             $data['subject'] = htmlspecialchars(trim(strip_tags(str_replace("\0", '', $data['subject']))), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
         }
 
-        return $this->getService()->ticketUpdate($model, $data);
+        $result = $this->getService()->ticketUpdate($model, $data);
+
+        if (array_key_exists('assigned_to', $data)) {
+            TicketAssign::assign($this->getDi(), (int) $model->getId(), (int) $data['assigned_to'] > 0 ? (int) $data['assigned_to'] : null, (int) $this->getIdentity()->getId());
+        }
+
+        return $result;
     }
 
     /**
@@ -212,6 +235,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
                 $this->getDi()['logger']->error('Support: auto-closing ticket {ticket_id} failed: {error}', ['ticket_id' => $ticketArr['id'] ?? '?', 'error' => $e->getMessage()]);
             }
         }
+        TicketBulk::sweep($this->getDi());
+        TicketAssign::sweep($this->getDi());
 
         return true;
     }
@@ -621,11 +646,73 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        foreach ($data['ids'] as $id) {
+        foreach (TicketBulk::ids($data['ids']) as $id) {
             $this->ticket_delete(['id' => $id]);
         }
+        TicketBulk::sweep($this->getDi());
+        TicketAssign::sweep($this->getDi());
 
         return true;
+    }
+
+    /**
+     * Pin tickets so they stay at the top of the staff ticket list.
+     *
+     * @return int - how many tickets are pinned now
+     */
+    #[RequiredParams(['ids' => 'Ticket IDs were not passed'])]
+    public function batch_ticket_pin($data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        return TicketBulk::pin($this->getDi(), TicketBulk::ids($data['ids']), (int) $this->getIdentity()->getId() ?: null);
+    }
+
+    /**
+     * Unpin tickets.
+     *
+     * @return int - how many tickets were pinned
+     */
+    #[RequiredParams(['ids' => 'Ticket IDs were not passed'])]
+    public function batch_ticket_unpin($data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        return TicketBulk::unpin($this->getDi(), TicketBulk::ids($data['ids']));
+    }
+
+    /**
+     * Pinned ticket ids, newest first (for the staff list markers).
+     *
+     * @return list<int>
+     */
+    public function ticket_pinned_ids(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketBulk::pinnedIds($this->getDi());
+    }
+
+    /**
+     * Close tickets.
+     *
+     * @return int - how many tickets were closed now
+     */
+    #[RequiredParams(['ids' => 'Ticket IDs were not passed'])]
+    public function batch_ticket_close($data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $closed = 0;
+        foreach (TicketBulk::ids($data['ids']) as $id) {
+            $ticket = $this->getService()->getTicketById($id);
+            if ($ticket->getStatus() !== SupportTicket::STATUS_CLOSED) {
+                $this->getService()->closeTicket($ticket, $this->getIdentity());
+                ++$closed;
+            }
+        }
+
+        return $closed;
     }
 
     /*

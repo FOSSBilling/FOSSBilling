@@ -78,6 +78,7 @@
                                     {% endif %}
                                     <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
                                     <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>
+                                    <tr><td>{{ 'Assigned To'|trans }}</td><td>{{ ticket.assigned_to.name|default('Nobody'|trans) }}</td></tr>
                                     <tr><td>{{ 'Priority'|trans }}</td><td>{{ include('mod_support_ticket_priority.html.twig', { level: ticket.priority_level|default('medium') }) }}</td></tr>
                                     <tr><td>{{ 'Time Opened'|trans }}</td><td>{{ ticket.created_at|format_date }}</td></tr>
                                     {% if task.task %}<tr><td>{{ 'Task'|trans }}</td><td>{{ mf.status_name(task.task) }}</td></tr>{% endif %}
@@ -273,6 +274,16 @@
                                             <option value="{{ level }}"{% if level == ticket.priority_level|default('medium') %} selected{% endif %}>{{ title }}</option>
                                         {% endfor %}
                                     </select>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="ticket-assigned-to">{{ 'Assigned To'|trans }}</label>
+                                    <select class="form-select" id="ticket-assigned-to" name="assigned_to">
+                                        <option value="0">{{ 'Nobody'|trans }}</option>
+                                        {% for staff_id, staff_name in admin.support_ticket_assignable_staff %}
+                                            <option value="{{ staff_id }}"{% if staff_id == ticket.assigned_to.id|default(0) %} selected{% endif %}>{{ staff_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">{{ 'The assignee is emailed unless they assign it to themselves.'|trans }}</div>
                                 </div>
                             </div>
                             <input type="hidden" name="id" value="{{ ticket.id }}">

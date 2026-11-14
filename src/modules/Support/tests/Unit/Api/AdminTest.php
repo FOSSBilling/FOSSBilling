@@ -1511,3 +1511,106 @@ test('kb category get pairs', function (): void {
     $result = $adminApi->kb_category_get_pairs([]);
     expect($result)->toBeArray();
 });
+
+test('ticket update assigns the ticket when assigned_to is given', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('ticketUpdate')->once()->andReturn(true);
+
+    $ticket = new SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 60);
+    $serviceMock->shouldReceive('getTicketById')->once()->with(60)->andReturn($ticket);
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, name VARCHAR(255), status VARCHAR(30), system_name VARCHAR(100) DEFAULT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, subject VARCHAR(255), status VARCHAR(30), priority INTEGER, support_helpdesk_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE support_helpdesk (id INTEGER PRIMARY KEY, name VARCHAR(255))');
+    $connection->executeStatement('CREATE TABLE support_ticket_assignment (ticket_id BIGINT NOT NULL, admin_id BIGINT NOT NULL, assigned_by BIGINT DEFAULT NULL, assigned_at DATETIME NOT NULL, PRIMARY KEY (ticket_id))');
+    $connection->insert('admin', ['id' => 3, 'name' => 'Agent', 'status' => 'active', 'system_name' => null]);
+    $connection->insert('support_ticket', ['id' => 60, 'subject' => 'Help', 'status' => 'open', 'priority' => 100, 'support_helpdesk_id' => 1]);
+    $connection->insert('support_helpdesk', ['id' => 1, 'name' => 'General']);
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $email = Mockery::mock();
+    $email->shouldReceive('sendTemplate')->once()->andReturnTrue();
+    $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+    $di['mod_service'] = $di->protect(fn (string $name): object => $name === 'email' ? $email : $staff);
+    $api->setDi($di);
+
+    $api->setService($serviceMock);
+    $api->setIdentity(Tests\Helpers\admin(['id' => 1]));
+
+    expect($api->ticket_update(['id' => 60, 'assigned_to' => 3]))->toBeTrue();
+    expect(Box\Mod\Support\TicketAssign::assignee($di, 60))->toBe(3);
+});
+
+test('ticket update refuses an unknown assignee', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('ticketUpdate')->once()->andReturn(true);
+
+    $ticket = new SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 60);
+    $serviceMock->shouldReceive('getTicketById')->once()->with(60)->andReturn($ticket);
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, name VARCHAR(255), status VARCHAR(30), system_name VARCHAR(100) DEFAULT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY)');
+    $connection->insert('support_ticket', ['id' => 60]);
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $api->setDi($di);
+
+    $api->setService($serviceMock);
+    $api->setIdentity(Tests\Helpers\admin(['id' => 1]));
+
+    expect(fn (): bool => $api->ticket_update(['id' => 60, 'assigned_to' => 999]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'active staff member');
+});
+
+test('batch ticket pin and unpin round-trip', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY)');
+    $connection->executeStatement('CREATE TABLE support_ticket_pin (ticket_id BIGINT NOT NULL, pinned_by BIGINT DEFAULT NULL, pinned_at DATETIME NOT NULL, PRIMARY KEY (ticket_id))');
+    $connection->insert('support_ticket', ['id' => 60]);
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $api->setDi($di);
+
+    expect($api->batch_ticket_pin(['ids' => [60]]))->toBe(1);
+    expect($api->ticket_pinned_ids([]))->toBe([60]);
+    expect($api->batch_ticket_unpin(['ids' => [60]]))->toBe(1);
+    expect($api->ticket_pinned_ids([]))->toBe([]);
+});
+
+test('batch ticket close closes only open tickets', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+
+    $open = new SupportTicket();
+    Tests\Helpers\setEntityId($open, 60);
+    $open->setStatus(SupportTicket::STATUS_OPEN);
+    $closed = new SupportTicket();
+    Tests\Helpers\setEntityId($closed, 61);
+    $closed->setStatus(SupportTicket::STATUS_CLOSED);
+
+    $serviceMock->shouldReceive('getTicketById')->twice()->andReturn($open, $closed);
+    $serviceMock->shouldReceive('closeTicket')->once()->with($open, Mockery::any())->andReturn(true);
+
+    $api->setService($serviceMock);
+    $api->setIdentity(Tests\Helpers\admin(['id' => 1]));
+
+    expect($api->batch_ticket_close(['ids' => [60, 61]]))->toBe(1);
+});

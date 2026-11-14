@@ -41,6 +41,7 @@ test('toApiArray conditional fields remain intentional', function (): void {
             'messages' => ['loop'],
             'rel' => ['if'],
             'priority' => ['if'],
+            'assigned_to' => ['if'],
             'notes' => ['if', 'loop'],
         ],
     ]);

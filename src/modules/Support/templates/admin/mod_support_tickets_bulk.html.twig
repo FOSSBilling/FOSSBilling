@@ -1,0 +1,44 @@
+{# The ticket list's "With Selected" bar: Pin, Unpin, Close. #}
+<div class="d-flex flex-wrap align-items-center gap-2">
+    <span class="text-secondary small">{{ 'With Selected:'|trans }}</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-pin-btn">{{ 'Pin'|trans }}</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-unpin-btn">{{ 'Unpin'|trans }}</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-close-btn">{{ 'Close'|trans }}</button>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function bulkTicketIds() {
+            return Array.from(document.querySelectorAll('input.batch-delete-checkbox:checked')).map(function(checkbox) {
+                return checkbox.getAttribute("data-item-id");
+            });
+        }
+
+        function bulkPost(endpoint, confirmTitle, confirmText) {
+            const ids = bulkTicketIds();
+            if (!ids.length) {
+                Modals.create({
+                    type: 'small',
+                    title: "{{ 'No tickets selected'|trans }}",
+                    content: "{{ 'Tick the tickets first.'|trans }}",
+                });
+                return;
+            }
+            Modals.create({
+                type: 'confirm',
+                title: confirmTitle,
+                content: confirmText,
+                confirmCallback: () => {
+                    FOSSBilling.api.admin.post(endpoint, { ids: ids },
+                        (result) => {
+                            window.location.reload();
+                        });
+                }
+            });
+        }
+
+        document.getElementById('bulk-pin-btn').addEventListener('click', () => bulkPost('support/batch_ticket_pin', "{{ 'Pin tickets?'|trans }}", "{{ 'Tickets will stay at the top of the list.'|trans }}"));
+        document.getElementById('bulk-unpin-btn').addEventListener('click', () => bulkPost('support/batch_ticket_unpin', "{{ 'Unpin tickets?'|trans }}", "{{ 'Tickets will return to their normal place in the list.'|trans }}"));
+        document.getElementById('bulk-close-btn').addEventListener('click', () => bulkPost('support/batch_ticket_close', "{{ 'Close tickets?'|trans }}", "{{ 'Tickets will be closed.'|trans }}"));
+    });
+</script>

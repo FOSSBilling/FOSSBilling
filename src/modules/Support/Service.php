@@ -450,6 +450,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $data['rel'] = $this->_getRelDetails($model);
             $data['priority'] = $model->getPriority();
+            $data['assigned_to'] = TicketAssign::assignees($this->di, [(int) $model->getId()])[(int) $model->getId()] ?? null;
             $data['notes'] = [];
             $supportTicketNotes = $this->getSupportTicketNoteRepository()->findByTicketId($model->getId() ?? 0);
 
