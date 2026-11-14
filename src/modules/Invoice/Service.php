@@ -709,6 +709,7 @@ class Service implements InjectionAwareInterface
                     }
                 }
                 $connection->beginTransaction();
+
                 try {
                     $this->lockAndRefreshInvoice($invoiceModel);
                     $deliver();
@@ -732,6 +733,7 @@ class Service implements InjectionAwareInterface
                         }
                         $em->refresh($invoiceModel);
                     }
+
                     throw $e;
                 }
             } else {
@@ -1299,13 +1301,13 @@ class Service implements InjectionAwareInterface
                         throw new InformationException('This invoice was canceled and cannot be marked as paid');
                     }
 
-                if ($this->invoiceHasDeletionHold($invoice)) {
-                    throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
-                }
-                if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
-                    $invoice->setGateway($payGateway);
-                    $this->di['em']->flush();
-                }
+                    if ($this->invoiceHasDeletionHold($invoice)) {
+                        throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
+                    }
+                    if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+                        $invoice->setGateway($payGateway);
+                        $this->di['em']->flush();
+                    }
 
                     $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
                     $invoiceTotal = $this->getTotalWithTax($invoice);
@@ -1423,31 +1425,29 @@ class Service implements InjectionAwareInterface
     {
         $invoice = $transaction->getInvoice() ?? throw new InformationException('Invoice not found');
         $gateway = $transaction->getGateway() ?? throw new InformationException('Payment gateway not found');
-        $paid = $this->withCreditLock((int) $invoice->getClientId(), function () use ($invoice, $gateway, $transaction): bool {
-            return $this->di['em']->wrapInTransaction(function () use ($invoice, $gateway, $transaction): bool {
-                $state = $this->lockAndRefreshInvoice($invoice);
-                if ($state['status'] !== Invoice::STATUS_UNPAID || $invoice->getReplacedByInvoiceId() !== null) {
-                    throw new InformationException('Only an unpaid invoice can be approved for payment.');
-                }
-                $received = $this->getBalanceDue($invoice);
-                $actuallyPaid = null;
-                $this->markAsPaid($invoice, false, false, true, null, $actuallyPaid);
-                if (!$actuallyPaid) {
-                    throw new InformationException('The invoice was already paid.');
-                }
-                $this->creditDepositBalanceIfNeeded($invoice, $gateway, $transaction->getTxnId());
-                $this->consumeInvoiceWalletFunds($invoice);
-                $gatewayName = $gateway->getName() ?: $gateway->getGateway();
-                $transaction->setStatus(Transaction::STATUS_PROCESSED);
-                $transaction->setAmount((string) $received);
-                $transaction->setNote($gatewayName . ' transaction No: ' . $transaction->getTxnId());
-                $transaction->setCurrency($invoice->getCurrency());
-                $transaction->setUpdatedAt(new \DateTime());
-                $this->di['em']->flush();
+        $paid = $this->withCreditLock((int) $invoice->getClientId(), fn (): bool => $this->di['em']->wrapInTransaction(function () use ($invoice, $gateway, $transaction): bool {
+            $state = $this->lockAndRefreshInvoice($invoice);
+            if ($state['status'] !== Invoice::STATUS_UNPAID || $invoice->getReplacedByInvoiceId() !== null) {
+                throw new InformationException('Only an unpaid invoice can be approved for payment.');
+            }
+            $received = $this->getBalanceDue($invoice);
+            $actuallyPaid = null;
+            $this->markAsPaid($invoice, false, false, true, null, $actuallyPaid);
+            if (!$actuallyPaid) {
+                throw new InformationException('The invoice was already paid.');
+            }
+            $this->creditDepositBalanceIfNeeded($invoice, $gateway, $transaction->getTxnId());
+            $this->consumeInvoiceWalletFunds($invoice);
+            $gatewayName = $gateway->getName() ?: $gateway->getGateway();
+            $transaction->setStatus(Transaction::STATUS_PROCESSED);
+            $transaction->setAmount((string) $received);
+            $transaction->setNote($gatewayName . ' transaction No: ' . $transaction->getTxnId());
+            $transaction->setCurrency($invoice->getCurrency());
+            $transaction->setUpdatedAt(new \DateTime());
+            $this->di['em']->flush();
 
-                return true;
-            });
-        });
+            return true;
+        }));
         if ($paid) {
             $this->firePaymentReceivedEvent($invoice);
             $this->executeInvoiceItemTasks(
@@ -2078,6 +2078,7 @@ class Service implements InjectionAwareInterface
         // A staff-recorded payment has no matching wallet receipt. Only the
         // remainder (including receipt-backed gateway payments) consumes credit.
         $processed = $this->getTransactionRepository()->getProcessedSumsByInvoiceIds([$invoiceId]);
+
         try {
             $receipts = $this->di['em']->getRepository(ClientBalance::class);
             $receipts->reconcileHistoricalGatewayReceiptsForInvoice($invoiceId);
@@ -2236,6 +2237,7 @@ class Service implements InjectionAwareInterface
             }
             $invoiceId = (int) $invoice->getId();
             $processed = $this->getTransactionRepository()->getProcessedSumsByInvoiceIds([$invoiceId]);
+
             try {
                 $receipts = $this->di['em']->getRepository(ClientBalance::class);
                 $receipts->reconcileHistoricalGatewayReceiptsForInvoice($invoiceId);
@@ -2254,7 +2256,9 @@ class Service implements InjectionAwareInterface
                 }
             }
             $adjustment = round($itemCharges - $this->getNonDepositTotalWithTax($invoice, $items), 2);
-            $this->markAsPaid($invoice, true, false, true, null, $paid);
+            $newlyPaid = null;
+            $markedPaid = $this->markAsPaid($invoice, true, false, true, null, $newlyPaid);
+            $paid = $newlyPaid ?? $markedPaid;
             if ($paid && $manualPayment > 0.0) {
                 // Provider receipts already credited the wallet; staff-recorded
                 // payments did not. Commit their credit with the paid state so
@@ -2502,6 +2506,7 @@ class Service implements InjectionAwareInterface
             if ($row['taxrate'] > 0 && $taxable != 0) {
                 $total += round($taxable * $row['taxrate'] / 100, 2);
             }
+
             try {
                 $receiptRepository->reconcileHistoricalGatewayReceiptsForInvoice((int) $id);
                 $walletProcessed = min($transactions[$id] ?? 0.0, $receiptRepository->getGatewayReceiptSumForInvoice((int) $id));

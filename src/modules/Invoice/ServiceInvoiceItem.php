@@ -142,6 +142,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             if (!NamedLock::acquire($connection, $name, 0)) {
                 return false;
             }
+
             try {
                 $this->di['em']->refresh($item);
                 if ($item->getStatus() === InvoiceItem::STATUS_EXECUTED) {
@@ -193,7 +194,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
                     case InvoiceItem::TASK_RENEW:
                         try {
-                            $metadata = $orderService->getOrderMetaRepository()->getPairsForOrder((int) $order_id);
+                            $metadata = $orderService->getOrderMetaRepository()->getPairsForOrder($order_id);
                             $marker = 'free_domain_renewal_invoice_' . $item->getInvoice()?->getId();
                             $freeRenewal = ($metadata[$marker] ?? null) === '1';
                             $zeroPriceMarker = 'domain_renewal_zero_price_invoice_' . $item->getInvoice()?->getId();
@@ -208,17 +209,17 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             }
                             if ($freeRenewal || $knownZeroPrice) {
                                 return $this->executeFreeDomainRenewal($item, $order, $orderService, $knownZeroPrice);
-                            } else {
-                                try {
-                                    $orderService->renewInvoiceItem($order, (int) $item->getId());
-                                } catch (\Exception $e) {
-                                    if ($this->di['em']->isOpen()
-                                        && ($orderService->getOrderMetaRepository()->getPairsForOrder((int) $order_id)[OrderService::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()] ?? null) === OrderService::RENEWAL_OUTCOME_PENDING) {
-                                        $item->setStatus(InvoiceItem::STATUS_FAILED);
-                                    }
+                            }
 
-                                    throw $e;
+                            try {
+                                $orderService->renewInvoiceItem($order, (int) $item->getId());
+                            } catch (\Exception $e) {
+                                if ($this->di['em']->isOpen()
+                                    && ($orderService->getOrderMetaRepository()->getPairsForOrder($order_id)[OrderService::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()] ?? null) === OrderService::RENEWAL_OUTCOME_PENDING) {
+                                    $item->setStatus(InvoiceItem::STATUS_FAILED);
                                 }
+
+                                throw $e;
                             }
                         } catch (\Exception $e) {
                             $this->di['logger']->error($e->getMessage());
@@ -280,7 +281,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             if ($item->getStatus() === InvoiceItem::STATUS_FAILED) {
                 return false;
             }
-            $metadata = $orderService->getOrderMetaRepository()->getPairsForOrder((int) $orderId);
+            $metadata = $orderService->getOrderMetaRepository()->getPairsForOrder($orderId);
             $claim = OrderService::META_FREE_RENEWAL_CLAIM_PREFIX . $item->getId();
             $approval = OrderService::META_FREE_RENEWAL_RETRY_PREFIX . $item->getId();
             if (($metadata[$claim] ?? null) !== OrderService::RENEWAL_OUTCOME_COMPLETED) {
@@ -289,6 +290,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 // acknowledgement, even if the order was canceled.
                 if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
                     $item->setStatus(InvoiceItem::STATUS_FAILED);
+
                     throw new \FOSSBilling\Core\Exception\InformationException('The domain order is no longer eligible for renewal and needs staff review.');
                 }
                 if (isset($metadata[$claim])) {
@@ -304,11 +306,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                     $reviewedZero = $knownZeroPrice || ($metadata['domain_renewal_reviewed_zero_' . $item->getId()] ?? null) === '1';
                     $claimValues = [$claim => '1'];
                     if (!$reviewedZero) {
-                        $until = $this->di['mod_service']('Product')->freeDomainRenewalUntil((int) $orderId);
+                        $until = $this->di['mod_service']('Product')->freeDomainRenewalUntil($orderId);
                         if ($until === null) {
                             if (($metadata[$approval] ?? null) === '1'
-                                || !$this->di['mod_service']('Product')->isFreeDomainRenewalOffered((int) $orderId)) {
+                                || !$this->di['mod_service']('Product')->isFreeDomainRenewalOffered($orderId)) {
                                 $item->setStatus(InvoiceItem::STATUS_FAILED);
+
                                 throw new \FOSSBilling\Core\Exception\InformationException('The paid hosting term does not cover this renewal; staff review is still required.');
                             }
 
@@ -601,6 +604,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         if (!NamedLock::acquire($connection, $name, 0)) {
             throw new \FOSSBilling\Core\Exception\InformationException('This renewal is already being processed.');
         }
+
         try {
             $this->di['em']->wrapInTransaction(function () use ($id, $decision): void {
                 $item = $this->invoiceItemRepository->find($id);
@@ -655,6 +659,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         if (!NamedLock::acquire($connection, $lock, 30)) {
             throw new \FOSSBilling\Core\Exception\InformationException('Another renewal for this domain is already in progress.');
         }
+
         try {
             $this->di['em']->refresh($item);
             $this->di['em']->refresh($order);

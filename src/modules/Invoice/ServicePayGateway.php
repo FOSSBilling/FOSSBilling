@@ -354,7 +354,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
         $feesService = $this->di['mod_service']('Invoice', 'GatewayFees');
         foreach ($invoices as $invoice) {
-            $this->di['em']->wrapInTransaction(function () use ($invoiceRepository, $invoice, $gatewayId, $replacement, $feesService): void {
+            $moveInvoice = function () use ($invoiceRepository, $invoice, $gatewayId, $replacement, $feesService): void {
                 $state = $invoiceRepository->lockAndGetState((int) $invoice->getId());
                 if ($state === null || $state['status'] !== Invoice::STATUS_UNPAID) {
                     return;
@@ -369,7 +369,14 @@ class ServicePayGateway implements InjectionAwareInterface
                 $this->di['em']->persist($invoice);
                 $this->di['em']->flush();
                 $feesService->apply($invoice, $replacement);
-            });
+            };
+            // MariaDB snapshot conflicts can abort the entire transaction.
+            // Let its owner roll back rather than masking the error with a savepoint.
+            if ($this->di['em']->getConnection()->isTransactionActive()) {
+                $moveInvoice();
+            } else {
+                $this->di['em']->wrapInTransaction($moveInvoice);
+            }
         }
 
         $this->di['logger']->info('Moved {count} unpaid invoices from gateway #{gateway_id} to gateway #{replacement_id}', ['count' => count($invoices), 'gateway_id' => $gatewayId, 'replacement_id' => $replacementId]);

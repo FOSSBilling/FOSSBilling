@@ -50,7 +50,7 @@ function gatewayReassignmentContext(?string $concurrentChange = null, ?array $da
         $listener = new class($concurrentChange, $ids[2], $writer) {
             private bool $changed = false;
 
-            public function __construct(private string $change, private int $otherGateway, private ?Doctrine\DBAL\Connection $writer)
+            public function __construct(private readonly string $change, private readonly int $otherGateway, private readonly ?Doctrine\DBAL\Connection $writer)
             {
             }
 
@@ -71,6 +71,12 @@ function gatewayReassignmentContext(?string $concurrentChange = null, ?array $da
         };
         $em->getEventManager()->addEventListener(['postLoad'], $listener);
     }
+
+    return [gatewayReassignmentService($em), $em, $ids];
+}
+
+function gatewayReassignmentService(EntityManager $em): ServicePayGateway
+{
     $invoices = new Service();
     $items = new ServiceInvoiceItem();
     $fees = new ServiceGatewayFees();
@@ -86,7 +92,7 @@ function gatewayReassignmentContext(?string $concurrentChange = null, ?array $da
         $service->setDi($di);
     }
 
-    return [$gateways, $em, $ids];
+    return $gateways;
 }
 
 test('gateway migration preserves concurrently settled or reassigned invoices', function (string $change): void {
@@ -136,7 +142,20 @@ test('gateway disabling respects concurrent commits under MySQL repeatable read'
             $em->getConnection()->insert('invoice_item', ['invoice_id' => $id, 'type' => 'custom', 'task' => 'gateway_fee', 'status' => 'pending_payment', 'price' => '3.25', 'quantity' => 1]);
         }
         $gateway = $em->find(PayGateway::class, $source);
-        $gateways->update($gateway, ['enabled' => false, 'replacement_id' => $replacement]);
+
+        try {
+            $gateways->update($gateway, ['enabled' => false, 'replacement_id' => $replacement]);
+        } catch (Doctrine\DBAL\Exception\DriverException $e) {
+            // Strict MariaDB snapshots reject the changed row: retry the whole
+            // operation only after rollback, with a fresh entity manager.
+            expect($em->getConnection()->getDatabasePlatform())->toBeInstanceOf(Doctrine\DBAL\Platforms\MariaDBPlatform::class);
+            expect($e->getMessage())->toContain('1020')
+                ->and($em->getConnection()->isTransactionActive())->toBeFalse()
+                ->and((int) $admin->fetchOne('SELECT enabled FROM ' . $database . '.pay_gateway WHERE id = ?', [$source]))->toBe(1);
+            $em = new EntityManager($em->getConnection(), $em->getConfiguration());
+            $gateways = gatewayReassignmentService($em);
+            $gateways->update($em->find(PayGateway::class, $source), ['enabled' => false, 'replacement_id' => $replacement]);
+        }
         // Inspect through an independent current read, not A's old snapshot.
         $row = $admin->fetchAssociative('SELECT status, gateway_id FROM ' . $database . '.invoice WHERE id = ?', [$id]);
         expect($row['status'])->toBe($change === 'gateway' ? 'unpaid' : 'paid')

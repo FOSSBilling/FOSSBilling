@@ -3453,7 +3453,6 @@ test('a Stripe subscription retry reuses its previously selected renewal invoice
         ->and($tx->getInvoice())->toBe($renewal);
 });
 
-
 test('a renewal charge without a renewable order is retained as unallocated credit', function (): void {
     $tx = buildTransaction();
     $tx->id = 987;
@@ -3475,9 +3474,7 @@ test('a renewal charge without a renewable order is retained as unallocated cred
     $invoiceService = Mockery::mock();
     $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
     $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8)->andReturn(null);
-    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(function (Transaction $payment, $client, $id): bool {
-        return $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order';
-    })->andReturn(true);
+    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn (Transaction $payment, $client, $id): bool => $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order')->andReturn(true);
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
@@ -3515,11 +3512,10 @@ test('a renewal charge is recorded after a closed manager is replaced', function
     $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8)->andReturnUsing(function () use (&$di, $replacement): ?Invoice {
         unset($di['em']);
         $di['em'] = $replacement;
+
         return null;
     });
-    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(function (Transaction $payment, $client, $id): bool {
-        return $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order';
-    })->andReturn(true);
+    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn (Transaction $payment, $client, $id): bool => $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order')->andReturn(true);
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): object => $invoiceService);

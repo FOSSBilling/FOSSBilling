@@ -443,8 +443,8 @@ class ServiceTransaction implements InjectionAwareInterface
                     throw new InformationException('Processed transactions cannot be deleted because they record money that already moved.');
                 }
                 if ($connection->fetchOne(
-                    'SELECT id FROM client_balance WHERE (type = :credit AND rel_id = :id) OR type = :refund LIMIT 1',
-                    ['credit' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $id, 'refund' => ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $id],
+                    'SELECT id FROM client_balance WHERE (type = :credit AND rel_id = :id) OR type = :refund OR gateway_transaction_id = :transaction_id LIMIT 1',
+                    ['credit' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $id, 'refund' => ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $id, 'transaction_id' => $id],
                 ) !== false) {
                     throw new InformationException('Transactions backing gateway receipt balance entries cannot be deleted.');
                 }

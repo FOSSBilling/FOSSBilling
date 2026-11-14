@@ -79,12 +79,10 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
      * Per-gateway payment fees for an invoice, so the client sees each
      * method's surcharge before paying. Read-only: nothing is changed.
      *
-     * @return array
-     *
      * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function gateway_fees($data)
+    public function gateway_fees($data): array
     {
         if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
             throw new \FOSSBilling\Core\Exception\InformationException('Invalid invoice hash', null, 4001);

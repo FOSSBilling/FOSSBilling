@@ -28,6 +28,7 @@ test('cron skips a renewal owned by another worker and recovers it once the item
     $connection = $em->getConnection();
     $name = 'fb:invoice-item-renewal:' . $item->getId();
     expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($connection, $name, 0))->toBeTrue();
+
     try {
         $cron->doBatchPaidInvoiceActivation();
         expect($item->getStatus())->toBe('pending_setup')->and($item->getAttempts())->toBe(0);
@@ -235,6 +236,7 @@ test('direct renewal execution respects a busy item lock without consuming attem
     $executor = ($cron->getDi()['mod_service'])('Invoice', 'InvoiceItem');
     $name = 'fb:invoice-item-renewal:' . $item->getId();
     expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($em->getConnection(), $name, 0))->toBeTrue();
+
     try {
         expect($executor->executeTask($item))->toBeFalse()
             ->and($item->getAttempts())->toBe(0)->and($item->getStatus())->toBe('pending_setup');

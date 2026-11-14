@@ -186,7 +186,7 @@ function transactionDeletionConnection(EntityManagerInterface $em, int $id): voi
 {
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, status TEXT)');
-    $connection->executeStatement('CREATE TABLE client_balance (id INTEGER PRIMARY KEY, type TEXT, rel_id TEXT)');
+    $connection->executeStatement('CREATE TABLE client_balance (id INTEGER PRIMARY KEY, type TEXT, rel_id TEXT, gateway_transaction_id INTEGER)');
     $connection->insert($connection->quoteSingleIdentifier('transaction'), ['id' => $id, 'status' => 'received']);
     $em->shouldReceive('getConnection')->andReturn($connection);
     $em->shouldReceive('refresh')->once();

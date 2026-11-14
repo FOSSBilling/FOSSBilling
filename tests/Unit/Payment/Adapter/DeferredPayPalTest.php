@@ -580,3 +580,46 @@ test('renewal refund accounting commits once and rejects a partial accounting ra
             ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction" WHERE txn_status = \'Refunded\' AND status = \'processed\' AND invoice_id = ?', [$renewal->getId()]))->toBe(2);
     }
 })->with([false, true]);
+
+test('canonical PayPal gateway receipts survive stale errors and discard only independent duplicates', function (bool $duplicate): void {
+    $c = deferredPayPalReceiptContext();
+    $parentId = $c['receipt']->getId();
+    $c['receipt']->setStatus('error');
+    $credit = (new Box\Mod\Client\Entity\ClientBalance())->setClient($c['client'])->setType('PayPal')->setAmount('3')
+        ->setDescription('PayPal transaction PAYPAL-DEFERRED')->setRelId('PAYPAL-DEFERRED')
+        ->setGatewayReceiptKey(hash('sha256', $c['gateway']->getId() . ':PAYPAL-DEFERRED'))->setGatewayTransactionId($parentId);
+    $c['em']->persist($credit);
+    $receipt = $c['receipt'];
+    if ($duplicate) {
+        $receipt = (clone $receipt)->setStatus('processing');
+        $c['em']->persist($receipt);
+    }
+    $c['em']->flush();
+    $c['adapter']->processTransaction($c['api'], $receipt->getId(), $c['payload'], $c['gateway']->getId());
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT id FROM "transaction"'))->toBe($parentId)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0);
+    expect($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processed');
+    $c['connection']->update($c['connection']->quoteSingleIdentifier('transaction'), ['status' => 'error'], ['id' => $parentId]);
+    $c['em']->refresh($c['receipt']);
+    $transactions = new Box\Mod\Invoice\ServiceTransaction();
+    $transactions->setDi($c['di']);
+    expect(fn () => $transactions->delete($c['receipt']))->toThrow(InformationException::class, 'backing gateway receipt');
+})->with([false, true]);
+
+test('independent PayPal deliveries retain only one deferred payment during a renewal hold', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $duplicate = (clone $c['receipt']);
+    $c['em']->persist($duplicate);
+    $c['em']->flush();
+    foreach ([$c['receipt'], $duplicate] as $receipt) {
+        $c['adapter']->processTransaction($c['api'], $receipt->getId(), $c['payload'], $c['gateway']->getId());
+    }
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0);
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-SINGLE', '-3');
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0);
+});

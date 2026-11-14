@@ -302,6 +302,9 @@ test('moveUnpaidInvoices moves invoices and reprices their fees', function (): v
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $em->shouldReceive('getConnection')->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
     $em->shouldReceive('persist')->once()->with($invoice);
@@ -359,6 +362,9 @@ test('disabling a gateway moves its unpaid invoices to the replacement', functio
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('flush')->atLeast()->once();
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $em->shouldReceive('getConnection')->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('refresh')->byDefault();

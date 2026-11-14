@@ -155,7 +155,7 @@ test('a failure after queue insertion rolls back the email checkpoint and permit
     $em->flush();
     (new SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Email\Entity\QueuedEmail::class)]);
     $email = Mockery::mock(Box\Mod\Email\Service::class);
-    $email->shouldReceive('sendTemplate')->twice()->andReturnUsing(function () use ($em, $client): bool {
+    $email->shouldReceive('sendTemplate')->twice()->andReturnUsing(function () use ($em): bool {
         $queue = (new Box\Mod\Email\Entity\QueuedEmail())->setRecipient('client@example.test')->setSender('admin@example.test')->setSubject('test')->setContent('content');
         $em->persist($queue);
         $em->flush();
@@ -166,7 +166,9 @@ test('a failure after queue insertion rolls back the email checkpoint and permit
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('toApiArray')->twice()->andReturn(['id' => $invoice->getId(), 'total' => 15.0, 'status' => Invoice::STATUS_UNPAID, 'client' => ['id' => $client->getId()]]);
     $service->shouldReceive('getInvoicePdfAttachment')->twice()->andReturnNull();
-    $service->shouldReceive('extendInvoiceHashLifetime')->twice()->andReturnUsing(function () use (&$attempt): void { if (++$attempt === 1) { throw new RuntimeException('hash update failed'); } });
+    $service->shouldReceive('extendInvoiceHashLifetime')->twice()->andReturnUsing(function () use (&$attempt): void { if (++$attempt === 1) {
+        throw new RuntimeException('hash update failed');
+    } });
     $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
     $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, [$service, 'sendIssuedInvoiceEmail']);
     $di = container();
@@ -176,10 +178,10 @@ test('a failure after queue insertion rolls back the email checkpoint and permit
     $di['mod_service'] = $di->protect(fn (): object => $email);
     $service->setDi($di);
     expect(fn () => $service->notifyDeferredInvoiceIssued($invoice))->toThrow(RuntimeException::class, 'hash update failed');
-    expect((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM email_queue"))->toBe(0)
+    expect((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM email_queue'))->toBe(0)
         ->and($invoice->getIssueNotificationState())->toBe(2);
     $service->notifyDeferredInvoiceIssued($invoice);
-    expect((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM email_queue"))->toBe(1)
+    expect((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM email_queue'))->toBe(1)
         ->and($invoice->getIssueNotificationState())->toBe(0);
 });
 

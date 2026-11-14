@@ -2693,6 +2693,8 @@ test('activateOrder force re-activates an already active order', function (): vo
     $orderRepoMock->shouldReceive('find')->with(1)->andReturn($orderEntity);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $connection->shouldReceive('fetchOne')->andReturnUsing(fn (string $sql): int|false => str_starts_with($sql, 'SELECT id FROM client_order WHERE') ? 1 : false);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getConnection')->andReturn($connection);
@@ -2701,7 +2703,6 @@ test('activateOrder force re-activates an already active order', function (): vo
 
     $eventDispatcher = new OrderServiceTestEventRecorder();
 
-    $emMock->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
     $di['em'] = $emMock;
     $di['event_dispatcher'] = $eventDispatcher;

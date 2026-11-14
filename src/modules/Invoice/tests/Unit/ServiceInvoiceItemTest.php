@@ -1164,7 +1164,6 @@ test('a stale worker does not retry a failed renewal after acquiring the lock', 
     expect($service->executeTask($item))->toBeFalse()->and($item->getStatus())->toBe(InvoiceItem::STATUS_FAILED);
 });
 
-
 test('a zero TLD renewal is not retried automatically after an interrupted registrar call', function (): void {
     $invoice = createEntity(Invoice::class, ['id' => 10]);
     $item = createEntity(InvoiceItem::class, ['id' => 11, 'invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'status' => InvoiceItem::STATUS_PENDING_SETUP, 'relId' => '20', 'price' => '0.00']);
@@ -1176,7 +1175,11 @@ test('a zero TLD renewal is not retried automatically after an interrupted regis
     $meta->shouldReceive('getPairsForOrder')->with(20)->andReturnUsing(function () use (&$values): array { return $values; });
     $orders = Mockery::mock(OrderService::class);
     $orders->shouldReceive('getOrderMetaRepository')->andReturn($meta);
-    $orders->shouldReceive('updateOrderMeta')->once()->with($order, ['free_domain_renewal_claim_11' => '1'])->andReturnUsing(function ($order, array $new) use (&$values): int { $values = array_merge($values, $new); return 2; });
+    $orders->shouldReceive('updateOrderMeta')->once()->with($order, ['free_domain_renewal_claim_11' => '1'])->andReturnUsing(function ($order, array $new) use (&$values): int {
+        $values = array_merge($values, $new);
+
+        return 2;
+    });
     $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->andThrow(new RuntimeException('Connection interrupted'));
     $orders->shouldReceive('saveStatusChange')->twice();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();

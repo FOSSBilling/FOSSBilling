@@ -172,13 +172,11 @@ test('apply adds the fee line and remove takes it off', function (): void {
     $membershipRepo->shouldReceive('getGroupIdsForClient')->with(7)->andReturn([]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->andReturnUsing(static function (string $class) use ($itemRepo, $clientRepo, $membershipRepo): object {
-        return match ($class) {
-            Box\Mod\Invoice\Entity\InvoiceItem::class => $itemRepo,
-            Client::class => $clientRepo,
-            ClientGroupMembershipRepository::class => $membershipRepo,
-            default => Mockery::mock()->shouldIgnoreMissing(),
-        };
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Box\Mod\Invoice\Entity\InvoiceItem::class => $itemRepo,
+        Client::class => $clientRepo,
+        ClientGroupMembershipRepository::class => $membershipRepo,
+        default => Mockery::mock()->shouldIgnoreMissing(),
     });
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('refresh')->andReturnNull();

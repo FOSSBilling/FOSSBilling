@@ -1514,6 +1514,9 @@ class Service implements InjectionAwareInterface
             $edited = [];
             foreach ($meta as $k => $v) {
                 $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
+                if ($mm instanceof OrderMeta && $k === self::META_SCHEDULED_CANCEL_CLAIM) {
+                    $this->di['em']->refresh($mm);
+                }
                 if (!$mm instanceof OrderMeta) {
                     $mm = new OrderMeta();
                     $mm->setOrder($order);
@@ -1831,6 +1834,7 @@ class Service implements InjectionAwareInterface
     private function renewFromOrderLocked(Order $order, ?bool &$serviceFailed = null): void
     {
         $this->assertOrderNotDeleting($order);
+
         try {
             $this->_callOnService($order, Order::ACTION_RENEW);
         } catch (\Exception $e) {
@@ -2133,6 +2137,7 @@ class Service implements InjectionAwareInterface
     {
         $connection = $this->di['em']->getConnection();
         $connection->beginTransaction();
+
         try {
             $this->completeCancellation($order, $reason, false);
             $productService = $this->di['mod_service']('Product');
@@ -2488,7 +2493,8 @@ class Service implements InjectionAwareInterface
             if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
                 return false;
             }
-            if ($order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
+            $expiresAt = $order->getExpiresAt();
+            if ($expiresAt === null || $expiresAt->getTimestamp() > time()) {
                 return false;
             }
             if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '1') {
@@ -2675,7 +2681,8 @@ class Service implements InjectionAwareInterface
                 // Re-check: the order may have been unsuspended/paid while
                 // earlier orders in this run were processed.
                 $this->di['em']->refresh($order);
-                if ($order->getStatus() !== Order::STATUS_SUSPENDED) {
+                $status = $order->getStatus();
+                if ($status !== Order::STATUS_SUSPENDED) {
                     continue;
                 }
                 // Scheduled cancellations, including uncertain attempts, are

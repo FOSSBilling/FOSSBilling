@@ -96,7 +96,7 @@ test('an unresolved receipt of a different amount does not block an unrelated in
         ->and($service->getFreeCredit((int) $client->getId()))->toBe(13.0);
 });
 
-test('staff can reconcile a matching historical receipt but cannot mislink it', function (): void {
+test('staff can reconcile a matching historical receipt but cannot link it incorrectly', function (): void {
     [, $em, $client, $gateway, $transaction] = receiptTestContext();
     $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true);
     $em->persist($invoice);
@@ -314,13 +314,19 @@ test('a paid historical receipt does not reserve unrelated funds', function (): 
     [, $em, $client, $gateway, $old] = receiptTestContext();
     $oldInvoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_PAID)->setIssued(true);
     $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true);
-    $em->persist($oldInvoice); $em->persist($invoice); $em->flush();
+    $em->persist($oldInvoice);
+    $em->persist($invoice);
+    $em->flush();
     $old->setInvoice($oldInvoice)->setAmount('10')->setStatus(Transaction::STATUS_PROCESSED);
     $failed = (new Transaction())->setInvoice($invoice)->setGateway($gateway)->setAmount('10')->setCurrency('USD')->setStatus(Transaction::STATUS_ERROR);
     $legacy = (new ClientBalance())->setClient($client)->setType('transaction')->setRelId((string) $old->getId())->setDescription('Stripe transaction pi_old_paid')->setAmount('10');
     $debit = (new ClientBalance())->setClient($client)->setType('invoice')->setRelId((string) $oldInvoice->getId())->setAmount('-10');
     $gift = (new ClientBalance())->setClient($client)->setType('gift')->setAmount('10');
-    $em->persist($failed); $em->persist($legacy); $em->persist($debit); $em->persist($gift); $em->flush();
+    $em->persist($failed);
+    $em->persist($legacy);
+    $em->persist($debit);
+    $em->persist($gift);
+    $em->flush();
     $service = gatewayDepositTestService($em);
     expect($service->getFreeCredit((int) $client->getId()))->toBe(10.0);
 });

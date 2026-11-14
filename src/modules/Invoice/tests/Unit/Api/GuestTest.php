@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore gatewayfees
+
 use Box\Mod\Invoice\Api\Guest;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;

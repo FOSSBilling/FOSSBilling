@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore gatewayfees
+
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientRepository;
@@ -1320,6 +1322,8 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -1424,6 +1428,8 @@ test('admin mark as paid credits client balance for a deposit invoice with custo
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -1518,6 +1524,8 @@ test('admin mark as paid credits client balance for a deposit invoice with a non
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -1609,6 +1617,8 @@ test('admin mark as paid credits only deposit lines on a mixed invoice', functio
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -1693,6 +1703,8 @@ test('admin mark as paid threads the paid_at override into the payment transacti
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -1761,6 +1773,8 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -1825,6 +1839,8 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -1991,6 +2007,8 @@ test('markAsPaidByAdmin rejects an invalid payment date before any write', funct
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -2095,6 +2113,8 @@ test('admin mark as paid creates no transaction when the invoice is canceled und
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
     $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->byDefault()->andReturn([]);
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn(invoiceLockingRepository());
@@ -10898,6 +10918,7 @@ test('a partly paid invoice uses a single payment rather than a full-price subsc
     $gatewayRepo = Mockery::mock(PayGatewayRepository::class);
     $gatewayRepo->shouldReceive('find')->with(2)->andReturn($gateway);
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo);
     $subscriptions = Mockery::mock(ServiceSubscription::class);

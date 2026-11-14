@@ -22,7 +22,7 @@ class ClientBalanceRepository extends EntityRepository
     public function reconcileHistoricalGatewayReceiptsForInvoice(int $invoiceId): void
     {
         $connection = $this->getEntityManager()->getConnection();
-        $txTable = $connection->quoteIdentifier('transaction');
+        $txTable = $connection->quoteSingleIdentifier('transaction');
         // Match historical receipts only when their provider fingerprint and
         // original transaction reference identify one processed transaction.
         $clientId = $connection->fetchOne('SELECT client_id FROM invoice WHERE id = ?', [$invoiceId]);
@@ -64,7 +64,6 @@ class ClientBalanceRepository extends EntityRepository
                 }
             }
         }
-
     }
 
     private function extractGatewayProviderId(string $description): ?string
@@ -82,7 +81,7 @@ class ClientBalanceRepository extends EntityRepository
     public function getGatewayReceiptSumForInvoice(int $invoiceId): float
     {
         $connection = $this->getEntityManager()->getConnection();
-        $txTable = $connection->quoteIdentifier('transaction');
+        $txTable = $connection->quoteSingleIdentifier('transaction');
 
         return (float) $connection->fetchOne("SELECT COALESCE(SUM(b.amount), 0) FROM client_balance b JOIN $txTable t ON t.id = b.gateway_transaction_id WHERE t.invoice_id = ? AND t.status = ? AND b.gateway_receipt_key IS NOT NULL", [$invoiceId, 'processed']);
     }
@@ -94,7 +93,7 @@ class ClientBalanceRepository extends EntityRepository
             return [];
         }
         $connection = $this->getEntityManager()->getConnection();
-        $txTable = $connection->quoteIdentifier('transaction');
+        $txTable = $connection->quoteSingleIdentifier('transaction');
         $rows = $connection->executeQuery("SELECT i.client_id, SUM(b.amount) AS amount FROM client_balance b JOIN $txTable t ON t.id = b.gateway_transaction_id JOIN invoice i ON i.id = t.invoice_id WHERE i.client_id IN (?) AND i.status = ? AND i.id <> ? AND t.status = ? AND b.gateway_receipt_key IS NOT NULL AND EXISTS (SELECT 1 FROM invoice_item ii WHERE ii.invoice_id = i.id AND ii.type = ?) GROUP BY i.client_id", [$clientIds, 'unpaid', $exceptInvoiceId, 'processed', 'deposit'], [\Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING])->fetchAllAssociative();
         $result = [];
         foreach ($rows as $row) {
@@ -102,7 +101,7 @@ class ClientBalanceRepository extends EntityRepository
         }
         // Reserve unlinked old receipts while they may belong to an unpaid
         // deposit or to a transaction whose processing has not completed.
-        $legacy = $connection->executeQuery("SELECT b.client_id, SUM(b.amount) AS amount FROM client_balance b WHERE b.client_id IN (?) AND b.amount > 0 AND b.gateway_transaction_id IS NULL AND (b.gateway_receipt_key IS NOT NULL OR (b.type = 'transaction' AND b.description LIKE 'Stripe %') OR (b.type = 'PayPal' AND b.description LIKE 'PayPal transaction %')) AND EXISTS (SELECT 1 FROM $txTable t JOIN invoice i ON i.id = t.invoice_id WHERE i.client_id = b.client_id AND i.status = ? AND t.amount = b.amount AND ((b.type = 'transaction' AND (b.rel_id IS NULL OR b.rel_id = '' OR b.rel_id = TRIM(CAST(t.id AS CHAR(20))))) OR (b.type = 'PayPal' AND (t.txn_id IS NULL OR t.txn_id = '' OR t.txn_id = SUBSTR(b.description, 20)))) AND ((t.status = ? AND EXISTS (SELECT 1 FROM invoice_item ii WHERE ii.invoice_id = i.id AND ii.type = ?)) OR t.status IN (?, ?, ?))) AND NOT EXISTS (SELECT 1 FROM $txTable pt JOIN invoice pi ON pi.id = pt.invoice_id JOIN pay_gateway pg ON pg.id = pt.gateway_id WHERE pi.client_id = b.client_id AND pi.id <> ? AND pi.status = ? AND pt.status = ? AND pt.amount = b.amount AND NOT EXISTS (SELECT 1 FROM invoice_item pitem WHERE pitem.invoice_id = pi.id AND pitem.type = ?) AND ((pg.gateway = 'Stripe' AND b.type = 'transaction' AND b.rel_id = TRIM(CAST(pt.id AS CHAR(20)))) OR (pg.gateway = 'PayPalEmail' AND b.type = 'PayPal' AND pt.txn_id = SUBSTR(b.description, 20)))) GROUP BY b.client_id", [$clientIds, 'unpaid', 'processed', 'deposit', 'received', 'processing', 'error', $exceptInvoiceId, 'unpaid', 'processed', 'deposit'], [\Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING])->fetchAllAssociative();
+        $legacy = $connection->executeQuery("SELECT b.client_id, SUM(b.amount) AS amount FROM client_balance b WHERE b.client_id IN (?) AND b.amount > 0 AND b.gateway_transaction_id IS NULL AND (b.gateway_receipt_key IS NOT NULL OR (b.type = 'transaction' AND b.description LIKE 'Stripe %') OR (b.type = 'PayPal' AND b.description LIKE 'PayPal transaction %')) AND EXISTS (SELECT 1 FROM $txTable t JOIN invoice i ON i.id = t.invoice_id WHERE i.client_id = b.client_id AND i.status = ? AND t.amount = b.amount AND ((b.type = 'transaction' AND (b.rel_id IS NULL OR b.rel_id = '' OR b.rel_id = TRIM(CAST(t.id AS CHAR(20))))) OR (b.type = 'PayPal' AND (t.txn_id IS NULL OR t.txn_id = '' OR t.txn_id = SUBSTR(b.description, 20)))) AND ((t.status = ? AND EXISTS (SELECT 1 FROM invoice_item ii WHERE ii.invoice_id = i.id AND ii.type = ?)) OR t.status IN (?, ?, ?))) AND NOT EXISTS (SELECT 1 FROM $txTable pt JOIN invoice pi ON pi.id = pt.invoice_id JOIN pay_gateway pg ON pg.id = pt.gateway_id WHERE pi.client_id = b.client_id AND pi.id <> ? AND pi.status = ? AND pt.status = ? AND pt.amount = b.amount AND NOT EXISTS (SELECT 1 FROM invoice_item paid_item WHERE paid_item.invoice_id = pi.id AND paid_item.type = ?) AND ((pg.gateway = 'Stripe' AND b.type = 'transaction' AND b.rel_id = TRIM(CAST(pt.id AS CHAR(20)))) OR (pg.gateway = 'PayPalEmail' AND b.type = 'PayPal' AND pt.txn_id = SUBSTR(b.description, 20)))) GROUP BY b.client_id", [$clientIds, 'unpaid', 'processed', 'deposit', 'received', 'processing', 'error', $exceptInvoiceId, 'unpaid', 'processed', 'deposit'], [\Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING])->fetchAllAssociative();
         foreach ($legacy as $row) {
             $clientId = (int) $row['client_id'];
             $result[$clientId] = ($result[$clientId] ?? 0.0) + (float) $row['amount'];
