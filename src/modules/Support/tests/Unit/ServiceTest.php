@@ -1882,11 +1882,12 @@ test('ticket update', function (): void {
     $data = [
         'status' => SupportTicket::STATUS_OPEN,
         'subject' => 'Subject',
-        'priority' => 1,
+        'priority' => 'high',
     ];
 
     $result = $service->ticketUpdate($ticket, $data);
     expect($result)->toBeTrue();
+    expect($ticket->getPriority())->toBe(150);
 });
 
 test('ticket message update', function (): void {
@@ -2220,7 +2221,8 @@ test('guest ticket creation uses values from the typed before event', function (
     $service = new Service();
     $helpdesk = helpdeskFixture();
     $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
-    $helpdeskRepo->shouldReceive('getDefault')->once()->andReturn($helpdesk);
+    $helpdeskRepo->shouldReceive('getPairs')->once()->andReturn([(int) $helpdesk->getId() => 'Support']);
+    $helpdeskRepo->shouldReceive('find')->once()->andReturn($helpdesk);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);

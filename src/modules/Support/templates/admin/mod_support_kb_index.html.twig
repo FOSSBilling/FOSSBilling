@@ -195,6 +195,7 @@
                                      <tr>
                                          <td>
                                              <a href='{{ "support/kb/category/#{category.id}"|url }}'>{{ category.title }}</a>
+                                             {% if category.hidden|default(false) %}<span class="badge bg-secondary-lt ms-1">{{ 'Hidden from clients'|trans }}</span>{% endif %}
                                              <div class="text-muted small">{{ '%active% active, %draft% draft'|trans({ '%active%': active_count, '%draft%': draft_count }) }}</div>
                                          </td>
                                          <td class="w-1">

@@ -13,6 +13,9 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\HiddenKbCategories;
+use Box\Mod\Support\TicketPriority;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -116,7 +119,15 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->getHelpdeskRepository()->getPairs();
+        return HiddenHelpdesks::visiblePairs($this->getDi(), $this->getService()->getHelpdeskRepository()->getPairs());
+    }
+
+    /**
+     * The ticket priorities a guest can choose from: {high, medium, low}.
+     */
+    public function ticket_priorities(): array
+    {
+        return TicketPriority::titles();
     }
 
     /*
@@ -164,6 +175,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             'status' => KbArticle::ACTIVE,
             'search' => $search,
             'kb_article_category_id' => $cat,
+            'exclude_category_ids' => HiddenKbCategories::ids($this->getDi()),
         ]);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
@@ -191,7 +203,11 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             : $repo->findOneActiveBySlug($slug);
 
         if (!$article instanceof KbArticle) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found', [], 404);
+        }
+
+        if (HiddenKbCategories::isHidden($this->getDi(), $article->getCategory()?->getId())) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found', [], 404);
         }
 
         $repo->incrementViews($article);
@@ -207,6 +223,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
         $this->assertKbEnabled();
 
         $data['article_status'] = KbArticle::ACTIVE;
+        $data['exclude_ids'] = HiddenKbCategories::ids($this->getDi());
         $q = $data['q'] ?? null;
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
@@ -239,7 +256,11 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             : $repo->findOneBySlug($slug);
 
         if (!$cat instanceof KbArticleCategory) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found', [], 404);
+        }
+
+        if (HiddenKbCategories::isHidden($this->getDi(), $cat->getId())) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found', [], 404);
         }
 
         return $cat->toApiArray($this->getIdentity(), includeArticleViews: $this->getService()->kbArticleViewsEnabled());

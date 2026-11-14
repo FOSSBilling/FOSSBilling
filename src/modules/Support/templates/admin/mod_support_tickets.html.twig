@@ -165,7 +165,12 @@
                         <div class="col-md-6 col-xl-3">
                             <div>
                                 <label class="form-label text-muted small mb-1" for="filter-ticket-priority">{{ 'Priority'|trans }}</label>
-                                <input class="form-control" type="text" id="filter-ticket-priority" name="priority" value="{{ request.priority }}" placeholder="{{ 'Priority'|trans }}">
+                                <select class="form-select" id="filter-ticket-priority" name="priority">
+                                    <option value="">{{ 'All Priorities'|trans }}</option>
+                                    {% for level, title in guest.support_ticket_priorities %}
+                                        <option value="{{ level }}"{% if request.priority|default('') == level %} selected{% endif %}>{{ title }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6 col-xl-3">
@@ -229,6 +234,7 @@
                         <th>{{ 'Author'|trans }}</th>
                         {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                         {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        <th>{{ 'Priority'|trans }}</th>
                         <th>{{ 'Helpdesk'|trans }}</th>
                         <th class="w-1"></th>
                     </tr>
@@ -280,6 +286,7 @@
                             <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
                         </td>
                         <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                        <td>{{ include('mod_support_ticket_priority.html.twig', { level: ticket.priority_level|default('medium') }) }}</td>
                         <td>{{ ticket.helpdesk.name|default('-') }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>
@@ -297,7 +304,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

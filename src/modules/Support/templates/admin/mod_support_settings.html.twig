@@ -108,6 +108,36 @@
                             <input type="hidden" name="ext" value="mod_support">
                         </div>
                         <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Ticket Limit'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Limit the new tickets a client opens from the client area. Every ticket of the client in the period counts, but tickets staff open, tickets from the contact form and all replies are never refused. 0 or empty: no limit.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="ticket_limit_max">{{ 'Tickets a client may open'|trans }}</label>
+                                    <input class="form-control" id="ticket_limit_max" type="number" min="0" name="ticket_limit_max" value="{{ params.ticket_limit_max|default('') }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="ticket_limit_days">{{ 'in this many days'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="ticket_limit_days" type="number" min="0" name="ticket_limit_days" value="{{ params.ticket_limit_days|default('') }}">
+                                        <span class="input-group-text">{{ 'days'|trans }}</span>
+                                    </div>
+                                </div>
+                                {% if has_permission('client', 'view') %}
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="ticket_limit_exempt_groups">{{ 'Client groups without a limit'|trans }}</label>
+                                    <select class="form-select" id="ticket_limit_exempt_groups" name="ticket_limit_exempt_groups[]" multiple>
+                                        {% for group_id, group_title in admin.client_group_get_pairs %}
+                                            <option value="{{ group_id }}"{% if group_id in params.ticket_limit_exempt_groups|default([]) %} selected{% endif %}>{{ group_title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% else %}
+                                    {# Staff who cannot list client groups keep the saved ones. #}
+                                    {% for group_id in params.ticket_limit_exempt_groups|default([]) %}<input type="hidden" name="ticket_limit_exempt_groups[]" value="{{ group_id }}">{% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Knowledge Base'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Control whether the knowledge base is visible to clients and available throughout the support area.'|trans }}</p>
                             {% set kb_enabled = params.kb_enable is not defined or params.kb_enable is same as(true) or params.kb_enable in [1, '1', 'true', 'on', 'yes'] %}
@@ -167,6 +197,7 @@
                                     <td>{{ helpdesk.id }}</td>
                                     <td>
                                         <a href='{{ "support/helpdesk/#{helpdesk.id}"|url }}'>{{ helpdesk.name }}</a>
+                                        {% if helpdesk.hidden|default(false) %}<span class="badge bg-secondary-lt ms-1">{{ 'Hidden from clients'|trans }}</span>{% endif %}
                                     </td>
                                     <td>{{ helpdesk.email }}</td>
                                     <td>{{ helpdesk.close_after }} {{ 'hour(s)'|trans }}</td>

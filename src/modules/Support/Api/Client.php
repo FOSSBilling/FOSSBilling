@@ -17,6 +17,8 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\TicketLimit;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -61,7 +63,16 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->getHelpdeskRepository()->getPairs();
+        return HiddenHelpdesks::visiblePairs($this->getDi(), $this->getService()->getHelpdeskRepository()->getPairs());
+    }
+
+    /**
+     * The client's ticket limit for the new-ticket banners: {max, days, limit,
+     * left, date}, or null when the client has no limit.
+     */
+    public function ticket_limit(): ?array
+    {
+        return TicketLimit::status($this->getDi(), $this->getIdentity());
     }
 
     /**
@@ -88,11 +99,12 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         $repo = $this->getService()->getHelpdeskRepository();
 
         $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
-        if (!$helpdesk instanceof Helpdesk) {
+        if (!$helpdesk instanceof Helpdesk || HiddenHelpdesks::isHidden($this->getDi(), (int) $helpdesk->getId())) {
             throw new \FOSSBilling\Core\Exception\InformationException('Helpdesk invalid');
         }
 
         $client = $this->getIdentity();
+        TicketLimit::check($this->getDi(), $client);
 
         return $this->getService()->ticketCreateForClient($client, $helpdesk, $data);
     }

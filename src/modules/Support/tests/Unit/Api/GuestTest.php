@@ -194,7 +194,7 @@ test('kb article get list', function (): void {
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->with(['status' => KbArticle::ACTIVE, 'search' => null, 'kb_article_category_id' => null])
+        ->with(['status' => KbArticle::ACTIVE, 'search' => null, 'kb_article_category_id' => null, 'exclude_category_ids' => []])
         ->andReturn($qb);
 
     $supportService = guestSupportServiceMock();

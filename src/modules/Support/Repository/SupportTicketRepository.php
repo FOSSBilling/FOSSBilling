@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Support\Repository;
 
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\TicketPriority;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Core\Doctrine\SqlExpr;
@@ -56,8 +57,14 @@ class SupportTicketRepository extends EntityRepository
         }
 
         if (isset($data['priority']) && $data['priority'] !== '') {
-            $qb->andWhere('t.priority = :priority')
-                ->setParameter('priority', (int) $data['priority']);
+            if (is_numeric($data['priority'])) {
+                $qb->andWhere('t.priority = :priority')
+                    ->setParameter('priority', (int) $data['priority']);
+            } else {
+                [$operator, $number] = TicketPriority::filter((string) $data['priority']);
+                $qb->andWhere('t.priority ' . $operator . ' :priority')
+                    ->setParameter('priority', $number);
+            }
         }
 
         if (!empty($data['client_id'])) {

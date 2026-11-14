@@ -78,6 +78,7 @@
                                     {% endif %}
                                     <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
                                     <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>
+                                    <tr><td>{{ 'Priority'|trans }}</td><td>{{ include('mod_support_ticket_priority.html.twig', { level: ticket.priority_level|default('medium') }) }}</td></tr>
                                     <tr><td>{{ 'Time Opened'|trans }}</td><td>{{ ticket.created_at|format_date }}</td></tr>
                                     {% if task.task %}<tr><td>{{ 'Task'|trans }}</td><td>{{ mf.status_name(task.task) }}</td></tr>{% endif %}
                                     {% if task.type == 'order' %}<tr><td>{{ 'Related To'|trans }}</td><td><a href='{{ "order/manage/#{task.id}"|url }}'>Order #{{ task.id }}</a></td></tr>{% endif %}
@@ -266,8 +267,12 @@
                                     {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), ticket.status, 1) }}
                                 </div>
                                 <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Priority'|trans }}</label>
-                                    <input class="form-control" type="text" name="priority" value="{{ ticket.priority }}">
+                                    <label class="form-label" for="ticket-priority">{{ 'Priority'|trans }}</label>
+                                    <select class="form-select" id="ticket-priority" name="priority">
+                                        {% for level, title in guest.support_ticket_priorities %}
+                                            <option value="{{ level }}"{% if level == ticket.priority_level|default('medium') %} selected{% endif %}>{{ title }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
                             <input type="hidden" name="id" value="{{ ticket.id }}">

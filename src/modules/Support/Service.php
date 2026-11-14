@@ -433,6 +433,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         $data = $model->toApiArray($identity);
         $data['replies'] = $this->messageGetRepliesCount($model);
+        $data['priority_level'] = TicketPriority::level($model->getPriority());
         $data['first'] = $firstSupportTicketMessage instanceof SupportTicketMessage ? $this->messageToApiArray($firstSupportTicketMessage, true, $identity) : null;
         $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
         $data['author'] = $this->getTicketAuthor($model, $identity);
@@ -474,9 +475,12 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         }
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
+            $data['priority_level'] = TicketPriority::level($data['priority'] ?? null);
+
             return $data;
         }
 
+        $data['priority_level'] = TicketPriority::level($data['priority'] ?? null);
         unset(
             $data['support_helpdesk_id'],
             $data['client_id'],
@@ -846,6 +850,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             throw new InformationException('Cannot remove helpdesk which has tickets');
         }
 
+        HiddenHelpdesks::forget($this->di, (int) $id);
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Deleted helpdesk #{id}', ['id' => $id]);
@@ -922,7 +927,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $model->setSubject($data['subject']);
         }
         if (isset($data['priority'])) {
-            $model->setPriority((int) $data['priority']);
+            $model->setPriority(TicketPriority::fromInput($data['priority']));
         }
         $model->setUpdatedAt(new \DateTime());
 
@@ -1078,7 +1083,16 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         $helpdesk = isset($data['support_helpdesk_id'])
             ? $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id'])
-            : $this->getHelpdeskRepository()->getDefault();
+            : null;
+        if ($helpdesk instanceof Helpdesk && HiddenHelpdesks::isHidden($this->di, (int) $helpdesk->getId())) {
+            $helpdesk = null;
+        }
+        if (!$helpdesk instanceof Helpdesk && !isset($data['support_helpdesk_id'])) {
+            // No help desk chosen: the first one clients see, rather than a hidden one.
+            $visible = HiddenHelpdesks::visiblePairs($this->di, $this->getHelpdeskRepository()->getPairs());
+            $firstId = array_key_first($visible);
+            $helpdesk = $firstId !== null ? $this->getHelpdeskRepository()->find($firstId) : null;
+        }
 
         if (!$helpdesk instanceof Helpdesk) {
             throw new \FOSSBilling\Core\Exception\BaseException('Helpdesk invalid');
@@ -1090,6 +1104,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $ticket = new SupportTicket();
         $ticket->setAccessHash(bin2hex(random_bytes(random_int(15, 30))));
         $ticket->setSupportHelpdesk($helpdesk);
+        $ticket->setPriority(TicketPriority::fromInput($data['priority'] ?? null));
         $ticket->setAuthorName($data['name']);
         $ticket->setAuthorEmail($data['email']);
         $ticket->setSubject($ticketEvent->getSubject());
@@ -1210,6 +1225,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $ticket->setClientId((int) $client->getId());
         $ticket->setSubject($data['subject']);
         $ticket->setSupportHelpdesk($helpdesk);
+        $ticket->setPriority(TicketPriority::fromInput($data['priority'] ?? null));
 
         // related task with ticket
         $ticket->setRelId($rel_id);
@@ -1318,6 +1334,9 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         }
         if (array_key_exists('signature', $data)) {
             $model->setSignature($data['signature']);
+        }
+        if (array_key_exists('hidden', $data)) {
+            HiddenHelpdesks::save($this->di, (int) $model->getId(), $data['hidden']);
         }
 
         $this->di['em']->flush();
@@ -1619,6 +1638,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             throw new InformationException('Cannot remove category which has articles');
         }
 
+        HiddenKbCategories::forget($this->di, (int) $id);
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 

@@ -24,6 +24,12 @@ class KbArticleCategoryRepository extends EntityRepository
         $qb = $this->createQueryBuilder('c')
             ->distinct();
 
+        $excludeIds = array_filter(array_map(intval(...), (array) ($data['exclude_ids'] ?? [])));
+        if ($excludeIds !== []) {
+            $qb->andWhere('c.id NOT IN (:exclude_ids)')
+                ->setParameter('exclude_ids', $excludeIds);
+        }
+
         // Use a WITH condition on the JOIN so the status filter does not turn the
         // LEFT JOIN into an implicit INNER JOIN. Categories with no active articles
         // must still appear in the results.

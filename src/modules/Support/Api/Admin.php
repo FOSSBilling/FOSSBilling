@@ -21,6 +21,8 @@ use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\HiddenKbCategories;
 use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -68,7 +70,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional int $support_helpdesk_id - ticket helpdesk id
      * @optional string $status - ticket status
      * @optional string $subject - ticket subject
-     * @optional string $priority - ticket priority
+     * @optional string $priority - ticket priority: low, medium or high
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_update(array $data): bool
@@ -243,7 +245,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity());
+        $result = $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity());
+        $result['list'] = HiddenHelpdesks::withFlags($this->getDi(), $result['list'] ?? []);
+
+        return $result;
     }
 
     /**
@@ -274,7 +279,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Help desk not found');
         }
 
-        return $model->toApiArray($this->getIdentity());
+        return $model->toApiArray($this->getIdentity()) + ['hidden' => HiddenHelpdesks::isHidden($this->getDi(), (int) $model->getId())];
     }
 
     /**
@@ -756,7 +761,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
+        $result = $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
+        $result['list'] = HiddenKbCategories::withFlags($this->getDi(), $result['list'] ?? []);
+
+        return $result;
     }
 
     /**
@@ -776,7 +784,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Article Category not found');
         }
 
-        return $cat->toApiArray($this->getIdentity());
+        return $cat->toApiArray($this->getIdentity()) + ['hidden' => HiddenKbCategories::isHidden($this->getDi(), $cat->getId())];
     }
 
     /**
@@ -820,7 +828,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $slug = $data['slug'] ?? null;
         $description = $data['description'] ?? null;
 
-        return $this->getService()->kbUpdateCategory($cat, $title, $slug, $description);
+        $result = $this->getService()->kbUpdateCategory($cat, $title, $slug, $description);
+        if (array_key_exists('hidden', $data)) {
+            HiddenKbCategories::save($this->getDi(), (int) $cat->getId(), $data['hidden']);
+        }
+
+        return $result;
     }
 
     /**
