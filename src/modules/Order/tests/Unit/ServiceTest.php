@@ -3366,6 +3366,7 @@ test('updateOrderMeta stores new meta entries', function (): void {
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $emMock->shouldReceive('persist')->once();
     $emMock->shouldReceive('flush')->once();
     $emMock->shouldIgnoreMissing();
@@ -3392,6 +3393,7 @@ test('updateOrderMeta persists new meta entries with order details', function ()
     $persisted = [];
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
         $persisted[] = $entity;
     });
@@ -3427,6 +3429,7 @@ test('updateOrderMeta updates existing meta', function (): void {
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use ($existing): void {
         expect($entity)->toBe($existing);
     });
@@ -3475,6 +3478,7 @@ test('setMergeRenewalsOverride stores the opt-in and opt-out', function (mixed $
     $persisted = [];
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
         $persisted[] = $entity;
     });

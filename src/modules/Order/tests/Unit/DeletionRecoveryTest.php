@@ -25,7 +25,7 @@ function deletionRecoveryContext(?string $databasePath = null): array
     $config->setProxyNamespace('DeletionRecoveryTestProxies');
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
     $em = new EntityManager($connection, $config);
-    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Order::class, OrderMeta::class, OrderStatus::class, ServiceLicense::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Order::class, OrderMeta::class, OrderStatus::class, ServiceLicense::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
     $license = new ServiceLicense();
     $em->persist($license);
     $em->flush();
@@ -320,3 +320,219 @@ test('MySQL current reads detect deletion holds committed after a billing snapsh
         $deletion->close();
     }
 })->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+
+function deletionPaymentContext(): array
+{
+    $c = deletionRecoveryContext();
+    $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+    $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('PayPalEmail')->setEnabled(true);
+    $c['em']->persist($client);
+    $c['em']->persist($gateway);
+    $c['em']->flush();
+    $c['order']->setClientId($client->getId())->setCurrency('USD');
+    $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setCurrency('USD')->setClientId($client->getId())->setGateway($gateway);
+    $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setRelId((string) $c['order']->getId())->setPrice(10)->setQuantity(1);
+    $c['em']->persist($invoice);
+    $c['em']->persist($item);
+    $c['em']->flush();
+    $billing = new Box\Mod\Invoice\Service();
+    $billing->setDi($c['di']);
+    $c['di']['mod_service'] = $c['di']->protect(fn (): object => $billing);
+
+    return $c + compact('client', 'gateway', 'invoice', 'item', 'billing');
+}
+
+test('manual payment rejects deletion holds without changing gateway or recording money', function (string $gatewayName, bool $lateHold): void {
+    $c = deletionPaymentContext();
+    $manual = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway($gatewayName)->setEnabled(true);
+    $c['em']->persist($manual);
+    $c['em']->flush();
+    if ($lateHold) {
+        // Commit a hold after preflight but before the payment transaction,
+        // modelling a deletion worker winning the race for the parent row.
+        $em = new class($c['connection'], $c['config']) extends EntityManager {
+            public int $orderId;
+
+            public function wrapInTransaction(callable $func): mixed
+            {
+                DeletionRecovery::setState($this->getConnection(), $this->orderId, DeletionRecovery::STARTED);
+
+                return parent::wrapInTransaction($func);
+            }
+        };
+        $em->orderId = $c['order']->getId();
+        $c['di']['em'] = $em;
+        $c['invoice'] = $em->find(Invoice::class, $c['invoice']->getId());
+    } else {
+        DeletionRecovery::setState($c['connection'], $c['order']->getId(), DeletionRecovery::STARTED);
+    }
+    $c['di']['event_dispatcher'] = Mockery::mock(Symfony\Contracts\EventDispatcher\EventDispatcherInterface::class);
+    $c['di']['event_dispatcher']->shouldNotReceive('dispatch');
+    expect(fn () => $c['billing']->markAsPaidByAdmin($c['invoice'], ['gateway_id' => $manual->getId(), 'transactionId' => 'manual-held-payment', 'execute' => true]))
+        ->toThrow(InformationException::class, 'awaiting recovery');
+    expect($c['connection']->fetchOne('SELECT gateway_id FROM invoice'))->toBe($c['gateway']->getId())
+        ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_UNPAID)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+})->with(['Custom', 'PayPalEmail'])->with([false, true]);
+
+function deletionPayPalApi(array $c, int $transactionId): object
+{
+    return new class($c, $transactionId) {
+        public bool $crash = false;
+
+        public function __construct(private array $c, private int $transactionId)
+        {
+        }
+
+        public function invoice_transaction_get(array $data): array
+        {
+            return $this->c['connection']->fetchAssociative('SELECT invoice_id, type, txn_id, txn_status, amount, currency, status FROM "transaction" WHERE id = ?', [$this->transactionId]);
+        }
+
+        public function invoice_transaction_update(array $data): bool
+        {
+            if ($this->crash && ($data['status'] ?? '') === 'processed') {
+                throw new Error('Interrupted before receipt completion');
+            }
+            $service = new Box\Mod\Invoice\ServiceTransaction();
+            $service->setDi($this->c['di']);
+
+            return $service->update($this->c['em']->find(Box\Mod\Invoice\Entity\Transaction::class, $this->transactionId), $data);
+        }
+
+        public function invoice_get(array $data): array
+        {
+            return ['client' => ['id' => $this->c['client']->getId()], 'currency' => 'USD'];
+        }
+
+        public function client_balance_add_funds(array $data): bool
+        {
+            $service = new Box\Mod\Client\Service();
+            $service->setDi($this->c['di']);
+
+            return $service->addFunds($this->c['client'], $data['amount'], $data['description'], $data);
+        }
+    };
+}
+
+test('verified PayPal renewal receipts remain credit during deletion recovery, including retries', function (string $txnType, bool $crash, string $gross): void {
+    $c = deletionPaymentContext();
+    $c['invoice']->setStatus(Invoice::STATUS_PAID);
+    $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('held-subscription')->setRelType('invoice')->setRelId($c['invoice']->getId());
+    $transaction = (new Box\Mod\Invoice\Entity\Transaction())->setInvoice($c['invoice'])->setGateway($c['gateway'])->setStatus('processing')->setTxnId('held-paypal-receipt')->setTxnStatus('Completed')->setType($txnType)->setAmount($gross)->setCurrency('USD');
+    $c['em']->persist($subscription);
+    $c['em']->persist($transaction);
+    $c['em']->flush();
+    DeletionRecovery::setState($c['connection'], $c['order']->getId(), DeletionRecovery::STARTED);
+    $payload = [
+        'get' => ['invoice_id' => $c['invoice']->getId(), 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId())],
+        'post' => ['txn_type' => $txnType, 'payment_status' => 'Completed', 'txn_id' => 'held-paypal-receipt', 'subscr_id' => 'held-subscription', 'mc_gross' => $gross, 'mc_currency' => 'USD'],
+    ];
+    $api = deletionPayPalApi($c, $transaction->getId());
+    $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
+    $adapter->setDi($c['di']);
+    if ($crash) {
+        $api->crash = true;
+        expect(fn () => $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId()))
+            ->toThrow(Error::class, 'Interrupted before receipt completion');
+        expect($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0)
+            ->and($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processing');
+        // A restarted worker gets a fresh entity manager after the rollback.
+        $c['em'] = new EntityManager($c['connection'], $c['config']);
+        $c['di']['em'] = $c['em'];
+        $c['client'] = $c['em']->find(Box\Mod\Client\Entity\Client::class, $c['client']->getId());
+        $api = deletionPayPalApi($c, $transaction->getId());
+    }
+    $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId());
+    // Even if staff recover deletion between callbacks, replay must not renew.
+    $c['connection']->delete('client_order_meta', ['client_order_id' => $c['order']->getId()]);
+    $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId());
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe((float) $gross)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processed')
+        ->and($c['connection']->fetchOne('SELECT invoice_id FROM "transaction"'))->toBe($c['invoice']->getId())
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
+        ->and($c['backend']->calls)->toBe(0);
+})->with(['subscr_payment', 'recurring_payment'])->with([false, true])->with(['10.00', '3.00']);
+
+test('metadata aliases cannot alter or forge deletion checkpoints under database collation', function (bool $existingHold, string $alias): void {
+    $c = deletionRecoveryContext();
+    // NOCASE models a case-insensitive metadata column independently of the
+    // connection default, as existing MySQL installs commonly have.
+    $c['connection']->executeStatement('DROP TABLE client_order_meta');
+    $c['connection']->executeStatement('CREATE TABLE client_order_meta (id INTEGER PRIMARY KEY AUTOINCREMENT, client_order_id BIGINT, name TEXT COLLATE NOCASE, value TEXT, created_at DATETIME, updated_at DATETIME)');
+    if ($existingHold) {
+        DeletionRecovery::setState($c['connection'], $c['order']->getId(), DeletionRecovery::STARTED);
+    }
+    $c['service']->updateOrderMeta($c['order'], ['ordinary' => 'original']);
+    expect(fn () => $c['service']->updateOrderMeta($c['order'], ['ordinary' => 'changed', $alias => DeletionRecovery::SERVICE_DELETED]))
+        ->toThrow(InformationException::class, 'cannot be edited');
+    expect(DeletionRecovery::getState($c['connection'], $c['order']->getId()))->toBe($existingHold ? DeletionRecovery::STARTED : null)
+        ->and($c['connection']->fetchOne("SELECT value FROM client_order_meta WHERE name = 'ordinary'"))->toBe('original')
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(1)
+        ->and($c['backend']->calls)->toBe(0);
+})->with([false, true])->with(['DELETION_STATE', 'Deletion_State']);
+
+test('MySQL checkpoint aliases respect the metadata column collation and roll back the entire edit', function (bool $existingHold, string $alias): void {
+    $connection = DriverManager::getConnection([
+        'driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) getenv('DELETION_HOLD_MYSQL_PORT'),
+        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
+    ]);
+
+    try {
+        // Deliberately give the connection a different comparison from the
+        // column: comparing two bound parameters would miss these aliases.
+        $connection->executeStatement('SET NAMES utf8mb4 COLLATE utf8mb4_bin');
+        $connection->executeStatement('CREATE TABLE client_order (id BIGINT PRIMARY KEY) ENGINE=InnoDB');
+        $connection->executeStatement('CREATE TABLE client_order_meta (id BIGINT AUTO_INCREMENT PRIMARY KEY, client_order_id BIGINT, name VARCHAR(255) COLLATE utf8mb4_unicode_ci, value TEXT, created_at DATETIME, updated_at DATETIME) ENGINE=InnoDB');
+        $connection->insert('client_order', ['id' => 1]);
+        if ($existingHold) {
+            DeletionRecovery::setState($connection, 1, DeletionRecovery::STARTED);
+        }
+        $connection->insert('client_order_meta', ['client_order_id' => 1, 'name' => 'ordinary', 'value' => 'original']);
+        $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+        $config->setProxyDir(sys_get_temp_dir());
+        $config->setProxyNamespace('DeletionRecoveryTestProxies');
+        $em = new EntityManager($connection, $config);
+        $di = container();
+        $di['em'] = $em;
+        $service = new Service();
+        $service->setDi($di);
+        expect(fn () => $service->updateOrderMeta($em->getReference(Order::class, 1), ['ordinary' => 'changed', $alias => DeletionRecovery::SERVICE_DELETED]))
+            ->toThrow(InformationException::class, 'cannot be edited');
+        expect(DeletionRecovery::getState($connection, 1))->toBe($existingHold ? DeletionRecovery::STARTED : null)
+            ->and($connection->fetchOne("SELECT value FROM client_order_meta WHERE name = 'ordinary'"))->toBe('original');
+    } finally {
+        $connection->executeStatement('DROP TABLE IF EXISTS client_order_meta');
+        $connection->executeStatement('DROP TABLE IF EXISTS client_order');
+        $connection->close();
+    }
+})->with([false, true])->with(['DELETION_STATE', 'deletion_state ', 'déletion_state'])
+    ->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+
+test('deferred PayPal renewal credits reject invalid amounts and currencies before adding funds', function (string $amount, string $currency): void {
+    $c = deletionPaymentContext();
+    $c['invoice']->setStatus(Invoice::STATUS_PAID);
+    $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('held-subscription')->setRelType('invoice')->setRelId($c['invoice']->getId());
+    $transaction = (new Box\Mod\Invoice\Entity\Transaction())->setInvoice($c['invoice'])->setGateway($c['gateway'])->setStatus('processing')->setTxnId('invalid-held-receipt')->setTxnStatus('Completed')->setType('subscr_payment')->setAmount($amount)->setCurrency($currency);
+    $c['em']->persist($subscription);
+    $c['em']->persist($transaction);
+    $c['em']->flush();
+    DeletionRecovery::setState($c['connection'], $c['order']->getId(), DeletionRecovery::STARTED);
+    $payload = [
+        'get' => ['invoice_id' => $c['invoice']->getId(), 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId())],
+        'post' => ['txn_type' => 'subscr_payment', 'payment_status' => 'Completed', 'txn_id' => 'invalid-held-receipt', 'subscr_id' => 'held-subscription', 'mc_gross' => $amount, 'mc_currency' => $currency],
+    ];
+    $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
+    $adapter->setDi($c['di']);
+    $api = deletionPayPalApi($c, $transaction->getId());
+    expect(fn () => $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId()))->toThrow(Exception::class);
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0)
+        ->and($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processing');
+})->with([
+    'negative' => ['-1', 'USD'],
+    'not numeric' => ['invalid', 'USD'],
+    'nonfinite' => ['1e999', 'USD'],
+    'wrong currency' => ['10', 'EUR'],
+]);

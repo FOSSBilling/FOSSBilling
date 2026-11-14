@@ -234,6 +234,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $this->verifyIpnEcho($ipn, $invoiceDbModel);
                 }
 
+                $deferredRenewal = false;
                 if ($isSubscriptionPayment && isset($ipn['subscr_id'])) {
                     $originalAlreadyPaid = $invoiceDbModel instanceof Invoice
                         && $invoiceDbModel->getStatus() === Invoice::STATUS_PAID;
@@ -241,12 +242,17 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     if ($originalAlreadyPaid) {
                         $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
                         if (!$renewalInvoice instanceof Invoice || $renewalInvoice->getId() === null) {
-                            throw new Payment_Exception('Unable to generate a renewal invoice for subscription payment');
+                            // The receipt is verified money even when renewal is held or
+                            // cannot be invoiced. Keep its original binding and retain
+                            // the funds as credit without settling another invoice.
+                            FOSSBilling\Core\Validation\PriceValidator::validateAmount($ipn['mc_gross'], 'PayPal payment amount');
+                            $invoiceDbModel = null;
+                            $deferredRenewal = true;
+                        } else {
+                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->getId()]);
+                            $tx['invoice_id'] = $renewalInvoice->getId();
+                            $invoiceDbModel = $renewalInvoice;
                         }
-
-                        $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->getId()]);
-                        $tx['invoice_id'] = $renewalInvoice->getId();
-                        $invoiceDbModel = $renewalInvoice;
                     }
                 }
 
@@ -262,6 +268,23 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     'type' => 'PayPal',
                     'rel_id' => $ipn['txn_id'],
                 ];
+
+                if ($deferredRenewal) {
+                    // Credit and receipt completion must commit together: a
+                    // worker interrupted here can retry without crediting twice.
+                    $this->di['em']->wrapInTransaction(function () use ($api_admin, $bd, $id): void {
+                        $api_admin->client_balance_add_funds($bd);
+                        $api_admin->invoice_transaction_update([
+                            'id' => $id,
+                            'error' => '',
+                            'error_code' => null,
+                            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
+                            'updated_at' => date('Y-m-d H:i:s'),
+                        ]);
+                    });
+
+                    return;
+                }
 
                 $api_admin->client_balance_add_funds($bd);
 

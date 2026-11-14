@@ -31,6 +31,14 @@ class OrderMetaRepository extends EntityRepository
         return $meta instanceof OrderMeta ? $meta : null;
     }
 
+    public function isDeletionCheckpoint(OrderMeta $meta): bool
+    {
+        return $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT id FROM client_order_meta WHERE id = :id AND name = :reserved',
+            ['id' => $meta->getId(), 'reserved' => \Box\Mod\Order\Service::META_DELETION_STATE],
+        ) !== false;
+    }
+
     public function deleteByOrderId(int $orderId): int
     {
         return $this->getEntityManager()->getConnection()->executeStatement(

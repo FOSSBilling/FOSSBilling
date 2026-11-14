@@ -1185,10 +1185,8 @@ class Service implements InjectionAwareInterface
             $paidAt = new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp));
         }
 
-        if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
-            $invoice->setGateway($payGateway);
-            $this->di['em']->persist($invoice);
-            $this->di['em']->flush();
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
         }
 
         if ($payGateway->getGateway() === 'Custom') {
@@ -1209,6 +1207,14 @@ class Service implements InjectionAwareInterface
                 $locked = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
                 if ($state['status'] === Invoice::STATUS_CANCELED || ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null)) {
                     throw new InformationException('This invoice was canceled and cannot be marked as paid');
+                }
+
+                if ($this->invoiceHasDeletionHold($invoice)) {
+                    throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
+                }
+                if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+                    $invoice->setGateway($payGateway);
+                    $this->di['em']->flush();
                 }
 
                 $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
@@ -1279,6 +1285,17 @@ class Service implements InjectionAwareInterface
         // in this call, as above.
         $actuallyPaid = null;
         $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
+            $state = $this->lockAndRefreshInvoice($invoice);
+            if ($state['status'] === Invoice::STATUS_PAID) {
+                return false;
+            }
+            if ($this->invoiceHasDeletionHold($invoice)) {
+                throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
+            }
+            if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+                $invoice->setGateway($payGateway);
+                $this->di['em']->flush();
+            }
             $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
             if ($actuallyPaid ?? $result) {
                 $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId);

@@ -1444,19 +1444,31 @@ class Service implements InjectionAwareInterface
         if (array_key_exists(self::META_DELETION_STATE, $meta)) {
             throw new InformationException('Deletion recovery state cannot be edited. Retry order deletion instead.');
         }
-        foreach ($meta as $k => $v) {
-            $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
-            if (!$mm instanceof OrderMeta) {
-                $mm = new OrderMeta();
-                $mm->setOrder($order);
-                $mm->setName($k);
-                $mm->setCreatedAt(new \DateTime());
+        $this->di['em']->wrapInTransaction(function () use ($order, $orderId, $meta): void {
+            $edited = [];
+            foreach ($meta as $k => $v) {
+                $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
+                if (!$mm instanceof OrderMeta) {
+                    $mm = new OrderMeta();
+                    $mm->setOrder($order);
+                    $mm->setName($k);
+                    $mm->setCreatedAt(new \DateTime());
+                }
+                $mm->setValue($v);
+                $mm->setUpdatedAt(new \DateTime());
+                $this->di['em']->persist($mm);
+                $edited[] = $mm;
             }
-            $mm->setValue($v);
-            $mm->setUpdatedAt(new \DateTime());
-            $this->di['em']->persist($mm);
-        }
-        $this->di['em']->flush();
+            $this->di['em']->flush();
+            // Check persisted names using the column's actual collation. This
+            // also catches aliases inserted before a checkpoint exists. Roll
+            // back the entire batch before any such write can become visible.
+            foreach ($edited as $mm) {
+                if ($this->getOrderMetaRepository()->isDeletionCheckpoint($mm)) {
+                    throw new InformationException('Deletion recovery state cannot be edited. Retry order deletion instead.');
+                }
+            }
+        });
 
         return 2;
     }
