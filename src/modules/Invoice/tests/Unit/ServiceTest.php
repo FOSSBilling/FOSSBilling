@@ -6532,6 +6532,300 @@ test('refundInvoice validates partial refund input', function (): void {
     }
 });
 
+test('refundInvoice books a custom line at the exact amount, tax-exempt', function (): void {
+    $line = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'price' => 100.0, 'quantity' => 1, 'taxed' => true]);
+    setEntityId($line, 11);
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD', 'taxrate' => '20']);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoiceModel, 10);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    // The taxed original totals 120; the note holds only the untaxed custom line.
+    $serviceMock->shouldReceive('getTotalWithTax')->andReturnUsing(
+        static fn (Invoice $inv): float => $inv->getCreditNoteForInvoiceId() === null ? 120.0 : -25.0
+    );
+    $serviceMock->shouldReceive('countIncome')->once();
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 11, 'total' => -25.0]);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
+
+    $notes = [];
+    $serviceMock->shouldReceive('addNote')
+        ->times(3)
+        ->andReturnUsing(function (Invoice $model, string $note) use (&$notes): bool {
+            $notes[] = $note;
+
+            return true;
+        });
+
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_refund_logic', 'manual')
+        ->andReturn('credit_note');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_number_padding')
+        ->andReturn(5);
+    $systemService->shouldReceive('getCompany')
+        ->andReturn([]);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn(90);
+    $systemService->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_cn_starting_number', 1)
+        ->andReturn(7);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_cn_series', 'CN-')
+        ->andReturn('CN-');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->andReturn(false);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')->once();
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$line]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(10)->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $creditNote = null;
+    $synthetic = null;
+    $em->shouldReceive('persist')->atLeast()->once()->andReturnUsing(
+        function (object $entity) use ($invoiceModel, &$creditNote, &$synthetic): void {
+            if ($entity instanceof Invoice && $entity !== $invoiceModel) {
+                $creditNote = $entity;
+                setEntityId($entity, 101);
+            }
+            if ($entity instanceof InvoiceItem) {
+                $synthetic = $entity;
+            }
+        }
+    );
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'email' => $emailService,
+    ]));
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $title = 'Partial chargeback R-1 of payment P-9.';
+    $options = ['gateway_refund' => false, 'custom_line' => ['title' => $title, 'amount' => 25.0]];
+    expect($serviceMock->refundInvoice($invoiceModel, 'PayPal chargeback R-1 of payment P-9.', null, $options))->toBe(101);
+
+    expect($creditNote)->not->toBeNull();
+    expect($creditNote->getCreditNoteForInvoiceId())->toBe(10);
+    expect($creditNote->getSerie())->toBe('CN-');
+    expect($creditNote->getStatus())->toBe(Invoice::STATUS_REFUNDED);
+
+    expect($synthetic)->not->toBeNull();
+    expect($synthetic->getType())->toBe(InvoiceItem::TYPE_CUSTOM);
+    expect($synthetic->getTask())->toBe(InvoiceItem::TASK_VOID);
+    expect($synthetic->getStatus())->toBe(InvoiceItem::STATUS_EXECUTED);
+    expect($synthetic->getTitle())->toBe($title);
+    expect($synthetic->getQuantity())->toBe(1);
+    expect((float) $synthetic->getPrice())->toEqual(-25.0);
+    expect($synthetic->getTaxed())->toBeFalse();
+    expect($synthetic->getRefundedItemId())->toBeNull();
+    expect($synthetic->getRelId())->toBeNull();
+    expect($synthetic->getInvoice())->toBe($creditNote);
+
+    expect((float) $invoiceModel->getRefund())->toEqual(25.0);
+    expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_PAID);
+    expect($notes)->toContain('PayPal chargeback R-1 of payment P-9.')
+        ->and($notes)->not->toContain('Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
+    expect($events)->toHaveCount(2);
+});
+
+test('refundInvoice validates custom lines', function (): void {
+    $line = createEntity(InvoiceItem::class, ['price' => 100.0, 'quantity' => 1, 'taxed' => false]);
+    setEntityId($line, 11);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotalWithTax')->andReturn(100.0);
+    $serviceMock->shouldReceive('countIncome')->never();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_refund_logic', 'manual')
+        ->andReturn('credit_note');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_number_padding')
+        ->andReturn(5);
+    $systemService->shouldReceive('getCompany')
+        ->andReturn([]);
+    $systemService->shouldReceive('reserveNextNumericParamValue')
+        ->andReturn(7);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_cn_series', 'CN-')
+        ->andReturn('CN-');
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$line]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldNotReceive('persist');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $di['event_dispatcher'] = new class {
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            return $event;
+        }
+    };
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoiceModel, 10);
+
+    $valid = ['title' => 'Partial chargeback R-1 of payment P-9.', 'amount' => 25.0];
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, null, ['gateway_refund' => false, 'custom_line' => 'nope']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Custom refund line is invalid');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, null, ['gateway_refund' => false, 'custom_line' => ['title' => '  ', 'amount' => 25.0]]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'needs a title');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, null, ['gateway_refund' => false, 'custom_line' => ['title' => 'X', 'amount' => 0]]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'greater than zero');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, null, ['gateway_refund' => false, 'custom_line' => ['title' => 'X', 'amount' => -5]]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'cannot be negative');
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [11 => 1], ['gateway_refund' => false, 'custom_line' => $valid]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'cannot be combined');
+
+    $invoiceModel->setRefund(90.0);
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, null, ['gateway_refund' => false, 'custom_line' => $valid]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'exceeds the remaining refundable amount');
+
+    $invoiceModel->setRefund(100.0);
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, null, ['gateway_refund' => false, 'custom_line' => $valid]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'No remaining refundable amount');
+});
+
+test('refundInvoice stamps a custom line into the gateway refund metadata', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotalWithTax')->andReturnUsing(
+        static fn (Invoice $inv): float => $inv->getCreditNoteForInvoiceId() === null ? 100.0 : -25.0
+    );
+    $serviceMock->shouldReceive('countIncome')->once();
+    $serviceMock->shouldReceive('addNote')->atLeast()->times(4);
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 7, 'total' => -25.0]);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    $invoiceModel->setCurrency('USD');
+    $invoiceModel->setTaxrate('0');
+    setEntityId($invoiceModel, 19);
+
+    $payGateway = createEntity(PayGateway::class, []);
+    setEntityId($payGateway, 7);
+    $invoiceModel->setGateway($payGateway);
+
+    $line = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'price' => 100.0, 'quantity' => 1, 'taxed' => false]);
+    setEntityId($line, 12);
+
+    $stripeTx = createEntity(Transaction::class, []);
+    $stripeTx->setGateway($payGateway);
+    $stripeTx->setTxnId('pi_123');
+    $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
+
+    $title = 'Partial chargeback R-1 of payment P-9.';
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
+    $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
+    $adapter->shouldReceive('refundPayment')->once()
+        ->with('pi_123', 25.0, Mockery::any(), Mockery::on(static fn (array $metadata): bool => ($metadata['lines'] ?? null) === 'custom:25.00:' . $title))
+        ->andReturn('re_123');
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($payGateway)->andReturn($adapter);
+
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')->with('invoice_refund_logic', 'manual')->andReturn('credit_note');
+    $systemService->shouldReceive('getParamValue')->with('invoice_number_padding')->andReturn(5);
+    $systemService->shouldReceive('getCompany')->andReturn([]);
+    $systemService->shouldReceive('getParamValue')->with('invoice_hash_lifetime_days', '90')->andReturn(90);
+    $systemService->shouldReceive('reserveNextNumericParamValue')->once()->with('invoice_cn_starting_number', 1)->andReturn(13);
+    $systemService->shouldReceive('getParamValue')->with('invoice_cn_series', 'CN-')->andReturn('CN-');
+    $systemService->shouldReceive('getParamValue')->with('invoice_email_attach_pdf')->andReturn(false);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')->once();
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$line]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(19)->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
+    $txRepo = Mockery::mock(TransactionRepository::class);
+    $txRepo->shouldReceive('findBy')->andReturnUsing(fn (array $criteria): array => ($criteria['type'] ?? null) === Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx]);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+
+    $persisted = [];
+    $em->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (object $entity) use (&$persisted): void {
+        if ($entity instanceof Invoice && $entity->getId() === null) {
+            setEntityId($entity, 7);
+        }
+        $persisted[] = $entity;
+    });
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($systemService, $emailService, $payGatewayService) {
+        if ($name === 'Invoice' && $sub === 'PayGateway') {
+            return $payGatewayService;
+        }
+
+        return moduleService(['system' => $systemService, 'email' => $emailService])($name, (string) $sub);
+    });
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->refundInvoice($invoiceModel, null, null, ['custom_line' => ['title' => $title, 'amount' => 25.0]]))->toBe(7);
+});
+
 test('debitInvoice issues a payable debit note linked to the original', function (): void {
     $invoiceModel = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
     $invoiceModel->setIssued(true);

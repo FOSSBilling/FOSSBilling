@@ -2098,13 +2098,15 @@ class Service implements InjectionAwareInterface
      */
     private function createRefundDocument(Invoice $invoice, $note, ?array $items, array $options): Invoice
     {
+        // Arbitrary-amount custom lines are validated before anything moves.
+        $customLine = $this->resolveCustomRefundLine($options['custom_line'] ?? null);
         $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
         $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
 
         // A dashboard refund already returned the card payment, so a deposit
         // invoice's wallet credit must be reversed when recording it.
         if ($gatewayReturned && $this->isInvoiceTypeDeposit($invoice)) {
-            $this->assertDepositReversalAvailable($invoice, $this->previewRefundAmount($invoice, $items));
+            $this->assertDepositReversalAvailable($invoice, $this->previewRefundAmount($invoice, $items, $customLine));
         }
 
         $gatewayPlan = [];
@@ -2114,7 +2116,7 @@ class Service implements InjectionAwareInterface
             // refundPayment call itself runs inside the credit-note
             // transaction below, after the deposit credit is reversed under
             // lock, so a shortfall aborts before Stripe is touched.
-            $gatewayPlan = $this->planGatewayRefund($invoice, $items);
+            $gatewayPlan = $this->planGatewayRefund($invoice, $items, $customLine);
         }
 
         // Offline-only refunds of deposits keep the pre-existing paper trail:
@@ -2136,7 +2138,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $customLine, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -2157,7 +2159,7 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Cannot refund invoice with negative amount');
                 }
 
-                $creditLines = $this->resolveRefundLines($invoice, $items);
+                $creditLines = $this->resolveRefundLines($invoice, $items, $customLine);
 
                 $new = new Invoice();
                 $new->setClientId($invoice->getClientId());
@@ -2309,7 +2311,7 @@ class Service implements InjectionAwareInterface
      *
      * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>}}|array{}
      */
-    private function planGatewayRefund(Invoice $invoice, ?array $items): array
+    private function planGatewayRefund(Invoice $invoice, ?array $items, ?array $customLine = null): array
     {
         $gateway = $invoice->getGateway();
         if (!$gateway instanceof PayGateway) {
@@ -2333,7 +2335,7 @@ class Service implements InjectionAwareInterface
             throw new InformationException('No refundable gateway payment found for invoice #:id. Return the payment in the gateway dashboard, or record an offline-only refund.', ['id' => $invoice->getId()]);
         }
 
-        $amount = $this->previewRefundAmount($invoice, $items);
+        $amount = $this->previewRefundAmount($invoice, $items, $customLine);
         if ($amount <= 0) {
             return [];
         }
@@ -2346,7 +2348,7 @@ class Service implements InjectionAwareInterface
 
         if (method_exists($adapter, 'listRefundsForTransaction')) {
             $recordedIds = $this->getRecordedGatewayRefundIds($invoice);
-            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway, $recordedIds, $this->refundItemsFingerprint($items));
+            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway, $recordedIds, $this->refundItemsFingerprint($items, $customLine));
             if ($reused !== null) {
                 return $reused;
             }
@@ -2368,7 +2370,7 @@ class Service implements InjectionAwareInterface
             'metadata' => [
                 'invoice_id' => (string) $invoice->getId(),
                 'gateway_id' => (string) $gateway->getId(),
-                'lines' => $this->refundItemsFingerprint($items),
+                'lines' => $this->refundItemsFingerprint($items, $customLine),
                 'attempt' => bin2hex(random_bytes(16)),
             ],
             'gateway' => $gateway->getName() ?: $gateway->getGateway(),
@@ -2616,9 +2618,9 @@ class Service implements InjectionAwareInterface
      * anything, mirroring how refundInvoice prices the note it is about to
      * create (negative line prices plus tax on taxed lines).
      */
-    private function previewRefundAmount(Invoice $invoice, ?array $items): float
+    private function previewRefundAmount(Invoice $invoice, ?array $items, ?array $customLine = null): float
     {
-        $creditLines = $this->resolveRefundLines($invoice, $items);
+        $creditLines = $this->resolveRefundLines($invoice, $items, $customLine);
         $subtotal = 0.0;
         $taxable = 0.0;
         foreach ($creditLines as [$item, $qty]) {
@@ -2640,21 +2642,27 @@ class Service implements InjectionAwareInterface
      * Canonical fingerprint of the refunded lines for the gateway refund's
      * idempotency key. Keys are strings here (form posts decode quantities
      * as strings) while the API also accepts ints, so both normalize to
-     * the same value.
+     * the same value. A custom line contributes its amount and title, so a
+     * repeated partial for a different amount never shares a key.
      */
-    private function refundItemsFingerprint(?array $items): string
+    private function refundItemsFingerprint(?array $items, ?array $customLine = null): string
     {
-        if (empty($items)) {
-            return 'full';
-        }
-        $pairs = [];
-        foreach ($items as $id => $qty) {
-            $pairs[(int) $id] = (int) $qty;
-        }
-        ksort($pairs);
         $parts = [];
-        foreach ($pairs as $id => $qty) {
-            $parts[] = $id . ':' . $qty;
+        if (!empty($items)) {
+            $pairs = [];
+            foreach ($items as $id => $qty) {
+                $pairs[(int) $id] = (int) $qty;
+            }
+            ksort($pairs);
+            foreach ($pairs as $id => $qty) {
+                $parts[] = $id . ':' . $qty;
+            }
+        }
+        if ($customLine !== null) {
+            $parts[] = 'custom:' . number_format($customLine['amount'], 2, '.', '') . ':' . $customLine['title'];
+        }
+        if ($parts === []) {
+            return 'full';
         }
 
         return implode(',', $parts);
@@ -2682,14 +2690,70 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * Validate the optional arbitrary-amount custom line for a refund. The
+     * amount is tax-exempt: gross reversal amounts carry no new tax.
+     *
+     * @return ?array{title: string, amount: float}
+     */
+    private function resolveCustomRefundLine(mixed $customLine): ?array
+    {
+        if ($customLine === null) {
+            return null;
+        }
+        if (!is_array($customLine)) {
+            throw new InformationException('Custom refund line is invalid.');
+        }
+        $title = trim((string) ($customLine['title'] ?? ''));
+        if ($title === '') {
+            throw new InformationException('Custom refund line needs a title.');
+        }
+        if (mb_strlen($title) > 255) {
+            throw new InformationException('Custom refund line title is too long.');
+        }
+        $amount = PriceValidator::validateAmount($customLine['amount'] ?? 0, 'Amount');
+        $amount = round($amount, 2);
+        if ($amount <= 0) {
+            throw new InformationException('Custom refund line needs an amount greater than zero.');
+        }
+
+        return ['title' => $title, 'amount' => $amount];
+    }
+
+    /**
      * Resolve which lines a refund credits: every line at its remaining
      * quantity when no selection is given, otherwise the selected
-     * line/quantity pairs validated against their remainders.
+     * line/quantity pairs validated against their remainders. A custom line
+     * stands alone: it references no source line, consumes no line quantity,
+     * and counts toward the remaining refundable amount through the
+     * invoice's refund total below.
      *
      * @return list<array{InvoiceItem, int}>
      */
-    private function resolveRefundLines(Invoice $invoice, ?array $items): array
+    private function resolveRefundLines(Invoice $invoice, ?array $items, ?array $customLine = null): array
     {
+        if ($customLine !== null) {
+            if (!empty($items)) {
+                throw new InformationException('Custom refund line cannot be combined with line selection.');
+            }
+            $remaining = round($this->getTotalWithTax($invoice) - (float) ($invoice->getRefund() ?? 0), 2);
+            if ($remaining <= 0.005) {
+                throw new InformationException('No remaining refundable amount on this invoice');
+            }
+            if ($customLine['amount'] - $remaining > 0.005) {
+                throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);
+            }
+            $synthetic = (new InvoiceItem())
+                ->setType(InvoiceItem::TYPE_CUSTOM)
+                ->setTask(InvoiceItem::TASK_VOID)
+                ->setStatus(InvoiceItem::STATUS_EXECUTED)
+                ->setTitle($customLine['title'])
+                ->setQuantity(1)
+                ->setPrice($customLine['amount'])
+                ->setTaxed(false);
+
+            return [[$synthetic, 1]];
+        }
+
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
         $credited = $this->getCreditedQuantities($invoice);
 
@@ -2806,7 +2870,9 @@ class Service implements InjectionAwareInterface
 
     /**
      * Quantities already credited per source line across all credit notes
-     * issued against the given invoice.
+     * issued against the given invoice. Custom lines reference no source
+     * line and are skipped here; their amounts count toward the invoice's
+     * refund total instead.
      *
      * @return array<int, int> source line id => credited quantity
      */

@@ -343,6 +343,118 @@ describe('payment notices', function (): void {
         expect(true)->toBeTrue();
     });
 
+    test('a partial reversal books a custom-line credit note for the exact amount', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD', 'issued' => true, 'status' => Invoice::STATUS_PAID]);
+
+        $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(100.00);
+        $invoiceService->shouldReceive('refundInvoice')->once()->with(
+            $invoice,
+            'PayPal chargeback R-1 of payment P-9.',
+            null,
+            ['gateway_refund' => false, 'custom_line' => ['title' => 'Partial chargeback R-1 of payment P-9.', 'amount' => 25.0]]
+        )->andReturn(101);
+        $invoiceService->shouldReceive('addNote')->once()->with($invoice, Mockery::pattern('/custom-line/'));
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(['invoice_id' => 60, 'amount' => 100.0]);
+
+        $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getConnection')->andReturn($connection);
+        $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+        $captured = null;
+        $api = Mockery::mock();
+        $api->shouldReceive('invoice_transaction_update')->once()->andReturnUsing(function (array $data) use (&$captured): void {
+            $captured = $data;
+        });
+
+        $adapter = autopayAdapter();
+        $adapter->setDi(autopayDi(['invoice' => $invoiceService], $em));
+
+        $adapter->processTransaction($api, 70, [
+            'source' => 'ipn',
+            'http_raw_post_data' => 'payment_status=Reversed&parent_txn_id=P-9&txn_id=R-1&mc_gross=25.00&mc_currency=USD',
+            'post' => ['payment_status' => 'Reversed', 'parent_txn_id' => 'P-9', 'txn_id' => 'R-1', 'mc_gross' => '25.00', 'mc_currency' => 'USD'],
+        ], 5);
+        expect($captured['note'] ?? '')->toContain('custom-line');
+    });
+
+    test('a failed partial reversal falls back to staff settlement', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD', 'issued' => true, 'status' => Invoice::STATUS_PAID]);
+
+        $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(100.00);
+        $invoiceService->shouldReceive('refundInvoice')->once()->andThrow(new FOSSBilling\Core\Exception\InformationException('No remaining refundable amount on this invoice'));
+        $invoiceService->shouldReceive('addNote')->once()->with($invoice, 'PayPal chargeback R-1 of payment P-9. No remaining refundable amount on this invoice');
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(['invoice_id' => 60, 'amount' => 100.0]);
+
+        $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getConnection')->andReturn($connection);
+        $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+        $captured = null;
+        $api = Mockery::mock();
+        $api->shouldReceive('invoice_transaction_update')->once()->andReturnUsing(function (array $data) use (&$captured): void {
+            $captured = $data;
+        });
+
+        $adapter = autopayAdapter();
+        $adapter->setDi(autopayDi(['invoice' => $invoiceService], $em));
+
+        $adapter->processTransaction($api, 70, [
+            'source' => 'ipn',
+            'http_raw_post_data' => 'payment_status=Reversed&parent_txn_id=P-9&txn_id=R-1&mc_gross=25.00&mc_currency=USD',
+            'post' => ['payment_status' => 'Reversed', 'parent_txn_id' => 'P-9', 'txn_id' => 'R-1', 'mc_gross' => '25.00', 'mc_currency' => 'USD'],
+        ], 5);
+        expect($captured['note'] ?? '')->toContain('Not refunded here');
+    });
+
+    test('a full reversal refunds the invoice and moves renewals back', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD', 'issued' => true, 'status' => Invoice::STATUS_PAID]);
+        $text = 'PayPal chargeback R-1 of payment P-9.';
+
+        $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(100.00);
+        $invoiceService->shouldReceive('refundInvoice')->once()->with($invoice, $text)->andReturn(101);
+        $invoiceService->shouldReceive('addNote')->once()->with($invoice, $text);
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(['invoice_id' => 60, 'amount' => 100.0]);
+        $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+        $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getConnection')->andReturn($connection);
+        $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+        $captured = null;
+        $api = Mockery::mock();
+        $api->shouldReceive('invoice_transaction_update')->once()->andReturnUsing(function (array $data) use (&$captured): void {
+            $captured = $data;
+        });
+
+        $adapter = autopayAdapter();
+        $adapter->setDi(autopayDi(['invoice' => $invoiceService], $em));
+
+        $adapter->processTransaction($api, 70, [
+            'source' => 'ipn',
+            'http_raw_post_data' => 'payment_status=Reversed&parent_txn_id=P-9&txn_id=R-1&mc_gross=100.00&mc_currency=USD',
+            'post' => ['payment_status' => 'Reversed', 'parent_txn_id' => 'P-9', 'txn_id' => 'R-1', 'mc_gross' => '100.00', 'mc_currency' => 'USD'],
+        ], 5);
+        expect($captured['note'] ?? '')->toBe($text);
+    });
+
     test('a notice that is not genuine is refused', function (): void {
         $adapter = autopayAdapter();
         $adapter->setDi(autopayDi());

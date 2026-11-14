@@ -491,13 +491,22 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
 
         try {
             $full = abs($amount - $service->getTotalWithTax($invoice)) < 0.01;
-            if (!$full) {
-                // Line-based refunds cannot express an arbitrary share: staff settles the rest by hand.
-                $service->addNote($invoice, $text . ' Partial reversal: settle the amount by hand.');
+            if ($full) {
+                $service->refundInvoice($invoice, $text);
+            } else {
+                // Arbitrary gross shares cannot map onto integer line quantities: book the exact amount on a tax-exempt custom line.
+                $service->refundInvoice($invoice, $text, null, [
+                    'gateway_refund' => false,
+                    'custom_line' => [
+                        'title' => sprintf('Partial chargeback %s of payment %s.', $reversalId, $paymentId),
+                        'amount' => $amount,
+                    ],
+                ]);
+                $result = $text . ' Partial reversal booked on a custom-line credit note.';
+                $service->addNote($invoice, $result);
 
-                return $text . ' Partial reversal: settled by hand.';
+                return $result;
             }
-            $service->refundInvoice($invoice, $text);
         } catch (FOSSBilling\Core\Exception\InformationException $e) {
             $service->addNote($invoice, $text . ' ' . $e->getMessage());
 
