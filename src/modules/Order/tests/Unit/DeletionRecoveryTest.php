@@ -674,3 +674,133 @@ test('a stale PayPal error status cannot replay retained credit after deletion r
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
         ->and($c['receipt']->getStatus())->toBe('processed');
 });
+
+test('out-of-order PayPal refunds wait for the parent receipt and retry without refunding the old invoice', function (?string $parentStatus): void {
+    $c = deferredPayPalReceiptContext();
+    if ($parentStatus === null) {
+        // The refund arrives before the completed callback has supplied its ID.
+        $c['receipt']->setTxnId(null);
+    } else {
+        $c['receipt']->setStatus($parentStatus);
+    }
+    $c['em']->flush();
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-EARLY', '-3');
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    expect($refund->getStatus())->toBe('received')
+        ->and($refund->getError())->toContain('awaiting its original payment')
+        ->and($c['em']->isOpen())->toBeTrue()
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0)
+        ->and($c['invoice']->getStatus())->toBe(Invoice::STATUS_PAID)
+        ->and((float) $c['invoice']->getRefund())->toBe(0.0);
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    expect($refund->getStatus())->toBe('processed')
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(2)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
+        ->and($c['invoice']->getStatus())->toBe(Invoice::STATUS_PAID)
+        ->and((float) $c['invoice']->getRefund())->toBe(0.0);
+})->with([null, 'received', 'processing', 'error']);
+
+test('MySQL deferred PayPal refunds for independent clients do not lock each others ledger rows', function (): void {
+    $em = deferredPayPalMysqlEntityManager();
+    $connection = $em->getConnection();
+    $metadata = array_map($em->getClassMetadata(...), [
+        Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class,
+        Invoice::class, Box\Mod\Invoice\Entity\PayGateway::class,
+        Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class,
+    ]);
+    $schema = new SchemaTool($em);
+    $workers = [];
+    $inputs = [];
+
+    try {
+        $schema->createSchema($metadata);
+        $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('PayPalEmail')->setEnabled(true);
+        $em->persist($gateway);
+        $em->flush();
+        $clientIds = [];
+        $refundIds = [];
+        foreach ([1, 2] as $_) {
+            $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+            $em->persist($client);
+            $em->flush();
+            $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setGateway($gateway)->setIssued(true)->setStatus(Invoice::STATUS_PAID);
+            $em->persist($invoice);
+            $em->flush();
+            $parent = (new Box\Mod\Invoice\Entity\Transaction())->setInvoice($invoice)->setGateway($gateway)->setTxnId('PAYMENT-' . $client->getId())->setStatus('processed')->setTxnStatus('Completed')->setType('subscr_payment')->setAmount('3')->setCurrency('USD');
+            $em->persist($parent);
+            $em->flush();
+            $credit = (new Box\Mod\Client\Entity\ClientBalance())->setClient($client)->setAmount('3')->setType(Box\Mod\Client\Entity\ClientBalance::TYPE_PAYPAL_DEFERRED)->setRelId((string) $parent->getId());
+            $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('SUB-' . $client->getId())->setRelType('invoice')->setRelId($invoice->getId());
+            $refund = (new Box\Mod\Invoice\Entity\Transaction())->setInvoice($invoice)->setGateway($gateway)->setStatus('processing');
+            foreach ([$credit, $subscription, $refund] as $entity) {
+                $em->persist($entity);
+            }
+            $em->flush();
+            $clientIds[] = $client->getId();
+            $refundIds[] = $refund->getId();
+        }
+        // A realistic wallet population keeps the existing client_id index
+        // selective for the normal per-client SUM ... FOR UPDATE mutex reads.
+        $padding = [];
+        for ($n = 0; $n < 100; ++$n) {
+            $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+            $em->persist($client);
+            $padding[] = $client;
+        }
+        $em->flush();
+        foreach ($padding as $client) {
+            $em->persist((new Box\Mod\Client\Entity\ClientBalance())->setClient($client)->setAmount('1')->setType('gift'));
+        }
+        $em->flush();
+        foreach ($refundIds as $refundId) {
+            $input = new Symfony\Component\Process\InputStream();
+            $worker = new Symfony\Component\Process\Process([
+                PHP_BINARY, '-d', 'sys_temp_dir=' . sys_get_temp_dir(), PATH_TESTS . '/Fixtures/paypal-refund-mysql-worker.php', PATH_DATA, (string) $refundId,
+            ]);
+            $worker->setInput($input);
+            $worker->setTimeout(20);
+            $workers[] = $worker;
+            $inputs[] = $input;
+            $worker->start();
+            expect($worker->waitUntil(fn ($type, $output): bool => str_contains($output, 'ready')))->toBeTrue();
+        }
+        foreach ($inputs as $input) {
+            $input->write("go\n");
+            $input->close();
+        }
+        foreach ($workers as $worker) {
+            $worker->wait();
+            $this->assertSame(0, $worker->getExitCode(), $worker->getOutput() . $worker->getErrorOutput());
+            expect($worker->getOutput())->toContain('processed');
+        }
+        foreach ($clientIds as $clientId) {
+            expect((float) $connection->fetchOne('SELECT SUM(amount) FROM client_balance WHERE client_id = ?', [$clientId]))->toBe(0.0);
+        }
+        expect($connection->fetchOne("SELECT COUNT(*) FROM invoice WHERE status <> 'paid'"))->toBe(0)
+            ->and($connection->fetchOne("SELECT COUNT(*) FROM `transaction` WHERE status <> 'processed'"))->toBe(0);
+    } finally {
+        foreach ($workers as $worker) {
+            $worker->stop();
+        }
+        foreach ($inputs as $input) {
+            $input->close();
+        }
+        $schema->dropSchema($metadata);
+        $connection->close();
+    }
+})->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+
+test('a completed PayPal receipt without a settled invoice is not treated as an invoice refund', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $c['invoice']->setStatus(Invoice::STATUS_UNPAID);
+    $c['receipt']->setStatus('processed');
+    $c['em']->flush();
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-UNSETTLED', '-3');
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    expect($refund->getStatus())->toBe('received')
+        ->and($c['invoice']->getStatus())->toBe(Invoice::STATUS_UNPAID)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+});

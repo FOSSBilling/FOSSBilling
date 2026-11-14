@@ -236,7 +236,7 @@ function signedPayPalGet(int $invoiceId, int $gatewayId = 1, array $extra = []):
     );
 }
 
-function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscription = null, ?callable $findActiveByTxn = null): Mockery\MockInterface
+function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscription = null, ?callable $findActiveByTxn = null, array $refundParents = []): Mockery\MockInterface
 {
     $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepo->shouldReceive('find')->byDefault()->andReturn($invoiceModel);
@@ -244,7 +244,7 @@ function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscripti
     $subRepo->shouldReceive('findOneBy')->byDefault()->andReturn($existingSubscription);
     $transactionRepo = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
     $transactionRepo->shouldReceive('find')->byDefault()->andReturnNull();
-    $transactionRepo->shouldReceive('findBy')->byDefault()->andReturn([]);
+    $transactionRepo->shouldReceive('findBy')->byDefault()->andReturn($refundParents);
     $transactionRepo->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturnUsing(
         $findActiveByTxn ?? static fn (): ?object => null
     );
@@ -261,6 +261,8 @@ function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscripti
         default => Mockery::mock(Doctrine\ORM\EntityRepository::class)->shouldIgnoreMissing(),
     });
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+    $em->shouldReceive('refresh')->byDefault();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
 
     return $em;
 }
@@ -1629,7 +1631,11 @@ describe('PayPal callback invoice binding', function (): void {
         $refunded = [];
         $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
+        $earlierInvoice->shouldReceive('getStatus')->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
         $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
+        $earlier->shouldReceive('getId')->andReturn(10);
+        $earlier->shouldReceive('getStatus')->andReturn(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
+        $earlier->shouldReceive('getTxnStatus')->andReturn('Completed');
         $earlier->shouldReceive('getInvoice')->byDefault()->andReturn($earlierInvoice);
 
         $apiAdmin = Mockery::mock();
@@ -1647,8 +1653,9 @@ describe('PayPal callback invoice binding', function (): void {
             return true;
         });
 
-        $em = paypalEmMocks(null, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
+        $em = paypalEmMocks(null, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null, [$earlier]);
         $di = container();
+        $em->getConnection()->shouldReceive('fetchOne')->once()->with('SELECT id FROM client WHERE id = :client_id', ['client_id' => 9])->andReturn(9);
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
 

@@ -524,13 +524,14 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         }
     }
 
-    /** Return false only when the parent payment was not a deferred credit. */
+    /** Return false only for a confirmed invoice payment; unresolved refunds stay retryable. */
     private function refundDeferredCredit($api, int $id, array $ipn, int $gatewayId, int $invoiceId, int $clientId): bool
     {
         $parentId = $ipn['parent_txn_id'] ?? null;
         if (!is_string($parentId) || $parentId === '') {
             throw new Payment_Exception('PayPal refund is missing its original payment ID');
         }
+        $settledInvoicePayment = false;
         $parents = $this->di['em']->getRepository(Transaction::class)->findBy(['txnId' => $parentId, 'gateway' => $gatewayId]);
         // Earlier failed deliveries can share the external ID. Find the receipt
         // whose ledger entry actually retained the money, not an arbitrary row.
@@ -541,14 +542,22 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
             // Wait for the original credit to commit, and serialize distinct or
             // repeated refund callbacks against that same credit.
-            $handled = $this->withReceiptLock($parent->getId(), function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId): bool {
-                return $this->di['em']->wrapInTransaction(function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId): bool {
+            $handled = $this->withReceiptLock($parent->getId(), function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId, &$settledInvoicePayment): bool {
+                $this->di['em']->refresh($parent);
+                $handled = $this->di['em']->wrapInTransaction(function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId): bool {
                     $connection = $this->di['em']->getConnection();
-                    // Match settlement's lock order: client mutex before ledger rows.
-                    $this->di['em']->getRepository(ClientBalance::class)->getClientBalanceSumForUpdate($clientId);
+                    // Serialize wallet deductions on the same client mutex as
+                    // settlement. No balance availability check is needed: the
+                    // gateway already returned the money. Parent receipt locks
+                    // serialize these ledger checkpoints, so range locks would
+                    // only block unrelated clients' inserts on MySQL.
+                    $connection->fetchOne(
+                        'SELECT id FROM client WHERE id = :client_id' . RowLock::suffix($connection),
+                        ['client_id' => $clientId],
+                    );
                     $credit = $connection->fetchAssociative(
-                        'SELECT client_id, amount FROM client_balance WHERE type = :type AND rel_id = :id' . RowLock::suffix($connection),
-                        ['type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $parent->getId()],
+                        'SELECT client_id, amount FROM client_balance WHERE client_id = :client_id AND type = :type AND rel_id = :id',
+                        ['client_id' => $clientId, 'type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $parent->getId()],
                     );
                     if ($credit === false) {
                         return false;
@@ -566,8 +575,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $amount = round(-$amount, 2);
                     $type = ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $parent->getId();
                     $refunds = $connection->fetchAllAssociative(
-                        'SELECT rel_id, amount FROM client_balance WHERE type = :type' . RowLock::suffix($connection),
-                        ['type' => $type],
+                        'SELECT rel_id, amount FROM client_balance WHERE client_id = :client_id AND type = :type',
+                        ['client_id' => $clientId, 'type' => $type],
                     );
                     $refunded = 0.0;
                     $duplicate = false;
@@ -604,13 +613,31 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
                     return true;
                 });
+                if (!$handled && $parent->getStatus() === Transaction::STATUS_PROCESSED && $parent->getTxnStatus() === 'Completed' && $parent->getInvoice()?->getId() === $invoiceId && $parent->getInvoice()?->getStatus() === Invoice::STATUS_PAID) {
+                    $settledInvoicePayment = true;
+                }
+
+                return $handled;
             });
             if ($handled) {
                 return true;
             }
         }
 
-        return false;
+        if ($settledInvoicePayment) {
+            return false;
+        }
+
+        // A refund may arrive before its completed-payment callback is stored
+        // or processed. Absence of a credit is not proof of invoice settlement.
+        $api->invoice_transaction_update([
+            'id' => $id,
+            'status' => Transaction::STATUS_RECEIVED,
+            'error' => 'PayPal refund is awaiting its original payment receipt. Retry after payment reconciliation.',
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return true;
     }
 
     /**

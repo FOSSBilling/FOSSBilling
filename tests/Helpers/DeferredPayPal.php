@@ -14,7 +14,7 @@ function deletionPayPalApi(array $c): object
 
         public function invoice_transaction_get(array $data): array
         {
-            return $this->c['connection']->fetchAssociative('SELECT invoice_id, type, txn_id, txn_status, amount, currency, status FROM "transaction" WHERE id = ?', [$data['id']]);
+            return $this->c['connection']->fetchAssociative('SELECT invoice_id, type, txn_id, txn_status, amount, currency, status FROM ' . $this->c['connection']->quoteSingleIdentifier('transaction') . ' WHERE id = ?', [$data['id']]);
         }
 
         public function invoice_transaction_update(array $data): bool
@@ -52,4 +52,18 @@ function deletionPayPalApi(array $c): object
             return $service->addFunds($this->c['client'], $data['amount'], $data['description'], $data);
         }
     };
+}
+
+function deferredPayPalMysqlEntityManager(?string $connectionClass = null): Doctrine\ORM\EntityManager
+{
+    $connection = Doctrine\DBAL\DriverManager::getConnection([
+        'driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) getenv('DELETION_HOLD_MYSQL_PORT'),
+        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
+    ] + ($connectionClass === null ? [] : ['wrapperClass' => $connectionClass]));
+    $connection->executeStatement('SET SESSION innodb_lock_wait_timeout = 4');
+    $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('DeferredPayPalMysqlProxies');
+
+    return new Doctrine\ORM\EntityManager($connection, $config);
 }
