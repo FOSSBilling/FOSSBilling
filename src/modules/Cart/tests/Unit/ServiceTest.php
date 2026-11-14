@@ -763,7 +763,16 @@ test('checkoutCart returns array with expected keys', function (): void {
     $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '192.0.2.1']);
-    $di['mod_service'] = $di->protect(fn () => $productService);
+    $di['mod_service'] = $di->protect(function (string $serviceName = '', string $sub = '') use ($productService) {
+        if (strtolower($serviceName) === 'invoice' && strtolower($sub) === 'savedcards') {
+            $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+            $savedCards->shouldReceive('autopay')->andReturn(null);
+
+            return $savedCards;
+        }
+
+        return $productService;
+    });
 
     $serviceMock->setDi($di);
     $result = $serviceMock->checkoutCart($cart, $client);
@@ -2900,4 +2909,55 @@ test('cart with a discounted domain is not subscribable even with a recurring pr
     $service->setDi($di);
 
     expect($service->toApiArray($cart)['subscribable'])->toBeFalse();
+});
+
+test('checkoutCart sends a free renewing order without a saved method to set up autopay', function (): void {
+    $cart = createEntity(Cart::class);
+
+    $order = new Order();
+    $orderIdReflection = new ReflectionProperty($order, 'id');
+    $orderIdReflection->setValue($order, 99);
+    $order->setPeriod('1M');
+
+    $client = createEntity(Client::class, ['id' => 7]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('createFromCart')->atLeast()->once()->andReturn([$order, null, [99]]);
+    $serviceMock->shouldReceive('rm')->atLeast()->once()->andReturn(true);
+
+    $autopay = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+    $autopay->shouldReceive('option')->once()->with('free_orders')->andReturn(true);
+    $autopay->shouldReceive('option')->once()->with('save_only')->andReturn(true);
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('autopay')->once()->andReturn($autopay);
+    $savedCards->shouldReceive('method')->once()->with(7)->andReturn(null);
+
+    $events = new ArrayObject();
+    $dispatcher = new readonly class($events) {
+        public function __construct(private ArrayObject $events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->events->append($event);
+
+            return $event;
+        }
+    };
+
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/');
+
+    $di = container();
+    $di['event_dispatcher'] = $dispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '192.0.2.1']);
+    $di['url'] = $url;
+    $di['mod_service'] = $di->protect(fn (string $name = '', string $sub = ''): object => strtolower($name) === 'invoice' && strtolower($sub) === 'savedcards' ? $savedCards : Mockery::mock()->shouldIgnoreMissing());
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->checkoutCart($cart, $client);
+
+    expect($result['redirect'])->toBe('https://billing.example/payment-methods/paypal-autopay?next=order%2Fservice%2Fmanage%2F99');
 });

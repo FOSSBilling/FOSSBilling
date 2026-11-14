@@ -118,6 +118,7 @@ describe('gateway resolution', function (): void {
     test('has no adapters without an enabled Stripe gateway', function (): void {
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->twice()->with('Stripe')->andReturn(null);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn(null);
 
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -131,6 +132,7 @@ describe('gateway resolution', function (): void {
         $gateway = createEntity(PayGateway::class, ['id' => 4, 'gateway' => 'Stripe']);
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->twice()->with('Stripe')->andReturn($gateway);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn(null);
 
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $payGatewayService = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
@@ -286,6 +288,7 @@ describe('runDue', function (): void {
     test('does nothing without a gateway that charges saved methods', function (): void {
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->once()->with('Stripe')->andReturn(null);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn(null);
 
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -300,6 +303,7 @@ describe('runDue', function (): void {
         $gateway = createEntity(PayGateway::class, ['id' => 4, 'gateway' => 'Stripe']);
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->with('Stripe')->andReturn($gateway);
+        $repo->shouldReceive('findEnabledByGateway')->with('PayPalAutoPay')->andReturn(null);
 
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $adapter->shouldReceive('gatewayId')->byDefault()->andReturn(4);
@@ -424,6 +428,7 @@ describe('runDue charges', function (): void {
         $gateway = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'Stripe']);
         $repo = Mockery::mock(PayGatewayRepository::class);
         $repo->shouldReceive('findEnabledByGateway')->with('Stripe')->andReturn($gateway);
+        $repo->shouldReceive('findEnabledByGateway')->with('PayPalAutoPay')->andReturn(null);
 
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $adapter->shouldReceive('gatewayId')->byDefault()->andReturn(5);
@@ -472,5 +477,34 @@ describe('runDue charges', function (): void {
 
         $service->runDue();
         expect(true)->toBeTrue();
+    });
+});
+
+describe('autopay gateway resolution', function (): void {
+    test('resolves the enabled PayPal Auto-Pay gateway adapter', function (): void {
+        $gateway = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'PayPalAutoPay']);
+        $repo = Mockery::mock(PayGatewayRepository::class);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn($gateway);
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $payGatewayService = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+        $service = savedCardsService($em, ['invoice:paygateway' => $payGatewayService]);
+
+        expect($service->autopay())->toBe($adapter);
+    });
+
+    test('returns null without an enabled PayPal Auto-Pay gateway', function (): void {
+        $repo = Mockery::mock(PayGatewayRepository::class);
+        $repo->shouldReceive('findEnabledByGateway')->once()->with('PayPalAutoPay')->andReturn(null);
+
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+        $service = savedCardsService($em);
+
+        expect($service->autopay())->toBeNull();
     });
 });

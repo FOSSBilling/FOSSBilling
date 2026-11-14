@@ -24,9 +24,10 @@
                 </div>
             </div>
             <div class="card-body" data-cards data-return-url="{{ 'payment-methods'|url }}">
-                {% if not cards.available %}
+                {% if not cards.available and not cards.autopay %}
                     <div class="alert alert-info" role="status">{{ 'Saved payment methods are not available.'|trans }}</div>
                 {% else %}
+                    {% if cards.available %}
                     {% if cards.cards is not empty %}
                         <ul class="list-group list-group-flush mb-4">
                             {% for card in cards.cards %}
@@ -54,6 +55,34 @@
                         <p class="text-secondary">{{ 'Confirm the card below to save it.'|trans }}</p>
                         <button class="btn btn-primary" type="submit">{{ 'Save card'|trans }}</button>
                     </form>
+                    {% endif %}
+                    {% if cards.autopay and (cards.autopay.account or cards.autopay.add) %}
+                    <div class="card mt-4">
+                        <div class="card-header py-3">
+                            <h2 class="mb-0">{{ 'PayPal automatic payments'|trans }}</h2>
+                        </div>
+                        {% if cards.autopay.account %}
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                    <span dir="ltr">{{ cards.autopay.account }}</span>
+                                    <span class="d-flex flex-wrap align-items-center gap-2">
+                                        {% if cards.autopay.default %}
+                                            <span class="badge text-bg-success">{{ 'Pays invoices automatically'|trans }}</span>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-primary" type="button" data-card-call="invoice/autopay_default">{{ 'Use for invoices'|trans }}</button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-danger" type="button" data-card-call="invoice/autopay_remove" data-confirm="{{ 'Stop automatic payments with PayPal?'|trans }}">{{ 'Remove'|trans }}</button>
+                                    </span>
+                                </li>
+                            </ul>
+                        {% else %}
+                            <div class="card-body">
+                                <p class="text-secondary">{{ 'Agree once at PayPal and your invoices are then paid from your PayPal account automatically.'|trans }}</p>
+                                <a class="btn btn-primary" href="{{ 'payment-methods/paypal-autopay'|url }}">{{ 'Set up automatic payments with PayPal'|trans }}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -96,7 +125,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             button.disabled = true;
-            FOSSBilling.api.client.post(button.dataset.cardCall, { id: button.dataset.id },
+            const params = {};
+            if (button.dataset.id) {
+                params.id = button.dataset.id;
+            }
+            FOSSBilling.api.client.post(button.dataset.cardCall, params,
                 function () { window.location.reload(); },
                 function (res) {
                     button.disabled = false;

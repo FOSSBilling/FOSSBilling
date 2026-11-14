@@ -176,13 +176,15 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         foreach ($cards as &$card) {
             $card['default'] = $card['default'] && $paying instanceof \Payment_Adapter_Stripe;
         }
+        $autopay = $savedCards->autopay();
+        $agreement = $autopay?->savedCard($clientId);
 
         return [
             'available' => $stripe !== null,
             'bank' => $stripe?->bankDebit($clientId) ?? false,
             'cards' => $cards,
             'paypal' => null,
-            'autopay' => null,
+            'autopay' => $autopay === null ? null : ['account' => $agreement['card'] ?? null, 'default' => $agreement !== null && $paying instanceof \Payment_Adapter_PayPalAutoPay, 'add' => $autopay->option('save_only')],
         ];
     }
 
@@ -248,6 +250,54 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         $adapter->cardSaveChoice($clientId, (int) $invoice->getId(), (string) $data['intent'], !empty($data['save']), !empty($data['make_default']));
 
         return true;
+    }
+
+    /** Makes the billing agreement the method that pays the client's invoices. */
+    public function autopay_default(): bool
+    {
+        $adapter = $this->autopayAdapter();
+        if ($adapter->savedCard((int) $this->getIdentity()->getId()) === null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('You have no PayPal billing agreement.');
+        }
+        $this->getDi()['mod_service']('Invoice', 'SavedCards')->choose($adapter->gatewayId(), $adapter->testMode(), (int) $this->getIdentity()->getId());
+
+        return true;
+    }
+
+    /** Removes the client's billing agreement, here and at PayPal. */
+    public function autopay_remove(): bool
+    {
+        $this->autopayAdapter()->agreementRemove((int) $this->getIdentity()->getId());
+
+        return true;
+    }
+
+    /** Pays the client's own unpaid invoice at once with their billing agreement. */
+    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
+    public function autopay_pay($data): array
+    {
+        $adapter = $this->autopayAdapter();
+        $clientId = (int) $this->getIdentity()->getId();
+        if (!$adapter->option('pay_saved') || $adapter->savedCard($clientId) === null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('You cannot pay this invoice with a saved PayPal account.');
+        }
+        $invoice = $this->getDi()['em']->getRepository(Invoice::class)->findOneBy([
+            'hash' => $data['hash'],
+            'clientId' => $clientId,
+            'status' => Invoice::STATUS_UNPAID,
+        ]);
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Core\Exception\InformationException('This invoice is already paid or cancelled.');
+        }
+        $result = $this->getDi()['mod_service']('Invoice', 'SavedCards')->charge($invoice, $adapter, true, true);
+
+        return ['paid' => $result['paid'], 'message' => (string) ($result['error'] ?? '')];
+    }
+
+    private function autopayAdapter(): \Payment_Adapter_PayPalAutoPay
+    {
+        return $this->getDi()['mod_service']('Invoice', 'SavedCards')->autopay()
+            ?? throw new \FOSSBilling\Core\Exception\InformationException('Automatic payments with PayPal are not available.');
     }
 
     private function cardAdapter(): \Payment_Adapter_Stripe

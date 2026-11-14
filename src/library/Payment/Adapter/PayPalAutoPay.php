@@ -413,6 +413,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 10)) {
             throw new Payment_Exception('Another request is being processed. Please try again.');
         }
+
         try {
             $this->applyPayment($api_admin, $id, $txnId, $invoice, $amount, $currency, $row, $asked);
         } finally {
@@ -487,6 +488,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         }
         $service = $this->di['mod_service']('Invoice');
         $text = sprintf('PayPal chargeback %s of payment %s.', $reversalId, $paymentId);
+
         try {
             $full = abs($amount - $service->getTotalWithTax($invoice)) < 0.01;
             if (!$full) {
@@ -504,7 +506,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         $moved = [];
         $items = $connection->fetchAllAssociative(
             "SELECT rel_id, period FROM invoice_item WHERE invoice_id = ? AND type = 'order' AND task = ? AND status = 'executed'",
-            [(int) $invoice->getId(), \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW]
+            [(int) $invoice->getId(), Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW]
         );
         foreach ($items as $item) {
             $orderRow = $connection->fetchAssociative('SELECT id, expires_at, period FROM client_order WHERE id = ?', [(int) $item['rel_id']]);
@@ -561,7 +563,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
     /** Removes an agreement wherever it is saved (cancelled at PayPal). */
     private function forget(string $agreementId): void
     {
-        $this->di['em']->getRepository(\Box\Mod\Invoice\Entity\PayGatewayCustomer::class)->clearSavedMethod($this->gatewayId(), $this->testMode(), $agreementId);
+        $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGatewayCustomer::class)->clearSavedMethod($this->gatewayId(), $this->testMode(), $agreementId);
     }
 
     private function cancelAgreement(string $agreementId): void
@@ -571,7 +573,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             if (!$this->ok($reply)) {
                 $this->di['logger']->warning('PayPal: billing agreement {agreement} was not cancelled at PayPal: {message}', ['agreement' => $agreementId, 'message' => $this->error($reply)]);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->di['logger']->warning('PayPal: billing agreement {agreement} was not cancelled at PayPal: {message}', ['agreement' => $agreementId, 'message' => $e->getMessage()]);
         }
     }
@@ -630,9 +632,10 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             'timeout' => 60,
             'body' => ['METHOD' => $method, 'VERSION' => self::VERSION, 'USER' => trim((string) $this->config[$prefix . 'api_username']), 'PWD' => trim((string) $this->config[$prefix . 'api_password']), 'SIGNATURE' => trim((string) $this->config[$prefix . 'api_signature'])] + $fields,
         ]);
+
         try {
             $body = $response->getContent();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             throw new Payment_Exception('PayPal did not answer :method: :error', [':method' => $method, ':error' => $e->getMessage()]);
         }
         parse_str($body, $reply);
@@ -708,7 +711,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
 
     private function moneyFormat(float $amount, string $currency): string
     {
-        $digits = \Symfony\Component\Intl\Currencies::exists($currency) ? \Symfony\Component\Intl\Currencies::getFractionDigits($currency) : 2;
+        $digits = Symfony\Component\Intl\Currencies::exists($currency) ? Symfony\Component\Intl\Currencies::getFractionDigits($currency) : 2;
 
         return number_format($amount, $digits, '.', '');
     }

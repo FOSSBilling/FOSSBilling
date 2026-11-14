@@ -25,7 +25,9 @@
     });
 
     function onOrderCheckout(result){
-        if (result.invoice_hash) {
+        if (result.redirect) {
+            window.top.location.href = result.redirect;
+        } else if (result.invoice_hash) {
             FOSSBilling.api.guest.post('invoice/payment', { hash: result.invoice_hash, gateway_id: result.gateway_id, auto_redirect: true },
                 (r) => {
                     let checkoutEl = document.getElementById('checkout');
