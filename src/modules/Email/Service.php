@@ -467,7 +467,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $this->di['em']->flush();
         }
         if ($send_now || $skipHistory) {
-            $this->_sendFromQueue($email, $throw_exceptions, $skipHistory);
+            return $this->_sendFromQueue($email, $throw_exceptions, $skipHistory);
         }
 
         return true;
@@ -748,10 +748,11 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('System');
         [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
+        $protectErrors = in_array($template->getActionCode(), self::SECRET_TEMPLATE_CODES, true);
 
         try {
-            $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone, $locale);
-            $ps = $systemService->renderEmailSubjectString($subjectTemplate, $vars, $timezone, $locale);
+            $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone, $locale, protectErrors: $protectErrors);
+            $ps = $systemService->renderEmailSubjectString($subjectTemplate, $vars, $timezone, $locale, protectErrors: $protectErrors);
 
             if ($template->hasError()) {
                 $template->clearError();
@@ -1331,15 +1332,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 }
             }
         } catch (\Exception $e) {
-            $message = $e->getMessage();
-            $this->di['logger']->withChannel('email')->error($e->getMessage());
+            $message = $skipHistory ? 'Secret email delivery failed; request a new link' : $e->getMessage();
+            $this->di['logger']->withChannel('email')->error($message);
 
             // Secret messages exist only in memory; failure cannot queue a retry.
             if ($skipHistory) {
                 if ($throw_exceptions) {
-                    $truncated = (strlen($message) > 350) ? __trans('Error message truncated due to length, please check the error log for the complete message: ') . substr($message, 0, 350) . '...' : $message;
-
-                    throw new \FOSSBilling\Core\Exception\BaseException($truncated);
+                    throw new \FOSSBilling\Core\Exception\BaseException($message, protected: true);
                 }
 
                 return false;

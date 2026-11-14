@@ -4061,7 +4061,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $productService->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_deleted');
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $subscriptionService->shouldReceive('cancelForOrder')->once()->with($order)->andReturn(0);
+    $subscriptionService->shouldReceive('cancelForOrder')->once()->with($order, false)->andReturn(0);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -4781,3 +4781,56 @@ test('createOrder applies a promo code and records the discount', function (): v
     expect($capturedOrder->isPromoRecurring())->toBeTrue();
     expect($capturedOrder->getPromoUsed())->toBe(1);
 });
+
+test('order deletion coordinates backend and gateway failures before local cleanup', function (string $failure, bool $force): void {
+    $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_PENDING_SETUP]);
+    $calls = [];
+    $backendPresent = true;
+    $gatewayFails = $failure === 'gateway';
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_callOnService')->andReturnUsing(function () use (&$calls, &$backendPresent, $failure): void {
+        $calls[] = $backendPresent ? 'backend' : 'missing backend';
+        if ($failure === 'backend') {
+            throw new RuntimeException('Backend refused deletion');
+        }
+        $backendPresent = false;
+    });
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('cancelForOrder')->with($order, $force)->andReturnUsing(function () use (&$calls, &$gatewayFails, $force): int {
+        $calls[] = 'gateway';
+        if ($gatewayFails && !$force) {
+            throw new RuntimeException('Gateway unavailable');
+        }
+
+        return 1;
+    });
+    $service->shouldReceive('rmInvoiceItemByOrder')->andReturnUsing(function () use (&$calls): void { $calls[] = 'invoice items'; });
+    $service->shouldReceive('rmClientOrderStatusByOrder')->andReturnUsing(function () use (&$calls): void { $calls[] = 'status'; });
+    $service->shouldReceive('rmOrder')->andReturnUsing(function () use (&$calls): void { $calls[] = 'order'; });
+    $meta = Mockery::mock(OrderMetaRepository::class);
+    $meta->shouldReceive('deleteByOrderId')->andReturnUsing(function () use (&$calls): int {
+        $calls[] = 'meta';
+
+        return 0;
+    });
+    $service->shouldReceive('getOrderMetaRepository')->andReturn($meta);
+    $product = Mockery::mock(Box\Mod\Product\Service::class);
+    $product->shouldReceive('releaseReservedPromoRedemptionsForOrder', 'releaseReservedStockForOrder')->andReturn(0);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name): object => strtolower($name) === 'invoice' ? $subscriptions : $product);
+    $service->setDi($di);
+    if ($failure !== 'none' && !$force) {
+        expect(fn () => $service->deleteFromOrder($order))->toThrow(RuntimeException::class);
+        expect($calls)->toBe($failure === 'backend' ? ['backend'] : ['backend', 'gateway']);
+        if ($failure === 'backend') {
+            return;
+        }
+        $calls = [];
+        $gatewayFails = false;
+        expect($service->deleteFromOrder($order))->toBeTrue();
+        expect($calls)->toBe(['missing backend', 'gateway', 'invoice items', 'status', 'meta', 'order']);
+    } else {
+        expect($service->deleteFromOrder($order, $force))->toBeTrue();
+        expect($calls)->toBe(['backend', 'gateway', 'invoice items', 'status', 'meta', 'order']);
+    }
+})->with(['none', 'backend', 'gateway'])->with([false, true]);

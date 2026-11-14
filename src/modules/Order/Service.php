@@ -1821,14 +1821,6 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
 
-        // Deleting an order must not leak its gateway subscription.
-        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
-
-        $orderStatus = $order->getStatus();
-        if ($orderStatus == Order::STATUS_PENDING_SETUP) {
-            $this->rmInvoiceItemByOrder($order);
-        }
-
         try {
             $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
         } catch (\Exception $e) {
@@ -1836,6 +1828,13 @@ class Service implements InjectionAwareInterface
                 throw $e;
             }
             $this->di['logger']->info("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
+        }
+
+        // A rejected backend deletion must leave billing active. Keep invoice
+        // links until cancellation succeeds so a failed gateway call can retry.
+        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order, $forceDelete);
+        if ($order->getStatus() === Order::STATUS_PENDING_SETUP) {
+            $this->rmInvoiceItemByOrder($order);
         }
 
         $productService = $this->di['mod_service']('Product');

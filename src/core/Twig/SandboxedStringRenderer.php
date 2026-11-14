@@ -21,18 +21,31 @@ final class SandboxedStringRenderer
         array $vars,
         string $errorPrefix,
         ?callable $onSecurityError = null,
+        bool $protectErrors = false,
     ): string {
         try {
-            return $twig->createTemplate($template)->render($vars);
-        } catch (\Twig\Sandbox\SecurityError $e) {
-            if ($onSecurityError !== null) {
-                $onSecurityError($e);
+            $render = static fn (): string => $twig->createTemplate($template)->render($vars);
+
+            return $protectErrors
+                ? \FOSSBilling\Core\Exception\BaseException::withProtectedDiagnostics($render)
+                : $render();
+        } catch (\Twig\Error\Error $e) {
+            // Runtime diagnostics can contain interpolated single-use secrets.
+            // Redact before constructing an application exception or logging it.
+            if ($protectErrors) {
+                throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' rendering failed', protected: true);
+            }
+            if ($e instanceof \Twig\Sandbox\SecurityError) {
+                if ($onSecurityError !== null) {
+                    $onSecurityError($e);
+                }
+
+                throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' contains disallowed Twig syntax: ' . $e->getMessage());
+            }
+            if ($e instanceof \Twig\Error\SyntaxError) {
+                throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' syntax error: ' . $e->getMessage());
             }
 
-            throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' contains disallowed Twig syntax: ' . $e->getMessage());
-        } catch (\Twig\Error\SyntaxError $e) {
-            throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' syntax error: ' . $e->getMessage());
-        } catch (\Twig\Error\Error $e) {
             throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' rendering error: ' . $e->getMessage());
         }
     }

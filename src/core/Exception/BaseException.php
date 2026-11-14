@@ -19,6 +19,21 @@ use FOSSBilling\Core\System\Environment;
  */
 class BaseException extends \Exception
 {
+    private static bool $protectDiagnostics = false;
+
+    /** Protect nested exceptions while processing single-use secrets. */
+    public static function withProtectedDiagnostics(\Closure $callback): mixed
+    {
+        $previous = self::$protectDiagnostics;
+        self::$protectDiagnostics = true;
+
+        try {
+            return $callback();
+        } finally {
+            self::$protectDiagnostics = $previous;
+        }
+    }
+
     /**
      * Creates a new translated exception.
      *
@@ -30,6 +45,12 @@ class BaseException extends \Exception
      */
     public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false, ?string $from = null)
     {
+        if (self::$protectDiagnostics) {
+            $message = 'An error occurred while processing sensitive data';
+            $variables = null;
+            $protected = true;
+        }
+
         $logStack = Config::getProperty('debug_and_monitoring.log_stacktrace', true);
         $stackLength = Config::getProperty('debug_and_monitoring.stacktrace_length', 25);
 

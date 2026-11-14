@@ -5159,7 +5159,12 @@ class Service implements InjectionAwareInterface
 
     public function checkInvoiceAuth(Invoice $invoice, InvoiceOperation $operation = InvoiceOperation::READ): void
     {
-        if ($this->di['auth']->isAdminLoggedIn() || Environment::isCLI()) {
+        if (Environment::isCLI()) {
+            return;
+        }
+        if ($this->di['auth']->isAdminLoggedIn()) {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+
             return;
         }
 
