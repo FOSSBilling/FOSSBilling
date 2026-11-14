@@ -563,7 +563,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
     /** Removes an agreement wherever it is saved (cancelled at PayPal). */
     private function forget(string $agreementId): void
     {
-        $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGatewayCustomer::class)->clearSavedMethod($this->gatewayId(), $this->testMode(), $agreementId);
+        $this->di['mod_service']('Invoice', 'SavedCards')->forget($this->gatewayId(), $this->testMode(), $agreementId);
     }
 
     private function cancelAgreement(string $agreementId): void

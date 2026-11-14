@@ -15,6 +15,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceCardCharge;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\PayGatewayCustomer;
+use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayCustomerRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
@@ -98,10 +99,22 @@ class ServiceSavedCards implements InjectionAwareInterface
         return $adapter instanceof \Payment_Adapter_Stripe ? $adapter : null;
     }
 
-    /** @return list<\Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay> the gateways that charge saved methods */
+    /** @return list<\Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay|\Payment_Adapter_PayPalEmail> the gateways that charge saved methods */
     public function adapters(): array
     {
-        return array_values(array_filter([$this->stripe(), $this->autopay()]));
+        return array_values(array_filter([$this->stripe(), $this->autopay(), $this->paypal()]));
+    }
+
+    /** The enabled PayPal Email gateway's adapter when clients can save their PayPal account, or null. */
+    public function paypal(): ?\Payment_Adapter_PayPalEmail
+    {
+        $gateway = $this->di['em']->getRepository(PayGateway::class)->findEnabledByGateway('PayPalEmail');
+        if (!$gateway instanceof PayGateway) {
+            return null;
+        }
+        $adapter = $this->di['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway);
+
+        return $adapter instanceof \Payment_Adapter_PayPalEmail && $adapter->canVault() ? $adapter : null;
     }
 
     /** The enabled PayPal Auto-Pay gateway's adapter (billing agreements), or null. */
@@ -195,6 +208,12 @@ class ServiceSavedCards implements InjectionAwareInterface
         }
     }
 
+    /** Forgets a saved method wherever it is kept (its agreement cancelled at PayPal first). */
+    public function forget(int $gatewayId, bool $testMode, string $paymentMethod): void
+    {
+        $this->getCustomerRepository()->clearSavedMethod($gatewayId, $testMode, $paymentMethod);
+    }
+
     /** From the cron: charges the saved method of every invoice whose next try is due today. */
     public function runDue(): void
     {
@@ -202,6 +221,7 @@ class ServiceSavedCards implements InjectionAwareInterface
         if ($adapters === []) {
             return;
         }
+        $this->endPaypalSubscriptions();
         $gatewayIds = array_map(static fn (object $adapter): int => $adapter->gatewayId(), $adapters);
         $settings = $this->settings();
         $connection = $this->di['em']->getConnection();
@@ -250,12 +270,47 @@ class ServiceSavedCards implements InjectionAwareInterface
     }
 
     /**
+     * A client who saved their PayPal account no longer needs their PayPal subscriptions: they are cancelled
+     * (PayPal emails the client) and the saved account pays the renewal invoices.
+     */
+    private function endPaypalSubscriptions(): void
+    {
+        $paypal = $this->paypal();
+        if ($paypal === null) {
+            return;
+        }
+        $connection = $this->di['em']->getConnection();
+        $ids = $connection->fetchFirstColumn(
+            "SELECT s.id FROM subscription s JOIN pay_gateway_customer g ON g.client_id = s.client_id AND g.pay_gateway_id = s.pay_gateway_id AND g.test_mode = ?
+              WHERE s.pay_gateway_id = ? AND s.status = 'active' AND s.sid IS NOT NULL AND s.sid <> '' AND g.saved_cards = 1
+                AND g.default_payment_method IS NOT NULL AND g.default_payment_method <> ''
+                AND (s.updated_at IS NULL OR s.updated_at < ?)",
+            // A subscription PayPal refused to cancel is tried again a day later, not every cron run.
+            [(int) $paypal->testMode(), $paypal->gatewayId(), date('Y-m-d H:i:s', strtotime('-1 day'))]
+        );
+        foreach ($ids as $id) {
+            $subscription = $this->di['em']->find(Subscription::class, (int) $id);
+            if (!$subscription instanceof Subscription) {
+                continue;
+            }
+            try {
+                $this->di['mod_service']('Invoice', 'Subscription')->cancel($subscription);
+                $this->di['logger']->info('Subscription #{id} ({sid}): cancelled at PayPal, the saved PayPal account pays from now on', ['id' => $id, 'sid' => $subscription->getSid()]);
+            } catch (\Throwable $e) {
+                $subscription->setUpdatedAt(new \DateTime());
+                $this->di['em']->flush();
+                $this->di['logger']->warning('Subscription #{id} ({sid}): not cancelled at PayPal: {message}', ['id' => $id, 'sid' => $subscription->getSid(), 'message' => $e->getMessage()]);
+            }
+        }
+    }
+
+    /**
      * Charges the saved method for the invoice's balance and records the payment: {paid, error}. A try of the cron
      * counts towards the retries and a failure emails the client; staff tries do neither.
      *
      * @return array{paid: bool, error: string|null}
      */
-    public function charge(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay $adapter, bool $byStaff, bool $byClient = false): array
+    public function charge(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay|\Payment_Adapter_PayPalEmail $adapter, bool $byStaff, bool $byClient = false): array
     {
         $lockName = 'fb:card-charge:' . (int) $invoice->getId();
         if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 10)) {
@@ -270,7 +325,7 @@ class ServiceSavedCards implements InjectionAwareInterface
     }
 
     /** @return array{paid: bool, error: string|null} */
-    private function chargeUnderLock(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay $adapter, bool $byStaff, bool $byClient = false): array
+    private function chargeUnderLock(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay|\Payment_Adapter_PayPalEmail $adapter, bool $byStaff, bool $byClient = false): array
     {
         $connection = $this->di['em']->getConnection();
         $row = $connection->fetchAssociative('SELECT status, gateway_id FROM invoice WHERE id = ?', [(int) $invoice->getId()]) ?: [];

@@ -10,12 +10,16 @@ declare(strict_types=1);
  */
 
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Transaction;
 use FOSSBilling\Core\System\Environment;
 use Pimple\Container;
 
 class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?Container $di = null;
+
+    private ?string $restToken = null;
 
     public function setDi(Container $di): void
     {
@@ -58,6 +62,48 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         'validators' => ['EmailAddress'],
                     ],
                 ],
+                'api_client_id' => [
+                    'text',
+                    [
+                        'label' => 'REST API client ID (live):',
+                        'description' => 'PayPal: your REST app, API Credentials. Needed for saved PayPal accounts, refunds, cancelling subscriptions and the dashboard balance.',
+                    ],
+                ],
+                'api_secret' => [
+                    'password',
+                    [
+                        'label' => 'REST API secret (live):',
+                        'secret' => true,
+                    ],
+                ],
+                'test_api_client_id' => [
+                    'text',
+                    [
+                        'label' => 'REST API client ID (sandbox):',
+                    ],
+                ],
+                'test_api_secret' => [
+                    'password',
+                    [
+                        'label' => 'REST API secret (sandbox):',
+                        'secret' => true,
+                    ],
+                ],
+                'vault' => [
+                    'radio',
+                    [
+                        'label' => 'Saved PayPal accounts:',
+                        'description' => 'Clients can save their PayPal account when they pay or on their Payment methods page, and their invoices are then paid automatically, as with saved cards. Needs the REST API keys and the Vault ("Save payment methods") on your PayPal REST app, which PayPal offers in some countries only.',
+                        'multiOptions' => ['1' => __trans('On'), '0' => __trans('Off')],
+                    ],
+                ],
+                'balance' => [
+                    'radio',
+                    [
+                        'label' => 'PayPal balance on the dashboard:',
+                        'multiOptions' => ['1' => __trans('On'), '0' => __trans('Off')],
+                    ],
+                ],
             ],
         ];
     }
@@ -84,6 +130,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
     public function processTransaction($api_admin, int $id, array $data, int $gateway_id): void
     {
+        // A REST payment (a saved PayPal account, "Pay and save") the return page recorded: read it back from PayPal.
+        if (isset($data['get']['paypal_capture']) && ($data['source'] ?? '') !== 'ipn') {
+            $this->processRestCapture($api_admin, $id, (string) $data['get']['paypal_capture']);
+
+            return;
+        }
+
         $post = (isset($data['post']) && is_array($data['post'])) ? $data['post'] : [];
         if ($post === []) {
             throw new Payment_Exception('PayPal payment data is missing.', [], 7021);
@@ -814,4 +867,361 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return $data;
     }
+
+    /** Whether the REST API keys are set: without them there is nothing to vault, refund, cancel or total. */
+    public function hasApiKeys(): bool
+    {
+        return $this->restKeys() !== null;
+    }
+
+    /** Checks the REST API keys when they are set (on saving the gateway). */
+    public function testConnection(): void
+    {
+        if ($this->restKeys() !== null) {
+            $this->restToken();
+        }
+    }
+
+    public function cancelSubscription(string $subscriptionId): void
+    {
+        if ($this->restKeys() === null) {
+            throw new FOSSBilling\Core\Exception\InformationException('Cancel subscription :id in PayPal: FOSSBilling marks it canceled when PayPal reports it.', [':id' => $subscriptionId]);
+        }
+        [$status, $body] = $this->rest('POST', '/v1/billing/subscriptions/' . rawurlencode($subscriptionId) . '/cancel', ['reason' => 'Cancelled in FOSSBilling']);
+        // Already cancelled or ended at PayPal (by the client, or by an earlier try) is what was asked.
+        if ($status === 422 && in_array($this->rest('GET', '/v1/billing/subscriptions/' . rawurlencode($subscriptionId))[1]['status'] ?? '', ['CANCELLED', 'EXPIRED'], true)) {
+            return;
+        }
+        if ($status !== 204) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal did not cancel subscription :id: :error', [':id' => $subscriptionId, ':error' => $this->restError($body, $status)]);
+        }
+    }
+
+    /** Whether PayPal finds the subscription and it can still be cancelled (a check before a plan change relies on it). */
+    public function canCancelSubscription(string $subscriptionId): bool
+    {
+        try {
+            [$status, $body] = $this->rest('GET', '/v1/billing/subscriptions/' . rawurlencode($subscriptionId));
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $status === 200 && in_array($body['status'] ?? '', ['APPROVAL_PENDING', 'APPROVED', 'ACTIVE', 'SUSPENDED'], true);
+    }
+
+    /** PayPal charges a subscription again only when its period ends, so cancelling it now ends it there. */
+    public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
+    {
+        $this->cancelSubscription($subscriptionId);
+    }
+
+    /** Refunds $amount of a PayPal payment (its transaction ID) and returns PayPal's refund ID. */
+    public function refundPayment(string $txnId, float $amount, string $currency, array $metadata = []): string
+    {
+        [$status, $body] = $this->rest('POST', '/v2/payments/captures/' . rawurlencode($txnId) . '/refund', [
+            'amount' => ['value' => $this->moneyFormat($amount, $currency), 'currency_code' => $currency],
+        ]);
+        if ($status !== 201 || empty($body['id'])) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal did not refund payment :id: :error', [':id' => $txnId, ':error' => $this->restError($body, $status)]);
+        }
+
+        return (string) $body['id'];
+    }
+
+    /** [client ID, secret] of the current mode, or null. */
+    private function restKeys(): ?array
+    {
+        $prefix = empty($this->config['test_mode']) ? '' : 'test_';
+        $id = trim((string) ($this->config[$prefix . 'api_client_id'] ?? ''));
+        $secret = trim((string) ($this->config[$prefix . 'api_secret'] ?? ''));
+
+        return $id !== '' && $secret !== '' ? [$id, $secret] : null;
+    }
+
+    private function restUrl(string $path): string
+    {
+        return (empty($this->config['test_mode']) ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com') . $path;
+    }
+
+    private function restToken(): string
+    {
+        if ($this->restToken === null) {
+            [$id, $secret] = $this->restKeys() ?? throw new FOSSBilling\Core\Exception\InformationException('Enter the PayPal REST API client ID and secret first.');
+            $response = $this->di['http_client']->request('POST', $this->restUrl('/v1/oauth2/token'), [
+                'auth_basic' => [$id, $secret],
+                'body' => ['grant_type' => 'client_credentials'],
+                'timeout' => 30,
+            ]);
+            $body = $response->toArray(false);
+            if ($response->getStatusCode() !== 200 || empty($body['access_token'])) {
+                throw new FOSSBilling\Core\Exception\InformationException('PayPal did not accept the REST API keys: :error', [':error' => (string) ($body['error_description'] ?? $response->getStatusCode())]);
+            }
+            $this->restToken = (string) $body['access_token'];
+        }
+
+        return $this->restToken;
+    }
+
+    /** [HTTP status, decoded body] of a REST call; network errors throw. */
+    private function rest(string $method, string $path, ?array $json = null, array $headers = []): array
+    {
+        // PayPal refuses a POST without a JSON content type, also one without a body (an order capture).
+        $options = ['auth_bearer' => $this->restToken(), 'timeout' => 60, 'headers' => $headers + ['Content-Type' => 'application/json']];
+        if ($json !== null) {
+            $options['json'] = $json;
+        }
+        $response = $this->di['http_client']->request($method, $this->restUrl($path), $options);
+        $status = $response->getStatusCode();
+
+        return [$status, $status === 204 ? [] : $response->toArray(false)];
+    }
+
+    private function restError(array $body, int $status): string
+    {
+        $detail = $body['details'][0]['description'] ?? $body['details'][0]['issue'] ?? null;
+
+        return trim(($body['message'] ?? $body['name'] ?? 'HTTP ' . $status) . ($detail ? ' (' . $detail . ')' : ''));
+    }
+
+    // Saved PayPal accounts (Invoice/ServiceSavedCards.php) through the Vault of the REST API. A client
+    // saves their account on the Payment methods page (a setup token they approve at PayPal) or with "Pay and save my
+    // PayPal account" (an order stored in the vault when it is paid); the cron then charges it as a saved card.
+
+    /** Whether clients can save their PayPal account here: the setting is on and the REST API keys are set. */
+    /** The PayPal account's balances through the REST API: [{currency, amount}]. */
+    public function balances(): array
+    {
+        if (!$this->hasApiKeys()) {
+            throw new FOSSBilling\Core\Exception\InformationException('Add the REST API keys to PayPal to see its balance.');
+        }
+        [$status, $body] = $this->rest('GET', '/v1/reporting/balances');
+        if ($status !== 200) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal did not give the balance: :error', [':error' => $this->restError($body, $status)]);
+        }
+
+        return array_map(static fn (array $balance): array => [
+            'currency' => (string) ($balance['currency'] ?? ''),
+            'amount' => (float) ($balance['total_balance']['value'] ?? 0),
+        ], $body['balances'] ?? []);
+    }
+
+    public function canVault(): bool
+    {
+        return (string) ($this->config['vault'] ?? '') === '1' && $this->hasApiKeys();
+    }
+
+    public function gatewayId(): int
+    {
+        return (int) ($this->config['gateway_id'] ?? 0);
+    }
+
+    public function testMode(): bool
+    {
+        return !empty($this->config['test_mode']);
+    }
+
+    /** The client's saved PayPal account ({payment_method, card, auto_pay_at}), or null. */
+    public function savedCard(int $clientId): ?array
+    {
+        return $this->di['mod_service']('Invoice', 'SavedCards')->saved($this->gatewayId(), $this->testMode(), $clientId);
+    }
+
+    /** Starts saving a PayPal account on the Payment methods page: {id, url}, the setup token and its approval page. */
+    public function vaultSetup(string $returnUrl, string $cancelUrl): array
+    {
+        [$status, $body] = $this->rest('POST', '/v3/vault/setup-tokens', ['payment_source' => ['paypal' => [
+            'usage_type' => 'MERCHANT',
+            'experience_context' => ['return_url' => $returnUrl, 'cancel_url' => $cancelUrl, 'shipping_preference' => 'NO_SHIPPING'],
+        ]]]);
+        $url = $this->restLink($body, 'approve');
+        if (!in_array($status, [200, 201], true) || empty($body['id']) || $url === null) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal did not start saving your account: :error', [':error' => $this->restError($body, $status)]);
+        }
+
+        return ['id' => (string) $body['id'], 'url' => $url];
+    }
+
+    /** After the client approved a setup token at PayPal: keeps that account as the one that pays their invoices. */
+    public function vaultSaved(int $clientId, string $setupTokenId): void
+    {
+        [$status, $body] = $this->rest('POST', '/v3/vault/payment-tokens', ['payment_source' => ['token' => ['id' => $setupTokenId, 'type' => 'SETUP_TOKEN']]]);
+        if (!in_array($status, [200, 201], true) || empty($body['id'])) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal did not save your account: :error', [':error' => $this->restError($body, $status)]);
+        }
+        $this->rememberAccount($clientId, (string) $body['id'], (string) ($body['customer']['id'] ?? ''), (string) ($body['payment_source']['paypal']['email_address'] ?? ''));
+    }
+
+    /** Removes the client's saved PayPal account, here and at PayPal. */
+    public function vaultRemove(int $clientId): void
+    {
+        $saved = $this->savedCard($clientId);
+        if ($saved !== null) {
+            $this->deleteToken($saved['payment_method']);
+            $this->di['mod_service']('Invoice', 'SavedCards')->forget($this->gatewayId(), $this->testMode(), $saved['payment_method']);
+        }
+    }
+
+    /** "Pay and save my PayPal account": an order for the invoice's balance, stored in the vault when paid: {id, url}. */
+    public function vaultOrder(Invoice $invoice, string $returnUrl, string $cancelUrl): array
+    {
+        [$status, $body] = $this->rest('POST', '/v2/checkout/orders', [
+            'intent' => 'CAPTURE',
+            'purchase_units' => [$this->purchaseUnit($invoice)],
+            'payment_source' => ['paypal' => [
+                'attributes' => ['vault' => ['store_in_vault' => 'ON_SUCCESS', 'usage_type' => 'MERCHANT']],
+                'experience_context' => ['return_url' => $returnUrl, 'cancel_url' => $cancelUrl, 'shipping_preference' => 'NO_SHIPPING', 'user_action' => 'PAY_NOW'],
+            ]],
+        ]);
+        $url = $this->restLink($body, 'payer-action');
+        if (!in_array($status, [200, 201], true) || empty($body['id']) || $url === null) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal did not start the payment: :error', [':error' => $this->restError($body, $status)]);
+        }
+
+        return ['id' => (string) $body['id'], 'url' => $url];
+    }
+
+    /** Takes the payment of an approved "Pay and save" order and keeps its PayPal account: the capture ID. */
+    public function vaultCapture(Invoice $invoice, string $orderId): string
+    {
+        $path = '/v2/checkout/orders/' . rawurlencode($orderId);
+        // The full reply: the short one leaves out the purchase unit's custom_id.
+        [$status, $body] = $this->rest('POST', $path . '/capture', null, ['PayPal-Request-Id' => 'cf-capture-' . $orderId, 'Prefer' => 'return=representation']);
+        // Captured already (the client came back twice): the order says how.
+        if ($status === 422) {
+            [$status, $body] = $this->rest('GET', $path);
+        }
+        $unit = $body['purchase_units'][0] ?? [];
+        $capture = $unit['payments']['captures'][0] ?? [];
+        if (!in_array($status, [200, 201], true) || empty($capture['id']) || (string) ($unit['custom_id'] ?? '') !== 'cf-invoice-' . $invoice->getId()) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal did not take the payment: :error', [':error' => $this->restError($body, $status)]);
+        }
+        $vault = $body['payment_source']['paypal']['attributes']['vault'] ?? [];
+        if (!empty($vault['id'])) {
+            $this->rememberAccount((int) $invoice->getClientId(), (string) $vault['id'], (string) ($vault['customer']['id'] ?? ''), (string) ($body['payment_source']['paypal']['email_address'] ?? ''));
+        }
+
+        return (string) $capture['id'];
+    }
+
+    /**
+     * Charges the client's saved PayPal account for an invoice's balance (the cron or staff). $attempt names the try,
+     * so each one is its own idempotent payment. Returns the capture ID; PayPal's refusal throws InformationException.
+     */
+    public function chargeSavedCard(Invoice $invoice, string $attempt): string
+    {
+        $saved = $this->savedCard((int) $invoice->getClientId()) ?? throw new FOSSBilling\Core\Exception\InformationException('The client has no saved PayPal account.');
+        [$status, $body] = $this->rest('POST', '/v2/checkout/orders', [
+            'intent' => 'CAPTURE',
+            'purchase_units' => [$this->purchaseUnit($invoice)],
+            'payment_source' => ['paypal' => ['vault_id' => $saved['payment_method']]],
+        ], ['PayPal-Request-Id' => 'cf-invoice-' . $invoice->getId() . '-' . $attempt]);
+        $capture = $body['purchase_units'][0]['payments']['captures'][0] ?? [];
+        if (in_array($status, [200, 201], true) && in_array($capture['status'] ?? '', ['DECLINED', 'FAILED'], true)) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal refused the payment: :error', [':error' => $capture['status']]);
+        }
+        if (in_array($status, [200, 201], true) && !empty($capture['id'])) {
+            return (string) $capture['id'];
+        }
+        if ($status >= 400 && $status < 500) {
+            throw new FOSSBilling\Core\Exception\InformationException('PayPal refused the payment: :error', [':error' => $this->restError($body, $status)]);
+        }
+
+        throw new Payment_Exception('PayPal answered HTTP :status to the payment of invoice #:id', [':status' => $status, ':id' => $invoice->getId()]);
+    }
+
+    /** A REST payment (capture) as PayPal reports it: recorded on its transaction and applied to its invoice once. */
+    public function processRestCapture($api_admin, int $id, string $captureId): void
+    {
+        [$status, $capture] = $this->rest('GET', '/v2/payments/captures/' . rawurlencode($captureId));
+        if ($status !== 200 || empty($capture['id'])) {
+            throw new Payment_Exception('PayPal payment :id was not found', [':id' => $captureId]);
+        }
+        // Only orders made here name an invoice: a payment of another shop on the same PayPal account pays nothing.
+        if (preg_match('/^cf-invoice-(\d+)$/', (string) ($capture['custom_id'] ?? ''), $match) !== 1) {
+            throw new Payment_Exception('PayPal payment :id is not for a FOSSBilling invoice', [':id' => $captureId]);
+        }
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $match[1]);
+        if (!$invoice instanceof Invoice) {
+            throw new Payment_Exception('Invoice not found');
+        }
+        $amount = (float) ($capture['amount']['value'] ?? 0);
+        $currency = (string) ($capture['amount']['currency_code'] ?? '');
+        $completed = ($capture['status'] ?? '') === 'COMPLETED';
+        $api_admin->invoice_transaction_update([
+            'id' => $id, 'invoice_id' => $invoice->getId(), 'txn_id' => (string) $capture['id'], 'type' => 'paypal_rest',
+            'txn_status' => $completed ? 'Completed' : ucfirst(strtolower((string) ($capture['status'] ?? ''))), 'amount' => $amount, 'currency' => $currency,
+        ]);
+        if (!$completed) {
+            $api_admin->invoice_transaction_update(['id' => $id, 'status' => Transaction::STATUS_RECEIVED, 'error' => sprintf('PayPal payment not completed: %s', (string) ($capture['status'] ?? 'unknown')), 'updated_at' => date('Y-m-d H:i:s')]);
+
+            return;
+        }
+        // This transaction too: "Process again" on a payment already applied must not credit it again.
+        $done = $this->di['em']->getRepository(Transaction::class)->findOneBy(['txnId' => $capture['id'], 'gateway' => $this->di['em']->getReference(PayGateway::class, $this->gatewayId()), 'status' => Transaction::STATUS_PROCESSED]);
+        if ($done instanceof Transaction) {
+            throw new Payment_Exception('Cannot process duplicate PayPal payment');
+        }
+        $this->validateCurrency($currency, $invoice->getCurrency());
+        $this->applyPayment($api_admin, (int) $invoice->getClientId(), $amount, (string) $capture['id'], $invoice);
+        $api_admin->invoice_transaction_update(['id' => $id, 'error' => '', 'error_code' => null, 'status' => Transaction::STATUS_PROCESSED, 'updated_at' => date('Y-m-d H:i:s')]);
+    }
+
+    /** The invoice's balance as an order's purchase unit; custom_id names the invoice (processRestCapture()). */
+    private function purchaseUnit(Invoice $invoice): array
+    {
+        $invoiceService = $this->di['mod_service']('Invoice');
+
+        return [
+            'custom_id' => 'cf-invoice-' . $invoice->getId(),
+            'description' => mb_substr($this->getInvoiceTitle($invoiceService->toApiArray($invoice)), 0, 127),
+            'amount' => ['currency_code' => (string) $invoice->getCurrency(), 'value' => $this->moneyFormat($invoiceService->getBalanceDue($invoice), (string) $invoice->getCurrency())],
+        ];
+    }
+
+    /** Keeps a vaulted PayPal account as the client's (the newest replaces the one saved before). */
+    private function rememberAccount(int $clientId, string $tokenId, string $customerId, string $email): void
+    {
+        $old = $this->savedCard($clientId)['payment_method'] ?? null;
+        $this->di['mod_service']('Invoice', 'SavedCards')->remember($this->gatewayId(), $this->testMode(), $clientId, $customerId, $tokenId, trim('PayPal ' . $email));
+        if ($old !== null && $old !== $tokenId) {
+            $this->deleteToken($old);
+        }
+    }
+
+    private function deleteToken(string $tokenId): void
+    {
+        try {
+            $this->rest('DELETE', '/v3/vault/payment-tokens/' . rawurlencode($tokenId));
+        } catch (\Throwable $e) {
+            $this->di['logger']->warning('PayPal: the saved account {token} was not removed at PayPal: {message}', ['token' => $tokenId, 'message' => $e->getMessage()]);
+        }
+    }
+
+    private function restLink(array $body, string $rel): ?string
+    {
+        foreach ($body['links'] ?? [] as $link) {
+            if (($link['rel'] ?? '') === $rel && is_string($link['href'] ?? null)) {
+                return $link['href'];
+            }
+        }
+
+        return null;
+    }
+
+    /** The saved method's gateway takes the payment, with its fee (see ServiceGatewayFees). */
+    private function applyPayment($api_admin, int $clientId, float $amount, string $txnId, Invoice $invoice): void
+    {
+        $invoiceService = $this->di['mod_service']('Invoice');
+        $invoiceService->validatePaymentAmount($amount, $invoiceService->getBalanceDue($invoice));
+        $api_admin->client_balance_add_funds(['id' => $clientId, 'amount' => $amount, 'description' => 'PayPal transaction ' . $txnId, 'type' => 'PayPal', 'rel_id' => $txnId]);
+        if ($invoiceService->isInvoiceTypeDeposit($invoice)) {
+            $invoiceService->markAsPaid($invoice);
+        } else {
+            if (!$invoice->isIssued()) {
+                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
+            }
+            $api_admin->invoice_pay_with_credits(['id' => $invoice->getId()]);
+        }
+    }
+
 }

@@ -508,3 +508,55 @@ describe('autopay gateway resolution', function (): void {
         expect($service->autopay())->toBeNull();
     });
 });
+
+describe('paypal subscription teardown', function (): void {
+    test('runDue cancels gateway subscriptions once a PayPal account is saved', function (): void {
+        $subscription = createEntity(Box\Mod\Invoice\Entity\Subscription::class, ['id' => 5, 'sid' => 'I-1']);
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('gatewayId')->byDefault()->andReturn(4);
+        $adapter->shouldReceive('testMode')->byDefault()->andReturn(false);
+        $autopay = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $autopay->shouldReceive('gatewayId')->byDefault()->andReturn(5);
+        $autopay->shouldReceive('testMode')->byDefault()->andReturn(false);
+        $paypal = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+        $paypal->shouldReceive('canVault')->andReturn(true);
+        $paypal->shouldReceive('gatewayId')->andReturn(6);
+        $paypal->shouldReceive('testMode')->andReturn(false);
+
+        $payGatewayService = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->andReturn($adapter, $autopay, $paypal);
+
+        $stripeGateway = createEntity(PayGateway::class, ['id' => 4, 'gateway' => 'Stripe']);
+        $autopayGateway = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'PayPalAutoPay']);
+        $paypalGateway = createEntity(PayGateway::class, ['id' => 6, 'gateway' => 'PayPalEmail']);
+        $repo = Mockery::mock(PayGatewayRepository::class);
+        $repo->shouldReceive('findEnabledByGateway')->with('Stripe')->andReturn($stripeGateway);
+        $repo->shouldReceive('findEnabledByGateway')->with('PayPalAutoPay')->andReturn($autopayGateway);
+        $repo->shouldReceive('findEnabledByGateway')->with('PayPalEmail')->andReturn($paypalGateway);
+
+        $extension = Mockery::mock();
+        $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAllAssociative')->andReturn([]);
+        $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([5]);
+
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('cancel')->once()->with($subscription);
+
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+        $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+        $em->shouldReceive('find')->with(Box\Mod\Invoice\Entity\Subscription::class, 5)->andReturn($subscription);
+        $service = savedCardsService($em, [
+            'extension' => $extension,
+            'invoice:paygateway' => $payGatewayService,
+            'invoice:subscription' => $subscriptionService,
+        ]);
+
+        $service->runDue();
+        expect(true)->toBeTrue();
+    });
+});
