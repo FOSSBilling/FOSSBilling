@@ -342,12 +342,13 @@ test('renewal refunds resolve the settled parent invoice without trusting anothe
     $c['em']->flush();
     $renewal = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setGateway($gateway)->setIssued(true)->setStatus(Invoice::STATUS_PAID);
     $c['em']->persist($renewal);
+    $c['em']->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($renewal)->setType('custom')->setPrice(3)->setQuantity(1));
     $c['receipt']->setInvoice($renewal)->setGateway($gateway)->setStatus('processed');
     $c['em']->flush();
     [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-RENEWAL', '-3');
     $c['api']->allowInvoiceRefund = true;
     $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
-    expect($c['api']->refunds)->toBe($sameClient && $sameGateway ? [['id' => $renewal->getId(), 'note' => 'PayPal refund PAYPAL-DEFERRED']] : [])
+    expect($c['api']->refunds)->toBe($sameClient && $sameGateway ? [['id' => $renewal->getId(), 'note' => 'PayPal refund PAYPAL-DEFERRED', 'expected_amount' => 3.0]] : [])
         ->and($refund->getStatus())->toBe($sameClient && $sameGateway ? 'processed' : 'received')
         ->and($refund->getInvoice()->getId())->toBe($sameClient && $sameGateway ? $renewal->getId() : $c['invoice']->getId())
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
@@ -431,10 +432,7 @@ test('receipt deletion waits for an overlapping callback and refreshes its stale
 
 test('renewal refund retries retain their parent invoice after interruption and authenticate the original callback', function (): void {
     $c = deferredPayPalReceiptContext();
-    $renewal = (new Invoice())->setClientId($c['client']->getId())->setCurrency('USD')->setGateway($c['gateway'])->setIssued(true)->setStatus(Invoice::STATUS_PAID);
-    $c['em']->persist($renewal);
-    $c['receipt']->setInvoice($renewal)->setStatus('processed');
-    $c['em']->flush();
+    $renewal = settledPayPalRenewal($c);
     [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-RETRY', '-3');
     $payload['get']['sig'] = FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId());
     $c['api']->crashRefund = true;
@@ -446,16 +444,13 @@ test('renewal refund retries retain their parent invoice after interruption and 
     $api = deferredPayPalApi($c);
     $api->allowInvoiceRefund = true;
     $c['adapter']->processTransaction($api, $refund->getId(), $payload, $c['gateway']->getId());
-    expect($api->refunds)->toBe([['id' => $renewal->getId(), 'note' => 'PayPal refund PAYPAL-DEFERRED']])
+    expect($api->refunds)->toBe([['id' => $renewal->getId(), 'note' => 'PayPal refund PAYPAL-DEFERRED', 'expected_amount' => 3.0]])
         ->and($c['connection']->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe('processed');
 });
 
 test('a committed renewal refund recovers interrupted receipt completion without refunding twice', function (): void {
     $c = deferredPayPalReceiptContext();
-    $renewal = (new Invoice())->setClientId($c['client']->getId())->setCurrency('USD')->setGateway($c['gateway'])->setIssued(true)->setStatus(Invoice::STATUS_PAID);
-    $c['em']->persist($renewal);
-    $c['receipt']->setInvoice($renewal)->setStatus('processed');
-    $c['em']->flush();
+    $renewal = settledPayPalRenewal($c);
     [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-COMMITTED', '-3');
     $c['api']->allowInvoiceRefund = true;
     $c['api']->crash = true;
@@ -470,3 +465,118 @@ test('a committed renewal refund recovers interrupted receipt completion without
     expect($api->refunds)->toBeEmpty()
         ->and($c['connection']->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe('processed');
 });
+
+test('partial renewal refunds remain for staff reconciliation across fresh-worker retries', function (string $amount): void {
+    $c = deferredPayPalReceiptContext();
+    $renewal = settledPayPalRenewal($c);
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-PARTIAL', $amount);
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    $c['em'] = new EntityManager($c['connection'], $c['config']);
+    $c['di']['em'] = $c['em'];
+    $api = deferredPayPalApi($c);
+    $c['adapter']->processTransaction($api, $refund->getId(), $payload, $c['gateway']->getId());
+    expect($api->refunds)->toBeEmpty()
+        ->and($c['connection']->fetchOne('SELECT status FROM invoice WHERE id = ?', [$renewal->getId()]))->toBe(Invoice::STATUS_PAID)
+        ->and((float) $c['connection']->fetchOne('SELECT refund FROM invoice WHERE id = ?', [$renewal->getId()]))->toBe(0.0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(2)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0)
+        ->and($c['connection']->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe('received')
+        ->and($c['connection']->fetchOne('SELECT error FROM "transaction" WHERE id = ?', [$refund->getId()]))->toContain('staff reconciliation');
+})->with(['-1', '-2', '-4']);
+
+test('renewal refunds validate currency and signed amount before accounting', function (string $amount, string $currency): void {
+    $c = deferredPayPalReceiptContext();
+    $renewal = settledPayPalRenewal($c);
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-INVALID', $amount, $currency);
+    expect(fn () => $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId()))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($c['api']->refunds)->toBeEmpty()
+        ->and($renewal->getStatus())->toBe(Invoice::STATUS_PAID);
+})->with([['-3', 'EUR'], ['0', 'USD'], ['3', 'USD'], ['NaN', 'USD']]);
+
+test('duplicate renewal refund receipts recover after completion crashes without relaxing transaction binding', function (bool $crashFirst, bool $crashDuplicate): void {
+    $c = deferredPayPalReceiptContext();
+    $renewal = settledPayPalRenewal($c);
+    [$first, $payload] = deferredPayPalRefund($c, 'REFUND-DUPLICATE', '-3');
+    [$duplicate] = deferredPayPalRefund($c, 'REFUND-DUPLICATE', '-3');
+    $c['api']->allowInvoiceRefund = true;
+    $c['api']->crash = $crashFirst;
+    if ($crashFirst) {
+        expect(fn () => $c['adapter']->processTransaction($c['api'], $first->getId(), $payload, $c['gateway']->getId()))->toThrow(Error::class, 'Interrupted before receipt completion');
+    } else {
+        $c['adapter']->processTransaction($c['api'], $first->getId(), $payload, $c['gateway']->getId());
+    }
+    expect($c['api']->refunds)->toHaveCount(1);
+    $c['em'] = new EntityManager($c['connection'], $c['config']);
+    $c['di']['em'] = $c['em'];
+    $api = deferredPayPalApi($c); // Another refund call must fail.
+    $api->crash = $crashDuplicate;
+    if ($crashDuplicate) {
+        expect(fn () => $c['adapter']->processTransaction($api, $duplicate->getId(), $payload, $c['gateway']->getId()))->toThrow(Error::class, 'Interrupted before receipt completion');
+        $c['em'] = new EntityManager($c['connection'], $c['config']);
+        $c['di']['em'] = $c['em'];
+        $api = deferredPayPalApi($c);
+    }
+    foreach ([$duplicate, $first, $duplicate] as $receipt) {
+        $c['adapter']->processTransaction($api, $receipt->getId(), $payload, $c['gateway']->getId());
+    }
+    expect($api->refunds)->toBeEmpty()
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction" WHERE txn_status = \'Refunded\' AND status = \'processed\' AND invoice_id = ?', [$renewal->getId()]))->toBe(2);
+    $c['invoice'] = $c['em']->find(Invoice::class, $c['invoice']->getId());
+    $c['gateway'] = $c['em']->find(Box\Mod\Invoice\Entity\PayGateway::class, $c['gateway']->getId());
+    [$unrelated] = deferredPayPalRefund($c, 'UNRELATED', '-3');
+    $service = new Box\Mod\Invoice\ServiceTransaction();
+    $service->setDi($c['di']);
+    expect(fn () => $service->update($unrelated, ['invoice_id' => $renewal->getId()]))->toThrow(InformationException::class, 'refunded');
+})->with([[false, false], [true, false], [false, true], [true, true]]);
+
+test('renewal refund accounting commits once and rejects a partial accounting race under the invoice lock', function (bool $partialRace): void {
+    $c = deferredPayPalReceiptContext();
+    $renewal = settledPayPalRenewal($c);
+    [$first, $payload] = deferredPayPalRefund($c, 'REFUND-ACCOUNTING', '-3');
+    [$duplicate] = deferredPayPalRefund($c, 'REFUND-ACCOUNTING', '-3');
+    $billing = Mockery::mock(Box\Mod\Invoice\Service::class)->makePartial();
+    $billing->shouldReceive('countIncome')->andReturnNull();
+    $billing->shouldReceive('recordJournalEvent')->andReturnNull();
+    $billing->shouldReceive('toApiArray')->andReturn(['total' => 0]);
+    $billing->shouldReceive('addNote')->andReturnTrue();
+    $billing->setDi($c['di']);
+    $items = new Box\Mod\Invoice\ServiceInvoiceItem();
+    $items->setDi($c['di']);
+    $system = Mockery::mock(Box\Mod\System\Service::class);
+    $system->shouldReceive('getParamValue')->andReturnUsing(fn ($key, $default = null) => $default);
+    $system->shouldReceive('reserveNextNumericParamValue')->andReturn(1);
+    $c['di']['mod_service'] = $c['di']->protect(fn ($module, $submodule = null): object => $module === 'system' ? $system : ($submodule === 'InvoiceItem' ? $items : $billing));
+    $c['api']->allowInvoiceRefund = true;
+    $c['api']->crash = !$partialRace;
+    $c['api']->refundHandler = function (array $data) use ($c, $billing, $renewal, $partialRace): int {
+        if ($partialRace) {
+            // A staff partial refund commits after the callback's preflight.
+            $line = $c['em']->getRepository(Box\Mod\Invoice\Entity\InvoiceItem::class)->findOneBy(['invoice' => $renewal->getId()]);
+            $credit = (new Invoice())->setClientId($c['client']->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_REFUNDED)->setCreditNoteForInvoiceId($renewal->getId());
+            $c['em']->persist($credit);
+            $c['em']->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($credit)->setPrice(-1)->setQuantity(1)->setRefundedItemId($line->getId()));
+            $c['em']->flush();
+            $c['connection']->update('invoice', ['refund' => 1], ['id' => $renewal->getId()]);
+        }
+
+        return $billing->refundInvoice($renewal, $data['note'], null, ['gateway_refund' => false, 'expected_amount' => $data['expected_amount']]);
+    };
+    if ($partialRace) {
+        expect(fn () => $c['adapter']->processTransaction($c['api'], $first->getId(), $payload, $c['gateway']->getId()))->toThrow(InformationException::class, 'changed during reconciliation');
+        expect($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice WHERE credit_note_for_invoice_id = ?', [$renewal->getId()]))->toBe(1)
+            ->and((float) $c['connection']->fetchOne('SELECT refund FROM invoice WHERE id = ?', [$renewal->getId()]))->toBe(1.0)
+            ->and($c['connection']->fetchOne('SELECT status FROM invoice WHERE id = ?', [$renewal->getId()]))->toBe(Invoice::STATUS_PAID);
+    } else {
+        expect(fn () => $c['adapter']->processTransaction($c['api'], $first->getId(), $payload, $c['gateway']->getId()))->toThrow(Error::class, 'Interrupted before receipt completion');
+        $c['em'] = new EntityManager($c['connection'], $c['config']);
+        $c['di']['em'] = $c['em'];
+        $api = deferredPayPalApi($c);
+        foreach ([$duplicate, $first] as $receipt) {
+            $c['adapter']->processTransaction($api, $receipt->getId(), $payload, $c['gateway']->getId());
+        }
+        expect($api->refunds)->toBeEmpty()
+            ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice WHERE credit_note_for_invoice_id = ?', [$renewal->getId()]))->toBe(1)
+            ->and((float) $c['connection']->fetchOne('SELECT refund FROM invoice WHERE id = ?', [$renewal->getId()]))->toBe(3.0)
+            ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction" WHERE txn_status = \'Refunded\' AND status = \'processed\' AND invoice_id = ?', [$renewal->getId()]))->toBe(2);
+    }
+})->with([false, true]);

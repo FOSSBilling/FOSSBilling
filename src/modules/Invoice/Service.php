@@ -1971,6 +1971,9 @@ class Service implements InjectionAwareInterface
     {
         $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
         $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
+        $expectedAmount = array_key_exists('expected_amount', $options)
+            ? PriceValidator::validateAmount($options['expected_amount'], 'Expected refund amount')
+            : null;
 
         // A dashboard refund already returned the card payment, so a deposit
         // invoice's wallet credit must be reversed when recording it.
@@ -2002,7 +2005,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $expectedAmount): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -2093,6 +2096,9 @@ class Service implements InjectionAwareInterface
                 // Credit notes carry no income themselves; the offset is
                 // tracked on the original below so reporting nets out.
                 $creditAmount = round(abs($this->getTotalWithTax($new)), 2);
+                if ($expectedAmount !== null && abs($creditAmount - $expectedAmount) > 0.005) {
+                    throw new InformationException('Refund amount changed during reconciliation. Review the invoice before retrying.');
+                }
                 $remaining = round($total - (float) ($invoice->getRefund() ?? 0), 2);
                 if ($creditAmount - $remaining > 0.005) {
                     throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);

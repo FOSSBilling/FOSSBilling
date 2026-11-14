@@ -16,6 +16,7 @@ function deferredPayPalApi(array $c): object
         public bool $allowInvoiceRefund = false;
         public bool $crashRefund = false;
         public array $refunds = [];
+        public ?Closure $refundHandler = null;
         public ?Closure $beforeInvoiceRead = null;
 
         public function __construct(private array $c)
@@ -58,7 +59,11 @@ function deferredPayPalApi(array $c): object
                 throw new RuntimeException('A deferred credit refund must not refund an invoice');
             }
             $this->refunds[] = $data;
-            $this->c['em']->find(Invoice::class, (int) $data['id'])->setStatus(Invoice::STATUS_REFUNDED);
+            if ($this->refundHandler !== null) {
+                return (bool) ($this->refundHandler)($data);
+            }
+            $invoice = $this->c['em']->find(Invoice::class, (int) $data['id']);
+            $invoice->setStatus(Invoice::STATUS_REFUNDED)->setRefund($this->c['billing']->getTotalWithTax($invoice));
             $this->c['em']->flush();
 
             return true;
@@ -116,7 +121,9 @@ function heldOrderPaymentContext(?string $databasePath = null): array
     $c['em']->flush();
     $billing = new Box\Mod\Invoice\Service();
     $billing->setDi($c['di']);
-    $c['di']['mod_service'] = $c['di']->protect(fn (): object => $billing);
+    $items = new Box\Mod\Invoice\ServiceInvoiceItem();
+    $items->setDi($c['di']);
+    $c['di']['mod_service'] = $c['di']->protect(fn ($module, $submodule = null): object => $submodule === 'InvoiceItem' ? $items : $billing);
 
     return $c + compact('client', 'gateway', 'invoice', 'item', 'billing');
 }
@@ -156,4 +163,16 @@ function deferredPayPalRefund(array $c, string $externalId, string $amount, stri
     $payload['post'] = ['txn_type' => 'subscr_payment', 'payment_status' => 'Refunded', 'txn_id' => $externalId, 'parent_txn_id' => 'PAYPAL-DEFERRED', 'subscr_id' => 'held-subscription', 'mc_gross' => $amount, 'mc_currency' => $currency];
 
     return [$refund, $payload];
+}
+
+function settledPayPalRenewal(array $c): Invoice
+{
+    $invoice = (new Invoice())->setClientId($c['client']->getId())->setCurrency('USD')->setGateway($c['gateway'])->setIssued(true)->setStatus(Invoice::STATUS_PAID);
+    $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setPrice(1)->setQuantity(3)->setTaxed(false);
+    $c['em']->persist($invoice);
+    $c['em']->persist($item);
+    $c['receipt']->setInvoice($invoice)->setStatus('processed');
+    $c['em']->flush();
+
+    return $invoice;
 }

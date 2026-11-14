@@ -1628,54 +1628,18 @@ describe('PayPal callback invoice binding', function (): void {
     });
 
     test('accepts an unsigned refund continuing a pre-upgrade payment', function (): void {
-        $refunded = [];
-        $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
-        $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
-        $earlierInvoice->shouldReceive('getClientId')->andReturn(9);
-        $earlierInvoice->shouldReceive('getStatus')->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
-        $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
-        $earlier->shouldReceive('getId')->andReturn(10);
-        $earlier->shouldReceive('getStatus')->andReturn(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
-        $earlier->shouldReceive('getTxnStatus')->andReturn('Completed');
-        $earlier->shouldReceive('getInvoice')->byDefault()->andReturn($earlierInvoice);
-
-        $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
-            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
-            'txn_status' => null, 'amount' => null, 'currency' => null,
-        ]);
-        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
-            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
-        ]);
-        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
-        $apiAdmin->shouldReceive('invoice_refund')->once()->withArgs(function (array $data) use (&$refunded): bool {
-            $refunded[] = $data;
-
-            return true;
-        });
-
-        $em = paypalEmMocks(null, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null, [$earlier]);
-        $di = container();
-        $em->getConnection()->shouldReceive('fetchOne')->once()->with('SELECT id FROM client WHERE id = :client_id', ['client_id' => 9])->andReturn(9);
-        $di['em'] = $em;
-        $di['logger'] = new Tests\Helpers\TestLogger();
-
-        // Refund IPN for a pre-upgrade payment: new txn id, unsigned URL,
-        // but parent_txn_id names the original recorded payment.
-        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
-            'post' => [
-                'txn_type' => 'web_accept',
-                'payment_status' => 'Refunded',
-                'txn_id' => 'REFUND-9',
-                'parent_txn_id' => 'TXN-ORIG',
-                'mc_gross' => '-120.00',
-                'mc_currency' => 'USD',
-            ],
-            'get' => ['invoice_id' => 16],
-        ], 2);
-
-        expect($refunded)->toHaveCount(1)
-            ->and($refunded[0]['id'])->toBe(16);
+        require_once PATH_TESTS . '/Helpers/DeferredPayPal.php';
+        $c = deferredPayPalReceiptContext(txnType: 'web_accept', amount: '120');
+        $c['item']->setPrice(120);
+        $c['receipt']->setStatus('processed');
+        $c['em']->flush();
+        [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-9', '-120');
+        $payload['post']['txn_type'] = 'web_accept';
+        $c['api']->allowInvoiceRefund = true;
+        $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+        expect($c['api']->refunds)->toHaveCount(1)
+            ->and($c['api']->refunds[0]['id'])->toBe($c['invoice']->getId())
+            ->and($refund->getStatus())->toBe('processed');
     });
 
     test('accepts an unsigned delayed completion with a recorded pending payment', function (): void {
