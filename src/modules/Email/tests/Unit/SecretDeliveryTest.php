@@ -216,16 +216,20 @@ test('protected rendering errors redact production debug stack traces', function
             FOSSBilling\Core\Twig\Extension\LegacyExtension::class => fn () => new FOSSBilling\Core\Twig\Extension\LegacyExtension($di),
         ]));
         $twig->addExtension(new Twig\Extension\SandboxExtension(FOSSBilling\Core\Twig\EmailPolicy::create(), true));
+        ini_set('zend.exception_ignore_args', '0');
         try {
             FOSSBilling\Core\Twig\SandboxedStringRenderer::render($twig, $argv[2], ['token' => str_repeat('abcdef12', 8)], 'Email template', protectErrors: true);
         } catch (FOSSBilling\Core\Exception\InformationException $e) {
-            echo $e->getMessage();
+            echo json_encode(['message' => $e->getMessage(), 'trace' => $e->getTrace(), 'capture' => ini_get('zend.exception_ignore_args')], JSON_THROW_ON_ERROR);
         }
         CODE;
     $process = new Symfony\Component\Process\Process([PHP_BINARY, '-d', 'error_log=/dev/stderr', '-r', $code, dirname(PATH_TESTS), $source]);
     $process->mustRun();
-    expect($process->getOutput())->toBe('Email template rendering failed')
-        ->and($process->getErrorOutput())->toContain('Exception: Email template rendering failed')
+    $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+    expect($result['message'])->toBe('An error occurred while processing sensitive data')
+        ->and($result['capture'])->toBe('0')
+        ->and($process->getOutput())->not->toContain(str_repeat('abcdef12', 8))
+        ->and($process->getErrorOutput())->toContain('Exception: An error occurred while processing sensitive data')
         ->and($process->getErrorOutput())->not->toContain(str_repeat('abcdef12', 8));
 })->with(['{{ token|date }}', '{{ token|period_title }}']);
 

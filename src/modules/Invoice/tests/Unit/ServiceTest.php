@@ -2343,13 +2343,17 @@ test('prepares invoice with undefined currency', function (): void {
     expect($result->getCurrency())->toBe($defaultCurrencyCode);
 });
 
-test('prepareInvoice with instant issue reports issuance failures instead of returning a draft', function (): void {
+test('prepareInvoice with instant issue reports issuance failures instead of returning a draft', function (bool $throws): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('setInvoiceDefaults')->once();
     $serviceMock->shouldReceive('recordJournalEvent')->once();
-    $serviceMock->shouldReceive('issueInvoice')
-        ->once()
-        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Only unpaid draft invoices can be issued.'));
+    $message = $throws ? 'Only unpaid draft invoices can be issued.' : 'Invoice issuance was deferred because an order is awaiting recovery.';
+    $issue = $serviceMock->shouldReceive('issueInvoice')->once();
+    if ($throws) {
+        $issue->andThrow(new FOSSBilling\Core\Exception\InformationException($message));
+    } else {
+        $issue->andReturn(false);
+    }
 
     $clientModel = createEntity(Client::class, ['currency' => 'EUR']);
 
@@ -2370,9 +2374,9 @@ test('prepareInvoice with instant issue reports issuance failures instead of ret
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'could not be issued');
     expect($logger->calls)->toContain([
         'method' => 'warning',
-        'params' => ['Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => null, 'message' => 'Only unpaid draft invoices can be issued.']],
+        'params' => ['Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => null, 'message' => $message]],
     ]);
-});
+})->with([false, true]);
 
 test('sets invoice defaults', function (): void {
     $service = new Service();
@@ -4726,7 +4730,7 @@ test('skips invoice items already finalized by another process during batch acti
     $itemInvoiceServiceMock->shouldNotReceive('executeTask');
 
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
-    $invoiceItemRepo->shouldNotReceive('find');
+    $invoiceItemRepo->shouldReceive('find')->once()->andReturn(createEntity(InvoiceItem::class));
 
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDatabasePlatform')

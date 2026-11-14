@@ -1631,6 +1631,7 @@ describe('PayPal callback invoice binding', function (): void {
         $refunded = [];
         $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
+        $earlierInvoice->shouldReceive('getClientId')->andReturn(9);
         $earlierInvoice->shouldReceive('getStatus')->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
         $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
         $earlier->shouldReceive('getId')->andReturn(10);

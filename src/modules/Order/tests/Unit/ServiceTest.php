@@ -3222,16 +3222,15 @@ test('cancelFromOrder remains retryable when subscription cancellation fails', f
 test('rmByClient removes all client orders', function (): void {
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 100]);
 
-    $orderModel = createEntity(Order::class, ['id' => 1]);
-
-    $queryBuilderMock = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
-    $queryBuilderMock->shouldReceive('delete')->once()->with('client_order')->andReturnSelf();
-    $queryBuilderMock->shouldReceive('where')->once()->with('client_id = :id')->andReturnSelf();
-    $queryBuilderMock->shouldReceive('setParameter')->once()->with('id', 100)->andReturnSelf();
-    $queryBuilderMock->shouldReceive('executeStatement')->once()->andReturn(1);
+    $orderModel = createEntity(Order::class, ['id' => 1, 'clientId' => 100]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('createQueryBuilder')->once()->andReturn($queryBuilderMock);
+    $dbalMock->shouldReceive('transactional')->once()->andReturnUsing(fn (Closure $callback) => $callback());
+    $dbalMock->shouldReceive('isTransactionActive')->andReturn(true);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $dbalMock->shouldReceive('fetchOne')->withArgs(fn (string $sql): bool => str_starts_with($sql, 'SELECT id FROM client_order'))->andReturn(1);
+    $dbalMock->shouldReceive('fetchOne')->withArgs(fn (string $sql): bool => str_starts_with($sql, 'SELECT COALESCE'))->andReturn(false);
+    $dbalMock->shouldReceive('delete')->once()->with('client_order', ['id' => 1, 'client_id' => 100])->andReturn(1);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('findByClientId')->once()->with(100)->andReturn([$orderModel]);

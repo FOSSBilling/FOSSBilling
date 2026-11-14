@@ -48,6 +48,7 @@ use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
+use Doctrine\DBAL\LockMode;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Doctrine\RowLock;
@@ -96,8 +97,8 @@ class Service implements InjectionAwareInterface
 
     public const META_DELETION_STATE = DeletionRecovery::META_NAME;
 
-    /** @var array<int, true> */
-    private array $lifecycleLocks = [];
+    /** @var array<string, true> Locks shared by service instances using the same connection. */
+    private static array $lifecycleLocks = [];
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
     public const META_MERGE_RENEWALS = 'merge_renewals';
@@ -1217,6 +1218,15 @@ class Service implements InjectionAwareInterface
 
     public function activateOrder(Order $order, $data = []): bool
     {
+        return $this->withLifecycleLock($order, function () use ($order, $data): bool {
+            $this->refreshLockedOrder($order);
+
+            return $this->activateLockedOrder($order, $data);
+        });
+    }
+
+    private function activateLockedOrder(Order $order, $data): bool
+    {
         $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
         $order = $this->getOrderRepository()->find($orderId);
@@ -1250,6 +1260,26 @@ class Service implements InjectionAwareInterface
     }
 
     public function createFromOrder(Order $order)
+    {
+        return $this->withLifecycleLock($order, function () use ($order) {
+            $this->refreshLockedOrder($order);
+
+            return $this->createServiceFromOrder($order);
+        });
+    }
+
+    private function refreshLockedOrder(Order $order): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $id = $this->orderId($order);
+        $suffix = $connection->isTransactionActive() ? RowLock::suffix($connection) : '';
+        if ($connection->fetchOne('SELECT id FROM client_order WHERE id = :id' . $suffix, ['id' => $id]) === false) {
+            throw new InformationException('Order :id not found', [':id' => $id]);
+        }
+        $this->di['em']->refresh($order, $connection->isTransactionActive() ? LockMode::PESSIMISTIC_WRITE : null);
+    }
+
+    private function createServiceFromOrder(Order $order)
     {
         $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
@@ -1871,6 +1901,7 @@ class Service implements InjectionAwareInterface
 
     private function deleteHeldOrder(Order $order, bool $forceDelete): bool
     {
+        $this->di['em']->refresh($order);
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
 
@@ -1880,6 +1911,7 @@ class Service implements InjectionAwareInterface
         }
         if ($state !== DeletionRecovery::SERVICE_DELETED) {
             DeletionRecovery::setState($this->di['em']->getConnection(), $orderId, DeletionRecovery::STARTED);
+            $this->di['em']->refresh($order);
 
             try {
                 $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
@@ -1923,23 +1955,24 @@ class Service implements InjectionAwareInterface
         DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId, $lockRow);
     }
 
-    private function withLifecycleLock(Order $order, \Closure $operation): mixed
+    public function withLifecycleLock(Order $order, \Closure $operation): mixed
     {
         $id = $this->orderId($order);
-        if (isset($this->lifecycleLocks[$id])) {
+        $connection = $this->di['em']->getConnection();
+        $key = spl_object_id($connection) . ':' . $id;
+        if (isset(self::$lifecycleLocks[$key])) {
             return $operation();
         }
-        $connection = $this->di['em']->getConnection();
         $name = 'order_lifecycle_' . $id;
         if (!NamedLock::acquire($connection, $name, 10)) {
             throw new InformationException('Another worker is changing this order. Please retry.');
         }
-        $this->lifecycleLocks[$id] = true;
+        self::$lifecycleLocks[$key] = true;
 
         try {
             return $operation();
         } finally {
-            unset($this->lifecycleLocks[$id]);
+            unset(self::$lifecycleLocks[$key]);
             NamedLock::release($connection, $name);
         }
     }
@@ -2426,24 +2459,52 @@ class Service implements InjectionAwareInterface
         return $o instanceof Order ? $o->getId() : null;
     }
 
-    public function rmByClient(ClientEntity $client): void
+    /** Acquire lifecycle locks before the client-removal transaction starts. */
+    public function withClientOrderLocks(ClientEntity $client, \Closure $operation): mixed
     {
-        $productService = $this->di['mod_service']('Product');
-        $clientId = (int) $client->getId();
-        $orders = $this->getOrderRepository()->findByClientId($clientId);
-        foreach ($orders as $order) {
-            $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
-            $productService->releaseReservedStockForOrder($order, 'client_deleted');
-            $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
-            $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
+        if ($this->di['em']->getConnection()->isTransactionActive()) {
+            throw new InformationException('Client deletion cannot run inside a database transaction.');
+        }
+        $orders = $this->getOrderRepository()->findByClientId((int) $client->getId());
+        usort($orders, fn (Order $a, Order $b): int => $this->orderId($a) <=> $this->orderId($b));
+        $ids = array_map($this->orderId(...), $orders);
+        $lockedOperation = fn () => $operation($ids);
+        foreach (array_reverse($orders) as $order) {
+            $next = $lockedOperation;
+            $lockedOperation = fn (): mixed => $this->withLifecycleLock($order, $next);
         }
 
-        $query = $this->di['em']->getConnection()->createQueryBuilder();
-        $query
-            ->delete('client_order')
-            ->where('client_id = :id')
-            ->setParameter('id', $clientId)
-            ->executeStatement();
+        return $lockedOperation();
+    }
+
+    public function rmByClient(ClientEntity $client, ?array $lockedOrderIds = null): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $connection->transactional(function () use ($client, $connection, $lockedOrderIds): void {
+            $clientId = (int) $client->getId();
+            $orders = $this->getOrderRepository()->findByClientId($clientId);
+            usort($orders, fn (Order $a, Order $b): int => $this->orderId($a) <=> $this->orderId($b));
+            if ($lockedOrderIds !== null && array_diff(array_map($this->orderId(...), $orders), $lockedOrderIds) !== []) {
+                throw new InformationException('Client orders changed while preparing deletion. Please retry.');
+            }
+            foreach ($orders as $order) {
+                $this->di['em']->refresh($order, LockMode::PESSIMISTIC_WRITE);
+                if ($order->getClientId() === $clientId) {
+                    $this->assertOrderNotDeleting($order, true);
+                }
+            }
+            $productService = $this->di['mod_service']('Product');
+            foreach ($orders as $order) {
+                if ($order->getClientId() !== $clientId) {
+                    continue;
+                }
+                $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
+                $productService->releaseReservedStockForOrder($order, 'client_deleted');
+                $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
+                $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
+                $connection->delete('client_order', ['id' => $this->orderId($order), 'client_id' => $clientId]);
+            }
+        });
     }
 
     public function exportCSV(array $headers): Response

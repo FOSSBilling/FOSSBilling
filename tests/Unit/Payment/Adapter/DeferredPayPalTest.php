@@ -326,3 +326,147 @@ test('a completed PayPal receipt without a settled invoice is not treated as an 
         ->and($c['invoice']->getStatus())->toBe(Invoice::STATUS_UNPAID)
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
 });
+
+test('renewal refunds resolve the settled parent invoice without trusting another client or gateway', function (bool $sameClient, bool $sameGateway): void {
+    $c = deferredPayPalReceiptContext();
+    $client = $c['client'];
+    $gateway = $c['gateway'];
+    if (!$sameClient) {
+        $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+        $c['em']->persist($client);
+    }
+    if (!$sameGateway) {
+        $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('PayPalEmail')->setEnabled(true);
+        $c['em']->persist($gateway);
+    }
+    $c['em']->flush();
+    $renewal = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setGateway($gateway)->setIssued(true)->setStatus(Invoice::STATUS_PAID);
+    $c['em']->persist($renewal);
+    $c['receipt']->setInvoice($renewal)->setGateway($gateway)->setStatus('processed');
+    $c['em']->flush();
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-RENEWAL', '-3');
+    $c['api']->allowInvoiceRefund = true;
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    expect($c['api']->refunds)->toBe($sameClient && $sameGateway ? [['id' => $renewal->getId(), 'note' => 'PayPal refund PAYPAL-DEFERRED']] : [])
+        ->and($refund->getStatus())->toBe($sameClient && $sameGateway ? 'processed' : 'received')
+        ->and($refund->getInvoice()->getId())->toBe($sameClient && $sameGateway ? $renewal->getId() : $c['invoice']->getId())
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+})->with([[true, true], [false, true], [true, false]]);
+
+test('conflicting settled parent invoices do not select an arbitrary refund target', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $c['receipt']->setStatus('processed');
+    $other = (new Invoice())->setClientId($c['client']->getId())->setCurrency('USD')->setGateway($c['gateway'])->setIssued(true)->setStatus(Invoice::STATUS_PAID);
+    $c['em']->persist($other);
+    $duplicate = (clone $c['receipt'])->setInvoice($other);
+    $c['em']->persist($duplicate);
+    $c['em']->flush();
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-CONFLICT', '-3');
+    $c['api']->allowInvoiceRefund = true;
+    expect(fn () => $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId()))->toThrow(Payment_Exception::class, 'conflicting');
+    expect($c['api']->refunds)->toBeEmpty();
+});
+
+test('receipt deletion preserves deferred credit checkpoints after a stale error status', function (bool $refundOnly): void {
+    $c = deferredPayPalReceiptContext();
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+    if ($refundOnly) {
+        [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-PROTECTED', '-1');
+        $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+        $c['connection']->executeStatement('DELETE FROM client_balance WHERE amount > 0');
+    }
+    $c['connection']->update($c['connection']->quoteSingleIdentifier('transaction'), ['status' => 'error'], ['id' => $c['receipt']->getId()]);
+    $c['em']->refresh($c['receipt']);
+    $service = new Box\Mod\Invoice\ServiceTransaction();
+    $service->setDi($c['di']);
+    expect(fn () => $service->delete($c['receipt']))->toThrow(InformationException::class, 'backing gateway receipt')
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction" WHERE id = ?', [$c['receipt']->getId()]))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1);
+    if (!$refundOnly) {
+        [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-AFTER-DELETE', '-3');
+        $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+        expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0);
+    }
+})->with([false, true]);
+
+test('receipt deletion refuses an outer transaction and still removes an ordinary unused receipt', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $service = new Box\Mod\Invoice\ServiceTransaction();
+    $service->setDi($c['di']);
+    $c['connection']->beginTransaction();
+
+    try {
+        expect(fn () => $service->delete($c['receipt']))->toThrow(InformationException::class, 'inside a database transaction');
+        expect($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(1);
+    } finally {
+        $c['connection']->rollBack();
+    }
+    expect($service->delete($c['receipt']))->toBeTrue()
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0);
+});
+
+test('receipt deletion waits for an overlapping callback and refreshes its stale status', function (): void {
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $path = $filesystem->tempnam(sys_get_temp_dir(), 'receipt-delete-');
+    $c = deferredPayPalReceiptContext($path);
+    $worker = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/receipt-delete-worker.php', $path, PATH_DATA, (string) $c['receipt']->getId()]);
+    $c['api']->beforeInvoiceRead = function () use ($worker): void {
+        $worker->start();
+        expect($worker->waitUntil(fn ($type, $output): bool => str_contains($output, 'ready')))->toBeTrue();
+    };
+
+    try {
+        $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $c['payload'], $c['gateway']->getId());
+        $worker->wait();
+        $this->assertSame(0, $worker->getExitCode(), $worker->getErrorOutput());
+        expect($worker->getOutput())->toContain('blocked')
+            ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(1)
+            ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0);
+    } finally {
+        $worker->stop();
+        $c['connection']->close();
+        $filesystem->remove([$path, $path . '-wal', $path . '-shm']);
+    }
+});
+
+test('renewal refund retries retain their parent invoice after interruption and authenticate the original callback', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $renewal = (new Invoice())->setClientId($c['client']->getId())->setCurrency('USD')->setGateway($c['gateway'])->setIssued(true)->setStatus(Invoice::STATUS_PAID);
+    $c['em']->persist($renewal);
+    $c['receipt']->setInvoice($renewal)->setStatus('processed');
+    $c['em']->flush();
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-RETRY', '-3');
+    $payload['get']['sig'] = FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId());
+    $c['api']->crashRefund = true;
+    expect(fn () => $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId()))->toThrow(Error::class, 'Interrupted');
+    expect((int) $c['connection']->fetchOne('SELECT invoice_id FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe($renewal->getId());
+    $c['em'] = new EntityManager($c['connection'], $c['config']);
+    $c['di']['em'] = $c['em'];
+    $c['client'] = $c['em']->find(Box\Mod\Client\Entity\Client::class, $c['client']->getId());
+    $api = deferredPayPalApi($c);
+    $api->allowInvoiceRefund = true;
+    $c['adapter']->processTransaction($api, $refund->getId(), $payload, $c['gateway']->getId());
+    expect($api->refunds)->toBe([['id' => $renewal->getId(), 'note' => 'PayPal refund PAYPAL-DEFERRED']])
+        ->and($c['connection']->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe('processed');
+});
+
+test('a committed renewal refund recovers interrupted receipt completion without refunding twice', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $renewal = (new Invoice())->setClientId($c['client']->getId())->setCurrency('USD')->setGateway($c['gateway'])->setIssued(true)->setStatus(Invoice::STATUS_PAID);
+    $c['em']->persist($renewal);
+    $c['receipt']->setInvoice($renewal)->setStatus('processed');
+    $c['em']->flush();
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-COMMITTED', '-3');
+    $c['api']->allowInvoiceRefund = true;
+    $c['api']->crash = true;
+    expect(fn () => $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId()))->toThrow(Error::class, 'Interrupted before receipt completion');
+    expect($c['api']->refunds)->toHaveCount(1)
+        ->and($c['connection']->fetchOne('SELECT status FROM invoice WHERE id = ?', [$renewal->getId()]))->toBe(Invoice::STATUS_REFUNDED);
+    $c['em'] = new EntityManager($c['connection'], $c['config']);
+    $c['di']['em'] = $c['em'];
+    $c['client'] = $c['em']->find(Box\Mod\Client\Entity\Client::class, $c['client']->getId());
+    $api = deferredPayPalApi($c); // Any second invoice_refund call throws.
+    $c['adapter']->processTransaction($api, $refund->getId(), $payload, $c['gateway']->getId());
+    expect($api->refunds)->toBeEmpty()
+        ->and($c['connection']->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$refund->getId()]))->toBe('processed');
+});

@@ -23,30 +23,32 @@ final class SandboxedStringRenderer
         ?callable $onSecurityError = null,
         bool $protectErrors = false,
     ): string {
-        try {
-            $render = static fn (): string => $twig->createTemplate($template)->render($vars);
+        $render = static function () use ($twig, $template, $vars, $errorPrefix, $onSecurityError, $protectErrors): string {
+            try {
+                return $twig->createTemplate($template)->render($vars);
+            } catch (\Twig\Error\Error $e) {
+                // Runtime diagnostics can contain interpolated single-use secrets.
+                // Redact before constructing an application exception or logging it.
+                if ($protectErrors) {
+                    throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' rendering failed', protected: true);
+                }
+                if ($e instanceof \Twig\Sandbox\SecurityError) {
+                    if ($onSecurityError !== null) {
+                        $onSecurityError($e);
+                    }
 
-            return $protectErrors
-                ? \FOSSBilling\Core\Exception\BaseException::withProtectedDiagnostics($render)
-                : $render();
-        } catch (\Twig\Error\Error $e) {
-            // Runtime diagnostics can contain interpolated single-use secrets.
-            // Redact before constructing an application exception or logging it.
-            if ($protectErrors) {
-                throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' rendering failed', protected: true);
-            }
-            if ($e instanceof \Twig\Sandbox\SecurityError) {
-                if ($onSecurityError !== null) {
-                    $onSecurityError($e);
+                    throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' contains disallowed Twig syntax: ' . $e->getMessage());
+                }
+                if ($e instanceof \Twig\Error\SyntaxError) {
+                    throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' syntax error: ' . $e->getMessage());
                 }
 
-                throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' contains disallowed Twig syntax: ' . $e->getMessage());
+                throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' rendering error: ' . $e->getMessage());
             }
-            if ($e instanceof \Twig\Error\SyntaxError) {
-                throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' syntax error: ' . $e->getMessage());
-            }
+        };
 
-            throw new \FOSSBilling\Core\Exception\InformationException($errorPrefix . ' rendering error: ' . $e->getMessage());
-        }
+        return $protectErrors
+            ? \FOSSBilling\Core\Exception\BaseException::withProtectedDiagnostics($render)
+            : $render();
     }
 }

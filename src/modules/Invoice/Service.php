@@ -1616,7 +1616,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['issue']) && $data['issue']) {
             try {
-                $this->issueInvoice($model, ['id' => $invoiceId]);
+                if (!$this->issueInvoice($model, ['id' => $invoiceId])) {
+                    throw new InformationException('Invoice issuance was deferred because an order is awaiting recovery.');
+                }
                 $this->di['logger']->info('Issued invoice #{invoice_id} instantly', ['invoice_id' => $invoiceId]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning('Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => $invoiceId, 'message' => $e->getMessage()]);
@@ -4287,7 +4289,8 @@ class Service implements InjectionAwareInterface
         $connection = $this->di['em']->getConnection();
         foreach ($invoiceItems as $item) {
             try {
-                $connection->transactional(function () use ($connection, $item, $invoiceItemService): void {
+                $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
+                $process = fn () => $connection->transactional(function () use ($connection, $item, $invoiceItemService, $model): void {
                     // Claim the row so concurrent cron processes cannot execute the same item twice.
                     $status = $connection->fetchOne(
                         'SELECT status FROM invoice_item WHERE id = :id' . RowLock::suffix($connection),
@@ -4297,12 +4300,19 @@ class Service implements InjectionAwareInterface
                         return;
                     }
 
-                    $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
                     if (!$model instanceof InvoiceItem) {
                         throw new InformationException('Invoice item was not found');
                     }
                     $invoiceItemService->executeTask($model);
                 });
+                $order = $model instanceof InvoiceItem && $model->getType() === InvoiceItem::TYPE_ORDER
+                    ? $this->di['em']->getRepository(Order::class)->find((int) $model->getRelId()) : null;
+                if ($order instanceof Order) {
+                    // Keep provisioning and its outer commit under one lifecycle lock.
+                    $this->di['mod_service']('Order')->withLifecycleLock($order, $process);
+                } else {
+                    $process();
+                }
             } catch (\Exception $e) {
                 $this->di['logger']->error($e->getMessage());
 

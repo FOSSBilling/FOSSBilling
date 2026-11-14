@@ -22,6 +22,9 @@ use Box\Mod\Invoice\Event\BeforeAdminTransactionCreateEvent;
 use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\NamedLock;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Exception\InformationException;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
@@ -99,7 +102,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if (!empty($data['invoice_id'])) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
             if (!$invoice instanceof Invoice) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Invoice not found');
+                throw new InformationException('Invoice not found');
             }
             $this->assertInvoiceAcceptsTransactions($invoice);
             $model->setInvoice($invoice);
@@ -109,7 +112,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if (!empty($data['gateway_id'])) {
             $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
             if (!$gateway instanceof PayGateway) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway not found');
+                throw new InformationException('Payment gateway not found');
             }
             $model->setGateway($gateway);
         }
@@ -219,7 +222,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         if (!is_string($rawBody) || strlen($rawBody) > self::MAX_CALLBACK_BODY_SIZE) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Invalid callback body');
+            throw new InformationException('Invalid callback body');
         }
 
         $body = ltrim($rawBody);
@@ -238,11 +241,11 @@ class ServiceTransaction implements InjectionAwareInterface
         $gateway = empty($data['gateway_id']) ? null
             : $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
         if (!$gateway instanceof PayGateway) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Invalid payment gateway');
+            throw new InformationException('Invalid payment gateway');
         }
         $adapter = $this->di['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway);
         if (!$adapter instanceof \FOSSBilling\Core\Payment\JsonWebhookAuthenticatorInterface) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway does not support authenticated JSON callbacks');
+            throw new InformationException('Payment gateway does not support authenticated JSON callbacks');
         }
         $adapter->authenticateJsonWebhook($data);
     }
@@ -264,20 +267,20 @@ class ServiceTransaction implements InjectionAwareInterface
                     $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
                 }
 
-                throw new \FOSSBilling\Core\Exception\InformationException('Invalid payment gateway');
+                throw new InformationException('Invalid payment gateway');
             }
         }
         if (!$skip_validation) {
             if (!isset($data['invoice_id'])) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Transaction invoice ID is missing');
+                throw new InformationException('Transaction invoice ID is missing');
             }
 
             if (!isset($data['gateway_id'])) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway ID is missing');
+                throw new InformationException('Payment gateway ID is missing');
             }
             $invoice = $this->di['em']->getRepository(Invoice::class)->find($data['invoice_id']);
             if ($invoice === null) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Invoice was not found');
+                throw new InformationException('Invoice was not found');
             }
             if ($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']) === null) {
                 throw new \FOSSBilling\Core\Exception\BaseException('Gateway was not found');
@@ -419,16 +422,44 @@ class ServiceTransaction implements InjectionAwareInterface
         // any client-balance credit written when it was debited). Deleting it
         // would rewrite financial history and orphan those rows.
         if ($model->getStatus() === Transaction::STATUS_PROCESSED) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Processed transactions cannot be deleted because they record money that already moved.');
+            throw new InformationException('Processed transactions cannot be deleted because they record money that already moved.');
         }
-        // Unprocessed transactions move no money, but drop any balance rows
-        // that reference them so no orphans remain.
-        $balances = $this->di['em']->getRepository(ClientBalance::class)->findBy(['type' => 'transaction', 'relId' => (string) $id]);
-        foreach ($balances as $balance) {
-            $this->di['em']->remove($balance);
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new InformationException('Transaction deletion cannot run inside a database transaction.');
         }
-        $this->di['em']->remove($model);
-        $this->di['em']->flush();
+        $lock = 'paypal_receipt_' . $id;
+        if (!NamedLock::acquire($connection, $lock, 10)) {
+            throw new InformationException('Another worker is processing this receipt. Please retry.');
+        }
+
+        try {
+            $connection->transactional(function () use ($connection, $model, $id): void {
+                $table = $connection->quoteSingleIdentifier('transaction');
+                $status = $connection->fetchOne('SELECT status FROM ' . $table . ' WHERE id = :id' . RowLock::suffix($connection), ['id' => $id]);
+                if ($status === false) {
+                    throw new InformationException('Transaction not found');
+                }
+                if ($status === Transaction::STATUS_PROCESSED) {
+                    throw new InformationException('Processed transactions cannot be deleted because they record money that already moved.');
+                }
+                if ($connection->fetchOne(
+                    'SELECT id FROM client_balance WHERE (type = :credit AND rel_id = :id) OR type = :refund LIMIT 1',
+                    ['credit' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $id, 'refund' => ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $id],
+                ) !== false) {
+                    throw new InformationException('Transactions backing gateway receipt balance entries cannot be deleted.');
+                }
+                $this->di['em']->refresh($model);
+                $balances = $this->di['em']->getRepository(ClientBalance::class)->findBy(['type' => 'transaction', 'relId' => (string) $id]);
+                foreach ($balances as $balance) {
+                    $this->di['em']->remove($balance);
+                }
+                $this->di['em']->remove($model);
+                $this->di['em']->flush();
+            });
+        } finally {
+            NamedLock::release($connection, $lock);
+        }
         $this->di['logger']->info('Removed transaction #{id}', ['id' => $id]);
 
         return true;
@@ -478,7 +509,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $changed[] = 'status';
         }
         if ($changed !== []) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Processed transactions cannot change :fields because they record money that already moved.', [':fields' => implode(', ', $changed)]);
+            throw new InformationException('Processed transactions cannot change :fields because they record money that already moved.', [':fields' => implode(', ', $changed)]);
         }
     }
 
@@ -493,7 +524,7 @@ class ServiceTransaction implements InjectionAwareInterface
             || $invoice->getStatus() === Invoice::STATUS_REFUNDED
             || $invoice->getReplacedByInvoiceId() !== null
         ) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Transactions cannot be linked to a canceled, refunded, or replaced invoice.');
+            throw new InformationException('Transactions cannot be linked to a canceled, refunded, or replaced invoice.');
         }
     }
 

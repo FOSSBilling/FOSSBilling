@@ -444,3 +444,181 @@ test('MySQL checkpoint aliases respect the metadata column collation and roll ba
     }
 })->with([false, true])->with(['DELETION_STATE', 'deletion_state ', 'déletion_state' /* cspell:ignore déletion */])
     ->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+
+function creationRecoveryBackend(array $c): object
+{
+    $backend = new class extends Box\Mod\Servicelicense\Service {
+        public int $created = 0;
+
+        public function action_create(Order $order): ServiceLicense
+        {
+            ++$this->created;
+            $license = (new ServiceLicense())->setClientId($order->getClientId());
+            $this->di['em']->persist($license);
+            $this->di['em']->flush();
+
+            return $license;
+        }
+
+        public function action_activate(Order $order): bool
+        {
+            return true;
+        }
+    };
+    $backend->setDi($c['di']);
+    $module = Mockery::mock();
+    $module->shouldReceive('getService')->andReturn($backend);
+    $c['di']['mod'] = $c['di']->protect(fn (): object => $module);
+
+    return $backend;
+}
+
+test('creation keeps deletion and client removal locked through service linkage and activation', function (string $mode, bool $batch): void {
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $path = $filesystem->tempnam(sys_get_temp_dir(), 'creation-lock-');
+    $c = deletionRecoveryContext($path);
+    $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+    $c['em']->persist($client);
+    $c['em']->remove($c['em']->find(ServiceLicense::class, $c['order']->getServiceId()));
+    $c['order']->setServiceId(null)->setPeriod(null)->setClientId($client->getId());
+    $c['em']->flush();
+    // The client id is assigned by flush, after the order was first persisted.
+    $c['order']->setClientId($client->getId());
+    $c['em']->flush();
+    $backend = creationRecoveryBackend($c);
+    $worker = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/order-create-delete-worker.php', $path, PATH_DATA, (string) $c['order']->getId(), $mode]);
+    $service = new class extends Service {
+        public ?Closure $afterCreate = null;
+
+        protected function _callOnService(Order $order, $action, mixed ...$arguments)
+        {
+            $result = parent::_callOnService($order, $action, ...$arguments);
+            if ($action === Order::ACTION_CREATE) {
+                ($this->afterCreate)();
+            }
+
+            return $result;
+        }
+    };
+    $service->setDi($c['di']);
+    $startWorker = function () use ($worker): void {
+        $worker->start();
+        expect($worker->waitUntil(fn ($type, $output): bool => str_contains($output, 'locked')))->toBeTrue();
+        expect($worker->getOutput())->toStartWith("locked\n");
+    };
+    $service->afterCreate = $batch ? static function (): void {} : $startWorker;
+    $items = Mockery::mock(Box\Mod\Invoice\ServiceInvoiceItem::class);
+    $c['di']['mod_service'] = $c['di']->protect(fn (string $name): object => match (strtolower($name)) {
+        'order' => $service, 'servicelicense' => $backend, 'invoice' => $items,
+    });
+
+    try {
+        if ($batch) {
+            $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_PAID);
+            $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setRelId((string) $c['order']->getId())->setTask(InvoiceItem::TASK_ACTIVATE)->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+            $c['em']->persist($invoice);
+            $c['em']->persist($item);
+            $c['em']->flush();
+            $items->shouldReceive('getAllNotExecutePaidItems')->once()->andReturn([['id' => $item->getId()]]);
+            $items->shouldReceive('executeTask')->once()->andReturnUsing(function () use ($c, $startWorker, $item): bool {
+                // Production resolves a fresh service inside the batch transaction.
+                $inner = new Service();
+                $inner->setDi($c['di']);
+                $inner->createFromOrder($c['order']);
+                $startWorker();
+                $item->setStatus(InvoiceItem::STATUS_EXECUTED);
+                $c['em']->flush();
+
+                return true;
+            });
+            $billing = new Box\Mod\Invoice\Service();
+            $billing->setDi($c['di']);
+            $billing->doBatchPaidInvoiceActivation();
+        } else {
+            $service->createFromOrder($c['order']);
+        }
+        $worker->wait();
+        $this->assertSame(0, $worker->getExitCode(), $worker->getErrorOutput());
+        expect($backend->created)->toBe(1);
+        if ($mode === 'client') {
+            expect($worker->getOutput())->toContain('Client cannot be deleted while they have service records')
+                ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(1)
+                ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client'))->toBe(1);
+        } else {
+            expect($worker->getOutput())->toContain('Gateway unavailable')
+                ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(0)
+                ->and(DeletionRecovery::getState($c['connection'], $c['order']->getId()))->toBe(DeletionRecovery::SERVICE_DELETED);
+        }
+    } finally {
+        $worker->stop();
+        $c['connection']->close();
+        $filesystem->remove([$path, $path . '-wal', $path . '-shm']);
+    }
+})->with(['order', 'client'])->with([false, true]);
+
+test('creation refreshes existing service links and refuses an order removed before it acquires the lock', function (bool $deleted): void {
+    $c = deletionRecoveryContext();
+    $backend = creationRecoveryBackend($c);
+    $c['order']->setPeriod(null);
+    $c['em']->flush();
+    $c['order']->setServiceId(null);
+    $c['di']['mod_service'] = $c['di']->protect(fn (string $name): object => match (strtolower($name)) {
+        'order' => $c['service'], 'servicelicense' => $backend,
+    });
+    if ($deleted) {
+        $c['connection']->delete('client_order', ['id' => $c['order']->getId()]);
+        expect(fn () => $c['service']->createFromOrder($c['order']))->toThrow(InformationException::class, 'not found');
+    } else {
+        $c['service']->createFromOrder($c['order']);
+        expect($c['order']->getServiceId())->not->toBeNull();
+    }
+    expect($backend->created)->toBe(0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(1);
+})->with([false, true]);
+
+test('client removal preserves deletion holds after backend service rows are gone', function (string $state): void {
+    $c = deletionRecoveryContext();
+    $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+    $c['em']->persist($client);
+    $c['em']->flush();
+    $c['order']->setClientId($client->getId());
+    $c['em']->flush();
+    failDeletionAtGateway($c);
+    DeletionRecovery::setState($c['connection'], $c['order']->getId(), $state);
+    $service = new Box\Mod\Client\Service();
+    $service->setDi($c['di']);
+    expect(fn () => $service->remove($client))->toThrow(InformationException::class, 'awaiting recovery');
+    expect($c['connection']->isTransactionActive())->toBeFalse()
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(0)
+        ->and(DeletionRecovery::getState($c['connection'], $c['order']->getId()))->toBe($state);
+})->with([DeletionRecovery::STARTED, DeletionRecovery::SERVICE_DELETED]);
+
+test('client removal refuses orders discovered after its lifecycle locks were collected', function (): void {
+    $c = deletionRecoveryContext();
+    $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+    $c['em']->persist($client);
+    $c['em']->flush();
+    $c['order']->setClientId($client->getId());
+    $c['em']->flush();
+    expect(fn () => $c['service']->rmByClient($client, []))->toThrow(InformationException::class, 'orders changed');
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order'))->toBe(1);
+});
+
+test('activation rechecks current status under the lifecycle lock and still supports explicit force', function (): void {
+    $c = deletionRecoveryContext();
+    $backend = creationRecoveryBackend($c);
+    $c['order']->setPeriod(null)->setStatus(Order::STATUS_PENDING_SETUP);
+    $c['em']->flush();
+    // Another executor completed after activateOrder's caller loaded this entity.
+    $c['connection']->update('client_order', ['status' => Order::STATUS_ACTIVE], ['id' => $c['order']->getId()]);
+    $c['di']['mod_service'] = $c['di']->protect(fn (string $name): object => match (strtolower($name)) {
+        'order' => $c['service'], 'servicelicense' => $backend,
+    });
+    expect($c['service']->activateOrder($c['order']))->toBeTrue()
+        ->and($c['order']->getStatus())->toBe(Order::STATUS_ACTIVE)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order_status'))->toBe(0);
+    expect($c['service']->activateOrder($c['order'], ['force' => true]))->toBeTrue()
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order_status'))->toBe(1);
+});

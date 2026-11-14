@@ -13,6 +13,9 @@ function deferredPayPalApi(array $c): object
 {
     return new class($c) {
         public bool $crash = false;
+        public bool $allowInvoiceRefund = false;
+        public bool $crashRefund = false;
+        public array $refunds = [];
         public ?Closure $beforeInvoiceRead = null;
 
         public function __construct(private array $c)
@@ -46,9 +49,19 @@ function deferredPayPalApi(array $c): object
             return ['client' => ['id' => $this->c['client']->getId()], 'currency' => 'USD'];
         }
 
-        public function invoice_refund(array $data): never
+        public function invoice_refund(array $data): bool
         {
-            throw new RuntimeException('A deferred credit refund must not refund an invoice');
+            if ($this->crashRefund) {
+                throw new Error('Interrupted before invoice refund');
+            }
+            if (!$this->allowInvoiceRefund) {
+                throw new RuntimeException('A deferred credit refund must not refund an invoice');
+            }
+            $this->refunds[] = $data;
+            $this->c['em']->find(Invoice::class, (int) $data['id'])->setStatus(Invoice::STATUS_REFUNDED);
+            $this->c['em']->flush();
+
+            return true;
         }
 
         public function client_balance_add_funds(array $data): bool
