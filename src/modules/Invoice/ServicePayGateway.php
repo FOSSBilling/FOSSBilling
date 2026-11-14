@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
+use Doctrine\DBAL\LockMode;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer;
 use Symfony\Component\Filesystem\Filesystem;
@@ -338,7 +339,8 @@ class ServicePayGateway implements InjectionAwareInterface
      */
     public function moveUnpaidInvoices(int $gatewayId, ?int $replacementId): void
     {
-        $invoices = $this->di['em']->getRepository(Invoice::class)->findUnpaidByGatewayId($gatewayId);
+        $invoiceRepository = $this->di['em']->getRepository(Invoice::class);
+        $invoices = $invoiceRepository->findUnpaidByGatewayId($gatewayId);
         if ($invoices === []) {
             return;
         }
@@ -352,10 +354,22 @@ class ServicePayGateway implements InjectionAwareInterface
 
         $feesService = $this->di['mod_service']('Invoice', 'GatewayFees');
         foreach ($invoices as $invoice) {
-            $invoice->setGateway($replacement);
-            $this->di['em']->persist($invoice);
-            $this->di['em']->flush();
-            $feesService->apply($invoice, $replacement);
+            $this->di['em']->wrapInTransaction(function () use ($invoiceRepository, $invoice, $gatewayId, $replacement, $feesService): void {
+                $state = $invoiceRepository->lockAndGetState((int) $invoice->getId());
+                if ($state === null || $state['status'] !== Invoice::STATUS_UNPAID) {
+                    return;
+                }
+                // A plain refresh can reuse an older MySQL transaction snapshot.
+                $this->di['em']->refresh($invoice, LockMode::PESSIMISTIC_WRITE);
+                // Selection may precede a concurrent payment or gateway change.
+                if ($invoice->getStatus() !== Invoice::STATUS_UNPAID || $invoice->getGateway()?->getId() !== $gatewayId) {
+                    return;
+                }
+                $invoice->setGateway($replacement);
+                $this->di['em']->persist($invoice);
+                $this->di['em']->flush();
+                $feesService->apply($invoice, $replacement);
+            });
         }
 
         $this->di['logger']->info('Moved {count} unpaid invoices from gateway #{gateway_id} to gateway #{replacement_id}', ['count' => count($invoices), 'gateway_id' => $gatewayId, 'replacement_id' => $replacementId]);
