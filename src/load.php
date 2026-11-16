@@ -231,6 +231,12 @@ function exceptionHandler(Exception|Error $e): void
  */
 function isCoreUpdateLockActive(?int $now = null): bool
 {
+    // Unlike the transient writer marker, this never expires: extracted files
+    // may be mixed until a complete verified release has been restored.
+    if (file_exists(PATH_ROOT . '/.update-extraction-pending')) {
+        return true;
+    }
+
     $path = PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock';
     $mtime = @filemtime($path);
     $handle = @fopen($path, 'r');
@@ -256,8 +262,10 @@ function blockWhileCoreUpdateIsRunning(bool $runtimeBusy = false): void
         return;
     }
 
+    $recovery = file_exists(PATH_ROOT . '/.update-extraction-pending')
+        ? ' Update extraction has not completed. If the updater has stopped, restore a complete verified release before clearing .update-extraction-pending.' : '';
     if (PHP_SAPI === 'cli') {
-        fwrite(STDERR, "FOSSBilling is currently applying a core update. Please try again in a few moments.\n");
+        fwrite(STDERR, 'FOSSBilling is currently applying a core update. Please try again in a few moments.' . $recovery . "\n");
         exit(1);
     }
 
@@ -268,6 +276,7 @@ function blockWhileCoreUpdateIsRunning(bool $runtimeBusy = false): void
         . '<body style="font-family:sans-serif;text-align:center;padding:4rem 1rem;">'
         . '<h1>FOSSBilling is updating</h1>'
         . '<p>This installation is being updated and will be back in a moment. This page will retry automatically.</p>'
+        . ($recovery !== '' ? '<p>' . $recovery . '</p>' : '')
         . '<script>setTimeout(function () { location.reload(); }, 5000);</script>'
         . '</body></html>';
     exit;

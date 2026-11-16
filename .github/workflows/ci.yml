@@ -186,7 +186,7 @@ jobs:
         run: |
           GITHUB_SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
           echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> "$GITHUB_ENV"
-          zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip . -x '.update-lock' 'data/uploads/.update-runtime.lock' 'data/update-finalization.*' 'config.php' 'config.old.php'
+          zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip . -x '.update-lock' '.update-extraction-pending' 'data/uploads/.update-runtime.lock' 'data/update-finalization.*' 'config.php' 'config.old.php'
           echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
 

@@ -1,10 +1,17 @@
+diff --git a/src/load.php b/src/load.php
 --- a/src/load.php
 +++ b/src/load.php
-@@ -178,19 +178,28 @@
+@@ -178,24 +178,41 @@
   */
  function isCoreUpdateLockActive(?int $now = null): bool
  {
 -    $mtime = @filemtime(PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock');
++    // Unlike the transient writer marker, this never expires: extracted files
++    // may be mixed until a complete verified release has been restored.
++    if (file_exists(PATH_ROOT . '/.update-extraction-pending')) {
++        return true;
++    }
++
 +    $path = PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock';
 +    $mtime = @filemtime($path);
 +    $handle = @fopen($path, 'r');
@@ -37,7 +44,23 @@
          return;
      }
  
-@@ -220,6 +229,29 @@
++    $recovery = file_exists(PATH_ROOT . '/.update-extraction-pending')
++        ? ' Update extraction has not completed. If the updater has stopped, restore a complete verified release before clearing .update-extraction-pending.' : '';
+     if (PHP_SAPI === 'cli') {
+-        fwrite(STDERR, "FOSSBilling is currently applying a core update. Please try again in a few moments.\n");
++        fwrite(STDERR, 'FOSSBilling is currently applying a core update. Please try again in a few moments.' . $recovery . "\n");
+         exit(1);
+     }
+ 
+@@ -206,6 +223,7 @@
+         . '<body style="font-family:sans-serif;text-align:center;padding:4rem 1rem;">'
+         . '<h1>FOSSBilling is updating</h1>'
+         . '<p>This installation is being updated and will be back in a moment. This page will retry automatically.</p>'
++        . ($recovery !== '' ? '<p>' . $recovery . '</p>' : '')
+         . '<script>setTimeout(function () { location.reload(); }, 5000);</script>'
+         . '</body></html>';
+     exit;
+@@ -220,6 +238,29 @@
      define('PATH_ROOT', __DIR__);
  
      blockWhileCoreUpdateIsRunning();
@@ -67,6 +90,18 @@
  
      // Check vendor folder exists and load Composer autoloader.
      define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
+@@ -304,6 +345,10 @@
+         @mkdir($pathData, 0o755, true);
+     }
+     define('PATH_DATA', $pathData);
++    if (!Environment::isTesting()) {
++        // The new release must also drain this old updater's post-extraction work.
++        FOSSBilling\Core\Update\RuntimeLock::acquireFinalizationReader(PATH_DATA);
++    }
+     define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
+     define('PATH_LOG', Path::join(PATH_DATA, 'log'));
+     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
+diff --git a/src/library/FOSSBilling/Update.php b/src/library/FOSSBilling/Update.php
 --- a/src/library/FOSSBilling/Update.php
 +++ b/src/library/FOSSBilling/Update.php
 @@ -11,8 +11,6 @@
@@ -87,19 +122,14 @@
  
          // Delete the cached result to force a refetch
          if ($refetch) {
-@@ -166,7 +164,7 @@
-             $item->expiresAfter(3600);
- 
-             try {
--                $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
-+                $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest?' . http_build_query(['update_protocol' => 1, 'current_version' => Version::VERSION]);
-                 $httpClient = $this->di['http_client'];
-                 $response = $httpClient->request('GET', $releaseInfoUrl);
-                 $releaseInfo = $response->toArray()['result'];
-@@ -312,6 +310,10 @@
+@@ -312,6 +310,14 @@
              throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
          }
  
++        if ($this->filesystem->exists(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME)) {
++            throw new InformationException('A previous update extraction did not complete. Restore a complete verified release before clearing the extraction recovery marker.');
++        }
++
 +        if (!class_exists(\ZipArchive::class)) {
 +            throw new InformationException('The PHP ZIP extension must be installed and enabled before updating FOSSBilling.');
 +        }
@@ -107,7 +137,7 @@
          $readiness = $this->di['update_readiness']->check();
          if (!$readiness['can_update']) {
              throw new Exception('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
-@@ -324,159 +326,149 @@
+@@ -324,159 +330,157 @@
  
          $this->di['logger']->setChannel('update')->info('Started FOSSBilling auto-update script');
          $latestVersionNum = $this->getLatestVersion();
@@ -254,6 +284,10 @@
 +                        throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
 +                    }
 +
++                    if ($this->filesystem->exists(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME)) {
++                        throw new InformationException('A previous update extraction did not complete. Restore a complete verified release before clearing the extraction recovery marker.');
++                    }
++
 +                    // Extract latest version archive on top of the current version.
 +                    try {
 +                        require_once PATH_ROOT . '/core/Filesystem/ZipExtractor.php';
@@ -261,6 +295,8 @@
 +                            if (!self::isSafeArchiveEntry($entryName)) {
 +                                throw new Exception('The update archive contains an unsafe file path and cannot be extracted.');
 +                            }
++                        }, beforeWrite: function (): void {
++                            $this->filesystem->dumpFile(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME, 'Core update extraction has started. Remove only after restoring a complete verified release.');
 +                        });
 +                    } catch (\RuntimeException $e) {
 +                        $this->di['logger']->setChannel('update')->error($e->getMessage());
@@ -284,6 +320,8 @@
 +                        'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
 +                        'source' => 'auto-update',
 +                    ]);
++                    // Only a verified extraction and durable finalization handoff clear recovery.
++                    $this->filesystem->remove(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME);
 +                });
              } finally {
 -                fclose($fileHandler);
@@ -404,7 +442,7 @@
      }
  
      /**
-@@ -506,11 +498,12 @@
+@@ -506,11 +510,12 @@
      {
          $normalized = str_replace('\\', '/', $entryName);
  
@@ -419,7 +457,7 @@
              // Windows strips trailing spaces and periods from path components, so
              // '.. .' or '...' resolve to '..' at extraction time even though they
              // don't match it literally here. Reject any segment that is nothing
-@@ -520,6 +513,14 @@
+@@ -520,6 +525,14 @@
              }
          }
  
@@ -429,15 +467,17 @@
 +        // A release must never replace live lock inodes, finalization state,
 +        // or an installation's configuration and encryption key.
 +        return !in_array($canonical, [
-+            '.update-lock', Core\Update\RuntimeLock::FILENAME,
++            '.update-lock', Core\Update\RuntimeLock::FILENAME, Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME,
 +            'data/update-finalization.lock', 'data/update-finalization.json',
 +            'config.php', 'config.old.php',
 +        ], true);
      }
  }
+diff --git a/src/core/Update/RuntimeLock.php b/src/core/Update/RuntimeLock.php
+new file mode 100644
 --- /dev/null
 +++ b/src/core/Update/RuntimeLock.php
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,129 @@
 +<?php
 +
 +declare(strict_types=1);
@@ -448,6 +488,7 @@
 +final class RuntimeLock
 +{
 +    public const string FILENAME = 'data/uploads/.update-runtime.lock';
++    public const string EXTRACTION_MARKER_FILENAME = '.update-extraction-pending';
 +
 +    /** @var array<string, resource> */
 +    private static array $readers = [];
@@ -508,6 +549,24 @@
 +        self::$readers[$root] = $handle;
 +    }
 +
++    /** Older coordination releases retain this reader until process shutdown. */
++    public static function acquireFinalizationReader(string $dataPath): void
++    {
++        $key = 'finalization:' . $dataPath;
++        if (isset(self::$readers[$key])) {
++            return;
++        }
++        $handle = @fopen($dataPath . '/update-finalization.lock', 'c');
++        if ($handle === false || !flock($handle, LOCK_SH)) {
++            if (is_resource($handle)) {
++                fclose($handle);
++            }
++
++            throw new \RuntimeException('Unable to acquire the update finalization reader.');
++        }
++        self::$readers[$key] = $handle;
++    }
++
 +    public static function release(string $root): void
 +    {
 +        if (isset(self::$readers[$root])) {
@@ -548,9 +607,11 @@
 +        }
 +    }
 +}
+diff --git a/src/core/Filesystem/ZipExtractor.php b/src/core/Filesystem/ZipExtractor.php
+new file mode 100644
 --- /dev/null
 +++ b/src/core/Filesystem/ZipExtractor.php
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,237 @@
 +<?php
 +
 +declare(strict_types=1);
@@ -574,8 +635,9 @@
 +     * The caller supplies the path/type policy for core or extension packages.
 +     *
 +     * @param callable(string, int): void $validateEntry
++     * @param (callable(): void)|null     $beforeWrite   Called once after validation and before changing any destination path
 +     */
-+    public function extract(string $archive, string $destination, callable $validateEntry, int $maxEntries = PHP_INT_MAX, int $maxBytes = PHP_INT_MAX): void
++    public function extract(string $archive, string $destination, callable $validateEntry, int $maxEntries = PHP_INT_MAX, int $maxBytes = PHP_INT_MAX, ?callable $beforeWrite = null): void
 +    {
 +        if (!class_exists(\ZipArchive::class)) {
 +            throw new \RuntimeException('The PHP ZIP extension must be installed and enabled to extract archives.');
@@ -619,6 +681,12 @@
 +
 +            if (!is_dir($destination) || !is_writable($destination)) {
 +                throw new \RuntimeException('The ZIP extraction destination must be a writable directory.');
++            }
++
++            // Core updates publish a durable recovery marker only after archive
++            // validation succeeds, but before any application path is changed.
++            if ($beforeWrite !== null && $entries !== []) {
++                $beforeWrite();
 +            }
 +
 +            $directories = [];

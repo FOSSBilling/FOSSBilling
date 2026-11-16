@@ -46,11 +46,10 @@ release; the updater checks ZIP before replacing files. If those requirements
 are unsuitable for 0.8.10, use the 0.9.0 fallback instead of promising an unsafe
 legacy upgrade path.
 
-
 Require native PHP ZIP, writable application uploads and configured data paths,
 and shared lock storage with working advisory locks. Exclude `.update-lock`,
-`data/uploads/.update-runtime.lock`, `data/update-finalization.*`, `config.php`
-and `config.old.php` from archives. Never replace live lock files. Multi-node
+`.update-extraction-pending`, `data/uploads/.update-runtime.lock`,
+`data/update-finalization.*`, `config.php` and `config.old.php` from archives. Never replace live lock files. Multi-node
 installations with independent storage need infrastructure-level coordination.
 Interrupted extraction requires a complete verified release or backup restore;
 finalization retries database/configuration work after successful extraction.

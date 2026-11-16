@@ -55,3 +55,17 @@ Historical SQL/config upgrade tests cover 0.7.2, 0.8.1 and 0.8.9 on MySQL/MariaD
 including interruption and retry. Portable schema and concurrency tests also
 exercise SQLite and PostgreSQL. Historical MySQL-only data transformations remain
 MySQL/MariaDB-only; this upgrade does not provide cross-database conversion.
+
+## Interrupted extraction recovery
+
+Before changing application files, the updater records `.update-extraction-pending`
+in the application root. It removes this marker only after extraction succeeds and
+finalization state is saved. An exception or killed updater leaves the marker in
+place; it does not expire. New web and cron requests stay blocked before Composer
+loads, so they cannot execute a partially replaced release.
+
+An archive rejected before any writes leaves the application available. After an
+interrupted write, stop the updater and restore a complete verified release or
+backup, then remove `.update-extraction-pending` before retrying finalization.
+Do not clear this marker merely to bypass the recovery check. Release archives
+must exclude it, alongside the transient update lock and other runtime state.

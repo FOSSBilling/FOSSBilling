@@ -496,3 +496,7 @@ test('isSafeArchiveEntry rejects an all-dots segment', function (): void {
 test('isSafeArchiveEntry accepts a filename that legitimately contains spaces and periods', function (): void {
     expect(Updater::isSafeArchiveEntry('src/data/my file v1.2.3.txt'))->toBeTrue();
 });
+
+test('release archives cannot replace the extraction recovery marker', function (): void {
+    expect(Updater::isSafeArchiveEntry('.update-extraction-pending'))->toBeFalse();
+});

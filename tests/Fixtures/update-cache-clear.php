@@ -26,6 +26,17 @@ $content = $scenario === 'extraction_failure' ? 'invalid zip' : Tests\Helpers\zi
 if ($scenario === 'protected_runtime') {
     $content = Tests\Helpers\zipArchive(['updated.txt' => 'updated', 'data/uploads/.update-runtime.lock' => 'must not replace']);
 }
+if ($scenario === 'partial_extraction') {
+    $content = Tests\Helpers\zipArchive(['updated.txt' => 'updated', 'blocked.txt' => 'cannot replace symlink']);
+    $filesystem->dumpFile(PATH_ROOT . '/target.txt', 'original');
+    $filesystem->symlink(PATH_ROOT . '/target.txt', PATH_ROOT . '/blocked.txt');
+}
+if ($scenario === 'protected_extraction_marker') {
+    $content = Tests\Helpers\zipArchive(['updated.txt' => 'updated', '.update-extraction-pending' => 'must not replace']);
+}
+if ($scenario === 'recovery_pending') {
+    $filesystem->touch(PATH_ROOT . '/.update-extraction-pending', time() - 86400);
+}
 $release = [
     'version' => '0.8.5-test',
     'minimum_php_version' => '8.3',
@@ -49,6 +60,9 @@ $finalization = new class {
 
     public function createPendingState(...$args): void
     {
+        if ($GLOBALS['scenario'] === 'pending_state_failure') {
+            throw new RuntimeException('Finalization state unavailable');
+        }
         $this->pending = true;
         $this->created = true;
     }
@@ -157,5 +171,6 @@ echo json_encode([
     'pending' => $finalization->created,
     'extracted' => $filesystem->exists(PATH_ROOT . '/updated.txt'),
     'locked' => $filesystem->exists(PATH_ROOT . '/' . Updater::LOCK_FILENAME),
+    'incomplete' => $filesystem->exists(PATH_ROOT . '/.update-extraction-pending'),
     'archives' => array_keys(iterator_to_array(Finder::create()->files()->in(PATH_DATA)->name('*.zip'))),
 ], JSON_THROW_ON_ERROR);
