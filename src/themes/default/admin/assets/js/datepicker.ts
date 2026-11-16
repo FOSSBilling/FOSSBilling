@@ -55,18 +55,24 @@ export default function initDatepickers() {
       const sorted = [...dates].sort();
       const first = sorted[0] ?? '';
       const last = sorted.length > 1 ? sorted[sorted.length - 1] : '';
-      input.value = range && last ? `${first} to ${last}` : first;
+      const desired = range && last ? `${first} to ${last}` : first;
+      input.value = desired;
       if (from && to) {
         from.value = first;
         to.value = last;
       }
       input.setCustomValidity('');
       // Notify form listeners without feeding the selection back to the calendar.
+      // Tabler also listens for native change events and re-emits
+      // change.bs.datepicker, so guard the round-trip and restore our format.
       calendarChange = true;
       try {
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
       } finally {
+        // Tabler rewrites the value to its own en-dash format while handling
+        // our synthetic change event; restore the " to " format callers expect.
+        input.value = desired;
         calendarChange = false;
       }
     };
@@ -79,16 +85,26 @@ export default function initDatepickers() {
         input.setCustomValidity(input.dataset.invalidDateLabel || 'Enter a valid date in YYYY-MM-DD format.');
         return;
       }
-      picker.setSelectedDates(parts.filter(Boolean));
+      // Keep typed ranges chronological like publish(); leave open-ended
+      // values untouched so an empty side stays on its original side.
+      const ordered = range && parts[0] && parts[1] ? [...parts].sort() : parts;
+      picker.setSelectedDates(ordered.filter(Boolean));
+      // setSelectedDates rewrites ranges with Tabler's en-dash separator;
+      // restore the " to " format so typed and pasted values match publish().
+      if (range && ordered[1]) input.value = `${ordered[0]} to ${ordered[1]}`;
       input.setCustomValidity('');
       if (from && to) {
-        from.value = parts[0] ?? '';
-        to.value = parts[1] ?? '';
+        from.value = ordered[0] ?? '';
+        to.value = ordered[1] ?? '';
       }
     };
     syncInput();
 
     input.addEventListener('change.bs.datepicker', event => {
+      // Ignore events triggered while publishing our own synthetic
+      // input/change (Tabler re-emits change.bs.datepicker from its
+      // native change handler, which would otherwise recurse infinitely).
+      if (calendarChange) return;
       const dates = (event as Event & { dates: string[] }).dates;
       publish(dates);
     });
