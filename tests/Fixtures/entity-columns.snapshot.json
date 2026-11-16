@@ -283,6 +283,7 @@
     "form_field.updated_at",
     "invoice.base_income",
     "invoice.base_refund",
+    "invoice.base_refund_tax",
     "invoice.buyer_address",
     "invoice.buyer_city",
     "invoice.buyer_company",

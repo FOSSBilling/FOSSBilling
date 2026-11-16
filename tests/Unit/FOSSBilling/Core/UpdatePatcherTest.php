@@ -4190,3 +4190,199 @@ test('JSON migration bootstrap probe does not suppress programming errors', func
 
     expect(fn () => $patcher->isJsonMigrationPending())->toThrow(LogicException::class, 'Broken connection factory');
 });
+
+test('refund income backfill nets out tax and preserves gross cash', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, refund NUMERIC, base_refund NUMERIC, base_refund_tax NUMERIC, taxrate TEXT, currency TEXT, currency_rate TEXT, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, price NUMERIC, quantity NUMERIC, taxed INTEGER)');
+    // Gross basis (pre-#4661): base_refund holds the tax-inclusive 120.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (30, '120.00', '120.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (31, NULL, NULL, NULL, '20', 'USD', '1.000000', 30)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (31, '-100.00', 1, 1)");
+    // No linked note: the tax is unknown, so it stays NULL rather than recording zero.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (40, '60.00', '60.00', NULL, '20', 'USD', '1.000000')");
+    // Linked notes with zero tax: known zero.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (90, '50.00', '50.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (91, NULL, NULL, NULL, '20', 'USD', '1.000000', 90)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (91, '-50.00', 1, 0)");
+    // Net basis (refunded after #4661, before this migration): base_refund is
+    // already net, so only the tax leg may be recorded - never rescaled.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (50, '120.00', '100.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (51, NULL, NULL, NULL, '20', 'USD', '1.000000', 50)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (51, '-100.00', 1, 1)");
+    // Ambiguous basis: stored base matches neither hypothesis, so it is left for later.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (60, '120.00', '999.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (61, NULL, NULL, NULL, '20', 'USD', '1.000000', 60)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (61, '-100.00', 1, 1)");
+    // Foreign currency at a changed rate: 100 EUR net recorded at 1.2 stores
+    // base_refund = 120, numerically matching the invoice-currency gross refund.
+    // Classification would need the refund-time rate, which is not stored, so the
+    // row must stay untouched.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (70, '120.00', '120.00', NULL, '20', 'EUR', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (71, NULL, NULL, NULL, '20', 'EUR', '1.000000', 70)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (71, '-100.00', 1, 1)");
+    // Current default but a payment-time rate proving the base moved since: the
+    // numbers look gross-basis, yet the refund was not recorded in this base.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (80, '120.00', '120.00', NULL, '20', 'USD', '0.850000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (81, NULL, NULL, NULL, '20', 'USD', '0.850000', 80)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (81, '-100.00', 1, 1)");
+    // Partially covered refund: the linked note accounts for 120 of the 180 refund,
+    // so the cumulative tax basis cannot be established - leave it unresolved even
+    // though a basis match alone would rewrite it.
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (100, '180.00', '180.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (101, NULL, NULL, NULL, '20', 'USD', '1.000000', 100)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (101, '-100.00', 1, 1)");
+
+    // USD is the default currency; its conversions are the 1:1 identity.
+    $defaultCurrency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $defaultCurrency->shouldReceive('getCode')->andReturn('USD');
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')->andReturn($defaultCurrency);
+    $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di = new Pimple\Container(['em' => $em, 'logger' => new Tests\Helpers\TestLogger()]);
+    $di['mod_service'] = $di->protect(fn (): Box\Mod\Currency\Service => $currencyService);
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+
+    $patcher->backfillRefundIncomeBasis();
+
+    $row30 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 30');
+    $row40 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 40');
+    $row50 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 50');
+    $row60 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 60');
+    $row70 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 70');
+    $row80 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 80');
+    $row90 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 90');
+    $row100 = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 100');
+    expect((float) $row30['base_refund'])->toBe(100.0)
+        ->and((float) $row30['base_refund_tax'])->toBe(20.0)
+        ->and((float) $row40['base_refund'])->toBe(60.0)
+        ->and($row40['base_refund_tax'])->toBeNull()
+        ->and((float) $row50['base_refund'])->toBe(100.0)
+        ->and((float) $row50['base_refund_tax'])->toBe(20.0)
+        ->and((float) $row60['base_refund'])->toBe(999.0)
+        ->and($row60['base_refund_tax'])->toBeNull()
+        ->and((float) $row70['base_refund'])->toBe(120.0)
+        ->and($row70['base_refund_tax'])->toBeNull()
+        ->and((float) $row80['base_refund'])->toBe(120.0)
+        ->and($row80['base_refund_tax'])->toBeNull()
+        ->and((float) $row90['base_refund'])->toBe(50.0)
+        ->and((float) $row90['base_refund_tax'])->toBe(0.0)
+        ->and((float) $row100['base_refund'])->toBe(180.0)
+        ->and($row100['base_refund_tax'])->toBeNull();
+
+    $patcher->backfillRefundIncomeBasis();
+
+    $row30Again = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 30');
+    $row50Again = $connection->fetchAssociative('SELECT base_refund, base_refund_tax FROM invoice WHERE id = 50');
+    expect((float) $row30Again['base_refund'])->toBe(100.0)
+        ->and((float) $row30Again['base_refund_tax'])->toBe(20.0)
+        ->and((float) $row50Again['base_refund'])->toBe(100.0)
+        ->and((float) $row50Again['base_refund_tax'])->toBe(20.0);
+});
+
+test('refund backfill bounded runs resume from the stored scan position', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, refund NUMERIC, base_refund NUMERIC, base_refund_tax NUMERIC, taxrate TEXT, currency TEXT, currency_rate TEXT, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, price NUMERIC, quantity NUMERIC, taxed INTEGER)');
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (30, '120.00', '120.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (31, NULL, NULL, NULL, '20', 'USD', '1.000000', 30)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (31, '-100.00', 1, 1)");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate) VALUES (40, '120.00', '120.00', NULL, '20', 'USD', '1.000000')");
+    $connection->executeStatement("INSERT INTO invoice (id, refund, base_refund, base_refund_tax, taxrate, currency, currency_rate, credit_note_for_invoice_id) VALUES (41, NULL, NULL, NULL, '20', 'USD', '1.000000', 40)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, price, quantity, taxed) VALUES (41, '-100.00', 1, 1)");
+
+    $defaultCurrency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $defaultCurrency->shouldReceive('getCode')->andReturn('USD');
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')->andReturn($defaultCurrency);
+    $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di = new Pimple\Container(['em' => $em, 'logger' => new Tests\Helpers\TestLogger()]);
+    $di['mod_service'] = $di->protect(fn (): Box\Mod\Currency\Service => $currencyService);
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+
+    // A previous bounded run stopped after id 30: the next one resumes after it.
+    $connection->insert('setting', ['param' => 'refund_basis_backfill_last_id', 'value' => '30', 'public' => 0, 'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00']);
+    $patcher->backfillRefundIncomeBasis(1);
+
+    expect($connection->fetchOne('SELECT base_refund_tax FROM invoice WHERE id = 30'))->toBeNull()
+        ->and((float) $connection->fetchOne('SELECT base_refund FROM invoice WHERE id = 40'))->toBe(100.0)
+        ->and((float) $connection->fetchOne('SELECT base_refund_tax FROM invoice WHERE id = 40'))->toBe(20.0)
+        ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'refund_basis_backfill_last_id'"))->toBe('40');
+
+    // The unbounded finalization run scans again from zero, converts the skipped row,
+    // and clears the marker.
+    $patcher->backfillRefundIncomeBasis();
+
+    expect((float) $connection->fetchOne('SELECT base_refund FROM invoice WHERE id = 30'))->toBe(100.0)
+        ->and((float) $connection->fetchOne('SELECT base_refund_tax FROM invoice WHERE id = 30'))->toBe(20.0)
+        ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'refund_basis_backfill_last_id'"))->toBeFalse();
+});
+
+test('refund backfill writes guard the update with the values read', function (): void {
+    $row = ['id' => 30, 'refund' => '120.00', 'base_refund' => '120.00', 'currency' => 'USD', 'currency_rate' => '1.000000'];
+    $note = ['id' => 31, 'credit_note_for_invoice_id' => 30, 'taxrate' => '20'];
+    $item = ['invoice_id' => 31, 'price' => '-100.00', 'quantity' => 1, 'taxed' => 1];
+
+    $table = Mockery::mock(Doctrine\DBAL\Schema\Table::class);
+    $table->shouldReceive('hasColumn')->with('base_refund_tax')->andReturnTrue();
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('tablesExist')->with(['invoice', 'invoice_item'])->andReturnTrue();
+    $schemaManager->shouldReceive('introspectTableByUnquotedName')->with('invoice')->andReturn($table);
+
+    $statements = [];
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
+    $connection->shouldReceive('fetchAllAssociative')->andReturn([$row], [$note], [$item], []);
+    $connection->shouldReceive('fetchOne')->andReturnFalse();
+    $connection->shouldReceive('insert')->andReturn(1);
+    $connection->shouldReceive('executeStatement')->andReturnUsing(function (string $sql, array $params = []) use (&$statements): int {
+        $statements[] = [$sql, $params];
+
+        return 1;
+    });
+
+    $defaultCurrency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $defaultCurrency->shouldReceive('getCode')->andReturn('USD');
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')->andReturn($defaultCurrency);
+    $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di = new Pimple\Container(['em' => $em, 'logger' => new Tests\Helpers\TestLogger()]);
+    $di['mod_service'] = $di->protect(fn (): Box\Mod\Currency\Service => $currencyService);
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+
+    $patcher->backfillRefundIncomeBasis(1);
+
+    $update = null;
+    foreach ($statements as [$sql, $params]) {
+        if (str_contains($sql, 'SET base_refund = :net')) {
+            $update = [$sql, $params];
+        }
+    }
+    expect($update)->not->toBeNull();
+    [$sql, $params] = $update;
+    // A refund posted concurrently rewrites refund/base_refund: the guard binds the
+    // read snapshots so that write is left for a later scan instead of applying
+    // stale math.
+    expect($sql)->toContain('AND refund = :refund_snapshot AND base_refund = :base_snapshot')
+        ->and($params['refund_snapshot'])->toBe('120.00')
+        ->and($params['base_snapshot'])->toBe('120.00')
+        ->and((float) $params['net'])->toBe(100.0)
+        ->and((float) $params['tax'])->toBe(20.0)
+        ->and((int) $params['id'])->toBe(30);
+});

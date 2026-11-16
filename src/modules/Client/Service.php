@@ -901,6 +901,14 @@ class Service implements InjectionAwareInterface
 
     public function remove(Client $model): void
     {
+        $orderService = $this->di['mod_service']('Order');
+        $orderService->withClientOrderLocks($model, function (array $lockedOrderIds) use ($model, $orderService): void {
+            $this->removeLockedClient($model, $orderService, $lockedOrderIds);
+        });
+    }
+
+    private function removeLockedClient(Client $model, object $orderService, array $lockedOrderIds): void
+    {
         $this->throwIfActiveServicesRemain($model);
 
         $entityManager = $this->di['em'];
@@ -909,8 +917,7 @@ class Service implements InjectionAwareInterface
         $entityManager->beginTransaction();
 
         try {
-            $service = $this->di['mod_service']('Order');
-            $service->rmByClient($model);
+            $orderService->rmByClient($model, $lockedOrderIds);
             $service = $this->di['mod_service']('Invoice');
             $service->rmByClient($model);
             $service = $this->di['mod_service']('Support');

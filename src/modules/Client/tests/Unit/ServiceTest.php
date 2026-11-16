@@ -664,9 +664,11 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $services = [];
     foreach (['order', 'invoice', 'support', 'email', 'activity'] as $module) {
         $moduleService = Mockery::mock();
-        $moduleService->shouldReceive('rmByClient')->once()->with($client);
+        $moduleService->shouldReceive('rmByClient')->once()->withArgs(fn ($actualClient, $ids = null): bool => $actualClient === $client && ($module !== 'order' || $ids === []));
         $services[$module] = $moduleService;
     }
+
+    $services['order']->shouldReceive('withClientOrderLocks')->once()->andReturnUsing(fn ($client, Closure $callback) => $callback([]));
 
     $balanceService = Mockery::mock();
     $balanceService->shouldReceive('rmByClient')->once()->with($client);
@@ -720,7 +722,8 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
     $exception = new RuntimeException('cleanup failed');
 
     $orderService = Mockery::mock();
-    $orderService->shouldReceive('rmByClient')->once()->with($client)->andThrow($exception);
+    $orderService->shouldReceive('rmByClient')->once()->with($client, [])->andThrow($exception);
+    $orderService->shouldReceive('withClientOrderLocks')->once()->andReturnUsing(fn ($client, Closure $callback) => $callback([]));
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
@@ -757,6 +760,7 @@ test('remove refuses clients with provisioned services', function (): void {
 
     $orderService = Mockery::mock();
     $orderService->shouldReceive('rmByClient')->never();
+    $orderService->shouldReceive('withClientOrderLocks')->once()->andReturnUsing(fn ($client, Closure $callback) => $callback([]));
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));

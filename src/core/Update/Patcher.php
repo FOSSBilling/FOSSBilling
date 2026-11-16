@@ -269,6 +269,7 @@ class Patcher implements InjectionAwareInterface
         // an unreachable database is skipped, already recorded by syncPortableSchema.
         try {
             $this->backfillInvoiceJournal();
+            $this->backfillRefundIncomeBasis();
             $this->checkInvoiceNumberCounter();
         } catch (\Doctrine\DBAL\Exception\ConnectionException) {
             return;
@@ -1201,6 +1202,15 @@ class Patcher implements InjectionAwareInterface
                 $this->logUpdate('error', 'Invoice journal healing failed: ' . $e->getMessage());
             }
 
+            // Same bounded healing for legacy tax-inclusive refunds: a finalization that
+            // ran before base_refund_tax existed leaves those rows for the drift sync
+            // above to add the column for - converge them a page at a time here.
+            try {
+                $this->backfillRefundIncomeBasis(1);
+            } catch (\Throwable $e) {
+                $this->logUpdate('error', 'Refund income basis healing failed: ' . $e->getMessage());
+            }
+
             return true;
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Ambient schema sync failed: ' . $e->getMessage());
@@ -1821,6 +1831,309 @@ class Patcher implements InjectionAwareInterface
     public function healInvoiceJournal(int $maxPages = 1): void
     {
         $this->backfillInvoiceJournal($maxPages);
+    }
+
+    /**
+     * Backfill pre-#4661 tax-inclusive `base_refund` rows to the net basis, preserving the tax
+     * portion in `base_refund_tax`. Only `base_refund_tax IS NULL` rows are touched, so reruns
+     * never double-apply. A row is only rewritten when its refund-time base currency is
+     * established: its currency must be the current default (whose conversions are the 1:1
+     * identity, exact at any point in time) and its payment-time `currency_rate` snapshot must
+     * be 1.0, pinning the same base across the payment-to-refund window. Anything else - a
+     * foreign base, a moved rate, or no linked note establishing the tax - is left NULL
+     * rather than recording a zero that would read as known. Bounded runs resume from a
+     * stored scan position so they converge across requests; unbounded runs rescan from
+     * zero and clear it.
+     */
+    public function backfillRefundIncomeBasis(int $maxPages = 0): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return;
+        }
+
+        try {
+            $dbal = $this->di['em']->getConnection();
+            $schemaManager = $dbal->createSchemaManager();
+            if (!$schemaManager->tablesExist(['invoice', 'invoice_item'])
+                || !$schemaManager->introspectTableByUnquotedName('invoice')->hasColumn('base_refund_tax')) {
+                return;
+            }
+        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
+            return;
+        }
+
+        // The default currency converts 1:1, so its gross/net hypotheses are exact no
+        // matter when the refund was recorded. Anything else needs its refund-time
+        // rate, which is not stored - those rows stay unresolved (see below).
+        $defaultCode = null;
+
+        try {
+            $defaultCode = $this->di['mod_service']('currency')->getCurrencyRepository()->findDefault()?->getCode();
+        } catch (\Throwable) {
+            $defaultCode = null;
+        }
+
+        $marker = 'refund_basis_backfill_last_id';
+        $lastId = 0;
+        if ($maxPages !== 0) {
+            $stored = $this->refundBackfillPosition($dbal, $marker);
+            if ($stored !== null) {
+                $lastId = $stored;
+            }
+        }
+
+        $updated = 0;
+        $pages = 0;
+
+        do {
+            $rows = $dbal->fetchAllAssociative(
+                'SELECT id, refund, base_refund, currency, currency_rate FROM invoice WHERE id > :last AND refund IS NOT NULL AND base_refund_tax IS NULL ORDER BY id LIMIT 200',
+                ['last' => $lastId]
+            );
+            if ($rows === []) {
+                break;
+            }
+            ++$pages;
+
+            $linkedTotalsByInvoice = $this->linkedRefundTotalsByInvoice($dbal, array_map(static fn (array $row): int => (int) $row['id'], $rows));
+
+            foreach ($rows as $row) {
+                $lastId = (int) $row['id'];
+
+                $refund = (float) ($row['refund'] ?? 0);
+                [$guard, $guardParams] = $this->unchangedRefundGuard($row);
+                if ($refund <= 0) {
+                    // Nothing refunded: no tax by definition.
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['value' => '0.00', 'id' => $row['id']], $guardParams)
+                    );
+
+                    continue;
+                }
+
+                $linked = $linkedTotalsByInvoice[$lastId] ?? null;
+                // `refund` accumulates each note's rounded gross, so allow a couple of
+                // cents of rounding dust. Anything beyond that is refunded money with
+                // no linked document: the cumulative tax basis cannot be established.
+                $covered = $linked !== null && $refund - $linked['gross'] <= 0.02;
+                $net = $covered ? round(max(0.0, $refund - $linked['tax']), 2) : $refund;
+
+                if (abs($net - $refund) < 0.005) {
+                    if (!$covered) {
+                        // No linked note (or only partial coverage) establishes the tax:
+                        // unknown, leave NULL rather than recording a zero that reads as known.
+                        $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: linked notes do not cover the full refund', $lastId));
+
+                        continue;
+                    }
+                    // Linked notes with zero tax: known zero, mark done.
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund_tax = :value WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['value' => '0.00', 'id' => $row['id']], $guardParams)
+                    );
+
+                    continue;
+                }
+
+                if (!$this->isEstablishedDefaultBasis($row, $defaultCode)) {
+                    $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: cannot establish its refund-time base currency', $lastId));
+
+                    continue;
+                }
+
+                $storedBase = (float) $row['base_refund'];
+                if (abs($storedBase - $refund) < 0.005) {
+                    // Legacy gross basis: scale the stored base down to net.
+                    $newBase = round($storedBase * $net / $refund, 2);
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund = :net, base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['net' => $newBase, 'tax' => round($storedBase - $newBase, 2), 'id' => $row['id']], $guardParams)
+                    );
+                } elseif (abs($storedBase - $net) < 0.005) {
+                    // Already net (refunded after #4661, before this migration): tax leg only.
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice SET base_refund_tax = :tax WHERE id = :id AND base_refund_tax IS NULL ' . $guard,
+                        array_merge(['tax' => round($refund - $net, 2), 'id' => $row['id']], $guardParams)
+                    );
+                } else {
+                    $this->logUpdate('warning', sprintf('Skipping refund basis backfill for invoice #%d: stored base matches neither gross nor net basis', $lastId));
+                }
+            }
+
+            if ($maxPages !== 0) {
+                $this->storeRefundBackfillPosition($dbal, $marker, $lastId);
+            }
+        } while ($maxPages === 0 || $pages < $maxPages);
+
+        if ($maxPages === 0 || $rows === []) {
+            // Unbounded runs always scan to exhaustion; bounded runs clear the marker
+            // once they reach the end so later refunds start fresh from zero.
+            $this->clearRefundBackfillPosition($dbal, $marker);
+        }
+
+        if ($updated > 0) {
+            $this->logUpdate('info', sprintf('Backfilled refund income basis for %d invoice(s)', $updated));
+        }
+    }
+
+    /**
+     * Optimistic-concurrency guard for backfill writes: only touch the row when `refund`
+     * and `base_refund` still hold the values this scan read. A refund posted concurrently
+     * rewrites both through `countIncome()`, so a mismatch means this page's computation
+     * is stale - the row stays NULL-taxed and is picked up again on a later scan.
+     *
+     * @param array<string, mixed> $row the invoice row as read (binds its snapshot values)
+     *
+     * @return array{string, array<string, mixed>} [AND fragment, bound snapshot values]
+     */
+    private function unchangedRefundGuard(array $row): array
+    {
+        $params = ['refund_snapshot' => $row['refund']];
+        if ($row['base_refund'] === null) {
+            return ['AND refund = :refund_snapshot AND base_refund IS NULL', $params];
+        }
+        $params['base_snapshot'] = $row['base_refund'];
+
+        return ['AND refund = :refund_snapshot AND base_refund = :base_snapshot', $params];
+    }
+
+    /**
+     * Whether the row's refund-time base currency is established well enough to rewrite it:
+     * its currency is the current default (1:1 identity conversion, exact at any point in
+     * time) and its payment-time `currency_rate` snapshot is 1.0, pinning the same base
+     * across the payment-to-refund window. The default currency's own rate is pinned at 1.0
+     * by the rate updater, so a mismatch means the base moved and the row stays unresolved.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function isEstablishedDefaultBasis(array $row, ?string $defaultCode): bool
+    {
+        if ($row['base_refund'] === null || $defaultCode === null) {
+            return false;
+        }
+        if ((string) ($row['currency'] ?? '') !== $defaultCode) {
+            return false;
+        }
+        if (!is_numeric($row['currency_rate'] ?? null) || abs((float) $row['currency_rate'] - 1.0) >= 0.000001) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Resumable scan position for bounded backfill runs, so pages of unresolvable rows
+     * cannot stall convergence: each bounded run continues where the previous stopped.
+     * Best-effort only - correctness never depends on it thanks to the IS NULL guard -
+     * so storage failures are swallowed after logging.
+     */
+    private function refundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): ?int
+    {
+        try {
+            $stored = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', sprintf('Refund basis backfill position unreadable: %s', $e->getMessage()));
+
+            return null;
+        }
+
+        return is_numeric($stored) ? (int) $stored : null;
+    }
+
+    private function storeRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker, int $lastId): void
+    {
+        try {
+            $exists = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
+            if ($exists === false) {
+                $now = date('Y-m-d H:i:s');
+                $dbal->insert('setting', [
+                    'param' => $marker,
+                    'value' => (string) $lastId,
+                    'public' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                $dbal->executeStatement(
+                    'UPDATE setting SET value = :value, updated_at = :updated WHERE param = :param',
+                    ['value' => (string) $lastId, 'updated' => date('Y-m-d H:i:s'), 'param' => $marker]
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', sprintf('Refund basis backfill position not stored: %s', $e->getMessage()));
+        }
+    }
+
+    private function clearRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): void
+    {
+        try {
+            $dbal->executeStatement('DELETE FROM setting WHERE param = :param', ['param' => $marker]);
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', sprintf('Refund basis backfill position not cleared: %s', $e->getMessage()));
+        }
+    }
+
+    /**
+     * Linked refund totals per invoice in invoice currency, mirroring `Invoice\Service` math:
+     * per-note rounded tax on taxed lines, and absolute credit-note totals for the gross
+     * share. Invoices without linked notes are absent.
+     *
+     * @param list<int> $invoiceIds
+     *
+     * @return array<int, array{tax: float, gross: float}>
+     */
+    private function linkedRefundTotalsByInvoice(\Doctrine\DBAL\Connection $dbal, array $invoiceIds): array
+    {
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($invoiceIds), '?'));
+        $notes = $dbal->fetchAllAssociative(
+            "SELECT id, credit_note_for_invoice_id, taxrate FROM invoice WHERE credit_note_for_invoice_id IN ({$placeholders})",
+            $invoiceIds
+        );
+        if ($notes === []) {
+            return [];
+        }
+
+        $noteIds = array_map(static fn (array $note): int => (int) $note['id'], $notes);
+        $placeholders = implode(',', array_fill(0, count($noteIds), '?'));
+        $items = $dbal->fetchAllAssociative(
+            "SELECT invoice_id, price, quantity, taxed FROM invoice_item WHERE invoice_id IN ({$placeholders})",
+            $noteIds
+        );
+
+        $subtotalByNote = [];
+        $taxableByNote = [];
+        foreach ($items as $item) {
+            $noteId = (int) $item['invoice_id'];
+            $lineTotal = ((float) ($item['price'] ?? 0) * ((float) ($item['quantity'] ?? 1)));
+            $subtotalByNote[$noteId] = ($subtotalByNote[$noteId] ?? 0.0) + $lineTotal;
+            if (!empty($item['taxed'])) {
+                $taxableByNote[$noteId] = ($taxableByNote[$noteId] ?? 0.0) + $lineTotal;
+            }
+        }
+
+        $taxByNote = [];
+        $grossByNote = [];
+        foreach ($notes as $note) {
+            $rate = (float) ($note['taxrate'] ?? 0);
+            $taxable = $taxableByNote[(int) $note['id']] ?? 0.0;
+            $taxByNote[(int) $note['id']] = ($rate > 0 && $taxable != 0.0) ? round($taxable * $rate / 100, 2) : 0.0;
+            $grossByNote[(int) $note['id']] = abs(($subtotalByNote[(int) $note['id']] ?? 0.0) + $taxByNote[(int) $note['id']]);
+        }
+
+        $totals = [];
+        foreach ($notes as $note) {
+            $invoiceId = (int) $note['credit_note_for_invoice_id'];
+            // Credit note amounts are negated, so their tax is too: negate back to a positive share.
+            $totals[$invoiceId]['tax'] = ($totals[$invoiceId]['tax'] ?? 0.0) - $taxByNote[(int) $note['id']];
+            $totals[$invoiceId]['gross'] = ($totals[$invoiceId]['gross'] ?? 0.0) + $grossByNote[(int) $note['id']];
+        }
+
+        return $totals;
     }
 
     /**
