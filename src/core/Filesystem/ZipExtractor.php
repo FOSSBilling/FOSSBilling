@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Core\Filesystem;
 
+use PhpZip\Constants\ZipPlatform;
+use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -25,34 +27,53 @@ final class ZipExtractor
      */
     public function extract(string $archive, string $destination, callable $validateEntry, int $maxEntries = PHP_INT_MAX, int $maxBytes = PHP_INT_MAX, ?callable $beforeWrite = null): void
     {
-        if (!class_exists(\ZipArchive::class)) {
-            throw new \RuntimeException('The PHP ZIP extension must be installed and enabled to extract archives.');
-        }
-
-        $zip = new \ZipArchive();
-        $result = @$zip->open($archive, \ZipArchive::RDONLY | \ZipArchive::CHECKCONS);
-        if ($result !== true) {
-            throw new \RuntimeException(sprintf('Unable to open ZIP archive (error %s).', $result));
+        $zip = class_exists(\ZipArchive::class) ? new \ZipArchive() : new ZipFile();
+        if ($zip instanceof ZipFile) {
+            $zip->openFile($archive);
+        } else {
+            $result = @$zip->open($archive, \ZipArchive::RDONLY | \ZipArchive::CHECKCONS);
+            if ($result !== true) {
+                throw new \RuntimeException(sprintf('Unable to open ZIP archive (error %s).', $result));
+            }
         }
 
         $filesystem = new Filesystem();
 
         try {
-            if ($zip->numFiles > $maxEntries) {
+            $count = $zip instanceof ZipFile ? count($zip->getEntries()) : $zip->numFiles;
+            if ($count > $maxEntries) {
                 throw new \RuntimeException('The ZIP archive exceeds its entry limit.');
             }
-            $this->validateRawNames($archive, $zip);
+            $rawNames = $this->validateRawNames($archive, $zip);
+            $fallbackEntries = $zip instanceof ZipFile ? array_values($zip->getEntries()) : [];
+            // PhpZip normalizes some names and collapses duplicates. Reject any
+            // mismatch so validation always covers exactly what will be written.
+            if ($zip instanceof ZipFile && $rawNames !== $zip->getListFiles()) {
+                throw new \RuntimeException('The ZIP archive contains ambiguous file names.');
+            }
             $entries = [];
             $remainingBytes = $maxBytes;
-            for ($index = 0; $index < $zip->numFiles; ++$index) {
-                $entry = $zip->statIndex($index);
-                if ($entry === false || !$zip->getExternalAttributesIndex($index, $platform, $attributes)) {
-                    throw new \RuntimeException('Unable to read ZIP entry metadata.');
+            for ($index = 0; $index < $count; ++$index) {
+                if ($zip instanceof ZipFile) {
+                    $metadata = $fallbackEntries[$index];
+                    $entry = [
+                        'name' => $metadata->getName(),
+                        'size' => $metadata->getUncompressedSize(),
+                        'crc' => $metadata->getCrc(),
+                        'mtime' => $metadata->getTime(),
+                    ];
+                    $platform = $metadata->getCreatedOS();
+                    $attributes = $metadata->getExternalAttributes();
+                } else {
+                    $entry = $zip->statIndex($index);
+                    if ($entry === false || !$zip->getExternalAttributesIndex($index, $platform, $attributes)) {
+                        throw new \RuntimeException('Unable to read ZIP entry metadata.');
+                    }
                 }
 
                 $name = $entry['name'];
                 $directory = str_ends_with(str_replace('\\', '/', $name), '/') || ($attributes & 0x10) !== 0;
-                $mode = $platform === \ZipArchive::OPSYS_UNIX ? ($attributes >> 16) & 0xFFFF : 0;
+                $mode = $platform === ZipPlatform::OS_UNIX ? ($attributes >> 16) & 0xFFFF : 0;
                 $mode = $mode ?: ($directory ? 0o040755 : 0o100644);
                 $directory = $directory || ($mode & 0o170000) === 0o040000;
                 $validateEntry($name, $mode);
@@ -112,8 +133,8 @@ final class ZipExtractor
         }
     }
 
-    /** @param array{index: int, size: int, crc: int, mode: int, mtime: int} $entry */
-    private function extractFile(\ZipArchive $zip, array $entry, string $path, Filesystem $filesystem): void
+    /** @param array{name: string, index?: int, size: int, crc: int, mode: int, mtime: int} $entry */
+    private function extractFile(\ZipArchive|ZipFile $zip, array $entry, string $path, Filesystem $filesystem): void
     {
         $temporary = $filesystem->tempnam(Path::getDirectory($path), '.fossbilling-zip-');
 
@@ -122,7 +143,7 @@ final class ZipExtractor
             $output = false;
 
             try {
-                $input = @$zip->getStreamIndex($entry['index']);
+                $input = $zip instanceof ZipFile ? $zip->getEntryStream($entry['name']) : @$zip->getStreamIndex($entry['index']);
                 $output = @fopen($temporary, 'wb');
                 if ($input === false || $output === false) {
                     throw new \RuntimeException('Unable to read or stage ZIP entry contents.');
@@ -152,8 +173,12 @@ final class ZipExtractor
         }
     }
 
-    /** Older libzip versions replace NUL bytes with spaces before exposing names. */
-    private function validateRawNames(string $archive, \ZipArchive $zip): void
+    /**
+     * Older libzip versions replace NUL bytes with spaces before exposing names.
+     *
+     * @return list<string>
+     */
+    private function validateRawNames(string $archive, \ZipArchive|ZipFile $zip): array
     {
         $stream = @fopen($archive, 'rb');
         if ($stream === false) {
@@ -161,7 +186,7 @@ final class ZipExtractor
         }
 
         try {
-            $comment = $zip->getArchiveComment(\ZipArchive::FL_ENC_RAW);
+            $comment = $zip instanceof ZipFile ? ($zip->getArchiveComment() ?? '') : $zip->getArchiveComment(\ZipArchive::FL_ENC_RAW);
             if (fseek($stream, -22 - strlen($comment), SEEK_END) !== 0) {
                 throw new \RuntimeException('Unable to read the ZIP central directory.');
             }
@@ -169,9 +194,10 @@ final class ZipExtractor
             if ($footer === false || strlen($footer) !== 22 || !str_starts_with($footer, "PK\x05\x06")) {
                 throw new \RuntimeException('Invalid ZIP central directory footer.');
             }
+            $declaredCount = unpack('vcount', substr($footer, 10, 2))['count'];
             $offset = unpack('Voffset', substr($footer, 16, 4))['offset'];
 
-            if ($offset === 0xFFFFFFFF) {
+            if ($offset === 0xFFFFFFFF || $declaredCount === 0xFFFF) {
                 // ZIP64 stores the directory offset in its extended footer.
                 fseek($stream, -42 - strlen($comment), SEEK_END);
                 $locator = fread($stream, 20);
@@ -186,13 +212,19 @@ final class ZipExtractor
                 if ($footer === false || strlen($footer) !== 56 || !str_starts_with($footer, "PK\x06\x06")) {
                     throw new \RuntimeException('Invalid ZIP64 central directory footer.');
                 }
+                $declaredCount = unpack('Pcount', substr($footer, 32, 8))['count'];
                 $offset = unpack('Poffset', substr($footer, 48, 8))['offset'];
             }
 
             if (fseek($stream, $offset) !== 0) {
                 throw new \RuntimeException('Unable to read the ZIP central directory.');
             }
-            for ($index = 0; $index < $zip->numFiles; ++$index) {
+            $count = $zip instanceof ZipFile ? count($zip->getEntries()) : $zip->numFiles;
+            if ($count !== $declaredCount) {
+                throw new \RuntimeException('The ZIP archive contains ambiguous file names.');
+            }
+            $names = [];
+            for ($index = 0; $index < $count; ++$index) {
                 $header = fread($stream, 46);
                 if ($header === false || strlen($header) !== 46 || !str_starts_with($header, "PK\x01\x02")) {
                     throw new \RuntimeException('Invalid ZIP central directory entry.');
@@ -202,10 +234,13 @@ final class ZipExtractor
                 if ($name === false || strlen($name) !== $lengths['name'] || str_contains($name, "\0")) {
                     throw new \RuntimeException('The ZIP archive contains an invalid file name.');
                 }
+                $names[] = $name;
                 if (fseek($stream, $lengths['extra'] + $lengths['comment'], SEEK_CUR) !== 0) {
                     throw new \RuntimeException('Unable to read the next ZIP directory entry.');
                 }
             }
+
+            return $names;
         } finally {
             fclose($stream);
         }

@@ -314,10 +314,6 @@ class Update implements InjectionAwareInterface
             throw new InformationException('A previous update extraction did not complete. Restore a complete verified release before clearing the extraction recovery marker.');
         }
 
-        if (!class_exists(\ZipArchive::class)) {
-            throw new InformationException('The PHP ZIP extension must be installed and enabled before updating FOSSBilling.');
-        }
-
         $readiness = $this->di['update_readiness']->check();
         if (!$readiness['can_update']) {
             throw new Exception('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
