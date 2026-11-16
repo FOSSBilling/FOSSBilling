@@ -2627,6 +2627,7 @@ class Patcher implements InjectionAwareInterface
         foreach ($this->fetchAll('SHOW TABLE STATUS') as $status) {
             if (($status['Name'] ?? null) === $table) {
                 $rowFormat = strtolower((string) ($status['Row_format'] ?? ''));
+
                 break;
             }
         }
