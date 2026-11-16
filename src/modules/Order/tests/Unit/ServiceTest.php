@@ -2900,7 +2900,7 @@ test('renewFromOrder extends expiration', function (): void {
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($clientOrderModel);
 
-    expect($clientOrderModel->expires_at)->toEqual(new DateTime('2027-01-01 00:00:00'));
+    expect($clientOrderModel->expires_at)->toEqual(new DateTimeImmutable('2027-01-01 00:00:00'));
     expect($clientOrderModel->status)->toEqual(Order::STATUS_ACTIVE);
 });
 
@@ -2924,7 +2924,7 @@ test('renewFromOrder treats a missing Doctrine expiration as now', function (): 
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($order);
 
-    expect($order->getExpiresAt())->toEqual(new DateTime('2027-01-01 00:00:00'))
+    expect($order->getExpiresAt())->toEqual(new DateTimeImmutable('2027-01-01 00:00:00'))
         ->and($order->getStatus())->toBe(Order::STATUS_ACTIVE);
 });
 
@@ -2959,7 +2959,7 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($clientOrderModel);
 
-    expect($clientOrderModel->expires_at)->toEqual(new DateTime('2027-01-01 00:00:00'));
+    expect($clientOrderModel->expires_at)->toEqual(new DateTimeImmutable('2027-01-01 00:00:00'));
     expect($clientOrderModel->status)->toEqual(Order::STATUS_ACTIVE);
 });
 

@@ -207,7 +207,7 @@ class DriverManagerFactory
         }
 
         // Get the timezone offset in the PDO format
-        $datetime = new \DateTime('now');
+        $datetime = new \DateTimeImmutable('now');
         $offset = $datetime->format('P');
         $connection->executeStatement("SET time_zone = '{$offset}'");
     }

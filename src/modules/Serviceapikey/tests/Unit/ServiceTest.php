@@ -72,7 +72,7 @@ test('isActive returns true for active order with future expires_at', function (
 
     $order = new Order();
     $order->setStatus(Order::STATUS_ACTIVE);
-    $order->setExpiresAt(new DateTime(date('Y-m-d H:i:s', time() + 86400)));
+    $order->setExpiresAt(new DateTimeImmutable(date('Y-m-d H:i:s', time() + 86400)));
 
     $orderRepo = Mockery::mock(EntityRepository::class);
     $orderRepo->shouldReceive('findOneBy')
@@ -99,7 +99,7 @@ test('isActive returns false for expired order', function (): void {
 
     $order = new Order();
     $order->setStatus(Order::STATUS_ACTIVE);
-    $order->setExpiresAt(new DateTime(date('Y-m-d H:i:s', time() - 3600)));
+    $order->setExpiresAt(new DateTimeImmutable(date('Y-m-d H:i:s', time() - 3600)));
 
     $orderRepo = Mockery::mock(EntityRepository::class);
     $orderRepo->shouldReceive('findOneBy')->once()->andReturn($order);

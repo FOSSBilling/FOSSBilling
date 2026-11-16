@@ -257,12 +257,12 @@ test('findUnpaidOlderThan returns only unpaid invoices whose due date is far eno
 
     $farOverdue = new Invoice();
     $farOverdue->setStatus(Invoice::STATUS_UNPAID);
-    $farOverdue->setDueAt(new DateTime('-10 days'));
+    $farOverdue->setDueAt(new DateTimeImmutable('-10 days'));
     $entityManager->persist($farOverdue);
 
     $recentlyOverdue = new Invoice();
     $recentlyOverdue->setStatus(Invoice::STATUS_UNPAID);
-    $recentlyOverdue->setDueAt(new DateTime('-2 days'));
+    $recentlyOverdue->setDueAt(new DateTimeImmutable('-2 days'));
     $entityManager->persist($recentlyOverdue);
 
     $noDueDate = new Invoice();
@@ -271,7 +271,7 @@ test('findUnpaidOlderThan returns only unpaid invoices whose due date is far eno
 
     $paidButOverdue = new Invoice();
     $paidButOverdue->setStatus(Invoice::STATUS_PAID);
-    $paidButOverdue->setDueAt(new DateTime('-10 days'));
+    $paidButOverdue->setDueAt(new DateTimeImmutable('-10 days'));
     $entityManager->persist($paidButOverdue);
 
     $entityManager->flush();

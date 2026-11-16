@@ -692,9 +692,9 @@ test('promoCanBeApplied returns expected result', function (Promo $promo, bool $
 })->with([
     [createPromoEntity(1)->setActive(false), false],
     [createPromoEntity(2)->setActive(true)->setMaxUses(5)->setUsed(5), false],
-    [createPromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('tomorrow')), false],
-    [createPromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('yesterday')), false],
-    [createPromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('tomorrow')), true],
+    [createPromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('tomorrow')), false],
+    [createPromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('yesterday'))->setEndAt(new DateTimeImmutable('yesterday')), false],
+    [createPromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('yesterday'))->setEndAt(new DateTimeImmutable('tomorrow')), true],
 ]);
 
 test('getCartProducts returns array of cart products', function (): void {

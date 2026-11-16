@@ -122,7 +122,7 @@ class Payment_Adapter_Custom
         $tx->setAmount((string) $invoiceTotal);
         $tx->setNote($gatewayName . ' transaction No: ' . $tx->getTxnId());
         $tx->setCurrency($invoice->getCurrency());
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
 
         // Store the updated transaction and use its return to indicate a success or failure.
         $this->di['em']->persist($tx);

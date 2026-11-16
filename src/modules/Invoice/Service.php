@@ -1072,7 +1072,7 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTime $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTimeImmutable $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
     {
         /** @var InvoiceItem[] $invoiceItems */
         $invoiceItems = [];
@@ -1111,7 +1111,7 @@ class Service implements InjectionAwareInterface
      *
      * @param InvoiceItem[] $invoiceItems
      */
-    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTime $paidAtOverride = null): bool
+    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTimeImmutable $paidAtOverride = null): bool
     {
         $state = $this->lockAndRefreshInvoice($invoice);
         if ($state['status'] === Invoice::STATUS_PAID) {
@@ -1149,7 +1149,7 @@ class Service implements InjectionAwareInterface
         $invoice->setCurrencyRate($currencyRate);
 
         $invoice->setStatus(Invoice::STATUS_PAID);
-        $invoice->setPaidAt($paidAtOverride ?? new \DateTime());
+        $invoice->setPaidAt($paidAtOverride ?? new \DateTimeImmutable());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
@@ -1182,7 +1182,7 @@ class Service implements InjectionAwareInterface
             if ($paidAtTimestamp === false) {
                 throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $data['paid_at']]);
             }
-            $paidAt = new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp));
+            $paidAt = new \DateTimeImmutable(date('Y-m-d H:i:s', $paidAtTimestamp));
         }
 
         if ($this->invoiceHasDeletionHold($invoice)) {
@@ -1249,7 +1249,7 @@ class Service implements InjectionAwareInterface
                     $transaction->setStatus(Transaction::STATUS_PROCESSED);
                     $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
                     $transaction->setNote(sprintf('%s transaction No: %s', $gatewayTitle, $transactionId));
-                    $transaction->setUpdatedAt(new \DateTime());
+                    $transaction->setUpdatedAt(new \DateTimeImmutable());
                     $this->di['em']->flush();
                 }
 
@@ -1642,7 +1642,7 @@ class Service implements InjectionAwareInterface
             $invoice_due_days = 1;
         }
         $due_time = strtotime("+{$invoice_due_days} day");
-        $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $due_time)));
+        $model->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $due_time)));
 
         $serie = $systemService->getParamValue('invoice_series');
         $model->setSerie($serie !== null ? (string) $serie : null);
@@ -2069,7 +2069,7 @@ class Service implements InjectionAwareInterface
                     : $systemService->getParamValue('invoice_cn_series', 'CN-'));
                 $new->setNr($nextNumber);
 
-                $new->setPaidAt(new \DateTime());
+                $new->setPaidAt(new \DateTimeImmutable());
                 $this->di['em']->persist($new);
                 $this->di['em']->flush();
 
@@ -2493,7 +2493,7 @@ class Service implements InjectionAwareInterface
         $tx->setType(\Payment_Transaction::TXTYPE_REFUND);
         $tx->setStatus(Transaction::STATUS_PROCESSED);
         $tx->setNote('Gateway refund for invoice #' . $invoice->getId());
-        $tx->setUpdatedAt(new \DateTime());
+        $tx->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->persist($tx);
         $this->di['em']->flush();
     }
@@ -2720,7 +2720,7 @@ class Service implements InjectionAwareInterface
             if (!is_numeric($invoice_due_days)) {
                 $invoice_due_days = 1;
             }
-            $new->setDueAt(new \DateTime(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
+            $new->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
             $this->di['em']->persist($new);
             $this->di['em']->flush();
 
@@ -3373,7 +3373,7 @@ class Service implements InjectionAwareInterface
                 if ($paidAtTimestamp === false) {
                     throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $paid_at]);
                 }
-                $model->setPaidAt(new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp)));
+                $model->setPaidAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $paidAtTimestamp)));
             }
 
             $due_at = $data['due_at'] ?? ($model->getDueAt() ? $model->getDueAt()->format('Y-m-d H:i:s') : null);
@@ -3384,7 +3384,7 @@ class Service implements InjectionAwareInterface
                 if ($dueAtTimestamp === false) {
                     throw new InformationException('Invalid date format for due_at: :value', [':value' => (string) $due_at]);
                 }
-                $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $dueAtTimestamp)));
+                $model->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $dueAtTimestamp)));
             }
 
             $model->setSerie($data['serie'] ?? $model->getSerie());
@@ -3406,7 +3406,7 @@ class Service implements InjectionAwareInterface
                 if ($createdAtTimestamp === false) {
                     throw new InformationException('Invalid date format for created_at: :value', [':value' => (string) $created_at]);
                 }
-                $model->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', $createdAtTimestamp)));
+                $model->setCreatedAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $createdAtTimestamp)));
             }
 
             $ni = $data['new_item'] ?? [];
@@ -4058,7 +4058,7 @@ class Service implements InjectionAwareInterface
 
         // invoice due date
         if ($due_days > 0) {
-            $proforma->setDueAt(new \DateTime('+' . $due_days . ' days'));
+            $proforma->setDueAt(new \DateTimeImmutable('+' . $due_days . ' days'));
             $this->di['em']->persist($proforma);
             $this->di['em']->flush();
         } else {
@@ -4117,7 +4117,7 @@ class Service implements InjectionAwareInterface
         return implode('|', [
             $order->getClientId(),
             $order->getCurrency(),
-            $expiresAt instanceof \DateTime ? $expiresAt->format('Y-m-d') : '',
+            $expiresAt instanceof \DateTimeInterface ? $expiresAt->format('Y-m-d') : '',
             $order->getPeriod() ?? '',
         ]);
     }
@@ -4178,12 +4178,12 @@ class Service implements InjectionAwareInterface
                 $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
 
                 $expiresAt = $order->getExpiresAt();
-                if ($expiresAt instanceof \DateTime && ($dueAt === null || $expiresAt > $dueAt)) {
+                if ($expiresAt instanceof \DateTimeInterface && ($dueAt === null || $expiresAt > $dueAt)) {
                     $dueAt = $expiresAt;
                 }
             }
 
-            if ($dueAt instanceof \DateTime) {
+            if ($dueAt instanceof \DateTimeInterface) {
                 $proforma->setDueAt($dueAt);
                 $this->di['em']->persist($proforma);
                 $this->di['em']->flush();
@@ -4441,7 +4441,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceSendReminderEvent((int) $invoice->getId()));
 
-        $invoice->setRemindedAt(new \DateTime());
+        $invoice->setRemindedAt(new \DateTimeImmutable());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
@@ -5263,14 +5263,14 @@ class Service implements InjectionAwareInterface
      * Computes the hash_expires_at timestamp. Returns null when the admin
      * has disabled hash expiration (invoice_hash_lifetime_days = 0).
      */
-    private function computeHashExpiration(): ?\DateTime
+    private function computeHashExpiration(): ?\DateTimeImmutable
     {
         $days = (int) $this->di['mod_service']('system')->getParamValue('invoice_hash_lifetime_days', '90');
         if ($days <= 0) {
             return null;
         }
 
-        return new \DateTime("+{$days} days");
+        return new \DateTimeImmutable("+{$days} days");
     }
 
     /**

@@ -39,5 +39,5 @@ test('stores system activity values and initializes its timestamp', function ():
         ->and($activity->getClientId())->toBe(3)
         ->and($activity->getMessage())->toBe('Test event')
         ->and($activity->getIp())->toBe('192.0.2.3')
-        ->and($activity->getCreatedAt())->toBeInstanceOf(DateTime::class);
+        ->and($activity->getCreatedAt())->toBeInstanceOf(DateTimeImmutable::class);
 });

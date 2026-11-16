@@ -198,7 +198,7 @@ class Service implements InjectionAwareInterface
         $client->setLastName($data['last_name'] ?? $client->getLastName());
         $client->setGender(ClientValidator::validateGender($data['gender'] ?? $client->getGender()));
         $birthday = ClientValidator::validateBirthday($data['birthday'] ?? $client->getBirthday()?->format('Y-m-d'));
-        $client->setBirthday($birthday !== null ? new \DateTime($birthday) : null);
+        $client->setBirthday($birthday !== null ? new \DateTimeImmutable($birthday) : null);
         $client->setCompany($data['company'] ?? $client->getCompany());
         $client->setCompanyVat($data['company_vat'] ?? $client->getCompanyVat());
         $client->setCompanyNumber($data['company_number'] ?? $client->getCompanyNumber());

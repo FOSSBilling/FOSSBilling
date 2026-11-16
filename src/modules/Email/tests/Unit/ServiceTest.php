@@ -135,8 +135,8 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
     $subject = 'Subject';
     $content_html = '<script>alert("x")</script><p>HTML</p>';
     $content_text = 'TEXT';
-    $created = new DateTime('-1 day');
-    $updated = new DateTime();
+    $created = new DateTimeImmutable('-1 day');
+    $updated = new DateTimeImmutable();
 
     $model = new Box\Mod\Email\Entity\ActivityClientEmail();
     \Tests\Helpers\setEntityId($model, $id);

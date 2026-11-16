@@ -83,12 +83,12 @@ class Service implements InjectionAwareInterface
 
         if (!empty($filter['date_from'])) {
             $qb->andWhere('n.createdAt >= :date_from')
-                ->setParameter('date_from', new \DateTime(date('Y-m-d 00:00:00', strtotime((string) $filter['date_from']))));
+                ->setParameter('date_from', new \DateTimeImmutable(date('Y-m-d 00:00:00', strtotime((string) $filter['date_from']))));
         }
 
         if (!empty($filter['date_to'])) {
             $qb->andWhere('n.createdAt <= :date_to')
-                ->setParameter('date_to', new \DateTime(date('Y-m-d 23:59:59', strtotime((string) $filter['date_to']))));
+                ->setParameter('date_to', new \DateTimeImmutable(date('Y-m-d 23:59:59', strtotime((string) $filter['date_to']))));
         }
 
         $sort = SortOptions::fromArray($filter, [

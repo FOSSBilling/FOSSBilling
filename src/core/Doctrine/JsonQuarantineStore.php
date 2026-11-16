@@ -100,7 +100,7 @@ final readonly class JsonQuarantineStore
             'display_id' => $displayId,
             'issue' => $issue,
             'original' => $this->crypt->encrypt($original),
-            'created_at' => new \DateTime(),
+            'created_at' => new \DateTimeImmutable(),
         ], [
             'table_name' => Types::STRING,
             'column_name' => Types::STRING,
@@ -109,7 +109,7 @@ final readonly class JsonQuarantineStore
             'display_id' => Types::STRING,
             'issue' => Types::STRING,
             'original' => Types::BLOB,
-            'created_at' => Types::DATETIME_MUTABLE,
+            'created_at' => Types::DATETIME_IMMUTABLE,
         ]);
 
         return true;
