@@ -979,3 +979,63 @@ test('updateCurrencyRates skips fetched rates that would round to zero', functio
 
     expect($service->updateCurrencyRates())->toBeTrue();
 });
+
+describe('currency API requests', function (): void {
+    beforeEach(function (): void {
+        $this->capturedRequests = [];
+        $httpClient = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options): Symfony\Component\HttpClient\Response\MockResponse {
+            $this->capturedRequests[] = ['url' => $url, 'options' => $options];
+
+            return new Symfony\Component\HttpClient\Response\MockResponse(
+                json_encode([
+                    'success' => true,
+                    'timestamp' => 1_760_000_000,
+                    'source' => 'USD',
+                    // cspell:ignore USDEUR USDGBP
+                    'quotes' => ['USDEUR' => 0.9, 'USDGBP' => 0.8],
+                ], JSON_THROW_ON_ERROR),
+                ['response_headers' => ['content-type: application/json']]
+            );
+        });
+
+        $repositoryStub = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+        $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
+        $emMock->shouldReceive('getRepository')
+            ->atLeast()->once()
+            ->andReturn($repositoryStub);
+
+        $di = container();
+        $di['em'] = $emMock;
+        $di['cache'] = static fn (): Symfony\Component\Cache\Adapter\ArrayAdapter => new Symfony\Component\Cache\Adapter\ArrayAdapter();
+        $di['http_client'] = static fn (): Symfony\Component\HttpClient\MockHttpClient => $httpClient;
+
+        $this->service = new Box\Mod\Currency\Service();
+        $this->service->setDi($di);
+    });
+
+    test('currencylayer rates are requested from the currencylayer API with an access key', function (): void {
+        $method = new ReflectionMethod($this->service, 'getCurrencyLayerRates');
+        $rates = $method->invoke($this->service, 'USD', 3600, 'test-key');
+
+        expect($this->capturedRequests)->toHaveCount(1)
+            ->and($this->capturedRequests[0]['url'])->toStartWith('https://api.currencylayer.com/live')
+            ->and($this->capturedRequests[0]['url'])->toContain('access_key=test-key')
+            ->and($this->capturedRequests[0]['url'])->toContain('source=USD')
+            ->and($rates)->toBe(['EUR' => 0.9, 'GBP' => 0.8]);
+    });
+
+    test('currency data api rates keep using the APILayer marketplace endpoint and apikey header', function (): void {
+        $method = new ReflectionMethod($this->service, 'getCurrencyDataRates');
+        $rates = $method->invoke($this->service, 'USD', 3600, 'test-key');
+
+        expect($this->capturedRequests)->toHaveCount(1);
+        $request = $this->capturedRequests[0];
+        parse_str((string) parse_url($request['url'], PHP_URL_QUERY), $query);
+
+        expect($request['url'])->toStartWith('https://api.apilayer.com/currency_data/live')
+            ->and($query)->toHaveKey('source', 'USD')
+            ->and($query)->not->toHaveKey('access_key')
+            ->and($request['options']['normalized_headers']['apikey'] ?? [])->toBe(['apikey: test-key'])
+            ->and($rates)->toBe(['EUR' => 0.9, 'GBP' => 0.8]);
+    });
+});
