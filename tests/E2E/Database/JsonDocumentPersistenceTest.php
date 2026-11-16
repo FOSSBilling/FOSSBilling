@@ -42,6 +42,7 @@ beforeEach(function (): void {
     }
     $this->connection = DriverManager::getConnection($params);
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS . '/Massmailer/Entity'], true, cache: new ArrayAdapter());
+    $config->setUseSchemaEditorApi(true);
     if (PHP_VERSION_ID >= 80400) {
         $config->enableNativeLazyObjects(true);
     } else {

@@ -102,6 +102,7 @@ test('charset migration is harmless when Custompages is not installed', function
 
 test('new Doctrine page tables and connections support supplementary Unicode', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS . '/Custompages/Entity'], true, cache: new ArrayAdapter());
+    $config->setUseSchemaEditorApi(true);
     if (PHP_VERSION_ID >= 80400) {
         $config->enableNativeLazyObjects(true);
     } else {

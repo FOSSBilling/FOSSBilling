@@ -12,10 +12,12 @@ declare(strict_types=1);
 namespace FOSSBilling\Core\Doctrine;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
+use Doctrine\ORM\Tools\ToolEvents;
 use FOSSBilling\Core\Cache\CacheFactory;
 use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Path;
@@ -54,6 +56,10 @@ class EntityManagerFactory
 
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER)); // Consistency with already existing RedBean tables
 
+        // ORM 3.8 deprecates generating schema without the schema editor API (removed in
+        // ORM 4.0). Requires doctrine/dbal 4.5+, guaranteed by composer's ^4.5 constraint.
+        $config->setUseSchemaEditorApi(true);
+
         // Enable native lazy loading if PHP version supports it (8.4+).
         if (PHP_VERSION_ID >= 80400) {
             $config->enableNativeLazyObjects(true);
@@ -70,7 +76,18 @@ class EntityManagerFactory
 
         $connection ??= DriverManagerFactory::getSharedConnection();
 
-        return new EntityManager($connection, $config);
+        $entityManager = new EntityManager($connection, $config);
+
+        // ORM 3.8's schema editor API drops column-length prefixes for plain indexes
+        // (see IndexLengthsListener) - restore them on MySQL/MariaDB, the only platforms
+        // whose DDL supports prefixes. Anywhere else the lengths are ignored when
+        // generating DDL, and restoring them would only make the generated schema differ
+        // from introspection on every sync.
+        if ($connection->getDatabasePlatform() instanceof AbstractMySQLPlatform) {
+            $entityManager->getEventManager()->addEventListener(ToolEvents::postGenerateSchemaTable, new IndexLengthsListener());
+        }
+
+        return $entityManager;
     }
 
     /**
