@@ -88,3 +88,26 @@ jobs:
           | Rector | `${{ steps.rector.outcome }}` |
           | PHP-CS-Fixer | `${{ steps.php_cs_fixer.outcome }}` |
           EOF
+
+  # Historical patches and fresh installs must all land on utf8mb4: a bare
+  # utf8/utf8mb3 default silently recreates the legacy mix the Patch146
+  # migration removes. Whole-repo grep is cheap and exact today (zero hits),
+  # so unlike the style checks above it needs no changed-files scoping.
+  check-charset:
+    name: Legacy Charset Guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Scoped to charset definitions so the intentional utf8/utf8mb3
+      # handling in Patcher/DriverManagerFactory (connection normalization,
+      # collation mapping) never trips it.
+      - name: Reject legacy MySQL charset defaults
+        run: |
+          if grep -rnE "CHARSET=utf8([^m]|$)|CHARACTER SET utf8([^m]|$)|SET NAMES utf8([^m]|$)" src/ --include='*.php'; then
+            echo '::error::Legacy utf8/utf8mb3 charset default found (see output above). Use utf8mb4 for MySQL/MariaDB definitions.'
+            exit 1
+          fi

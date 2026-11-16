@@ -10,6 +10,8 @@ use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\InstallSeeder;
 use FOSSBilling\Core\Doctrine\SchemaInstaller;
 use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
+use FOSSBilling\Core\Update\Patch\Patch133;
+use FOSSBilling\Core\Update\Patch\Patch146;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -54,7 +56,7 @@ beforeEach(function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $this->patcher = new Patcher();
     $this->patcher->setDi($di);
-    $this->runPatch = (new ReflectionMethod($this->patcher, 'patch133'))->getClosure($this->patcher);
+    $this->runPatch = fn () => (new Patch133())->apply($this->patcher);
 });
 
 afterEach(function (): void {
@@ -462,4 +464,57 @@ test('fresh installation supports supplementary Unicode in a legacy database wit
         ->and($saved->getContent())->toBe('🚀 🎧 🔒')
         ->and($saved->getSection())->toBe('🔒 Security')
         ->and($this->connection->fetchOne('SELECT @@character_set_database'))->toBe($databaseCharset);
+});
+
+test('Unicode repair converts the database default preserving collation', function (): void {
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8');
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_general_ci')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+    (new Patch146())->apply($this->patcher);
+    expect($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_general_ci')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair maps utf8mb3 database defaults to utf8mb4', function (): void {
+    try {
+        $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci');
+    } catch (PDOException) {
+        $this->markTestSkipped('This server does not support utf8mb3 database defaults.');
+    }
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_general_ci')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair leaves utf8mb4 database defaults untouched', function (): void {
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair falls back when the database collation has no utf8mb4 equivalent', function (): void {
+    try {
+        $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8 COLLATE utf8_general_mysql500_ci');
+    } catch (PDOException) {
+        $this->markTestSkipped('This server does not support the utf8_general_mysql500_ci collation.');
+    }
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4');
+    $calls = $this->patcher->getDi()['logger']->calls;
+    expect($calls)->toHaveCount(1)
+        ->and($calls[0]['method'])->toBe('warning')
+        ->and($calls[0]['params'][0])->toContain('has no utf8mb4 equivalent');
 });

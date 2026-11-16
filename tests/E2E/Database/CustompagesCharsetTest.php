@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Update\Patch\Patch128;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -30,7 +31,7 @@ beforeEach(function (): void {
     $di['em'] = $em;
     $this->patcher = new Patcher();
     $this->patcher->setDi($di);
-    $this->runPatch = (new ReflectionMethod($this->patcher, 'patch128'))->getClosure($this->patcher);
+    $this->runPatch = fn () => (new Patch128())->apply($this->patcher);
 });
 
 afterEach(function (): void {
