@@ -55,6 +55,8 @@ try {
             }
         });
         $result = 'deleted';
+    } elseif ($action === 'attach') {
+        $result = TicketFiles::attach($di, 60, true, [(string) getenv('ATTACHMENT_RACE_TOKEN')], 70);
     } elseif ($action === 'mail') {
         $result = TicketFiles::attachFromMail($di, 7, 60, 70, [['name' => 'race.txt', 'content' => 'race']]);
     } else {

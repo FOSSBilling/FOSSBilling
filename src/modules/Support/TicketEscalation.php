@@ -13,6 +13,7 @@ namespace Box\Mod\Support;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Utils\Normalizer;
 
 /**
@@ -176,20 +177,59 @@ final class TicketEscalation
                 continue;
             }
             foreach (self::due($di, $rule, $now) as $ticket) {
-                if (!self::claim($di, (int) $rule['id'], (int) $ticket['id'], (string) $ticket['last_reply'])) {
-                    continue;
-                }
-
                 try {
-                    self::act($di, $rule, (int) $ticket['id']);
-                    ++$acted;
+                    if (self::apply($di, $rule, $ticket, $now)) {
+                        ++$acted;
+                    }
                 } catch (\Throwable $e) {
+                    if ($di['em']->isOpen()) {
+                        $di['em']->clear();
+                    }
                     self::log($di, 'escalation rule "' . $rule['name'] . '" failed on ticket #' . $ticket['id'] . ': ' . $e->getMessage());
+                }
+                if (!$di['em']->isOpen()) {
+                    return $acted;
                 }
             }
         }
 
         return $acted;
+    }
+
+    /** Recheck a cron candidate under the same lock used by human replies and deletion. */
+    private static function apply(\Pimple\Container $di, array $rule, array $ticket, int $now): bool
+    {
+        $db = self::db($di);
+
+        return $db->transactional(function () use ($di, $db, $rule, $ticket, $now): bool {
+            $id = (int) $ticket['id'];
+            if ($db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
+                $db->executeStatement('UPDATE support_ticket SET id = id WHERE id = ?', [$id]);
+            }
+            if ($db->fetchOne('SELECT id FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$id]) === false) {
+                return false;
+            }
+            $eligible = self::due($di, $rule, $now, $id);
+            if ($eligible === [] || $eligible[0]['last_reply'] !== $ticket['last_reply']
+                || !self::claim($di, (int) $rule['id'], $id, (string) $ticket['last_reply'])) {
+                return false;
+            }
+
+            try {
+                self::act($di, $rule, $id);
+
+                return true;
+            } catch (\Throwable $e) {
+                // Retain the once-per-reply attempt marker on action failure,
+                // matching the existing rule semantics, but discard dirty ORM state.
+                if ($di['em']->isOpen()) {
+                    $di['em']->clear();
+                }
+                self::log($di, 'escalation rule "' . $rule['name'] . '" failed on ticket #' . $id . ': ' . $e->getMessage());
+
+                return false;
+            }
+        });
     }
 
     /** Applied marks of deleted tickets or rules. */
@@ -211,7 +251,7 @@ final class TicketEscalation
      *
      * @return list<array{id: int, last_reply: string}>
      */
-    private static function due(\Pimple\Container $di, array $rule, int $now): array
+    private static function due(\Pimple\Container $di, array $rule, int $now, ?int $ticketId = null): array
     {
         $minutes = (int) $rule['minutes'];
         $where = [];
@@ -234,6 +274,11 @@ final class TicketEscalation
                 $levels[] = 'COALESCE(t.priority, ' . TicketPriority::MEDIUM . ') ' . $operator . ' ' . $number;
             }
             $where[] = '(' . implode(' OR ', $levels) . ')';
+        }
+        if ($ticketId !== null) {
+            $where[] = 't.id = ?';
+            $params[] = $ticketId;
+            $types[] = \Doctrine\DBAL\ParameterType::INTEGER;
         }
         // The last reply that is not the system's own (autoresponder, a rule's reply).
         $lastReply = '(SELECT MAX(m.created_at) FROM support_ticket_message m LEFT JOIN admin a ON a.id = m.admin_id'

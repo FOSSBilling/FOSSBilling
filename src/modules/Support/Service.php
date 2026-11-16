@@ -1056,23 +1056,33 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         SupportTicketValidator::validateContent($content);
 
-        if ($model->getAdminId() === null) {
-            throw new InformationException('Only admin replies can be edited');
+        $em = $this->di['em'];
+        $ticketId = $em->getConnection()->fetchOne('SELECT support_ticket_id FROM support_ticket_message WHERE id = ?', [$model->getId()]);
+        if ($ticketId === false || $ticketId === null) {
+            throw new InformationException('Ticket message not found.');
         }
-
-        $previousContent = (string) $model->getContent();
-        if ($previousContent === $content) {
-            return true;
-        }
-
-        $history = new SupportTicketMessageHistory();
-        $history->setMessage($model);
-        $history->setAdminId((int) $identity->getId());
-        $history->setContent($previousContent);
-        $this->di['em']->persist($history);
-
-        $model->setContent($content);
-        $this->di['em']->flush();
+        $em->wrapInTransaction(function () use ($em, $model, $content, $identity, $ticketId): void {
+            $this->lockTicketForWrite((int) $ticketId);
+            $currentTicketId = $em->getConnection()->fetchOne('SELECT support_ticket_id FROM support_ticket_message WHERE id = ?' . RowLock::suffix($em->getConnection()), [$model->getId()]);
+            if ($currentTicketId === false || (int) $currentTicketId !== (int) $ticketId) {
+                throw new InformationException('The message was deleted or moved. Reload the ticket before editing it.');
+            }
+            $em->refresh($model);
+            if ($model->getAdminId() === null) {
+                throw new InformationException('Only admin replies can be edited');
+            }
+            $previousContent = (string) $model->getContent();
+            if ($previousContent === $content) {
+                return;
+            }
+            $history = new SupportTicketMessageHistory();
+            $history->setMessage($model);
+            $history->setAdminId((int) $identity->getId());
+            $history->setContent($previousContent);
+            $em->persist($history);
+            $model->setContent($content);
+            $em->flush();
+        });
 
         $this->di['logger']->info('Edited ticket message #{model_id}', ['model_id' => $model->getId()]);
 
@@ -1425,19 +1435,24 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         SupportTicketValidator::validateContent($content);
 
         $em = $this->di['em'];
-        $msg = new SupportTicketMessage();
-        $msg->setSupportTicket($ticket);
-        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $msg->setAdminId((int) $identity->getId());
-        } elseif ($identity instanceof Client) {
-            $msg->setClientId((int) $identity->getId());
-        } else {
-            throw new \FOSSBilling\Core\Exception\BaseException('Identity is invalid');
-        }
-        $msg->setContent($content);
-        $msg->setIp($this->di['request']->getClientIp());
-        $em->persist($msg);
-        $em->flush();
+        $msg = $em->wrapInTransaction(function () use ($em, $ticket, $identity, $content): SupportTicketMessage {
+            $this->lockTicketForWrite((int) $ticket->getId());
+            $msg = new SupportTicketMessage();
+            $msg->setSupportTicket($ticket);
+            if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
+                $msg->setAdminId((int) $identity->getId());
+            } elseif ($identity instanceof Client) {
+                $msg->setClientId((int) $identity->getId());
+            } else {
+                throw new \FOSSBilling\Core\Exception\BaseException('Identity is invalid');
+            }
+            $msg->setContent($content);
+            $msg->setIp($this->di['request']->getClientIp());
+            $em->persist($msg);
+            $em->flush();
+
+            return $msg;
+        });
 
         return (int) $msg->getId();
     }
@@ -1614,17 +1629,34 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     public function noteCreate(SupportTicket $ticket, \Box\Mod\Staff\Entity\Admin $identity, string $note): int
     {
         $em = $this->di['em'];
-        $model = new SupportTicketNote();
-        $model->setSupportTicket($ticket);
-        $model->setAdminId((int) $identity->getId());
-        $model->setNote($note);
-        $em->persist($model);
-        $em->flush();
+        $model = $em->wrapInTransaction(function () use ($em, $ticket, $identity, $note): SupportTicketNote {
+            $this->lockTicketForWrite((int) $ticket->getId());
+            $model = new SupportTicketNote();
+            $model->setSupportTicket($ticket);
+            $model->setAdminId((int) $identity->getId());
+            $model->setNote($note);
+            $em->persist($model);
+            $em->flush();
+
+            return $model;
+        });
 
         $id = (int) $model->getId();
         $this->di['logger']->info('Added note to ticket #{id}', ['id' => $id]);
 
         return $id;
+    }
+
+    /** Serialize child writes with ticket deletion and merge, including legacy schemas without FKs. */
+    private function lockTicketForWrite(int $id): void
+    {
+        $db = $this->di['em']->getConnection();
+        if ($db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
+            $db->executeStatement('UPDATE support_ticket SET id = id WHERE id = ?', [$id]);
+        }
+        if ($db->fetchOne('SELECT id FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$id]) === false) {
+            throw new InformationException('Ticket not found.');
+        }
     }
 
     public function ticketTaskComplete(SupportTicket $model): bool

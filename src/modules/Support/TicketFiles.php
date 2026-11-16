@@ -158,12 +158,12 @@ final class TicketFiles
 
     private static function lockTicketOwner(Connection $db, int $ticketId, int $clientId): bool
     {
+        if ($db->getDatabasePlatform() instanceof SQLitePlatform) {
+            $db->executeStatement('UPDATE support_ticket SET id = id WHERE id = ?', [$ticketId]);
+        }
         if ($clientId === 0) {
             if ($db->getDatabasePlatform() instanceof PostgreSQLPlatform) {
                 $db->executeStatement('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['ticket-file-guest:' . $ticketId]);
-            }
-            if ($db->getDatabasePlatform() instanceof SQLitePlatform) {
-                $db->executeStatement('UPDATE support_ticket SET id = id WHERE id = ?', [$ticketId]);
             }
 
             return $db->fetchOne('SELECT id FROM support_ticket WHERE id = ? AND (client_id IS NULL OR client_id = 0)' . RowLock::suffix($db), [$ticketId]) !== false;
@@ -296,41 +296,47 @@ final class TicketFiles
         if ($clientId === false) {
             return 0;
         }
-        $sql = 'SELECT id FROM support_ticket_message WHERE support_ticket_id = ?';
-        $params = [$ticketId];
-        if ($messageId !== null) {
-            $sql .= ' AND id = ?';
-            $params[] = $messageId;
-        }
-        if ($staff) {
-            $sql .= ' AND admin_id IS NOT NULL';
-        } else {
-            $sql .= ' AND admin_id IS NULL AND client_id = ?';
-            $params[] = (int) $clientId;
-        }
-        $messageId = $db->fetchOne($sql . ' ORDER BY id DESC', $params);
-        if ($messageId === false) {
-            return 0;
-        }
-        $already = (int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = ? AND removed_at IS NULL', [(int) $messageId]);
-        $room = self::MAX_FILES - $already;
-        if ($room <= 0) {
-            return 0;
-        }
-        $attached = 0;
-        foreach (array_slice($tokens, 0, $room) as $token) {
-            $sql = 'UPDATE support_ticket_file SET message_id = ?, ticket_id = ?, attached_at = ? WHERE token = ? AND session_hash = ? AND client_id = ? AND message_id IS NULL AND removed_at IS NULL AND (ticket_id IS NULL OR ticket_id = ?)';
-            $params = [(int) $messageId, $ticketId, date('Y-m-d H:i:s'), $token, self::sessionHash($di), (int) $clientId, $ticketId];
-            if ($staff) {
-                $sql .= ' AND uploader_kind = ? AND uploader_id = (SELECT admin_id FROM support_ticket_message WHERE id = ?)';
-                array_push($params, 'admin', (int) $messageId);
-            } else {
-                $sql .= " AND uploader_kind = 'client'";
-            }
-            $attached += (int) $db->executeStatement($sql, $params);
-        }
 
-        return $attached;
+        return $db->transactional(function () use ($di, $db, $ticketId, $clientId, $staff, $tokens, $messageId): int {
+            if (!self::lockTicketOwner($db, $ticketId, (int) $clientId)) {
+                return 0;
+            }
+            $sql = 'SELECT id FROM support_ticket_message WHERE support_ticket_id = ?';
+            $params = [$ticketId];
+            if ($messageId !== null) {
+                $sql .= ' AND id = ?';
+                $params[] = $messageId;
+            }
+            if ($staff) {
+                $sql .= ' AND admin_id IS NOT NULL';
+            } else {
+                $sql .= ' AND admin_id IS NULL AND client_id = ?';
+                $params[] = (int) $clientId;
+            }
+            $messageId = $db->fetchOne($sql . ' ORDER BY id DESC' . RowLock::suffix($db), $params);
+            if ($messageId === false) {
+                return 0;
+            }
+            $already = count($db->fetchFirstColumn('SELECT id FROM support_ticket_file WHERE message_id = ? AND removed_at IS NULL' . RowLock::suffix($db), [(int) $messageId]));
+            $room = self::MAX_FILES - $already;
+            if ($room <= 0) {
+                return 0;
+            }
+            $attached = 0;
+            foreach (array_slice($tokens, 0, $room) as $token) {
+                $sql = 'UPDATE support_ticket_file SET message_id = ?, ticket_id = ?, attached_at = ? WHERE token = ? AND session_hash = ? AND client_id = ? AND message_id IS NULL AND removed_at IS NULL AND (ticket_id IS NULL OR ticket_id = ?)';
+                $params = [(int) $messageId, $ticketId, date('Y-m-d H:i:s'), $token, self::sessionHash($di), (int) $clientId, $ticketId];
+                if ($staff) {
+                    $sql .= ' AND uploader_kind = ? AND uploader_id = (SELECT admin_id FROM support_ticket_message WHERE id = ?)';
+                    array_push($params, 'admin', (int) $messageId);
+                } else {
+                    $sql .= " AND uploader_kind = 'client'";
+                }
+                $attached += (int) $db->executeStatement($sql, $params);
+            }
+
+            return $attached;
+        });
     }
 
     /**

@@ -39,6 +39,8 @@ function ticketEscalationDi(Doctrine\DBAL\Connection $connection, array &$calls)
     $di = container();
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('isOpen')->andReturnTrue();
+    $em->shouldReceive('clear')->zeroOrMoreTimes();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -245,3 +247,24 @@ test('escalation sweep drops orphan marks and reads degrade without tables', fun
     expect(TicketEscalation::run($bare))->toBe(0);
     expect(TicketEscalation::sweep($bare))->toBe(0);
 });
+
+test('delayed escalation candidates cannot act after a newer reply status change or deletion', function (string $change): void {
+    [$db] = ticketEscalationConnection();
+    $calls = [];
+    $di = ticketEscalationDi($db, $calls);
+    ticketEscalationRule($db);
+    $oldReply = date('Y-m-d H:i:s', time() - 3660);
+    ticketEscalationTicket($db, 10, 'open', null, $oldReply);
+    $rule = TicketEscalation::rules($di)[0];
+    $candidate = ['id' => 10, 'last_reply' => $oldReply];
+    if ($change === 'reply') {
+        $db->insert('support_ticket_message', ['support_ticket_id' => 10, 'content' => 'Just replied', 'created_at' => date('Y-m-d H:i:s')]);
+    } elseif ($change === 'status') {
+        $db->update('support_ticket', ['status' => 'closed'], ['id' => 10]);
+    } else {
+        $db->delete('support_ticket', ['id' => 10]);
+    }
+    $result = (new ReflectionMethod(TicketEscalation::class, 'apply'))->invoke(null, $di, $rule, $candidate, time());
+    expect($result)->toBeFalse()->and($calls)->toBe([])
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_escalation_applied'))->toBe(0);
+})->with(['reply', 'status', 'deleted']);

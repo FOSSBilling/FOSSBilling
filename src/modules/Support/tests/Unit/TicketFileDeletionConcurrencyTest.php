@@ -39,11 +39,11 @@ function attachmentRaceDatabase(string $driver): array
     };
     $db->executeStatement('CREATE TABLE client (id BIGINT PRIMARY KEY)');
     $db->executeStatement('CREATE TABLE support_ticket (id BIGINT PRIMARY KEY, client_id BIGINT NULL)');
-    $db->executeStatement('CREATE TABLE support_ticket_message (id BIGINT PRIMARY KEY, support_ticket_id BIGINT NOT NULL)');
+    $db->executeStatement('CREATE TABLE support_ticket_message (id BIGINT PRIMARY KEY, support_ticket_id BIGINT NOT NULL, admin_id BIGINT NULL, client_id BIGINT NULL)');
     $db->executeStatement("CREATE TABLE support_ticket_file (id $id, token VARCHAR(32) NOT NULL UNIQUE, ticket_id BIGINT NULL, message_id BIGINT NULL, client_id BIGINT NOT NULL, uploader_kind VARCHAR(10) NOT NULL, uploader_id BIGINT NOT NULL, session_hash VARCHAR(64) NOT NULL, name VARCHAR(191) NOT NULL, mime VARCHAR(100) NOT NULL, size INTEGER NOT NULL, created_at TIMESTAMP NOT NULL, attached_at TIMESTAMP NULL, removed_at TIMESTAMP NULL, removed_by BIGINT NULL, removed_reason VARCHAR(20) NULL)");
     $db->insert('client', ['id' => 7]);
     $db->insert('support_ticket', ['id' => 60, 'client_id' => 7]);
-    $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60]);
+    $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'admin_id' => 1]);
     putenv('FOSSBILLING_TICKET_FILES_DIR=' . $dir . '/files');
 
     return [$db, $params, $dir, $admin === null ? null : json_encode($admin, JSON_THROW_ON_ERROR)];
@@ -311,3 +311,35 @@ test('retention sweep cannot delete an upload attached concurrently', function (
         attachmentRaceCleanup($db, $params, $dir, $admin);
     }
 })->with(['sqlite', 'mysql', 'pgsql'])->with([false, true]);
+
+test('concurrent attachment requests cannot exceed the message file limit', function (string $driver): void {
+    [$db, $params, $dir, $admin] = attachmentRaceDatabase($driver);
+
+    try {
+        for ($i = 1; $i <= 6; ++$i) {
+            $db->insert('support_ticket_file', [
+                'token' => str_pad((string) $i, 32, '0', STR_PAD_LEFT), 'ticket_id' => 60, 'message_id' => $i <= 4 ? 70 : null,
+                'client_id' => 7, 'uploader_kind' => 'admin', 'uploader_id' => 1, 'session_hash' => hash('sha256', 'fossbilling-ticket-files|race-session'),
+                'name' => 'race.txt', 'mime' => 'text/plain', 'size' => 4, 'created_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+        $db->beginTransaction();
+        $db->executeStatement('UPDATE support_ticket SET id = id WHERE id = 60');
+        putenv('ATTACHMENT_RACE_TOKEN=' . str_pad('5', 32, '0', STR_PAD_LEFT));
+        [$first, $firstPipes] = attachmentRaceWorker($params, $dir, 'attach');
+        putenv('ATTACHMENT_RACE_TOKEN=' . str_pad('6', 32, '0', STR_PAD_LEFT));
+        [$second, $secondPipes] = attachmentRaceWorker($params, $dir, 'attach');
+        $db->commit();
+        $one = attachmentRaceResult($first, $firstPipes);
+        $two = attachmentRaceResult($second, $secondPipes);
+        expect($one)->toHaveKey('result')->and($two)->toHaveKey('result')
+            ->and($one['result'] + $two['result'])->toBe(1)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = 70'))->toBe(TicketFiles::MAX_FILES);
+    } finally {
+        putenv('ATTACHMENT_RACE_TOKEN');
+        if ($db->isTransactionActive()) {
+            $db->rollBack();
+        }
+        attachmentRaceCleanup($db, $params, $dir, $admin);
+    }
+})->with(['sqlite', 'mysql', 'pgsql']);

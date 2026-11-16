@@ -173,7 +173,7 @@ function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleReposit
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     supportWireSecretSchema($connection);
     $records = [];
-    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') || str_starts_with($sql, 'SELECT support_ticket_id') || str_starts_with($sql, 'SELECT id FROM support_ticket') ? 1 : SupportTicket::STATUS_OPEN));
     $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('delete')->byDefault()->andReturn(0);
     $connection->shouldReceive('insert')->byDefault()->andReturnUsing(function (string $table, array $data) use (&$records): int {
@@ -2775,7 +2775,7 @@ test('closing a ticket purges its secrets', function (): void {
     $connection->shouldReceive('insert')->byDefault()->andReturn(1);
     $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
     $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
-    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') || str_starts_with($sql, 'SELECT support_ticket_id') || str_starts_with($sql, 'SELECT id FROM support_ticket') ? 1 : SupportTicket::STATUS_OPEN));
     $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('delete')->andReturnUsing(function (string $table) use (&$deleted): int {
         $deleted[] = $table;
@@ -2808,7 +2808,7 @@ test('removing a ticket cleans its pins, assignment, ratings, feedback and merge
     $connection->shouldReceive('insert')->byDefault()->andReturn(1);
     $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
     $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
-    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') || str_starts_with($sql, 'SELECT support_ticket_id') || str_starts_with($sql, 'SELECT id FROM support_ticket') ? 1 : SupportTicket::STATUS_OPEN));
     $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('delete')->andReturnUsing(function (string $table, array $where) use (&$deleted): int {
         $deleted[] = $table . ':' . json_encode($where);
