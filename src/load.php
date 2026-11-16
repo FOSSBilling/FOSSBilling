@@ -250,9 +250,9 @@ function isCoreUpdateLockActive(?int $now = null): bool
     return $mtime !== false && ($now - $mtime) <= 600;
 }
 
-function blockWhileCoreUpdateIsRunning(): void
+function blockWhileCoreUpdateIsRunning(bool $runtimeBusy = false): void
 {
-    if (!isCoreUpdateLockActive()) {
+    if (!$runtimeBusy && !isCoreUpdateLockActive()) {
         return;
     }
 
@@ -282,11 +282,28 @@ function preInit(): void
     define('PATH_ROOT', __DIR__);
 
     blockWhileCoreUpdateIsRunning();
-    // Enter before Composer can load classes that extraction may replace.
-    require_once PATH_ROOT . '/core/Update/RuntimeLock.php';
+    // Lock before loading even the helper: an update may replace its API too.
+    // Keep this bootstrap-safe literal in sync with RuntimeLock::FILENAME.
+    $bootstrapLock = null;
     if (getenv('APP_ENV') !== 'test') {
-        FOSSBilling\Core\Update\RuntimeLock::acquire(PATH_ROOT);
+        $bootstrapLock = @fopen(PATH_ROOT . '/data/uploads/.update-runtime.lock', 'c');
+        if ($bootstrapLock === false) {
+            throw new RuntimeException('Unable to acquire the application update lock.');
+        }
+        if (!flock($bootstrapLock, LOCK_SH | LOCK_NB, $wouldBlock)) {
+            if ($wouldBlock) {
+                // Retry from a fresh bootstrap after extraction, rather than
+                // resuming functions compiled from the previous release.
+                blockWhileCoreUpdateIsRunning(true);
+            }
+
+            throw new RuntimeException('Unable to acquire the application update lock.');
+        }
         blockWhileCoreUpdateIsRunning();
+    }
+    require_once PATH_ROOT . '/core/Update/RuntimeLock.php';
+    if (is_resource($bootstrapLock)) {
+        FOSSBilling\Core\Update\RuntimeLock::acquire(PATH_ROOT, $bootstrapLock);
     }
 
     // Check vendor folder exists and load Composer autoloader.

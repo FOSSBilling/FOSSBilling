@@ -4190,3 +4190,53 @@ test('JSON migration bootstrap probe does not suppress programming errors', func
 
     expect(fn () => $patcher->isJsonMigrationPending())->toThrow(LogicException::class, 'Broken connection factory');
 });
+
+test('a connection lost after schema sync cannot complete core patches', function (string $stage): void {
+    withNonMysqlDbDriver(function () use ($stage): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($em);
+        $patcher = new class extends Patcher {
+            public string $failAt;
+
+            public function applyJsonMigrations(): void
+            {
+            }
+
+            public function backfillInvoiceJournal(int $maxPages = 0): void
+            {
+                if ($this->failAt === 'journal') {
+                    $this->disconnect();
+                }
+            }
+
+            public function checkInvoiceNumberCounter(): void
+            {
+                if ($this->failAt === 'counter') {
+                    $this->disconnect();
+                }
+            }
+
+            private function disconnect(): never
+            {
+                $driverError = new class('connection lost after schema sync') extends RuntimeException implements Doctrine\DBAL\Driver\Exception {
+                    public function getSQLState(): ?string
+                    {
+                        return '08006';
+                    }
+                };
+
+                throw new Doctrine\DBAL\Exception\ConnectionException($driverError, null);
+            }
+        };
+        $patcher->failAt = $stage;
+        $patcher->setDi(new Pimple\Container([
+            'em' => $em,
+            'pdo' => mockPdoAllowingThemeMigrationCalls(),
+            'logger' => new Tests\Helpers\TestLogger(),
+        ]));
+
+        expect(fn () => $patcher->applyCorePatches(force: true))->toThrow(Doctrine\DBAL\Exception\ConnectionException::class, 'connection lost after schema sync')
+            ->and($patcher->schemaSyncFailed())->toBeFalse();
+    });
+})->with(['journal', 'counter']);

@@ -78,21 +78,84 @@ test('bootstrap cannot load application classes while extraction owns the lock',
     $filesystem = new Filesystem();
     $filesystem->mkdir([$root . '/data/uploads', $root . '/vendor', $root . '/core/Update']);
     $filesystem->copy(PATH_ROOT . '/load.php', $root . '/load.php');
-    $filesystem->copy(PATH_ROOT . '/core/Update/RuntimeLock.php', $root . '/core/Update/RuntimeLock.php');
+    $helperSource = $filesystem->readFile(PATH_ROOT . '/core/Update/RuntimeLock.php');
+    $filesystem->dumpFile($root . '/core/Update/RuntimeLock.php', $helperSource . PHP_EOL . 'file_put_contents(__DIR__ . "/../../helper-loaded", "old");');
     $filesystem->dumpFile($root . '/vendor/autoload.php', '<?php file_put_contents(__DIR__ . "/../autoloaded", "ready"); exit(0);');
     $process = new Process([PHP_BINARY, '-r', 'file_put_contents($argv[1] . "/entering", "ready"); require $argv[1] . "/load.php";', $root], env: ['APP_ENV' => 'prod']);
 
+    $process->setTimeout(5);
+
     try {
-        RuntimeLock::exclusively($root, function () use ($process, $root): void {
+        RuntimeLock::exclusively($root, function () use ($process, $root, $helperSource, $filesystem): void {
             $process->start();
             awaitRuntimeBarrier($root . '/entering', $process);
-            usleep(100000);
-            expect($process->isRunning())->toBeTrue()->and(is_file($root . '/autoloaded'))->toBeFalse();
+            $process->wait();
+            expect($process->getExitCode())->toBe(1)
+                ->and($process->getErrorOutput())->toContain('currently applying a core update')
+                ->and(is_file($root . '/autoloaded'))->toBeFalse()
+                ->and(is_file($root . '/helper-loaded'))->toBeFalse();
+            $filesystem->dumpFile($root . '/core/Update/RuntimeLock.php', $helperSource . PHP_EOL . 'file_put_contents(__DIR__ . "/../../helper-loaded", "new");');
         });
-        $process->wait();
-        expect($process->isSuccessful())->toBeTrue()->and(is_file($root . '/autoloaded'))->toBeTrue();
+        $process->mustRun();
+        expect($process->isSuccessful())->toBeTrue()->and(is_file($root . '/autoloaded'))->toBeTrue()
+            ->and($filesystem->readFile($root . '/helper-loaded'))->toBe('new');
     } finally {
         $process->stop();
+        $filesystem->remove($root);
+    }
+});
+
+test('stale marker takeover preserves its inode and excludes competing updaters', function (): void {
+    $root = sys_get_temp_dir() . '/fb-marker-takeover-' . bin2hex(random_bytes(6));
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($root);
+    $path = $root . '/.update-lock';
+    $filesystem->touch($path, time() - 700);
+    $original = stat($path);
+    $owner = false;
+
+    try {
+        $owner = RuntimeLock::claimMarker($path, 600);
+        expect(is_resource($owner))->toBeTrue()
+            ->and(fstat($owner)['ino'])->toBe($original['ino']);
+        $contender = new Process([PHP_BINARY, '-r', 'require $argv[1]; $handle = FOSSBilling\Core\Update\RuntimeLock::claimMarker($argv[2], 600); echo is_resource($handle) ? "claimed" : "busy"; if (is_resource($handle)) { fclose($handle); }', PATH_ROOT . '/vendor/autoload.php', $path]);
+        $contender->mustRun();
+        expect($contender->getOutput())->toBe('busy');
+        // Age alone must not let a second updater displace the live owner.
+        $probe = fopen($path, 'r');
+
+        try {
+            expect(flock($probe, LOCK_SH | LOCK_NB))->toBeFalse();
+        } finally {
+            fclose($probe);
+        }
+    } finally {
+        if (is_resource($owner)) {
+            fclose($owner);
+        }
+        $filesystem->remove($root);
+    }
+});
+
+test('an unlocked fresh marker retains the legacy recovery window', function (): void {
+    $root = sys_get_temp_dir() . '/fb-marker-fresh-' . bin2hex(random_bytes(6));
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($root);
+    $path = $root . '/.update-lock';
+    $owner = RuntimeLock::claimMarker($path, 600);
+
+    try {
+        expect(is_resource($owner))->toBeTrue();
+        fclose($owner);
+        $owner = false;
+        expect(RuntimeLock::claimMarker($path, 600))->toBeFalse();
+        $filesystem->touch($path, time() - 700);
+        $owner = RuntimeLock::claimMarker($path, 600);
+        expect(is_resource($owner))->toBeTrue();
+    } finally {
+        if (is_resource($owner)) {
+            fclose($owner);
+        }
         $filesystem->remove($root);
     }
 });

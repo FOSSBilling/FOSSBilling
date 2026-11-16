@@ -266,13 +266,16 @@ class Patcher implements InjectionAwareInterface
         // Deliberately outside the drift healer: a large backlog must not stall page loads.
         // A genuine backfill failure propagates so finalization stays pending: invoices
         // that gain a live event before a later run are never revisited by the healer,
-        // so completing finalization here would leave baselines missing for good. Only
-        // an unreachable database is skipped, already recorded by syncPortableSchema.
+        // so completing finalization here would leave baselines missing for good. A
+        // connection failure is tolerated only if schema sync already recorded it;
+        // a connection lost after successful sync must still fail finalization.
         try {
             $this->backfillInvoiceJournal();
             $this->checkInvoiceNumberCounter();
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            return;
+        } catch (\Doctrine\DBAL\Exception\ConnectionException $e) {
+            if (!$this->schemaSyncFailed) {
+                throw $e;
+            }
         }
     }
 

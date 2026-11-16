@@ -4,6 +4,8 @@ Use the administration update screen after taking a backup. The updater download
 and verifies the release archive, stops new application work, and waits for active
 requests and cron jobs before replacing application files. If work does not drain
 within the wait limit, no files are extracted; retry once that work finishes.
+Requests arriving during extraction receive the maintenance/retry response and
+restart with a fresh bootstrap after the update. Cron can retry on its next run.
 There is no routine requirement to stop cron, run SQL, reset payment claims or
 manually purge support files between coordination-capable releases.
 

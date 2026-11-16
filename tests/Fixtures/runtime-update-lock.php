@@ -24,6 +24,29 @@ function awaitFile(string $path): void
 
 file_put_contents(PATH_ROOT . '/' . $name . '.entering', 'entering');
 $service = new Finalization();
+if ($mode === 'legacy-timeout') {
+    define('DEBUG', false);
+    define('PATH_CONFIG', PATH_ROOT . '/config.php');
+    (new Symfony\Component\Filesystem\Filesystem())->dumpFile(PATH_CONFIG, '<?php return [];');
+    $reader = new Finalization();
+    $reader->acquireRuntimeLock();
+
+    try {
+        $service->withUpdateLock(static function (): void {
+            throw new LogicException('Extraction must not start while the legacy reader is active.');
+        }, 0.02);
+
+        throw new LogicException('Expected the legacy-reader drain to time out.');
+    } catch (FOSSBilling\Core\Exception\InformationException $e) {
+        if (!str_contains($e->getMessage(), 'still finishing')) {
+            throw $e;
+        }
+        echo 'timed out without extraction';
+    } finally {
+        $reader->releaseRuntimeLock();
+    }
+    exit;
+}
 if ($mode !== 'legacy-cron') {
     RuntimeLock::acquire(PATH_ROOT);
 }

@@ -429,18 +429,10 @@ class Updater implements InjectionAwareInterface
             // requests/cron and prevents Composer loading during replacement.
             // Exclusive creation also rejects ordinary competing update requests.
             $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
-            if ($this->filesystem->exists($lockFile) && !$this->isExtractionActive($lockFile)) {
-                $this->filesystem->remove($lockFile);
-            }
-
-            // fopen(..., 'x') rather than Filesystem here: it's the only way to make the
-            // create atomic (it fails if the file already exists), which is what makes
-            // this a real mutex against two updates racing each other below.
-            $lockHandle = @fopen($lockFile, 'x');
+            $lockHandle = RuntimeLock::claimMarker($lockFile, self::LOCK_STALE_SECONDS);
             if ($lockHandle === false) {
                 throw new InformationException('Another update appears to already be in progress. Please wait for it to finish before trying again.');
             }
-            flock($lockHandle, LOCK_EX);
             ignore_user_abort(true);
 
             /*
@@ -487,8 +479,11 @@ class Updater implements InjectionAwareInterface
                     ]);
                 });
             } finally {
-                $this->filesystem->remove($lockFile);
-                fclose($lockHandle);
+                try {
+                    $this->filesystem->remove($lockFile);
+                } finally {
+                    fclose($lockHandle);
+                }
             }
 
             // Log off the current user and destroy the session.
@@ -498,23 +493,6 @@ class Updater implements InjectionAwareInterface
                 $this->removeDownloadedArchive($archiveFile);
             }
         }
-    }
-
-    private function isExtractionActive(string $path): bool
-    {
-        $handle = @fopen($path, 'r');
-        if ($handle !== false) {
-            try {
-                if (!flock($handle, LOCK_SH | LOCK_NB)) {
-                    return true;
-                }
-                flock($handle, LOCK_UN);
-            } finally {
-                fclose($handle);
-            }
-        }
-
-        return time() - (int) @filemtime($path) <= self::LOCK_STALE_SECONDS;
     }
 
     /**

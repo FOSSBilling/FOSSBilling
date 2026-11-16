@@ -12,12 +12,52 @@ final class RuntimeLock
     /** @var array<string, resource> */
     private static array $readers = [];
 
-    public static function acquire(string $root): void
+    /**
+     * Claim a fresh or abandoned extraction marker without unlinking another
+     * contender's marker between checking its age and acquiring ownership.
+     *
+     * @return resource|false
+     */
+    public static function claimMarker(string $path, int $staleSeconds): mixed
+    {
+        $handle = @fopen($path, 'x');
+        $created = $handle !== false;
+        if (!$created) {
+            $handle = @fopen($path, 'r+');
+        }
+        if ($handle === false) {
+            return false;
+        }
+        // A bootstrap probe can briefly hold SH on the newly created file.
+        // Wait for that probe instead of abandoning our own fresh marker.
+        if (!flock($handle, $created ? LOCK_EX : LOCK_EX | LOCK_NB)) {
+            fclose($handle);
+
+            return false;
+        }
+        clearstatcache(true, $path);
+        $opened = fstat($handle);
+        $current = @stat($path);
+        if ($opened === false || $current === false
+            || $opened['dev'] !== $current['dev'] || $opened['ino'] !== $current['ino']
+            || (!$created && time() - $opened['mtime'] <= $staleSeconds)) {
+            fclose($handle);
+
+            return false;
+        }
+
+        // Reuse a stale inode under its exclusive lock. Unlink-and-recreate
+        // would let two contenders remove each other's newly created marker.
+        return $handle;
+    }
+
+    /** @param resource|null $bootstrapLock Already-held bootstrap reader, transferred to this class. */
+    public static function acquire(string $root, mixed $bootstrapLock = null): void
     {
         if (isset(self::$readers[$root])) {
             return;
         }
-        $handle = @fopen($root . '/' . self::FILENAME, 'c');
+        $handle = $bootstrapLock ?? @fopen($root . '/' . self::FILENAME, 'c');
         if ($handle === false || !flock($handle, LOCK_SH)) {
             if (is_resource($handle)) {
                 fclose($handle);

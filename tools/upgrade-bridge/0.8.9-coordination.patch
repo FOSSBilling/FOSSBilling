@@ -1,6 +1,6 @@
 --- a/src/load.php
 +++ b/src/load.php
-@@ -178,13 +178,22 @@
+@@ -178,19 +178,28 @@
   */
  function isCoreUpdateLockActive(?int $now = null): bool
  {
@@ -28,14 +28,41 @@
      return $mtime !== false && ($now - $mtime) <= 600;
  }
  
-@@ -220,6 +229,11 @@
+-function blockWhileCoreUpdateIsRunning(): void
+-{
+-    if (!isCoreUpdateLockActive()) {
++function blockWhileCoreUpdateIsRunning(bool $runtimeBusy = false): void
++{
++    if (!$runtimeBusy && !isCoreUpdateLockActive()) {
+         return;
+     }
+ 
+@@ -220,6 +229,29 @@
      define('PATH_ROOT', __DIR__);
  
      blockWhileCoreUpdateIsRunning();
-+    require_once PATH_ROOT . '/core/Update/RuntimeLock.php';
++    // Lock before loading even the helper: an update may replace its API too.
++    // Keep this bootstrap-safe literal in sync with RuntimeLock::FILENAME.
++    $bootstrapLock = null;
 +    if (getenv('APP_ENV') !== 'test') {
-+        FOSSBilling\Core\Update\RuntimeLock::acquire(PATH_ROOT);
++        $bootstrapLock = @fopen(PATH_ROOT . '/data/uploads/.update-runtime.lock', 'c');
++        if ($bootstrapLock === false) {
++            throw new RuntimeException('Unable to acquire the application update lock.');
++        }
++        if (!flock($bootstrapLock, LOCK_SH | LOCK_NB, $wouldBlock)) {
++            if ($wouldBlock) {
++                // Retry from a fresh bootstrap after extraction, rather than
++                // resuming functions compiled from the previous release.
++                blockWhileCoreUpdateIsRunning(true);
++            }
++
++            throw new RuntimeException('Unable to acquire the application update lock.');
++        }
 +        blockWhileCoreUpdateIsRunning();
++    }
++    require_once PATH_ROOT . '/core/Update/RuntimeLock.php';
++    if (is_resource($bootstrapLock)) {
++        FOSSBilling\Core\Update\RuntimeLock::acquire(PATH_ROOT, $bootstrapLock);
 +    }
  
      // Check vendor folder exists and load Composer autoloader.
@@ -80,7 +107,7 @@
          $readiness = $this->di['update_readiness']->check();
          if (!$readiness['can_update']) {
              throw new Exception('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
-@@ -324,159 +326,154 @@
+@@ -324,159 +326,149 @@
  
          $this->di['logger']->setChannel('update')->info('Started FOSSBilling auto-update script');
          $latestVersionNum = $this->getLatestVersion();
@@ -214,18 +241,10 @@
 +             * abandoned once it's older than LOCK_STALE_SECONDS.
 +             */
 +            $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
-+            if ($this->filesystem->exists($lockFile) && !$this->isExtractionActive($lockFile)) {
-+                $this->filesystem->remove($lockFile);
-+            }
-+
-+            // fopen(..., 'x') rather than Filesystem here: it's the only way to make the
-+            // create atomic (it fails if the file already exists), which is what makes
-+            // this a real mutex against two updates racing each other below.
-+            $lockHandle = @fopen($lockFile, 'x');
++            $lockHandle = Core\Update\RuntimeLock::claimMarker($lockFile, self::LOCK_STALE_SECONDS);
 +            if ($lockHandle === false) {
 +                throw new InformationException('Another update appears to already be in progress. Please wait for it to finish before trying again.');
 +            }
-+            flock($lockHandle, LOCK_EX);
 +            ignore_user_abort(true);
 +
 +            try {
@@ -270,8 +289,11 @@
 -                fclose($fileHandler);
 -            }
 -        } catch (\Throwable $e) {
-+                $this->filesystem->remove($lockFile);
-+                fclose($lockHandle);
++                try {
++                    $this->filesystem->remove($lockFile);
++                } finally {
++                    fclose($lockHandle);
++                }
 +            }
 +
 +            // Log off the current user and destroy the session.
@@ -382,28 +404,7 @@
      }
  
      /**
-@@ -502,15 +499,33 @@
-      * Normalizing backslashes to forward slashes before checking for '..'
-      * segments and absolute paths closes that gap on every platform.
-      */
-+    private function isExtractionActive(string $path): bool
-+    {
-+        $handle = @fopen($path, 'r');
-+        if ($handle !== false) {
-+            try {
-+                if (!flock($handle, LOCK_SH | LOCK_NB)) {
-+                    return true;
-+                }
-+                flock($handle, LOCK_UN);
-+            } finally {
-+                fclose($handle);
-+            }
-+        }
-+
-+        return time() - (int) @filemtime($path) <= self::LOCK_STALE_SECONDS;
-+    }
-+
-     public static function isSafeArchiveEntry(string $entryName): bool
+@@ -506,11 +498,12 @@
      {
          $normalized = str_replace('\\', '/', $entryName);
  
@@ -418,7 +419,7 @@
              // Windows strips trailing spaces and periods from path components, so
              // '.. .' or '...' resolve to '..' at extraction time even though they
              // don't match it literally here. Reject any segment that is nothing
-@@ -520,6 +535,14 @@
+@@ -520,6 +513,14 @@
              }
          }
  
@@ -436,7 +437,7 @@
  }
 --- /dev/null
 +++ b/src/core/Update/RuntimeLock.php
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,110 @@
 +<?php
 +
 +declare(strict_types=1);
@@ -451,12 +452,52 @@
 +    /** @var array<string, resource> */
 +    private static array $readers = [];
 +
-+    public static function acquire(string $root): void
++    /**
++     * Claim a fresh or abandoned extraction marker without unlinking another
++     * contender's marker between checking its age and acquiring ownership.
++     *
++     * @return resource|false
++     */
++    public static function claimMarker(string $path, int $staleSeconds): mixed
++    {
++        $handle = @fopen($path, 'x');
++        $created = $handle !== false;
++        if (!$created) {
++            $handle = @fopen($path, 'r+');
++        }
++        if ($handle === false) {
++            return false;
++        }
++        // A bootstrap probe can briefly hold SH on the newly created file.
++        // Wait for that probe instead of abandoning our own fresh marker.
++        if (!flock($handle, $created ? LOCK_EX : LOCK_EX | LOCK_NB)) {
++            fclose($handle);
++
++            return false;
++        }
++        clearstatcache(true, $path);
++        $opened = fstat($handle);
++        $current = @stat($path);
++        if ($opened === false || $current === false
++            || $opened['dev'] !== $current['dev'] || $opened['ino'] !== $current['ino']
++            || (!$created && time() - $opened['mtime'] <= $staleSeconds)) {
++            fclose($handle);
++
++            return false;
++        }
++
++        // Reuse a stale inode under its exclusive lock. Unlink-and-recreate
++        // would let two contenders remove each other's newly created marker.
++        return $handle;
++    }
++
++    /** @param resource|null $bootstrapLock Already-held bootstrap reader, transferred to this class. */
++    public static function acquire(string $root, mixed $bootstrapLock = null): void
 +    {
 +        if (isset(self::$readers[$root])) {
 +            return;
 +        }
-+        $handle = @fopen($root . '/' . self::FILENAME, 'c');
++        $handle = $bootstrapLock ?? @fopen($root . '/' . self::FILENAME, 'c');
 +        if ($handle === false || !flock($handle, LOCK_SH)) {
 +            if (is_resource($handle)) {
 +                fclose($handle);

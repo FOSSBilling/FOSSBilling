@@ -286,18 +286,17 @@ test('schema sync failures keep the upgrade pending until a successful retry', f
 });
 
 test('extraction times out safely while an older cron reader is active', function (): void {
-    (new Filesystem())->mkdir(PATH_ROOT . '/data/uploads');
-    $handle = fopen(Path::join(PATH_DATA, 'update-finalization.lock'), 'c');
-    flock($handle, LOCK_SH);
-    $extracted = false;
+    $directory = sys_get_temp_dir() . '/fb-legacy-drain-timeout-' . bin2hex(random_bytes(6));
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory . '/data/uploads');
 
     try {
-        expect(fn () => (new Finalization())->withUpdateLock(function () use (&$extracted): void {
-            $extracted = true;
-        }, 0.02))->toThrow(InformationException::class, 'still finishing');
-        expect($extracted)->toBeFalse();
+        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/runtime-update-lock.php', $directory, 'legacy-timeout', 'timeout']);
+        $process->setTimeout(5);
+        $process->mustRun();
+        expect($process->getOutput())->toBe('timed out without extraction');
     } finally {
-        fclose($handle);
+        $filesystem->remove($directory);
     }
 });
 
