@@ -134,7 +134,12 @@
         "Ucfirst",
         "ungroup",
         "nullsafe",
-        "pluraltrans"
+        "pluraltrans",
+        "autopay",
+        "chargeback",
+        "gatewayfees",
+        "savedcards",
+        "sepa"
     ],
 
     "ignoreWords": [
@@ -683,6 +688,34 @@
         {
             "filename": "tools/tests/I18n/fixtures/extraction.php",
             "words": ["mple"]
+        },
+        {
+            "filename": "tests/Unit/Payment/Adapter/PayPalAutoPayTest.php",
+            "words": [
+                "BILLINGAGREEMENTID",
+                "CURRENCYCODE",
+                "LONGMESSAGE",
+                "MSGSUBID",
+                "PAYERID",
+                "PAYMENTINFO",
+                "PAYMENTREQUEST",
+                "PAYMENTSTATUS",
+                "REFUNDTRANSACTIONID",
+                "TRANSACTIONID"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/TicketFiles.php",
+            "words": [
+                "hashtextextended",
+                "xact"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/tests/Unit/TicketFeedbackTest.php",
+            "words": [
+                "guesthash"
+            ]
         }
     ],
     "ignorePaths": [

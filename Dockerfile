@@ -163,6 +163,11 @@ CMD ["sh", "-c", "cron & exec apache2-foreground"]
 
 FROM runtime AS test
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends git \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
 WORKDIR /workspace
 
 COPY --from=release-tree /app/src ./src
