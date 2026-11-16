@@ -16,6 +16,8 @@
     {% set schemaDrift = finalization.schema_drift|default({}) %}
     {% set driftOutOfSync = schemaDrift.out_of_sync|default(false) %}
     {% set lastSyncFailure = schemaDrift.last_sync_failure|default(null) %}
+    {% set jsonMigration = finalization.json_migration|default({}) %}
+    {% set quarantined = jsonMigration.quarantined|default([]) %}
 
     <div class="page page-center">
         <div class="container-tight py-4">
@@ -64,6 +66,23 @@
                                     {% if lastSyncFailure %}
                                         {{ 'A previous automatic synchronization attempt failed (last attempt: %time%). If finalization reports an error, check the update log before retrying.'|trans({'%time%': lastSyncFailure.attempted_at}) }}
                                     {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if quarantined is not empty %}
+                            <div class="alert alert-warning" role="alert">
+                                <div class="alert-icon">
+                                    <svg class="icon alert-icon icon-2" aria-hidden="true">
+                                        <use href="#alert-triangle" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    {{ '%count% JSON value(s) could not be migrated and were set to empty. Review them with database:json:audit --quarantined before completing.'|trans({'%count%': quarantined|length}) }}
+                                    <ul class="mb-0 mt-2">
+                                        {% for entry in quarantined|slice(0, 10) %}
+                                            <li>{{ entry.table }}.{{ entry.column }} id={{ entry.id }} ({{ entry.issue }})</li>
+                                        {% endfor %}
+                                    </ul>
                                 </div>
                             </div>
                         {% endif %}

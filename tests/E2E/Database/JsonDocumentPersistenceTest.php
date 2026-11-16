@@ -118,7 +118,7 @@ test('automatic TEXT upgrades retain JSON meaning and safely repeat', function (
     }
     $migration = new JsonMigration();
     expect(fn () => $migration->assertReady($this->connection))->toThrow(JsonMigrationException::class);
-    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 1, 'empty_values' => 2]);
+    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 1, 'empty_values' => 2, 'quarantined_values' => 0, 'decoded_values' => 0, 'quarantined' => []]);
     $migration->assertReady($this->connection);
     foreach ($this->em->getRepository(MassmailerMessage::class)->findBy([], ['id' => 'ASC']) as $index => $message) {
         expect($message->getFilter())->toEqual(json_decode($values[$index] ?? 'null', true));
@@ -126,7 +126,7 @@ test('automatic TEXT upgrades retain JSON meaning and safely repeat', function (
     }
     $this->em->flush();
     $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
-    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0])
+    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0])
         ->and($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
     $this->em->clear();
     $message = $this->em->getRepository(MassmailerMessage::class)->findOneBy([]);
@@ -136,19 +136,25 @@ test('automatic TEXT upgrades retain JSON meaning and safely repeat', function (
     expect($this->em->find(MassmailerMessage::class, $message->getId())->getFilter())->toEqual(['unicode' => '🚀', 'id' => '001']);
 });
 
-test('unsafe legacy documents block conversion without changing earlier valid rows or exposing secrets', function (string $raw): void {
+test('unsafe legacy documents are quarantined without blocking conversion or exposing secrets', function (string $raw): void {
     makeLegacyJsonColumn($this->connection);
     $this->connection->insert('mod_massmailer', ['filter' => '']);
     $this->connection->insert('mod_massmailer', ['filter' => $raw]);
-    $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
 
-    try {
-        (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt());
-        $this->fail('Unsafe legacy JSON was accepted.');
-    } catch (JsonMigrationException $exception) {
-        expect($exception->getMessage())->not->toContain('private-secret', $raw);
+    $result = (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt());
+    expect(json_encode($result))->not->toContain('private-secret', $raw);
+    if ($raw === '"{\\"a\\":1}"') {
+        expect($result['decoded_values'])->toBe(1)
+            ->and($result['quarantined_values'])->toBe(0)
+            ->and($this->connection->fetchOne('SELECT filter FROM mod_massmailer ORDER BY id LIMIT 1 OFFSET 1'))->toBe('{"a":1}');
+    } else {
+        expect($result['quarantined_values'])->toBe(1)
+            ->and($result['decoded_values'])->toBe(0)
+            ->and($result['quarantined'][0]['issue'])->not->toBeEmpty()
+            ->and($this->connection->fetchOne('SELECT filter FROM mod_massmailer ORDER BY id LIMIT 1 OFFSET 1'))->toBeNull();
     }
-    expect($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
+    expect($this->connection->fetchOne('SELECT filter FROM mod_massmailer ORDER BY id LIMIT 1'))->toBeNull();
+    (new JsonMigration())->assertReady($this->connection);
 })->with(['{private-secret', '{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}', 'false', '42', '"scalar"', '"{\\"a\\":1}"']);
 
 test('the full JSON-column inventory migrates while encrypted and dormant exclusions remain unchanged', function (): void {
@@ -176,7 +182,7 @@ test('the full JSON-column inventory migrates while encrypted and dormant exclus
     $c->executeStatement('CREATE TABLE email_template (id BIGINT PRIMARY KEY, vars TEXT)');
     $c->insert('email_template', ['id' => 1, 'vars' => 'encrypted-private-value']);
     $migration = new JsonMigration();
-    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 29, 'empty_values' => 28]);
+    expect($migration->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 29, 'empty_values' => 28, 'quarantined_values' => 0, 'decoded_values' => 0, 'quarantined' => []]);
     $migration->assertReady($c);
     foreach (FOSSBilling\Core\Doctrine\JsonFields::FIELDS as $table => $definition) {
         $actual = $c->createSchemaManager()->introspectTableByUnquotedName($table);
@@ -261,7 +267,7 @@ test('automatic updates convert mixed defaults and real binary session identifie
     expect($result['empty_values'])->toBe(503)
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM session WHERE fingerprint IS NULL'))->toBe(503)
         ->and(array_map(fn ($value) => json_decode($value, true), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe(['false', '0', str_repeat('x', 255), ['one', 'two']])
-        ->and($migration->automatic($sessionEm, new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0]);
+        ->and($migration->automatic($sessionEm, new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
 });
 
 test('unchanged checkbox defaults migrate and repeat safely on native databases', function (): void {
@@ -275,27 +281,29 @@ test('unchanged checkbox defaults migrate and repeat safely on native databases'
     $crypt = new FOSSBilling\Core\Security\Crypt();
     $migration->automatic($em, $crypt);
     expect(array_map(fn ($raw) => json_decode($raw, true, 512, JSON_THROW_ON_ERROR), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe([[1 => 'selected'], ['selected']])
-        ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0])
+        ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0])
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
 });
 
-test('unsafe checkbox collections are reported before normalization and leave source rows unchanged', function (string $raw): void {
+test('unsafe checkbox collections are quarantined while valid defaults still migrate', function (string $raw): void {
     $c = $this->connection;
     $c->executeStatement('CREATE TABLE form_field (id BIGINT PRIMARY KEY, type VARCHAR(30), default_value VARCHAR(255))');
     $c->insert('form_field', ['id' => 1, 'type' => 'text', 'default_value' => $raw]);
     $c->insert('form_field', ['id' => 2, 'type' => 'checkbox', 'default_value' => '{"0":"valid"}']);
     $c->insert('form_field', ['id' => 3, 'type' => 'checkbox', 'default_value' => $raw]);
-    $before = $c->fetchAllAssociative('SELECT * FROM form_field ORDER BY id');
     $issues = iterator_to_array((new FOSSBilling\Core\Doctrine\JsonAudit())->inspect($c, 'form_field'));
     expect($issues)->toHaveCount(1)
         ->and((int) $issues[0]['id'])->toBe(3)
         ->and($issues[0]['column'])->toBe('default_value')
         ->and(json_encode($issues, JSON_THROW_ON_ERROR))->not->toContain('private-secret');
-    expect(fn () => (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt()))
-        ->toThrow(JsonMigrationException::class, 'JSON preflight failed for form_field.default_value id=3');
-    expect($c->fetchAllAssociative('SELECT * FROM form_field ORDER BY id'))->toBe($before)
-        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, 'prepared:form_field.default_value:1'))->toBeFalse()
-        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
+    $result = (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Core\Security\Crypt());
+    expect($result['quarantined_values'])->toBe(1)
+        ->and($result['quarantined'][0]['column'])->toBe('default_value')
+        ->and((int) $result['quarantined'][0]['id'])->toBe(3)
+        ->and($c->fetchOne('SELECT default_value FROM form_field WHERE id = 3'))->toBeNull()
+        ->and($c->fetchOne('SELECT default_value FROM form_field WHERE id = 2'))->toBe('["valid"]')
+        ->and(json_encode($result, JSON_THROW_ON_ERROR))->not->toContain('private-secret');
+    (new JsonMigration())->assertReady($c);
 })->with(['{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}']);
 
 test('fresh JSON mappings preserve form defaults through later automatic upgrades', function (): void {
