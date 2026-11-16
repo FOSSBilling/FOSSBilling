@@ -55,18 +55,24 @@ export default function initDatepickers() {
       const sorted = [...dates].sort();
       const first = sorted[0] ?? '';
       const last = sorted.length > 1 ? sorted[sorted.length - 1] : '';
-      input.value = range && last ? `${first} to ${last}` : first;
+      const desired = range && last ? `${first} to ${last}` : first;
+      input.value = desired;
       if (from && to) {
         from.value = first;
         to.value = last;
       }
       input.setCustomValidity('');
       // Notify form listeners without feeding the selection back to the calendar.
+      // Tabler also listens for native change events and re-emits
+      // change.bs.datepicker, so guard the round-trip and restore our format.
       calendarChange = true;
       try {
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
       } finally {
+        // Tabler rewrites the value to its own en-dash format while handling
+        // our synthetic change event; restore the " to " format callers expect.
+        input.value = desired;
         calendarChange = false;
       }
     };
@@ -89,6 +95,10 @@ export default function initDatepickers() {
     syncInput();
 
     input.addEventListener('change.bs.datepicker', event => {
+      // Ignore events triggered while publishing our own synthetic
+      // input/change (Tabler re-emits change.bs.datepicker from its
+      // native change handler, which would otherwise recurse infinitely).
+      if (calendarChange) return;
       const dates = (event as Event & { dates: string[] }).dates;
       publish(dates);
     });
