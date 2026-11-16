@@ -142,15 +142,21 @@ test('unsafe legacy documents are quarantined without blocking conversion or exp
     $this->connection->insert('product', ['id' => 2, 'config' => $raw]);
 
     $result = (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt());
-    expect(json_encode($result))->not->toContain('private-secret', $raw);
-    if ($raw === '"{\\"a\\":1}"') {
+    $expectedIssue = match (true) {
+        $raw === '"{\\"a\\":1}"' => null,
+        $raw === '{private-secret' => 'invalid_json',
+        $raw === 'false' || $raw === '42' || str_starts_with($raw, '"') => 'unexpected_root',
+        default => 'unsafe_json',
+    };
+    expect(json_encode($result))->not->toContain('private-secret');
+    if ($expectedIssue === null) {
         expect($result['decoded_values'])->toBe(1)
             ->and($result['quarantined_values'])->toBe(0)
             ->and(json_decode($this->connection->fetchOne('SELECT config FROM product WHERE id = 2'), true))->toBe(['a' => 1]);
     } else {
         expect($result['quarantined_values'])->toBe(1)
             ->and($result['decoded_values'])->toBe(0)
-            ->and($result['quarantined'][0]['issue'])->not->toBeEmpty()
+            ->and($result['quarantined'][0]['issue'])->toBe($expectedIssue)
             ->and($this->connection->fetchOne('SELECT config FROM product WHERE id = 2'))->toBeNull();
     }
     expect($this->connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull();

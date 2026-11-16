@@ -18,6 +18,7 @@
     {% set lastSyncFailure = schemaDrift.last_sync_failure|default(null) %}
     {% set jsonMigration = finalization.json_migration|default({}) %}
     {% set quarantined = jsonMigration.quarantined|default([]) %}
+    {% set quarantinedTotal = jsonMigration.quarantined_total|default(quarantined|length) %}
 
     <div class="page page-center">
         <div class="container-tight py-4">
@@ -77,9 +78,9 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    {{ '%count% JSON value(s) could not be migrated and were set to empty. Review them with database:json:audit --quarantined before completing.'|trans({'%count%': quarantined|length}) }}
+                                    {{ '%count% JSON value(s) could not be migrated and were set to empty. Review them with database:json:audit --quarantined before completing.'|trans({'%count%': quarantinedTotal}) }}
                                     <ul class="mb-0 mt-2">
-                                        {% for entry in quarantined|slice(0, 10) %}
+                                        {% for entry in quarantined %}
                                             <li>{{ entry.table }}.{{ entry.column }} id={{ entry.id }} ({{ entry.issue }})</li>
                                         {% endfor %}
                                     </ul>

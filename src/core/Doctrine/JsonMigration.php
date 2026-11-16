@@ -256,11 +256,15 @@ final class JsonMigration
                 }
                 $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $table, $column, $row, $write, $key): void {
                     $journal->save($key, ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($write['original'])]);
-                    $connection->executeStatement(
+                    $changed = $connection->executeStatement(
                         'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = ? WHERE id = ? AND ' . $quotedColumn . ' = ?',
                         [$write['value'], $row['id'], $write['original']],
                         [\Doctrine\DBAL\ParameterType::STRING, $row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
                     );
+                    // The repaired value always differs, so no match means a concurrent write won the row.
+                    if ($changed !== 1) {
+                        throw new JsonMigrationException('JSON source value changed during migration; retry update finalization.');
+                    }
                 });
                 ++$decoded;
 
@@ -279,11 +283,15 @@ final class JsonMigration
                 if (!$stored) {
                     return;
                 }
-                $connection->executeStatement(
+                $changed = $connection->executeStatement(
                     'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $quotedColumn . ' = ?',
                     [$row['id'], $write['original']],
                     [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
                 );
+                // NULL always differs from the scanned value, so no match means a concurrent write won the row.
+                if ($changed !== 1) {
+                    throw new JsonMigrationException('JSON source value changed during migration; retry update finalization.');
+                }
             });
         }
 

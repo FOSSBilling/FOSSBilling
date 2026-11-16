@@ -67,6 +67,7 @@ function seedQuarantine(Doctrine\DBAL\Connection $connection, string $table = 'p
     (new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->save(
         $table, $column, $id, false, (string) $id, 'invalid_json', $original
     );
+    (new FOSSBilling\Core\Doctrine\JsonMigrationJournal($em, new FOSSBilling\Core\Security\Crypt()))->complete();
 }
 
 test('quarantine show prints the original verbatim', function (): void {
@@ -118,6 +119,30 @@ test('quarantine restore validates before writing and drops the record', functio
         expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(0)
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBe('{"label":"fixed"}')
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
+    } finally {
+        unlink($file);
+    }
+});
+
+test('quarantine restore waits for migration completion', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE product (id BIGINT PRIMARY KEY, config TEXT)');
+    $connection->insert('product', ['id' => 1, 'config' => null]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+    FOSSBilling\Core\Doctrine\JsonQuarantineStore::sync($em);
+    (new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->save(
+        'product', 'config', 1, false, '1', 'invalid_json', '{broken-secret'
+    );
+    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
+    file_put_contents($file, '{"label":"fixed"}');
+
+    try {
+        $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
+        $command->setDi(quarantineCommandContainer($connection));
+        $tester = new CommandTester($command);
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(2)
+            ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull()
+            ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toHaveCount(1);
     } finally {
         unlink($file);
     }

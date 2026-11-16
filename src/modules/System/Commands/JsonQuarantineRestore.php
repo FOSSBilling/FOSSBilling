@@ -77,6 +77,12 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
 
             return Command::INVALID;
         }
+        if (!$connection->createSchemaManager()->tablesExist(['json_migration_record'])
+            || !\FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($connection, \FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE)) {
+            $output->writeln('<error>JSON conversion has not completed; retry update finalization before restoring a value.</error>');
+
+            return Command::INVALID;
+        }
 
         try {
             \FOSSBilling\Core\Doctrine\JsonMigrationValidation::assertCompatible($candidate, $table === 'form_field' && $column === 'default_value');

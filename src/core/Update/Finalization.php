@@ -527,19 +527,19 @@ class Finalization implements InjectionAwareInterface
      * unreadable database reports no quarantined values, the same
      * recoverability contract as getSchemaDriftStatus().
      *
-     * @return array{quarantined: list<array{table: string, column: string, id: string, issue: string, quarantined_at: string}>}
+     * @return array{quarantined: list<array{table: string, column: string, id: string, issue: string, quarantined_at: string}>, quarantined_total: int}
      */
     private function getJsonMigrationStatus(): array
     {
         try {
             if (!$this->di instanceof \Pimple\Container || !isset($this->di['em'], $this->di['crypt'])) {
-                return ['quarantined' => []];
+                return ['quarantined' => [], 'quarantined_total' => 0];
             }
             $store = new \FOSSBilling\Core\Doctrine\JsonQuarantineStore($this->di['em']->getConnection(), $this->di['crypt']);
 
-            return ['quarantined' => $store->list()];
+            return ['quarantined' => $store->list(limit: 10), 'quarantined_total' => $store->count()];
         } catch (\Throwable) {
-            return ['quarantined' => []];
+            return ['quarantined' => [], 'quarantined_total' => 0];
         }
     }
 

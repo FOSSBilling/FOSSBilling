@@ -44,14 +44,18 @@ final readonly class JsonQuarantineStore
     /**
      * @return list<array{table: string, column: string, id: string, issue: string, quarantined_at: string}>
      */
-    public function list(?string $table = null): array
+    public function list(?string $table = null, ?int $limit = null): array
     {
         if (!$this->exists()) {
             return [];
         }
-        $rows = $table === null
-            ? $this->connection->fetchAllAssociative('SELECT table_name, column_name, display_id, issue, created_at FROM ' . self::TABLE . ' ORDER BY id')
-            : $this->connection->fetchAllAssociative('SELECT table_name, column_name, display_id, issue, created_at FROM ' . self::TABLE . ' WHERE table_name = ? ORDER BY id', [$table]);
+        $sql = 'SELECT table_name, column_name, display_id, issue, created_at FROM ' . self::TABLE . ($table === null ? '' : ' WHERE table_name = ?') . ' ORDER BY id';
+        $params = $table === null ? [] : [$table];
+        $types = $table === null ? [] : [Types::STRING];
+        if ($limit !== null) {
+            $sql .= ' LIMIT ' . max(1, $limit);
+        }
+        $rows = $this->connection->fetchAllAssociative($sql, $params, $types);
         $entries = [];
         foreach ($rows as $row) {
             $created = $row['created_at'];
@@ -68,6 +72,18 @@ final readonly class JsonQuarantineStore
         }
 
         return $entries;
+    }
+
+    public function count(?string $table = null): int
+    {
+        if (!$this->exists()) {
+            return 0;
+        }
+        $sql = 'SELECT COUNT(*) FROM ' . self::TABLE . ($table === null ? '' : ' WHERE table_name = ?');
+        $params = $table === null ? [] : [$table];
+        $types = $table === null ? [] : [Types::STRING];
+
+        return (int) $this->connection->fetchOne($sql, $params, $types);
     }
 
     /** Store an encrypted original; false when an entry already exists. */
