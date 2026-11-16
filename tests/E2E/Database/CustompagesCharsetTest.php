@@ -62,7 +62,7 @@ test('charset migration repairs legacy page text and preserves definitions, data
     expect($columns['content']['Type'])->toBe('text')
         ->and($columns['content']['Null'])->toBe('NO')
         ->and($columns['content']['Comment'])->toBe('Editor content')
-        ->and($columns['content']['Collation'])->toBe('utf8mb4_bin')
+        ->and($columns['content']['Collation'])->toBe('utf8mb4_unicode_ci')
         ->and($columns['title']['Type'])->toBe('varchar(255)')
         ->and($columns['title']['Comment'])->toBe('Page title')
         ->and($columns['description']['Null'])->toBe('YES')
@@ -79,7 +79,7 @@ test('charset migration repairs legacy page text and preserves definitions, data
     expect($this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC))->toBe($columns);
 });
 
-test('charset migration skips customized defaults, indexes, generated fields and other charsets', function (): void {
+test('charset migration skips customized defaults, generated fields and other charsets', function (): void {
     $this->pdo->exec("CREATE TABLE custom_pages (
         id INT PRIMARY KEY,
         title VARCHAR(255) NOT NULL DEFAULT 'custom',
@@ -93,7 +93,15 @@ test('charset migration skips customized defaults, indexes, generated fields and
     $this->patcher->getDi()['logger'] = $logger;
     $before = $this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC);
     ($this->runPatch)();
-    expect($this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC))->toBe($before);
+    // The unique description fits the index size limit after widening, so only
+    // the literal default, the generated column and the latin1 text stay put.
+    $after = $this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC);
+    $byField = static fn (array $rows, string $field): array => array_values(array_filter($rows, static fn (array $row): bool => $row['Field'] === $field))[0];
+    expect($byField($after, 'title'))->toBe($byField($before, 'title'))
+        ->and($byField($after, 'keywords'))->toBe($byField($before, 'keywords'))
+        ->and($byField($after, 'content'))->toBe($byField($before, 'content'))
+        ->and($byField($after, 'description')['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'custom_pages'"))->toBe('utf8mb4_unicode_ci');
 });
 
 test('charset migration is harmless when Custompages is not installed', function (): void {

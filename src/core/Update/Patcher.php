@@ -2397,38 +2397,55 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        // Widen user-authored text without changing indexed slug equality or
-        // the size of TEXT columns (CONVERT TO CHARACTER SET can promote them to MEDIUMTEXT).
+        // Normalize every listed text column to utf8mb4_unicode_ci, the same
+        // collation fresh installs get. TEXT columns keep their size (CONVERT
+        // TO CHARACTER SET can promote them to MEDIUMTEXT, so MODIFY is used
+        // instead). Indexed columns convert too, unless the wider 4-byte
+        // characters would overflow the server's index key length -
+        // those keep their definition for manual review.
         $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
         // MariaDB's UCA-1400 collations appear without a charset prefix here
         // (and with NULL charset in COLLATIONS); applicability includes their aliases.
-        $collations = array_map(
+        $applicable = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
+        $normalized = array_map(
             static fn (string $name): string => str_starts_with($name, 'utf8mb4_') ? $name : 'utf8mb4_' . $name,
-            $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']),
+            $applicable,
         );
-        $changes = [];
+        $position = array_search('utf8mb4_unicode_ci', $normalized, true);
+        if ($position === false) {
+            $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . ': utf8mb4_unicode_ci is not available on this server.');
+
+            return;
+        }
+        $targetCollation = $applicable[$position];
+        $liveColumns = [];
         foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
+            $liveColumns[$column['Field']] = $column;
+        }
+        $byteLimit = $this->utf8mb4IndexByteLimit($table);
+        $changes = [];
+        foreach ($liveColumns as $column) {
             $name = $column['Field'];
             if (!in_array($name, $columns, true)) {
                 continue;
             }
 
             $collation = $column['Collation'] ?? '';
-            if (!preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
-                if ($repairTableDefault && $collation !== '' && !str_starts_with($collation, 'utf8mb4_')) {
+            if ($collation === $targetCollation) {
+                continue;
+            }
+            if (!preg_match('/^utf8(?:mb3)?_/', $collation) && !str_starts_with($collation, 'utf8mb4_')) {
+                if ($repairTableDefault) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized character set requires manual review.');
                 }
 
                 continue;
             }
-            $targetCollation = 'utf8mb4_' . $matches[1];
             $columnIndexes = array_filter($indexes, static fn (array $index): bool => $index['Column_name'] === $name);
-            $canRebuildFulltext = $table === 'support_ticket_message' && $name === 'content';
-            foreach ($columnIndexes as $index) {
-                $indexColumns = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
-                if ($index['Index_type'] !== 'FULLTEXT' || count($indexColumns) !== 1) {
-                    $canRebuildFulltext = false;
-                }
+            if ($columnIndexes !== [] && !$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': index would exceed the size limit after conversion and requires manual review.');
+
+                continue;
             }
             $literalUnitDefault = null;
             if ($name === 'unit' && in_array($table, ['product', 'client_order', 'invoice_item'], true)
@@ -2450,11 +2467,9 @@ class Patcher implements InjectionAwareInterface
                     }
                 }
             }
-            if (($columnIndexes !== [] && !$canRebuildFulltext)
-                || $column['Extra'] !== ''
+            if ($column['Extra'] !== ''
                 || ($column['Default'] !== null && $literalUnitDefault === null)
-                || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])
-                || !in_array($targetCollation, $collations, true)) {
+                || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])) {
                 $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized column or index requires manual review.');
 
                 continue;
@@ -2480,15 +2495,10 @@ class Patcher implements InjectionAwareInterface
                 'SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
                 ['table' => $table],
             );
-            if (is_string($tableCollation) && preg_match('/^utf8(?:mb3)?_(.+)$/', $tableCollation, $matches)) {
-                $targetCollation = 'utf8mb4_' . $matches[1];
-                if (in_array($targetCollation, $collations, true)) {
-                    // DEFAULT changes only future columns; CONVERT would also widen indexed
-                    // slugs/identifiers and can promote TEXT to MEDIUMTEXT.
-                    $changes[] = 'DEFAULT CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($targetCollation);
-                } else {
-                    $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': collation requires manual review.');
-                }
+            if (is_string($tableCollation) && $tableCollation !== $targetCollation
+                && (preg_match('/^utf8(?:mb3)?_/', $tableCollation) || str_starts_with($tableCollation, 'utf8mb4_'))) {
+                // DEFAULT changes only future columns; existing text moves via MODIFY COLUMN above.
+                $changes[] = 'DEFAULT CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($targetCollation);
             } elseif (is_string($tableCollation) && !str_starts_with($tableCollation, 'utf8mb4_')) {
                 $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': customized character set requires manual review.');
             }
@@ -2499,6 +2509,144 @@ class Patcher implements InjectionAwareInterface
             // patch sequence, leaving the patch pending; successful reruns skip widened columns.
             $this->executeSql(sprintf('ALTER TABLE `%s` ', $this->quoteIdentifier($table)) . implode(', ', $changes));
         }
+    }
+
+    /**
+     * Whether every index containing a text column still fits the server's
+     * key length once that column widens to 4 bytes per character.
+     *
+     * Single-column FULLTEXT indexes rebuild with the table and are always
+     * safe; anything referencing an unknown column type or exceeding the
+     * limit keeps its old definition instead of failing the upgrade.
+     */
+    private function canConvertIndexedColumn(array $columnIndexes, array $indexes, array $liveColumns, array $columns, int $byteLimit): bool
+    {
+        foreach ($columnIndexes as $index) {
+            $members = array_values(array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']));
+            if ($index['Index_type'] === 'FULLTEXT') {
+                if (count($members) !== 1) {
+                    return false;
+                }
+
+                continue;
+            }
+            $bytes = 0;
+            foreach ($members as $member) {
+                $memberBytes = $this->utf8mb4IndexColumnBytes($member, $liveColumns, $columns);
+                if ($memberBytes === null) {
+                    return false;
+                }
+                $bytes += $memberBytes;
+            }
+            if ($bytes > $byteLimit) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Worst-case key bytes for one indexed column after conversion, or null
+     * when the size cannot be determined (treated as unsafe by the caller).
+     */
+    private function utf8mb4IndexColumnBytes(array $index, array $liveColumns, array $columns): ?int
+    {
+        $definition = $liveColumns[$index['Column_name']] ?? null;
+        if ($definition === null) {
+            return null;
+        }
+        $type = strtolower((string) ($definition['Type'] ?? ''));
+        $subPart = $index['Sub_part'] !== null ? (int) $index['Sub_part'] : null;
+        $isBinary = str_starts_with($type, 'binary') || str_starts_with($type, 'varbinary') || str_ends_with($type, 'blob');
+
+        if (preg_match('/^(?:var)?char\((\d+)\)$/', $type, $matches)) {
+            $characters = (int) $matches[1];
+            if ($isBinary) {
+                return $subPart ?? $characters;
+            }
+            $factor = in_array($definition['Field'], $columns, true) ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
+            if ($factor === null) {
+                return null;
+            }
+
+            return ($subPart ?? $characters) * $factor;
+        }
+
+        if (in_array($type, ['tinytext', 'text', 'mediumtext', 'longtext'], true)) {
+            // MySQL requires a prefix length to index a TEXT column.
+            if ($subPart === null) {
+                return null;
+            }
+            $factor = in_array($definition['Field'], $columns, true) ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
+
+            return $factor === null ? null : $subPart * $factor;
+        }
+
+        $base = preg_replace('/\(.*$/', '', $type);
+        $fixed = ['tinyint' => 1, 'smallint' => 2, 'mediumint' => 3, 'int' => 4, 'integer' => 4, 'bigint' => 8, 'year' => 1, 'date' => 3, 'float' => 4, 'double' => 8];
+        if (isset($fixed[$base])) {
+            return $fixed[$base];
+        }
+        if (in_array($base, ['datetime', 'timestamp', 'time'], true)) {
+            $bytes = $base === 'time' ? 3 : 5;
+            if (preg_match('/\((\d+)\)$/', $type, $matches)) {
+                $bytes += intdiv((int) $matches[1] + 1, 2);
+            }
+
+            return $bytes;
+        }
+
+        return null;
+    }
+
+    private static function charsetMaxBytes(?string $collation): ?int
+    {
+        if (!is_string($collation) || $collation === '') {
+            return null;
+        }
+        if (str_starts_with($collation, 'utf8mb4_')) {
+            return 4;
+        }
+        if (preg_match('/^utf8(?:mb3)?_/', $collation)) {
+            return 3;
+        }
+        if (in_array($collation, ['latin1_bin', 'latin1_general_ci', 'latin1_general_cs', 'ascii_bin', 'ascii_general_ci', 'binary'], true)) {
+            return 1;
+        }
+
+        return null;
+    }
+
+    private function utf8mb4IndexByteLimit(string $table): int
+    {
+        // Match in PHP rather than LIKE: table names contain underscores,
+        // which are single-character wildcards in a LIKE pattern.
+        $rowFormat = '';
+        foreach ($this->fetchAll('SHOW TABLE STATUS') as $status) {
+            if (($status['Name'] ?? null) === $table) {
+                $rowFormat = strtolower((string) ($status['Row_format'] ?? ''));
+                break;
+            }
+        }
+        if (in_array($rowFormat, ['dynamic', 'compressed'], true) && self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
+            return 3072;
+        }
+
+        return 767;
+    }
+
+    private static function supportsLargeIndexPrefixes(mixed $version): bool
+    {
+        if (!is_string($version) || !preg_match('/^(\d+)\.(\d+)\.(\d+)/', $version, $matches)) {
+            return false;
+        }
+        [$major, $minor, $patch] = [(int) $matches[1], (int) $matches[2], (int) $matches[3]];
+        if (stripos($version, 'mariadb') !== false) {
+            return $major > 10 || ($major === 10 && ($minor > 2 || ($minor === 2 && $patch >= 2)));
+        }
+
+        return $major > 5 || ($major === 5 && ($minor > 7 || ($minor === 7 && $patch >= 7)));
     }
 
     public function legacyUnicodeColumns(): array
@@ -2514,7 +2662,7 @@ class Patcher implements InjectionAwareInterface
             'admin_password_reset' => [],
             'cart' => [],
             'cart_product' => [],
-            'client' => ['first_name', 'last_name', 'company', 'company_vat', 'company_number', 'postcode', 'billing_email', 'address_1', 'address_2', 'city', 'state', 'notes',
+            'client' => ['first_name', 'last_name', 'company', 'company_vat', 'company_number', 'postcode', 'email', 'billing_email', 'address_1', 'address_2', 'city', 'state', 'notes',
                 'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5', 'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
                 'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15', 'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20'],
             'client_balance' => ['description'],
@@ -2524,9 +2672,9 @@ class Patcher implements InjectionAwareInterface
             'client_order_meta' => ['value'],
             'client_order_status' => ['notes'],
             'client_password_reset' => [],
-            'currency' => ['format_pattern'],
-            'custom_pages' => ['title', 'description', 'keywords', 'content'],
-            'email_template' => ['subject', 'content', 'description', 'last_error'],
+            'currency' => ['format_pattern', 'code'],
+            'custom_pages' => ['title', 'description', 'keywords', 'content', 'slug'],
+            'email_template' => ['subject', 'content', 'description', 'last_error', 'action_code'],
             'email_template_group' => [],
             'email_queue' => ['recipient', 'sender', 'subject', 'content', 'to_name', 'from_name', 'attachment_name'],
             'extension' => [],
@@ -2544,8 +2692,8 @@ class Patcher implements InjectionAwareInterface
             'pay_gateway' => ['name'],
             'pay_gateway_customer' => [],
             'pay_gateway_product' => ['name'],
-            'post' => ['title', 'description', 'content', 'section', 'image'],
-            'product' => ['title', 'description', 'unit', 'icon_url', 'plugin_config'],
+            'post' => ['title', 'description', 'content', 'section', 'image', 'slug'],
+            'product' => ['title', 'description', 'unit', 'icon_url', 'plugin_config', 'slug'],
             'product_category' => ['title', 'description', 'icon_url'],
             'product_payment' => [],
             'product_payment_period' => [],
@@ -2559,13 +2707,13 @@ class Patcher implements InjectionAwareInterface
             'service_hosting' => ['sld', 'tld', 'username'],
             'service_hosting_hp' => ['name'],
             'service_hosting_server' => ['name', 'username', 'password', 'status_url', 'hostname', 'ns1', 'ns2', 'ns3', 'ns4'],
-            'service_license' => [],
+            'service_license' => ['license_key'],
             'session' => [],
             'setting' => ['value'],
             'subscription' => [],
             'support_helpdesk' => ['name', 'signature', 'email'],
-            'support_kb_article' => ['title', 'content'],
-            'support_kb_article_category' => ['title', 'description'],
+            'support_kb_article' => ['title', 'content', 'slug'],
+            'support_kb_article_category' => ['title', 'description', 'slug'],
             'support_pr' => ['title', 'content'],
             'support_pr_category' => ['title'],
             'support_ticket' => ['author_name', 'author_email', 'subject', 'rel_new_value'],
@@ -2573,7 +2721,7 @@ class Patcher implements InjectionAwareInterface
             'support_ticket_message_history' => ['content'],
             'support_ticket_note' => ['note'],
             'tax' => ['name', 'state'],
-            'tld' => [],
+            'tld' => ['tld'],
             'tld_registrar' => ['name'],
             'transaction' => ['error', 'note', 'output', 'txn_status'],
         ];
@@ -2599,34 +2747,21 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
+        // Normalize to the fresh-install collation; every legacy suffix maps
+        // onto it, including ones with no direct utf8mb4 equivalent.
         $collations = $this->fetchFirstColumn(
             'SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset',
             ['charset' => 'utf8mb4']
         );
-        // MariaDB UCA-1400 collations appear without a charset prefix; normalize for lookup.
-        $normalized = array_map(
-            static fn (string $name): string => str_starts_with($name, 'utf8mb4_') ? $name : 'utf8mb4_' . $name,
-            $collations
-        );
+        if (!in_array('utf8mb4_unicode_ci', $collations, true)) {
+            $this->logUpdate('warning', 'Skipped utf8mb4 database default for ' . $database . ': utf8mb4_unicode_ci is not available on this server.');
 
-        $targetCollation = null;
-        if (preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
-            $candidate = 'utf8mb4_' . $matches[1];
-            if (in_array($candidate, $normalized, true)) {
-                $targetCollation = $collations[array_search($candidate, $normalized, true)];
-            }
-        }
-
-        if ($targetCollation === null) {
-            $fallback = in_array('utf8mb4_general_ci', $collations, true) ? 'utf8mb4_general_ci' : ($collations[0] ?? 'utf8mb4_general_ci');
-            $this->logUpdate('warning', 'Database default collation ' . $collation . ' has no utf8mb4 equivalent; using ' . $fallback . ' for the database default.');
-            $targetCollation = $fallback;
+            return;
         }
 
         $this->executeSql(sprintf(
-            'ALTER DATABASE `%s` CHARACTER SET utf8mb4 COLLATE %s',
-            $this->quoteIdentifier($database),
-            $this->quoteIdentifier($targetCollation)
+            'ALTER DATABASE `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
+            $this->quoteIdentifier($database)
         ));
     }
 
