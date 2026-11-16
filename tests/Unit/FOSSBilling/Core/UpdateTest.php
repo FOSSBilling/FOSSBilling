@@ -11,6 +11,35 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\Process\Process;
+
+test('update archives survive cache clearing and are always removed', function (string $scenario, ?string $error): void {
+    // Keep destructive cache clearing and extraction out of other tests' paths.
+    $root = Path::join(sys_get_temp_dir(), 'fossbilling-update-cache-' . bin2hex(random_bytes(8)));
+    $filesystem = new Filesystem();
+    $process = new Process([PHP_BINARY, PATH_TESTS . '/Fixtures/update-cache-clear.php', $root, $scenario]);
+
+    try {
+        $process->mustRun();
+        $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+        if ($error === null) {
+            expect($result['error'])->toBeNull();
+        } else {
+            expect($result['error'])->toContain($error);
+        }
+        expect($result['pending'])->toBe($error === null)
+            ->and($result['extracted'])->toBe($error === null)
+            ->and($result['archives'])->toBe([]);
+    } finally {
+        $filesystem->remove($root);
+    }
+})->with([
+    'cache absent when opening the archive' => ['before_download', null],
+    'cache cleared while streaming the archive' => ['during_download', null],
+    'transport failure' => ['transport_failure', 'Failed to download'],
+    'extraction failure' => ['extraction_failure', 'Failed to extract'],
+    'another updater owns the lock' => ['locked', 'Another update'],
+]);
 
 function createUpdateTestArchive(string $content): string
 {
@@ -29,7 +58,6 @@ test('does not finalize an update in the request that extracts it', function ():
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
     $entryName = '.fossbilling-update-test-' . bin2hex(random_bytes(8)) . '.txt';
     $extractedFile = Path::join(PATH_ROOT, $entryName);
-    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
 
@@ -104,7 +132,6 @@ test('does not finalize an update in the request that extracts it', function ():
         expect($filesystem->exists($extractedFile))->toBeTrue();
     } finally {
         $filesystem->remove($extractedFile);
-        $filesystem->remove($archiveFile);
         if (!$lockExisted) {
             $filesystem->remove($lockFile);
         }
@@ -116,7 +143,6 @@ test('resets the opcode cache after extracting the update archive', function ():
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
     $entryName = '.fossbilling-update-test-' . bin2hex(random_bytes(8)) . '.txt';
     $extractedFile = Path::join(PATH_ROOT, $entryName);
-    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
 
@@ -191,7 +217,6 @@ test('resets the opcode cache after extracting the update archive', function ():
         expect($update->opcodeCacheResets)->toBe(1);
     } finally {
         $filesystem->remove($extractedFile);
-        $filesystem->remove($archiveFile);
         if (!$lockExisted) {
             $filesystem->remove($lockFile);
         }
@@ -208,7 +233,6 @@ test('opcode cache reset is best-effort and never throws', function (): void {
 test('does not create pending state when archive extraction fails', function (): void {
     $filesystem = new Filesystem();
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
-    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
     $archiveContent = 'not a zip archive';
@@ -265,7 +289,6 @@ test('does not create pending state when archive extraction fails', function ():
     try {
         expect(fn (): mixed => $update->performUpdate())->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Failed to extract file');
     } finally {
-        $filesystem->remove($archiveFile);
         if (!$lockExisted) {
             $filesystem->remove($lockFile);
         }
