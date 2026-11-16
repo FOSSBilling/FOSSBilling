@@ -63,13 +63,13 @@ $chargeToken = $claim === '' ? null : $db->fetchOne('SELECT owner_token FROM inv
 $work = function () use ($db, $em, $tx, $invoice, $client, $prepared, $clients, $invoices, $service, $otherEm, $otherTx, $action): void {
     fwrite(STDOUT, "ready\n");
     paymentWorkerWait();
-    if ($action === 'stripe_initial') {
+    if (in_array($action, ['stripe_initial', 'stripe_initial_unpaid', 'stripe_invoice'], true)) {
         $adapter = new Payment_Adapter_Stripe(['test_mode' => true, 'test_api_key' => 'sk_test_dummy', 'test_pub_key' => 'pk_test_dummy', 'gateway_id' => 1]);
         $di = new Pimple\Container();
         $di['em'] = $em;
         $di['logger'] = new Psr\Log\NullLogger();
-        $di['mod_service'] = $di->protect(fn () => new class($em) {
-            public function __construct(private Doctrine\ORM\EntityManagerInterface $em)
+        $di['mod_service'] = $di->protect(fn () => new class($em, $action === 'stripe_initial_unpaid') {
+            public function __construct(private Doctrine\ORM\EntityManagerInterface $em, private bool $leaveUnpaid)
             {
             }
 
@@ -80,6 +80,9 @@ $work = function () use ($db, $em, $tx, $invoice, $client, $prepared, $clients, 
 
             public function payInvoiceWithCredits(Invoice $invoice): bool
             {
+                if ($this->leaveUnpaid) {
+                    return false;
+                }
                 $invoice->setStatus(Invoice::STATUS_PAID);
                 $this->em->flush();
 
@@ -101,8 +104,24 @@ $work = function () use ($db, $em, $tx, $invoice, $client, $prepared, $clients, 
         };
         $latest = Stripe\Invoice::constructFrom(['id' => 'in_initial_' . $db->getDatabase(), 'status' => 'paid', 'amount_paid' => 1000, 'currency' => 'usd']);
         $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_initial', 'latest_invoice' => $latest]);
-        $amount = (new ReflectionMethod($adapter, 'processInitialSubscriptionPayment'))->invoke($adapter, $api, $tx, $invoice, $subscription);
-        $tx->setAmount((string) $amount)->setStatus(Transaction::STATUS_PROCESSED);
+        if ($action === 'stripe_invoice') {
+            $latest->billing_reason = 'subscription_create';
+            $latest->subscription = 'sub_initial';
+            $remoteSubscription = Stripe\Subscription::constructFrom(['id' => 'sub_initial', 'metadata' => ['invoice_id' => '1', 'client_id' => '1', 'gateway_id' => '1']]);
+            $subscriptions = Mockery::mock();
+            $subscriptions->shouldReceive('retrieve')->andReturn($remoteSubscription);
+            $stripe = Mockery::mock(Stripe\StripeClient::class);
+            $stripe->subscriptions = $subscriptions;
+            (new ReflectionProperty($adapter, 'stripe'))->setValue($adapter, $stripe);
+            $event = (object) ['data' => (object) ['object' => $latest]];
+            if (!(new ReflectionMethod($adapter, 'handleInvoicePaymentSucceeded'))->invoke($adapter, $api, $tx, $event, 1)) {
+                $tx->setAmount('0');
+            }
+        } else {
+            $amount = (new ReflectionMethod($adapter, 'processInitialSubscriptionPayment'))->invoke($adapter, $api, $tx, $invoice, $subscription);
+            $tx->setAmount((string) $amount);
+        }
+        $tx->setStatus(Transaction::STATUS_PROCESSED);
         $em->flush();
 
         return;

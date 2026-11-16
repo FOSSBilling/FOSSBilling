@@ -805,7 +805,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $priceId = $this->resolveSubscriptionPriceId($setupIntent, $invoice);
 
             try {
-                $subscription = $this->createStripeSubscription($customerId, $priceId, $setupIntent, $invoice);
+                $subscription = $this->createStripeSubscription($customerId, $priceId, $setupIntent, $invoice, $tx);
             } catch (Stripe\Exception\ApiErrorException $e) {
                 // Only handle the expected race where the setup_intent.succeeded
                 // webhook created the subscription concurrently with the same
@@ -861,15 +861,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     }
 
     /**
-     * Process the initial subscription payment immediately after subscription
-     * creation so the user sees a paid invoice when redirected back.
-     *
-     * Stripe charges the first invoice synchronously during subscription
-     * creation (charge_automatically + default_payment_method). This method
-     * retrieves that invoice and applies the payment to FOSSBilling right
-     * away, rather than waiting for the invoice.paid webhook to arrive.
-     */
-    /**
      * Records the subscription's first charge, returning what Stripe actually
      * collected. An unpaid first charge records nothing: the invoice counts
      * processed transactions as payments, so a full-total placeholder here
@@ -877,6 +868,25 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      */
     private function processInitialSubscriptionPayment($api_admin, Transaction $tx, Invoice $invoice, Stripe\Subscription $subscription): float
     {
+        $ownedCredit = $this->ownedSubscriptionCredit($tx);
+        if ($ownedCredit !== false) {
+            if ((int) $ownedCredit['client_id'] !== $invoice->getClientId()) {
+                throw new FOSSBilling\Core\Exception\InformationException('This Stripe receipt belongs to another client. Reconcile its wallet history before continuing.');
+            }
+            $this->di['em']->refresh($invoice);
+            if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
+                $invoiceService = $this->di['mod_service']('Invoice');
+                if (!$invoiceService->isInvoiceTypeDeposit($invoice)) {
+                    if (!$invoice->isIssued()) {
+                        $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
+                    }
+                    $invoiceService->payInvoiceWithCredits($invoice);
+                }
+            }
+
+            return (float) $ownedCredit['amount'];
+        }
+
         $latestInvoiceId = $subscription->latest_invoice ?? null;
         if (empty($latestInvoiceId)) {
             return 0.0;
@@ -892,16 +902,22 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         return $this->withStripeObjectLock($latestInvoice->id, $this->gatewayId(), function () use ($api_admin, $tx, $invoice, $latestInvoice): float {
             $this->di['em']->refresh($invoice);
+            $credit = $this->subscriptionCredit($tx, $latestInvoice->id);
+            $recordedAmount = null;
+            if ($credit !== false) {
+                if ((int) $credit['client_id'] !== $invoice->getClientId()) {
+                    throw new FOSSBilling\Core\Exception\InformationException('This Stripe receipt belongs to another client. Reconcile its wallet history before continuing.');
+                }
+                // The receipt's original transaction keeps its amount even if
+                // another callback finishes paying the invoice after a crash.
+                $recordedAmount = (string) $credit['rel_id'] === (string) $tx->getId() ? (float) $credit['amount'] : 0.0;
+            }
             if ($invoice->getStatus() === Invoice::STATUS_PAID) {
-                // Recovery of this receipt must retain the amount after a
-                // crash between paying the invoice and finalizing its transaction.
-                $credit = $this->di['em']->getConnection()->fetchAssociative(
-                    'SELECT client_id, rel_id, amount FROM client_balance WHERE payment_key = ?',
-                    [Box\Mod\Invoice\PaymentCredit::forTransaction($tx, ['type' => 'transaction', 'payment_reference' => $latestInvoice->id])]
-                );
+                if ($credit === false) {
+                    throw new FOSSBilling\Core\Exception\InformationException('This paid invoice has no matching Stripe wallet receipt. Reconcile its payment history before continuing.');
+                }
 
-                return $credit !== false && (int) $credit['client_id'] === $invoice->getClientId() && (string) $credit['rel_id'] === (string) $tx->getId()
-                    ? (float) $credit['amount'] : 0.0;
+                return $recordedAmount;
             }
 
             $firstCharge = $this->getAmountFromMinorUnits(
@@ -927,8 +943,29 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 $invoiceService->payInvoiceWithCredits($invoice);
             }
 
-            return $firstCharge;
+            return $recordedAmount ?? $firstCharge;
         });
+    }
+
+    private function subscriptionCredit(Transaction $tx, string $reference): array|false
+    {
+        return $this->di['em']->getConnection()->fetchAssociative(
+            'SELECT client_id, rel_id, amount FROM client_balance WHERE payment_key = ?',
+            [Box\Mod\Invoice\PaymentCredit::forTransaction($tx, ['type' => 'transaction', 'payment_reference' => $reference])]
+        );
+    }
+
+    private function ownsSubscriptionCredit(Transaction $tx): bool
+    {
+        return $this->ownedSubscriptionCredit($tx) !== false;
+    }
+
+    private function ownedSubscriptionCredit(Transaction $tx): array|false
+    {
+        return $this->di['em']->getConnection()->fetchAssociative(
+            "SELECT client_id, rel_id, amount FROM client_balance WHERE rel_id = ? AND type = 'transaction' AND payment_key IS NOT NULL AND amount > 0",
+            [(string) $tx->getId()]
+        );
     }
 
     public function authenticateJsonWebhook(array $data): void
@@ -1199,10 +1236,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         // Dedup: Stripe sends both invoice.payment_succeeded and invoice.paid for
         // the same payment. Use the Stripe invoice ID as the shared natural key so
         // whichever event arrives second sees the first is already processing/done.
+        $credit = $this->subscriptionCredit($tx, $stripeInvoice->id);
+        $ownsCredit = $credit !== false && (string) $credit['rel_id'] === (string) $tx->getId();
+        $receiptInvoice = $credit === false ? null : ($ownsCredit ? $tx : $this->di['em']->getRepository(Transaction::class)->find((int) $credit['rel_id']))?->getInvoice();
         $tx->setTxnId($stripeInvoice->id);
         $existing = $this->di['em']->getRepository(Transaction::class)
             ->findProcessingOrProcessedByTxnId($stripeInvoice->id, $this->gatewayId(), (int) $tx->getId());
-        if ($existing instanceof Transaction) {
+        if ($existing instanceof Transaction && !$ownsCredit) {
             return false;
         }
 
@@ -1214,29 +1254,39 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return false;
         }
 
-        // Link the transaction to the invoice as early as possible so the
-        // association survives any early return or failure further below.
+        $amount = $this->getAmountFromMinorUnits((int) ($stripeInvoice->amount_paid ?? 0), (string) ($stripeInvoice->currency ?? ''));
+        if ($credit !== false && ((int) $credit['client_id'] !== (int) $clientId || round((float) $credit['amount'], 2) !== round($amount, 2)
+            || ($receiptInvoice instanceof Invoice && $receiptInvoice->getClientId() !== (int) $clientId))) {
+            throw new FOSSBilling\Core\Exception\InformationException('This Stripe receipt has different wallet history. Reconcile it before continuing.');
+        }
+        // Keep a known receipt's invoice link; new receipts start with the
+        // subscription's original invoice until a renewal is selected.
         if ($invoiceId) {
-            $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
+            $tx->setInvoice($receiptInvoice ?? $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
             $this->di['em']->flush();
         }
 
         $billingReason = (string) ($stripeInvoice->billing_reason ?? '');
         $isInitialPayment = $billingReason === 'subscription_create';
 
-        // The early link above already fetched the invoice, so this second find
-        // hits the identity map. It covers: (a) skip if already paid,
-        // (b) billing_reason fallback.
+        // Billing reason distinguishes initial receipts from renewals. The
+        // original invoice's paid status alone does not establish provenance.
         if ($invoiceId) {
             $existingInvoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
             if ($existingInvoice instanceof Invoice) {
-                // Skip if already paid — redirect flow may have processed it first. Only for the initial payment:
-                // the subscription metadata always points at the first invoice, so for a renewal it is paid by
-                // design and the payment goes to a renewal invoice below. An inconclusive (missing)
-                // billing_reason with a paid original is also skipped: minting a renewal there would
-                // double-credit a duplicate initial webhook.
+                // Retain an original receipt owner, discard known duplicates,
+                // and stop for review when a paid invoice has no matching receipt.
                 if ($existingInvoice->getStatus() === Invoice::STATUS_PAID && ($isInitialPayment || $billingReason === '')) {
-                    return false;
+                    if ($credit === false) {
+                        throw new FOSSBilling\Core\Exception\InformationException('This paid invoice has no matching Stripe wallet receipt. Reconcile its payment history before continuing.');
+                    }
+                    if ($ownsCredit) {
+                        $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
+                        $tx->setAmount((string) $credit['amount']);
+                        $tx->setCurrency(strtoupper((string) ($stripeInvoice->currency ?? '')));
+                    }
+
+                    return $ownsCredit;
                 }
                 // Fallback: billing_reason inconclusive but original invoice still unpaid.
                 if (!$isInitialPayment && $existingInvoice->getStatus() === Invoice::STATUS_UNPAID) {
@@ -1247,10 +1297,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         $bd = [
             'id' => $clientId,
-            'amount' => $this->getAmountFromMinorUnits(
-                (int) ($stripeInvoice->amount_paid ?? 0),
-                (string) ($stripeInvoice->currency ?? '')
-            ),
+            'amount' => $amount,
             'payment_reference' => $stripeInvoice->id,
             'description' => $isInitialPayment
                 ? 'Stripe subscription initial payment ' . $stripeInvoice->id
@@ -1261,7 +1308,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         // No re-claim: the service layer already holds the processing claim.
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
-        $tx->setAmount((string) $bd['amount']);
+        $tx->setAmount((string) ($credit !== false && !$ownsCredit ? 0 : $bd['amount']));
         $tx->setCurrency(strtoupper((string) ($stripeInvoice->currency ?? '')));
 
         $api_admin->client_balance_add_funds($bd);
@@ -1278,14 +1325,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 $invoiceService->payInvoiceWithCredits($invoiceModel);
             }
         } else {
-            $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment(
-                $stripeSubscription->id,
-                (int) $clientId
-            );
+            if ($credit !== false) {
+                if (!$receiptInvoice instanceof Invoice || $receiptInvoice->getId() === (int) $invoiceId || $receiptInvoice->getClientId() !== (int) $clientId) {
+                    throw new FOSSBilling\Core\Exception\InformationException('This recurring payment already credited the wallet. Link its verified renewal invoice to the original transaction before retrying.');
+                }
+                $renewalInvoice = $receiptInvoice;
+            } else {
+                $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($stripeSubscription->id, (int) $clientId);
+            }
 
             if ($renewalInvoice instanceof Invoice) {
                 $tx->setInvoice($renewalInvoice);
-                if (!$invoiceService->isInvoiceTypeDeposit($renewalInvoice)) {
+                if ($renewalInvoice->getStatus() !== Invoice::STATUS_PAID && !$invoiceService->isInvoiceTypeDeposit($renewalInvoice)) {
                     $invoiceService->payInvoiceWithCredits($renewalInvoice);
                 }
             } else {
@@ -1499,7 +1550,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         // Dedup: skip if already processed or being processed via the redirect flow.
         $existing = $this->di['em']->getRepository(Transaction::class)
             ->findProcessingOrProcessedByTxnId($setupIntent->id, $gateway_id, (int) $tx->getId());
-        if ($existing instanceof Transaction) {
+        if ($existing instanceof Transaction && !$this->ownsSubscriptionCredit($tx)) {
             $tx->setInvoice($existing->getInvoice());
 
             return false;
@@ -1525,7 +1576,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         // If both fire simultaneously, Stripe returns the same subscription
         // to the first and a "concurrent request" error to the second.
         try {
-            $subscription = $this->createStripeSubscription($customerId, $priceId, $setupIntent, $invoice);
+            $subscription = $this->createStripeSubscription($customerId, $priceId, $setupIntent, $invoice, $tx);
         } catch (Stripe\Exception\ApiErrorException $e) {
             // Only treat idempotency conflicts as the expected race with the
             // redirect flow; rethrow all other API errors (card declined, auth
@@ -2419,8 +2470,21 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
     }
 
-    private function createStripeSubscription(string $customerId, string $priceId, Stripe\SetupIntent $setupIntent, Invoice $invoice): Stripe\Subscription
+    private function createStripeSubscription(string $customerId, string $priceId, Stripe\SetupIntent $setupIntent, Invoice $invoice, ?Transaction $transaction = null): Stripe\Subscription
     {
+        if ($transaction?->getSId()) {
+            $subscription = $this->stripe->subscriptions->retrieve($transaction->getSId(), []);
+            if ((int) ($subscription->metadata->invoice_id ?? 0) !== $invoice->getId()
+                || (int) ($subscription->metadata->gateway_id ?? 0) !== $this->gatewayId()) {
+                throw new FOSSBilling\Core\Exception\InformationException('The recorded Stripe subscription does not match this invoice and gateway.');
+            }
+
+            return $subscription;
+        }
+        if ($transaction !== null && $this->ownsSubscriptionCredit($transaction)) {
+            throw new FOSSBilling\Core\Exception\InformationException('This transaction already credited a Stripe payment. Record its verified subscription ID before retrying.');
+        }
+
         $subscriptionParams = [
             'customer' => $customerId,
             'items' => [[

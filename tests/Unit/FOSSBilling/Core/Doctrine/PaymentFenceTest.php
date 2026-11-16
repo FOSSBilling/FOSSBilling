@@ -650,3 +650,32 @@ test('Stripe initial payment contenders refresh the invoice under one receipt lo
         $cleanup();
     }
 })->with(['sqlite', 'mysql', 'pgsql']);
+
+test('Stripe setup and invoice callbacks count a reused wallet receipt once', function (string $driver, string $secondAction): void {
+    [$db, $config, $service, $cleanup] = paymentFenceDatabase($driver);
+
+    try {
+        $em = $service->getDi()['em'];
+        $second = (new Transaction())->setInvoice($em->find(Invoice::class, 1))->setGateway($em->find(PayGateway::class, 1))->setStatus('received');
+        $em->persist($second);
+        $em->flush();
+        foreach ([1, 2] as $id) {
+            $worker = paymentFenceWorker($config, $id === 1 ? 'stripe_initial_unpaid' : $secondAction, id: $id);
+            fwrite($worker[1][0], "go\n");
+            expect(trim((string) fgets($worker[1][1])))->toBe('credited');
+            fwrite($worker[1][0], "go\n");
+            expect(paymentFenceResult($worker)['completed'])->toBeTrue();
+        }
+        if ($secondAction === 'stripe_invoice') {
+            $db->executeStatement('UPDATE ' . $db->quoteSingleIdentifier('transaction') . " SET status = 'error', amount = NULL WHERE id = 1");
+            $retry = paymentFenceWorker($config, 'stripe_initial');
+            fwrite($retry[1][0], "go\n");
+            expect(paymentFenceResult($retry)['completed'])->toBeTrue();
+        }
+        expect($db->fetchOne('SELECT status FROM invoice WHERE id = 1'))->toBe($secondAction === 'stripe_invoice' ? 'paid' : 'unpaid')
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10.0)
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM ' . $db->quoteSingleIdentifier('transaction') . " WHERE status = 'processed'"))->toBe(10.0);
+    } finally {
+        $cleanup();
+    }
+})->with(['sqlite', 'mysql', 'pgsql'])->with(['stripe_initial_unpaid', 'stripe_invoice']);
