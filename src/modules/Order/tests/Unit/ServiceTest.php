@@ -1440,6 +1440,31 @@ test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation me
         ->and($ids)->not->toContain(2);
 });
 
+test('rmInvoiceItemByOrder removes pending items through either order linkage', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, rel_id TEXT, order_id INTEGER, status TEXT)');
+    $connection->insert('invoice_item', ['id' => 1, 'rel_id' => '7', 'order_id' => 7, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT]);
+    $connection->insert('invoice_item', ['id' => 2, 'rel_id' => '7', 'order_id' => null, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT]);
+    $connection->insert('invoice_item', ['id' => 3, 'rel_id' => '8', 'order_id' => 8, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT]);
+    $connection->insert('invoice_item', ['id' => 4, 'rel_id' => '7', 'order_id' => 7, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $svc->rmInvoiceItemByOrder(createEntity(Order::class, ['id' => 7]));
+
+    // Both the typed and the legacy (pre-backfill) links to order 7 are gone;
+    // other orders and non-pending statuses are untouched.
+    expect($connection->fetchFirstColumn('SELECT id FROM invoice_item ORDER BY id'))->toBe([3, 4]);
+});
+
 test('getRelatedOrderIdByType returns id', function (): void {
     $id = 1;
     $model = createEntity(Order::class, ['id' => $id]);

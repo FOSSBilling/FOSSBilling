@@ -2334,10 +2334,15 @@ class Service implements InjectionAwareInterface
 
     public function rmInvoiceItemByOrder(Order $order): void
     {
+        // Matches rows through either linkage: order_id is the typed form, while
+        // rel_id covers rows written before the order_id backfill reached them.
+        // Single-order scope, so both branches stay sargable (unlike the same
+        // shape in a table-wide correlated subquery).
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM invoice_item WHERE order_id = :order_id AND status = :status',
+            'DELETE FROM invoice_item WHERE status = :status AND (order_id = :order_id OR (order_id IS NULL AND rel_id = :rel_id))',
             [
                 'order_id' => $this->orderId($order),
+                'rel_id' => (string) $this->orderId($order),
                 'status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
             ],
         );

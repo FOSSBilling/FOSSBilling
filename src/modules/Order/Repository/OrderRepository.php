@@ -205,12 +205,35 @@ class OrderRepository extends EntityRepository
      */
     public function getStaleUnpaid(int $days): array
     {
+        $connection = $this->getEntityManager()->getConnection();
+
+        // Destructive-caller guard: the NOT EXISTS below excludes orders with any
+        // paid invoice item, matched through invoice_item.order_id. Until the
+        // backfill that populates it has recorded completion (see
+        // Patcher::backfillInvoiceItemOrderIds()), a paid order with only legacy
+        // (rel_id) references would read as never-paid and be deleted. Defer
+        // instead: a skipped run only delays cleanup of orders that are already
+        // overdue, while a wrongful deletion cannot be undone.
+        try {
+            $backfilled = $connection->fetchOne(
+                'SELECT value FROM setting WHERE param = :param',
+                ['param' => 'invoice_item_order_id_backfill_done']
+            );
+        } catch (\Throwable) {
+            // Fail closed like the missing flag: without proof the linkage is
+            // complete, a destructive batch must not run.
+            return [];
+        }
+        if ($backfilled === false) {
+            return [];
+        }
+
         // DATEDIFF(NOW(), X) > :days, compared only by calendar date, is equivalent to
         // X < cutoff, where cutoff is midnight $days days ago - a portable stand-in that also
         // lets $days collapse to a single bound parameter computed once in PHP.
         $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days")->format('Y-m-d H:i:s');
 
-        $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+        $ids = $connection->fetchFirstColumn(
             <<<'SQL'
                 SELECT o.id
                 FROM client_order o

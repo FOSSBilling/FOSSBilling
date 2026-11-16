@@ -28,6 +28,7 @@ function mockOrderRepositoryConnection(): Mockery\MockInterface
 {
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
+    $connection->shouldReceive('fetchOne')->andReturn('1');
 
     return $connection;
 }
@@ -167,4 +168,35 @@ test('lockAndGetUnpaidInvoiceId rejects being called outside of a transaction', 
 
     expect(fn (): ?int => $repository->lockAndGetUnpaidInvoiceId(42))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'outside of a transaction');
+});
+
+test('stale unpaid orders are deferred while the typed linkage backfill is incomplete', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT value FROM setting WHERE param = :param', ['param' => 'invoice_item_order_id_backfill_done'])
+        ->andReturn(false);
+    $connection->shouldNotReceive('fetchFirstColumn');
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect($repository->getStaleUnpaid(5))->toBe([]);
+});
+
+test('stale unpaid orders are deferred when the backfill flag cannot be read', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
+    $connection->shouldReceive('fetchOne')->once()->andThrow(new RuntimeException('database unreachable'));
+    $connection->shouldNotReceive('fetchFirstColumn');
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect($repository->getStaleUnpaid(5))->toBe([]);
 });
