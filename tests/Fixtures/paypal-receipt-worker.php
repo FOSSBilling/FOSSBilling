@@ -12,10 +12,14 @@ require dirname(__DIR__) . '/Helpers/Container.php';
 require dirname(__DIR__) . '/Helpers/DeferredPayPal.php';
 putenv('APP_ENV=test');
 $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+$config->setUseSchemaEditorApi(true);
 $config->setProxyDir(sys_get_temp_dir());
 $config->setProxyNamespace('PayPalReceiptWorkerProxies');
 $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $argv[1]]);
 $em = new Doctrine\ORM\EntityManager($connection, $config);
+if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+    $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+}
 $di = Tests\Helpers\container();
 $di['em'] = $em;
 $billing = new Box\Mod\Invoice\Service();

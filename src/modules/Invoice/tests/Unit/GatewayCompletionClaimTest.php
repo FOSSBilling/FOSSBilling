@@ -23,6 +23,7 @@ test('MySQL completion claims preserve financial status and exclude concurrent p
     $worker = function (Doctrine\DBAL\Connection $connection): ServiceTransaction {
         $di = container();
         $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+        $config->setUseSchemaEditorApi(true);
         $config->setProxyDir(sys_get_temp_dir());
         $config->setProxyNamespace('GatewayCompletionClaimProxies');
         $di['em'] = new EntityManager($connection, $config);

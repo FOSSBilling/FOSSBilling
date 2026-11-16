@@ -210,9 +210,13 @@ test('the real ORM rolls back an email queue write with its delivery marker', fu
         dirname(__DIR__, 2) . '/Entity',
         dirname(__DIR__, 3) . '/Email/Entity',
     ], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\EventProxies');
     $em = new Doctrine\ORM\EntityManager($db, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([
         $em->getClassMetadata(Box\Mod\Support\Entity\TicketCloseEvent::class),
         $em->getClassMetadata(Box\Mod\Email\Entity\QueuedEmail::class),
@@ -248,9 +252,13 @@ test('a failed delivery does not poison the entity manager for the next queued e
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([
         dirname(__DIR__, 2) . '/Entity', dirname(__DIR__, 3) . '/Email/Entity',
     ], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\EventProxies');
     $em = new Doctrine\ORM\EntityManager($db, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([
         $em->getClassMetadata(Box\Mod\Support\Entity\TicketCloseEvent::class),
         $em->getClassMetadata(Box\Mod\Email\Entity\QueuedEmail::class),
@@ -286,9 +294,13 @@ test('an ORM flush failure stops the batch and leaves later events for a fresh m
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([
         dirname(__DIR__, 2) . '/Entity', dirname(__DIR__, 3) . '/Email/Entity',
     ], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\EventProxies');
     $em = new Doctrine\ORM\EntityManager($db, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([
         $em->getClassMetadata(Box\Mod\Support\Entity\TicketCloseEvent::class),
         $em->getClassMetadata(Box\Mod\Email\Entity\QueuedEmail::class),

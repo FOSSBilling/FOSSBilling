@@ -857,12 +857,16 @@ test('claimForProcessing executes on SQLite despite the reserved table name', fu
     // syntax error on SQLite - every claim threw, so no payment could complete there.
     // A real connection, not a mock, is the only way to prove the quoting works.
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([Symfony\Component\Filesystem\Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new Doctrine\ORM\EntityManager(
         Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]),
         $config
     );
+    if ($entityManager->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $entityManager->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema([
         $entityManager->getClassMetadata(Transaction::class),
     ]);
@@ -1068,16 +1072,23 @@ test('offline approval rejects overlapping requests and processed retries', func
     $filesystem = new Symfony\Component\Filesystem\Filesystem();
     $database = $filesystem->tempnam(sys_get_temp_dir(), 'approval-race-');
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $firstEm = new Doctrine\ORM\EntityManager(
         Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'path' => $database]),
         $config
     );
+    if ($firstEm->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $firstEm->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $secondEm = new Doctrine\ORM\EntityManager(
         Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'path' => $database]),
         $config
     );
+    if ($secondEm->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $secondEm->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     try {
         (new Doctrine\ORM\Tools\SchemaTool($firstEm))->createSchema([
@@ -1230,9 +1241,13 @@ test('a rolled back settlement can record its error after Doctrine closes the en
     $db->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, status TEXT NOT NULL, error TEXT, error_code INTEGER, updated_at TEXT, processing_token TEXT, gateway_completion_state INTEGER NOT NULL DEFAULT 0)');
     $db->executeStatement('INSERT INTO "transaction" (id, status) VALUES (?, ?)', [3, Transaction::STATUS_PROCESSING]);
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([Symfony\Component\Filesystem\Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new Doctrine\ORM\EntityManager($db, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     try {
         $em->wrapInTransaction(fn () => throw new RuntimeException('settlement failed'));
@@ -1402,10 +1417,17 @@ test('locked transaction edits recheck settled history before applying stale val
 test('a stale Doctrine entity cannot rewrite a concurrently settled transaction', function (): void {
     $path = tempnam(sys_get_temp_dir(), 'fb-transaction-edit-');
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([Symfony\Component\Filesystem\Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $first = new Doctrine\ORM\EntityManager(Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'path' => $path]), $config);
+    if ($first->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $first->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $second = new Doctrine\ORM\EntityManager(Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'path' => $path]), $config);
+    if ($second->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $second->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     try {
         (new Doctrine\ORM\Tools\SchemaTool($first))->createSchema([$first->getClassMetadata(Transaction::class)]);
@@ -1431,9 +1453,13 @@ test('a stale Doctrine entity cannot rewrite a concurrently settled transaction'
 
 test('API metadata updates preserve a processing claim and notify after commit', function (): void {
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([Symfony\Component\Filesystem\Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new Doctrine\ORM\EntityManager(Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Transaction::class)]);
     $tx = (new Transaction())->setStatus(Transaction::STATUS_RECEIVED);
     $em->persist($tx);

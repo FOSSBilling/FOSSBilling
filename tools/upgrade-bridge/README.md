@@ -6,7 +6,7 @@ pushed or deployed.
 ## Targets
 
 - `codex/phase-bc-main` targets `main`, integrating the complete payment, support
-  concurrency and upgrade automation changes with origin/main at `5ec8f29067`.
+  concurrency and upgrade automation changes with origin/main at `864b9bd1f`.
   This candidate is under integration validation; do not label it merge-ready
   until its complete test and concurrency checks pass.
 - `codex/update-coordination-0.8-next` starts at `da1f48896d`. `0.8-next` tracks

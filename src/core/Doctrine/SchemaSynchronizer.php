@@ -13,6 +13,8 @@ namespace FOSSBilling\Core\Doctrine;
 
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ComparatorConfig;
+use Doctrine\DBAL\Schema\ForeignKeyConstraint;
+use Doctrine\DBAL\Schema\Name\UnqualifiedName;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\SchemaDiff;
 use Doctrine\DBAL\Schema\TableDiff;
@@ -140,7 +142,7 @@ final class SchemaSynchronizer
 
         $diff = $comparator->compareSchemas($fromSchema, $toSchema);
 
-        [$safeDiff, $skipped] = self::splitAdditiveChanges($diff, $schemaManager);
+        [$safeDiff, $skipped] = self::splitAdditiveChanges($diff, $schemaManager, $toSchema);
 
         $applied = $platform->getAlterSchemaSQL($safeDiff);
         foreach ($applied as $statement) {
@@ -174,11 +176,28 @@ final class SchemaSynchronizer
      * Splits a schema diff into an additive-only diff safe to execute, plus a human-readable list
      * of the drops/changes that were left untouched.
      *
+     * Foreign keys are reconciled against ground truth (the live table versus its desired
+     * metadata table) rather than the comparator's added/dropped lists: with the schema editor
+     * API (ORM 3.8+) foreign keys are unnamed, and DBAL's comparator pairs same-name
+     * constraints - every unnamed constraint shares the name '', so any table with 2+ foreign
+     * keys perpetually reports spurious drop+add pairs for constraints that are identical on
+     * both sides (and logging the dropped side via
+     * `TableDiff::getDroppedForeignKeyConstraintNames()` throws `InvalidState` on unnamed
+     * constraints). Comparing definitions directly is immune to all of that, for our own
+     * entities and third-party ones alike.
+     *
      * @return array{0: SchemaDiff, 1: list<string>}
      */
-    private static function splitAdditiveChanges(SchemaDiff $diff, AbstractSchemaManager $schemaManager): array
+    private static function splitAdditiveChanges(SchemaDiff $diff, AbstractSchemaManager $schemaManager, Schema $toSchema): array
     {
         $skipped = [];
+
+        // Desired (metadata) tables by unquoted name, same normalization as
+        // {@see self::introspectOnly()} so quoted names (e.g. `transaction`) resolve.
+        $desiredTables = [];
+        foreach ($toSchema->getTables() as $table) {
+            $desiredTables[strtolower($table->getObjectName()->getUnqualifiedName()->getValue())] = $table;
+        }
 
         foreach ($diff->getDroppedTables() as $table) {
             $skipped[] = sprintf('table `%s` exists in the database but not in entity metadata', $table->getObjectName()->toString());
@@ -213,21 +232,24 @@ final class SchemaSynchronizer
                 $skipped[] = sprintf('index `%s` on `%s` exists in the database but not in entity metadata', $index->getObjectName()->toString(), $tableName);
             }
 
-            foreach ($tableDiff->getDroppedForeignKeyConstraintNames() as $foreignKeyName) {
-                $skipped[] = sprintf('foreign key `%s` on `%s` exists in the database but not in entity metadata', $foreignKeyName->toString(), $tableName);
+            // Ground-truth FK reconciliation (see method docblock): only genuinely new or
+            // removed constraints are reported, never applied to an existing table.
+            $liveForeignKeys = $tableDiff->getOldTable()->getForeignKeys();
+            $unqualifiedName = strtolower($tableDiff->getOldTable()->getObjectName()->getUnqualifiedName()->getValue());
+            $desiredForeignKeys = isset($desiredTables[$unqualifiedName]) ? $desiredTables[$unqualifiedName]->getForeignKeys() : [];
+
+            foreach ($liveForeignKeys as $foreignKey) {
+                if (self::hasEqualForeignKey($foreignKey, $desiredForeignKeys)) {
+                    continue;
+                }
+                $skipped[] = sprintf('foreign key `%s` on `%s` exists in the database but not in entity metadata', self::foreignKeyName($foreignKey), $tableName);
             }
 
-            // Foreign keys being ADDED to an already-existing table are never applied here, name
-            // collision or not. Unlike a new column or index, a new FK constraint is checked against
-            // every existing row: years-old data created without the FK relationships current
-            // metadata declares (the pre-cutover schema dump had no FOREIGN KEY clauses - the
-            // whole schema has always been app-level referential integrity only) can easily contain orphaned references, and even where it
-            // doesn't, retrofitting a constraint changes DELETE/UPDATE behavior the application was
-            // never built expecting. A brand-new table's own FK constraints (via createdTables,
-            // below) stay untouched - those are the safe case, same as any fresh install.
-            foreach ($tableDiff->getAddedForeignKeys() as $foreignKey) {
-                $name = $foreignKey->getObjectName()?->toString() ?? '(unnamed)';
-                $skipped[] = sprintf('foreign key `%s` on `%s` is defined in entity metadata but was left uncreated (would apply against existing rows)', $name, $tableName);
+            foreach ($desiredForeignKeys as $foreignKey) {
+                if (self::hasEqualForeignKey($foreignKey, $liveForeignKeys)) {
+                    continue;
+                }
+                $skipped[] = sprintf('foreign key `%s` on `%s` is defined in entity metadata but was left uncreated (would apply against existing rows)', self::foreignKeyName($foreignKey), $tableName);
             }
 
             // An "added" column/index whose name collides with one just logged as dropped isn't a
@@ -310,5 +332,50 @@ final class SchemaSynchronizer
         );
 
         return [$safeDiff, $skipped];
+    }
+
+    /**
+     * Whether an equal-definition foreign key exists in the list. Mirrors the definition
+     * comparison of DBAL's own comparator (`Comparator::diffForeignKey()`, which matches
+     * constraints by definition rather than by name) using only public, non-deprecated API.
+     *
+     * @param array<ForeignKeyConstraint> $haystack
+     */
+    private static function hasEqualForeignKey(ForeignKeyConstraint $needle, array $haystack): bool
+    {
+        foreach ($haystack as $candidate) {
+            if (self::foreignKeysEqual($needle, $candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function foreignKeysEqual(ForeignKeyConstraint $a, ForeignKeyConstraint $b): bool
+    {
+        return self::unqualifiedColumnNames($a->getReferencingColumnNames()) === self::unqualifiedColumnNames($b->getReferencingColumnNames())
+            && self::unqualifiedColumnNames($a->getReferencedColumnNames()) === self::unqualifiedColumnNames($b->getReferencedColumnNames())
+            && $a->getReferencedTableName()->getUnqualifiedName()->getValue() === $b->getReferencedTableName()->getUnqualifiedName()->getValue()
+            && $a->getOnUpdateAction() === $b->getOnUpdateAction()
+            && $a->getOnDeleteAction() === $b->getOnDeleteAction();
+    }
+
+    /**
+     * @param array<UnqualifiedName> $names
+     *
+     * @return list<string>
+     */
+    private static function unqualifiedColumnNames(array $names): array
+    {
+        return array_values(array_map(
+            static fn (UnqualifiedName $name): string => strtolower($name->getIdentifier()->getValue()),
+            $names,
+        ));
+    }
+
+    private static function foreignKeyName(ForeignKeyConstraint $foreignKey): string
+    {
+        return $foreignKey->getObjectName()?->toString() ?? '(unnamed)';
     }
 }

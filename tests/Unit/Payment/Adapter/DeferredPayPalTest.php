@@ -688,6 +688,9 @@ test('PayPal resumes financially processed receipts through the transaction work
         $connection->update($table, ['updated_at' => date('Y-m-d H:i:s', time() - 600)], ['id' => $receipt->getId()]);
     }
     $fresh = new EntityManager($connection, $em->getConfiguration());
+    if ($fresh->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $fresh->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     [$retry, , $billing] = $configure($fresh);
     expect(array_column($retry->getReceived(), 'id'))->toContain($receipt->getId());
     $beforeRetry = $adapterCalls;

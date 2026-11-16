@@ -5,8 +5,8 @@ candidate until its integration validation is complete.
 
 ## Main
 
-Target: `main` at `5ec8f29067`  
-Branch: `codex/phase-bc-main`  
+Target: `main` at `864b9bd1f`
+Branch: `codex/phase-bc-main`
 Suggested title: Add saved payment recovery, support workflows and coordinated upgrades
 
 Interrupted payment workers and concurrent support operations can leave uncertain
@@ -20,7 +20,7 @@ code, and test historical upgrades with frozen release fixtures.
 Integrate the upstream gateway receipt and local-completion model rather than
 maintaining two independent settlement paths. Retain explicit staff recovery for
 ambiguous provider operations. Preserve main's secret delivery and immutable
-timestamps. Keep published migration numbers 140–145 and move the unpublished
+timestamps and ORM 3.8 schema-editor compatibility. Keep published migration numbers 140–145 and move the unpublished
 Phase B/C migrations to 146–160.
 
 Validation status is recorded in the local review report; this draft is not a
@@ -29,9 +29,9 @@ branch through `3ce2ad35f` remains intact.
 
 ## Maintenance backport
 
-Target: `0.8-next` at `da1f48896d` (next release currently planned as 0.8.10)  
-Branch: `codex/update-coordination-0.8-next`  
-Local commit: `8fe59b910`  
+Target: `0.8-next` at `da1f48896d` (next release currently planned as 0.8.10)
+Branch: `codex/update-coordination-0.8-next`
+Local commit: `8fe59b910`
 Suggested title: Coordinate built-in upgrades with active requests and cron
 
 Built-in extraction can replace application code while another request or cron

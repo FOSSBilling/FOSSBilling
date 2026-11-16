@@ -38,6 +38,9 @@ test('an interrupted receipt transaction rolls back its wallet entry and can be 
         ->and($connection->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$txId]))->toBe(Transaction::STATUS_PROCESSING);
     $connection->executeStatement('DROP TRIGGER fail_gateway_receipt');
     $newEm = new EntityManager($connection, $em->getConfiguration());
+    if ($newEm->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $newEm->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $di = container();
     $di['em'] = $newEm;
     $retry = new Service();
@@ -73,6 +76,9 @@ test('invoice receipt and settlement roll back together across provider retries'
         ->and($connection->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$txId]))->toBe(Transaction::STATUS_PROCESSING);
     $connection->executeStatement('DROP TRIGGER fail_invoice');
     $restartedEm = new EntityManager($connection, $em->getConfiguration());
+    if ($restartedEm->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $restartedEm->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $retry = gatewayDepositTestService($restartedEm);
     expect($retry->recordGatewayPayment($restartedEm->find(Transaction::class, $txId), $restartedEm->find(Client::class, $clientId), $providerId, $description, $type, (string) $txId))->toBeTrue()
         ->and($connection->fetchOne('SELECT SUM(amount) FROM client_balance'))->toEqual(0)
@@ -186,6 +192,9 @@ test('failed fee repricing rolls back the partial provider receipt for a safe re
 
     $connection->executeStatement('DROP TRIGGER fail_fee_reprice');
     $retryEm = new EntityManager($connection, $em->getConfiguration());
+    if ($retryEm->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $retryEm->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $retry = gatewayDepositTestService($retryEm);
     $retryTx = $retryEm->find(Transaction::class, $transaction->getId());
     $retryClient = $retryEm->find(Client::class, $client->getId());
@@ -410,6 +419,9 @@ test('offline completion survives listener failures and process crashes without 
     expect($connection->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$id]))->toBe('processed')
         ->and((int) $connection->fetchOne('SELECT gateway_completion_state FROM "transaction" WHERE id = ?', [$id]))->toBe(Transaction::GATEWAY_COMPLETION_RUNNING);
     $retryEm = new EntityManager($connection, $em->getConfiguration());
+    if ($retryEm->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $retryEm->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $retry = gatewayDepositTestService($retryEm);
     $di = $retry->getDi();
     $di['event_dispatcher'] = $dispatcher;
@@ -497,6 +509,9 @@ test('staff transaction edits reject foreign currency settlement before mutating
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'currency');
     expect($transaction->getCurrency())->toBe('USD')->and($transaction->getStatus())->toBe('received');
     $em = new EntityManager($em->getConnection(), $em->getConfiguration());
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $di['em'] = $em;
     $service->setDi($di);
     $transaction = $em->find(Transaction::class, $transaction->getId());
@@ -567,6 +582,9 @@ test('manual settlement preserves a processed partial payment and requires a new
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
     // A rejected attempt closes Doctrine's manager. Retry through fresh request services.
     $fresh = new EntityManager($connection, $em->getConfiguration());
+    if ($fresh->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $fresh->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $service = $makeService($fresh);
     $invoice = $fresh->find(Invoice::class, $invoice->getId());
     expect($service->markAsPaidByAdmin($invoice, ['transactionId' => 'manual-remainder']))->toBeTrue()

@@ -24,9 +24,13 @@ use function Tests\Helpers\container;
 function gatewayReassignmentContext(?string $concurrentChange = null, ?array $databaseParams = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 4)], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new EntityManager(DriverManager::getConnection($databaseParams ?? ['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Invoice::class, InvoiceItem::class, PayGateway::class, Box\Mod\Invoice\Entity\Transaction::class]));
     $source = (new PayGateway())->setGateway('Stripe')->setEnabled(true);
     $replacement = (new PayGateway())->setGateway('PayPalEmail')->setEnabled(true);
@@ -153,6 +157,9 @@ test('gateway disabling respects concurrent commits under MySQL repeatable read'
                 ->and($em->getConnection()->isTransactionActive())->toBeFalse()
                 ->and((int) $admin->fetchOne('SELECT enabled FROM ' . $database . '.pay_gateway WHERE id = ?', [$source]))->toBe(1);
             $em = new EntityManager($em->getConnection(), $em->getConfiguration());
+            if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+                $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+            }
             $gateways = gatewayReassignmentService($em);
             $gateways->update($em->find(PayGateway::class, $source), ['enabled' => false, 'replacement_id' => $replacement]);
         }

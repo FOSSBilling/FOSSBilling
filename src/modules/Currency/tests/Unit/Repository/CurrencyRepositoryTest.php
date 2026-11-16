@@ -24,6 +24,7 @@ use Symfony\Component\Filesystem\Path;
 function currencyRepositoryEntityManager(): EntityManager
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(dirname(__DIR__, 3), 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
 

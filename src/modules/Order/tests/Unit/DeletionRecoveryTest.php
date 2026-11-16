@@ -24,10 +24,14 @@ require_once PATH_TESTS . '/Helpers/DeferredPayPal.php';
 function deletionRecoveryContext(?string $databasePath = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('DeletionRecoveryTestProxies');
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
     $em = new EntityManager($connection, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Order::class, OrderMeta::class, OrderStatus::class, ServiceLicense::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
     $license = new ServiceLicense();
     $em->persist($license);
@@ -164,6 +168,9 @@ test('failed local cleanup cannot remove the hold before the order is removed', 
     expect(fn () => $c['service']->deleteFromOrder($c['order']))->toThrow(RuntimeException::class, 'Local cleanup failed');
     expect(DeletionRecovery::getState($c['connection'], $c['order']->getId()))->toBe(DeletionRecovery::SERVICE_DELETED);
     $em = new EntityManager($c['connection'], $c['config']);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $c['di']['em'] = $em;
     $service = new Service();
     $service->setDi($c['di']);
@@ -426,9 +433,13 @@ test('MySQL checkpoint aliases respect the metadata column collation and roll ba
         }
         $connection->insert('client_order_meta', ['client_order_id' => 1, 'name' => 'ordinary', 'value' => 'original']);
         $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+        $config->setUseSchemaEditorApi(true);
         $config->setProxyDir(sys_get_temp_dir());
         $config->setProxyNamespace('DeletionRecoveryTestProxies');
         $em = new EntityManager($connection, $config);
+        if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+            $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+        }
         $di = container();
         $di['em'] = $em;
         $service = new Service();
@@ -629,9 +640,13 @@ test('MySQL renewal checkpoint aliases cannot be forged overwritten or removed t
         'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
     ]);
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('RenewalAliasTestProxies');
     $em = new EntityManager($connection, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $alias = match ($form) {
         'case' => strtoupper($prefix) . '11',
         'accent' => str_replace('renewal', 'rénewal', $prefix) . '11', // cspell:ignore rénewal

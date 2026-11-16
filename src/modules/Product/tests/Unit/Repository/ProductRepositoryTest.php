@@ -28,6 +28,7 @@ use Symfony\Component\Filesystem\Path;
 function productSearchEntityManager(?AbstractLogger $logger = null): EntityManager
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
 
@@ -117,9 +118,12 @@ test('paginated product pricing fetches payments and periods without per-product
         Window::fromPageNumberAndSize(2, 2),
     );
     $products = $page->getItems();
+    $totalCount = $page->getTotalCount();
+    // ORM 3.8 defers the COUNT query until getTotalCount() is called, so capture the
+    // baseline after it - what follows must add no per-product queries of its own.
     $queriesAfterPagination = count($logger->queries);
 
-    expect($page->getTotalCount())->toBe(6)
+    expect($totalCount)->toBe(6)
         ->and($products)->toHaveCount(2)
         ->and(array_map(static fn (Product $product): ?string => $product->getTitle(), $products))
         ->toBe(['Product 3', 'Product 4']);
