@@ -19,6 +19,7 @@ use FOSSBilling\Core\Doctrine\TimestampTrait;
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientBalanceRepository::class)]
 #[ORM\Table(name: 'client_balance')]
 #[ORM\Index(name: 'client_balance_client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'client_balance_gateway_transaction_id_idx', columns: ['gateway_transaction_id'])]
 #[ORM\UniqueConstraint(name: 'uniq_invoice_item_credit', columns: ['invoice_item_id'])]
 #[ORM\UniqueConstraint(name: 'uniq_gateway_receipt_key', columns: ['gateway_receipt_key'])]
 #[ORM\HasLifecycleCallbacks]

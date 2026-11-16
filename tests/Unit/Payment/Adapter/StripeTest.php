@@ -922,6 +922,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(true);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment', 'payInvoiceWithCredits');
 
         $apiAdmin = Mockery::mock();
@@ -930,7 +931,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(99)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->with('in_init_dup', null, 61)
+            ->with('in_init_dup', 1, 61)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -2167,7 +2168,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
-            ->with('seti_existing')
+            ->with('seti_existing', 1, (int) $tx->getId())
             ->andReturn($existingTx);
 
         $di = container();
@@ -3515,7 +3516,7 @@ test('a renewal charge is recorded after a closed manager is replaced', function
 
         return null;
     });
-    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn (Transaction $payment, $client, $id): bool => $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order')->andReturn(true);
+    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn (Transaction $payment, $client, $id): bool => $payment === $replacementTx && $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order')->andReturn(true);
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): object => $invoiceService);

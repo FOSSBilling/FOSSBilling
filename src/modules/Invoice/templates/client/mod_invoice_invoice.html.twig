@@ -39,6 +39,7 @@
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
                     <p class="small text-muted">{{ 'Please choose a payment type and pay for your chosen products.'|trans }}</p>
+                    {% set gateway_fees = guest.invoice_gateway_fees({hash: invoice.hash}).fees %}
                     <form method="post" action="{{ 'invoice/payment'|api_url(role: 'guest') }}"
                         {{ fb_api_form({ redirect: ("invoice/#{invoice.hash}")|url(query: { 'auto_redirect': 1 }) }) }}>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
@@ -73,6 +74,10 @@
                                         </picture>
                                     </label>
                                     {% endif %}
+                                    {% set fee = gateway_fees[gtw.id].fee|default(0) %}
+                                    {% if fee > 0 %}
+                                        <div class="small text-muted text-center">+ {{ fee|format_currency(invoice.currency ?? default_currency) }} {{ 'fee'|trans }}</div>
+                                    {% endif %}
                                     </div>
                                 {% endif %}
                             {% endfor %}
@@ -81,7 +86,7 @@
                     </form>
                 </div>
             </div>
-            {% set free_credit = client ? client.balance_get_total|default(0) : 0 %}
+            {% set free_credit = client and client.profile_get.id == invoice.client.id ? client.balance_get_total|default(0) : 0 %}
             {% if free_credit > 0 and invoice.balance_due > 0 and 'deposit' not in invoice.lines|map(l => l.type) %}
                 {% set credit = min(free_credit, invoice.balance_due) %}
                 <div class="card mt-3">
@@ -371,28 +376,7 @@
             });
         });
 
-        const feeUrl = "{{ 'invoice/gateway_fees'|api_url(role: 'guest') }}";        const invoiceHash = "{{ invoice.hash }}";
-        const invoiceCurrency = "{{ invoice.currency }}";
-        fetch(`${feeUrl}?hash=${encodeURIComponent(invoiceHash)}`, {
-            headers: { 'Accept': 'application/json' },
-        })
-            .then(response => response.ok ? response.json() : null)
-            .then(data => {
-                const fees = data && data.result && data.result.fees;
-                if (!fees) {
-                    return;
-                }
-                document.querySelectorAll('.invoice-gateway input[name="gateway_id"]').forEach(input => {
-                    const entry = fees[input.getAttribute('gateway_id')];
-                    if (entry && Number(entry.fee) > 0) {
-                        const badge = document.createElement('div');
-                        badge.className = 'small text-muted text-center';
-                        badge.textContent = `+ ${entry.fee} ${invoiceCurrency} {{ 'fee'|trans }}`;
-                        input.closest('.invoice-gateway').appendChild(badge);
-                    }
-                });
-            })
-            .catch(() => {});
+
     });
 
     function paymentPrompt(id, supportsSubscription, supportsOneTime, title){

@@ -10603,6 +10603,7 @@ test('admin mark as paid with custom gateway records only the balance due', func
         && $balance->getRelId() === '10'
         && $balance->getClient()?->getId() === 3));
     $transactionRepo->shouldReceive('find')->once()->with(20)->andReturn($transactionModel);
+    $transactionRepo->shouldReceive('getProcessedSumsByInvoiceIds')->once()->with([10])->andReturn([]);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class));
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->once()->with(10)->andReturn([$invoiceItemModel = createEntity(InvoiceItem::class)]);
     $em->shouldReceive('flush')->twice();
@@ -10737,6 +10738,7 @@ test('refundInvoice adds the refund to account credit when asked', function (): 
             $callback($journalConnection);
         });
     $em->shouldReceive('getConnection')->andReturn($journalConnection);
+    $em->shouldReceive('find')->with(Client::class, 5)->andReturn(createEntity(Client::class, ['id' => 5, 'currency' => 'USD']));
     $em->shouldReceive('persist')
         ->atLeast()->once()
         ->andReturnUsing(function (object $entity) use ($newId, &$creditNote, &$balances): void {
@@ -10852,6 +10854,9 @@ test('offline approval consumes applied credit and records only the outstanding 
     $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
     $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo);
+    $transactions = Mockery::mock(TransactionRepository::class);
+    $transactions->shouldReceive('getProcessedSumsByInvoiceIds')->with([10])->andReturn([]);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactions);
     $gatewayBalanceRepo = Mockery::mock(Box\Mod\Client\Repository\ClientBalanceRepository::class)->shouldIgnoreMissing();
     $em->shouldReceive('getRepository')->with(ClientBalance::class)->byDefault()->andReturn($gatewayBalanceRepo);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($items);

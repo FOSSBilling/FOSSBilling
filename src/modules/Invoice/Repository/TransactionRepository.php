@@ -229,6 +229,10 @@ class TransactionRepository extends EntityRepository
      */
     public function findActiveByTxnIdAndGatewayId(string $txnId, int $gatewayId, int $excludeId): ?Transaction
     {
+        if ($this->ownsRecordedGatewayReceipt($excludeId, $txnId, $gatewayId)) {
+            return null;
+        }
+
         return $this->competingTransactionQuery($txnId, $gatewayId, $excludeId, [
             Transaction::STATUS_RECEIVED,
             Transaction::STATUS_PROCESSING,
@@ -243,10 +247,25 @@ class TransactionRepository extends EntityRepository
      */
     public function findProcessingOrProcessedByTxnId(string $txnId, ?int $gatewayId = null, ?int $excludeId = null): ?Transaction
     {
+        if ($excludeId !== null && $this->ownsRecordedGatewayReceipt($excludeId, $txnId, $gatewayId)) {
+            return null;
+        }
+
         return $this->competingTransactionQuery($txnId, $gatewayId, $excludeId, [
             Transaction::STATUS_PROCESSING,
             Transaction::STATUS_PROCESSED,
         ])->getQuery()->getOneOrNullResult();
+    }
+
+    private function ownsRecordedGatewayReceipt(int $id, string $txnId, ?int $gatewayId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        $table = $connection->quoteSingleIdentifier('transaction');
+
+        return $connection->fetchOne(
+            "SELECT b.id FROM client_balance b JOIN $table t ON t.id = b.gateway_transaction_id WHERE t.id = :id AND t.txn_id = :txn_id AND (:any_gateway = 1 OR t.gateway_id = :gateway_id) LIMIT 1",
+            ['id' => $id, 'txn_id' => $txnId, 'any_gateway' => $gatewayId === null ? 1 : 0, 'gateway_id' => $gatewayId],
+        ) !== false;
     }
 
     /**

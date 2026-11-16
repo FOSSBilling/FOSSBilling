@@ -2855,7 +2855,7 @@ test('updateOrder updates fields', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('updatePeriod')->atLeast()->once()->with($clientOrderModel, $data['period']);
-    $serviceMock->shouldReceive('updateOrderMeta')->atLeast()->once()->with($clientOrderModel, $data['meta']);
+    $serviceMock->shouldReceive('updateOrderMeta')->atLeast()->once()->with($clientOrderModel, $data['meta'], true);
 
     $serviceMock->setDi($di);
 
@@ -3060,8 +3060,8 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connectionMock->shouldReceive('executeStatement')->once()->with(
-        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name)',
-        ['order_id' => $clientOrderModel->getId(), 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM],
+        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name)',
+        ['order_id' => $clientOrderModel->getId(), 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => Service::META_SCHEDULED_CANCEL_PHASE],
     );
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldIgnoreMissing();
@@ -3113,8 +3113,8 @@ test('gateway finalized cancellation dispatches both lifecycle events', function
     $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
     $connection->shouldReceive('executeStatement')->once()->with(
-        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name)',
-        ['order_id' => 10, 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM],
+        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name)',
+        ['order_id' => 10, 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => Service::META_SCHEDULED_CANCEL_PHASE],
     );
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
@@ -3170,11 +3170,11 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
     $service->shouldReceive('getOrderMetaRepository')->once()->andReturn($metadata);
     $service->shouldReceive('updateOrderMeta')
         ->once()
-        ->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1'])
+        ->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1', Service::META_SCHEDULED_CANCEL_PHASE => 'scheduling'])
         ->andReturn(2);
     $service->shouldReceive('updateOrderMeta')
         ->once()
-        ->with($order, [Service::META_SCHEDULED_CANCEL_CLAIM => '0'])
+        ->with($order, [Service::META_SCHEDULED_CANCEL_CLAIM => '0', Service::META_SCHEDULED_CANCEL_PHASE => 'scheduled'])
         ->andReturn(1);
     $service->shouldReceive('saveStatusChange')
         ->once()
@@ -3202,7 +3202,7 @@ test('scheduleCancellationFromOrder holds the order for review when the provider
     $metadata = Mockery::mock(OrderMetaRepository::class);
     $metadata->shouldReceive('getPairsForOrder')->once()->andReturn([]);
     $service->shouldReceive('getOrderMetaRepository')->once()->andReturn($metadata);
-    $service->shouldReceive('updateOrderMeta')->once()->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1'])->andReturn(2);
+    $service->shouldReceive('updateOrderMeta')->once()->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1', Service::META_SCHEDULED_CANCEL_PHASE => 'scheduling'])->andReturn(2);
     $service->setDi($di);
 
     expect(fn () => $service->scheduleCancellationFromOrder($order))
@@ -4928,9 +4928,10 @@ test('interrupted scheduled cancellation is held until staff reviews it', functi
     $metadata->shouldReceive('getPairsForOrder')->with(821)->andReturnUsing(function () use (&$state): array { return $state; });
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscription->shouldReceive('cancelForOrder')->once()->with($order)->andReturn(1);
+    $subscription->shouldReceive('hasActiveSubscriptionForOrder')->once()->andReturn(false);
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
-    $service->shouldReceive('updateOrderMeta')->twice()->andReturnUsing(function ($unused, array $values) use (&$state): int {
+    $service->shouldReceive('updateOrderMeta')->times(3)->andReturnUsing(function ($unused, array $values) use (&$state): int {
         $state = array_replace($state, $values);
 
         return 2;
@@ -5000,6 +5001,7 @@ test('staff can confirm an interrupted scheduled cancellation without repeating 
     $product->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($order, 'order_canceled');
     $product->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_canceled');
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->andReturn(false);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('executeStatement')->once()->andReturn(1);
     $connection->shouldReceive('beginTransaction')->once();

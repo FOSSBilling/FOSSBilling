@@ -26,11 +26,23 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\cryptMock;
 
+function payGatewayTestConnection(): Doctrine\DBAL\Connection
+{
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(true);
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturn(1);
+
+    return $connection;
+}
+
 function payGatewayService(?PayGatewayRepository $repo = null, ?EntityManagerInterface $em = null): ServicePayGateway
 {
     $service = new ServicePayGateway();
     $di = container();
     $em ??= Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $repo ??= Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -61,7 +73,7 @@ test('gets pairs', function (): void {
         ],
     ];
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = payGatewayTestConnection();
     $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($queryResult);
@@ -75,7 +87,7 @@ test('gets pairs', function (): void {
 });
 
 test('gets available gateways', function (): void {
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = payGatewayTestConnection();
     $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
@@ -96,6 +108,8 @@ test('installs a pay gateway', function (): void {
         ->andReturn([$code]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
@@ -178,6 +192,8 @@ test('copies a gateway', function (): void {
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('persist')->once()->with(Mockery::on(fn (PayGateway $copy): bool => $copy->getCustomLogo() === $payGateway->getCustomLogo()));
     $em->shouldReceive('flush')->once();
@@ -202,6 +218,8 @@ test('updates a gateway', function (): void {
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('flush')->atLeast()->once();
     $repo = Mockery::mock(PayGatewayRepository::class);
@@ -236,6 +254,8 @@ test('update sanitizes the gateway fee into its bounds', function (): void {
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('flush')->atLeast()->once();
     $repo = Mockery::mock(PayGatewayRepository::class);
@@ -258,6 +278,8 @@ test('moveUnpaidInvoices does nothing when the gateway has none', function (): v
     $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
@@ -276,6 +298,8 @@ test('moveUnpaidInvoices throws without an enabled replacement', function (): vo
     $payGatewayRepo->shouldReceive('find')->once()->with(9)->andReturn(null);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
@@ -301,8 +325,10 @@ test('moveUnpaidInvoices moves invoices and reprices their fees', function (): v
     $feesService->shouldReceive('apply')->once()->with($invoice, $replacement)->andReturnNull();
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = payGatewayTestConnection();
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
     $em->shouldReceive('getConnection')->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
@@ -327,6 +353,8 @@ test('disabling a gateway with no unpaid invoices needs no replacement', functio
     $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->once()->with(7)->andReturn([]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('flush')->atLeast()->once();
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
@@ -359,10 +387,12 @@ test('disabling a gateway moves its unpaid invoices to the replacement', functio
     $feesService->shouldReceive('apply')->once()->with($invoice, $replacement)->andReturnNull();
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('flush')->atLeast()->once();
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($payGatewayRepo);
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = payGatewayTestConnection();
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
     $em->shouldReceive('getConnection')->andReturn($connection);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
@@ -425,6 +455,7 @@ test('update keeps the existing secret gateway value when the incoming value is 
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -462,6 +493,7 @@ test('update rotates a secret gateway value when a new value is submitted', func
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -492,6 +524,7 @@ test('update stores gateway secrets encrypted at rest', function (): void {
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -568,6 +601,8 @@ test('deletes a gateway', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
@@ -600,6 +635,8 @@ test('refuses to delete a gateway with existing invoices', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('remove')->never();
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
@@ -622,6 +659,8 @@ test('refuses to delete a gateway with existing subscriptions', function (): voi
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('remove')->never();
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
@@ -648,6 +687,8 @@ test('refuses to delete a gateway with existing transactions', function (): void
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('remove')->never();
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
@@ -690,6 +731,8 @@ test('active gateways without an adapter logo get a default logo', function (): 
     $service = Mockery::mock(ServicePayGateway::class)->makePartial();
     $di = container();
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $di['em'] = $em;
@@ -1021,6 +1064,8 @@ test('credential migration defers missing adapters but propagates programming er
     $service->shouldReceive('getSecretFields')->once()->andThrow($error);
     $di = container();
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $di['em'] = $em;
@@ -1100,6 +1145,8 @@ test('disabling a gateway without a valid replacement leaves it enabled', functi
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('findUnpaidByGatewayId')->with(7)->andReturn([createEntity(Invoice::class, ['id' => 11])]);
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(payGatewayTestConnection());
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);

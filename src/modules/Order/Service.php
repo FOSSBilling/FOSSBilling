@@ -102,6 +102,7 @@ class Service implements InjectionAwareInterface
 
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     public const META_SCHEDULED_CANCEL_CLAIM = 'scheduled_cancel_claim';
+    public const META_SCHEDULED_CANCEL_PHASE = 'scheduled_cancel_phase';
 
     public const META_DELETION_STATE = DeletionRecovery::META_NAME;
 
@@ -1494,7 +1495,7 @@ class Service implements InjectionAwareInterface
         $this->updateOrderMeta($order, [self::META_MERGE_RENEWALS => \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($value) ? '1' : '0']);
     }
 
-    public function updateOrderMeta(Order $order, $meta): int
+    public function updateOrderMeta(Order $order, $meta, bool $protectLifecycleCheckpoints = false): int
     {
         if (!is_array($meta)) {
             return 0;
@@ -1503,6 +1504,9 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
 
         if (empty($meta)) {
+            if ($protectLifecycleCheckpoints && $this->getOrderMetaRepository()->getLifecycleCheckpointRows($orderId) !== []) {
+                throw new InformationException('Lifecycle recovery checkpoints must be resolved through staff review.');
+            }
             $this->getOrderMetaRepository()->deleteEditableByOrderId($orderId);
 
             return 1;
@@ -1510,11 +1514,12 @@ class Service implements InjectionAwareInterface
         if (array_key_exists(self::META_DELETION_STATE, $meta)) {
             throw new InformationException('Deletion recovery state cannot be edited. Retry order deletion instead.');
         }
-        $this->di['em']->wrapInTransaction(function () use ($order, $orderId, $meta): void {
+        $this->di['em']->wrapInTransaction(function () use ($order, $orderId, $meta, $protectLifecycleCheckpoints): void {
+            $checkpoints = $protectLifecycleCheckpoints ? $this->getOrderMetaRepository()->getLifecycleCheckpointRows($orderId) : null;
             $edited = [];
             foreach ($meta as $k => $v) {
                 $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
-                if ($mm instanceof OrderMeta && $k === self::META_SCHEDULED_CANCEL_CLAIM) {
+                if ($mm instanceof OrderMeta && in_array($k, [self::META_SCHEDULED_CANCEL_CLAIM, self::META_SCHEDULED_CANCEL_PHASE], true)) {
                     $this->di['em']->refresh($mm);
                 }
                 if (!$mm instanceof OrderMeta) {
@@ -1537,6 +1542,9 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Deletion recovery state cannot be edited. Retry order deletion instead.');
                 }
             }
+            if ($checkpoints !== null && $checkpoints !== $this->getOrderMetaRepository()->getLifecycleCheckpointRows($orderId)) {
+                throw new InformationException('Lifecycle recovery checkpoints must be resolved through staff review.');
+            }
         });
 
         return 2;
@@ -1554,7 +1562,7 @@ class Service implements InjectionAwareInterface
     private function isRenewalCheckpointKey(string $key): bool
     {
         foreach ([self::META_PAID_RENEWAL_OUTCOME_PREFIX, self::META_FREE_RENEWAL_CLAIM_PREFIX, self::META_FREE_RENEWAL_RETRY_PREFIX] as $prefix) {
-            if (str_starts_with($key, $prefix)) {
+            if (stripos($key, $prefix) === 0) {
                 return true;
             }
         }
@@ -1580,7 +1588,7 @@ class Service implements InjectionAwareInterface
                 }
             }
             if (is_array($metaInput) && (array_key_exists(self::META_SCHEDULED_CANCEL_CLAIM, $metaInput)
-                || array_key_exists(self::META_CANCEL_AT_PERIOD_END, $metaInput))) {
+                || array_key_exists(self::META_CANCEL_AT_PERIOD_END, $metaInput) || array_key_exists(self::META_SCHEDULED_CANCEL_PHASE, $metaInput))) {
                 throw new InformationException('Scheduled cancellation metadata cannot be changed through order updates.');
             }
             if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)
@@ -1667,7 +1675,7 @@ class Service implements InjectionAwareInterface
             $this->setMergeRenewalsOverride($order, $data['merge_renewals']);
         }
 
-        $this->updateOrderMeta($order, $data['meta'] ?? null);
+        $this->updateOrderMeta($order, $data['meta'] ?? null, true);
 
         $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
@@ -2018,11 +2026,11 @@ class Service implements InjectionAwareInterface
 
         // Commit a review hold before provider I/O. A crash or ambiguous
         // response must not leave a provider cancellation with no local marker.
-        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1']);
+        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1', self::META_SCHEDULED_CANCEL_PHASE => 'scheduling']);
         if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
             throw new InformationException('No active gateway subscription is linked to this order.');
         }
-        $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
+        $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0', self::META_SCHEDULED_CANCEL_PHASE => 'scheduled']);
 
         $order->setReason($reason);
         $order->setUpdatedAt(new \DateTime());
@@ -2084,7 +2092,7 @@ class Service implements InjectionAwareInterface
                     $this->di['em']->refresh($order);
                     $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
                     if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
-                        || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)
+                        || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)
                         || $order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
                         $connection->commit();
 
@@ -2189,11 +2197,11 @@ class Service implements InjectionAwareInterface
         $order->setSuspendedAt(null);
         $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
-        // Remove both checkpoints in one statement. If this process stops
+        // Remove the schedule checkpoints in one statement. If this process stops
         // before it, claim 2 remains discoverable for cleanup recovery.
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name)',
-            ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM],
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name)',
+            ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => self::META_SCHEDULED_CANCEL_PHASE],
         );
     }
 
@@ -2487,10 +2495,10 @@ class Service implements InjectionAwareInterface
                 return false;
             }
             if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '2'
-                && in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_CANCELED], true)) {
+                && in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW, Order::STATUS_CANCELED], true)) {
                 return $this->finishScheduledCancellation($order, 'Cancellation requested at end of period');
             }
-            if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+            if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
                 return false;
             }
             $expiresAt = $order->getExpiresAt();
@@ -2512,7 +2520,7 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->refresh($order);
                 $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
                 if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
-                    || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)
+                    || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)
                     || $order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
                     $connection->commit();
 
@@ -2556,21 +2564,28 @@ class Service implements InjectionAwareInterface
         if (!in_array($decision, ['retry', 'completed'], true)) {
             throw new InformationException('Choose retry or completed after checking the gateway and service provider.');
         }
-        $connection = $this->di['em']->getConnection();
-        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
-        if (!NamedLock::acquire($connection, $name, 30)) {
-            throw new InformationException('Scheduled cancellation is already being processed.');
-        }
 
-        try {
+        return $this->withCancellationScheduleLock($order, function () use ($order, $decision): bool {
             $this->di['em']->refresh($order);
             $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
             if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
                 || ($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) !== '1'
-                || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+                || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
                 throw new InformationException('This order has no scheduled cancellation awaiting review.');
             }
             if ($decision === 'retry') {
+                $phase = $meta[self::META_SCHEDULED_CANCEL_PHASE] ?? null;
+                if ($phase === 'scheduling' || $phase === null) {
+                    $subscriptions = $this->di['mod_service']('Invoice', 'Subscription');
+                    // Older claims have no phase. An active subscription must
+                    // be scheduled again after staff approves the retry.
+                    if ($phase === 'scheduling' || $subscriptions->hasActiveSubscriptionForOrder($order)) {
+                        if ($subscriptions->scheduleCancellationForOrder($order) === 0 && $subscriptions->hasActiveSubscriptionForOrder($order)) {
+                            throw new InformationException('The gateway cancellation has not been scheduled.');
+                        }
+                    }
+                    $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_PHASE => 'scheduled']);
+                }
                 $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
 
                 return true;
@@ -2581,9 +2596,7 @@ class Service implements InjectionAwareInterface
             $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '2']);
 
             return $this->finishScheduledCancellation($order, 'Scheduled cancellation confirmed by staff');
-        } finally {
-            NamedLock::release($connection, $name);
-        }
+        });
     }
 
     public function batchSuspendExpired(): bool
@@ -2599,8 +2612,8 @@ class Service implements InjectionAwareInterface
         // Scheduled cancellations take effect at expiry, independently of
         // suspension grace periods and gateway webhook delivery.
         $ids = $this->di['em']->getConnection()->fetchFirstColumn(
-            "SELECT DISTINCT o.id FROM client_order o LEFT JOIN client_order_meta m ON m.client_order_id = o.id AND m.name = :name AND m.value = :value WHERE (m.id IS NOT NULL AND ((o.status IN (:active, :suspended) AND o.expires_at <= :now) OR (o.status IN (:active2, :suspended2, :canceled) AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2')))) OR (o.status = :orphan_canceled AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2'))",
-            ['name' => self::META_CANCEL_AT_PERIOD_END, 'value' => '1', 'active' => Order::STATUS_ACTIVE, 'suspended' => Order::STATUS_SUSPENDED, 'active2' => Order::STATUS_ACTIVE, 'suspended2' => Order::STATUS_SUSPENDED, 'canceled' => Order::STATUS_CANCELED, 'orphan_canceled' => Order::STATUS_CANCELED, 'now' => date('Y-m-d H:i:s'), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM]
+            "SELECT DISTINCT o.id FROM client_order o LEFT JOIN client_order_meta m ON m.client_order_id = o.id AND m.name = :name AND m.value = :value WHERE (m.id IS NOT NULL AND ((o.status IN (:active, :suspended, :failed_renew) AND o.expires_at <= :now) OR (o.status IN (:active2, :suspended2, :failed_renew2, :canceled) AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2')))) OR (o.status = :orphan_canceled AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2'))",
+            ['name' => self::META_CANCEL_AT_PERIOD_END, 'value' => '1', 'active' => Order::STATUS_ACTIVE, 'suspended' => Order::STATUS_SUSPENDED, 'failed_renew' => Order::STATUS_FAILED_RENEW, 'failed_renew2' => Order::STATUS_FAILED_RENEW, 'active2' => Order::STATUS_ACTIVE, 'suspended2' => Order::STATUS_SUSPENDED, 'canceled' => Order::STATUS_CANCELED, 'orphan_canceled' => Order::STATUS_CANCELED, 'now' => date('Y-m-d H:i:s'), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM]
         );
         foreach ($ids as $id) {
             try {

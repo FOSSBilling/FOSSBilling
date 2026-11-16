@@ -38,6 +38,23 @@ class OrderMetaRepository extends EntityRepository
         ) !== false;
     }
 
+    /** Compare checkpoint state using the metadata column's actual collation. */
+    public function getLifecycleCheckpointRows(int $orderId): array
+    {
+        $service = \Box\Mod\Order\Service::class;
+        $conditions = ['name IN (:cancel, :claim, :phase)'];
+        $parameters = ['order_id' => $orderId, 'cancel' => $service::META_CANCEL_AT_PERIOD_END, 'claim' => $service::META_SCHEDULED_CANCEL_CLAIM, 'phase' => $service::META_SCHEDULED_CANCEL_PHASE];
+        foreach ([$service::META_PAID_RENEWAL_OUTCOME_PREFIX, $service::META_FREE_RENEWAL_CLAIM_PREFIX, $service::META_FREE_RENEWAL_RETRY_PREFIX] as $i => $prefix) {
+            $conditions[] = 'SUBSTRING(name, 1, ' . strlen($prefix) . ') = :prefix' . $i;
+            $parameters['prefix' . $i] = $prefix;
+        }
+
+        return $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT id, name, value FROM client_order_meta WHERE client_order_id = :order_id AND (' . implode(' OR ', $conditions) . ') ORDER BY id',
+            $parameters,
+        );
+    }
+
     public function deleteByOrderId(int $orderId): int
     {
         return $this->getEntityManager()->getConnection()->executeStatement(

@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Transaction;
@@ -209,9 +210,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if (($ipn['payment_status'] ?? '') === 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
                     if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
-                        $this->completeReceipt($api_admin, $id);
+                        $recorded = $this->di['em']->getRepository(Transaction::class)->find($id);
+                        if (!$recorded instanceof Transaction || $recorded->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
+                            $this->completeReceipt($api_admin, $id);
 
-                        return;
+                            return;
+                        }
                     }
 
                     if (!isset($ipn['mc_gross'], $ipn['txn_id'])) {
@@ -278,8 +282,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if ($originalInvoice instanceof Invoice) {
                     $this->verifyIpnEcho($ipn, $originalInvoice);
                 }
-                $client = $this->di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->find($client_id);
-                if (!$client instanceof Box\Mod\Client\Entity\Client) {
+                $client = $this->di['em']->getRepository(Client::class)->find($client_id);
+                if (!$client instanceof Client) {
                     throw new Payment_Exception('PayPal client not found');
                 }
                 if ($invoiceService->gatewayReceiptExists($gateway_id, (string) $ipn['txn_id'], $client, (float) $ipn['mc_gross'], 'PayPal transaction ' . $ipn['txn_id'], 'PayPal')) {
@@ -528,6 +532,14 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 $this->di['em']->refresh($receipt);
                 if ($receipt->getGateway()?->getId() !== $gatewayId || $receipt->getTxnId() !== $providerId || $receipt->getTxnStatus() !== 'Completed') {
                     throw new Payment_Exception('The recorded PayPal payment differs from its receipt');
+                }
+                if ($receipt->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
+                    $credit = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayTransactionId' => $canonicalId]);
+                    $client = $credit?->getClient();
+                    if (!$client instanceof Client) {
+                        throw new Payment_Exception('The recorded PayPal payment needs staff reconciliation');
+                    }
+                    $this->di['mod_service']('Invoice')->recordGatewayPayment($receipt, $client, $providerId, (string) $credit->getDescription(), (string) $credit->getType(), $credit->getRelId());
                 }
                 $this->completeReceipt($api, $canonicalId);
             };

@@ -623,3 +623,79 @@ test('independent PayPal deliveries retain only one deferred payment during a re
     $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
     expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0);
 });
+
+test('PayPal resumes financially processed receipts through the transaction worker', function (bool $crash): void {
+    require_once PATH_MODS . '/Invoice/tests/Fixtures/GatewayReceiptContext.php';
+    [, $em, $client, $gateway, $receipt] = receiptTestContext();
+    $gateway->setGateway('PayPalEmail');
+    $invoice = (new Invoice())->setClientId($client->getId())->setGateway($gateway)->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('void')->setPrice(15)->setQuantity(1));
+    $receipt->setInvoice($invoice)->setTxnId('PAYPAL-COMPLETION')->setStatus('received');
+    $em->flush();
+    $calls = 0;
+    $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent::class, function () use (&$calls, $crash): void {
+        if (++$calls === 1) {
+            throw $crash ? new Error('process stopped') : new RuntimeException('listener failed');
+        }
+    });
+    $payload = ['get' => ['invoice_id' => $invoice->getId(), 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams($gateway->getId(), $invoice->getId())],
+        'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed', 'txn_id' => 'PAYPAL-COMPLETION', 'mc_gross' => '15', 'mc_currency' => 'USD']];
+    $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
+    $adapterCalls = 0;
+    $configure = function (EntityManager $manager) use ($dispatcher, $adapter, $payload, $client, $gateway, &$adapterCalls): array {
+        $billing = gatewayDepositTestService($manager);
+        $di = $billing->getDi();
+        $di['event_dispatcher'] = $dispatcher;
+        $api = deferredPayPalApi(['connection' => $manager->getConnection(), 'client' => $client, 'em' => $manager, 'di' => $di, 'billing' => $billing]);
+        $adapter->setDi($di);
+        $di['api_system'] = $api;
+        $bridge = new class($adapter, $payload, $gateway->getId(), $adapterCalls) {
+            public function __construct(private readonly Payment_Adapter_PayPalEmail $adapter, private readonly array $payload, private readonly int $gatewayId, private int &$calls)
+            {
+            }
+
+            public function processTransaction(mixed $api, int $id, array $payload, int $gatewayId): void
+            {
+                ++$this->calls;
+                $this->adapter->processTransaction($api, $id, $this->payload, $this->gatewayId);
+            }
+        };
+        $gateways = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+        $gateways->shouldReceive('getPaymentAdapter')->andReturn($bridge);
+        $services = $di['mod_service'];
+        unset($di['mod_service']);
+        $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => $sub === 'PayGateway' ? $gateways : $services($module, $sub));
+        $worker = new Box\Mod\Invoice\ServiceTransaction();
+        $worker->setDi($di);
+
+        return [$worker, $api, $billing];
+    };
+    [$worker, $api] = $configure($em);
+    if ($crash) {
+        expect(fn () => $adapter->processTransaction($api, $receipt->getId(), $payload, $gateway->getId()))->toThrow(Error::class);
+    } else {
+        $worker->processAndCatchErrors($receipt->getId());
+    }
+    $connection = $em->getConnection();
+    $table = $connection->quoteSingleIdentifier('transaction');
+    expect($connection->fetchOne("SELECT status FROM $table WHERE id = ?", [$receipt->getId()]))->toBe('processed');
+    if ($crash) {
+        $connection->update($table, ['updated_at' => date('Y-m-d H:i:s', time() - 600)], ['id' => $receipt->getId()]);
+    }
+    $fresh = new EntityManager($connection, $em->getConfiguration());
+    [$retry, , $billing] = $configure($fresh);
+    expect(array_column($retry->getReceived(), 'id'))->toContain($receipt->getId());
+    $beforeRetry = $adapterCalls;
+    $retry->processAndCatchErrors($receipt->getId());
+    expect($adapterCalls)->toBe($beforeRetry);
+    $stored = $fresh->find(Box\Mod\Invoice\Entity\Transaction::class, $receipt->getId());
+    expect($stored->getError())->toBeEmpty();
+    expect($stored->getGatewayCompletionState())->toBe(Box\Mod\Invoice\Entity\Transaction::GATEWAY_COMPLETION_DONE)
+        ->and($stored->getStatus())->toBe('processed')->and($stored->getError())->toBeEmpty()
+        ->and($billing->getFreeCredit($client->getId()))->toBe(0.0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
+        ->and($calls)->toBe(2);
+})->with([false, true]);

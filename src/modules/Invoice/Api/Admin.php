@@ -401,6 +401,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return array_map(function (\Box\Mod\Invoice\Entity\InvoiceItem $item): array {
             $data = $item->toApiArray();
             if ($item->getType() === \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER && $item->getTask() === \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW) {
+                $order = $this->getDi()['em']->find(Order::class, (int) $item->getRelId());
+                $product = $order instanceof Order ? $this->getDi()['em']->find(\Box\Mod\Product\Entity\Product::class, (int) $order->getProductId()) : null;
+                $data['product_type'] = $product?->getType();
                 $meta = $this->getDi()['mod_service']('Order')->getOrderMetaRepository()->getPairsForOrder((int) $item->getRelId());
                 if (isset($meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()])) {
                     $data['renewal_outcome'] = $meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()];

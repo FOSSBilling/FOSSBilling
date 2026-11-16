@@ -757,6 +757,7 @@
     "transaction.currency",
     "transaction.error",
     "transaction.error_code",
+    "transaction.gateway_completion_state",
     "transaction.gateway_id",
     "transaction.id",
     "transaction.invoice_id",

@@ -184,6 +184,7 @@ test('an interrupted outcome commit holds the provider attempt for staff review'
     $newOrders->shouldNotReceive('_callOnService');
     $newCron->doBatchPaidInvoiceActivation();
     expect($connection->fetchOne('SELECT status FROM invoice_item WHERE id = ?', [$item->getId()]))->toBe('failed');
+    (new Doctrine\ORM\Tools\SchemaTool($newEm))->createSchema([$newEm->getClassMetadata(Box\Mod\Product\Entity\Product::class)]);
     $api = Mockery::mock(Box\Mod\Invoice\Api\Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $api->shouldReceive('checkPermissions')->once()->with('invoice', 'view');
     $api->setDi($newCron->getDi());

@@ -141,7 +141,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($tx === null) {
             return $id;
         }
-        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError()) && $tx->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
             return $id;
         }
 
@@ -171,7 +171,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($tx === null) {
             return;
         }
-        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError()) && $tx->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
             return;
         }
 
@@ -676,12 +676,15 @@ class ServiceTransaction implements InjectionAwareInterface
                 FROM {$table} as m
                 WHERE m.status = :received_status
                     OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
+                    OR (m.status = :processed_status AND (m.gateway_completion_state = 1 OR (m.gateway_completion_state = 2 AND (m.updated_at IS NULL OR m.updated_at <= :completion_retry_after))))
                 ORDER BY m.id DESC";
 
         return $this->di['em']->getConnection()->fetchAllAssociative($sql, [
             'received_status' => Transaction::STATUS_RECEIVED,
             'processing_status' => Transaction::STATUS_PROCESSING,
             'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
+            'processed_status' => Transaction::STATUS_PROCESSED,
+            'completion_retry_after' => $this->getProcessingRecoveryThreshold(),
         ]);
     }
 
@@ -712,7 +715,7 @@ class ServiceTransaction implements InjectionAwareInterface
         // syntax error on SQLite and no payment can complete there.
         $table = $connection->quoteSingleIdentifier('transaction');
         $affectedRows = $connection->executeStatement(
-            "UPDATE {$table} SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))",
+            "UPDATE {$table} SET gateway_completion_state = CASE WHEN status = 'processed' THEN 2 ELSE gateway_completion_state END, status = CASE WHEN status = 'processed' THEN status ELSE ? END, updated_at = ? WHERE id = ? AND (status IN (?, ?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)) OR (status = 'processed' AND (gateway_completion_state = 1 OR (gateway_completion_state = 2 AND (updated_at IS NULL OR updated_at <= ?)))))",
             [
                 Transaction::STATUS_PROCESSING,
                 date('Y-m-d H:i:s'),
@@ -721,6 +724,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 Transaction::STATUS_ERROR,
                 Transaction::STATUS_APPROVED,
                 Transaction::STATUS_PROCESSING,
+                $this->getProcessingRecoveryThreshold(),
                 $this->getProcessingRecoveryThreshold(),
             ]
         );
@@ -754,8 +758,8 @@ class ServiceTransaction implements InjectionAwareInterface
      * Mark a transaction as errored due to a processing failure.
      *
      * Reloads the transaction from the database so the status is current, and
-     * only marks it as errored if it has not already been processed, ensuring
-     * a successful processing is never clobbered by a stale exception.
+     * preserves committed financial status while marking unfinished local
+     * completion retryable. A completed payment ignores stale exceptions.
      */
     private function markTransactionError(int $id, \Throwable $e): void
     {
@@ -766,10 +770,14 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->di['em']->refresh($tx);
         if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
-            return;
+            if ($tx->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
+                return;
+            }
+            // Keep settled funds visible to reservation and refund accounting.
+            $tx->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_PENDING);
+        } else {
+            $tx->setStatus(Transaction::STATUS_ERROR);
         }
-
-        $tx->setStatus(Transaction::STATUS_ERROR);
         $tx->setError($e->getMessage());
         $tx->setErrorCode((int) $e->getCode());
         $tx->setUpdatedAt(new \DateTime());
@@ -811,6 +819,16 @@ class ServiceTransaction implements InjectionAwareInterface
 
         if (ServicePayGateway::isManualApprovalGateway($gtw->getGateway())) {
             throw $this->manualApprovalException($gtw);
+        }
+
+        // The claim leaves financially committed receipts processed. Their
+        // remaining work is local, so recovery must never recreate a provider
+        // subscription or resolve a different latest renewal invoice.
+        $this->di['em']->refresh($tx);
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && $tx->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
+            $this->di['mod_service']('Invoice')->completeGatewayPayment($tx);
+
+            return true;
         }
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');

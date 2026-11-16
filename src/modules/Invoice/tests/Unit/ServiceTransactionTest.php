@@ -849,7 +849,9 @@ test('processTransaction passes an empty array for a missing IPN payload', funct
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
     $payGatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn($adapter);
 
-    $service = transactionService($transactionRepo);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('refresh')->once()->with($transactionModel);
+    $service = transactionService($transactionRepo, em: $em);
     $di = $service->getDi();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['api_system'] = new stdClass();

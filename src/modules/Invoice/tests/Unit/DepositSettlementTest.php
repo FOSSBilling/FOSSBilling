@@ -267,7 +267,7 @@ test('mixed manual and split gateway deposit funding credits all payments exactl
     $service->recordGatewayPayment($last, $client, 'pi_manual_last', 'Stripe transaction pi_manual_last', 'transaction', (string) $last->getId());
     expect($invoice->getStatus())->toBe(Invoice::STATUS_PAID)
         ->and($service->getFreeCredit((int) $client->getId()))->toBe(100.0 - $serviceCharge);
-    expect($service->recordGatewayPayment($last, $client, 'pi_manual_last', 'Stripe transaction pi_manual_last', 'transaction', (string) $last->getId()))->toBeFalse();
+    expect($service->recordGatewayPayment($last, $client, 'pi_manual_last', 'Stripe transaction pi_manual_last', 'transaction', (string) $last->getId()))->toBeTrue();
     expect((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM client_balance WHERE description LIKE 'Manual payment funding%'"))->toBe(1)
         ->and($service->getFreeCredit((int) $client->getId()))->toBe(100.0 - $serviceCharge);
 })->with(['pure deposit' => [0.0], 'deposit and service' => [20.0]]);
@@ -296,6 +296,6 @@ test('mixed deposit settlement rolls back and recovers manual credit across inte
     expect($retry->recordGatewayPayment($last, $client, 'pi_crash_last', 'Stripe transaction pi_crash_last', 'transaction', (string) $lastId))->toBeTrue()
         ->and($retryEm->find(Invoice::class, $invoiceId)->getStatus())->toBe(Invoice::STATUS_PAID)
         ->and($retry->getFreeCredit((int) $clientId))->toBe(80.0);
-    expect($retry->recordGatewayPayment($last, $client, 'pi_crash_last', 'Stripe transaction pi_crash_last', 'transaction', (string) $lastId))->toBeFalse()
+    expect($retry->recordGatewayPayment($last, $client, 'pi_crash_last', 'Stripe transaction pi_crash_last', 'transaction', (string) $lastId))->toBeTrue()
         ->and($retry->getFreeCredit((int) $clientId))->toBe(80.0);
 })->with(['paid state', 'manual credit']);

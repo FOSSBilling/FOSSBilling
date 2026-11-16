@@ -168,3 +168,64 @@ test('gateway disabling respects concurrent commits under MySQL repeatable read'
         $admin->close();
     }
 })->with(['payment without fee' => ['paid', false], 'payment with fee' => ['paid', true], 'gateway reassignment' => ['gateway', true]]);
+
+test('replacement gateway stays locked until reassignment commits', function (): void {
+    $port = getenv('PAYMENT_TEST_MYSQL_PORT');
+    if ($port === false || $port === '') {
+        $this->markTestSkipped('Set PAYMENT_TEST_MYSQL_PORT for an isolated MySQL/MariaDB test server.');
+    }
+    $params = ['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) $port, 'user' => 'root', 'password' => getenv('PAYMENT_TEST_MYSQL_PASSWORD') ?: ''];
+    $admin = DriverManager::getConnection($params);
+    $database = 'gateway_lock_test_' . bin2hex(random_bytes(6));
+    $admin->executeStatement('CREATE DATABASE ' . $database);
+
+    try {
+        [$gateways, $em, [$source, $replacement, $other, $id]] = gatewayReassignmentContext(null, $params + ['dbname' => $database]);
+        $writer = DriverManager::getConnection($params + ['dbname' => $database]);
+        $probe = new class($writer, $replacement) {
+            public bool $blocked = false;
+
+            public function __construct(private readonly Doctrine\DBAL\Connection $writer, private readonly int $replacement)
+            {
+            }
+
+            public function postLoad(Doctrine\ORM\Event\PostLoadEventArgs $event): void
+            {
+                if (!$event->getObject() instanceof Invoice || $this->blocked) {
+                    return;
+                }
+                $this->writer->beginTransaction();
+
+                try {
+                    $this->writer->fetchOne('SELECT id FROM pay_gateway WHERE id = ? FOR UPDATE NOWAIT', [$this->replacement]);
+                } catch (Doctrine\DBAL\Exception\DriverException) {
+                    $this->blocked = true;
+                } finally {
+                    $this->writer->rollBack();
+                }
+            }
+        };
+        $em->getEventManager()->addEventListener(['postLoad'], $probe);
+        $gateways->update($em->find(PayGateway::class, $source), ['enabled' => false, 'replacement_id' => $replacement]);
+        expect($probe->blocked)->toBeTrue();
+        // Once the first updater commits, the second sees those invoices and
+        // moves them again rather than leaving them on its disabled gateway.
+        $gateways->update($em->find(PayGateway::class, $replacement), ['enabled' => false, 'replacement_id' => $other]);
+        expect((int) $em->getConnection()->fetchOne('SELECT gateway_id FROM invoice WHERE id = ?', [$id]))->toBe($other);
+        $writer->close();
+        $em->getConnection()->close();
+    } finally {
+        $admin->executeStatement('DROP DATABASE ' . $database);
+        $admin->close();
+    }
+});
+
+test('refreshing a gateway for its lock preserves concurrently changed optional fields', function (): void {
+    [$gateways, $em, [$source]] = gatewayReassignmentContext();
+    $model = $em->find(PayGateway::class, $source);
+    // Simulate a second updater committing after this entity was loaded.
+    $em->getConnection()->update('pay_gateway', ['custom_logo' => 'new-logo.svg', 'enabled' => 0], ['id' => $source]);
+    expect($gateways->update($model, ['title' => 'Updated title']))->toBeTrue()
+        ->and($model->getCustomLogo())->toBe('new-logo.svg')
+        ->and($model->isEnabled())->toBeFalse();
+});

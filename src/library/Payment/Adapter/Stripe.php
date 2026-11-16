@@ -630,9 +630,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
 
         if ($charge->status === 'succeeded') {
-            if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
-                return;
-            }
             $tx->setStatus(Transaction::STATUS_PROCESSING);
             if (!$this->applyOneTimePayment($tx, $invoice, $charge)) {
                 $this->di['em']->remove($tx);
@@ -1078,7 +1075,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         // whichever event arrives second sees the first is already processing/done.
         $tx->setTxnId($stripeInvoice->id);
         $existing = $this->di['em']->getRepository(Transaction::class)
-            ->findProcessingOrProcessedByTxnId($stripeInvoice->id, null, (int) $tx->getId());
+            ->findProcessingOrProcessedByTxnId($stripeInvoice->id, (int) $tx->getGateway()?->getId(), (int) $tx->getId());
         if ($existing instanceof Transaction) {
             return false;
         }
@@ -1131,7 +1128,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
         $description = $isInitialPayment ? 'Stripe subscription initial payment ' : 'Stripe subscription recurring payment ';
         if ($invoiceService->gatewayReceiptExists((int) $tx->getGateway()?->getId(), (string) $stripeInvoice->id, $client, $amount, $description . $stripeInvoice->id, 'transaction')) {
-            return false;
+            $tx->setAmount((string) $amount);
+            $tx->setCurrency((string) $stripeInvoice->currency);
+
+            return $invoiceService->recordGatewayPayment($tx, $client, (string) $stripeInvoice->id, $description . $stripeInvoice->id, 'transaction', (string) $tx->getId());
         }
         if ($ambiguousPaidInvoice) {
             throw new FOSSBilling\Core\Exception\InformationException('Stripe subscription payment needs staff review because its billing reason is missing.');
@@ -1331,7 +1331,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         // Dedup: skip if already processed or being processed via the redirect flow.
         $existing = $this->di['em']->getRepository(Transaction::class)
-            ->findProcessingOrProcessedByTxnId($setupIntent->id);
+            ->findProcessingOrProcessedByTxnId($setupIntent->id, $gateway_id, (int) $tx->getId());
         if ($existing instanceof Transaction) {
             $tx->setInvoice($existing->getInvoice());
 
