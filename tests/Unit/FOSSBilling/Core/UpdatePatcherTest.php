@@ -2465,15 +2465,11 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
 });
 
 /*
- * Regression test: scope discovery (installedExtensionModules()'s schema introspection and
- * query, plus metadata loading) has to fail inside the same try/catch as the sync call itself -
- * it can throw for the same reasons the sync can (an unreachable database above all), and this
- * method's whole contract is "errors are logged, not thrown". A connection that fails outright
- * (rather than one that's merely missing a table) reproduces exactly that: the failure happens
- * during installedExtensionModules()'s own tablesExist() call, before SchemaSynchronizer::
- * syncEntities() is ever reached.
+ * Core finalization must stop before structural sync or JSON data conversion if
+ * a required portable migration cannot inspect the database. Log the cause
+ * without swallowing it; a later successful reconnect cannot repair a skipped rename.
  */
-test('applyCorePatches logs schema discovery failures and blocks the data migration when the database is unavailable', function (): void {
+test('core patches log and stop before additive sync when portable migration inspection cannot connect', function (): void {
     withNonMysqlDbDriver(function (): void {
         $brokenConnection = Doctrine\DBAL\DriverManager::getConnection([
             'driver' => 'pdo_sqlite',
@@ -2494,11 +2490,11 @@ test('applyCorePatches logs schema discovery failures and blocks the data migrat
         $patcher = new Patcher();
         $patcher->setDi($di);
 
-        expect(fn () => $patcher->applyCorePatches(force: true))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
+        expect(fn () => $patcher->applyCorePatches(force: true))->toThrow(Doctrine\DBAL\Exception\ConnectionException::class);
 
         $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
         expect($errorCalls)->not->toBe([])
-            ->and($errorCalls[0]['params'][0])->toContain('Schema sync against the configured database failed');
+            ->and($errorCalls[0]['params'][0])->toContain('Portable invoice migration failed');
     });
 });
 
@@ -4240,3 +4236,75 @@ test('a connection lost after schema sync cannot complete core patches', functio
             ->and($patcher->schemaSyncFailed())->toBeFalse();
     });
 })->with(['journal', 'counter']);
+
+test('portable migration inspection failures cannot be skipped before schema sync', function (string $method, string $table): void {
+    $driverError = new class('portable migration connection lost') extends RuntimeException implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '08006';
+        }
+    };
+    $error = new Doctrine\DBAL\Exception\ConnectionException($driverError, null);
+    $schema = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schema->expects('introspectTableByUnquotedName')->with($table)->andThrow($error);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->expects('createSchemaManager')->andReturn($schema);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->expects('getConnection')->andReturn($connection);
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em]));
+
+    expect(fn () => (new ReflectionMethod($patcher, $method))->invoke($patcher))
+        ->toThrow(Doctrine\DBAL\Exception\ConnectionException::class, 'portable migration connection lost');
+})->with([
+    ['renameInvoiceApprovedColumn', 'invoice'],
+    ['renameInvoiceStatusIndex', 'invoice'],
+    ['dropInvoiceBuyerPhoneCcColumn', 'invoice'],
+    ['dropTransactionValidateIpnColumn', 'transaction'],
+]);
+
+test('a transient approval inspection failure stops additive sync and preserves invoice values on retry', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($em);
+        $connection->executeStatement('ALTER TABLE invoice RENAME COLUMN issued TO approved');
+        $connection->insert('invoice', ['id' => 1, 'status' => 'paid', 'approved' => 1, 'nr' => 42]);
+        $realSchema = $connection->createSchemaManager();
+        $schema = Mockery::mock($realSchema);
+        $fail = true;
+        $schema->shouldReceive('introspectTableByUnquotedName')->andReturnUsing(function (string $table, ?string $schemaName = null) use (&$fail, $realSchema) {
+            if ($table === 'invoice' && $fail) {
+                $fail = false;
+                $driverError = new class('temporary inspection outage') extends RuntimeException implements Doctrine\DBAL\Driver\Exception {
+                    public function getSQLState(): ?string
+                    {
+                        return '08006';
+                    }
+                };
+
+                throw new Doctrine\DBAL\Exception\ConnectionException($driverError, null);
+            }
+
+            return $realSchema->introspectTableByUnquotedName($table, $schemaName);
+        });
+        $proxy = Mockery::mock($connection);
+        $proxy->shouldReceive('createSchemaManager')->andReturn($schema);
+        $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($proxy);
+        $patcher = patcherWithoutJsonMigration();
+        $patcher->setDi(new Pimple\Container([
+            'em' => $em,
+            'pdo' => $connection->getNativeConnection(),
+            'logger' => new Tests\Helpers\TestLogger(),
+        ]));
+
+        expect(fn () => $patcher->applyCorePatches(force: true))->toThrow(Doctrine\DBAL\Exception\ConnectionException::class, 'temporary inspection outage')
+            ->and($realSchema->introspectTableByUnquotedName('invoice')->hasColumn('issued'))->toBeFalse()
+            ->and((int) $connection->fetchOne('SELECT approved FROM invoice WHERE id = 1'))->toBe(1);
+        $patcher->applyCorePatches(force: true);
+        expect($realSchema->introspectTableByUnquotedName('invoice')->hasColumn('approved'))->toBeFalse()
+            ->and((int) $connection->fetchOne('SELECT issued FROM invoice WHERE id = 1'))->toBe(1)
+            ->and((int) $connection->fetchOne('SELECT nr FROM invoice WHERE id = 1'))->toBe(42)
+            ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_event WHERE invoice_id = 1'))->toBe(1);
+    });
+});

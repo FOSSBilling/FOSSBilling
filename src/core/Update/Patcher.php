@@ -243,7 +243,13 @@ class Patcher implements InjectionAwareInterface
         $this->syncSeededModuleVersions();
 
         // Portable invoice settings/rename steps, shared with the drift healer.
-        $this->applyPortableInvoiceMigrations();
+        try {
+            $this->applyPortableInvoiceMigrations();
+        } catch (\Throwable $e) {
+            $this->logUpdate('error', 'Portable invoice migration failed: ' . $e->getMessage());
+
+            throw $e;
+        }
 
         // Heal installs missing product_category.priority independent of patch
         // level (see ensureProductCategoryPriorityColumn()): runs on every
@@ -1545,6 +1551,9 @@ class Patcher implements InjectionAwareInterface
      */
     private function applyPortableInvoiceMigrations(): void
     {
+        // Failed inspections must stop this attempt: DBAL may reconnect before
+        // additive sync, which could otherwise create issued alongside approved.
+        // Ambient callers already log failures at their outer boundary.
         $this->migrateInvoiceImmutabilitySetting();
 
         // Paid invoices keep their issued number, so the retired paid-only
@@ -1658,14 +1667,7 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        try {
-            $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
-            return;
-        }
+        $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
         if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
             return;
         }
@@ -1692,16 +1694,9 @@ class Patcher implements InjectionAwareInterface
         $old = 'invoice_status_approved_due_at_idx';
         $new = 'invoice_status_issued_due_at_idx';
 
-        try {
-            $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
-            $dropOld = $schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old);
-            $missingNew = !$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new);
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
-            return;
-        }
+        $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+        $dropOld = $schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old);
+        $missingNew = !$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new);
         if ($dropOld) {
             $this->executeSql($this->isLegacyPatchDriver()
                 ? "DROP INDEX `$old` ON `invoice`"
@@ -1725,14 +1720,7 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        try {
-            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
-                return;
-            }
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
+        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
             return;
         }
 
@@ -1754,14 +1742,7 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        try {
-            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
-                return;
-            }
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
+        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
             return;
         }
 
