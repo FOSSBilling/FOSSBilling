@@ -1425,6 +1425,9 @@ class Service implements InjectionAwareInterface
     {
         $invoice = $transaction->getInvoice() ?? throw new InformationException('Invoice not found');
         $gateway = $transaction->getGateway() ?? throw new InformationException('Payment gateway not found');
+        if (!ServicePayGateway::isManualApprovalGateway($gateway->getGateway())) {
+            throw new InformationException('Offline settlement requires a manual payment gateway.');
+        }
         $paid = $this->withCreditLock((int) $invoice->getClientId(), fn (): bool => $this->di['em']->wrapInTransaction(function () use ($invoice, $gateway, $transaction): bool {
             $state = $this->lockAndRefreshInvoice($invoice);
             if ($state['status'] !== Invoice::STATUS_UNPAID || $invoice->getReplacedByInvoiceId() !== null) {
@@ -1440,6 +1443,9 @@ class Service implements InjectionAwareInterface
             $this->consumeInvoiceWalletFunds($invoice);
             $gatewayName = $gateway->getName() ?: $gateway->getGateway();
             $transaction->setStatus(Transaction::STATUS_PROCESSED);
+            $transaction->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_RUNNING);
+            $transaction->setError(null);
+            $transaction->setErrorCode(null);
             $transaction->setAmount((string) $received);
             $transaction->setNote($gatewayName . ' transaction No: ' . $transaction->getTxnId());
             $transaction->setCurrency($invoice->getCurrency());
@@ -1449,11 +1455,7 @@ class Service implements InjectionAwareInterface
             return true;
         }));
         if ($paid) {
-            $this->firePaymentReceivedEvent($invoice);
-            $this->executeInvoiceItemTasks(
-                $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
-                $this->di['mod_service']('Invoice', 'InvoiceItem')
-            );
+            $this->completeOfflinePayment($transaction);
         }
 
         return $paid;
@@ -1898,9 +1900,7 @@ class Service implements InjectionAwareInterface
             }
 
             $invoice->setIssued(true);
-            if (!empty($data['defer_issue_event'])) {
-                $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) ? 1 : 2);
-            }
+            $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) ? 1 : 2);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
 
@@ -1914,12 +1914,21 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        if (isset($data['use_credits']) && $data['use_credits']) {
-            $this->tryPayWithCredits($invoice);
+        if (!empty($data['use_credits'])) {
+            try {
+                $this->tryPayWithCredits($invoice);
+            } catch (\Throwable $e) {
+                $this->di['logger']->warning('Could not apply credit to issued invoice #{id}: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+                if (!$this->di['em']->isOpen()) {
+                    $id = (int) $invoice->getId();
+                    $this->resetEntityManager();
+                    $invoice = $this->getInvoiceRepository()->find($id) ?? throw new InformationException('Invoice not found');
+                }
+            }
         }
 
         if (empty($data['defer_issue_event'])) {
-            $this->notifyInvoiceIssued($invoice);
+            $this->notifyDeferredInvoiceIssued($invoice);
         }
 
         $this->di['logger']->info('Issued invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
@@ -2251,6 +2260,17 @@ class Service implements InjectionAwareInterface
     /** Resume committed receipt work without repeating any provider operation. */
     public function completeGatewayPayment(Transaction $transaction): void
     {
+        $this->completePayment($transaction, false);
+    }
+
+    /** Resume only local work for a payment already confirmed by staff. */
+    public function completeOfflinePayment(Transaction $transaction): void
+    {
+        $this->completePayment($transaction, true);
+    }
+
+    private function completePayment(Transaction $transaction, bool $offline): void
+    {
         $em = $this->di['em'];
         $connection = $em->getConnection();
         $name = 'fb:gateway-completion:' . $transaction->getId();
@@ -2266,20 +2286,28 @@ class Service implements InjectionAwareInterface
             if ($transaction->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
                 return;
             }
-            $receipt = $em->getRepository(ClientBalance::class)->findOneBy(['gatewayTransactionId' => $transaction->getId()]);
-            $client = $receipt?->getClient();
             $invoice = $transaction->getInvoice();
             if ($invoice instanceof Invoice) {
                 $em->refresh($invoice);
             }
-            $amount = (float) $transaction->getAmount();
-            $currency = (string) $transaction->getCurrency();
-            if (!$receipt instanceof ClientBalance || !$client instanceof Client || !$receipt->getGatewayReceiptKey()
-                || !is_finite($amount) || $amount <= 0.0 || round((float) $receipt->getAmount(), 2) !== round($amount, 2)
-                || $currency === '' || strcasecmp($currency, (string) $client->getCurrency()) !== 0
-                || ($invoice instanceof Invoice && ((int) $invoice->getClientId() !== (int) $client->getId()
-                    || strcasecmp($currency, (string) $invoice->getCurrency()) !== 0))) {
-                throw new InformationException('Gateway payment completion does not match its committed receipt.');
+            if ($offline) {
+                $gateway = $transaction->getGateway();
+                if (!$gateway instanceof PayGateway || !ServicePayGateway::isManualApprovalGateway($gateway->getGateway())
+                    || !$invoice instanceof Invoice || strcasecmp((string) $transaction->getCurrency(), (string) $invoice->getCurrency()) !== 0) {
+                    throw new InformationException('Offline payment completion requires a committed staff-approved invoice payment.');
+                }
+            } else {
+                $receipt = $em->getRepository(ClientBalance::class)->findOneBy(['gatewayTransactionId' => $transaction->getId()]);
+                $client = $receipt?->getClient();
+                $amount = (float) $transaction->getAmount();
+                $currency = (string) $transaction->getCurrency();
+                if (!$receipt instanceof ClientBalance || !$client instanceof Client || !$receipt->getGatewayReceiptKey()
+                    || !is_finite($amount) || $amount <= 0.0 || round((float) $receipt->getAmount(), 2) !== round($amount, 2)
+                    || $currency === '' || strcasecmp($currency, (string) $client->getCurrency()) !== 0
+                    || ($invoice instanceof Invoice && ((int) $invoice->getClientId() !== (int) $client->getId()
+                        || strcasecmp($currency, (string) $invoice->getCurrency()) !== 0))) {
+                    throw new InformationException('Gateway payment completion does not match its committed receipt.');
+                }
             }
             if ($invoice instanceof Invoice && $invoice->getStatus() === Invoice::STATUS_PAID) {
                 $this->firePaymentReceivedEvent($invoice);

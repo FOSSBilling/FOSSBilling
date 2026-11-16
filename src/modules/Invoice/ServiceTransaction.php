@@ -98,6 +98,14 @@ class ServiceTransaction implements InjectionAwareInterface
             $this->assertNoProcessedHistoryChange($model, $data);
         }
 
+        $invoice = !empty($data['invoice_id'])
+            ? $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id'])
+            : $model->getInvoice();
+        if (($data['status'] ?? $model->getStatus()) === Transaction::STATUS_PROCESSED
+            && (float) ($data['amount'] ?? $model->getAmount()) != 0.0 && $invoice instanceof Invoice
+            && strcasecmp((string) ($data['currency'] ?? $model->getCurrency()), (string) $invoice->getCurrency()) !== 0) {
+            throw new InformationException('Payment currency does not match the invoice.');
+        }
         if (!empty($data['invoice_id'])) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
             if (!$invoice instanceof Invoice) {
@@ -550,6 +558,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'currency' => $model->getCurrency(),
             'type' => $model->getType(),
             'status' => $model->getStatus(),
+            'completion_pending' => $model->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE,
             'ip' => $model->getIp(),
             'error' => $model->getError(),
             'error_code' => $model->getErrorCode(),
@@ -592,6 +601,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'currency' => $transaction->getCurrency(),
             'type' => $transaction->getType(),
             'status' => $transaction->getStatus(),
+            'completion_pending' => $transaction->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE,
             'ip' => $transaction->getIp(),
             'error' => $transaction->getError(),
             'error_code' => $transaction->getErrorCode(),
@@ -858,12 +868,6 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('This payment gateway does not require manual approval.', [], 7003);
         }
 
-        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        $adapter = $payGatewayService->getPaymentAdapter($gtw);
-        if (!method_exists($adapter, 'approveTransaction')) {
-            throw new \FOSSBilling\Core\Exception\BaseException('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'approveTransaction'], 705);
-        }
-
         // Serialize concurrent approvals the same way processing claims do:
         // a double-clicked Approve button converges on a single approver.
         if (!$this->claimForProcessing((int) $model->getId())) {
@@ -872,17 +876,23 @@ class ServiceTransaction implements InjectionAwareInterface
             return true;
         }
 
-        // Mirror the SQL claim in Doctrine and keep it until settlement finishes.
-        // Approved is claimable, so persisting it here would allow a second approver.
-        $model->setStatus(Transaction::STATUS_PROCESSING);
-        $model->setError(null);
-        $model->setErrorCode(null);
-        $model->setUpdatedAt(new \DateTime());
-        $this->di['em']->flush();
+        $this->di['em']->refresh($model);
 
         try {
-            $this->di['logger']->info('Confirmed offline payment for transaction #{id}: settling', ['id' => $model->getId()]);
-            $adapter->approveTransaction($this->di['api_system'], (int) $model->getId(), (int) $gtw->getId());
+            if ($model->getStatus() === Transaction::STATUS_PROCESSED) {
+                $this->di['mod_service']('Invoice')->completeOfflinePayment($model);
+            } else {
+                $model->setError(null);
+                $model->setErrorCode(null);
+                $this->di['em']->flush();
+                $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+                $adapter = $payGatewayService->getPaymentAdapter($gtw);
+                if (!method_exists($adapter, 'approveTransaction')) {
+                    throw new \FOSSBilling\Core\Exception\BaseException('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'approveTransaction'], 705);
+                }
+                $this->di['logger']->info('Confirmed offline payment for transaction #{id}: settling', ['id' => $model->getId()]);
+                $adapter->approveTransaction($this->di['api_system'], (int) $model->getId(), (int) $gtw->getId());
+            }
         } catch (\Throwable $e) {
             $this->markTransactionError((int) $model->getId(), $e);
 

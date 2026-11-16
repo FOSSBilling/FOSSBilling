@@ -861,6 +861,7 @@ test('approveTransaction settles an offline payment', function (): void {
     $payGatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn($adapter);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('refresh')->once()->with($transactionModel)->andReturnUsing(function () use ($transactionModel): void { $transactionModel->setStatus(Transaction::STATUS_PROCESSING); });
     $em->shouldReceive('flush')->atLeast()->once();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');

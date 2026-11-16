@@ -335,7 +335,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     throw new Payment_Exception('PayPal payment invoice does not belong to the client');
                 }
                 if ($invoiceDbModel->getStatus() !== Invoice::STATUS_PAID) {
-                    $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $invoiceService->getBalanceDue($invoiceDbModel));
                     if (!$invoiceDbModel->isIssued()) {
                         $invoiceService->issueInvoice($invoiceDbModel, ['use_credits' => false]);
                     }

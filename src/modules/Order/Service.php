@@ -1519,7 +1519,7 @@ class Service implements InjectionAwareInterface
             $edited = [];
             foreach ($meta as $k => $v) {
                 $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
-                if ($mm instanceof OrderMeta && in_array($k, [self::META_SCHEDULED_CANCEL_CLAIM, self::META_SCHEDULED_CANCEL_PHASE], true)) {
+                if ($mm instanceof OrderMeta) {
                     $this->di['em']->refresh($mm);
                 }
                 if (!$mm instanceof OrderMeta) {
@@ -1697,18 +1697,36 @@ class Service implements InjectionAwareInterface
         return $this->renewOrderWithCheckpoint($order, self::META_PAID_RENEWAL_OUTCOME_PREFIX . $itemId);
     }
 
-    public function renewFreeDomainInvoiceItem(Order $order, int $itemId): bool
+    public function renewFreeDomainInvoiceItem(Order $order, int $itemId, ?callable $prepare = null): bool
     {
-        return $this->renewOrderWithCheckpoint($order, self::META_FREE_RENEWAL_CLAIM_PREFIX . $itemId);
+        $checkpoint = self::META_FREE_RENEWAL_CLAIM_PREFIX . $itemId;
+        if ($prepare === null) {
+            return $this->renewOrderWithCheckpoint($order, $checkpoint);
+        }
+
+        return $this->withCancellationScheduleLock($order, function () use ($order, $checkpoint, $prepare): bool {
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (($meta[$checkpoint] ?? null) !== self::RENEWAL_OUTCOME_COMPLETED) {
+                $this->assertOrderCanRenew($order, $meta, $checkpoint);
+            }
+            if (!$prepare()) {
+                return false;
+            }
+
+            return $this->renewOrderWithCheckpoint($order, $checkpoint, true);
+        }, 0);
     }
 
-    private function renewOrderWithCheckpoint(Order $order, ?string $checkpoint): bool
+    private function renewOrderWithCheckpoint(Order $order, ?string $checkpoint, bool $alreadyLocked = false): bool
     {
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderRenewEvent($orderId));
 
         if ($checkpoint === null) {
             $this->renewFromOrder($order);
+        } elseif ($alreadyLocked) {
+            $this->renewFromOrderWithRowLock($order, $checkpoint);
         } else {
             $this->renewFromOrderWithCheckpoint($order, $checkpoint);
         }
@@ -1817,7 +1835,7 @@ class Service implements InjectionAwareInterface
             // Both provider actions must stay under the cancellation lock and
             // follow the refreshed hold check, including for suspended orders.
             if ($order->getStatus() === Order::STATUS_SUSPENDED) {
-                $this->unsuspendFromOrder($order);
+                $this->unsuspendFromOrderLocked($order);
             }
             $this->renewFromOrderLocked($order, $serviceFailed);
             if ($checkpoint !== null) {
@@ -1924,7 +1942,24 @@ class Service implements InjectionAwareInterface
 
     public function unsuspendFromOrder(Order $order): bool
     {
+        if ($order->getId() === null) {
+            return $this->unsuspendFromOrderLocked($order);
+        }
+
+        return $this->withCancellationScheduleLock($order, function () use ($order): bool {
+            $this->di['em']->refresh($order);
+
+            return $this->unsuspendFromOrderLocked($order);
+        });
+    }
+
+    private function unsuspendFromOrderLocked(Order $order): bool
+    {
         $this->assertOrderNotDeleting($order);
+        $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+        if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
+            throw new InformationException('Scheduled cancellation needs staff review before this order can be unsuspended.');
+        }
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUnsuspendEvent($orderId));
 

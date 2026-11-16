@@ -164,7 +164,9 @@ test('offline settlement of a mixed deposit consumes prior gateway funds and cre
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)
         ->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(20)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-mixed');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-mixed');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -215,7 +217,9 @@ test('staff settlement allocates aggregate tax consistently for mixed deposits',
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_DEPOSIT)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(true)->setTaxed(false));
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(0.05)->setQuantity(2)->setCharged(false)->setTaxed(true));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-tax');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-tax');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);

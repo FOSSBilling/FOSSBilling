@@ -198,7 +198,10 @@ test('replacement gateway stays locked until reassignment commits', function ():
 
                 try {
                     $this->writer->fetchOne('SELECT id FROM pay_gateway WHERE id = ? FOR UPDATE NOWAIT', [$this->replacement]);
-                } catch (Doctrine\DBAL\Exception\DriverException) {
+                } catch (Doctrine\DBAL\Exception\DriverException $e) {
+                    if (!in_array((int) $e->getPrevious()?->getCode(), [1205, 3572], true)) {
+                        throw $e;
+                    }
                     $this->blocked = true;
                 } finally {
                     $this->writer->rollBack();
@@ -228,4 +231,62 @@ test('refreshing a gateway for its lock preserves concurrently changed optional 
     expect($gateways->update($model, ['title' => 'Updated title']))->toBeTrue()
         ->and($model->getCustomLogo())->toBe('new-logo.svg')
         ->and($model->isEnabled())->toBeFalse();
+});
+
+test('gateway migration reprices current fee items and partial payments after candidate selection', function (): void {
+    $port = getenv('PAYMENT_TEST_MYSQL_PORT');
+    if (!$port) {
+        $this->markTestSkipped('Set PAYMENT_TEST_MYSQL_PORT for an isolated MySQL/MariaDB test server.');
+    }
+    $params = ['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) $port, 'user' => 'root', 'password' => getenv('PAYMENT_TEST_MYSQL_PASSWORD') ?: ''];
+    $admin = DriverManager::getConnection($params);
+    $database = 'gateway_fee_test_' . bin2hex(random_bytes(6));
+    $admin->executeStatement('CREATE DATABASE ' . $database);
+
+    try {
+        [$gateways, $em, [$source, $replacement, , $id]] = gatewayReassignmentContext(null, $params + ['dbname' => $database]);
+        (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Client\Entity\Client::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\InvoiceCredit::class]));
+        $connection = $em->getConnection();
+        $connection->update('invoice', ['currency' => 'USD'], ['id' => $id]);
+        $connection->update('pay_gateway', ['config' => json_encode(['fee' => ['percent' => 10]])], ['id' => $replacement]);
+        $connection->insert('invoice_item', ['invoice_id' => $id, 'type' => 'custom', 'task' => 'void', 'price' => 100, 'quantity' => 1]);
+        $connection->insert('invoice_item', ['invoice_id' => $id, 'type' => 'custom', 'task' => 'gateway_fee', 'price' => 3, 'quantity' => 1]);
+        $writer = DriverManager::getConnection($params + ['dbname' => $database]);
+        $listener = new class($writer) {
+            private bool $changed = false;
+
+            public function __construct(private readonly Doctrine\DBAL\Connection $writer)
+            {
+            }
+
+            public function postLoad(Doctrine\ORM\Event\PostLoadEventArgs $event): void
+            {
+                $invoice = $event->getObject();
+                if (!$invoice instanceof Invoice || $this->changed) {
+                    return;
+                }
+                $this->changed = true;
+                $this->writer->transactional(function () use ($invoice): void {
+                    $this->writer->fetchOne('SELECT id FROM invoice WHERE id = ? FOR UPDATE', [$invoice->getId()]);
+                    $this->writer->executeStatement("DELETE FROM invoice_item WHERE invoice_id = ? AND task = 'gateway_fee'", [$invoice->getId()]);
+                    $this->writer->insert('invoice_item', ['invoice_id' => $invoice->getId(), 'type' => 'custom', 'task' => 'gateway_fee', 'price' => 10, 'quantity' => 1]);
+                    $this->writer->insert($this->writer->quoteSingleIdentifier('transaction'), ['invoice_id' => $invoice->getId(), 'status' => 'processed', 'amount' => 50, 'currency' => 'USD']);
+                });
+            }
+        };
+        $em->getEventManager()->addEventListener(['postLoad'], $listener);
+        $gateways->update($em->find(PayGateway::class, $source), ['enabled' => false, 'replacement_id' => $replacement]);
+        $fees = $writer->fetchFirstColumn("SELECT price FROM invoice_item WHERE invoice_id = ? AND task = 'gateway_fee'", [$id]);
+        expect(array_map(floatval(...), $fees))->toBe([5.0])
+            ->and($connection->getTransactionIsolation())->toBe(Doctrine\DBAL\TransactionIsolationLevel::REPEATABLE_READ);
+        $writer->close();
+        // An existing snapshot cannot be made safe by nesting a transaction.
+        $connection->beginTransaction();
+        expect(fn () => $gateways->moveUnpaidInvoices($source, $replacement))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'fresh READ COMMITTED');
+        $connection->rollBack();
+        $connection->close();
+    } finally {
+        $admin->executeStatement('DROP DATABASE ' . $database);
+        $admin->close();
+    }
 });

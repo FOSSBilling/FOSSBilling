@@ -401,8 +401,6 @@ describe('PayPal subscription IPN handling', function (): void {
             return true;
         });
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
 
@@ -469,8 +467,6 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceService->shouldReceive('recordGatewayPayment')->byDefault()->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
         $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('I-ABC123', 9)->andReturn($renewal);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($paidInvoice);
@@ -704,8 +700,6 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
         $invoiceService->shouldReceive('recordGatewayPayment')->byDefault()->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($invoiceModel);
@@ -761,8 +755,6 @@ describe('PayPal subscription IPN handling', function (): void {
             return true;
         });
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
 
@@ -1241,8 +1233,6 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
         $invoiceService->shouldReceive('recordGatewayPayment')->byDefault()->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
 
@@ -1525,8 +1515,6 @@ describe('PayPal callback invoice binding', function (): void {
             return true;
         });
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $di = container();
@@ -1616,8 +1604,6 @@ describe('PayPal callback invoice binding', function (): void {
             return true;
         });
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $di = container();
@@ -1716,8 +1702,6 @@ describe('PayPal callback invoice binding', function (): void {
             return true;
         });
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(120.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($invoiceModel, null, static fn (): ?object => $earlier);
@@ -1911,7 +1895,6 @@ test('a PayPal subscription retry retains the signed original and selected renew
     $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
     $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
     $invoiceService->shouldReceive('getBalanceDue')->with($renewal)->andReturn(120.0);
-    $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.0, 120.0);
     $invoiceService->shouldReceive('recordGatewayPayment')->once()->with($transaction, Mockery::type(Box\Mod\Client\Entity\Client::class), 'TXN-RETRY', 'PayPal transaction TXN-RETRY', 'PayPal', 'TXN-RETRY')->andReturn(true);
     $di = container();
     $di['em'] = $em;

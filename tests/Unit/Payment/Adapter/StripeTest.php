@@ -1306,10 +1306,6 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             return true;
         });
         $invoiceService->shouldReceive('getBalanceDue')->andReturn(29.99);
-        $invoiceService->shouldReceive('validatePaymentAmount')
-            ->once()
-            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
-            ->andReturn(null);
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
 
@@ -1352,7 +1348,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 });
 
 describe('processPaymentIntent', function (): void {
-    test('validates a redirect payment amount as a float', function (): void {
+    test('records the verified redirect payment amount', function (): void {
         $invoice = createEntity(Invoice::class, [
             'id' => 15,
             'client_id' => 7,
@@ -1379,11 +1375,6 @@ describe('processPaymentIntent', function (): void {
 
             return true;
         });
-        $invoiceService->shouldReceive('getBalanceDue')->once()->with($invoice)->andReturn(29.99);
-        $invoiceService->shouldReceive('validatePaymentAmount')
-            ->once()
-            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
-            ->andReturn(null);
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->with($invoice)->andReturn(false);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->zeroOrMoreTimes()->with($invoice, true)->andReturn(true);
 

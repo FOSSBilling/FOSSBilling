@@ -101,6 +101,10 @@ test('skips the fee for exempt client groups', function (): void {
     // Client::getGroupIds() on a fresh entity is empty; exempt group 9 does not match.
     $service = gatewayFeesService($em, $currencyService);
     expect($service->fee(gatewayWithFee(['percent' => 5, 'exempt_groups' => [9]]), 100.0, 'USD', 7))->toEqual(5.0);
+    $group = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 9]);
+    $membership = (new Box\Mod\Client\Entity\ClientGroupMembership())->setClientGroup($group);
+    $client->getGroupMemberships()->add($membership);
+    expect($service->fee(gatewayWithFee(['percent' => 5, 'exempt_groups' => [9]]), 100.0, 'USD', 7))->toEqual(0.0);
 });
 
 function gatewayFeesInvoice(array $properties = []): Box\Mod\Invoice\Entity\Invoice

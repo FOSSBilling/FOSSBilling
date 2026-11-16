@@ -32,18 +32,23 @@ class TransactionRepository extends EntityRepository
         }
 
         $rows = $this->createQueryBuilder('t')
-            ->select('IDENTITY(t.invoice) AS invoice_id, SUM(t.amount) AS amount')
+            ->select('IDENTITY(t.invoice) AS invoice_id, SUM(t.amount) AS amount, t.currency, i.currency AS invoice_currency')
+            ->join('t.invoice', 'i')
             ->where('IDENTITY(t.invoice) IN (:invoice_ids)')
             ->andWhere('t.status = :status')
             ->setParameter('invoice_ids', $invoiceIds)
             ->setParameter('status', Transaction::STATUS_PROCESSED)
-            ->groupBy('t.invoice')
+            ->groupBy('t.invoice', 't.currency', 'i.currency')
             ->getQuery()
             ->getScalarResult();
 
         $sums = [];
         foreach ($rows as $row) {
-            $sums[(int) $row['invoice_id']] = round((float) $row['amount'], 2);
+            if ((float) $row['amount'] != 0.0 && ($row['currency'] === null || $row['currency'] === '' || strcasecmp($row['currency'], (string) $row['invoice_currency']) !== 0)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('A processed payment currency does not match its invoice and needs staff reconciliation.');
+            }
+            $id = (int) $row['invoice_id'];
+            $sums[$id] = round(($sums[$id] ?? 0.0) + (float) $row['amount'], 2);
         }
 
         return $sums;

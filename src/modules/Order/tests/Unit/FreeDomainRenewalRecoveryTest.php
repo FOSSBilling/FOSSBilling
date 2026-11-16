@@ -158,3 +158,44 @@ test('ordinary edits cannot erase free domain claims or retry approvals', functi
     expect(fn () => $orders->updateOrder($order, ['meta' => [$key => '0']]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Renewal outcome checkpoints');
     expect(fn () => $orders->updateOrder($order, ['meta' => []]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Renewal outcome checkpoints');
 })->with(['free_domain_renewal_claim_', 'free_domain_renewal_retry_']);
+
+test('free retry approval is consumed even when the managed approval still says zero', function (): void {
+    [$em, $order, $item, $orders, , $executor] = freeHoldRegressionContext('zero');
+    $key = 'free_domain_renewal_retry_' . $item->getId();
+    $approval = (new OrderMeta())->setOrder($order)->setName($key)->setValue('0');
+    $em->persist($approval);
+    $em->flush();
+    $executor->reviewDomainRenewal($item->getId(), 'retry_zero');
+    // Keep this worker's managed approval at zero while staff grants a retry.
+    $em->getConnection()->update('client_order_meta', ['value' => '0'], ['id' => $approval->getId()]);
+    $em->refresh($approval);
+    $em->getConnection()->update('client_order_meta', ['value' => '1'], ['id' => $approval->getId()]);
+    $orders->shouldReceive('_callOnService')->once()->andReturnUsing(function () use ($em, $key): void {
+        expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [$key]))->toBe('0');
+
+        throw new Error('crash during registrar call');
+    });
+    expect(fn () => $executor->executeTask($item))->toThrow(Error::class);
+    expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [$key]))->toBe('0');
+});
+
+test('free eligibility and provider execution share the direct renewal lock', function (): void {
+    [$em, $order, $item, $orders, , $executor] = freeHoldRegressionContext('free');
+    $em->getConnection()->executeStatement('DELETE FROM client_order_meta WHERE name = ?', ['free_domain_renewal_claim_' . $item->getId()]);
+    $item->setStatus('pending_setup');
+    $em->flush();
+    $products = Mockery::mock(Box\Mod\Product\Service::class);
+    $products->shouldReceive('findProductById')->andReturn((new Box\Mod\Product\Entity\Product())->setType('domain'));
+    $products->shouldReceive('freeDomainRenewalUntil')->once()->andReturnUsing(function () use ($orders, $order): int {
+        expect(fn () => $orders->renewOrder($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+
+        return time() + 366 * 86400;
+    });
+    $di = $executor->getDi();
+    $services = $di['mod_service'];
+    unset($di['mod_service']);
+    $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => $module === 'Product' ? $products : $services($module, $sub));
+    $orders->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_RENEW);
+    $executor->executeTask($item);
+    expect($item->getStatus())->toBe('executed');
+});

@@ -273,63 +273,75 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         try {
-            $this->di['em']->refresh($item);
-            $this->di['em']->refresh($order);
-            if ($item->getStatus() === InvoiceItem::STATUS_EXECUTED) {
-                return true;
-            }
-            if ($item->getStatus() === InvoiceItem::STATUS_FAILED) {
-                return false;
-            }
-            $metadata = $orderService->getOrderMetaRepository()->getPairsForOrder($orderId);
-            $claim = OrderService::META_FREE_RENEWAL_CLAIM_PREFIX . $item->getId();
-            $approval = OrderService::META_FREE_RENEWAL_RETRY_PREFIX . $item->getId();
-            if (($metadata[$claim] ?? null) !== OrderService::RENEWAL_OUTCOME_COMPLETED) {
-                // Eligibility applies to a new provider attempt. A
-                // completed claim only resumes local delivery and
-                // acknowledgement, even if the order was canceled.
-                if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
-                    $item->setStatus(InvoiceItem::STATUS_FAILED);
-
-                    throw new \FOSSBilling\Core\Exception\InformationException('The domain order is no longer eligible for renewal and needs staff review.');
+            $renewed = $orderService->renewFreeDomainInvoiceItem($order, (int) $item->getId(), function () use ($item, $order, $orderService, $orderId, $knownZeroPrice): bool {
+                $this->di['em']->refresh($item);
+                $this->di['em']->refresh($order);
+                if ($item->getStatus() === InvoiceItem::STATUS_EXECUTED) {
+                    return false;
                 }
-                if (isset($metadata[$claim])) {
-                    if (($metadata[$approval] ?? null) !== '1') {
+                if ($item->getStatus() === InvoiceItem::STATUS_FAILED) {
+                    return false;
+                }
+                $metadata = $orderService->getOrderMetaRepository()->getPairsForOrder($orderId);
+                $claim = OrderService::META_FREE_RENEWAL_CLAIM_PREFIX . $item->getId();
+                $approval = OrderService::META_FREE_RENEWAL_RETRY_PREFIX . $item->getId();
+                if (($metadata[$claim] ?? null) !== OrderService::RENEWAL_OUTCOME_COMPLETED) {
+                    // Eligibility applies to a new provider attempt. A
+                    // completed claim only resumes local delivery and
+                    // acknowledgement, even if the order was canceled.
+                    if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
                         $item->setStatus(InvoiceItem::STATUS_FAILED);
 
-                        throw new \FOSSBilling\Core\Exception\InformationException('This renewal was already sent or attempted and needs staff review.');
+                        throw new \FOSSBilling\Core\Exception\InformationException('The domain order is no longer eligible for renewal and needs staff review.');
                     }
-                    // Consume the approval durably before the external call. A
-                    // second interruption always requires another review.
-                    $orderService->updateOrderMeta($order, [$approval => '0']);
-                } else {
-                    $reviewedZero = $knownZeroPrice || ($metadata['domain_renewal_reviewed_zero_' . $item->getId()] ?? null) === '1';
-                    $claimValues = [$claim => '1'];
-                    if (!$reviewedZero) {
-                        $until = $this->di['mod_service']('Product')->freeDomainRenewalUntil($orderId);
-                        if ($until === null) {
-                            if (($metadata[$approval] ?? null) === '1'
-                                || !$this->di['mod_service']('Product')->isFreeDomainRenewalOffered($orderId)) {
-                                $item->setStatus(InvoiceItem::STATUS_FAILED);
+                    if (isset($metadata[$claim])) {
+                        if (($metadata[$approval] ?? null) !== '1') {
+                            $item->setStatus(InvoiceItem::STATUS_FAILED);
 
-                                throw new \FOSSBilling\Core\Exception\InformationException('The paid hosting term does not cover this renewal; staff review is still required.');
-                            }
-
-                            // Wait for the linked hosting payment without
-                            // consuming a claim or a retry attempt.
-                            return false;
+                            throw new \FOSSBilling\Core\Exception\InformationException('This renewal was already sent or attempted and needs staff review.');
                         }
-                        $claimValues = ['free_domain_paid_through' => (string) $until, $claim => '1'];
+                        // Consume the approval durably before the external call. A
+                        // second interruption always requires another review.
+                        $orderService->updateOrderMeta($order, [$approval => '0']);
+                    } else {
+                        $reviewedZero = $knownZeroPrice || ($metadata['domain_renewal_reviewed_zero_' . $item->getId()] ?? null) === '1';
+                        $claimValues = [$claim => '1'];
+                        if (!$reviewedZero) {
+                            $until = $this->di['mod_service']('Product')->freeDomainRenewalUntil($orderId);
+                            if ($until === null) {
+                                if (($metadata[$approval] ?? null) === '1'
+                                    || !$this->di['mod_service']('Product')->isFreeDomainRenewalOffered($orderId)) {
+                                    $item->setStatus(InvoiceItem::STATUS_FAILED);
+
+                                    throw new \FOSSBilling\Core\Exception\InformationException('The paid hosting term does not cover this renewal; staff review is still required.');
+                                }
+
+                                // Wait for the linked hosting payment without
+                                // consuming a claim or a retry attempt.
+                                return false;
+                            }
+                            $claimValues = ['free_domain_paid_through' => (string) $until, $claim => '1'];
+                        }
+                        if (($metadata[$approval] ?? null) === '1') {
+                            $claimValues[$approval] = '0';
+                        }
+                        // Flush a durable claim before the external call.
+                        $orderService->updateOrderMeta($order, $claimValues);
                     }
-                    if (($metadata[$approval] ?? null) === '1') {
-                        $claimValues[$approval] = '0';
-                    }
-                    // Flush a durable claim before the external call.
-                    $orderService->updateOrderMeta($order, $claimValues);
                 }
+
+                return true;
+            });
+            if (!$renewed) {
+                return $item->getStatus() === InvoiceItem::STATUS_EXECUTED;
             }
-            $orderService->renewFreeDomainInvoiceItem($order, (int) $item->getId());
             $this->markAsExecuted($item);
+        } catch (\FOSSBilling\Core\Exception\InformationException $e) {
+            if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
+                $item->setStatus(InvoiceItem::STATUS_FAILED);
+            }
+
+            throw $e;
         } finally {
             NamedLock::release($connection, $lock);
         }

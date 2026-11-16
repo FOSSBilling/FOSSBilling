@@ -49,7 +49,9 @@ test('an unlinked earlier receipt holds offline settlement for reconciliation', 
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)
         ->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-legacy');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-legacy');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -67,7 +69,9 @@ test('a historical receipt with a verified transaction reference is linked safel
     $em->flush();
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-linked');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-linked');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -85,7 +89,9 @@ test('an unresolved receipt of a different amount does not block an unrelated in
     $em->flush();
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-unrelated');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-unrelated');
     $legacy = (new ClientBalance())->setClient($client)->setAmount('13')->setType('transaction')->setGatewayReceiptKey(hash('sha256', 'other'));
     $em->persist($offline);
     $em->persist($legacy);
@@ -103,7 +109,9 @@ test('staff can reconcile a matching historical receipt but cannot link it incor
     $em->flush();
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40')->setTxnId('pi_staff_review');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-review');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-review');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -129,7 +137,9 @@ test('pre-fingerprint receipt is held until staff links the verified provider pa
     $em->flush();
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-pre-key');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-pre-key');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -156,7 +166,9 @@ test('staff reconciliation finalizes an errored historical receipt without relea
     $em->flush();
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-error');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-error');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -267,7 +279,9 @@ test('a known historical receipt does not block a different equal-amount invoice
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $old->setInvoice($oldInvoice)->setAmount('10')->setStatus(Transaction::STATUS_PROCESSED);
     $failed = (new Transaction())->setInvoice($invoice)->setGateway($gateway)->setAmount('10')->setCurrency('USD')->setStatus(Transaction::STATUS_ERROR);
-    $offline = (new Transaction())->setInvoice($invoice)->setGateway($gateway)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-unrelated');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setInvoice($invoice)->setGateway($manualGateway)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-unrelated');
     $legacy = (new ClientBalance())->setClient($client)->setType('transaction')->setRelId((string) $old->getId())->setDescription('Stripe transaction pi_old_other')->setAmount('10');
     $em->persist($failed);
     $em->persist($offline);

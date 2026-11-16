@@ -42,6 +42,9 @@ class ServiceGatewayFees implements InjectionAwareInterface
         }
 
         $invoiceService = $this->di['mod_service']('Invoice');
+        if ($invoiceService->isInvoiceTypeDeposit($invoice)) {
+            return ['base' => 0.0, 'fees' => []];
+        }
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
 

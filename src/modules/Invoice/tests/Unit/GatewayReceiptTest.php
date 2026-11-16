@@ -115,7 +115,9 @@ test('offline settlement consumes the earlier gateway receipt exactly once', fun
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)
         ->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -241,7 +243,9 @@ test('a long PayPal provider id can identify an old receipt safely', function ()
     $em->flush();
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40')->setTxnId($provider);
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-paypal');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-paypal');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -379,4 +383,119 @@ test('local gateway completion keeps its mutex through listeners and clears stal
     $billing->completeGatewayPayment($transaction);
     expect($calls)->toBe(1)->and($transaction->getError())->toBeNull()->and($transaction->getErrorCode())->toBeNull()
         ->and($transaction->getGatewayCompletionState())->toBe(Transaction::GATEWAY_COMPLETION_DONE);
+});
+
+test('offline completion survives listener failures and process crashes without settling twice', function (bool $crash): void {
+    [, $em, $client, $gateway, $transaction] = receiptTestContext();
+    $gateway->setGateway('Custom');
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $item = (new InvoiceItem())->setInvoice($invoice)->setType('deposit')->setTask('void')->setPrice(15)->setQuantity(1)->setStatus('pending_payment')->setCharged(false);
+    $em->persist($item);
+    $transaction->setInvoice($invoice);
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    $calls = 0;
+    $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent::class, function () use (&$calls, $crash): void {
+        if (++$calls === 1) {
+            throw $crash ? new Error('crash after offline commit') : new RuntimeException('listener failure');
+        }
+    });
+    $service->getDi()['event_dispatcher'] = $dispatcher;
+    expect(fn () => $service->approveOfflineTransaction($transaction))->toThrow($crash ? Error::class : RuntimeException::class);
+    $id = $transaction->getId();
+    $connection = $em->getConnection();
+    expect($connection->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$id]))->toBe('processed')
+        ->and((int) $connection->fetchOne('SELECT gateway_completion_state FROM "transaction" WHERE id = ?', [$id]))->toBe(Transaction::GATEWAY_COMPLETION_RUNNING);
+    $retryEm = new EntityManager($connection, $em->getConfiguration());
+    $retry = gatewayDepositTestService($retryEm);
+    $di = $retry->getDi();
+    $di['event_dispatcher'] = $dispatcher;
+    $adapter = Mockery::mock();
+    // Recovery must never call the adapter's approval/settlement again.
+    $adapter->shouldNotReceive('approveTransaction');
+    $gateways = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+    $gateways->shouldReceive('getPaymentAdapter')->andReturn($adapter);
+    $services = $di['mod_service'];
+    unset($di['mod_service']);
+    $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => $sub === 'PayGateway' ? $gateways : $services($module, $sub));
+    $approver = new Box\Mod\Invoice\ServiceTransaction();
+    $approver->setDi($di);
+    $connection->executeStatement('UPDATE "transaction" SET updated_at = ? WHERE id = ?', [date('Y-m-d H:i:s', time() - 3600), $id]);
+    $row = $retryEm->find(Transaction::class, $id);
+    expect($approver->toApiArray($row)['completion_pending'])->toBeTrue();
+    expect($approver->approveTransaction($row))->toBeTrue()
+        ->and($row->getGatewayCompletionState())->toBe(Transaction::GATEWAY_COMPLETION_DONE)
+        ->and($calls)->toBe(2)
+        ->and($approver->toApiArray($row)['completion_pending'])->toBeFalse()
+        ->and((float) $connection->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0)
+        ->and($connection->fetchOne('SELECT status FROM invoice_item WHERE id = ?', [$item->getId()]))->toBe('executed');
+    expect($approver->approveTransaction($row))->toBeTrue()->and($calls)->toBe(2);
+})->with([false, true]);
+
+test('processed foreign currency payments cannot settle an invoice as local money', function (string $currency): void {
+    [, $em, $client, $gateway, $transaction] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $transaction->setInvoice($invoice)->setStatus('processed')->setAmount('40')->setCurrency('USD');
+    $em->persist((new Transaction())->setInvoice($invoice)->setGateway($gateway)->setStatus('processed')->setAmount('60')->setCurrency($currency));
+    $em->flush();
+    $sum = fn () => $em->getRepository(Transaction::class)->getProcessedSumsByInvoiceIds([$invoice->getId()]);
+    if ($currency === 'usd') {
+        expect($sum())->toBe([$invoice->getId() => 100.0]);
+    } else {
+        expect($sum)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'currency');
+    }
+})->with(['JPY', 'usd', '']);
+
+test('Stripe records a collected partial payment after checkout credit is removed', function (): void {
+    [, $em, $client, $gateway, $transaction] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('void')->setPrice(100)->setQuantity(1)->setStatus('pending_payment')->setCharged(false));
+    // Checkout collected the remaining 60; the former 40 credit is now gone.
+    $transaction->setInvoice($invoice)->setAmount('60');
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    $adapter = new Payment_Adapter_Stripe(['test_mode' => true, 'test_api_key' => 'sk_test_dummy', 'test_pub_key' => 'pk_test_dummy']);
+    $adapter->setDi($service->getDi());
+    $apply = new ReflectionMethod($adapter, 'applyOneTimePayment');
+    expect($apply->invoke($adapter, $transaction, $invoice, (object) ['id' => 'pi_partial_credit_removed']))->toBeTrue()
+        ->and($invoice->getStatus())->toBe('unpaid')->and($service->getBalanceDue($invoice))->toBe(40.0);
+    expect($apply->invoke($adapter, $transaction, $invoice, (object) ['id' => 'pi_partial_credit_removed']))->toBeTrue()
+        ->and((float) $em->getConnection()->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(60.0)
+        ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1);
+});
+
+test('deposit quotes never advertise a fee that deposit settlement excludes', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid');
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('deposit')->setPrice(100)->setQuantity(1));
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    $fees = ($service->getDi()['mod_service'])('Invoice', 'GatewayFees');
+    expect($fees->quote($invoice))->toBe(['base' => 0.0, 'fees' => []]);
+});
+
+test('staff transaction edits reject foreign currency settlement before mutating history', function (): void {
+    [, $em, $client, , $transaction] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true);
+    $em->persist($invoice);
+    $transaction->setInvoice($invoice);
+    $em->flush();
+    $service = new Box\Mod\Invoice\ServiceTransaction();
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+    expect(fn () => $service->update($transaction, ['status' => 'processed', 'amount' => '60', 'currency' => 'JPY']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'currency');
+    expect($transaction->getCurrency())->toBe('USD')->and($transaction->getStatus())->toBe('processing');
+    expect($service->update($transaction, ['status' => 'processed', 'amount' => '60', 'currency' => 'usd']))->toBeTrue()
+        ->and($transaction->getCurrency())->toBe('usd');
 });

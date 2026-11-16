@@ -27,7 +27,23 @@ class ClientBalanceRepository extends EntityRepository
         // original transaction reference identify one processed transaction.
         $clientId = $connection->fetchOne('SELECT client_id FROM invoice WHERE id = ?', [$invoiceId]);
         $receipts = $connection->fetchAllAssociative("SELECT id, type, rel_id, description, amount, gateway_receipt_key FROM client_balance WHERE client_id = ? AND amount > 0 AND gateway_transaction_id IS NULL AND (gateway_receipt_key IS NOT NULL OR (type = 'transaction' AND description LIKE 'Stripe %') OR (type = 'PayPal' AND description LIKE 'PayPal transaction %'))", [$clientId]);
-        $transactions = $receipts === [] ? [] : $connection->fetchAllAssociative("SELECT t.id, t.invoice_id, t.txn_id, t.amount, t.status, t.gateway_id, g.gateway FROM $txTable t LEFT JOIN invoice i ON i.id = t.invoice_id JOIN pay_gateway g ON g.id = t.gateway_id WHERE (i.client_id = ? OR t.invoice_id IS NULL)", [$clientId]);
+        $stripeIds = [];
+        $paypalIds = [];
+        foreach ($receipts as $receipt) {
+            if ($receipt['type'] === 'transaction' && ctype_digit((string) $receipt['rel_id'])) {
+                $stripeIds[] = (int) $receipt['rel_id'];
+            } elseif ($receipt['type'] === 'PayPal') {
+                $provider = $this->extractGatewayProviderId((string) $receipt['description']);
+                if ($provider !== null && $provider !== '') {
+                    $paypalIds[] = $provider;
+                }
+            }
+        }
+        $transactions = $receipts === [] ? [] : $connection->executeQuery(
+            "SELECT t.id, t.invoice_id, t.txn_id, t.amount, t.status, t.gateway_id, g.gateway FROM $txTable t LEFT JOIN invoice i ON i.id = t.invoice_id JOIN pay_gateway g ON g.id = t.gateway_id WHERE i.client_id = ? OR (t.invoice_id IS NULL AND ((g.gateway = 'Stripe' AND t.id IN (?)) OR (g.gateway = 'PayPalEmail' AND t.txn_id IN (?))))",
+            [$clientId, array_values(array_unique($stripeIds)), array_values(array_unique($paypalIds))],
+            [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ArrayParameterType::STRING],
+        )->fetchAllAssociative();
         foreach ($receipts as $receipt) {
             $provider = $this->extractGatewayProviderId((string) $receipt['description']);
             $matches = [];

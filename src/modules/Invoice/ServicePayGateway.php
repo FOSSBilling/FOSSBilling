@@ -299,7 +299,7 @@ class ServicePayGateway implements InjectionAwareInterface
             $customLogo = $this->importGatewayLogo($data['logo_url']);
         }
 
-        $this->di['em']->wrapInTransaction(function () use ($model, $data, $customLogo, $logoChanged, $mergedConfig): void {
+        $this->withGatewayTransaction(function () use ($model, $data, $customLogo, $logoChanged, $mergedConfig): void {
             $replacementId = isset($data['replacement_id']) && $data['replacement_id'] !== '' ? (int) $data['replacement_id'] : null;
             if ($model->getId() !== null) {
                 $this->lockGatewayRows([$model->getId(), $replacementId]);
@@ -314,7 +314,7 @@ class ServicePayGateway implements InjectionAwareInterface
             // Validate and move unpaid invoices before disabling the gateway.
             // Any failure rolls back both migration and gateway configuration.
             if ($wasEnabled && !$newEnabled) {
-                $this->moveUnpaidInvoices((int) $model->getId(), $replacementId);
+                $this->moveUnpaidInvoicesLocked((int) $model->getId(), $replacementId);
             }
 
             $model->setName($data['title'] ?? $model->getName());
@@ -346,12 +346,33 @@ class ServicePayGateway implements InjectionAwareInterface
      */
     public function moveUnpaidInvoices(int $gatewayId, ?int $replacementId): void
     {
-        if (!$this->di['em']->getConnection()->isTransactionActive()) {
-            $this->di['em']->wrapInTransaction(fn () => $this->moveUnpaidInvoicesLocked($gatewayId, $replacementId));
+        $this->withGatewayTransaction(fn () => $this->moveUnpaidInvoicesLocked($gatewayId, $replacementId));
+    }
+
+    private function withGatewayTransaction(callable $action): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $mysql = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+        $isolation = $mysql ? $connection->getTransactionIsolation() : null;
+        if ($connection->isTransactionActive()) {
+            if ($mysql && $isolation !== \Doctrine\DBAL\TransactionIsolationLevel::READ_COMMITTED) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Gateway changes require a fresh READ COMMITTED transaction. Retry the whole operation outside the current transaction.');
+            }
+            $this->di['em']->wrapInTransaction($action);
 
             return;
         }
-        $this->moveUnpaidInvoicesLocked($gatewayId, $replacementId);
+        if ($mysql) {
+            $connection->setTransactionIsolation(\Doctrine\DBAL\TransactionIsolationLevel::READ_COMMITTED);
+        }
+
+        try {
+            $this->di['em']->wrapInTransaction($action);
+        } finally {
+            if ($mysql) {
+                $connection->setTransactionIsolation($isolation);
+            }
+        }
     }
 
     private function moveUnpaidInvoicesLocked(int $gatewayId, ?int $replacementId): void

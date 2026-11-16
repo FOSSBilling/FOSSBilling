@@ -104,6 +104,7 @@ test('lists per-gateway fees for an unpaid invoice', function (): void {
     $model = createEntity(Invoice::class, ['status' => Invoice::STATUS_UNPAID, 'currency' => 'USD', 'client_id' => 7, 'taxrate' => 0]);
 
     $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')->with($model)->andReturn(false);
     $serviceMock->shouldReceive('checkInvoiceAuth')->atLeast()->once();
     $serviceMock->shouldReceive('getAmountPaid')->once()->with($model)->andReturn(0.0);
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn(

@@ -699,3 +699,30 @@ test('PayPal resumes financially processed receipts through the transaction work
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
         ->and($calls)->toBe(2);
 })->with([false, true]);
+
+test('PayPal records collected funds after checkout credit is removed and retries without duplication', function (): void {
+    $c = deferredPayPalReceiptContext(null, false, 'web_accept', '60');
+    (new SchemaTool($c['em']))->createSchema([$c['em']->getClassMetadata(Box\Mod\Invoice\Entity\InvoiceCredit::class)]);
+    $c['invoice']->setStatus('unpaid')->setIssued(true);
+    $c['connection']->executeStatement('DELETE FROM client_order_meta');
+    $c['connection']->executeStatement('DELETE FROM invoice_item');
+    $c['em']->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($c['invoice'])->setType('custom')->setTask('void')->setStatus('pending_payment')->setPrice(100)->setQuantity(1)->setCharged(false));
+    $c['em']->flush();
+    $fees = new Box\Mod\Invoice\ServiceGatewayFees();
+    $fees->setDi($c['di']);
+    $balance = new Box\Mod\Client\ServiceBalance();
+    $balance->setDi($c['di']);
+    $services = $c['di']['mod_service'];
+    unset($c['di']['mod_service']);
+    $c['di']['mod_service'] = $c['di']->protect(fn (string $module, ?string $sub = null): object => match ($sub) {
+        'GatewayFees' => $fees, 'Balance' => $balance, default => $services($module, $sub)
+    });
+    $payload = $c['payload'];
+    $payload['get'] = signedPayPalGet($c['invoice']->getId(), $c['gateway']->getId());
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $payload, $c['gateway']->getId());
+    expect($c['invoice']->getStatus())->toBe('unpaid')
+        ->and($c['billing']->getBalanceDue($c['invoice']))->toBe(40.0);
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $payload, $c['gateway']->getId());
+    expect((int) $c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(60.0);
+});

@@ -503,3 +503,16 @@ test('scheduled cancellation recovery accepts failed-renew orders', function (st
     $service->setDi($di);
     expect($service->$entry($order))->toBeTrue();
 })->with(['processScheduledCancellation', 'finalizeCancellationFromGateway']);
+
+test('standalone unsuspend respects fresh cancellation recovery holds', function (string $claim): void {
+    [$em, $order] = cancellationRegressionContext();
+    $order->setStatus(Order::STATUS_SUSPENDED);
+    $meta = (new OrderMeta())->setOrder($order)->setName(Service::META_SCHEDULED_CANCEL_CLAIM)->setValue('0');
+    $em->persist($meta);
+    $em->flush();
+    $em->getConnection()->update('client_order_meta', ['value' => $claim], ['id' => $meta->getId()]);
+    [$service] = cronRenewalRegressionServices($em);
+    $service->shouldNotReceive('_callOnService');
+    expect(fn () => $service->unsuspendFromOrder($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'staff review')
+        ->and($order->getStatus())->toBe(Order::STATUS_SUSPENDED);
+})->with(['1', '2']);

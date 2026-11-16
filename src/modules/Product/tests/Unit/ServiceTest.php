@@ -4097,7 +4097,7 @@ test('free renewal offer exists before hosting payment and is consumed only afte
 });
 
 test('hosting renewed moments before an overdue domain covers the same calendar term', function (string $logic): void {
-    $hosting = freeRenewalHostingOrder(['expiresAt' => (new DateTime())->modify('+1 year -1 minute')]);
+    $hosting = freeRenewalHostingOrder(['expiresAt' => (new DateTime('today noon'))->modify('+1 year -1 minute')]);
     [$service, $domain] = freeDomainRenewalService(
         ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
         [$hosting],

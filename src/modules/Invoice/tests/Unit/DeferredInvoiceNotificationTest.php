@@ -213,3 +213,34 @@ test('deferred email rechecks invoice status after acquiring its row lock', func
     $service->notifyDeferredInvoiceIssued($invoice);
     expect($invoice->getStatus())->toBe(Invoice::STATUS_CANCELED)->and($invoice->getIssueNotificationState())->toBe(0);
 });
+
+test('ordinary issuance still notifies after credit failure and recovers an interrupted notification', function (bool $closed): void {
+    [, $em, $client] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true)->setNr('42');
+    $em->persist($invoice);
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    $service->shouldReceive('tryPayWithCredits')->once()->andReturnUsing(function () use ($em, $closed): void {
+        if ($closed) {
+            $em->close();
+        }
+
+        throw new RuntimeException('credit lock unavailable');
+    });
+    $fresh = new Doctrine\ORM\EntityManager($em->getConnection(), $em->getConfiguration());
+    $service->shouldAllowMockingProtectedMethods()->shouldReceive('createEntityManager')->zeroOrMoreTimes()->andReturn($fresh);
+    $calls = 0;
+    $events = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $events->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, function () use (&$calls): void {
+        if (++$calls === 1) {
+            throw new Error('notification crash');
+        }
+    });
+    $service->getDi()['event_dispatcher'] = $events;
+    expect(fn () => $service->issueInvoice($invoice, ['use_credits' => true]))->toThrow(Error::class, 'notification crash');
+    expect($calls)->toBe(1)
+        ->and((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(2);
+    $service->doBatchDeliverIssuedNotifications();
+    expect($calls)->toBe(2)
+        ->and((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(0);
+})->with([false, true]);

@@ -260,3 +260,20 @@ test('suspended renewal keeps the cancellation lock across unsuspension and rene
     $cron->doBatchPaidInvoiceActivation();
     expect($order->getStatus())->toBe(Order::STATUS_ACTIVE)->and($item->getStatus())->toBe('executed');
 });
+
+test('renewal pending outcome replaces a stale cached pending value before provider I/O', function (): void {
+    [$em, $order, $item, $orders, $cron] = cronRenewalRegressionContext();
+    $key = 'paid_renewal_outcome_' . $item->getId();
+    $meta = (new OrderMeta())->setOrder($order)->setName($key)->setValue('pending');
+    $em->persist($meta);
+    $em->flush();
+    $em->getConnection()->update('client_order_meta', ['value' => 'retry'], ['id' => $meta->getId()]);
+    $orders->shouldReceive('_callOnService')->once()->andReturnUsing(function () use ($em, $key): void {
+        expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [$key]))->toBe('pending');
+
+        throw new Error('crash at provider');
+    });
+    expect(fn () => $orders->renewInvoiceItem($order, $item->getId()))->toThrow(Error::class);
+    expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [$key]))->toBe('pending');
+    expect(fn () => $orders->renewInvoiceItem($order, $item->getId()))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'unresolved');
+});

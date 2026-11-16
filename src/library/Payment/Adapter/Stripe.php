@@ -1639,7 +1639,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             throw new FOSSBilling\Core\Exception\InformationException('Client not found');
         }
         if ($invoice instanceof Invoice && $invoice->getStatus() !== Invoice::STATUS_PAID) {
-            $invoiceService->validatePaymentAmount((float) $tx->getAmount(), $invoiceService->getBalanceDue($invoice));
             if (!$invoice->isIssued()) {
                 $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }

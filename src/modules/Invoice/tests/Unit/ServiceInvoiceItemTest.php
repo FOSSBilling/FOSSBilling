@@ -925,7 +925,7 @@ test('a previously attempted free renewal is not sent to the registrar again', f
     $orders->shouldReceive('saveStatusChange')->once();
     $orders->shouldNotReceive('renewOrder');
     $orders->shouldNotReceive('renewInvoiceItem');
-    $orders->shouldNotReceive('renewFreeDomainInvoiceItem');
+    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->andReturnUsing(fn (Order $order, int $id, callable $prepare): bool => $prepare());
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -956,7 +956,7 @@ test('a free domain renewal records its claim before contacting the registrar', 
     $orders = Mockery::mock(OrderService::class);
     $orders->shouldReceive('getOrderMetaRepository')->andReturn($meta);
     $orders->shouldReceive('updateOrderMeta')->once()->globally()->ordered()->with($order, ['free_domain_paid_through' => '1900000000', 'free_domain_renewal_claim_11' => '1'])->andReturn(2);
-    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->globally()->ordered()->with($order, 11)->andReturn(true);
+    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->with($order, 11, Mockery::type('callable'))->andReturnUsing(fn (Order $order, int $id, callable $prepare): bool => $prepare());
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('freeDomainRenewalUntil')->with(20)->andReturn(1900000000);
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
@@ -989,7 +989,7 @@ test('a known zero-priced domain renewal proceeds without a free hosting claim',
     $orders = Mockery::mock(OrderService::class);
     $orders->shouldReceive('getOrderMetaRepository')->andReturn($meta);
     $orders->shouldReceive('updateOrderMeta')->once()->globally()->ordered()->with($order, ['free_domain_renewal_claim_11' => '1']);
-    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->globally()->ordered()->with($order, 11);
+    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->with($order, 11, Mockery::type('callable'))->andReturnUsing(fn (Order $order, int $id, callable $prepare): bool => $prepare());
     $product = createEntity(Box\Mod\Product\Entity\Product::class, ['id' => 5, 'type' => Box\Mod\Product\Service::DOMAIN]);
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('findProductById')->with(5)->andReturn($product);
@@ -1048,7 +1048,11 @@ test('a reviewed retry consumes its approval before contacting the registrar', f
     $orders = Mockery::mock(OrderService::class);
     $orders->shouldReceive('getOrderMetaRepository')->andReturn($meta);
     $orders->shouldReceive('updateOrderMeta')->once()->globally()->ordered()->with($order, ['free_domain_renewal_retry_11' => '0']);
-    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->globally()->ordered()->with($order, 11)->andThrow(new RuntimeException('Registrar timeout'));
+    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->andReturnUsing(function (Order $order, int $id, callable $prepare): bool {
+        $prepare();
+
+        throw new RuntimeException('Registrar timeout');
+    });
     $orders->shouldReceive('saveStatusChange')->once();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
@@ -1114,7 +1118,7 @@ test('a free renewal waits without calling the registrar until hosting is paid',
     $orders->shouldReceive('getOrderMetaRepository')->andReturn($meta);
     $orders->shouldNotReceive('renewOrder');
     $orders->shouldNotReceive('renewInvoiceItem');
-    $orders->shouldNotReceive('renewFreeDomainInvoiceItem');
+    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->andReturnUsing(fn (Order $order, int $id, callable $prepare): bool => $prepare());
     $orders->shouldNotReceive('updateOrderMeta');
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('freeDomainRenewalUntil')->with(20)->andReturnNull();
@@ -1180,7 +1184,13 @@ test('a zero TLD renewal is not retried automatically after an interrupted regis
 
         return 2;
     });
-    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->andThrow(new RuntimeException('Connection interrupted'));
+    $providerCalls = 0;
+    $orders->shouldReceive('renewFreeDomainInvoiceItem')->twice()->andReturnUsing(function (Order $order, int $id, callable $prepare) use (&$providerCalls): bool {
+        $prepare();
+        ++$providerCalls;
+
+        throw new RuntimeException('Connection interrupted');
+    });
     $orders->shouldReceive('saveStatusChange')->twice();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
@@ -1199,7 +1209,7 @@ test('a zero TLD renewal is not retried automatically after an interrupted regis
 
     $service->executeTask($item);
     $service->executeTask($item);
-    expect($item->getStatus())->toBe(InvoiceItem::STATUS_FAILED)->and($values['free_domain_renewal_claim_11'])->toBe('1');
+    expect($item->getStatus())->toBe(InvoiceItem::STATUS_FAILED)->and($values['free_domain_renewal_claim_11'])->toBe('1')->and($providerCalls)->toBe(1);
 });
 
 test('a renewal is held for staff when the hosting offer ends', function (): void {
@@ -1214,7 +1224,7 @@ test('a renewal is held for staff when the hosting offer ends', function (): voi
     $orders->shouldReceive('getOrderMetaRepository')->andReturn($meta);
     $orders->shouldNotReceive('renewOrder');
     $orders->shouldNotReceive('renewInvoiceItem');
-    $orders->shouldNotReceive('renewFreeDomainInvoiceItem');
+    $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->andReturnUsing(fn (Order $order, int $id, callable $prepare): bool => $prepare());
     $orders->shouldReceive('saveStatusChange')->once();
     $orders->shouldNotReceive('updateOrderMeta');
     $products = Mockery::mock(Box\Mod\Product\Service::class);
