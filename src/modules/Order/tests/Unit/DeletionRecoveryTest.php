@@ -24,6 +24,7 @@ require_once PATH_TESTS . '/Helpers/DeferredPayPal.php';
 function deletionRecoveryContext(?string $databasePath = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('DeletionRecoveryTestProxies');
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
@@ -426,6 +427,7 @@ test('MySQL checkpoint aliases respect the metadata column collation and roll ba
         }
         $connection->insert('client_order_meta', ['client_order_id' => 1, 'name' => 'ordinary', 'value' => 'original']);
         $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+        $config->setUseSchemaEditorApi(true);
         $config->setProxyDir(sys_get_temp_dir());
         $config->setProxyNamespace('DeletionRecoveryTestProxies');
         $em = new EntityManager($connection, $config);

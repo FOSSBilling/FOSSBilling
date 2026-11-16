@@ -87,6 +87,7 @@ function deferredPayPalMysqlEntityManager(?string $connectionClass = null): Enti
     ] + ($connectionClass === null ? [] : ['wrapperClass' => $connectionClass]));
     $connection->executeStatement('SET SESSION innodb_lock_wait_timeout = 4'); // cspell:ignore innodb
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('DeferredPayPalMysqlProxies');
 
@@ -96,6 +97,7 @@ function deferredPayPalMysqlEntityManager(?string $connectionClass = null): Enti
 function heldOrderPaymentContext(?string $databasePath = null): array
 {
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('HeldOrderPaymentProxies');
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
