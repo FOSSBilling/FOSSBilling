@@ -135,5 +135,7 @@ final class PatchRegistry
         148 => Patch148::class,
         149 => Patch149::class,
         150 => Patch150::class,
+        151 => Patch151::class,
+        152 => Patch152::class,
     ];
 }
