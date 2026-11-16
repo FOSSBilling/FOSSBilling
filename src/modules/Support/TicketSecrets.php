@@ -86,7 +86,11 @@ final class TicketSecrets
             if (($fields['password'] === '' || $fields['password'] === null) && ($fields['ssh_key'] === '' || $fields['ssh_key'] === null)) {
                 throw new \FOSSBilling\Core\Exception\InformationException('Enter a password or an SSH key.');
             }
-            $port = trim((string) ($data['port'] ?? ''));
+            $port = $data['port'] ?? '';
+            if (!is_string($port) && !is_int($port)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Enter a valid port.');
+            }
+            $port = trim((string) $port);
             if ($port !== '' && (filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]) === false)) {
                 throw new \FOSSBilling\Core\Exception\InformationException('Enter a valid port.');
             }

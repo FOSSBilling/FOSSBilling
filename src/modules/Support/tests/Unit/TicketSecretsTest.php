@@ -49,6 +49,20 @@ function ticketSecretsServer(): array
     ];
 }
 
+test('ticket secret ports reject invalid types without warnings or writes', function (mixed $port): void {
+    [$di, $connection] = ticketSecretsConnection();
+
+    expect(fn () => withoutPhpWarnings(fn () => TicketSecrets::addForClient($di, 5, 60, 'server', [...ticketSecretsServer(), 'port' => $port])))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'valid port');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
+})->with([
+    'array' => [[]],
+    'object' => [new stdClass()],
+    'boolean' => [false],
+    'float' => [22.0],
+]);
+
 test('ticket secret kinds default on with a week keep', function (): void {
     [$di] = ticketSecretsConnection();
     expect(TicketSecrets::kinds($di))->toBe(['server' => true, 'other' => true, 'days' => 7]);
@@ -59,6 +73,19 @@ test('ticket secret kinds default on with a week keep', function (): void {
     [$di] = ticketSecretsConnection(['secrets_days' => '']);
     expect(TicketSecrets::kinds($di)['days'])->toBe(7);
 });
+
+test('ticket secret ports accept whole numbers and empty values', function (mixed $port, ?int $expected): void {
+    [$di] = ticketSecretsConnection();
+    $added = withoutPhpWarnings(fn () => TicketSecrets::addForClient($di, 5, 60, 'server', [...ticketSecretsServer(), 'port' => $port]));
+
+    expect(TicketSecrets::openForStaff($di, $added['id'], 1)['port'])->toBe($expected);
+})->with([
+    'integer' => [22, 22],
+    'padded string' => [' 22 ', 22],
+    'maximum' => ['65535', 65535],
+    'empty' => ['', null],
+    'null' => [null, null],
+]);
 
 test('ticket secret add stores encrypted values with a label', function (): void {
     [$di, $connection] = ticketSecretsConnection(['secrets_server' => '1']);
