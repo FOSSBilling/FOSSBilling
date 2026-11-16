@@ -78,18 +78,15 @@ final class JsonAudit extends Command implements InjectionAwareInterface
     /** @return list<array{table: string, column: string, id: int|string, issue: string}> */
     private function quarantined(): array
     {
-        try {
-            if (!isset($this->di['em'], $this->di['crypt'])) {
-                return [];
-            }
-            $journal = new \FOSSBilling\Core\Doctrine\JsonMigrationJournal($this->di['em'], $this->di['crypt']);
-            $summary = $journal->find(\FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE)
-                ?? $journal->find('quarantine-index:json-fields-v1');
-            $entries = $summary['quarantined'] ?? $summary['entries'] ?? [];
-
-            return array_values(is_array($entries) ? $entries : []);
-        } catch (\Throwable) {
+        $connection = $this->di['em']->getConnection();
+        if (!$connection->createSchemaManager()->tablesExist(['json_migration_record'])) {
             return [];
         }
+        $journal = new \FOSSBilling\Core\Doctrine\JsonMigrationJournal($this->di['em'], $this->di['crypt']);
+        $summary = $journal->find(\FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE)
+            ?? $journal->find('quarantine-index:json-fields-v1');
+        $entries = $summary['quarantined'] ?? $summary['entries'] ?? [];
+
+        return array_values(is_array($entries) ? $entries : []);
     }
 }

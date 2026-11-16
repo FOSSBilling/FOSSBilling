@@ -19,6 +19,11 @@ namespace FOSSBilling\Core\Doctrine;
  */
 final class JsonFields
 {
+    /** Columns where NULL is fail-open (unrestricted recipients); incompatible values keep blocking the migration. */
+    public const array QUARANTINE_BLOCKED = [
+        'mod_massmailer.filter',
+    ];
+
     /** @var array<string, array{entity: class-string, columns: array<string, string>}> */
     public const array FIELDS = [
         'mod_massmailer' => ['entity' => \Box\Mod\Massmailer\Entity\MassmailerMessage::class, 'columns' => ['filter' => 'filter']],

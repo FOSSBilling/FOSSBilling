@@ -59,7 +59,7 @@ final class JsonMigration
         $targets = [];
         $temp = 'fb_json_preflight_' . bin2hex(random_bytes(6));
         $quotedTemp = $connection->quoteSingleIdentifier($temp);
-        $quarantineIndex = $journal->find('quarantine-index:json-fields-v1')['entries'] ?? [];
+        $quarantineIndex = self::quarantineIndex($journal->find('quarantine-index:json-fields-v1'));
         $decodedTotal = 0;
 
         try {
@@ -117,6 +117,9 @@ final class JsonMigration
                                     $pending[] = ['row' => $row, 'value' => $repaired, 'original' => $raw, 'issue' => null];
                                     $batch[] = ['row' => $row, 'value' => $repaired];
                                     $bytes += strlen($repaired);
+                                } elseif (in_array($table . '.' . $column, JsonFields::QUARANTINE_BLOCKED, true)) {
+                                    // NULL is fail-open here (unrestricted recipients), so keep blocking for review.
+                                    throw new JsonMigrationException("JSON preflight failed for $table.$column id=" . JsonFields::displayId($table, $row['id']) . '; no source data was changed. Review this row with database:json:audit.');
                                 } else {
                                     $pending[] = ['row' => $row, 'value' => null, 'original' => $raw, 'issue' => JsonAudit::classifyIssue($prepared ?? $raw, $scalarColumn)];
                                 }
@@ -124,12 +127,8 @@ final class JsonMigration
                         }
                         if ($rowsRead >= 500 || $bytes >= 262144) {
                             $this->validateBatch($connection, $temp, $batch, $table, $column);
+                            $decodedTotal += $this->applySourceWrites($connection, $journal, $table, $column, $pending, $quarantineIndex);
                             $journal->checkpoint('scan:' . $table . '.' . $column, ['cursor' => base64_encode((string) $row['id']), 'binary' => $row['id_type'] === \Doctrine\DBAL\ParameterType::BINARY]);
-                            $counts = $this->applySourceWrites($connection, $journal, $table, $column, $pending, $quarantineIndex);
-                            $decodedTotal += $counts['decoded'];
-                            if ($counts['quarantined'] > 0) {
-                                $journal->checkpoint('quarantine-index:json-fields-v1', ['entries' => $quarantineIndex]);
-                            }
                             $batch = [];
                             $bytes = 0;
                             $rowsRead = 0;
@@ -137,11 +136,7 @@ final class JsonMigration
                         }
                     }
                     $this->validateBatch($connection, $temp, $batch, $table, $column);
-                    $counts = $this->applySourceWrites($connection, $journal, $table, $column, $pending, $quarantineIndex);
-                    $decodedTotal += $counts['decoded'];
-                    if ($counts['quarantined'] > 0) {
-                        $journal->checkpoint('quarantine-index:json-fields-v1', ['entries' => $quarantineIndex]);
-                    }
+                    $decodedTotal += $this->applySourceWrites($connection, $journal, $table, $column, $pending, $quarantineIndex);
                     $journal->save('scanned:' . $table . '.' . $column, ['validated' => true]);
                 }
             }
@@ -210,6 +205,27 @@ final class JsonMigration
         return ['columns' => count($targets), 'empty_values' => $empty, 'quarantined_values' => count($quarantineIndex), 'decoded_values' => $decodedTotal, 'quarantined' => array_values($quarantineIndex)];
     }
 
+    /** Validate decrypted quarantine-index entries before trusting them. */
+    private static function quarantineIndex(?array $found): array
+    {
+        $index = [];
+        $entries = $found['entries'] ?? null;
+        if (!is_array($entries)) {
+            return [];
+        }
+        foreach ($entries as $key => $entry) {
+            if (!is_string($key) || !is_array($entry)
+                || !isset($entry['table'], $entry['column'], $entry['id'], $entry['issue'])
+                || !is_string($entry['table']) || !is_string($entry['column'])
+                || (!is_int($entry['id']) && !is_string($entry['id'])) || !is_string($entry['issue'])) {
+                continue;
+            }
+            $index[$key] = ['table' => $entry['table'], 'column' => $entry['column'], 'id' => $entry['id'], 'issue' => $entry['issue']];
+        }
+
+        return $index;
+    }
+
     /** Decode one double-encoding level when the inner document is a safe object or array. */
     private function tryDoubleDecoded(string $prepared, bool $scalar): ?string
     {
@@ -250,13 +266,10 @@ final class JsonMigration
      *
      * @param list<array{row: array{id: int|string, value: ?string, type: ?string, id_type: \Doctrine\DBAL\ParameterType}, value: ?string, original: string, issue: ?string}> $writes
      * @param array<string, array{table: string, column: string, id: int|string, issue: string}>                                                                              $index
-     *
-     * @return array{decoded: int, quarantined: int}
      */
-    private function applySourceWrites(Connection $connection, JsonMigrationJournal $journal, string $table, string $column, array $writes, array &$index): array
+    private function applySourceWrites(Connection $connection, JsonMigrationJournal $journal, string $table, string $column, array $writes, array &$index): int
     {
         $decoded = 0;
-        $quarantined = 0;
         $quotedTable = $connection->quoteSingleIdentifier($table);
         $quotedColumn = $connection->quoteSingleIdentifier($column);
         foreach ($writes as $write) {
@@ -276,7 +289,7 @@ final class JsonMigration
             if (!$repair) {
                 $payload['issue'] = $write['issue'];
             }
-            $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $row, $write, $key, $payload): void {
+            $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $table, $column, $row, $write, $key, $payload, $indexKey, $displayId, &$index): void {
                 $journal->save($key, $payload);
                 if ($write['issue'] === null) {
                     $connection->executeStatement(
@@ -290,17 +303,17 @@ final class JsonMigration
                         [$row['id'], $write['original']],
                         [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
                     );
+                    // Persist membership with the source update so a retry never loses the entry.
+                    $index[$indexKey] = ['table' => $table, 'column' => $column, 'id' => $displayId, 'issue' => $write['issue']];
+                    $journal->checkpoint('quarantine-index:json-fields-v1', ['entries' => $index]);
                 }
             });
             if ($repair) {
                 ++$decoded;
-            } else {
-                $index[$indexKey] = ['table' => $table, 'column' => $column, 'id' => $displayId, 'issue' => $write['issue']];
-                ++$quarantined;
             }
         }
 
-        return ['decoded' => $decoded, 'quarantined' => $quarantined];
+        return $decoded;
     }
 
     /** Prevent update completion from reopening an installation with unconverted JSON fields. */

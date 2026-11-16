@@ -37,3 +37,31 @@ test('JSON audit tolerates absent optional module tables and columns', function 
     $connection->insert('product', ['id' => 1, 'config' => '{"label":"🚀"}']);
     expect(iterator_to_array((new JsonAudit())->inspect($connection)))->toBe([]);
 });
+
+test('JSON audit quarantine listing distinguishes a missing journal from an unreadable one', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
+    $connection->insert('product', ['id' => 1, 'config' => '{"label":"🚀"}']);
+
+    // No journal table at all: quarantined history is simply empty.
+    $command = new JsonAuditCommand();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $command->setDi(new Pimple\Container(['em' => $em]));
+    $tester = new CommandTester($command);
+    expect($tester->execute(['--quarantined' => true]))->toBe(0);
+
+    // Unreadable journal payloads must surface instead of reporting a clean bill of health.
+    $realEm = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+    new FOSSBilling\Core\Doctrine\JsonMigrationJournal($realEm, new FOSSBilling\Core\Security\Crypt());
+    $connection->insert('json_migration_record', [
+        'record_key' => hash('sha256', FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE),
+        'payload' => 'v3:undecryptable',
+    ], ['record_key' => Doctrine\DBAL\Types\Types::BINARY, 'payload' => Doctrine\DBAL\Types\Types::BLOB]);
+    $crypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
+    $crypt->shouldReceive('decrypt')->andReturn(false);
+    $command = new JsonAuditCommand();
+    $command->setDi(new Pimple\Container(['em' => $realEm, 'crypt' => $crypt]));
+    $tester = new CommandTester($command);
+    expect(fn () => $tester->execute(['--quarantined' => true]))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
+});

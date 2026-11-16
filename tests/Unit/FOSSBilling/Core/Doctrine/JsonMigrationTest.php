@@ -75,6 +75,17 @@ test('transaction IPN rows with legacy payloads migrate without blocking the upd
     expect((new JsonMigration())->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
 });
 
+test('recipient filters keep blocking the migration because NULL would lift all restrictions', function (): void {
+    $c = $this->jsonMigrationConnection;
+    $c->executeStatement('CREATE TABLE mod_massmailer (id INTEGER PRIMARY KEY, filter TEXT)');
+    $c->insert('mod_massmailer', ['id' => 1, 'filter' => '{"client_groups":[7],"client_groups":[7]}']);
+
+    expect(fn () => (new JsonMigration())->automatic(EntityManagerFactory::create($c), new Crypt()))
+        ->toThrow(JsonMigrationException::class, 'JSON preflight failed for mod_massmailer.filter id=1');
+    expect($c->fetchOne('SELECT filter FROM mod_massmailer'))->toBe('{"client_groups":[7],"client_groups":[7]}')
+        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
+});
+
 test('customized columns and indexes require review without source changes', function (string $definition): void {
     $c = $this->jsonMigrationConnection;
     $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config ' . $definition . ')');

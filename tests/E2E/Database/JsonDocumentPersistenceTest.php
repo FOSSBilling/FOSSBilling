@@ -137,23 +137,23 @@ test('automatic TEXT upgrades retain JSON meaning and safely repeat', function (
 });
 
 test('unsafe legacy documents are quarantined without blocking conversion or exposing secrets', function (string $raw): void {
-    makeLegacyJsonColumn($this->connection);
-    $this->connection->insert('mod_massmailer', ['filter' => '']);
-    $this->connection->insert('mod_massmailer', ['filter' => $raw]);
+    $this->connection->executeStatement('CREATE TABLE product (id BIGINT PRIMARY KEY, config TEXT)');
+    $this->connection->insert('product', ['id' => 1, 'config' => '']);
+    $this->connection->insert('product', ['id' => 2, 'config' => $raw]);
 
     $result = (new JsonMigration())->automatic(FOSSBilling\Core\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Core\Security\Crypt());
     expect(json_encode($result))->not->toContain('private-secret', $raw);
     if ($raw === '"{\\"a\\":1}"') {
         expect($result['decoded_values'])->toBe(1)
             ->and($result['quarantined_values'])->toBe(0)
-            ->and($this->connection->fetchOne('SELECT filter FROM mod_massmailer ORDER BY id LIMIT 1 OFFSET 1'))->toBe('{"a":1}');
+            ->and($this->connection->fetchOne('SELECT config FROM product WHERE id = 2'))->toBe('{"a":1}');
     } else {
         expect($result['quarantined_values'])->toBe(1)
             ->and($result['decoded_values'])->toBe(0)
             ->and($result['quarantined'][0]['issue'])->not->toBeEmpty()
-            ->and($this->connection->fetchOne('SELECT filter FROM mod_massmailer ORDER BY id LIMIT 1 OFFSET 1'))->toBeNull();
+            ->and($this->connection->fetchOne('SELECT config FROM product WHERE id = 2'))->toBeNull();
     }
-    expect($this->connection->fetchOne('SELECT filter FROM mod_massmailer ORDER BY id LIMIT 1'))->toBeNull();
+    expect($this->connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull();
     (new JsonMigration())->assertReady($this->connection);
 })->with(['{private-secret', '{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}', 'false', '42', '"scalar"', '"{\\"a\\":1}"']);
 
