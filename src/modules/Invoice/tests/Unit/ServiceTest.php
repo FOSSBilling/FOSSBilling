@@ -1622,7 +1622,7 @@ test('admin mark as paid threads the paid_at override into the payment transacti
             false,
             false,
             true,
-            Mockery::on(fn ($value): bool => $value instanceof \DateTimeInterface && $value->format('Y-m-d') === '2024-05-06'),
+            Mockery::on(fn ($value): bool => $value instanceof DateTimeInterface && $value->format('Y-m-d') === '2024-05-06'),
             Mockery::any()
         )
         ->andReturn(true);
@@ -1742,7 +1742,7 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
             false,
             false,
             true,
-            Mockery::on(fn ($value): bool => $value instanceof \DateTimeInterface && $value->format('Y-m-d H:i:s') === '2026-08-01 10:30:00'),
+            Mockery::on(fn ($value): bool => $value instanceof DateTimeInterface && $value->format('Y-m-d H:i:s') === '2026-08-01 10:30:00'),
             Mockery::any()
         )
         ->andReturn(true);
