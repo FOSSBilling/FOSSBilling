@@ -401,7 +401,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         $asked = isset($match[2]) && hash_equals($this->askedSignature((int) $match[1], $match[2], $this->moneyFormat($amount, $currency), $currency), $match[3]) ? $match[2] : '';
         $row = ['invoice_id' => $invoice->getId(), 'txn_id' => $txnId, 'type' => 'paypal_nvp', 'amount' => $amount, 'currency' => $currency, 'updated_at' => date('Y-m-d H:i:s')];
         if (in_array($status, ['Pending', 'In-Progress'], true)) {
-            // As WHMCS's "Payment Pending": no other charge or reminder until PayPal's notice settles it.
+            // No other charge or reminder until PayPal settles the payment.
             $api_admin->invoice_transaction_update($row + ['id' => $id, 'txn_status' => 'processing', 'status' => Transaction::STATUS_RECEIVED, 'error' => 'PayPal is holding the payment: ' . ($payment['PENDINGREASON'] ?? 'pending')]);
 
             return;
@@ -498,11 +498,12 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         try {
             $full = abs($amount - $service->getTotalWithTax($invoice)) < 0.01;
             if ($full) {
-                $service->refundInvoice($invoice, $text);
+                $service->refundInvoice($invoice, $text, null, ['gateway_refund' => false, 'gateway_returned' => true]);
             } else {
                 // Arbitrary gross shares cannot map onto integer line quantities: book the exact amount on a tax-exempt custom line.
                 $service->refundInvoice($invoice, $text, null, [
                     'gateway_refund' => false,
+                    'gateway_returned' => true,
                     'custom_line' => [
                         'title' => sprintf('Partial chargeback %s of payment %s.', $reversalId, $paymentId),
                         'amount' => $amount,

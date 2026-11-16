@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div class="card-body" data-cards data-return-url="{{ 'payment-methods'|url }}">
-                {% if not cards.available and not cards.autopay %}
+                {% if not cards.available and not cards.autopay and not cards.paypal %}
                     <div class="alert alert-info" role="status">{{ 'Saved payment methods are not available.'|trans }}</div>
                 {% else %}
                     {% if cards.available %}

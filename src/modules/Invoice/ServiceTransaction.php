@@ -84,7 +84,34 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
+    /** Serialize transaction edits with settlement and validate current financial history. */
     public function update(Transaction $model, array $data): bool
+    {
+        $em = $this->di['em'];
+
+        $updated = $em->wrapInTransaction(function () use ($em, $model, $data): bool {
+            $db = $em->getConnection();
+            $table = $db->quoteSingleIdentifier('transaction');
+            $id = (int) $model->getId();
+            if ($db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
+                $db->executeStatement("UPDATE {$table} SET status = status WHERE id = ?", [$id]);
+            }
+            $status = $db->fetchOne("SELECT status FROM {$table} WHERE id = ?" . \FOSSBilling\Core\Doctrine\RowLock::suffix($db), [$id]);
+            if ($status === false) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Transaction not found.');
+            }
+            if ($status === Transaction::STATUS_PROCESSED || $status !== $model->getStatus()) {
+                $em->refresh($model);
+            }
+
+            return $this->applyUpdate($model, $data);
+        });
+        $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionUpdateEvent((int) $model->getId()));
+
+        return $updated;
+    }
+
+    private function applyUpdate(Transaction $model, array $data): bool
     {
         $transactionId = (int) $model->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionUpdateEvent($transactionId));
@@ -124,7 +151,6 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->setErrorCode(isset($data['error_code']) ? (int) $data['error_code'] : $model->getErrorCode());
         $model->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
-        $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionUpdateEvent($transactionId));
 
         $this->di['logger']->info('Updated transaction #{model_id}', ['model_id' => $model->getId()]);
 
@@ -414,21 +440,34 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function delete(Transaction $model): bool
     {
-        $id = $model->getId();
-        // A processed transaction records money that already moved (including
-        // any client-balance credit written when it was debited). Deleting it
-        // would rewrite financial history and orphan those rows.
+        $id = (int) $model->getId();
         if ($model->getStatus() === Transaction::STATUS_PROCESSED) {
             throw new \FOSSBilling\Core\Exception\InformationException('Processed transactions cannot be deleted because they record money that already moved.');
         }
-        // Unprocessed transactions move no money, but drop any balance rows
-        // that reference them so no orphans remain.
-        $balances = $this->di['em']->getRepository(ClientBalance::class)->findBy(['type' => 'transaction', 'relId' => (string) $id]);
-        foreach ($balances as $balance) {
-            $this->di['em']->remove($balance);
-        }
-        $this->di['em']->remove($model);
-        $this->di['em']->flush();
+        $em = $this->di['em'];
+        $em->wrapInTransaction(function () use ($em, $model, $id): void {
+            $db = $em->getConnection();
+            $table = $db->quoteSingleIdentifier('transaction');
+            if ($db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
+                $db->executeStatement("UPDATE {$table} SET status = status WHERE id = ?", [$id]);
+            }
+            $status = $db->fetchOne("SELECT status FROM {$table} WHERE id = ?" . \FOSSBilling\Core\Doctrine\RowLock::suffix($db), [$id]);
+            if ($status === false) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Transaction not found.');
+            }
+            if ($status === Transaction::STATUS_PROCESSED) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Processed transactions cannot be deleted because they record money that already moved.');
+            }
+            if ($status === Transaction::STATUS_PROCESSING) {
+                throw new \FOSSBilling\Core\Exception\InformationException('A transaction being processed cannot be deleted.');
+            }
+            $balances = $em->getRepository(ClientBalance::class)->findBy(['type' => 'transaction', 'relId' => (string) $id]);
+            foreach ($balances as $balance) {
+                $em->remove($balance);
+            }
+            $em->remove($model);
+            $em->flush();
+        });
         $this->di['logger']->info('Removed transaction #{id}', ['id' => $id]);
 
         return true;
@@ -642,16 +681,10 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         // `transaction` is a reserved word (bare use is a syntax error on SQLite): quote it.
         $table = $this->di['em']->getConnection()->quoteSingleIdentifier('transaction');
-        $sql = "SELECT m.*
-                FROM {$table} as m
-                WHERE m.status = :received_status
-                    OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
-                ORDER BY m.id DESC";
+        $sql = "SELECT m.* FROM {$table} as m WHERE m.status = :received_status ORDER BY m.id DESC";
 
         return $this->di['em']->getConnection()->fetchAllAssociative($sql, [
             'received_status' => Transaction::STATUS_RECEIVED,
-            'processing_status' => Transaction::STATUS_PROCESSING,
-            'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
         ]);
     }
 
@@ -660,42 +693,34 @@ class ServiceTransaction implements InjectionAwareInterface
         return date('Y-m-d H:i:s', time() - self::PROCESSING_RECOVERY_TIMEOUT);
     }
 
-    /**
-     * Atomically claim a transaction for processing.
-     * Uses conditional UPDATE to prevent race conditions when multiple
-     * workers attempt to process the same transaction simultaneously.
-     *
-     * Accepts 'received' status immediately, allows stale 'processing'
-     * transactions to be reclaimed after the recovery timeout, allows
-     * 'error' transactions to be retried (e.g. via the admin Process button
-     * or PayPal IPN retries), and accepts 'approved' offline payments moving
-     * to settlement.
-     *
-     * @param int $id Transaction ID
-     *
-     * @return bool True if the transaction was successfully claimed, false if already being processed
-     */
+    /** Claim unprocessed work without assuming that an old worker has stopped. */
     public function claimForProcessing(int $id): bool
     {
         $connection = $this->di['em']->getConnection();
-        // `transaction` is a reserved word: quote it portably, or the claim is a
-        // syntax error on SQLite and no payment can complete there.
         $table = $connection->quoteSingleIdentifier('transaction');
         $affectedRows = $connection->executeStatement(
-            "UPDATE {$table} SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))",
-            [
-                Transaction::STATUS_PROCESSING,
-                date('Y-m-d H:i:s'),
-                $id,
-                Transaction::STATUS_RECEIVED,
-                Transaction::STATUS_ERROR,
-                Transaction::STATUS_APPROVED,
-                Transaction::STATUS_PROCESSING,
-                $this->getProcessingRecoveryThreshold(),
-            ]
+            "UPDATE {$table} SET status = ?, updated_at = ? WHERE id = ? AND status IN (?, ?, ?)",
+            [Transaction::STATUS_PROCESSING, date('Y-m-d H:i:s'), $id, Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR, Transaction::STATUS_APPROVED]
         );
 
         return $affectedRows > 0;
+    }
+
+    /** Release only after staff has stopped the old worker and checked the gateway outcome. */
+    public function releaseStaleProcessing(int $id, ?int $staffId = null): bool
+    {
+        $db = $this->di['em']->getConnection();
+        $table = $db->quoteSingleIdentifier('transaction');
+        $updated = $db->executeStatement(
+            "UPDATE {$table} SET status = ?, error = ?, error_code = NULL, updated_at = ? WHERE id = ? AND status = ? AND (updated_at IS NULL OR updated_at <= ?)",
+            [Transaction::STATUS_ERROR, 'Processing was interrupted. Verify the gateway outcome before retrying.', date('Y-m-d H:i:s'), $id, Transaction::STATUS_PROCESSING, $this->getProcessingRecoveryThreshold()]
+        );
+        if ($updated === 0) {
+            throw new \FOSSBilling\Core\Exception\InformationException('This transaction is not eligible for recovery yet or its status has changed.');
+        }
+        $this->di['logger']->warning('Staff member #{staff} released stale transaction #{id} after confirming that processing stopped and the gateway outcome was checked.', ['staff' => $staffId, 'id' => $id]);
+
+        return true;
     }
 
     public function preProcessTransaction(Transaction $model): bool
@@ -720,32 +745,20 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * Mark a transaction as errored due to a processing failure.
-     *
-     * Reloads the transaction from the database so the status is current, and
-     * only marks it as errored if it has not already been processed, ensuring
-     * a successful processing is never clobbered by a stale exception.
-     */
+    /** Record a processing failure without overwriting a concurrently settled transaction. */
     private function markTransactionError(int $id, \Throwable $e): void
     {
-        $tx = $this->getTransactionRepository()->find($id);
-        if ($tx === null) {
-            return;
+        // Doctrine closes the entity manager after a failed transaction. Use the
+        // connection directly, and make the status guard part of the write.
+        $db = $this->di['em']->getConnection();
+        $table = $db->quoteSingleIdentifier('transaction');
+        $updated = $db->executeStatement(
+            "UPDATE {$table} SET status = ?, error = ?, error_code = ?, updated_at = ? WHERE id = ? AND status <> ?",
+            [Transaction::STATUS_ERROR, $e->getMessage(), (int) $e->getCode(), date('Y-m-d H:i:s'), $id, Transaction::STATUS_PROCESSED]
+        );
+        if ($updated > 0) {
+            $this->di['logger']->error('Failed to process transaction #{id}: {exception}', ['id' => $id, 'exception' => $e]);
         }
-
-        $this->di['em']->refresh($tx);
-        if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
-            return;
-        }
-
-        $tx->setStatus(Transaction::STATUS_ERROR);
-        $tx->setError($e->getMessage());
-        $tx->setErrorCode((int) $e->getCode());
-        $tx->setUpdatedAt(new \DateTime());
-        $this->di['em']->flush();
-
-        $this->di['logger']->error('Failed to process transaction #{id}: {exception}', ['id' => $id, 'exception' => $e]);
     }
 
     /**

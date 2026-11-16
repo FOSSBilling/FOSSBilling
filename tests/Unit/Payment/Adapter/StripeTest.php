@@ -184,6 +184,7 @@ function buildEntityManagerMocks(): array
 
     $txRepo->shouldReceive('find')->byDefault()->andReturn(null);
     $txRepo->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+    $txRepo->shouldReceive('findClearingByTxnId')->byDefault()->andReturn(null);
     $txRepo->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturn(null);
     $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->byDefault()->andReturn(null);
 
@@ -1235,6 +1236,28 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         expect($tx->getInvoice()?->getId())->toBe(10)
             ->and($tx->txn_id)->toBe('pi_existing');
+    });
+
+    test('settles a cleared debit through the atomic invoice path', function (): void {
+        $tx = createEntity(Transaction::class, ['id' => 201]);
+        $invoice = createEntity(Invoice::class, ['id' => 15, 'client_id' => 7]);
+        $clearing = createEntity(Transaction::class, ['id' => 200]);
+        $clearing->setInvoice($invoice);
+        $intent = (object) [
+            'id' => 'pi_debit', 'status' => 'succeeded', 'amount' => 2999,
+            'currency' => 'usd', 'metadata' => (object) ['invoice_id' => '15', 'client_id' => '7'],
+        ];
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $invoiceRepo->shouldReceive('find')->with(15)->andReturn($invoice);
+        $txRepo->shouldReceive('findClearingByTxnId')->once()->with('pi_debit', 1, 201)->andReturn($clearing);
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('settleClearingPayment')->once()->with($invoice, $clearing, $tx);
+        $di = container();
+        $di['em'] = $em;
+        $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
+        $this->adapter->setDi($di);
+
+        expect(invokePrivateMethod($this->adapter, 'handlePaymentIntentSucceededWebhookUnderLock', [$tx, $intent, 1]))->toBeTrue();
     });
 
     test('processes one-time payment when not already handled', function (): void {
@@ -2816,6 +2839,31 @@ describe('listRefundsForTransaction', function (): void {
             ['id' => 're_1', 'amount' => 10.5, 'invoice_id' => '5', 'lines' => '12:1'],
             ['id' => 're_3', 'amount' => 2.0, 'invoice_id' => null, 'lines' => null],
         ]);
+    });
+
+    test('lists every refund page before deciding a refund is unrecorded', function (): void {
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('all')->once()->with(['payment_intent' => 'pi_123', 'limit' => 100])
+            ->andReturn((object) ['has_more' => true, 'data' => [(object) ['id' => 're_first', 'status' => 'failed']]]);
+        $refunds->shouldReceive('all')->once()->with(['payment_intent' => 'pi_123', 'limit' => 100, 'starting_after' => 're_first'])
+            ->andReturn((object) ['has_more' => false, 'data' => [(object) ['id' => 're_old', 'amount' => 1000, 'status' => 'succeeded', 'metadata' => (object) ['invoice_id' => '5', 'lines' => 'full']]]]);
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->listRefundsForTransaction('pi_123', 'USD'))->toBe([
+            ['id' => 're_old', 'amount' => 10.0, 'invoice_id' => '5', 'lines' => 'full'],
+        ]);
+    });
+
+    test('rejects an incomplete refund page without a cursor', function (): void {
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('all')->once()->andReturn((object) ['has_more' => true, 'data' => []]);
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect(fn () => $this->adapter->listRefundsForTransaction('pi_123', 'USD'))->toThrow(Payment_Exception::class, 'invalid pagination cursor');
     });
 
     test('resolves a Stripe invoice before listing', function (): void {

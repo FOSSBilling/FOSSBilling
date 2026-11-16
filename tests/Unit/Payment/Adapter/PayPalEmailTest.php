@@ -1637,16 +1637,19 @@ describe('PayPal callback invoice binding', function (): void {
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
-        $apiAdmin->shouldReceive('invoice_refund')->once()->withArgs(function (array $data) use (&$refunded): bool {
-            $refunded[] = $data;
-
-            return true;
-        });
+        $apiAdmin->shouldNotReceive('invoice_refund');
 
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(120.00);
+        $invoiceService->shouldReceive('refundInvoice')->once()->with($invoiceModel, 'PayPal refund TXN-ORIG', null, [
+            'gateway_refund' => false, 'gateway_returned' => true,
+        ])->andReturnUsing(function (...$args) use (&$refunded): int {
+            $refunded[] = $args;
+
+            return 1;
+        });
 
         $em = paypalEmMocks($invoiceModel, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
         $di = container();
@@ -1669,10 +1672,10 @@ describe('PayPal callback invoice binding', function (): void {
         ], 2);
 
         expect($refunded)->toHaveCount(1)
-            ->and($refunded[0]['id'])->toBe(16);
+            ->and($refunded[0][0])->toBe($invoiceModel);
     });
 
-    test('leaves a partial PayPal refund for staff instead of refunding the whole invoice', function (): void {
+    test('leaves a partial or unknown PayPal refund for staff', function (string $gross): void {
         $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
         $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
@@ -1706,12 +1709,12 @@ describe('PayPal callback invoice binding', function (): void {
                 'payment_status' => 'Refunded',
                 'txn_id' => 'REFUND-9',
                 'parent_txn_id' => 'TXN-ORIG',
-                'mc_gross' => '-10.00',
+                'mc_gross' => $gross,
                 'mc_currency' => 'USD',
             ],
             'get' => ['invoice_id' => 16],
         ], 2);
-    });
+    })->with(['-10.00', '0.00']);
 
     test('accepts an unsigned delayed completion with a recorded pending payment', function (): void {
         $funds = [];
@@ -1892,4 +1895,23 @@ test('one-time payment form asks the balance due of a part-paid invoice', functi
 
     expect($fields['amount'])->toBe('50.00')
         ->and($fields['tax'])->toBe('0.00');
+});
+
+test('PayPal refunds send the durable request id and accept a replay response', function (): void {
+    $token = Mockery::mock();
+    $token->shouldReceive('getStatusCode')->andReturn(200);
+    $token->shouldReceive('toArray')->with(false)->andReturn(['access_token' => 'token']);
+    $refund = Mockery::mock();
+    $refund->shouldReceive('getStatusCode')->andReturn(200);
+    $refund->shouldReceive('toArray')->with(false)->andReturn(['id' => 'refund-1']);
+    $http = Mockery::mock();
+    $http->shouldReceive('request')->once()->with('POST', Mockery::pattern('/oauth2\/token$/'), Mockery::any())->andReturn($token);
+    $http->shouldReceive('request')->once()->with('POST', Mockery::pattern('/captures\/capture-1\/refund$/'), Mockery::on(fn (array $options): bool => ($options['headers']['PayPal-Request-Id'] ?? '') === str_repeat('a', 32)))->andReturn($refund);
+    $di = container();
+    $di['http_client'] = $http;
+    $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com', 'api_client_id' => 'client', 'api_secret' => 'secret']);
+    $adapter->setDi($di);
+
+    expect($adapter->refundPayment('capture-1', 10.0, 'USD', ['attempt' => str_repeat('a', 32)]))->toBe('refund-1');
+    expect(fn () => $adapter->refundPayment('capture-1', 10.0, 'USD'))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'durable refund attempt');
 });

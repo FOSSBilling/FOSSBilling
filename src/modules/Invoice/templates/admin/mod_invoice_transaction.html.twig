@@ -157,7 +157,19 @@
                                 <span>{{ 'Process'|trans }}</span>
                             </a>
                         {% endif %}
-                        {% if transaction.status != 'processed' %}
+                        {% if transaction.status == 'processing' %}
+                            <form method="post" action="{{ 'invoice/transaction_release_stale'|api_url }}" {{ fb_api_form({reload: true}) }} class="w-100">
+                                <p class="text-warning mb-2">{{ 'Before releasing an interrupted payment, stop the previous worker and check the gateway for an existing payment. Retrying an unverified payment can charge the customer twice.'|trans }}</p>
+                                <label class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="confirmed" value="1" required>
+                                    <span class="form-check-label">{{ 'The previous worker has stopped, I checked the gateway outcome, and I have reconciled any payment already made.'|trans }}</span>
+                                </label>
+                                <input type="hidden" name="id" value="{{ transaction.id }}">
+                                <button class="btn btn-warning" type="submit">{{ 'Release interrupted transaction'|trans }}</button>
+                                <p class="text-muted mb-0">{{ 'Transactions can be released after five minutes. Release does not retry the payment.'|trans }}</p>
+                            </form>
+                        {% endif %}
+                        {% if transaction.status not in ['processed', 'processing'] %}
                             <a class="btn btn-danger" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': transaction.id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|url}) }}>
                                 <svg class="icon" width="24" height="24">

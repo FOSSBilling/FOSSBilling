@@ -224,6 +224,46 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return $this->getService()->refundInvoice($model, $note, $items, $options);
     }
 
+    /** Get the unresolved PayPal refund attempt for this invoice. */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function refund_attempt_get($data): ?array
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->pendingGatewayRefund($this->_getInvoice($data));
+    }
+
+    /** Record the result staff verified in PayPal. */
+    #[RequiredParams(['id' => 'Invoice ID is missing', 'attempt_id' => 'Refund attempt is missing', 'outcome' => 'Refund outcome is missing'])]
+    public function refund_attempt_reconcile($data): int|bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $invoice = $this->_getInvoice($data);
+        $attemptId = (string) $data['attempt_id'];
+        if (!preg_match('/^[a-f0-9]{32}$/', $attemptId)) {
+            throw new InformationException('Invalid refund attempt.');
+        }
+        if (($data['verified'] ?? null) !== '1') {
+            throw new InformationException('Confirm that you checked PayPal before continuing.');
+        }
+        $adminId = (int) $this->getIdentity()->getId();
+        if ($data['outcome'] === 'not_refunded') {
+            return $this->getService()->dismissGatewayRefundAttempt($invoice, $attemptId, $adminId);
+        }
+        if ($data['outcome'] !== 'refunded') {
+            throw new InformationException('Choose the verified refund outcome.');
+        }
+        if ($this->getService()->isInvoiceTypeDeposit($invoice)) {
+            $this->checkPermissions('client', 'manage_balance');
+        }
+        $items = ($data['selection'] ?? '') === 'partial' ? ($data['items'] ?? null) : null;
+        if (!in_array($data['selection'] ?? '', ['full', 'partial'], true) || (($data['selection'] ?? '') === 'partial' && (!is_array($items) || $items === []))) {
+            throw new InformationException('Select the original refund lines.');
+        }
+
+        return $this->getService()->reconcileGatewayRefund($invoice, $attemptId, (string) ($data['refund_id'] ?? ''), $items, $adminId);
+    }
+
     /**
      * Issue a debit note against an invoice.
      *
@@ -621,7 +661,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $savedCards = $this->getDi()['mod_service']('Invoice', 'SavedCards');
         $method = $savedCards->method((int) $invoice->getClientId());
         $adapter = $method['adapter'] ?? null;
-        if (!$adapter instanceof \Payment_Adapter_Stripe) {
+        if (!$adapter instanceof \Payment_Adapter_Stripe && !$adapter instanceof \Payment_Adapter_PayPalAutoPay && !$adapter instanceof \Payment_Adapter_PayPalEmail) {
             throw new InformationException('The client has no saved payment method.');
         }
 
@@ -989,6 +1029,18 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->claimForProcessing((int) $data['id']);
+    }
+
+    /** Release an interrupted transaction after checking the worker and gateway. */
+    #[RequiredParams(['id' => 'Transaction ID is required'])]
+    public function transaction_release_stale($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+        if (($data['confirmed'] ?? null) !== '1' && ($data['confirmed'] ?? null) !== 1) {
+            throw new InformationException('Confirm that the previous worker has stopped and check the gateway outcome.');
+        }
+
+        return $this->getDi()['mod_service']('Invoice', 'Transaction')->releaseStaleProcessing((int) $data['id'], $this->getIdentity()->getId());
     }
 
     /**

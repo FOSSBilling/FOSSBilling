@@ -203,13 +203,16 @@ test('payment methods page renders the saved cards', function (): void {
     expect($controller->get_payment_methods($app))->toBe('rendered');
 });
 
-test('invoice autopay page starts paying with a billing agreement', function (): void {
+test('invoice autopay page starts paying with a billing agreement', function (bool $once): void {
     $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32)]);
     $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepo->shouldReceive('findOneBy')->once()->with(['hash' => str_repeat('a', 32), 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID])->andReturn($invoice);
 
     $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
-    $adapter->shouldReceive('checkout')->once()->with($invoice, true, 'https://billing.example/invoice/paypal-autopay-paid', 'https://billing.example/invoice/' . str_repeat('a', 32))->andReturn(['token' => 'EC-1', 'url' => 'https://paypal.example/EC-1']);
+    if ($once) {
+        $adapter->shouldReceive('option')->once()->with('pay_once')->andReturn(true);
+    }
+    $adapter->shouldReceive('checkout')->once()->with($invoice, !$once, 'https://billing.example/invoice/paypal-autopay-paid', 'https://billing.example/invoice/' . str_repeat('a', 32))->andReturn(['token' => 'EC-1', 'url' => 'https://paypal.example/EC-1']);
 
     $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
     $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
@@ -221,7 +224,7 @@ test('invoice autopay page starts paying with a billing agreement', function ():
     $cache->shouldReceive('save')->once()->with($item);
 
     $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
-    $request = Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-autopay/' . str_repeat('a', 32));
+    $request = Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-autopay/' . str_repeat('a', 32) . ($once ? '?once=1' : ''));
     $app->shouldReceive('getRequest')->andReturn($request);
     $app->shouldReceive('redirectUrl')->once()->with('https://paypal.example/EC-1')->andReturn(new RedirectResponse('https://paypal.example/EC-1'));
 
@@ -230,7 +233,11 @@ test('invoice autopay page starts paying with a billing agreement', function ():
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($invoiceRepo);
-    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards]));
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    if ($once) {
+        $invoiceService->shouldReceive('checkInvoiceAuth')->once()->with($invoice, Box\Mod\Invoice\InvoiceOperation::PAYMENT);
+    }
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService]));
     $di['url'] = $url;
     $di['cache'] = $cache;
     $di['request'] = $request;
@@ -245,7 +252,7 @@ test('invoice autopay page starts paying with a billing agreement', function ():
     $response = $controller->get_invoice_autopay($app, str_repeat('a', 32));
 
     expect($response)->toBeInstanceOf(RedirectResponse::class);
-});
+})->with([false, true]);
 
 test('invoice autopay return records the approved payment', function (): void {
     $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
@@ -556,3 +563,37 @@ test('pay and save waits while another payment is clearing', function (): void {
 
     expect($controller->get_invoice_paypal_save($app, str_repeat('a', 32))->getTargetUrl())->toBe('/invoice/' . str_repeat('a', 32));
 });
+
+test('one-time PayPal checkout applies invoice access policy before contacting PayPal', function (bool $allowed): void {
+    $hash = str_repeat('a', 32);
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => $hash, 'status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
+    $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $repo->shouldReceive('findOneBy')->once()->andReturn($invoice);
+    $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+    $adapter->shouldReceive('option')->once()->with('pay_once')->andReturn(true);
+    $adapter->shouldNotReceive('checkout');
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
+    $service = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $auth = $service->shouldReceive('checkInvoiceAuth')->once()->with($invoice, Box\Mod\Invoice\InvoiceOperation::PAYMENT);
+    if (!$allowed) {
+        $auth->andThrow(new FOSSBilling\Core\Exception\InformationException('Access denied', [], 403));
+    }
+    $request = Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-autopay/' . $hash . '?once=1');
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+    $destination = $allowed ? 'invoice/' . $hash : 'invoice';
+    $app->shouldReceive('redirect')->once()->with($destination)->andReturn(new RedirectResponse('/' . $destination));
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($repo);
+    if ($allowed) {
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    }
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $savedCards, 'invoice' => $service]));
+    $controller = new Client();
+    $controller->setDi($di);
+    expect($controller->get_invoice_autopay($app, $hash)->getTargetUrl())->toBe('/' . $destination);
+})->with([false, true]);

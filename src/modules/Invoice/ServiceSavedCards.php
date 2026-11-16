@@ -23,8 +23,8 @@ use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Exception\InformationException;
 
 /**
- * Automatic payments with saved payment methods, as WHMCS charges a payment
- * method on file. A client saves a Stripe card when paying an invoice or on
+ * Automatic payments with saved payment methods. A client saves a Stripe
+ * card when paying an invoice or on
  * the client area's Payment methods page. Each gateway keeps the saved
  * method in pay_gateway_customer (default_payment_method); the one the
  * client saved or chose last (auto_pay_at) pays. The cron charges it for
@@ -228,10 +228,10 @@ class ServiceSavedCards implements InjectionAwareInterface
         foreach ($adapters as $adapter) {
             $rows = $connection->fetchAllAssociative(
                 "SELECT i.id, i.client_id, i.due_at, COALESCE(c.attempts, 0) AS attempts FROM invoice i
-                   JOIN pay_gateway_customer g ON g.client_id = i.client_id AND g.pay_gateway_id = ? AND g.test_mode = ? AND g.saved_cards = 1
+                   JOIN pay_gateway_customer g ON g.client_id = i.client_id AND g.pay_gateway_id = ? AND g.test_mode = ? AND g.saved_cards = TRUE
                         AND g.default_payment_method IS NOT NULL AND g.default_payment_method <> ''
                    LEFT JOIN invoice_card_charge c ON c.invoice_id = i.id
-                  WHERE i.status = 'unpaid' AND i.approved = 1 AND i.due_at IS NOT NULL
+                  WHERE i.status = 'unpaid' AND i.due_at IS NOT NULL
                     AND (i.gateway_id IS NULL OR i.gateway_id IN (" . implode(',', $gatewayIds) . ')) AND COALESCE(c.attempts, 0) < ?
                     AND (c.last_attempt_at IS NULL OR c.last_attempt_at < ?)
                     AND NOT ' . PendingPayments::sql('i.id', $connection) . "
@@ -282,7 +282,7 @@ class ServiceSavedCards implements InjectionAwareInterface
         $connection = $this->di['em']->getConnection();
         $ids = $connection->fetchFirstColumn(
             "SELECT s.id FROM subscription s JOIN pay_gateway_customer g ON g.client_id = s.client_id AND g.pay_gateway_id = s.pay_gateway_id AND g.test_mode = ?
-              WHERE s.pay_gateway_id = ? AND s.status = 'active' AND s.sid IS NOT NULL AND s.sid <> '' AND g.saved_cards = 1
+              WHERE s.pay_gateway_id = ? AND s.status = 'active' AND s.sid IS NOT NULL AND s.sid <> '' AND g.saved_cards = TRUE
                 AND g.default_payment_method IS NOT NULL AND g.default_payment_method <> ''
                 AND (s.updated_at IS NULL OR s.updated_at < ?)",
             // A subscription PayPal refused to cancel is tried again a day later, not every cron run.
@@ -390,7 +390,7 @@ class ServiceSavedCards implements InjectionAwareInterface
             $tx = $txId !== null ? $this->di['em']->find(Transaction::class, $txId) : null;
 
             return ['paid' => false, 'error' => $tx?->getTxnStatus() === Transaction::STATUS_PROCESSING
-                ? 'The bank debit has started. The invoice is marked paid when it clears.'
+                ? 'The payment has started. The invoice is marked paid when it clears.'
                 : 'The payment was taken but is not completed yet. Check it with the payment service.'];
         }
 

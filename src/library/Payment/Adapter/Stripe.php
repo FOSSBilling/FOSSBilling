@@ -329,27 +329,41 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $filter = $this->resolveRefundTarget($txnId);
         $filter['limit'] = 100;
 
-        try {
-            $refunds = $this->stripe->refunds->all($filter);
-        } catch (Stripe\Exception\ApiErrorException $e) {
-            throw new Payment_Exception('Could not list Stripe refunds: :error', [':error' => $e->getMessage()]);
-        }
-
         $result = [];
-        foreach ($refunds->data ?? [] as $refund) {
-            if (in_array($refund->status ?? '', ['failed', 'canceled'], true)) {
-                continue;
+        $cursors = [];
+        while (true) {
+            try {
+                $refunds = $this->stripe->refunds->all($filter);
+            } catch (Stripe\Exception\ApiErrorException $e) {
+                throw new Payment_Exception('Could not list Stripe refunds: :error', [':error' => $e->getMessage()]);
             }
-            if (!is_string($refund->id ?? null) || $refund->id === '') {
-                continue;
+
+            $page = $refunds->data ?? [];
+            foreach ($page as $refund) {
+                if (in_array($refund->status ?? '', ['failed', 'canceled'], true)) {
+                    continue;
+                }
+                if (!is_string($refund->id ?? null) || $refund->id === '') {
+                    continue;
+                }
+                $lines = $refund->metadata->lines ?? null;
+                $result[] = [
+                    'id' => $refund->id,
+                    'amount' => $this->getAmountFromMinorUnits((int) ($refund->amount ?? 0), $currency),
+                    'invoice_id' => is_string($refund->metadata->invoice_id ?? null) ? $refund->metadata->invoice_id : null,
+                    'lines' => is_string($lines) && $lines !== '' ? $lines : null,
+                ];
             }
-            $lines = $refund->metadata->lines ?? null;
-            $result[] = [
-                'id' => $refund->id,
-                'amount' => $this->getAmountFromMinorUnits((int) ($refund->amount ?? 0), $currency),
-                'invoice_id' => is_string($refund->metadata->invoice_id ?? null) ? $refund->metadata->invoice_id : null,
-                'lines' => is_string($lines) && $lines !== '' ? $lines : null,
-            ];
+            if (!($refunds->has_more ?? false)) {
+                break;
+            }
+            $last = end($page);
+            $cursor = is_object($last) ? ($last->id ?? null) : null;
+            if (!is_string($cursor) || $cursor === '' || isset($cursors[$cursor])) {
+                throw new Payment_Exception('Could not list Stripe refunds: invalid pagination cursor.');
+            }
+            $cursors[$cursor] = true;
+            $filter['starting_after'] = $cursor;
         }
 
         return $result;
@@ -1348,8 +1362,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         $invoice = $tx->getInvoice();
 
-        // Delegate to the shared payment processing logic
-        $this->applyOneTimePayment($tx, $invoice, $paymentIntent);
+        $clearing = $this->di['em']->getRepository(Transaction::class)->findClearingByTxnId(
+            (string) $paymentIntent->id,
+            $gateway_id,
+            (int) $tx->getId()
+        );
+        if ($clearing instanceof Transaction) {
+            if (!$invoice instanceof Invoice) {
+                throw new FOSSBilling\Core\Exception\InformationException('Invoice not found for cleared payment.');
+            }
+            $this->di['mod_service']('Invoice')->settleClearingPayment($invoice, $clearing, $tx);
+        } else {
+            $this->applyOneTimePayment($tx, $invoice, $paymentIntent);
+        }
 
         return true;
     }

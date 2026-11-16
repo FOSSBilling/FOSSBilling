@@ -352,7 +352,7 @@ describe('payment notices', function (): void {
             $invoice,
             'PayPal chargeback R-1 of payment P-9.',
             null,
-            ['gateway_refund' => false, 'custom_line' => ['title' => 'Partial chargeback R-1 of payment P-9.', 'amount' => 25.0]]
+            ['gateway_refund' => false, 'gateway_returned' => true, 'custom_line' => ['title' => 'Partial chargeback R-1 of payment P-9.', 'amount' => 25.0]]
         )->andReturn(101);
         $invoiceService->shouldReceive('addNote')->once()->with($invoice, Mockery::pattern('/custom-line/'));
 
@@ -424,7 +424,7 @@ describe('payment notices', function (): void {
 
         $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
         $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(100.00);
-        $invoiceService->shouldReceive('refundInvoice')->once()->with($invoice, $text)->andReturn(101);
+        $invoiceService->shouldReceive('refundInvoice')->once()->with($invoice, $text, null, ['gateway_refund' => false, 'gateway_returned' => true])->andReturn(101);
         $invoiceService->shouldReceive('addNote')->once()->with($invoice, $text);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);

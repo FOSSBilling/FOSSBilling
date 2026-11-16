@@ -565,3 +565,34 @@ describe('paypal subscription teardown', function (): void {
         expect(true)->toBeTrue();
     });
 });
+
+test('automatic charge query runs against the invoice schema', function (): void {
+    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    foreach ([
+        'CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, due_at TEXT, status TEXT, gateway_id INTEGER)',
+        'CREATE TABLE pay_gateway_customer (client_id INTEGER, pay_gateway_id INTEGER, test_mode BOOLEAN, saved_cards BOOLEAN, default_payment_method TEXT)',
+        'CREATE TABLE invoice_card_charge (invoice_id INTEGER, attempts INTEGER, last_attempt_at TEXT)',
+        'CREATE TABLE "transaction" (invoice_id INTEGER, status TEXT, txn_status TEXT, created_at TEXT)',
+        'CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id TEXT)',
+        'CREATE TABLE subscription (rel_type TEXT, rel_id INTEGER, status TEXT)',
+    ] as $sql) {
+        $db->executeStatement($sql);
+    }
+    $gateway = createEntity(PayGateway::class, ['id' => 4, 'gateway' => 'Stripe']);
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findEnabledByGateway')->with('Stripe')->andReturn($gateway);
+    $repo->shouldReceive('findEnabledByGateway')->with('PayPalAutoPay')->andReturn(null);
+    $repo->shouldReceive('findEnabledByGateway')->with('PayPalEmail')->andReturn(null);
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $adapter->shouldReceive('gatewayId')->andReturn(4);
+    $adapter->shouldReceive('testMode')->andReturn(false);
+    $payGateway = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+    $payGateway->shouldReceive('getPaymentAdapter')->with($gateway)->andReturn($adapter);
+    $extension = Mockery::mock();
+    $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $em->shouldReceive('getConnection')->andReturn($db);
+    savedCardsService($em, ['extension' => $extension, 'invoice:paygateway' => $payGateway])->runDue();
+    expect(true)->toBeTrue();
+});

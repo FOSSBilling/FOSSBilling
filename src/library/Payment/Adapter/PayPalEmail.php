@@ -497,9 +497,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             && $ipn['payment_status'] == 'Refunded'
             && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment', 'recurring_payment'], true)
         ) {
-            // A partial refund must not auto-refund the whole invoice — leave
-            // it for staff instead. Only skip when we positively know it is
-            // partial; unknown totals keep the old behavior.
+            // Record only a known full refund; partial or unknown amounts need staff review.
             $refundAmount = abs((float) ($ipn['mc_gross'] ?? 0));
             $invoiceTotal = null;
 
@@ -512,14 +510,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 $this->di['logger']->warning('Could not determine invoice total for PayPal refund on invoice #{id}: {message}', ['id' => $invoice['id'], 'message' => $e->getMessage()]);
             }
 
-            if ($refundAmount > 0 && $invoiceTotal !== null && abs($invoiceTotal - $refundAmount) > 0.01) {
-                $this->di['logger']->warning('Partial PayPal refund {amount} for invoice #{id} (total {total}) left for staff instead of refunding the whole invoice', ['amount' => $refundAmount, 'id' => $invoice['id'], 'total' => $invoiceTotal]);
+            if ($refundAmount <= 0 || $invoiceTotal === null || abs($invoiceTotal - $refundAmount) > 0.01) {
+                $this->di['logger']->warning('PayPal refund {amount} for invoice #{id} (total {total}) needs staff review', ['amount' => $refundAmount, 'id' => $invoice['id'], 'total' => $invoiceTotal]);
             } else {
-                $refd = [
-                    'id' => $invoice['id'],
-                    'note' => 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''),
-                ];
-                $api_admin->invoice_refund($refd);
+                $this->di['mod_service']('Invoice')->refundInvoice($invoiceModel, 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''), null, [
+                    'gateway_refund' => false,
+                    'gateway_returned' => true,
+                ]);
             }
         }
 
@@ -943,10 +940,14 @@ document.addEventListener('DOMContentLoaded', function() {
     /** Refunds $amount of a PayPal payment (its transaction ID) and returns PayPal's refund ID. */
     public function refundPayment(string $txnId, float $amount, string $currency, array $metadata = []): string
     {
+        $requestId = $metadata['attempt'] ?? null;
+        if (!is_string($requestId) || !preg_match('/^[a-f0-9]{32}$/', $requestId)) {
+            throw new FOSSBilling\Core\Exception\InformationException('A durable refund attempt is required.');
+        }
         [$status, $body] = $this->rest('POST', '/v2/payments/captures/' . rawurlencode($txnId) . '/refund', [
             'amount' => ['value' => $this->moneyFormat($amount, $currency), 'currency_code' => $currency],
-        ]);
-        if ($status !== 201 || empty($body['id'])) {
+        ], ['PayPal-Request-Id' => $requestId]);
+        if (!in_array($status, [200, 201], true) || empty($body['id'])) {
             throw new FOSSBilling\Core\Exception\InformationException('PayPal did not refund payment :id: :error', [':id' => $txnId, ':error' => $this->restError($body, $status)]);
         }
 
@@ -1158,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', function() {
     public function processRestCapture($api_admin, int $id, string $captureId): void
     {
         [$status, $capture] = $this->rest('GET', '/v2/payments/captures/' . rawurlencode($captureId));
-        if ($status !== 200 || empty($capture['id'])) {
+        if ($status !== 200 || ($capture['id'] ?? null) !== $captureId) {
             throw new Payment_Exception('PayPal payment :id was not found', [':id' => $captureId]);
         }
         // Only orders made here name an invoice: a payment of another shop on the same PayPal account pays nothing.
@@ -1172,23 +1173,49 @@ document.addEventListener('DOMContentLoaded', function() {
         $amount = (float) ($capture['amount']['value'] ?? 0);
         $currency = (string) ($capture['amount']['currency_code'] ?? '');
         $completed = ($capture['status'] ?? '') === 'COMPLETED';
-        $api_admin->invoice_transaction_update([
-            'id' => $id, 'invoice_id' => $invoice->getId(), 'txn_id' => (string) $capture['id'], 'type' => 'paypal_rest',
-            'txn_status' => $completed ? 'Completed' : ucfirst(strtolower((string) ($capture['status'] ?? ''))), 'amount' => $amount, 'currency' => $currency,
-        ]);
-        if (!$completed) {
-            $api_admin->invoice_transaction_update(['id' => $id, 'status' => Transaction::STATUS_RECEIVED, 'error' => sprintf('PayPal payment not completed: %s', (string) ($capture['status'] ?? 'unknown')), 'updated_at' => date('Y-m-d H:i:s')]);
+        $em = $this->di['em'];
+        $db = $em->getConnection();
+        $lock = 'fb:paypal:' . substr(hash('sha256', $this->gatewayId() . ':' . $capture['id']), 0, 48);
+        if (!FOSSBilling\Core\Doctrine\NamedLock::acquire($db, $lock)) {
+            throw new Payment_Exception('PayPal payment is already being processed');
+        }
 
-            return;
+        try {
+            $repo = $em->getRepository(Transaction::class);
+            $done = $repo->findOneBy(['txnId' => $capture['id'], 'gateway' => $em->getReference(PayGateway::class, $this->gatewayId()), 'status' => Transaction::STATUS_PROCESSED]);
+            if ($done instanceof Transaction) {
+                if ((int) $done->getId() !== $id) {
+                    $api_admin->invoice_transaction_update([
+                        'id' => $id, 'invoice_id' => $invoice->getId(), 'txn_id' => (string) $capture['id'],
+                        'type' => 'paypal_rest', 'txn_status' => 'Completed', 'amount' => $amount, 'currency' => $currency,
+                        'status' => Transaction::STATUS_ERROR, 'error' => 'Duplicate PayPal payment already processed',
+                    ]);
+                }
+
+                return;
+            }
+            if (!$completed) {
+                $api_admin->invoice_transaction_update([
+                    'id' => $id, 'invoice_id' => $invoice->getId(), 'txn_id' => (string) $capture['id'], 'type' => 'paypal_rest',
+                    'txn_status' => ($capture['status'] ?? '') === 'PENDING' ? 'processing' : ucfirst(strtolower((string) ($capture['status'] ?? ''))), 'amount' => $amount, 'currency' => $currency,
+                ]);
+                $api_admin->invoice_transaction_update(['id' => $id, 'status' => Transaction::STATUS_RECEIVED, 'error' => sprintf('PayPal payment not completed: %s', (string) ($capture['status'] ?? 'unknown')), 'updated_at' => date('Y-m-d H:i:s')]);
+
+                return;
+            }
+            $api_admin->invoice_transaction_update([
+                'id' => $id, 'invoice_id' => $invoice->getId(), 'txn_id' => (string) $capture['id'], 'type' => 'paypal_rest',
+                'txn_status' => 'processing', 'amount' => $amount, 'currency' => $currency,
+            ]);
+            $this->validateCurrency($currency, $invoice->getCurrency());
+            $payment = $repo->find($id);
+            if (!$payment instanceof Transaction) {
+                throw new Payment_Exception('Transaction not found');
+            }
+            $this->di['mod_service']('Invoice')->settleClearingPayment($invoice, $payment, $payment, 'PayPal');
+        } finally {
+            FOSSBilling\Core\Doctrine\NamedLock::release($db, $lock);
         }
-        // This transaction too: "Process again" on a payment already applied must not credit it again.
-        $done = $this->di['em']->getRepository(Transaction::class)->findOneBy(['txnId' => $capture['id'], 'gateway' => $this->di['em']->getReference(PayGateway::class, $this->gatewayId()), 'status' => Transaction::STATUS_PROCESSED]);
-        if ($done instanceof Transaction) {
-            throw new Payment_Exception('Cannot process duplicate PayPal payment');
-        }
-        $this->validateCurrency($currency, $invoice->getCurrency());
-        $this->applyPayment($api_admin, (int) $invoice->getClientId(), $amount, (string) $capture['id'], $invoice);
-        $api_admin->invoice_transaction_update(['id' => $id, 'error' => '', 'error_code' => null, 'status' => Transaction::STATUS_PROCESSED, 'updated_at' => date('Y-m-d H:i:s')]);
     }
 
     /** The invoice's balance as an order's purchase unit; custom_id names the invoice (processRestCapture()). */
@@ -1231,21 +1258,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return null;
-    }
-
-    /** The saved method's gateway takes the payment, with its fee (see ServiceGatewayFees). */
-    private function applyPayment($api_admin, int $clientId, float $amount, string $txnId, Invoice $invoice): void
-    {
-        $invoiceService = $this->di['mod_service']('Invoice');
-        $invoiceService->validatePaymentAmount($amount, $invoiceService->getBalanceDue($invoice));
-        $api_admin->client_balance_add_funds(['id' => $clientId, 'amount' => $amount, 'description' => 'PayPal transaction ' . $txnId, 'type' => 'PayPal', 'rel_id' => $txnId]);
-        if ($invoiceService->isInvoiceTypeDeposit($invoice)) {
-            $invoiceService->markAsPaid($invoice);
-        } else {
-            if (!$invoice->isIssued()) {
-                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
-            }
-            $api_admin->invoice_pay_with_credits(['id' => $invoice->getId()]);
-        }
     }
 }

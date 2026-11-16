@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice\Controller;
 
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\InvoiceOperation;
 use Box\Mod\Invoice\PendingPayments;
 use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Exception\InformationException;
@@ -109,9 +110,28 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         if ($once && !$adapter->option('pay_once')) {
             throw new InformationException('PayPal is not available.');
         }
+        if ($once) {
+            if (preg_match('/^[a-f0-9]{30,60}$/', $hash) !== 1) {
+                return $app->redirect('invoice');
+            }
+            $this->di['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $app->getRequest()->getClientIp());
+            $this->di['rate_limiter']->consumeOrThrow('invoice_payment_hash', $hash, 0);
+        }
         $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['hash' => $hash, 'status' => Invoice::STATUS_UNPAID]);
         if (!$invoice instanceof Invoice || (!$once && (int) $invoice->getClientId() !== $this->clientId())) {
             return $app->redirect('invoice');
+        }
+        if ($once) {
+            try {
+                $this->di['mod_service']('Invoice')->checkInvoiceAuth($invoice, InvoiceOperation::PAYMENT);
+            } catch (InformationException $e) {
+                if ($this->isInvoiceAccessDenied($e)) {
+                    return $app->redirect('invoice');
+                }
+
+                throw $e;
+            }
+            $this->di['rate_limiter']->consumeOrThrow('invoice_payment_hash', $hash);
         }
         // A bank debit still clearing pays this invoice: starting another payment now would charge twice.
         if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {

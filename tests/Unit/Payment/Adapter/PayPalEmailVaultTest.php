@@ -136,7 +136,7 @@ describe('REST maintenance', function (): void {
             [201, ['id' => 'R-1']],
         ]);
 
-        expect($adapter->refundPayment('C-1', 25.00, 'USD'))->toBe('R-1');
+        expect($adapter->refundPayment('C-1', 25.00, 'USD', ['attempt' => str_repeat('a', 32)]))->toBe('R-1');
     });
 
     test('reads the PayPal balances', function (): void {
@@ -264,27 +264,23 @@ describe('REST capture recording', function (): void {
     test('routes a vault return payment through the capture reader', function (): void {
         $api = Mockery::mock();
         $api->shouldReceive('invoice_transaction_update')->andReturnNull();
-        $api->shouldReceive('client_balance_add_funds')->once()->with([
-            'id' => 9, 'amount' => 25.0, 'description' => 'PayPal transaction C-9', 'type' => 'PayPal', 'rel_id' => 'C-9',
-        ]);
-        $api->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 60]);
 
         $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD', 'issued' => true, 'status' => Invoice::STATUS_UNPAID]);
         $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
         $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
 
         $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
-        $invoiceService->shouldReceive('getBalanceDue')->once()->with($invoice)->andReturn(25.00);
-        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(25.00, 25.00);
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+        $invoiceService->shouldReceive('settleClearingPayment')->once()->with($invoice, Mockery::type(Transaction::class), Mockery::type(Transaction::class), 'PayPal');
 
         $txRepo = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
         $txRepo->shouldReceive('findOneBy')->once()->andReturn(null);
+        $txRepo->shouldReceive('find')->once()->with(70)->andReturn(createEntity(Transaction::class, ['id' => 70]));
 
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
         $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
         $em->shouldReceive('getReference')->with(PayGateway::class, 6)->andReturn(createEntity(PayGateway::class, ['id' => 6]));
+        $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
 
         $adapter = paypalEmailAdapter();
         $adapter->setDi(paypalDi(['invoice' => $invoiceService], $em));
@@ -300,7 +296,12 @@ describe('REST capture recording', function (): void {
 
     test('an incomplete capture waits instead of paying', function (): void {
         $api = Mockery::mock();
-        $api->shouldReceive('invoice_transaction_update')->twice();
+        $updates = [];
+        $api->shouldReceive('invoice_transaction_update')->twice()->andReturnUsing(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
 
         $invoice = createEntity(Invoice::class, ['id' => 60, 'currency' => 'USD']);
         $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
@@ -308,6 +309,11 @@ describe('REST capture recording', function (): void {
 
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $txRepo = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
+        $txRepo->shouldReceive('findOneBy')->once()->andReturn(null);
+        $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+        $em->shouldReceive('getReference')->with(PayGateway::class, 6)->andReturn(createEntity(PayGateway::class, ['id' => 6]));
+        $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
 
         $adapter = paypalEmailAdapter();
         $adapter->setDi(paypalDi([], $em));
@@ -318,6 +324,36 @@ describe('REST capture recording', function (): void {
 
         $adapter->processTransaction($api, 70, ['source' => 'saved_card', 'get' => ['paypal_capture' => 'C-9']], 6);
 
-        expect(true)->toBeTrue();
+        expect($updates[0]['txn_status'])->toBe('processing')
+            ->and($updates[1]['status'])->toBe(Transaction::STATUS_RECEIVED);
+    });
+
+    test('a stale pending response cannot recreate a clearing marker after the capture is settled', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 60, 'currency' => 'USD']);
+        $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('find')->with(60)->andReturn($invoice);
+        $txRepo = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
+        $txRepo->shouldReceive('findOneBy')->once()->andReturn(createEntity(Transaction::class, ['id' => 69]));
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+        $em->shouldReceive('getReference')->with(PayGateway::class, 6)->andReturn(createEntity(PayGateway::class, ['id' => 6]));
+        $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+        $updates = [];
+        $api = Mockery::mock();
+        $api->shouldReceive('invoice_transaction_update')->once()->andReturnUsing(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
+        $adapter = paypalEmailAdapter();
+        $adapter->setDi(paypalDi([], $em));
+        $adapter->getDi()['http_client'] = paypalRest([
+            [200, ['access_token' => 'tok']],
+            [200, ['id' => 'C-9', 'status' => 'PENDING', 'custom_id' => 'fb-invoice-60', 'amount' => ['value' => '25.00', 'currency_code' => 'USD']]],
+        ]);
+        $adapter->processTransaction($api, 70, ['source' => 'saved_card', 'get' => ['paypal_capture' => 'C-9']], 6);
+        expect($updates[0]['status'])->toBe(Transaction::STATUS_ERROR)
+            ->and($updates[0]['txn_status'])->toBe('Completed');
     });
 });
