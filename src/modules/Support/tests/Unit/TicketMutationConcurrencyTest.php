@@ -14,7 +14,7 @@ use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\Filesystem\Filesystem;
 
-function supportMutationDatabase(string $driver): array
+function supportMutationDatabase(string $driver, array $extraMetadata = []): array
 {
     $filesystem = new Filesystem();
     $dir = sys_get_temp_dir() . '/fb-support-mutation-' . bin2hex(random_bytes(6));
@@ -37,7 +37,7 @@ function supportMutationDatabase(string $driver): array
     }
     $db = DriverManager::getConnection($params);
     $em = EntityManagerFactory::create($db);
-    $metadata = array_map($em->getClassMetadata(...), [Helpdesk::class, SupportTicket::class, SupportTicketMessage::class, SupportTicketNote::class, SupportTicketMessageHistory::class]);
+    $metadata = array_map($em->getClassMetadata(...), [Helpdesk::class, SupportTicket::class, SupportTicketMessage::class, SupportTicketNote::class, SupportTicketMessageHistory::class, ...$extraMetadata]);
     // Reproduce upgraded installations: no foreign keys enforce deletion here.
     foreach ((new SchemaTool($em))->getCreateSchemaSql($metadata) as $sql) {
         if (!str_contains($sql, 'ADD CONSTRAINT')) {
@@ -137,3 +137,39 @@ test('ticket deletion serializes concurrent note message and history writes', fu
         $cleanup();
     }
 })->with(['sqlite', 'mysql', 'pgsql'])->with(['note', 'message', 'edit']);
+
+test('failed escalation SQL rolls back its actions while retaining the once per reply marker', function (string $driver): void {
+    [$db, $params, $service, $ticket, $message, $cleanup] = supportMutationDatabase($driver, [
+        Box\Mod\Support\Entity\SupportEscalationRule::class, Box\Mod\Support\Entity\SupportEscalationApplied::class,
+    ]);
+
+    try {
+        $db->executeStatement('CREATE TABLE admin (id BIGINT PRIMARY KEY, system_name VARCHAR(100))');
+        $db->executeStatement('CREATE TABLE client (id BIGINT PRIMARY KEY, first_name VARCHAR(255), last_name VARCHAR(255), email VARCHAR(255))');
+        $db->update('support_ticket_message', ['created_at' => date('Y-m-d H:i:s', time() - 3660)], ['id' => 1]);
+        $db->insert('support_escalation_rule', [
+            'id' => 1, 'name' => 'Failure regression', 'active' => 1, 'helpdesks' => '[]', 'statuses' => '["open"]', 'priorities' => '[]',
+            'minutes' => 60, 'new_status' => '', 'new_priority' => '', 'notify' => '[]', 'reply' => 'Escalate',
+            'created_at' => date('Y-m-d H:i:s', time() - 120), 'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $di = $service->getDi();
+        $support = Mockery::mock(Service::class);
+        $support->shouldReceive('getTicketById')->andReturn($ticket);
+        $support->shouldReceive('ticketReply')->once()->andReturnUsing(function () use ($db): int {
+            $db->insert('support_ticket_note', ['id' => 99, 'support_ticket_id' => 1, 'note' => 'Must roll back']);
+            $db->executeQuery('SELECT * FROM absent_escalation_dependency');
+
+            return 99;
+        });
+        $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+        $staff->shouldReceive('getCronAdmin')->andReturn(Tests\Helpers\admin(['id' => 9]));
+        $di['mod_service'] = $di->protect(fn (string $module): object => $module === 'support' ? $support : $staff);
+        expect(Box\Mod\Support\TicketEscalation::run($di))->toBe(0)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_escalation_applied'))->toBe(1)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_note'))->toBe(0)
+            ->and(Box\Mod\Support\TicketEscalation::run($di))->toBe(0)
+            ->and($db->isTransactionActive())->toBeFalse();
+    } finally {
+        $cleanup();
+    }
+})->with(['sqlite', 'mysql', 'pgsql']);

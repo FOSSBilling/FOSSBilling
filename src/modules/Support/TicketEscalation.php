@@ -216,7 +216,8 @@ final class TicketEscalation
             }
 
             try {
-                self::act($di, $rule, $id);
+                // Roll back SQL errors before committing the attempt marker on PostgreSQL.
+                $db->transactional(fn () => self::act($di, $rule, $id));
 
                 return true;
             } catch (\Throwable $e) {
