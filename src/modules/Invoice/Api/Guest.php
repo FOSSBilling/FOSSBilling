@@ -102,35 +102,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
 
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_gateway_fees_hash', (string) $data['hash']);
 
-        if ($model->getStatus() !== Invoice::STATUS_UNPAID) {
-            return ['base' => 0.0, 'fees' => []];
-        }
-
-        $feesService = $this->getDi()['mod_service']('Invoice', 'GatewayFees');
-        $payGatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
-        $subscribeService = $this->getDi()['mod_service']('Invoice', 'Subscription');
-
-        $base = $feesService->base($model);
-        $currency = (string) $model->getCurrency();
-        $clientId = $model->getClientId();
-        $subscribable = $service->getAmountPaid($model) <= 0.0 && $subscribeService->isSubscribable((int) $model->getId());
-
-        $fees = [];
-        foreach ($payGatewayService->getPayGatewayRepository()->findEnabledOrderedByIdDesc() as $gateway) {
-            if (!in_array($currency, $payGatewayService->getAcceptedCurrencies($gateway), true)) {
-                continue;
-            }
-            if (!$gateway->isAllowSingle() && !($subscribable && $gateway->isAllowRecurrent())) {
-                continue;
-            }
-            $charge = $feesService->charge($model, $gateway, $base);
-            $fees[(int) $gateway->getId()] = [
-                'fee' => $charge,
-                'total' => round($base + $charge, 2),
-            ];
-        }
-
-        return ['base' => $base, 'fees' => $fees];
+        return $this->getDi()['mod_service']('Invoice', 'GatewayFees')->quote($model);
     }
 
     /**

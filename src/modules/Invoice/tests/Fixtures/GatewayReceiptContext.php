@@ -17,12 +17,12 @@ use Symfony\Component\Filesystem\Path;
 
 use function Tests\Helpers\container;
 
-function receiptTestContext(): array
+function receiptTestContext(?Doctrine\DBAL\Connection $connection = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', '..')], true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
-    $em = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    $em = new EntityManager($connection ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
     (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Transaction::class]));
     $client = (new Client())->setCurrency('USD');
     $gateway = (new PayGateway())->setGateway('Stripe');

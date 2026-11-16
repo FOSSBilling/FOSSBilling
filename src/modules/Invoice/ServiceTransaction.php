@@ -768,20 +768,20 @@ class ServiceTransaction implements InjectionAwareInterface
             return;
         }
 
+        $connection = $this->di['em']->getConnection();
+        // Decide against the live row: a completion owner may acknowledge DONE
+        // or commit its receipt after this worker observed an earlier state.
+        $affected = $connection->executeStatement(
+            'UPDATE ' . $connection->quoteSingleIdentifier('transaction')
+            . " SET gateway_completion_state = CASE WHEN status = 'processed' THEN 1 ELSE gateway_completion_state END,"
+            . " status = CASE WHEN status = 'processed' THEN status ELSE 'error' END, error = ?, error_code = ?, updated_at = ?"
+            . " WHERE id = ? AND (status <> 'processed' OR gateway_completion_state <> 0)",
+            [$e->getMessage(), (int) $e->getCode(), date('Y-m-d H:i:s'), $id],
+        );
         $this->di['em']->refresh($tx);
-        if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
-            if ($tx->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
-                return;
-            }
-            // Keep settled funds visible to reservation and refund accounting.
-            $tx->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_PENDING);
-        } else {
-            $tx->setStatus(Transaction::STATUS_ERROR);
+        if ($affected < 1) {
+            return;
         }
-        $tx->setError($e->getMessage());
-        $tx->setErrorCode((int) $e->getCode());
-        $tx->setUpdatedAt(new \DateTime());
-        $this->di['em']->flush();
 
         $this->di['logger']->error('Failed to process transaction #{id}: {exception}', ['id' => $id, 'exception' => $e]);
     }
@@ -825,8 +825,10 @@ class ServiceTransaction implements InjectionAwareInterface
         // remaining work is local, so recovery must never recreate a provider
         // subscription or resolve a different latest renewal invoice.
         $this->di['em']->refresh($tx);
-        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && $tx->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
-            $this->di['mod_service']('Invoice')->completeGatewayPayment($tx);
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
+            if ($tx->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
+                $this->di['mod_service']('Invoice')->completeGatewayPayment($tx);
+            }
 
             return true;
         }

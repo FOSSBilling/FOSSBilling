@@ -39,7 +39,7 @@
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
                     <p class="small text-muted">{{ 'Please choose a payment type and pay for your chosen products.'|trans }}</p>
-                    {% set gateway_fees = guest.invoice_gateway_fees({hash: invoice.hash}).fees %}
+                    {% if gateway_fees is not null %}
                     <form method="post" action="{{ 'invoice/payment'|api_url(role: 'guest') }}"
                         {{ fb_api_form({ redirect: ("invoice/#{invoice.hash}")|url(query: { 'auto_redirect': 1 }) }) }}>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
@@ -84,6 +84,9 @@
                         </div>
                         <input type="hidden" name="gateway_id" id="gateway_id">
                     </form>
+                    {% else %}
+                        <div class="alert alert-warning">{{ 'Payment fee information is temporarily unavailable. Please reload this page before choosing a payment method.'|trans }}</div>
+                    {% endif %}
                 </div>
             </div>
             {% set free_credit = client and client.profile_get.id == invoice.client.id ? client.balance_get_total|default(0) : 0 %}

@@ -64,25 +64,26 @@ test('failed renewal actions offer registrar review only for zero-priced domains
     expect(str_contains($html, 'Retry free renewal'))->toBe($productType === 'domain' && $price === 0.0);
 })->with([['domain', 0.0], ['hosting', 0.0], ['domain', 10.0]]);
 
-test('gateway fee badges render from the injected API in invoice currency', function (): void {
+test('gateway fee badges use supplied quotes and quote failure keeps invoice rendering available', function (bool $available): void {
     $source = (new Filesystem())->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_invoice.html.twig');
-    $start = strpos($source, '{% set gateway_fees');
+    $start = strpos($source, '{% if gateway_fees is not null %}');
     $end = strpos($source, '</form>', $start) + strlen('</form>');
+    $end = strpos($source, '{% endif %}', $end) + strlen('{% endif %}');
     $guest = new class {
         public array $invoice_gateways = [['id' => 1, 'accepted_currencies' => ['EUR'], 'allow_single' => true, 'allow_recurrent' => false, 'title' => 'Gateway', 'logo' => ['height' => '10px', 'width' => '10px', 'logo' => '/logo']]];
-        public int $feeReads = 0;
 
         public function invoice_gateway_fees(array $data): array
         {
-            expect($data)->toBe(['hash' => 'example']);
-            ++$this->feeReads;
-
-            return ['fees' => [1 => ['fee' => 2.5]]];
+            throw new RuntimeException('Public fee quotes are unavailable');
         }
     };
-    $html = invoiceReviewTemplate(substr($source, $start, $end - $start))->render('fragment', [
+    $html = invoiceReviewTemplate(substr($source, $start, $end - $start) . '<footer>Invoice details remain available</footer>')->render('fragment', [
         'guest' => $guest, 'invoice' => ['hash' => 'example', 'currency' => 'EUR', 'subscribable' => false],
+        'gateway_fees' => $available ? [1 => ['fee' => 2.5]] : null,
     ]);
-    expect($html)->toContain('EUR 2.50')->and($guest->feeReads)->toBe(1)
-        ->and($source)->not->toContain('fetch(');
-});
+    expect($html)->toContain('Invoice details remain available')
+        ->and(str_contains($html, 'EUR 2.50'))->toBe($available)
+        ->and(str_contains($html, '<form'))->toBe($available)
+        ->and(str_contains($html, 'temporarily unavailable'))->toBe(!$available)
+        ->and($source)->not->toContain('invoice_gateway_fees(', 'fetch(');
+})->with([true, false]);
