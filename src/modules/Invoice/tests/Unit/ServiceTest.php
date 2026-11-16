@@ -4250,8 +4250,12 @@ test('generates invoices for expiring orders', function (): void {
     $orderRepoMock->shouldReceive('findBy')
         ->atLeast()->once()
         ->andReturn([$clientOrder]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$clientOrder], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $di = container();
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
+    $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -4336,6 +4340,7 @@ test('renewal batch merges mergeable orders sharing a bucket into one invoice', 
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$first, $second], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
@@ -4344,6 +4349,9 @@ test('renewal batch merges mergeable orders sharing a bucket into one invoice', 
     $serviceMock->shouldNotReceive('generateForOrder');
 
     $di = container();
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
+    $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['Order', ''] => $orderService,
@@ -4368,6 +4376,7 @@ test('renewal batch keeps subscription-backed orders on the single-invoice path'
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$order]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$order], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->with($order)->andReturn(true);
@@ -4376,6 +4385,9 @@ test('renewal batch keeps subscription-backed orders on the single-invoice path'
     $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
 
     $di = container();
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
+    $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['Order', ''] => $orderService,
@@ -4401,6 +4413,7 @@ test('renewal batch invoices different billing periods separately', function ():
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$monthly, $yearly]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$monthly, $yearly], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
@@ -4409,6 +4422,9 @@ test('renewal batch invoices different billing periods separately', function ():
     $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
 
     $di = container();
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
+    $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['Order', ''] => $orderService,
@@ -4434,6 +4450,7 @@ test('renewal batch retries each order singly when merged generation fails', fun
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$first, $second], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
@@ -4442,6 +4459,9 @@ test('renewal batch retries each order singly when merged generation fails', fun
     $serviceMock->shouldReceive('issueInvoice')->twice();
 
     $di = container();
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
+    $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['em']->shouldReceive('isOpen')->andReturn(true);
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
@@ -4467,6 +4487,7 @@ test('renewal batch resets the manager and stops when merged generation closes i
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$first, $second], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
@@ -4501,6 +4522,7 @@ test('renewal batch does not regenerate when issuance fails', function (): void 
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$first, $second], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
@@ -4509,6 +4531,9 @@ test('renewal batch does not regenerate when issuance fails', function (): void 
     $serviceMock->shouldNotReceive('generateForOrder');
 
     $di = container();
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
+    $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['Order', ''] => $orderService,
@@ -4530,6 +4555,7 @@ test('renewal batch falls back to the single-invoice path when the merge check f
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$order]);
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(fn ($id) => array_values(array_filter([$order], fn (Order $order): bool => $order->getId() === $id))[0] ?? null);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->andThrow(new Exception('meta store unavailable'));
@@ -4538,6 +4564,9 @@ test('renewal batch falls back to the single-invoice path when the merge check f
     $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
 
     $di = container();
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
+    $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $di['logger'] = new Tests\Helpers\TestLogger();

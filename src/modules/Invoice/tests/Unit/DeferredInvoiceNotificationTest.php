@@ -424,3 +424,21 @@ test('notification recovery continues past a receipt reconciliation hold after r
     }
     expect($em->isOpen())->toBeFalse();
 })->with([[1, 1], [1, 2], [5, 1], [5, 6]]);
+
+test('issuance and direct credit retries preserve refunded invoices and their returned credit', function (): void {
+    [, $em, $client, $gateway] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setGateway($gateway)->setCurrency('USD')->setNr('42')->setStatus(Invoice::STATUS_REFUNDED)->setIssued(true);
+    $em->persist($invoice);
+    $em->persist((new Box\Mod\Client\Entity\ClientBalance())->setClient($client)->setType('refund')->setAmount('100'));
+    $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('gateway_fee')->setPrice(10)->setQuantity(1));
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    expect($service->issueInvoice($invoice, ['use_credits' => true]))->toBeTrue()
+        ->and($service->tryPayWithCredits($invoice))->toBeFalse()
+        ->and($invoice->getStatus())->toBe(Invoice::STATUS_REFUNDED)
+        ->and((float) $em->getConnection()->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(100.0)
+        ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(1)
+        ->and((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM client_balance WHERE type = 'invoice'"))->toBe(0);
+    expect(fn () => $service->markAsPaid($invoice))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only an unpaid invoice');
+    expect($em->getConnection()->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(Invoice::STATUS_REFUNDED);
+});
