@@ -82,7 +82,7 @@ test('quarantine show prints the original verbatim', function (): void {
     expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '2']))->toBe(2);
     expect($tester->execute(['--table' => 'product', '--column' => 'addons', '--id' => '1']))->toBe(2);
 
-    // Undecryptable originals surface instead of printing a clean bill of health.
+    // Originals that fail decryption surface instead of printing a clean bill of health.
     $badCrypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $badCrypt->shouldReceive('decrypt')->andReturn(false);
     $command = new Box\Mod\System\Commands\JsonQuarantineShow();
@@ -187,7 +187,7 @@ test('quarantine forget drops the record without decrypting it and keeps the NUL
     $tester = new CommandTester($command);
     expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '9']))->toBe(2);
 
-    // An undecryptable original must not block dismissal once the NULL is accepted.
+    // A payload that fails decryption must not block dismissal once the NULL is accepted.
     $badCrypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
     $badCrypt->shouldReceive('decrypt')->andReturn(false);
     $command = new Box\Mod\System\Commands\JsonQuarantineForget();
