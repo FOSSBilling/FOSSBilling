@@ -34,7 +34,7 @@ class ClientOrderCancelRequestRepository extends EntityRepository
     public function getPendingList(): array
     {
         return $this->createQueryBuilder('r')
-            ->select('r.id', 'r.type', 'r.reason', 'r.status', 'r.createdAt', 'o.id AS client_order_id', 'o.title AS order_title', 'o.status AS order_status', 'o.expiresAt', 'c.id AS client_id', 'c.firstName AS client_first_name', 'c.lastName AS client_last_name')
+            ->select('r.id', 'r.type', 'r.reason', 'r.status', 'r.createdAt AS created_at', 'o.id AS client_order_id', 'o.title AS order_title', 'o.status AS order_status', 'o.expiresAt AS expires_at', 'c.id AS client_id', 'c.firstName AS client_first_name', 'c.lastName AS client_last_name')
             ->leftJoin('r.order', 'o')
             ->leftJoin('r.client', 'c')
             ->andWhere('r.status = :status')

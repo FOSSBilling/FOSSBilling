@@ -2014,24 +2014,45 @@ class Service implements InjectionAwareInterface
                 if ($connection->isTransactionActive()) {
                     throw new InformationException('Scheduled cancellation requires a committed claim before external actions.');
                 }
-                $this->assertOrderCanBeCanceled($order);
-                // Match cron's external-action ordering: the subscription is
-                // canceled before service termination. Claim 2 then means only
-                // local cleanup remains, with no intermediate protocol needed.
-                $this->updateOrderMeta($order, [
-                    self::META_SCHEDULED_CANCEL_CLAIM => '1',
-                    self::META_SCHEDULED_CANCEL_PHASE => 'scheduled',
-                    self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'immediate', 'reason' => $reason, 'skip_event' => (bool) $skipEvent], JSON_THROW_ON_ERROR),
-                ]);
-                $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
 
-                return $this->finalizeCancellationAfterClaim($order, $reason, $skipEvent);
+                return $this->cancelWithRecovery($order, $reason, (bool) $skipEvent);
             }
 
             return $this->cancelFromOrderLocked($order, $reason, $skipEvent);
         } finally {
             NamedLock::release($connection, $name);
         }
+    }
+
+    /** Request retries must never repeat an uncertain external cancellation. */
+    public function cancelFromRequest(Order $order, string $reason): bool
+    {
+        return $this->withCancellationScheduleLock($order, function () use ($order, $reason): bool {
+            $this->di['em']->refresh($order);
+            $this->assertOrderNotDeleting($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
+                throw new InformationException('The service cancellation requires staff review.');
+            }
+
+            return $this->cancelWithRecovery($order, $reason, false);
+        }, 0);
+    }
+
+    private function cancelWithRecovery(Order $order, $reason, bool $skipEvent): bool
+    {
+        $this->assertOrderCanBeCanceled($order);
+        // A shared durable claim also supports staff-reviewed retries and local
+        // cleanup recovery through the existing scheduled cancellation protocol.
+        $this->updateOrderMeta($order, [
+            self::META_CANCEL_AT_PERIOD_END => '1',
+            self::META_SCHEDULED_CANCEL_CLAIM => '1',
+            self::META_SCHEDULED_CANCEL_PHASE => 'scheduled',
+            self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'immediate', 'reason' => $reason, 'skip_event' => $skipEvent], JSON_THROW_ON_ERROR),
+        ]);
+        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+
+        return $this->finalizeCancellationAfterClaim($order, $reason, $skipEvent);
     }
 
     private function cancelFromOrderLocked(Order $order, $reason = null, $skipEvent = false): bool
@@ -2436,6 +2457,7 @@ class Service implements InjectionAwareInterface
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
             $productService->releaseReservedStockForOrder($order, 'order_deleted');
             $this->rmClientOrderStatusByOrder($order);
+            $this->di['em']->getConnection()->delete('client_order_cancel_request', ['client_order_id' => $orderId]);
             $this->getOrderMetaRepository()->deleteByOrderId($orderId);
             $this->rmOrder($order);
         });
@@ -3181,8 +3203,11 @@ class Service implements InjectionAwareInterface
                 $productService->releaseReservedStockForOrder($order, 'client_deleted');
                 $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
                 $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
+                $connection->delete('client_order_cancel_request', ['client_order_id' => $this->orderId($order)]);
                 $connection->delete('client_order', ['id' => $this->orderId($order), 'client_id' => $clientId]);
             }
+            // Also remove orphaned request history from legacy schemas without FKs.
+            $connection->delete('client_order_cancel_request', ['client_id' => $clientId]);
         });
     }
 

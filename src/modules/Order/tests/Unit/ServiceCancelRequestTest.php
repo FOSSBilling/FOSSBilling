@@ -29,11 +29,19 @@ function cancelRequestService(?object $em = null): ServiceCancelRequest
     );
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturn(Order::STATUS_ACTIVE);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('refresh')->byDefault();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $orders = Mockery::mock(Box\Mod\Order\Service::class);
+    $orders->shouldReceive('withLifecycleLock')->andReturnUsing(fn ($order, Closure $operation): mixed => $operation());
+    $orders->shouldReceive('assertOrderNotDeleting')->andReturnNull();
+    $metadata = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $metadata->shouldReceive('getPairsForOrder')->andReturn([]);
+    $orders->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
+    $di['mod_service'] = $di->protect(fn (string $module): object => $module === 'Order' ? $orders : Mockery::mock()->shouldIgnoreMissing());
     $service->setDi($di);
 
     return $service;
@@ -151,7 +159,7 @@ test('accept cancels immediately for an immediate request', function (): void {
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class);
     $orderService->shouldReceive('findByClientIdAndOrderId')->once()->with(7, 11)->andReturn($order);
-    $orderService->shouldReceive('cancelFromOrder')->once()->andReturn(true);
+    $orderService->shouldReceive('cancelFromRequest')->once()->andReturn(true);
 
     $query = Mockery::mock(Doctrine\ORM\Query::class);
     $query->shouldReceive('execute')->once()->andReturn(1);

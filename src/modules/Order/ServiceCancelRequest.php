@@ -52,24 +52,35 @@ class ServiceCancelRequest implements InjectionAwareInterface
         if (!in_array($type, [ClientOrderCancelRequest::TYPE_IMMEDIATE, ClientOrderCancelRequest::TYPE_END_OF_PERIOD], true)) {
             throw new InformationException('Invalid cancellation type.');
         }
-        if ($order->getStatus() !== Order::STATUS_ACTIVE) {
-            throw new InformationException('Only an active service can be cancelled.');
-        }
-        if ($type === ClientOrderCancelRequest::TYPE_END_OF_PERIOD && $order->getExpiresAt() === null) {
-            throw new InformationException('This service cannot be cancelled at the end of its period. Choose Immediate, or open a ticket.');
-        }
-        if ($this->pending($order) instanceof ClientOrderCancelRequest) {
-            throw new InformationException('We have already received this request.');
-        }
+        $request = $this->withOrderRequestLock($order, function () use ($order, $type, $reason): ClientOrderCancelRequest {
+            $orders = $this->di['mod_service']('Order');
 
-        $request = new ClientOrderCancelRequest();
-        $request->setOrder($order);
-        $request->setClient($this->di['em']->getRepository(Client::class)->find($order->getClientId()));
-        $request->setType($type);
-        $request->setReason(mb_substr($reason, 0, self::MAX_REASON));
-        $request->setStatus(ClientOrderCancelRequest::STATUS_PENDING);
-        $this->di['em']->persist($request);
-        $this->di['em']->flush();
+            return $orders->withLifecycleLock($order, function () use ($orders, $order, $type, $reason): ClientOrderCancelRequest {
+                $this->di['em']->refresh($order);
+                $orders->assertOrderNotDeleting($order);
+                if ($order->getStatus() !== Order::STATUS_ACTIVE) {
+                    throw new InformationException('Only an active service can be cancelled.');
+                }
+                if ($type === ClientOrderCancelRequest::TYPE_END_OF_PERIOD && $order->getExpiresAt() === null) {
+                    throw new InformationException('This service cannot be cancelled at the end of its period. Choose Immediate, or open a ticket.');
+                }
+                $this->assertCancellationNotStarted($order, $orders);
+                if ($this->pending($order) instanceof ClientOrderCancelRequest) {
+                    throw new InformationException('We have already received this request.');
+                }
+
+                $request = new ClientOrderCancelRequest();
+                $request->setOrder($order);
+                $request->setClient($this->di['em']->getRepository(Client::class)->find($order->getClientId()));
+                $request->setType($type);
+                $request->setReason(mb_substr($reason, 0, self::MAX_REASON));
+                $request->setStatus(ClientOrderCancelRequest::STATUS_PENDING);
+                $this->di['em']->persist($request);
+                $this->di['em']->flush();
+
+                return $request;
+            });
+        });
 
         $this->di['logger']->info('Client requested the cancellation of order #{order_id} ({type})', ['order_id' => $order->getId(), 'type' => $type]);
         $this->notify($request, $type);
@@ -114,12 +125,12 @@ class ServiceCancelRequest implements InjectionAwareInterface
             throw new InformationException('This service has no cancellation request waiting.');
         }
 
-        $this->withRequestLock((int) $request->getId(), function () use ($request): void {
+        $this->withRequestLock((int) $request->getId(), function () use ($request, $order): void {
             $this->di['em']->refresh($request);
             if ($request->getStatus() !== ClientOrderCancelRequest::STATUS_PENDING) {
                 throw new InformationException('This cancellation request is no longer waiting.');
             }
-            $this->close($request, ClientOrderCancelRequest::STATUS_WITHDRAWN);
+            $this->withOrderRequestLock($order, fn () => $this->stopBeforeCancellation($request, $order, ClientOrderCancelRequest::STATUS_WITHDRAWN));
         });
         $this->di['logger']->info('Client withdrew the cancellation request of order #{order_id}', ['order_id' => $order->getId()]);
     }
@@ -127,7 +138,13 @@ class ServiceCancelRequest implements InjectionAwareInterface
     public function stop(int $id): void
     {
         $this->withRequestLock($id, function () use ($id): void {
-            $this->close($this->find($id), ClientOrderCancelRequest::STATUS_STOPPED);
+            $request = $this->find($id);
+            $order = $request->getOrder();
+            if ($order instanceof Order) {
+                $this->withOrderRequestLock($order, fn () => $this->stopBeforeCancellation($request, $order, ClientOrderCancelRequest::STATUS_STOPPED));
+            } else {
+                $this->close($request, ClientOrderCancelRequest::STATUS_STOPPED);
+            }
         });
         $this->di['logger']->info('Stopped cancellation request #{id}', ['id' => $id]);
     }
@@ -143,20 +160,38 @@ class ServiceCancelRequest implements InjectionAwareInterface
     private function acceptLocked(int $id): void
     {
         $request = $this->find($id);
+        $order = $request->getOrder();
+        if (!$order instanceof Order) {
+            $this->close($request, ClientOrderCancelRequest::STATUS_ACCEPTED);
+
+            return;
+        }
+        $this->withOrderRequestLock($order, fn () => $this->acceptOrder($request));
+    }
+
+    private function acceptOrder(ClientOrderCancelRequest $request): void
+    {
+        $this->di['em']->refresh($request);
+        if ($request->getStatus() !== ClientOrderCancelRequest::STATUS_PENDING) {
+            throw new InformationException('This cancellation request is no longer waiting.');
+        }
         $orderService = $this->di['mod_service']('Order');
         $order = $orderService->findByClientIdAndOrderId((int) $request->getClient()?->getId(), (int) $request->getOrder()?->getId());
+        if ($order instanceof Order) {
+            $this->di['em']->refresh($order);
+        }
         // Staff deleted or canceled it already: nothing is left to do.
         if ($order instanceof Order && $order->getStatus() !== Order::STATUS_CANCELED) {
             $reason = 'Cancellation request #' . $request->getId();
             if ($request->getType() === ClientOrderCancelRequest::TYPE_END_OF_PERIOD) {
                 $orderService->scheduleCancellationFromOrder($order, $reason, true);
             } else {
-                $orderService->cancelFromOrder($order, $reason);
+                $orderService->cancelFromRequest($order, $reason);
             }
         }
 
         $this->close($request, ClientOrderCancelRequest::STATUS_ACCEPTED);
-        $this->di['logger']->info('Accepted cancellation request #{id}', ['id' => $id]);
+        $this->di['logger']->info('Accepted cancellation request #{id}', ['id' => $request->getId()]);
     }
 
     /**
@@ -234,6 +269,45 @@ class ServiceCancelRequest implements InjectionAwareInterface
         }
     }
 
+    private function withOrderRequestLock(Order $order, callable $operation): mixed
+    {
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new InformationException('Cancellation requests require a committed transaction before processing.');
+        }
+        $name = 'fb:cancel-request-order:' . $order->getId();
+        if (!NamedLock::acquire($connection, $name, 0)) {
+            throw new InformationException('This cancellation request is already being processed.');
+        }
+
+        try {
+            return $operation();
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    private function stopBeforeCancellation(ClientOrderCancelRequest $request, Order $order, string $status): void
+    {
+        $orders = $this->di['mod_service']('Order');
+        $orders->withLifecycleLock($order, function () use ($request, $order, $orders, $status): void {
+            $this->assertCancellationNotStarted($order, $orders);
+            $this->close($request, $status);
+        });
+    }
+
+    private function assertCancellationNotStarted(Order $order, Service $orders): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $currentStatus = $connection->fetchOne('SELECT status FROM client_order WHERE id = ?', [$order->getId()]);
+        $meta = $orders->getOrderMetaRepository()->getPairsForOrder((int) $order->getId());
+        if ($currentStatus === Order::STATUS_CANCELED
+            || ($meta[Service::META_CANCEL_AT_PERIOD_END] ?? null) === '1'
+            || in_array($meta[Service::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
+            throw new InformationException('Cancellation has already started. Review the order cancellation before changing this request.');
+        }
+    }
+
     private function withRequestLock(int $id, callable $operation): mixed
     {
         $connection = $this->di['em']->getConnection();
@@ -254,19 +328,22 @@ class ServiceCancelRequest implements InjectionAwareInterface
 
     private function close(ClientOrderCancelRequest $request, string $status): void
     {
+        // Old overlapping submissions may have left multiple pending rows.
+        // The order mutex lets one terminal decision close that entire set.
+        $order = $request->getOrder();
         $changed = $this->di['em']->createQueryBuilder()
             ->update(ClientOrderCancelRequest::class, 'r')
             ->set('r.status', ':status')
             ->set('r.updatedAt', ':now')
-            ->where('r.id = :id')
+            ->where($order instanceof Order ? 'r.order = :id' : 'r.id = :id')
             ->andWhere('r.status = :pending')
             ->setParameter('status', $status)
             ->setParameter('now', new \DateTimeImmutable())
-            ->setParameter('id', $request->getId())
+            ->setParameter('id', $order instanceof Order ? $order : $request->getId())
             ->setParameter('pending', ClientOrderCancelRequest::STATUS_PENDING)
             ->getQuery()
             ->execute();
-        if ($changed !== 1) {
+        if ($changed < 1) {
             throw new InformationException('This cancellation request is no longer waiting.');
         }
     }

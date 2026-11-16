@@ -3288,6 +3288,8 @@ test('rmByClient removes all client orders', function (): void {
     $dbalMock->shouldReceive('fetchOne')->withArgs(fn (string $sql): bool => str_starts_with($sql, 'SELECT id FROM client_order'))->andReturn(1);
     $dbalMock->shouldReceive('fetchOne')->withArgs(fn (string $sql): bool => str_starts_with($sql, 'SELECT COALESCE'))->andReturn(false);
     $dbalMock->shouldReceive('delete')->once()->with('client_order', ['id' => 1, 'client_id' => 100])->andReturn(1);
+    $dbalMock->shouldReceive('delete')->once()->with('client_order_cancel_request', ['client_order_id' => 1])->andReturn(1);
+    $dbalMock->shouldReceive('delete')->once()->with('client_order_cancel_request', ['client_id' => 100])->andReturn(0);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('findByClientId')->once()->with(100)->andReturn([$orderModel]);
