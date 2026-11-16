@@ -1,0 +1,30 @@
+name: Pull Request Labeler
+
+on:
+  pull_request_target:
+    branches: main
+    types: [opened, reopened, synchronize]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  labeler:
+    name: 'Pull Request Labeler'
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      # Fork PRs need a base-repository token to apply labels. Keep this workflow
+      # metadata-only: no checkout, PR code execution, artifacts, or caches.
+      # Without a checkout, labeler reads its config from the base repository API.
+      - uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7
+        with:
+          repo-token: ${{ github.token }}
+          configuration-path: .github/labeler.yml
+          sync-labels: true
