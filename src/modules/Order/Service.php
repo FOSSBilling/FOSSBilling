@@ -493,7 +493,7 @@ class Service implements InjectionAwareInterface
                     SELECT 1
                     FROM invoice_item pending_item
                     INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
-                    WHERE pending_item.rel_id = co.id
+                    WHERE pending_item.order_id = co.id
                     AND pending_item.type = :pending_item_type
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
@@ -2335,9 +2335,9 @@ class Service implements InjectionAwareInterface
     public function rmInvoiceItemByOrder(Order $order): void
     {
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM invoice_item WHERE rel_id = :rel_id AND status = :status',
+            'DELETE FROM invoice_item WHERE order_id = :order_id AND status = :status',
             [
-                'rel_id' => (string) $this->orderId($order),
+                'order_id' => $this->orderId($order),
                 'status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
             ],
         );

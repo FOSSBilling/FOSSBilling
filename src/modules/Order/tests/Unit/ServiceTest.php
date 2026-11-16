@@ -1364,7 +1364,7 @@ test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellati
                     SELECT 1
                     FROM invoice_item pending_item
                     INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
-                    WHERE pending_item.rel_id = co.id
+                    WHERE pending_item.order_id = co.id
                     AND pending_item.type = :pending_item_type
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
@@ -1396,7 +1396,7 @@ test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation me
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, status TEXT, invoice_option TEXT, period TEXT, expires_at TEXT, unpaid_invoice_id INTEGER, client_id INTEGER)');
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
-    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, rel_id INTEGER, invoice_id INTEGER, type TEXT, task TEXT, status TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, rel_id TEXT, order_id INTEGER, invoice_id INTEGER, type TEXT, task TEXT, status TEXT)');
     $connection->executeStatement('CREATE TABLE client_order_meta (id INTEGER PRIMARY KEY, client_order_id INTEGER, name TEXT, value TEXT)');
 
     $expiresAt = (new DateTimeImmutable('tomorrow'))->format('Y-m-d H:i:s');

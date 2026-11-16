@@ -379,6 +379,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $pi->setPeriod($period);
             $pi->setQuantity(PriceValidator::validateQuantity($data['quantity'] ?? 1));
             $pi->setUnit($data['unit'] ?? null);
+            // Dual-write the typed order linkage (see invoice_item.order_id).
+            // Derived after unit because discount lines name their order
+            // through unit='discount' rather than type='order'.
+            $pi->setOrderId(self::resolveOrderReference($pi->getType(), $pi->getUnit(), $pi->getRelId()));
             $pi->setCharged($data['charged'] ?? 0);
             $pi->setPrice(PriceValidator::validateSignedAmount($data['price'] ?? 0));
             $pi->setTaxed($data['taxed'] ?? false);
@@ -542,10 +546,32 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function getOrderId(InvoiceItem $item): int
     {
         if ($item->getType() == InvoiceItem::TYPE_ORDER) {
-            return (int) $item->getRelId();
+            // Prefer the typed linkage, falling back to the legacy string
+            // reference for rows written before the order_id backfill ran.
+            return $item->getOrderId() ?? (int) $item->getRelId();
         }
 
         return 0;
+    }
+
+    /**
+     * Derives the typed order linkage from a new item's generic reference
+     * (see invoice_item.order_id). Only the shapes this codebase produces for
+     * order references qualify (type='order' lines, unit='discount' lines);
+     * invoice/credit-note references, hook_call JSON and third-party line
+     * types map to null.
+     */
+    public static function resolveOrderReference(?string $type, ?string $unit, ?string $relId): ?int
+    {
+        if ($relId === null || !is_numeric($relId)) {
+            return null;
+        }
+
+        if ($type === InvoiceItem::TYPE_ORDER || $unit === 'discount') {
+            return (int) $relId;
+        }
+
+        return null;
     }
 
     protected function markAsExecuted(InvoiceItem $item)
@@ -722,6 +748,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->setInvoice($proforma);
         $pi->setType(InvoiceItem::TYPE_ORDER);
         $pi->setRelId((string) $order->getId());
+        $pi->setOrderId((int) $order->getId());
         $pi->setTask($task);
         $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
         $pi->setTitle($line['title'] ?? $order->getTitle());

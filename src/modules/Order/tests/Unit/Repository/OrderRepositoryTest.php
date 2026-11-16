@@ -101,7 +101,7 @@ test('stale unpaid orders are matched by pending-setup status, unpaid invoice ov
                 && $parameters['cutoff'] === (new DateTimeImmutable('today'))->modify('-5 days')->format('Y-m-d H:i:s')
                 // Orders any paid invoice ever covered are never touched.
                 && str_contains($sql, 'NOT EXISTS')
-                && str_contains($sql, 'ii.rel_id = o.id AND ii.type = :item_type AND pi.status = :paid_status')
+                && str_contains($sql, 'ii.order_id = o.id AND ii.type = :item_type AND pi.status = :paid_status')
                 // Still linked to a live, overdue unpaid invoice - falling back to the
                 // order's own creation date if that invoice has no due date set.
                 && str_contains($sql, 'i.id = o.unpaid_invoice_id')

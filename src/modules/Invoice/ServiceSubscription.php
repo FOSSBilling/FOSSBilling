@@ -264,9 +264,9 @@ class ServiceSubscription implements InjectionAwareInterface
             && $subscription->getRelType() === 'invoice') {
             $query = $this->di['em']->getConnection()->createQueryBuilder();
             $orderIds = $query
-                ->select('DISTINCT ii.rel_id')
+                ->select('DISTINCT ii.order_id')
                 ->from('invoice_item', 'ii')
-                ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.rel_id')
+                ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.order_id')
                 ->where('ii.invoice_id = :invoice_id')
                 ->andWhere('ii.type = :item_type')
                 ->andWhere('com.name = :meta_name')
@@ -370,7 +370,7 @@ class ServiceSubscription implements InjectionAwareInterface
             ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
             ->where('s.rel_type = :rel_type')
             ->andWhere('ii.type = :item_type')
-            ->andWhere('ii.rel_id = :order_id')
+            ->andWhere('ii.order_id = :order_id')
             ->setParameter('rel_type', 'invoice')
             ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
             ->setParameter('order_id', $order->getId());

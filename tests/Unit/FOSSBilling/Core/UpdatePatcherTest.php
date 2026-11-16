@@ -2853,6 +2853,73 @@ test('credit and debit note patch is a no-op when the columns and indexes alread
     (new FOSSBilling\Core\Update\Patch\Patch119())->apply($patcher);
 });
 
+test('invoice item order linkage patch adds the column and lookup index when missing', function (): void {
+    $itemColumns = Mockery::mock(PDOStatement::class);
+    $itemColumns->expects('execute')->with([])->andReturnTrue();
+    $itemColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'rel_id'],
+        ['Field' => 'refunded_item_id'],
+    ]);
+
+    $itemIndexes = Mockery::mock(PDOStatement::class);
+    $itemIndexes->expects('execute')->with([])->andReturnTrue();
+    $itemIndexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'invoice_item_pending_renewal_idx'],
+    ]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice_item`')->once()->andReturn($itemColumns);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `invoice_item`')->once()->andReturn($itemIndexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice_item` ADD COLUMN `order_id` bigint(20) DEFAULT NULL AFTER `rel_id`')
+        ->andReturn($addColumn);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice_item` ADD INDEX `invoice_item_order_lookup_idx` (`order_id`, `type`, `task`, `status`, `invoice_id`)')
+        ->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+    (new FOSSBilling\Core\Update\Patch\Patch146())->apply($patcher);
+});
+
+test('invoice item order linkage patch is a no-op when the column and index already exist', function (): void {
+    $itemColumns = Mockery::mock(PDOStatement::class);
+    $itemColumns->expects('execute')->with([])->andReturnTrue();
+    $itemColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'rel_id'],
+        ['Field' => 'order_id'],
+    ]);
+
+    $itemIndexes = Mockery::mock(PDOStatement::class);
+    $itemIndexes->expects('execute')->with([])->andReturnTrue();
+    $itemIndexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'invoice_item_pending_renewal_idx'],
+        ['Key_name' => 'invoice_item_order_lookup_idx'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice_item`')->once()->andReturn($itemColumns);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `invoice_item`')->once()->andReturn($itemIndexes);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'ALTER TABLE')));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+    (new FOSSBilling\Core\Update\Patch\Patch146())->apply($patcher);
+});
+
 test('invoice note settings seeding inserts missing rows without touching customized values', function (): void {
     $selectSeries = Mockery::mock(PDOStatement::class);
     $selectSeries->expects('execute')->with(['param' => 'invoice_dn_series'])->andReturnTrue();
@@ -3355,6 +3422,87 @@ test('invoice journal backfill writes one baseline entry per invoice missing fro
             // Idempotent: a second run writes nothing more.
             (new ReflectionMethod($patcher, 'backfillInvoiceJournal'))->invoke($patcher);
             expect($connection->fetchOne('SELECT COUNT(*) FROM invoice_event'))->toBe(3);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('invoice item order_id backfill links order references and leaves other rows alone', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-backfill-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            $connection->executeStatement(
+                "INSERT INTO invoice_item (invoice_id, type, task, status, unit, rel_id, order_id) VALUES
+                    (1, 'order', 'renew', 'pending_payment', NULL, '10', NULL),
+                    (1, 'order', 'renew', 'pending_payment', NULL, '{\"hook\":\"call\"}', NULL),
+                    (1, 'custom', 'void', 'pending_payment', NULL, '19', NULL),
+                    (2, 'custom', 'void', 'pending_payment', 'discount', '11', NULL),
+                    (2, 'order', 'renew', 'pending_payment', NULL, '12', 99)"
+            );
+
+            $di = new Pimple\Container();
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new Patcher();
+            $patcher->setDi($di);
+            $patcher->backfillInvoiceItemOrderIds();
+
+            $rows = $connection->fetchAllAssociative('SELECT rel_id, order_id FROM invoice_item ORDER BY id');
+            expect($rows)->toHaveCount(5)
+                ->and($rows[0]['order_id'])->toBe(10)
+                ->and($rows[1]['order_id'])->toBeNull()
+                ->and($rows[2]['order_id'])->toBeNull()
+                ->and($rows[3]['order_id'])->toBe(11)
+                ->and($rows[4]['order_id'])->toBe(99);
+
+            // Idempotent: a second run changes nothing.
+            $patcher->backfillInvoiceItemOrderIds();
+            expect(array_column($connection->fetchAllAssociative('SELECT order_id FROM invoice_item ORDER BY id'), 'order_id'))
+                ->toEqual(array_column($rows, 'order_id'));
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('invoice item order_id backfill pages bounded runs', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-pages-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            for ($i = 1; $i <= 550; ++$i) {
+                $connection->executeStatement(
+                    "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '{$i}')"
+                );
+            }
+
+            $di = new Pimple\Container();
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new Patcher();
+            $patcher->setDi($di);
+            $patcher->backfillInvoiceItemOrderIds(1);
+
+            expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(500);
+
+            $patcher->backfillInvoiceItemOrderIds();
+            expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(550);
         } finally {
             (new Filesystem())->remove($dbFile);
         }

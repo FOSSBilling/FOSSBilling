@@ -270,6 +270,11 @@ class Patcher implements InjectionAwareInterface
         try {
             $this->backfillInvoiceJournal();
             $this->backfillRefundIncomeBasis();
+            // Typed order linkage backfill (see invoice_item.order_id): runs here for
+            // every driver while the column the sync above added is guaranteed present.
+            // Same-version deploys converge through the bounded heal in
+            // ensureSchemaInSync().
+            $this->backfillInvoiceItemOrderIds();
             $this->checkInvoiceNumberCounter();
         } catch (\Doctrine\DBAL\Exception\ConnectionException) {
             return;
@@ -1218,6 +1223,15 @@ class Patcher implements InjectionAwareInterface
                 $this->backfillRefundIncomeBasis(1);
             } catch (\Throwable $e) {
                 $this->logUpdate('error', 'Refund income basis healing failed: ' . $e->getMessage());
+            }
+
+            // Same treatment for the order_id backfill: one page per drift heal so
+            // code-only deploys converge without stalling; versioned updates run
+            // the unbounded backfill through applyCorePatches() instead.
+            try {
+                $this->backfillInvoiceItemOrderIds(1);
+            } catch (\Throwable $e) {
+                $this->logUpdate('error', 'Invoice item order linkage backfill failed: ' . $e->getMessage());
             }
 
             return true;
@@ -2585,6 +2599,61 @@ class Patcher implements InjectionAwareInterface
         }
 
         $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
+    }
+
+    /**
+     * Backfills invoice_item.order_id from rel_id for rows that reference orders
+     * (see https://github.com/FOSSBilling/FOSSBilling/issues/4688). Portable and
+     * idempotent: the numeric check runs in PHP so no per-platform regex is needed,
+     * and only rows still missing order_id are touched. $maxPages bounds periodic
+     * healing callers: 0 means no limit.
+     *
+     * Only the two shapes this codebase produces for order references are migrated:
+     * type='order' lines and unit='discount' lines (which default to TYPE_CUSTOM but
+     * still name an order). Any other numeric rel_id (invoice/credit-note references,
+     * third-party line types) is deliberately left alone.
+     */
+    public function backfillInvoiceItemOrderIds(int $maxPages = 0): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return;
+        }
+
+        $dbal = $this->di['em']->getConnection();
+        $schemaManager = $dbal->createSchemaManager();
+        if (!$schemaManager->tablesExist(['invoice_item'])
+            || !$schemaManager->introspectTableByUnquotedName('invoice_item')->hasColumn('order_id')) {
+            return;
+        }
+
+        // Keyset pages, not one unbounded read: a production invoice_item table holds
+        // tens of thousands of rows, and only id/rel_id are needed per row.
+        // Idempotent: written rows drop out of later pages via order_id IS NULL, and
+        // the conditional UPDATE keeps a racing writer's newer value intact.
+        // Rows whose rel_id isn't an order id (hook_call JSON, invoice references)
+        // are skipped but still advance the keyset, so the loop always terminates.
+        $lastId = 0;
+        $pages = 0;
+        do {
+            $rows = $dbal->fetchAllAssociative(
+                "SELECT id, rel_id FROM invoice_item WHERE order_id IS NULL AND (type = 'order' OR unit = 'discount') AND id > :last ORDER BY id LIMIT 500",
+                ['last' => $lastId]
+            );
+
+            foreach ($rows as $row) {
+                $lastId = (int) $row['id'];
+                $relId = $row['rel_id'] ?? null;
+                if (!is_numeric($relId)) {
+                    continue;
+                }
+
+                $dbal->executeStatement(
+                    'UPDATE invoice_item SET order_id = :order_id WHERE id = :id AND order_id IS NULL',
+                    ['order_id' => (int) $relId, 'id' => $row['id']]
+                );
+            }
+            ++$pages;
+        } while ($rows !== [] && ($maxPages === 0 || $pages < $maxPages));
     }
 
     /**

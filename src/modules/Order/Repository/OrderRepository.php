@@ -219,7 +219,7 @@ class OrderRepository extends EntityRepository
                       SELECT 1
                       FROM invoice_item ii
                       INNER JOIN invoice pi ON pi.id = ii.invoice_id
-                      WHERE ii.rel_id = o.id AND ii.type = :item_type AND pi.status = :paid_status
+                      WHERE ii.order_id = o.id AND ii.type = :item_type AND pi.status = :paid_status
                   )
                   AND (
                       EXISTS (

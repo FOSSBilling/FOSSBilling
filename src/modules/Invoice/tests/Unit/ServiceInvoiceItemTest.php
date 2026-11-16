@@ -306,6 +306,80 @@ test('adds new item casts a numeric rel_id to string', function (): void {
     expect($persistedItem->getRelId())->toBe('82');
 });
 
+test('adds new item derives the typed order linkage from rel_id', function (): void {
+    $cases = [
+        'order line names its order' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '82'],
+            82,
+        ],
+        'discount line names its order' => [
+            ['title' => 'Discount', 'price' => -10, 'unit' => 'discount', 'rel_id' => '82'],
+            82,
+        ],
+        'custom line keeps a generic reference untyped' => [
+            ['title' => 'Setup', 'price' => 5, 'rel_id' => '19'],
+            null,
+        ],
+        'order line with a non-numeric reference stays untyped' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '{"hook":"call"}'],
+            null,
+        ],
+        'order line without a reference stays untyped' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER],
+            null,
+        ],
+    ];
+
+    foreach ($cases as $name => [$data, $expectedOrderId]) {
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $persistedItem = null;
+        $em->shouldReceive('persist')
+            ->once()
+            ->withArgs(function (InvoiceItem $pi) use (&$persistedItem): bool {
+                $persistedItem = $pi;
+
+                return true;
+            });
+        $em->shouldReceive('flush')->once();
+        $repo = Mockery::mock(InvoiceItemRepository::class);
+        $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+
+        $service = new ServiceInvoiceItem();
+        $di = container();
+        $di['em'] = $em;
+        $invoiceServiceMock = Mockery::mock(InvoiceService::class);
+        $invoiceServiceMock->shouldReceive('isInvoiceEditable')->andReturn(true);
+        $di['mod_service'] = $di->protect(moduleService(['invoice' => $invoiceServiceMock]));
+        $service->setDi($di);
+
+        $service->addNew(createEntity(Invoice::class), $data);
+
+        expect($persistedItem->getOrderId())->toBe($expectedOrderId, "order_id for case: {$name}");
+    }
+});
+
+test('resolves the typed order reference only for order shapes', function (): void {
+    expect(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '82'))->toBe(82)
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_CUSTOM, 'discount', '82'))->toBe(82)
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_CUSTOM, null, '19'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '{"hook":"call"}'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, ''))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(null, null, null))->toBeNull();
+});
+
+test('getOrderId prefers the typed linkage with a rel_id fallback', function (): void {
+    $typed = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '7']);
+    $typed->setOrderId(42);
+    $legacy = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '7']);
+    $custom = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_CUSTOM, 'rel_id' => '7']);
+
+    $service = invoiceItemService();
+
+    expect($service->getOrderId($typed))->toBe(42)
+        ->and($service->getOrderId($legacy))->toBe(7)
+        ->and($service->getOrderId($custom))->toBe(0);
+});
+
 test('addNew refuses locked invoices unless bypassed for internal flows', function (): void {
     $invoiceModel = createEntity(Invoice::class);
     $invoiceModel->setIssued(true);
