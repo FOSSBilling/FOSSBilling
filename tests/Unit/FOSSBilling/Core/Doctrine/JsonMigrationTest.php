@@ -12,7 +12,7 @@ beforeEach(function (): void {
     $this->jsonMigrationConnection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
 });
 
-test('an invalid row is quarantined to NULL without blocking earlier source values', function (): void {
+test('an invalid row is quarantined without blocking earlier source values', function (): void {
     $c = $this->jsonMigrationConnection;
     $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
     $c->executeStatement('CREATE TABLE session (id VARCHAR(255) PRIMARY KEY, fingerprint TEXT)');
@@ -31,9 +31,21 @@ test('an invalid row is quarantined to NULL without blocking earlier source valu
         ->and($result['quarantined'][0]['issue'])->toBe('invalid_json')
         ->and(json_encode($result))->not->toContain('session-secret', 'payload-secret');
     expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
-        ->and($c->fetchOne('SELECT fingerprint FROM session'))->toBeNull()
+        ->and($c->fetchAssociative('SELECT * FROM session'))->toBeFalse()
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
     expect((new JsonMigration())->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
+});
+
+test('a damaged session fingerprint removes its short-lived row instead of passing the check', function (): void {
+    $c = $this->jsonMigrationConnection;
+    $c->executeStatement('CREATE TABLE session (id VARCHAR(255) PRIMARY KEY, fingerprint TEXT)');
+    $c->insert('session', ['id' => 'session-secret', 'fingerprint' => '']);
+
+    $em = EntityManagerFactory::create($c);
+    $result = (new JsonMigration())->automatic($em, new Crypt());
+    expect($result['empty_values'])->toBe(1)
+        ->and($result['quarantined_values'])->toBe(0)
+        ->and($c->fetchAssociative('SELECT * FROM session'))->toBeFalse();
 });
 
 test('quarantined originals survive finalization for later review and repair', function (): void {

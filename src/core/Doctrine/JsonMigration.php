@@ -116,7 +116,7 @@ final class JsonMigration
                                     $bytes += strlen($repaired);
                                 } elseif (in_array($table . '.' . $column, JsonFields::QUARANTINE_BLOCKED, true)) {
                                     // NULL is fail-open here (drops an enforced restriction), so keep blocking for review.
-                                    throw new JsonMigrationException("JSON preflight failed for $table.$column id=" . JsonFields::displayId($table, $row['id']) . '; no source data was changed. Review this row with database:json:audit.');
+                                    throw new JsonMigrationException("JSON preflight failed for $table.$column id=" . JsonFields::displayId($table, $row['id']) . '; this row was not changed. Repairs and quarantines already applied to earlier rows are kept (see database:json:audit --quarantined). Review this row with database:json:audit.');
                                 } else {
                                     $pending[] = ['row' => $row, 'value' => null, 'original' => $raw, 'issue' => JsonAudit::classifyIssue($prepared ?? $raw, $scalarColumn)];
                                 }
@@ -173,7 +173,13 @@ final class JsonMigration
                 if ($row['value'] !== null && trim($row['value']) === '') {
                     $connection->transactional(function () use ($connection, $journal, $table, $column, $row): void {
                         $journal->save('original:' . $table . '.' . $column . ':' . $row['id'], ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($row['value'])]);
-                        $connection->executeStatement('UPDATE ' . $connection->quoteSingleIdentifier($table) . ' SET ' . $connection->quoteSingleIdentifier($column) . ' = NULL WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' = ?', [$row['id'], $row['value']], [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]);
+                        if ($table === 'session') {
+                            // Same fail-open as quarantined fingerprints: drop
+                            // the short-lived row instead of NULLing it.
+                            $connection->executeStatement('DELETE FROM ' . $connection->quoteSingleIdentifier($table) . ' WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' = ?', [$row['id'], $row['value']], [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]);
+                        } else {
+                            $connection->executeStatement('UPDATE ' . $connection->quoteSingleIdentifier($table) . ' SET ' . $connection->quoteSingleIdentifier($column) . ' = NULL WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' = ?', [$row['id'], $row['value']], [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]);
+                        }
                     });
                     ++$empty;
                 }
@@ -295,11 +301,23 @@ final class JsonMigration
                 if (!$stored) {
                     return;
                 }
-                $changed = $connection->executeStatement(
-                    'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $match,
-                    [$row['id'], $write['original']],
-                    [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
-                );
+                if ($table === 'session') {
+                    // A NULL fingerprint passes the session check (new sessions
+                    // have none yet), while a damaged one previously destroyed
+                    // the session. Remove the short-lived row so its owner
+                    // signs in again; the quarantine record keeps the audit trail.
+                    $changed = $connection->executeStatement(
+                        'DELETE FROM ' . $quotedTable . ' WHERE id = ? AND ' . $match,
+                        [$row['id'], $write['original']],
+                        [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
+                    );
+                } else {
+                    $changed = $connection->executeStatement(
+                        'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $match,
+                        [$row['id'], $write['original']],
+                        [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
+                    );
+                }
                 // NULL always differs from the scanned value, so no match means a concurrent write won the row.
                 if ($changed !== 1) {
                     throw new JsonMigrationException('JSON source value changed during migration; retry update finalization.');
