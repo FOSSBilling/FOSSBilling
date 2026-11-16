@@ -1335,6 +1335,9 @@ class Service implements InjectionAwareInterface
                         if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
                             throw new InformationException('Transaction ID is already associated with another invoice.');
                         }
+                        if ($transaction->getStatus() === Transaction::STATUS_PROCESSED) {
+                            throw new InformationException('Transaction ID has already been processed. Use a distinct reference for an additional payment.');
+                        }
                     }
 
                     $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
@@ -1979,15 +1982,19 @@ class Service implements InjectionAwareInterface
     public function doBatchDeliverIssuedNotifications(): bool
     {
         $invoices = $this->getInvoiceRepository()->findBy(['issueNotificationState' => [1, 2, 5, 6]]);
-        foreach ($invoices as $invoice) {
+        $invoiceIds = array_map(static fn (Invoice $invoice): int => (int) $invoice->getId(), $invoices);
+        foreach ($invoiceIds as $invoiceId) {
             try {
+                // A prior failure may have replaced the manager and detached the selection.
+                $invoice = $this->getInvoiceRepository()->find($invoiceId);
+                if (!$invoice instanceof Invoice) {
+                    continue;
+                }
                 $this->notifyDeferredInvoiceIssued($invoice, true);
             } catch (\Throwable $e) {
-                $this->di['logger']->warning('Could not deliver deferred invoice issuance #{id}: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+                $this->di['logger']->warning('Could not deliver deferred invoice issuance #{id}: {error}', ['id' => $invoiceId, 'error' => $e->getMessage()]);
                 if (!$this->di['em']->isOpen()) {
                     $this->resetEntityManager();
-
-                    break;
                 }
             }
         }

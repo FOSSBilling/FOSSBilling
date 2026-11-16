@@ -531,3 +531,45 @@ test('historical currency mismatches still allow annotations but no financial ed
     expect(fn () => $service->update($transaction, ['currency' => 'EUR']))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
     expect($transaction->getCurrency())->toBe('USD');
 })->with(['unpaid', 'refunded', 'canceled']);
+
+test('manual settlement preserves a processed partial payment and requires a new reference', function (string $type): void {
+    [, $em, $client, $gateway, $partial] = receiptTestContext();
+    $gateway->setGateway('Custom')->setEnabled(true);
+    $invoice = (new Invoice())->setClientId($client->getId())->setGateway($gateway)->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setNr('42');
+    $em->persist($invoice);
+    $em->flush();
+    $item = (new InvoiceItem())->setInvoice($invoice)->setType($type)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged($type === InvoiceItem::TYPE_DEPOSIT);
+    $em->persist($item);
+    $partial->setInvoice($invoice)->setTxnId('manual-partial')->setAmount('80')->setStatus(Transaction::STATUS_PROCESSED)->setNote('Original payment');
+    $em->flush();
+    $makeService = function (EntityManager $manager): Service {
+        $service = gatewayDepositTestService($manager);
+        $transactions = new Box\Mod\Invoice\ServiceTransaction();
+        $di = $service->getDi();
+        $modules = $di['mod_service'];
+        unset($di['mod_service']);
+        $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => $module === 'Invoice' && $sub === 'Transaction' ? $transactions : $modules($module, $sub));
+        $transactions->setDi($di);
+
+        return $service;
+    };
+    $service = $makeService($em);
+    expect(fn () => $service->markAsPaidByAdmin($invoice, ['transactionId' => 'manual-partial']))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Use a distinct reference');
+    $connection = $em->getConnection();
+    $table = $connection->quoteSingleIdentifier('transaction');
+    expect((float) $connection->fetchOne("SELECT amount FROM $table WHERE id = ?", [$partial->getId()]))->toBe(80.0)
+        ->and($connection->fetchOne("SELECT note FROM $table WHERE id = ?", [$partial->getId()]))->toBe('Original payment')
+        ->and($connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(Invoice::STATUS_UNPAID)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+    // A rejected attempt closes Doctrine's manager. Retry through fresh request services.
+    $fresh = new EntityManager($connection, $em->getConfiguration());
+    $service = $makeService($fresh);
+    $invoice = $fresh->find(Invoice::class, $invoice->getId());
+    expect($service->markAsPaidByAdmin($invoice, ['transactionId' => 'manual-remainder']))->toBeTrue()
+        ->and($service->markAsPaidByAdmin($invoice, ['transactionId' => 'manual-remainder']))->toBeTrue()
+        ->and((float) $connection->fetchOne("SELECT amount FROM $table WHERE txn_id = 'manual-partial'"))->toBe(80.0)
+        ->and((float) $connection->fetchOne("SELECT amount FROM $table WHERE txn_id = 'manual-remainder'"))->toBe(20.0)
+        ->and((int) $connection->fetchOne("SELECT COUNT(*) FROM $table WHERE invoice_id = ?", [$invoice->getId()]))->toBe(2)
+        ->and($invoice->getStatus())->toBe(Invoice::STATUS_PAID)
+        ->and($service->getFreeCredit((int) $client->getId()))->toBe($type === InvoiceItem::TYPE_DEPOSIT ? 100.0 : 0.0);
+})->with([InvoiceItem::TYPE_CUSTOM, InvoiceItem::TYPE_DEPOSIT]);

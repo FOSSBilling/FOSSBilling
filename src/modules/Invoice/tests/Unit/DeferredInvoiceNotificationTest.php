@@ -388,3 +388,39 @@ test('Add Funds publishes its number and notification atomically and rolls back 
         (new Symfony\Component\Filesystem\Filesystem())->remove($path);
     }
 })->with([false, true]);
+
+test('notification recovery continues past a receipt reconciliation hold after replacing its manager', function (int $checkpoint, int $readyCheckpoint): void {
+    [, $em, $client, , $transaction] = receiptTestContext();
+    $held = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setIssued(true)->setStatus(Invoice::STATUS_UNPAID)->setIssueNotificationState($checkpoint);
+    $ready = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setIssued(true)->setStatus(Invoice::STATUS_UNPAID)->setIssueNotificationState($readyCheckpoint);
+    $em->persist($held);
+    $em->persist($ready);
+    $em->flush();
+    $transaction->setInvoice($held)->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED)->setTxnId('pi_held');
+    $receipt = (new Box\Mod\Client\Entity\ClientBalance())->setClient($client)->setType('transaction')->setRelId((string) $transaction->getId())->setDescription('Stripe transaction pi_held')->setAmount('15');
+    $em->persist($receipt);
+    $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($held)->setType('custom')->setPrice(100)->setQuantity(1));
+    $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($ready)->setType('custom')->setPrice(100)->setQuantity(1));
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    $replacements = 0;
+    $service->shouldAllowMockingProtectedMethods()->shouldReceive('createEntityManager')->twice()->andReturnUsing(function ($connection) use ($em, &$replacements): Doctrine\ORM\EntityManager {
+        ++$replacements;
+
+        return new Doctrine\ORM\EntityManager($connection, $em->getConfiguration());
+    });
+    $delivered = [];
+    $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, function ($event) use (&$delivered): void { $delivered[] = $event->invoiceId; });
+    $service->getDi()['event_dispatcher'] = $dispatcher;
+    foreach ([1, 2] as $attempt) {
+        expect($service->doBatchDeliverIssuedNotifications())->toBeTrue()
+            ->and($replacements)->toBe($attempt)
+            ->and($delivered)->toBe([$ready->getId()])
+            ->and($service->getDi()['em']->isOpen())->toBeTrue()
+            ->and((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$held->getId()]))->toBe($checkpoint)
+            ->and((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$ready->getId()]))->toBe(0)
+            ->and($em->getConnection()->fetchOne('SELECT gateway_transaction_id FROM client_balance WHERE id = ?', [$receipt->getId()]))->toBeNull();
+    }
+    expect($em->isOpen())->toBeFalse();
+})->with([[1, 1], [1, 2], [5, 1], [5, 6]]);
