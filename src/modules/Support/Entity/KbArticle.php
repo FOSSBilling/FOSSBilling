@@ -218,6 +218,6 @@ class KbArticle implements ArrayInterface, TimestampInterface
 
     private function touchUpdatedAt(): void
     {
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 }

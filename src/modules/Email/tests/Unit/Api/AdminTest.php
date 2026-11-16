@@ -74,8 +74,8 @@ test('email get', function (): void {
     $model->setSubject($subject);
     $model->setContentHtml($content_html);
     $model->setContentText($content_text);
-    $model->setCreatedAt(new DateTime('-1 day'));
-    $model->setUpdatedAt(new DateTime());
+    $model->setCreatedAt(new DateTimeImmutable('-1 day'));
+    $model->setUpdatedAt(new DateTimeImmutable());
 
     $expected = $model->toApiArray();
 

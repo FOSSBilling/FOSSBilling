@@ -86,7 +86,7 @@ test('completed domain renewal recovers after cancellation without changing the 
     // Reopen after interruption and model a cancellation committed before recovery.
     $newEm = new EntityManager($connection, $em->getConfiguration());
     $canceledOrder = $newEm->find(Order::class, $orderId);
-    $canceledOrder->setStatus(Order::STATUS_CANCELED)->setCanceledAt(new DateTime())->setExpiresAt(null)->setReason('Staff cancellation');
+    $canceledOrder->setStatus(Order::STATUS_CANCELED)->setCanceledAt(new DateTimeImmutable())->setExpiresAt(null)->setReason('Staff cancellation');
     $newEm->flush();
     $canceledState = $connection->fetchAssociative('SELECT * FROM client_order WHERE id = ?', [$orderId]);
     $attempts = (int) $connection->fetchOne('SELECT attempts FROM invoice_item WHERE id = ?', [$itemId]);
@@ -112,7 +112,7 @@ test('completed domain renewal recovers after cancellation without changing the 
 test('an incomplete domain claim cannot bypass cancellation during recovery', function (string $kind): void {
     [$em, $order, $item, $orders, $cron, $executor] = freeHoldRegressionContext($kind);
     $executor->reviewDomainRenewal((int) $item->getId(), $kind === 'free' ? 'retry_free' : 'retry_zero');
-    $order->setStatus(Order::STATUS_CANCELED)->setCanceledAt(new DateTime());
+    $order->setStatus(Order::STATUS_CANCELED)->setCanceledAt(new DateTimeImmutable());
     $em->flush();
     $orders->shouldNotReceive('_callOnService');
     $cron->doBatchPaidInvoiceActivation();

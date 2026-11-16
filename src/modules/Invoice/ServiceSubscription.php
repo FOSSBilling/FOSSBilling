@@ -95,7 +95,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->setPeriod($data['period'] ?? $model->getPeriod());
         $model->setAmount($data['amount'] ?? $model->getAmount());
         $model->setCurrency($data['currency'] ?? $model->getCurrency());
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
         $newId = (int) $model->getId();
 
@@ -161,7 +161,7 @@ class ServiceSubscription implements InjectionAwareInterface
     public function unsubscribe(Subscription $model): void
     {
         $model->setStatus('canceled');
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
     }
 

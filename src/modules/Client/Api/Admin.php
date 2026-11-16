@@ -450,13 +450,13 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         if (array_key_exists('birthday', $data) && $data['birthday'] !== null && $data['birthday'] !== '') {
-            $client->setBirthday(new \DateTime($data['birthday']));
+            $client->setBirthday(new \DateTimeImmutable($data['birthday']));
         } elseif (array_key_exists('birthday', $data)) {
             $client->setBirthday(null);
         }
 
         if (array_key_exists('created_at', $data) && $data['created_at'] !== null && $data['created_at'] !== '') {
-            $client->setCreatedAt(new \DateTime($data['created_at']));
+            $client->setCreatedAt(new \DateTimeImmutable($data['created_at']));
         } elseif (array_key_exists('created_at', $data)) {
             $client->setCreatedAt(null);
         }

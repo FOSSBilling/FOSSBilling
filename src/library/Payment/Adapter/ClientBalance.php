@@ -139,7 +139,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\Core\Container\Inject
             $tx->setError('');
             $tx->setErrorCode(null);
             $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
-            $tx->setUpdatedAt(new DateTime());
+            $tx->setUpdatedAt(new DateTimeImmutable());
             $this->di['em']->flush();
         }
 

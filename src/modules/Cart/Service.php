@@ -519,7 +519,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->remove($cartProduct);
         }
         $cart->setPromoId(null);
-        $cart->setUpdatedAt(new \DateTime());
+        $cart->setUpdatedAt(new \DateTimeImmutable());
         $this->persistCart($cart);
 
         return true;
@@ -528,7 +528,7 @@ class Service implements InjectionAwareInterface
     public function removePromo(Cart $cart): bool
     {
         $cart->setPromoId(null);
-        $cart->setUpdatedAt(new \DateTime());
+        $cart->setUpdatedAt(new \DateTimeImmutable());
         $this->persistCart($cart);
 
         $this->di['logger']->info('Removed promo code from shopping cart #{cart_id}', ['cart_id' => $cart->getId()]);

@@ -41,8 +41,8 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         if (!is_null($this->getService()->getLastExecutionTime())) {
-            $t1 = new \DateTime($this->getService()->getLastExecutionTime());
-            $t2 = new \DateTime('-1min');
+            $t1 = new \DateTimeImmutable($this->getService()->getLastExecutionTime());
+            $t2 = new \DateTimeImmutable('-1min');
 
             if ($t1 >= $t2) {
                 return false;

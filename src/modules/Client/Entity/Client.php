@@ -95,8 +95,8 @@ class Client implements ArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
     private ?string $gender = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    private ?\DateTime $birthday = null;
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $birthday = null;
 
     #[ORM\Column(name: 'phone_cc', type: Types::STRING, length: 10, nullable: true)]
     private ?string $phoneCc = null;
@@ -464,12 +464,12 @@ class Client implements ArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getBirthday(): ?\DateTime
+    public function getBirthday(): ?\DateTimeImmutable
     {
         return $this->birthday;
     }
 
-    public function setBirthday(?\DateTime $birthday): self
+    public function setBirthday(?\DateTimeImmutable $birthday): self
     {
         $this->birthday = $birthday;
 

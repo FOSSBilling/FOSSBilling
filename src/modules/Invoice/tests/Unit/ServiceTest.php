@@ -480,7 +480,7 @@ test('ensure valid hash regenerates a missing hash', function (): void {
     expect(strlen($invoiceModel->hash))->toBeGreaterThanOrEqual(30);
     expect(strlen($invoiceModel->hash))->toBeLessThanOrEqual(60);
     expect($invoiceModel->hash)->toMatch('/^[a-f0-9]+$/');
-    expect($invoiceModel->hash_expires_at)->toBeInstanceOf(DateTime::class);
+    expect($invoiceModel->hash_expires_at)->toBeInstanceOf(DateTimeImmutable::class);
 });
 
 test('ensure valid hash regenerates a legacy format hash', function (): void {
@@ -1674,7 +1674,7 @@ test('admin mark as paid threads the paid_at override into the payment transacti
             false,
             false,
             true,
-            Mockery::on(fn ($value): bool => $value instanceof DateTime && $value->format('Y-m-d') === '2024-05-06'),
+            Mockery::on(fn ($value): bool => $value instanceof DateTimeInterface && $value->format('Y-m-d') === '2024-05-06'),
             Mockery::any()
         )
         ->andReturn(true);
@@ -1815,7 +1815,7 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
             false,
             false,
             true,
-            Mockery::on(fn ($value): bool => $value instanceof DateTime && $value->format('Y-m-d H:i:s') === '2026-08-01 10:30:00'),
+            Mockery::on(fn ($value): bool => $value instanceof DateTimeInterface && $value->format('Y-m-d H:i:s') === '2026-08-01 10:30:00'),
             Mockery::any()
         )
         ->andReturn(true);
@@ -1926,7 +1926,7 @@ test('markAsPaid records the paid journal inside the payment transaction', funct
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    expect($service->markAsPaid($invoice, true, false, true, new DateTime('2026-08-01 10:30:00')))->toBeTrue()
+    expect($service->markAsPaid($invoice, true, false, true, new DateTimeImmutable('2026-08-01 10:30:00')))->toBeTrue()
         // Recorded while the payment transaction was still open, carrying
         // the admin-supplied paid_at date rather than the payment time.
         ->and($journalPaidAt)->toBe([true, '2026-08-01']);
@@ -7495,7 +7495,7 @@ test('attachOrderToInvoice refuses locked invoices and invalid orders', function
 });
 
 test('reissueInvoice cancels the original and moves its lines to a numbered replacement', function (): void {
-    $dueAt = new DateTime('2026-10-01 00:00:00');
+    $dueAt = new DateTimeImmutable('2026-10-01 00:00:00');
     $original = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
     $original->setIssued(true);
     $original->setStatus(Invoice::STATUS_UNPAID);

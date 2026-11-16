@@ -98,7 +98,7 @@ test('syncWhois does not clear registered_at when the registrar returns no regis
     $service = makeSyncWhoisService($whois, $em);
 
     $model = new ServiceDomain();
-    $stored = new DateTime('2020-05-01 12:00:00');
+    $stored = new DateTimeImmutable('2020-05-01 12:00:00');
     $model->setRegisteredAt($stored);
 
     $service->syncWhois($model, new Box\Mod\Order\Entity\Order());
@@ -117,7 +117,7 @@ test('syncWhois updates registered_at when the registrar returns a registration 
     $service = makeSyncWhoisService($whois, $em);
 
     $model = new ServiceDomain();
-    $model->setRegisteredAt(new DateTime('2020-05-01 12:00:00'));
+    $model->setRegisteredAt(new DateTimeImmutable('2020-05-01 12:00:00'));
 
     $service->syncWhois($model, new Box\Mod\Order\Entity\Order());
 
@@ -184,7 +184,7 @@ test('syncWhois still refreshes expires_at and synced_at', function (): void {
     $service->syncWhois($model, new Box\Mod\Order\Entity\Order());
 
     expect($model->getExpiresAt()?->format('Y-m-d H:i:s'))->toBe('2027-01-15 08:00:00');
-    expect($model->getSyncedAt())->toBeInstanceOf(DateTime::class);
+    expect($model->getSyncedAt())->toBeInstanceOf(DateTimeImmutable::class);
     expect($em->flushCount)->toBe(1);
 });
 
@@ -239,7 +239,7 @@ test('syncWhois does not clear expires_at when the registrar returns no expirati
     $service = makeSyncWhoisService($whois, $em);
 
     $model = new ServiceDomain();
-    $model->setExpiresAt(new DateTime('2027-06-15 00:00:00'));
+    $model->setExpiresAt(new DateTimeImmutable('2027-06-15 00:00:00'));
 
     $service->syncWhois($model, new Box\Mod\Order\Entity\Order());
 

@@ -102,7 +102,7 @@ function heldOrderPaymentContext(?string $databasePath = null): array
     $em = new EntityManager($connection, $config);
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Order::class, OrderMeta::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
     $order = (new Order())->setServiceType('custom')->setServiceId(1)->setStatus(Order::STATUS_ACTIVE)->setGroupMaster(false)
-        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTime('+1 day'));
+        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTimeImmutable('+1 day'));
     $em->persist($order);
     $em->flush();
     $di = Tests\Helpers\container();

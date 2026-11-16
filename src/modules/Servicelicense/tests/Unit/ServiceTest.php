@@ -302,7 +302,7 @@ test('is license inactive when order has expired', function (): void {
 
     $expiredOrder = new Order();
     $expiredOrder->setStatus(Order::STATUS_ACTIVE);
-    $expiredOrder->setExpiresAt(new DateTime(date('Y-m-d H:i:s', time() - 3600)));
+    $expiredOrder->setExpiresAt(new DateTimeImmutable(date('Y-m-d H:i:s', time() - 3600)));
 
     $serviceLicenseModel = new ServiceLicense();
 
@@ -549,7 +549,7 @@ test('get expiration date', function (): void {
     $expected = '2004-02-12 15:19:21';
 
     $order = new Order();
-    $order->setExpiresAt(new DateTime($expected));
+    $order->setExpiresAt(new DateTimeImmutable($expected));
 
     $serviceLicenseModel = new ServiceLicense();
 

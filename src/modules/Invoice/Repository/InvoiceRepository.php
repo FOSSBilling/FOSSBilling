@@ -310,8 +310,7 @@ class InvoiceRepository extends EntityRepository
      */
     public function findUnpaidIssuedNotRemindedBefore(int $cutoffTimestamp): array
     {
-        $cutoff = new \DateTime();
-        $cutoff->setTimestamp($cutoffTimestamp);
+        $cutoff = (new \DateTimeImmutable())->setTimestamp($cutoffTimestamp);
 
         return $this->createQueryBuilder('i')
             ->andWhere('i.status = :status')

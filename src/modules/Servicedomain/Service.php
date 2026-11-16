@@ -473,7 +473,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             }
         }
 
-        $model->setSyncedAt(new \DateTime());
+        $model->setSyncedAt(new \DateTimeImmutable());
 
         $this->di['em']->flush();
     }
@@ -1560,16 +1560,16 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return true;
     }
 
-    private function formatRegistrarTimestamp(mixed $timestamp): ?\DateTime
+    private function formatRegistrarTimestamp(mixed $timestamp): ?\DateTimeImmutable
     {
         if (!is_numeric($timestamp) || (int) $timestamp <= 0) {
             return null;
         }
 
-        return new \DateTime('@' . (int) $timestamp);
+        return new \DateTimeImmutable('@' . (int) $timestamp);
     }
 
-    private function formatDateTime(?\DateTime $dateTime): ?string
+    private function formatDateTime(?\DateTimeInterface $dateTime): ?string
     {
         return $dateTime?->format('Y-m-d H:i:s');
     }

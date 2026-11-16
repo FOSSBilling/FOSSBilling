@@ -2926,7 +2926,7 @@ test('renewFromOrder extends expiration', function (): void {
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($clientOrderModel);
 
-    expect($clientOrderModel->expires_at)->toEqual(new DateTime('2027-01-01 00:00:00'));
+    expect($clientOrderModel->expires_at)->toEqual(new DateTimeImmutable('2027-01-01 00:00:00'));
     expect($clientOrderModel->status)->toEqual(Order::STATUS_ACTIVE);
 });
 
@@ -2950,7 +2950,7 @@ test('renewFromOrder treats a missing Doctrine expiration as now', function (): 
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($order);
 
-    expect($order->getExpiresAt())->toEqual(new DateTime('2027-01-01 00:00:00'))
+    expect($order->getExpiresAt())->toEqual(new DateTimeImmutable('2027-01-01 00:00:00'))
         ->and($order->getStatus())->toBe(Order::STATUS_ACTIVE);
 });
 
@@ -2985,7 +2985,7 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($clientOrderModel);
 
-    expect($clientOrderModel->expires_at)->toEqual(new DateTime('2027-01-01 00:00:00'));
+    expect($clientOrderModel->expires_at)->toEqual(new DateTimeImmutable('2027-01-01 00:00:00'));
     expect($clientOrderModel->status)->toEqual(Order::STATUS_ACTIVE);
 });
 
@@ -4891,7 +4891,7 @@ test('order deletion coordinates backend and gateway failures before local clean
     }
 })->with(['none', 'backend', 'gateway'])->with([false, true]);
 test('batchSuspendExpired cancels scheduled orders at expiry instead of suspending them', function (): void {
-    $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTimeImmutable('-1 minute')]);
     $orders = Mockery::mock(OrderRepository::class);
     $orders->shouldReceive('find')->with(42)->andReturn($order);
     $metadata = Mockery::mock(OrderMetaRepository::class);
@@ -4922,7 +4922,7 @@ test('batchSuspendExpired cancels scheduled orders at expiry instead of suspendi
 });
 
 test('interrupted scheduled cancellation is held until staff reviews it', function (): void {
-    $order = createEntity(Order::class, ['id' => 821, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $order = createEntity(Order::class, ['id' => 821, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTimeImmutable('-1 minute')]);
     $state = [Service::META_CANCEL_AT_PERIOD_END => '1'];
     $metadata = Mockery::mock(OrderMetaRepository::class);
     $metadata->shouldReceive('getPairsForOrder')->with(821)->andReturnUsing(function () use (&$state): array { return $state; });
@@ -4961,7 +4961,7 @@ test('interrupted scheduled cancellation is held until staff reviews it', functi
 });
 
 test('a gateway failure leaves scheduled cancellation held for review', function (): void {
-    $order = createEntity(Order::class, ['id' => 822, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $order = createEntity(Order::class, ['id' => 822, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTimeImmutable('-1 minute')]);
     $state = [Service::META_CANCEL_AT_PERIOD_END => '1'];
     $metadata = Mockery::mock(OrderMetaRepository::class);
     $metadata->shouldReceive('getPairsForOrder')->with(822)->andReturnUsing(function () use (&$state): array { return $state; });
@@ -4994,7 +4994,7 @@ test('a gateway failure leaves scheduled cancellation held for review', function
 });
 
 test('staff can confirm an interrupted scheduled cancellation without repeating the service action', function (): void {
-    $order = createEntity(Order::class, ['id' => 823, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTime('-1 minute')]);
+    $order = createEntity(Order::class, ['id' => 823, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTimeImmutable('-1 minute')]);
     $metadata = Mockery::mock(OrderMetaRepository::class);
     $metadata->shouldReceive('getPairsForOrder')->with(823)->andReturn([Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_CLAIM => '1']);
     $product = Mockery::mock(Box\Mod\Product\Service::class);

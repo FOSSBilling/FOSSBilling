@@ -22,7 +22,7 @@ test('maps the existing setting table and unique parameter constraint', function
 });
 
 test('stores setting values and manages timestamps', function (): void {
-    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $createdAt = new DateTimeImmutable('2026-01-01 12:00:00');
     $setting = (new Setting())
         ->setParam('company_name')
         ->setValue('Example Ltd')
@@ -39,7 +39,7 @@ test('stores setting values and manages timestamps', function (): void {
         ->and($setting->getCategory())->toBe('company')
         ->and($setting->getHash())->toBe('configuration')
         ->and($setting->getCreatedAt())->toBe($createdAt)
-        ->and($setting->getUpdatedAt())->toBeInstanceOf(DateTime::class);
+        ->and($setting->getUpdatedAt())->toBeInstanceOf(DateTimeImmutable::class);
 });
 
 test('treats a null public value as private', function (): void {

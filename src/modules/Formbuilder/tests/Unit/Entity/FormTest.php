@@ -30,7 +30,7 @@ test('maps the existing form tables without changing their columns', function ()
 });
 
 test('stores form values and manages timestamps', function (): void {
-    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $createdAt = new DateTimeImmutable('2026-01-01 12:00:00');
     $form = (new Form())
         ->setName('Hosting details')
         ->setStyle(['type' => 'horizontal']);
@@ -41,5 +41,5 @@ test('stores form values and manages timestamps', function (): void {
     expect($form->getName())->toBe('Hosting details')
         ->and($form->getStyle())->toBe(['type' => 'horizontal'])
         ->and($form->getCreatedAt())->toBe($createdAt)
-        ->and($form->getUpdatedAt())->toBeInstanceOf(DateTime::class);
+        ->and($form->getUpdatedAt())->toBeInstanceOf(DateTimeImmutable::class);
 });

@@ -169,17 +169,17 @@ class Invoice implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 35, nullable: true)]
     private ?string $taxrate = null;
 
-    #[ORM\Column(name: 'due_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $dueAt = null;
+    #[ORM\Column(name: 'due_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $dueAt = null;
 
-    #[ORM\Column(name: 'reminded_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $remindedAt = null;
+    #[ORM\Column(name: 'reminded_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $remindedAt = null;
 
-    #[ORM\Column(name: 'paid_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $paidAt = null;
+    #[ORM\Column(name: 'paid_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $paidAt = null;
 
-    #[ORM\Column(name: 'hash_expires_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $hashExpiresAt = null;
+    #[ORM\Column(name: 'hash_expires_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $hashExpiresAt = null;
 
     public function getId(): ?int
     {
@@ -690,48 +690,48 @@ class Invoice implements TimestampInterface
         return $this;
     }
 
-    public function getDueAt(): ?\DateTime
+    public function getDueAt(): ?\DateTimeImmutable
     {
         return $this->dueAt;
     }
 
-    public function setDueAt(?\DateTime $dueAt): self
+    public function setDueAt(?\DateTimeImmutable $dueAt): self
     {
         $this->dueAt = $dueAt;
 
         return $this;
     }
 
-    public function getRemindedAt(): ?\DateTime
+    public function getRemindedAt(): ?\DateTimeImmutable
     {
         return $this->remindedAt;
     }
 
-    public function setRemindedAt(?\DateTime $remindedAt): self
+    public function setRemindedAt(?\DateTimeImmutable $remindedAt): self
     {
         $this->remindedAt = $remindedAt;
 
         return $this;
     }
 
-    public function getPaidAt(): ?\DateTime
+    public function getPaidAt(): ?\DateTimeImmutable
     {
         return $this->paidAt;
     }
 
-    public function setPaidAt(?\DateTime $paidAt): self
+    public function setPaidAt(?\DateTimeImmutable $paidAt): self
     {
         $this->paidAt = $paidAt;
 
         return $this;
     }
 
-    public function getHashExpiresAt(): ?\DateTime
+    public function getHashExpiresAt(): ?\DateTimeImmutable
     {
         return $this->hashExpiresAt;
     }
 
-    public function setHashExpiresAt(?\DateTime $hashExpiresAt): self
+    public function setHashExpiresAt(?\DateTimeImmutable $hashExpiresAt): self
     {
         $this->hashExpiresAt = $hashExpiresAt;
 

@@ -1059,15 +1059,15 @@ class Service implements InjectionAwareInterface
 
             $order->setNotes($data['notes'] ?? null);
             if (isset($data['created_at'])) {
-                $order->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', strtotime((string) $data['created_at']))));
+                $order->setCreatedAt(new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $data['created_at']))));
             } else {
-                $order->setCreatedAt(new \DateTime());
+                $order->setCreatedAt(new \DateTimeImmutable());
             }
 
             if (isset($data['updated_at'])) {
-                $order->setUpdatedAt(new \DateTime(date('Y-m-d H:i:s', strtotime((string) $data['updated_at']))));
+                $order->setUpdatedAt(new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $data['updated_at']))));
             } else {
-                $order->setUpdatedAt(new \DateTime());
+                $order->setUpdatedAt(new \DateTimeImmutable());
             }
 
             $this->di['em']->persist($order);
@@ -1081,10 +1081,10 @@ class Service implements InjectionAwareInterface
                         $mm = new OrderMeta();
                         $mm->setOrder($order);
                         $mm->setName($k);
-                        $mm->setCreatedAt(new \DateTime());
+                        $mm->setCreatedAt(new \DateTimeImmutable());
                     }
                     $mm->setValue($v);
-                    $mm->setUpdatedAt(new \DateTime());
+                    $mm->setUpdatedAt(new \DateTimeImmutable());
                     $this->di['em']->persist($mm);
                 }
                 $this->di['em']->flush();
@@ -1335,7 +1335,7 @@ class Service implements InjectionAwareInterface
 
                 $serviceId = method_exists($service, 'getId') ? $service->getId() : $service->id;
                 $order->setServiceId((int) $serviceId);
-                $order->setUpdatedAt(new \DateTime());
+                $order->setUpdatedAt(new \DateTimeImmutable());
                 $this->persistOrder($order);
             }
         }
@@ -1357,14 +1357,14 @@ class Service implements InjectionAwareInterface
 
                 $periodObj = $this->di['period']($period);
                 $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
-                $order->setExpiresAt(new \DateTime($newExpires));
+                $order->setExpiresAt(new \DateTimeImmutable($newExpires));
             }
 
             $order->setStatus(Order::STATUS_ACTIVE);
-            $order->setActivatedAt(new \DateTime());
+            $order->setActivatedAt(new \DateTimeImmutable());
             $order->setSuspendedAt(null);
             $order->setCanceledAt(null);
-            $order->setUpdatedAt(new \DateTime());
+            $order->setUpdatedAt(new \DateTimeImmutable());
 
             $this->persistOrder($order);
         } catch (\Throwable $e) {
@@ -1527,10 +1527,10 @@ class Service implements InjectionAwareInterface
                     $mm = new OrderMeta();
                     $mm->setOrder($order);
                     $mm->setName($k);
-                    $mm->setCreatedAt(new \DateTime());
+                    $mm->setCreatedAt(new \DateTimeImmutable());
                 }
                 $mm->setValue($v);
-                $mm->setUpdatedAt(new \DateTime());
+                $mm->setUpdatedAt(new \DateTimeImmutable());
                 $this->di['em']->persist($mm);
                 $edited[] = $mm;
             }
@@ -1624,19 +1624,19 @@ class Service implements InjectionAwareInterface
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
             $createdAtDate = date('Y-m-d H:i:s', strtotime((string) $created_at));
-            $order->setCreatedAt(new \DateTime($createdAtDate));
+            $order->setCreatedAt(new \DateTimeImmutable($createdAtDate));
         }
 
         $activated_at = $data['activated_at'] ?? null;
         if (!empty($activated_at)) {
             $activatedAtDate = date('Y-m-d H:i:s', strtotime((string) $activated_at));
-            $order->setActivatedAt(new \DateTime($activatedAtDate));
+            $order->setActivatedAt(new \DateTimeImmutable($activatedAtDate));
         }
 
         $expires_at = $data['expires_at'] ?? null;
         if (!empty($expires_at)) {
             $expiresAtDate = date('Y-m-d H:i:s', strtotime((string) $expires_at));
-            $order->setExpiresAt(new \DateTime($expiresAtDate));
+            $order->setExpiresAt(new \DateTimeImmutable($expiresAtDate));
         }
         if (empty($expires_at) && !is_null($expires_at)) {
             $order->setExpiresAt(null);
@@ -1679,7 +1679,7 @@ class Service implements InjectionAwareInterface
 
         $this->updateOrderMeta($order, $data['meta'] ?? null, true);
 
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminOrderUpdateEvent($orderId));
@@ -1895,14 +1895,14 @@ class Service implements InjectionAwareInterface
             }
             $periodObj = $this->di['period']($period);
             $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
-            $order->setExpiresAt(new \DateTime($newExpires));
+            $order->setExpiresAt(new \DateTimeImmutable($newExpires));
         }
 
         $order->setStatus(Order::STATUS_ACTIVE);
         $order->setSuspendedAt(null);
         $order->setUnsuspendedAt(null);
         $order->setCanceledAt(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Order renewed');
@@ -1926,8 +1926,8 @@ class Service implements InjectionAwareInterface
 
         $order->setStatus(Order::STATUS_SUSPENDED);
         $order->setReason($reason);
-        $order->setSuspendedAt(new \DateTime());
-        $order->setUpdatedAt(new \DateTime());
+        $order->setSuspendedAt(new \DateTimeImmutable());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $note = ($reason === null) ? 'Order suspended' : 'Order suspended for ' . $reason;
@@ -1970,8 +1970,8 @@ class Service implements InjectionAwareInterface
         $order->setStatus(Order::STATUS_ACTIVE);
         $order->setReason(null);
         $order->setSuspendedAt(null);
-        $order->setUnsuspendedAt(new \DateTime());
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUnsuspendedAt(new \DateTimeImmutable());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Order unsuspended');
@@ -2088,7 +2088,7 @@ class Service implements InjectionAwareInterface
         $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0', self::META_SCHEDULED_CANCEL_PHASE => 'scheduled']);
 
         $order->setReason($reason);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
         $this->saveStatusChange($order, 'Cancellation scheduled at the end of the current billing period');
         $this->di['logger']->info('Scheduled cancellation for order #{order_id} at the end of the current billing period', ['order_id' => $orderId]);
@@ -2260,10 +2260,10 @@ class Service implements InjectionAwareInterface
 
         $order->setStatus(Order::STATUS_CANCELED);
         $order->setReason($reason);
-        $order->setCanceledAt(new \DateTime());
+        $order->setCanceledAt(new \DateTimeImmutable());
         $order->setExpiresAt(null);
         $order->setSuspendedAt(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
         // Remove the schedule checkpoints in one statement. If this process stops
         // before it, claim 2 remains discoverable for cleanup recovery.
@@ -2316,11 +2316,11 @@ class Service implements InjectionAwareInterface
 
         $order->setStatus(Order::STATUS_ACTIVE);
         $order->setReason(null);
-        $order->setActivatedAt(new \DateTime());
-        $order->setExpiresAt($expiresAt ? new \DateTime($expiresAt) : null);
+        $order->setActivatedAt(new \DateTimeImmutable());
+        $order->setExpiresAt($expiresAt ? new \DateTimeImmutable($expiresAt) : null);
         $order->setSuspendedAt(null);
         $order->setCanceledAt(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Activated canceled order');
@@ -2932,7 +2932,7 @@ class Service implements InjectionAwareInterface
         $oldConfig = $order->getConfig();
 
         $order->setConfig($config);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->persist($order);
         $this->di['em']->flush();
 
@@ -3099,14 +3099,14 @@ class Service implements InjectionAwareInterface
     public function setUnpaidInvoice(Order $order, Invoice $proforma): void
     {
         $order->setUnpaidInvoiceId((int) $proforma->getId());
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
     }
 
     public function unsetUnpaidInvoice(Order $order): void
     {
         $order->setUnpaidInvoiceId(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
     }
 

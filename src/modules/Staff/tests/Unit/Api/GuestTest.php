@@ -207,7 +207,7 @@ test('updatePassword invalidates existing sessions', function (): void {
 
     $admin = \Tests\Helpers\admin(['id' => 1, 'status' => Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
 
-    $passwordReset = createEntity(Box\Mod\Staff\Entity\AdminPasswordReset::class, ['id' => 1, 'admin' => $admin, 'created_at' => new DateTime('-300 seconds')]);
+    $passwordReset = createEntity(Box\Mod\Staff\Entity\AdminPasswordReset::class, ['id' => 1, 'admin' => $admin, 'created_at' => new DateTimeImmutable('-300 seconds')]);
 
     $passwordResetRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
     $passwordResetRepository->shouldReceive('findOneByHash')->once()->with('hashedString')->andReturn($passwordReset);

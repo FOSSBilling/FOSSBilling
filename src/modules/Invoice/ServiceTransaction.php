@@ -135,7 +135,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->setStatus($data['status'] ?? $model->getStatus());
         $model->setError($data['error'] ?? $model->getError());
         $model->setErrorCode(isset($data['error_code']) ? (int) $data['error_code'] : $model->getErrorCode());
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
         $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionUpdateEvent($transactionId));
 

@@ -34,7 +34,7 @@ test('a committed cancellation claim blocks renewal and expiry changes before ga
             ->and($claim)->toBe('1');
         expect(fn () => $service->renewFromOrder($order))
             ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
-        expect(fn () => $service->updateOrder($order, ['expires_at' => (new DateTime('+1 year'))->format('Y-m-d H:i:s')]))
+        expect(fn () => $service->updateOrder($order, ['expires_at' => (new DateTimeImmutable('+1 year'))->format('Y-m-d H:i:s')]))
             ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 
         return 1;
@@ -57,7 +57,7 @@ test('a scheduled cancellation blocks renewal and expiry edits before a gateway 
 
     expect(fn () => $service->renewFromOrder($order))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'being canceled');
-    expect(fn () => $service->updateOrder($order, ['expires_at' => (new DateTime('+1 year'))->format('Y-m-d H:i:s')]))
+    expect(fn () => $service->updateOrder($order, ['expires_at' => (new DateTimeImmutable('+1 year'))->format('Y-m-d H:i:s')]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'being canceled');
 });
 
@@ -141,7 +141,7 @@ test('local cleanup resumes after an interrupted scheduled cancellation without 
 
 test('suspended cancellation batch respects scheduled review holds and future end dates', function (string $claim): void {
     [$em, $order] = cancellationRegressionContext();
-    $order->setStatus(Order::STATUS_SUSPENDED)->setSuspendedAt(new DateTime('-90 days'))->setExpiresAt(new DateTime('+30 days'));
+    $order->setStatus(Order::STATUS_SUSPENDED)->setSuspendedAt(new DateTimeImmutable('-90 days'))->setExpiresAt(new DateTimeImmutable('+30 days'));
     $em->persist((new OrderMeta())->setOrder($order)->setName(Service::META_SCHEDULED_CANCEL_CLAIM)->setValue($claim));
     $em->flush();
     $service = Mockery::mock(Service::class)->makePartial();
@@ -162,7 +162,7 @@ test('suspended cancellation batch respects scheduled review holds and future en
 
 test('suspended cancellation batch never repeats termination for an orphaned cleanup claim', function (): void {
     [$em, $order] = cancellationRegressionContext();
-    $order->setStatus(Order::STATUS_SUSPENDED)->setSuspendedAt(new DateTime('-90 days'));
+    $order->setStatus(Order::STATUS_SUSPENDED)->setSuspendedAt(new DateTimeImmutable('-90 days'));
     $em->persist((new OrderMeta())->setOrder($order)->setName(Service::META_SCHEDULED_CANCEL_CLAIM)->setValue('2'));
     $em->flush();
     $em->getConnection()->executeStatement('DELETE FROM client_order_meta WHERE client_order_id = ? AND name = ?', [$order->getId(), Service::META_CANCEL_AT_PERIOD_END]);
@@ -235,7 +235,7 @@ test('staff expiry changes cannot pass an in-flight cancellation claim', functio
     $di = container();
     $di['em'] = $em;
     $service->setDi($di);
-    expect(fn () => $service->updateOrder($order, ['expires_at' => (new DateTime('+1 year'))->format('Y-m-d H:i:s')]))
+    expect(fn () => $service->updateOrder($order, ['expires_at' => (new DateTimeImmutable('+1 year'))->format('Y-m-d H:i:s')]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'being canceled');
 });
 
@@ -520,7 +520,7 @@ test('standalone unsuspend respects fresh cancellation recovery holds', function
 
 test('immediate cancellation of a scheduled order commits the hold before subscription I/O', function (): void {
     [$em, $order] = cancellationRegressionContext();
-    $order->setExpiresAt(new DateTime('+1 year'));
+    $order->setExpiresAt(new DateTimeImmutable('+1 year'));
     $em->flush();
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldNotReceive('_callOnService');
@@ -536,7 +536,7 @@ test('immediate cancellation of a scheduled order commits the hold before subscr
     $di['mod_service'] = $di->protect(fn (): object => $subscription);
     $service->setDi($di);
     expect(fn () => $service->cancelFromOrder($order))->toThrow(RuntimeException::class, 'subscription outcome');
-    $order->setExpiresAt(new DateTime('-1 day'));
+    $order->setExpiresAt(new DateTimeImmutable('-1 day'));
     $em->flush();
     expect($service->processScheduledCancellation($order))->toBeFalse();
     expect(fn () => $service->renewFromOrder($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
@@ -545,7 +545,7 @@ test('immediate cancellation of a scheduled order commits the hold before subscr
 
 test('scheduled immediate cancellation preserves reason and event skipping', function (bool $skip): void {
     [$em, $order] = cancellationRegressionContext();
-    $order->setExpiresAt(new DateTime('+1 year'));
+    $order->setExpiresAt(new DateTimeImmutable('+1 year'));
     $em->flush();
     $orderOfCalls = [];
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -577,7 +577,7 @@ test('scheduled immediate cancellation preserves reason and event skipping', fun
 
 test('scheduled immediate termination commits cleanup recovery without repeating external calls', function (): void {
     [$em, $order] = cancellationRegressionContext();
-    $order->setExpiresAt(new DateTime('+1 year'));
+    $order->setExpiresAt(new DateTimeImmutable('+1 year'));
     $em->flush();
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_CANCEL);
@@ -648,7 +648,7 @@ test('scheduled cleanup restores managed promo reservations after rollback and r
 
 test('staff-approved retry resumes immediate cancellation before period end', function (bool $legacy, bool $failsAgain): void {
     [$em, $order] = cancellationRegressionContext();
-    $order->setExpiresAt(new DateTime('+1 year'));
+    $order->setExpiresAt(new DateTimeImmutable('+1 year'));
     $em->flush();
     $orders = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
@@ -702,7 +702,7 @@ test('staff-approved retry resumes immediate cancellation before period end', fu
 
 test('approved period-end retry remains deferred until expiry', function (): void {
     [$em, $order] = cancellationRegressionContext();
-    $order->setExpiresAt(new DateTime('+1 year'));
+    $order->setExpiresAt(new DateTimeImmutable('+1 year'));
     foreach ([Service::META_SCHEDULED_CANCEL_CLAIM => '1', Service::META_SCHEDULED_CANCEL_PHASE => 'scheduled'] as $key => $value) {
         $em->persist((new OrderMeta())->setOrder($order)->setName($key)->setValue($value));
     }

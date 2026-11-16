@@ -506,7 +506,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $tx->setTxnStatus($err['type']);
         $tx->setError($err['message']);
         $tx->setStatus(Transaction::STATUS_ERROR);
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
 
         $this->debugLog((string) json_encode($e->getJsonBody()));
@@ -653,7 +653,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         };
 
         $tx->setStatus($paymentStatus);
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
     }
 
@@ -695,7 +695,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
                 if ($subscription === null) {
                     $tx->setStatus(Transaction::STATUS_PROCESSED);
-                    $tx->setUpdatedAt(new DateTime());
+                    $tx->setUpdatedAt(new DateTimeImmutable());
                     $this->di['em']->flush();
 
                     return;
@@ -730,7 +730,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $tx->setStatus(Transaction::STATUS_ERROR);
         }
 
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
     }
 
@@ -912,7 +912,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return;
         }
 
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
     }
 
@@ -1323,7 +1323,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         if ($setupIntent->status !== 'succeeded') {
             $tx->setStatus(Transaction::STATUS_ERROR);
-            $tx->setUpdatedAt(new DateTime());
+            $tx->setUpdatedAt(new DateTimeImmutable());
             $this->di['em']->flush();
 
             return false;
@@ -1376,7 +1376,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $tx->setSPeriod($this->getSubscriptionPeriodForInvoice($invoice));
         $tx->setCurrency($invoice->getCurrency());
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
 
         // Create the FOSSBilling subscription record immediately.
