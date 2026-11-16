@@ -247,6 +247,18 @@ final class JsonMigration
         $decoded = 0;
         $quotedTable = $connection->quoteSingleIdentifier($table);
         $quotedColumn = $connection->quoteSingleIdentifier($column);
+        // MySQL's default collations compare case-insensitively (and ignore
+        // trailing spaces), so `col = ?` could match a concurrently corrected
+        // value that merely differs in case and NULL it away. PostgreSQL has
+        // no `=` operator for JSON at all. Mirror Patcher's platform handling:
+        // byte-exact on MySQL, text comparison on PostgreSQL.
+        $platform = $connection->getDatabasePlatform();
+        $match = $quotedColumn . ' = ?';
+        if ($platform instanceof AbstractMySQLPlatform) {
+            $match = 'CAST(' . $quotedColumn . ' AS BINARY) = CAST(? AS BINARY)';
+        } elseif ($platform instanceof PostgreSQLPlatform) {
+            $match = 'CAST(' . $quotedColumn . ' AS TEXT) = ?';
+        }
         foreach ($writes as $write) {
             $row = $write['row'];
             if ($write['issue'] === null) {
@@ -254,10 +266,10 @@ final class JsonMigration
                 if ($journal->has($key)) {
                     continue;
                 }
-                $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $table, $column, $row, $write, $key): void {
+                $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $match, $table, $column, $row, $write, $key): void {
                     $journal->save($key, ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($write['original'])]);
                     $changed = $connection->executeStatement(
-                        'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = ? WHERE id = ? AND ' . $quotedColumn . ' = ?',
+                        'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = ? WHERE id = ? AND ' . $match,
                         [$write['value'], $row['id'], $write['original']],
                         [\Doctrine\DBAL\ParameterType::STRING, $row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
                     );
@@ -270,7 +282,7 @@ final class JsonMigration
 
                 continue;
             }
-            $connection->transactional(function () use ($connection, $quarantine, $quotedTable, $quotedColumn, $table, $column, $row, $write): void {
+            $connection->transactional(function () use ($connection, $quarantine, $quotedTable, $quotedColumn, $match, $table, $column, $row, $write): void {
                 $stored = $quarantine->save(
                     $table,
                     $column,
@@ -284,7 +296,7 @@ final class JsonMigration
                     return;
                 }
                 $changed = $connection->executeStatement(
-                    'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $quotedColumn . ' = ?',
+                    'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $match,
                     [$row['id'], $write['original']],
                     [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
                 );

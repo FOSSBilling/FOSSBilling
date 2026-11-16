@@ -6,6 +6,7 @@ use Box\Mod\System\Commands\JsonAudit as JsonAuditCommand;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\Core\Doctrine\JsonAudit;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Filesystem\Filesystem;
 
 test('JSON audit scans all rows in bounded batches without changing or exposing payloads', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
@@ -70,6 +71,19 @@ function seedQuarantine(Doctrine\DBAL\Connection $connection, string $table = 'p
     (new FOSSBilling\Core\Doctrine\JsonMigrationJournal($em, new FOSSBilling\Core\Security\Crypt()))->complete();
 }
 
+function quarantineRestoreFile(string $contents): string
+{
+    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
+    (new Filesystem())->dumpFile($file, $contents);
+
+    return $file;
+}
+
+function removeQuarantineRestoreFile(string $file): void
+{
+    (new Filesystem())->remove($file);
+}
+
 test('quarantine show prints the original verbatim', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     seedQuarantine($connection, original: '<info>not-a-tag</info>{"a":1}');
@@ -97,15 +111,14 @@ test('quarantine restore validates before writing and drops the record', functio
     $connection->executeStatement('CREATE TABLE product (id BIGINT PRIMARY KEY, config TEXT)');
     $connection->insert('product', ['id' => 1, 'config' => null]);
     seedQuarantine($connection);
-    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
-    file_put_contents($file, '{"label":"fixed"}');
+    $file = quarantineRestoreFile('{"label":"fixed"}');
 
     try {
         $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
         $command->setDi(quarantineCommandContainer($connection));
         $tester = new CommandTester($command);
         // Invalid documents are refused without touching anything.
-        file_put_contents($file, '{broken');
+        (new Filesystem())->dumpFile($file, '{broken');
         expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(2)
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull()
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toHaveCount(1);
@@ -115,12 +128,12 @@ test('quarantine restore validates before writing and drops the record', functio
         expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '9', '--from-file' => $file]))->toBe(2);
 
         // A valid document is written back and the record dropped.
-        file_put_contents($file, '{"label":"fixed"}');
+        (new Filesystem())->dumpFile($file, '{"label":"fixed"}');
         expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(0)
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBe('{"label":"fixed"}')
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
     } finally {
-        unlink($file);
+        removeQuarantineRestoreFile($file);
     }
 });
 
@@ -133,8 +146,7 @@ test('quarantine restore waits for migration completion', function (): void {
     (new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->save(
         'product', 'config', 1, false, '1', 'invalid_json', '{broken-secret'
     );
-    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
-    file_put_contents($file, '{"label":"fixed"}');
+    $file = quarantineRestoreFile('{"label":"fixed"}');
 
     try {
         $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
@@ -144,7 +156,7 @@ test('quarantine restore waits for migration completion', function (): void {
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull()
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toHaveCount(1);
     } finally {
-        unlink($file);
+        removeQuarantineRestoreFile($file);
     }
 });
 
@@ -153,8 +165,7 @@ test('quarantine restore refuses to overwrite a value set since', function (): v
     $connection->executeStatement('CREATE TABLE product (id BIGINT PRIMARY KEY, config TEXT)');
     $connection->insert('product', ['id' => 1, 'config' => '{"label":"someone-fixed-it"}']);
     seedQuarantine($connection);
-    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
-    file_put_contents($file, '{"label":"fixed"}');
+    $file = quarantineRestoreFile('{"label":"fixed"}');
 
     try {
         $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
@@ -164,7 +175,7 @@ test('quarantine restore refuses to overwrite a value set since', function (): v
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBe('{"label":"someone-fixed-it"}')
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toHaveCount(1);
     } finally {
-        unlink($file);
+        removeQuarantineRestoreFile($file);
     }
 });
 
@@ -174,8 +185,7 @@ test('quarantine commands address the exact column when one row has several', fu
     $connection->insert('product', ['id' => 1, 'config' => null, 'plugin_config' => null]);
     seedQuarantine($connection);
     seedQuarantine($connection, 'product', 'plugin_config', 1);
-    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
-    file_put_contents($file, '{"label":"fixed"}');
+    $file = quarantineRestoreFile('{"label":"fixed"}');
 
     try {
         // Restoring one column leaves the other column's record untouched.
@@ -197,7 +207,7 @@ test('quarantine commands address the exact column when one row has several', fu
         expect($tester->execute(['--table' => 'product', '--column' => 'plugin_config', '--id' => '1']))->toBe(0)
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
     } finally {
-        unlink($file);
+        removeQuarantineRestoreFile($file);
     }
 });
 
@@ -230,8 +240,7 @@ test('quarantine restore encrypts declared gateway secrets before writing', func
     $connection->insert('pay_gateway', ['gateway' => 'Custom', 'config' => null]);
     $id = (int) $connection->lastInsertId();
     seedQuarantine($connection, 'pay_gateway', 'config', $id);
-    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
-    file_put_contents($file, '{"api_key":"sk_live_secret","pub_key":"pk_live_visible"}');
+    $file = quarantineRestoreFile('{"api_key":"sk_live_secret","pub_key":"pk_live_visible"}');
 
     try {
         $payGateway = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
@@ -249,7 +258,7 @@ test('quarantine restore encrypts declared gateway secrets before writing', func
             ->and((new FOSSBilling\Core\Security\SecretFields(new FOSSBilling\Core\Security\Crypt()))->reveal($stored)['api_key'])->toBe('sk_live_secret')
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
     } finally {
-        unlink($file);
+        removeQuarantineRestoreFile($file);
     }
 });
 
@@ -260,8 +269,7 @@ test('quarantine restore encrypts declared registrar secrets before writing', fu
     $connection->insert('tld_registrar', ['registrar' => 'Custom', 'config' => null]);
     $id = (int) $connection->lastInsertId();
     seedQuarantine($connection, 'tld_registrar', 'config', $id);
-    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
-    file_put_contents($file, '{"api_key":"sk_live_secret","endpoint":"https://example.test"}');
+    $file = quarantineRestoreFile('{"api_key":"sk_live_secret","endpoint":"https://example.test"}');
 
     try {
         $service = Mockery::mock(Box\Mod\Servicedomain\Service::class);
@@ -277,6 +285,31 @@ test('quarantine restore encrypts declared registrar secrets before writing', fu
             ->and($stored['api_key'])->toBeArray()
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
     } finally {
-        unlink($file);
+        removeQuarantineRestoreFile($file);
+    }
+});
+
+test('quarantine restore writes JSON null without touching secret encryption', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\PayGateway::class)]);
+    $connection->insert('pay_gateway', ['gateway' => 'Custom', 'config' => null]);
+    $id = (int) $connection->lastInsertId();
+    seedQuarantine($connection, 'pay_gateway', 'config', $id);
+    $file = quarantineRestoreFile('null');
+
+    try {
+        $payGateway = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+        $payGateway->shouldReceive('getSecretFields')->andReturn(['api_key']);
+        $di = quarantineCommandContainer($connection);
+        $di['mod_service'] = $di->protect(static fn (string $name = '', string $sub = ''): object => $payGateway);
+        $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
+        $command->setDi($di);
+        $tester = new CommandTester($command);
+        expect($tester->execute(['--table' => 'pay_gateway', '--column' => 'config', '--id' => (string) $id, '--from-file' => $file]))->toBe(0)
+            ->and($connection->fetchOne('SELECT config FROM pay_gateway WHERE id = ?', [$id]))->toBe('null')
+            ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
+    } finally {
+        removeQuarantineRestoreFile($file);
     }
 });

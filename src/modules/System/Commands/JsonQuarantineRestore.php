@@ -163,6 +163,9 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
             return $candidate;
         }
         $decoded = json_decode($candidate, true, 512, JSON_THROW_ON_ERROR);
+        if ($decoded === null) {
+            return $candidate;
+        }
         $protected = (new \FOSSBilling\Core\Security\SecretFields($this->di['crypt']))->store($decoded, $fields);
 
         return json_encode($protected, JSON_THROW_ON_ERROR);
