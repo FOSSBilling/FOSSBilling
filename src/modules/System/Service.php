@@ -320,8 +320,9 @@ class Service
             }
 
             if (strtolower((string) $key) === 'invoice_reminder_send_time'
-                && $val !== null && trim((string) $val) !== ''
-                && !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', trim((string) $val))) {
+                && $val !== null
+                && (!is_string($val)
+                    || (trim($val) !== '' && !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', trim($val))))) {
                 throw new \FOSSBilling\InformationException('Reminder send time must be empty or a valid 24-hour time (HH:MM).');
             }
         }

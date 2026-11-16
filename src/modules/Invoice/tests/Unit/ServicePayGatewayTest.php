@@ -435,6 +435,8 @@ test('gets active gateways', function (): void {
     $service = new ServicePayGateway();
     $payGatewayModel = new Model_PayGateway();
     $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->id = 17;
+    $payGatewayModel->name = 'Card payments';
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
@@ -448,7 +450,7 @@ test('gets active gateways', function (): void {
 
     $data = ['format' => 'pairs'];
     $result = $service->getActive($data);
-    expect($result)->toBeArray();
+    expect($result)->toBe([17 => 'Card payments']);
 });
 
 test('checks if can perform recurrent payment', function (): void {

@@ -941,6 +941,10 @@ test('converts ticket to api array with rel details', function (): void {
     supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
     $di = container();
     $di['db'] = $dbMock;
+    $di['dbal']->shouldReceive('fetchAssociative')->with(
+        'SELECT id, first_name, last_name, email FROM client WHERE id = :id',
+        ['id' => 1]
+    )->andReturn(['id' => 1, 'first_name' => 'Client', 'last_name' => 'Name', 'email' => 'client@example.com']);
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
@@ -957,6 +961,7 @@ test('converts ticket to api array with rel details', function (): void {
 
     $result = $serviceMock->toApiArray($ticket, true, new Model_Admin());
     expect($result)->toBeArray();
+    expect($result['author'])->toMatchArray(['id' => 1, 'first_name' => 'Client', 'last_name' => 'Name', 'email' => 'client@example.com']);
     expect($result)->toHaveKey('replies');
     expect($result)->toHaveKey('helpdesk');
     expect($result)->toHaveKey('messages');
