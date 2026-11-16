@@ -86,7 +86,7 @@ class Service implements InjectionAwareInterface
      */
     private const array EXPORTABLE_COLUMNS = [
         'id', 'client_id', 'serie', 'nr', 'currency', 'currency_rate',
-        'credit', 'base_income', 'base_refund', 'refund', 'notes',
+        'credit', 'base_income', 'base_refund', 'base_refund_tax', 'refund', 'notes',
         'text_1', 'text_2', 'status', 'seller_company', 'seller_company_vat',
         'seller_company_number', 'seller_address', 'seller_phone', 'seller_email',
         'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat',
@@ -99,7 +99,7 @@ class Service implements InjectionAwareInterface
     /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
     private const array DEFAULT_EXPORT_COLUMNS = [
         'id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund',
-        'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
+        'base_refund_tax', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
         'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address',
         'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone',
         'buyer_email', 'issued', 'taxname', 'taxrate',
@@ -301,6 +301,7 @@ class Service implements InjectionAwareInterface
             'credit' => $invoice->getCredit(),
             'base_income' => $invoice->getBaseIncome(),
             'base_refund' => $invoice->getBaseRefund(),
+            'base_refund_tax' => $invoice->getBaseRefundTax(),
             'refund' => $invoice->getRefund(),
             'notes' => $invoice->getNotes(),
             'text_1' => $invoice->getText1(),
@@ -509,7 +510,19 @@ class Service implements InjectionAwareInterface
             );
         }
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
+        // A refund whose tax was never classified leaves the net basis unknown: report
+        // null rather than netting an income from a gross base_refund. No in-repo
+        // consumer reads this key (dashboards use the Stats endpoints), so no
+        // separate gross-subtraction field is needed.
+        if (($row['refund'] ?? null) !== null && ($row['base_refund_tax'] ?? null) === null) {
+            $result['income'] = null;
+        }
         $result['refund'] = $row['refund'] ?? 0;
+        // Tax portion of the refund, in base currency like `income` (unlike
+        // invoice-currency `refund`/`refunded_total`): do not subtract it from
+        // `refund`. Null when the backfill could not classify the refund, as
+        // opposed to a known zero-tax refund.
+        $result['refund_tax'] = $row['base_refund_tax'] ?? null;
         $result['credit'] = $row['credit'] ?? 0;
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -934,12 +947,22 @@ class Service implements InjectionAwareInterface
         // Bounded to one page per run: invoices that never got any journal row (a lost
         // write, or a table created after its invoices by drift healing) converge over
         // runs instead of stalling this one. Failures stay local to the cron log.
+        // Legacy tax-inclusive refunds converge the same way, independently of the
+        // schema-hash gate: a finalization whose sync failed leaves these rows for
+        // drift healing, which only runs one bounded page per request.
+        $patcher = new \FOSSBilling\Core\Update\Patcher();
+        $patcher->setDi($di);
+
         try {
-            $patcher = new \FOSSBilling\Core\Update\Patcher();
-            $patcher->setDi($di);
             $patcher->healInvoiceJournal();
         } catch (\Throwable $e) {
             $di['logger']->warning('Invoice journal healing failed: {message}', ['message' => $e->getMessage()]);
+        }
+
+        try {
+            $patcher->backfillRefundIncomeBasis(1);
+        } catch (\Throwable $e) {
+            $di['logger']->warning('Refund income basis healing failed: {message}', ['message' => $e->getMessage()]);
         }
     }
 
@@ -1098,7 +1121,7 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTime $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTimeImmutable $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
     {
         /** @var InvoiceItem[] $invoiceItems */
         $invoiceItems = [];
@@ -1107,8 +1130,8 @@ class Service implements InjectionAwareInterface
         });
         $actuallyPaid = $paid;
 
-        // Another payment request may have acquired the row lock first and completed the payment.
-        // Treat that as an idempotent success, but do not send duplicate events or execute tasks.
+        // Replays and deletion holds do not settle another payment. Accept the
+        // receipt without sending payment events or executing service tasks.
         if (!$paid) {
             return true;
         }
@@ -1137,7 +1160,7 @@ class Service implements InjectionAwareInterface
      *
      * @param InvoiceItem[] $invoiceItems
      */
-    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTime $paidAtOverride = null): bool
+    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTimeImmutable $paidAtOverride = null): bool
     {
         $state = $this->lockAndRefreshInvoice($invoice);
         if ($state['status'] === Invoice::STATUS_PAID) {
@@ -1145,6 +1168,12 @@ class Service implements InjectionAwareInterface
         }
         if ($state['status'] === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
             throw new InformationException('This invoice was canceled and cannot be marked as paid');
+        }
+
+        // A gateway may already have credited incoming funds. Keep those funds
+        // available for staff reconciliation without settling a held invoice.
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            return false;
         }
 
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
@@ -1169,7 +1198,7 @@ class Service implements InjectionAwareInterface
         $invoice->setCurrencyRate($currencyRate);
 
         $invoice->setStatus(Invoice::STATUS_PAID);
-        $invoice->setPaidAt($paidAtOverride ?? new \DateTime());
+        $invoice->setPaidAt($paidAtOverride ?? new \DateTimeImmutable());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
@@ -1202,13 +1231,11 @@ class Service implements InjectionAwareInterface
             if ($paidAtTimestamp === false) {
                 throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $data['paid_at']]);
             }
-            $paidAt = new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp));
+            $paidAt = new \DateTimeImmutable(date('Y-m-d H:i:s', $paidAtTimestamp));
         }
 
-        if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
-            $invoice->setGateway($payGateway);
-            $this->di['em']->persist($invoice);
-            $this->di['em']->flush();
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
         }
 
         if ($payGateway->getGateway() === 'Custom') {
@@ -1229,6 +1256,14 @@ class Service implements InjectionAwareInterface
                 $locked = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
                 if ($state['status'] === Invoice::STATUS_CANCELED || ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null)) {
                     throw new InformationException('This invoice was canceled and cannot be marked as paid');
+                }
+
+                if ($this->invoiceHasDeletionHold($invoice)) {
+                    throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
+                }
+                if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+                    $invoice->setGateway($payGateway);
+                    $this->di['em']->flush();
                 }
 
                 $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
@@ -1272,7 +1307,7 @@ class Service implements InjectionAwareInterface
                     $transaction->setStatus(Transaction::STATUS_PROCESSED);
                     $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
                     $transaction->setNote(sprintf('%s transaction No: %s', $gatewayTitle, $transactionId));
-                    $transaction->setUpdatedAt(new \DateTime());
+                    $transaction->setUpdatedAt(new \DateTimeImmutable());
                     $this->di['em']->flush();
                 }
 
@@ -1308,6 +1343,17 @@ class Service implements InjectionAwareInterface
         // in this call, as above.
         $actuallyPaid = null;
         $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
+            $state = $this->lockAndRefreshInvoice($invoice);
+            if ($state['status'] === Invoice::STATUS_PAID) {
+                return false;
+            }
+            if ($this->invoiceHasDeletionHold($invoice)) {
+                throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
+            }
+            if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+                $invoice->setGateway($payGateway);
+                $this->di['em']->flush();
+            }
             $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
             if ($actuallyPaid ?? $result) {
                 $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId);
@@ -1456,12 +1502,28 @@ class Service implements InjectionAwareInterface
 
         $oldIncome = $invoice->getBaseIncome();
         $oldRefund = $invoice->getBaseRefund();
+        $oldRefundTax = $invoice->getBaseRefundTax();
 
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
-            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), (float) $invoice->getRefund()));
+            // base_income excludes tax, so the refund it is netted against must exclude it too.
+            // base_refund_tax preserves the cash tax portion so gross cash remains derivable.
+            // Round the converted legs first so the stored pair always sums to the converted gross.
+            // A NULL tax portion means the cumulative basis is unresolved: keep base_refund on
+            // the gross amount without classifying unknown tax as known.
+            [$netRefund, $taxPortion] = $this->getRefundBreakdown($invoice);
+            $currencyCode = $invoice->getCurrency();
+            $netBase = round($table->toBaseCurrency($currencyCode, $netRefund), 2);
+            $invoice->setBaseRefund($netBase);
+            if ($taxPortion === null) {
+                $invoice->setBaseRefundTax(null);
+            } else {
+                $grossBase = round($table->toBaseCurrency($currencyCode, $netRefund + $taxPortion), 2);
+                $invoice->setBaseRefundTax(round($grossBase - $netBase, 2));
+            }
         } else {
             $invoice->setBaseRefund(null);
+            $invoice->setBaseRefundTax(null);
         }
 
         // Base-currency rewrites on issued invoices (e.g. after an FX rate move) touch locked
@@ -1473,15 +1535,92 @@ class Service implements InjectionAwareInterface
         $refundChanged = $oldRefund === null
             ? $invoice->getBaseRefund() !== null
             : (float) $invoice->getBaseRefund() !== (float) $oldRefund;
-        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged)) {
+        $refundTaxChanged = $oldRefundTax === null
+            ? $invoice->getBaseRefundTax() !== null
+            : (float) $invoice->getBaseRefundTax() !== (float) $oldRefundTax;
+        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged || $refundTaxChanged)) {
             $this->di['logger']->info(
-                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income})',
-                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome()]
+                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income}, refund tax {old_tax} -> {new_tax})',
+                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome(), 'old_tax' => $oldRefundTax, 'new_tax' => $invoice->getBaseRefundTax()]
             );
         }
 
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
+    }
+
+    /**
+     * Split the refunded amount into its net (without tax) and tax portions, in invoice currency.
+     *
+     * `refund` holds what was paid back (tax included); the tax part is read from the credit notes
+     * issued against the invoice. Returns [net, tax] with gross === net + tax when every
+     * refunded amount is backed by a linked note. Otherwise the tax is NULL: without a link
+     * the split is unknowable, so the whole refund stays net rather than guessing.
+     *
+     * @return array{0: float, 1: float|null}
+     */
+    private function getRefundBreakdown(Invoice $invoice): array
+    {
+        $refund = (float) $invoice->getRefund();
+        if ($refund <= 0) {
+            return [$refund, 0.0];
+        }
+
+        $creditNotes = $this->findRefundingInvoices($invoice);
+        if ($creditNotes === []) {
+            // Older refunds recorded before `credit_note_for_invoice_id` existed, or notes
+            // deleted since: no linked note establishes the tax, so keep the pre-#4661
+            // gross base_refund and leave the tax unknown rather than recording zero.
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->debug(
+                    'Refund without linked credit note for invoice #{invoice_id}: keeping tax-inclusive base_refund with unknown tax',
+                    ['invoice_id' => $invoice->getId()]
+                );
+            }
+
+            return [$refund, null];
+        }
+
+        // Credit note amounts are negated, so their tax is too. Keep the sign:
+        // a refunded negative taxable subtotal (a taxed discount) gives back
+        // negative tax, which adds to the refund without tax.
+        $refundedTax = 0.0;
+        $linkedGross = 0.0;
+        foreach ($creditNotes as $creditNote) {
+            $refundedTax -= $this->getTax($creditNote);
+            $linkedGross += abs($this->getTotalWithTax($creditNote));
+        }
+
+        // `refund` accumulates each note's rounded gross, so allow a couple of cents of
+        // rounding dust. Anything beyond that is a refunded amount with no linked
+        // document: the cumulative tax basis is unresolved, so keep the gross base
+        // and leave the tax unknown rather than splitting on partial evidence.
+        if ($refund - $linkedGross > 0.02) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning(
+                    'Refund for invoice #{invoice_id} exceeds its linked credit notes ({refund} vs {linked}): keeping tax-inclusive base_refund with unknown tax',
+                    ['invoice_id' => $invoice->getId(), 'refund' => $refund, 'linked' => round($linkedGross, 2)]
+                );
+            }
+
+            return [$refund, null];
+        }
+
+        $unclamped = $refund - $refundedTax;
+        if ($unclamped < 0) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning(
+                    'Refund tax {tax} exceeds refund {refund} for invoice #{invoice_id}: clamping base_refund to 0',
+                    ['invoice_id' => $invoice->getId(), 'tax' => $refundedTax, 'refund' => $refund]
+                );
+            }
+
+            return [0.0, round($refund, 2)];
+        }
+
+        $net = round($unclamped, 2);
+
+        return [$net, round($refund - $net, 2)];
     }
 
     public function prepareInvoice(Client $client, array $data): Invoice
@@ -1539,7 +1678,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['issue']) && $data['issue']) {
             try {
-                $this->issueInvoice($model, ['id' => $invoiceId]);
+                if (!$this->issueInvoice($model, ['id' => $invoiceId])) {
+                    throw new InformationException('Invoice issuance was deferred because an order is awaiting recovery.');
+                }
                 $this->di['logger']->info('Issued invoice #{invoice_id} instantly', ['invoice_id' => $invoiceId]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning('Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => $invoiceId, 'message' => $e->getMessage()]);
@@ -1563,7 +1704,7 @@ class Service implements InjectionAwareInterface
             $invoice_due_days = 1;
         }
         $due_time = strtotime("+{$invoice_due_days} day");
-        $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $due_time)));
+        $model->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $due_time)));
 
         $serie = $systemService->getParamValue('invoice_series');
         $model->setSerie($serie !== null ? (string) $serie : null);
@@ -1633,7 +1774,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceIssueEvent((int) $invoice->getId()));
 
-        $this->di['em']->wrapInTransaction(function () use ($invoice): void {
+        $issued = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
             $this->lockAndRefreshInvoice($invoice);
 
             // First issuance is only valid from the unpaid state. Re-issuing
@@ -1641,6 +1782,9 @@ class Service implements InjectionAwareInterface
             // canceled rows keep their state); this guard is about drafts.
             if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Only unpaid draft invoices can be issued.');
+            }
+            if ($this->invoiceHasDeletionHold($invoice)) {
+                return false;
             }
 
             // Freeze the parties from the live records and claim the number
@@ -1660,7 +1804,12 @@ class Service implements InjectionAwareInterface
             // Commits atomically with the issuance above: a crash can no
             // longer leave an issued invoice without its journal entry.
             $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
+
+            return true;
         });
+        if (!$issued) {
+            return false;
+        }
 
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
@@ -1718,6 +1867,10 @@ class Service implements InjectionAwareInterface
             // what the credit must cover.
             if (!$gatewayPayment) {
                 $this->di['mod_service']('Invoice', 'GatewayFees')->remove($invoice);
+            }
+
+            if ($this->invoiceHasDeletionHold($invoice)) {
+                return false;
             }
 
             $clientId = (int) $invoice->getClientId();
@@ -1813,7 +1966,7 @@ class Service implements InjectionAwareInterface
                 $this->issueInvoice($invoice, ['use_credits' => false]);
             }
             $clearing->setTxnStatus($gatewayName === 'PayPal' ? 'Completed' : 'succeeded');
-            $clearing->setUpdatedAt(new \DateTime());
+            $clearing->setUpdatedAt(new \DateTimeImmutable());
             $this->di['em']->flush();
             $this->di['mod_service']('client')->addFunds($client, (float) $payment->getAmount(), $gatewayName . ' transaction ' . $payment->getTxnId(), [
                 'type' => $gatewayName === 'PayPal' ? 'PayPal' : 'transaction', 'rel_id' => $gatewayName === 'PayPal' ? $payment->getTxnId() : $payment->getId(),
@@ -1833,7 +1986,7 @@ class Service implements InjectionAwareInterface
             $payment->setStatus(Transaction::STATUS_PROCESSED);
             $payment->setError('');
             $payment->setErrorCode(null);
-            $payment->setUpdatedAt(new \DateTime());
+            $payment->setUpdatedAt(new \DateTimeImmutable());
             $this->di['em']->flush();
         });
 
@@ -1888,22 +2041,7 @@ class Service implements InjectionAwareInterface
 
         $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
 
-        if (empty($items)) {
-            return 0.0;
-        }
-
-        $taxable_subtotal = 0.0;
-        foreach ($items as $item) {
-            if ($item->getTaxed()) {
-                $taxable_subtotal += (($item->getPrice() ?? 0) * ($item->getQuantity() ?? 1));
-            }
-        }
-
-        if ($taxable_subtotal == 0) {
-            return 0.0;
-        }
-
-        return round($taxable_subtotal * (float) $invoice->getTaxrate() / 100, 2);
+        return (float) ServiceTax::calculateInvoiceTax($invoice, $items);
     }
 
     public function getTotal(Invoice $invoice): float
@@ -2238,6 +2376,9 @@ class Service implements InjectionAwareInterface
         } elseif ($pending !== null && (!$gatewayRefundRequested || !$invoice->getGateway() instanceof PayGateway)) {
             throw new InformationException('Reconcile the pending PayPal refund before recording another refund.');
         }
+        $expectedAmount = array_key_exists('expected_amount', $options)
+            ? PriceValidator::validateAmount($options['expected_amount'], 'Expected refund amount')
+            : null;
 
         // A dashboard refund already returned the card payment, so a deposit
         // invoice's wallet credit must be reversed when recording it.
@@ -2274,7 +2415,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $customLine, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit, $attemptId, $refundId): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $customLine, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit, $attemptId, $refundId, $expectedAmount): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -2338,7 +2479,7 @@ class Service implements InjectionAwareInterface
                     : $systemService->getParamValue('invoice_cn_series', 'CN-'));
                 $new->setNr($nextNumber);
 
-                $new->setPaidAt(new \DateTime());
+                $new->setPaidAt(new \DateTimeImmutable());
                 $this->di['em']->persist($new);
                 $this->di['em']->flush();
 
@@ -2365,6 +2506,9 @@ class Service implements InjectionAwareInterface
                 // Credit notes carry no income themselves; the offset is
                 // tracked on the original below so reporting nets out.
                 $creditAmount = round(abs($this->getTotalWithTax($new)), 2);
+                if ($expectedAmount !== null && abs($creditAmount - $expectedAmount) > 0.005) {
+                    throw new InformationException('Refund amount changed during reconciliation. Review the invoice before retrying.');
+                }
                 $remaining = round($total - (float) ($invoice->getRefund() ?? 0), 2);
                 if ($creditAmount - $remaining > 0.005) {
                     throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);
@@ -2847,7 +2991,7 @@ class Service implements InjectionAwareInterface
         $tx->setType(\Payment_Transaction::TXTYPE_REFUND);
         $tx->setStatus(Transaction::STATUS_PROCESSED);
         $tx->setNote('Gateway refund for invoice #' . $invoice->getId());
-        $tx->setUpdatedAt(new \DateTime());
+        $tx->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->persist($tx);
         $this->di['em']->flush();
     }
@@ -3132,7 +3276,7 @@ class Service implements InjectionAwareInterface
             if (!is_numeric($invoice_due_days)) {
                 $invoice_due_days = 1;
             }
-            $new->setDueAt(new \DateTime(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
+            $new->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
             $this->di['em']->persist($new);
             $this->di['em']->flush();
 
@@ -3785,7 +3929,7 @@ class Service implements InjectionAwareInterface
                 if ($paidAtTimestamp === false) {
                     throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $paid_at]);
                 }
-                $model->setPaidAt(new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp)));
+                $model->setPaidAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $paidAtTimestamp)));
             }
 
             $due_at = $data['due_at'] ?? ($model->getDueAt() ? $model->getDueAt()->format('Y-m-d H:i:s') : null);
@@ -3796,7 +3940,7 @@ class Service implements InjectionAwareInterface
                 if ($dueAtTimestamp === false) {
                     throw new InformationException('Invalid date format for due_at: :value', [':value' => (string) $due_at]);
                 }
-                $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $dueAtTimestamp)));
+                $model->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $dueAtTimestamp)));
             }
 
             $model->setSerie($data['serie'] ?? $model->getSerie());
@@ -3818,7 +3962,7 @@ class Service implements InjectionAwareInterface
                 if ($createdAtTimestamp === false) {
                     throw new InformationException('Invalid date format for created_at: :value', [':value' => (string) $created_at]);
                 }
-                $model->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', $createdAtTimestamp)));
+                $model->setCreatedAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $createdAtTimestamp)));
             }
 
             $ni = $data['new_item'] ?? [];
@@ -4367,7 +4511,7 @@ class Service implements InjectionAwareInterface
         if ($paid) {
             $this->di['logger']->info('Covered invoice #{id} with client credits.', ['id' => $model->getId()]);
         } else {
-            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued or already paid.', ['id' => $model->getId()]);
+            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued, already paid, or awaiting order deletion recovery.', ['id' => $model->getId()]);
         }
 
         return $paid;
@@ -4388,6 +4532,9 @@ class Service implements InjectionAwareInterface
      */
     public function resolveRenewalLine(Order $order): array
     {
+        if ($order->getId() !== null) {
+            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+        }
         $price = $order->getPrice();
         $line = [
             'price' => $order->getPrice(),
@@ -4443,6 +4590,9 @@ class Service implements InjectionAwareInterface
      */
     public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
     {
+        if ($order->getId() !== null) {
+            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+        }
         // check if we do have invoice prepared already
         if ($order->getUnpaidInvoiceId() !== null) {
             $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
@@ -4475,7 +4625,7 @@ class Service implements InjectionAwareInterface
 
         // invoice due date
         if ($due_days > 0) {
-            $proforma->setDueAt(new \DateTime('+' . $due_days . ' days'));
+            $proforma->setDueAt(new \DateTimeImmutable('+' . $due_days . ' days'));
             $this->di['em']->persist($proforma);
             $this->di['em']->flush();
         } else {
@@ -4534,7 +4684,7 @@ class Service implements InjectionAwareInterface
         return implode('|', [
             $order->getClientId(),
             $order->getCurrency(),
-            $expiresAt instanceof \DateTime ? $expiresAt->format('Y-m-d') : '',
+            $expiresAt instanceof \DateTimeInterface ? $expiresAt->format('Y-m-d') : '',
             $order->getPeriod() ?? '',
         ]);
     }
@@ -4564,6 +4714,12 @@ class Service implements InjectionAwareInterface
             throw new InformationException('No orders were provided for the merged renewal invoice.');
         }
 
+        foreach ($orders as $order) {
+            if ($order->getId() !== null) {
+                \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+            }
+        }
+
         $client = $this->di['em']->getRepository(Client::class)->find($first->getClientId())
             ?? throw new InformationException('Client not found');
 
@@ -4589,12 +4745,12 @@ class Service implements InjectionAwareInterface
                 $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
 
                 $expiresAt = $order->getExpiresAt();
-                if ($expiresAt instanceof \DateTime && ($dueAt === null || $expiresAt > $dueAt)) {
+                if ($expiresAt instanceof \DateTimeInterface && ($dueAt === null || $expiresAt > $dueAt)) {
                     $dueAt = $expiresAt;
                 }
             }
 
-            if ($dueAt instanceof \DateTime) {
+            if ($dueAt instanceof \DateTimeInterface) {
                 $proforma->setDueAt($dueAt);
                 $this->di['em']->persist($proforma);
                 $this->di['em']->flush();
@@ -4706,7 +4862,8 @@ class Service implements InjectionAwareInterface
         $connection = $this->di['em']->getConnection();
         foreach ($invoiceItems as $item) {
             try {
-                $connection->transactional(function () use ($connection, $item, $invoiceItemService): void {
+                $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
+                $process = fn () => $connection->transactional(function () use ($connection, $item, $invoiceItemService, $model): void {
                     // Claim the row so concurrent cron processes cannot execute the same item twice.
                     $status = $connection->fetchOne(
                         'SELECT status FROM invoice_item WHERE id = :id' . RowLock::suffix($connection),
@@ -4716,12 +4873,19 @@ class Service implements InjectionAwareInterface
                         return;
                     }
 
-                    $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
                     if (!$model instanceof InvoiceItem) {
                         throw new InformationException('Invoice item was not found');
                     }
                     $invoiceItemService->executeTask($model);
                 });
+                $order = $model instanceof InvoiceItem && $model->getType() === InvoiceItem::TYPE_ORDER
+                    ? $this->di['em']->getRepository(Order::class)->find((int) $model->getRelId()) : null;
+                if ($order instanceof Order) {
+                    // Keep provisioning and its outer commit under one lifecycle lock.
+                    $this->di['mod_service']('Order')->withLifecycleLock($order, $process);
+                } else {
+                    $process();
+                }
             } catch (\Exception $e) {
                 $this->di['logger']->error($e->getMessage());
 
@@ -4844,7 +5008,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceSendReminderEvent((int) $invoice->getId()));
 
-        $invoice->setRemindedAt(new \DateTime());
+        $invoice->setRemindedAt(new \DateTimeImmutable());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
@@ -4942,6 +5106,25 @@ class Service implements InjectionAwareInterface
         return $proforma;
     }
 
+    private function invoiceHasDeletionHold(Invoice $invoice): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        $orderIds = $connection->fetchFirstColumn(
+            'SELECT DISTINCT rel_id FROM invoice_item WHERE invoice_id = :invoice_id AND type = :type AND rel_id IS NOT NULL ORDER BY rel_id',
+            ['invoice_id' => $invoice->getId(), 'type' => InvoiceItem::TYPE_ORDER],
+        );
+        // Consistent lock order for multi-order invoices.
+        $orderIds = array_unique(array_map(intval(...), $orderIds));
+        sort($orderIds);
+        foreach ($orderIds as $orderId) {
+            if (\Box\Mod\Order\DeletionRecovery::isHeld($connection, $orderId, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function processInvoice(array $data): array
     {
         $allowSubscribe = $data['allow_subscription'] ?? true;
@@ -4967,6 +5150,10 @@ class Service implements InjectionAwareInterface
         // page, which hides the payment form while a payment is pending.
         if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
             throw new InformationException('A payment for this invoice is still clearing', [], 403);
+        }
+
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            throw new InformationException('Order deletion is awaiting recovery. Retry deletion before billing or changing the service.');
         }
 
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -5645,7 +5832,12 @@ class Service implements InjectionAwareInterface
 
     public function checkInvoiceAuth(Invoice $invoice, InvoiceOperation $operation = InvoiceOperation::READ): void
     {
-        if ($this->di['auth']->isAdminLoggedIn() || Environment::isCLI()) {
+        if (Environment::isCLI()) {
+            return;
+        }
+        if ($this->di['auth']->isAdminLoggedIn()) {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+
             return;
         }
 
@@ -5673,14 +5865,14 @@ class Service implements InjectionAwareInterface
      * Computes the hash_expires_at timestamp. Returns null when the admin
      * has disabled hash expiration (invoice_hash_lifetime_days = 0).
      */
-    private function computeHashExpiration(): ?\DateTime
+    private function computeHashExpiration(): ?\DateTimeImmutable
     {
         $days = (int) $this->di['mod_service']('system')->getParamValue('invoice_hash_lifetime_days', '90');
         if ($days <= 0) {
             return null;
         }
 
-        return new \DateTime("+{$days} days");
+        return new \DateTimeImmutable("+{$days} days");
     }
 
     /**

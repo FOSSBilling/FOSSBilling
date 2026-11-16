@@ -17,26 +17,13 @@ class Patch140 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Cancellation requests ship with a new client_order_cancel_request
-        // entity table. Installs upgrading past it rely on this patch on
-        // MySQL; fresh installs and other drivers get the table from the
-        // portable schema sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('client_order_cancel_request')) {
-            $patcher->executeSql(
-                'CREATE TABLE `client_order_cancel_request` (
-                    `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `client_order_id` BIGINT DEFAULT NULL,
-                    `client_id` BIGINT DEFAULT NULL,
-                    `type` VARCHAR(32) DEFAULT NULL,
-                    `reason` TEXT DEFAULT NULL,
-                    `status` VARCHAR(32) DEFAULT NULL,
-                    `created_at` DATETIME DEFAULT NULL,
-                    `updated_at` DATETIME DEFAULT NULL,
-                    PRIMARY KEY (`id`),
-                    KEY `client_order_cancel_request_order_id_idx` (`client_order_id`),
-                    KEY `client_order_cancel_request_status_idx` (`status`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
-            );
+        // #4673 added base_refund_tax so the cash tax portion of a refund stays
+        // derivable while base_refund nets out of income without tax. MySQL
+        // upgrades must not depend on the ambient schema sync (see #4392):
+        // create it explicitly here; the portable sync covers other drivers.
+        // The guard makes reruns (and installs that already synced it) no-ops.
+        if (!$patcher->tableHasColumn('invoice', 'base_refund_tax')) {
+            $patcher->executeSql('ALTER TABLE `invoice` ADD COLUMN `base_refund_tax` decimal(18,2) DEFAULT NULL AFTER `base_refund`');
         }
     }
 }

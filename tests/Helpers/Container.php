@@ -494,8 +494,8 @@ function createEntity(string $class, array $properties = []): object
                                 $parameter = (new \ReflectionMethod($this, $method))->getParameters()[0] ?? null;
                                 $type = $parameter?->getType();
                                 if ($type instanceof \ReflectionNamedType) {
-                                    if ($type->getName() === \DateTime::class && is_string($value)) {
-                                        $value = new \DateTime($value);
+                                    if ($type->getName() === \DateTimeImmutable::class && is_string($value)) {
+                                        $value = new \DateTimeImmutable($value);
                                     } elseif ($type->getName() === 'int' && is_string($value) && ctype_digit($value)) {
                                         $value = (int) $value;
                                     } elseif ($type->getName() === 'float' && is_numeric($value)) {
@@ -519,8 +519,8 @@ function createEntity(string $class, array $properties = []): object
                                 $property = $reflection->getProperty($propertyName);
                                 $type = $property->getType();
                                 if ($type instanceof \ReflectionNamedType) {
-                                    if ($type->getName() === \DateTime::class && is_string($value)) {
-                                        $value = new \DateTime($value);
+                                    if ($type->getName() === \DateTimeImmutable::class && is_string($value)) {
+                                        $value = new \DateTimeImmutable($value);
                                     } elseif ($type->getName() === 'int' && is_numeric($value)) {
                                         $value = (int) $value;
                                     } elseif ($type->getName() === 'bool' && is_int($value)) {

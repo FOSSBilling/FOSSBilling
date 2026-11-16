@@ -533,7 +533,7 @@ class Service implements InjectionAwareInterface
         $model->setQuantityInStock((int) ($data['quantity_in_stock'] ?? $model->getQuantityInStock()));
         $model->setDescription($data['description'] ?? $model->getDescription());
         $model->setPlugin($data['plugin'] ?? $model->getPlugin());
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
 
         $this->di['em']->flush();
 
@@ -548,7 +548,7 @@ class Service implements InjectionAwareInterface
             $model = $this->getProductRepository()->find((int) $id);
             if ($model instanceof Product) {
                 $model->setPriority((int) $p);
-                $model->setUpdatedAt(new \DateTime());
+                $model->setUpdatedAt(new \DateTimeImmutable());
             }
         }
 
@@ -584,7 +584,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->setConfig($config);
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product #{model_id} configuration', ['model_id' => $model->getId()]);
@@ -681,7 +681,7 @@ class Service implements InjectionAwareInterface
         if ($priority !== null && $priority !== '') {
             $productCategory->setPriority((int) $priority);
         }
-        $productCategory->setUpdatedAt(new \DateTime());
+        $productCategory->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #{category_id}', ['category_id' => $productCategory->getId()]);
@@ -707,7 +707,7 @@ class Service implements InjectionAwareInterface
             $model = $this->getProductCategoryRepository()->find($id);
             if ($model instanceof ProductCategory) {
                 $model->setPriority($p);
-                $model->setUpdatedAt(new \DateTime());
+                $model->setUpdatedAt(new \DateTimeImmutable());
             }
         }
 
@@ -1068,7 +1068,7 @@ class Service implements InjectionAwareInterface
         $updated = $this->getProductRepository()->decrementStockIfAvailable(
             (int) $resolvedProduct->getId(),
             $quantity,
-            new \DateTime()
+            new \DateTimeImmutable()
         );
 
         if ($updated === 0) {
@@ -1136,7 +1136,7 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $this->getProductRepository()->incrementStock($productId, $quantity, new \DateTime());
+            $this->getProductRepository()->incrementStock($productId, $quantity, new \DateTimeImmutable());
 
             $resolvedProduct = $this->getProductRepository()->find($productId);
             if ($resolvedProduct instanceof Product) {
@@ -2255,7 +2255,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $committedAt = $invoice->getPaidAt() ?? new \DateTime();
+        $committedAt = $invoice->getPaidAt() ?? new \DateTimeImmutable();
         foreach ($redemptions as $redemption) {
             if (!$redemption instanceof PromoRedemption) {
                 continue;
@@ -2815,7 +2815,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $releasedAt = new \DateTime();
+        $releasedAt = new \DateTimeImmutable();
         $checkoutReleaseCounts = [];
         foreach ($redemptions as $redemption) {
             if ($redemption->getStatus() !== PromoRedemption::STATUS_RESERVED) {
@@ -2853,7 +2853,7 @@ class Service implements InjectionAwareInterface
         string $status,
     ): PromoRedemption {
         $timestamp = $createdAt ?? date('Y-m-d H:i:s');
-        $dateTime = new \DateTime($timestamp);
+        $dateTime = new \DateTimeImmutable($timestamp);
         $redemption = new PromoRedemption();
         $clientId = (int) $client->getId();
         $orderId = $order?->getId();
@@ -3288,14 +3288,18 @@ class Service implements InjectionAwareInterface
         return !empty($value) ? date('Y-m-d H:i:s', strtotime((string) $value)) : null;
     }
 
-    private function normalizePromoDateTimeObject(mixed $value): ?\DateTime
+    private function normalizePromoDateTimeObject(mixed $value): ?\DateTimeImmutable
     {
-        if ($value instanceof \DateTime) {
-            return clone $value;
+        if ($value instanceof \DateTimeImmutable) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface($value);
         }
 
         $normalized = $this->normalizePromoDateTime($value);
 
-        return $normalized !== null ? new \DateTime($normalized) : null;
+        return $normalized !== null ? new \DateTimeImmutable($normalized) : null;
     }
 }

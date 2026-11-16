@@ -29,6 +29,6 @@ class GatewayRefundAttempt
     #[ORM\Column(type: Types::STRING, length: 16)]
     public string $state;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
-    public \DateTime $createdAt;
+    #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
+    public \DateTimeImmutable $createdAt;
 }

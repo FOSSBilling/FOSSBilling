@@ -62,14 +62,14 @@ class SupportTicketFile
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $size = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $createdAt = null;
+    #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(name: 'attached_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $attachedAt = null;
+    #[ORM\Column(name: 'attached_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $attachedAt = null;
 
-    #[ORM\Column(name: 'removed_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $removedAt = null;
+    #[ORM\Column(name: 'removed_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $removedAt = null;
 
     #[ORM\Column(name: 'removed_by', type: Types::BIGINT, nullable: true)]
     private ?int $removedBy = null;
@@ -203,36 +203,36 @@ class SupportTicketFile
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTime
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(?\DateTime $createdAt): self
+    public function setCreatedAt(?\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getAttachedAt(): ?\DateTime
+    public function getAttachedAt(): ?\DateTimeImmutable
     {
         return $this->attachedAt;
     }
 
-    public function setAttachedAt(?\DateTime $attachedAt): self
+    public function setAttachedAt(?\DateTimeImmutable $attachedAt): self
     {
         $this->attachedAt = $attachedAt;
 
         return $this;
     }
 
-    public function getRemovedAt(): ?\DateTime
+    public function getRemovedAt(): ?\DateTimeImmutable
     {
         return $this->removedAt;
     }
 
-    public function setRemovedAt(?\DateTime $removedAt): self
+    public function setRemovedAt(?\DateTimeImmutable $removedAt): self
     {
         $this->removedAt = $removedAt;
 

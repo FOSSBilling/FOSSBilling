@@ -318,7 +318,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function getExpired(): array
     {
-        return $this->getSupportTicketRepository()->findExpiredOnHold(new \DateTime());
+        return $this->getSupportTicketRepository()->findExpiredOnHold(new \DateTimeImmutable());
     }
 
     public function countByStatus(string $status): int
@@ -1032,7 +1032,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             if (isset($data['priority'])) {
                 $model->setPriority(TicketPriority::fromInput($data['priority']));
             }
-            $model->setUpdatedAt(new \DateTime());
+            $model->setUpdatedAt(new \DateTimeImmutable());
             $em->flush();
             if ($model->getStatus() === SupportTicket::STATUS_CLOSED) {
                 TicketSecrets::forgetTicket($db, $id);
@@ -1139,7 +1139,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $em->flush();
 
             $ticket->setStatus($identity instanceof \Box\Mod\Staff\Entity\Admin ? SupportTicket::STATUS_ONHOLD : SupportTicket::STATUS_OPEN);
-            $ticket->setUpdatedAt(new \DateTime());
+            $ticket->setUpdatedAt(new \DateTimeImmutable());
             $em->flush();
 
             return $msg;

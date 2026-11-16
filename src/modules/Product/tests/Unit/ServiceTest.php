@@ -1506,8 +1506,8 @@ test('duplicate promo', function (): void {
         ->setPeriods(['1M'])
         ->setClientGroups([2])
         ->setRequiresProducts([5])
-        ->setStartAt(new DateTime('2012-01-01'))
-        ->setEndAt(new DateTime('2012-01-02'));
+        ->setStartAt(new DateTimeImmutable('2012-01-01'))
+        ->setEndAt(new DateTimeImmutable('2012-01-02'));
 
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('findOneBy')->once()->with(['code' => 'PROMO-COPY'])->andReturn(null);
@@ -1834,9 +1834,9 @@ test('promo can be applied', function (Promo $promo, bool $expectedResult): void
 })->with([
     'inactive' => [fn (): Promo => productTestCreatePromoEntity(1)->setActive(false), false],
     'max uses reached' => [fn (): Promo => productTestCreatePromoEntity(2)->setActive(true)->setMaxUses(5)->setUsed(5), false],
-    'not yet started' => [fn (): Promo => productTestCreatePromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('tomorrow')), false],
-    'already ended' => [fn (): Promo => productTestCreatePromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('yesterday')), false],
-    'within window' => [fn (): Promo => productTestCreatePromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('tomorrow')), true],
+    'not yet started' => [fn (): Promo => productTestCreatePromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('tomorrow')), false],
+    'already ended' => [fn (): Promo => productTestCreatePromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('yesterday'))->setEndAt(new DateTimeImmutable('yesterday')), false],
+    'within window' => [fn (): Promo => productTestCreatePromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('yesterday'))->setEndAt(new DateTimeImmutable('tomorrow')), true],
 ]);
 
 test('can client use promo returns false when promo cannot be applied', function (): void {

@@ -30,18 +30,18 @@ class TicketCloseEvent
     #[ORM\Column(name: 'actor_id', type: Types::BIGINT, nullable: true)]
     public ?int $actorId;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
-    public \DateTime $createdAt;
+    #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
+    public \DateTimeImmutable $createdAt;
 
-    #[ORM\Column(name: 'attempted_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    public ?\DateTime $attemptedAt;
+    #[ORM\Column(name: 'attempted_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public ?\DateTimeImmutable $attemptedAt;
 
-    #[ORM\Column(name: 'notification_queued_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    public ?\DateTime $notificationQueuedAt;
+    #[ORM\Column(name: 'notification_queued_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public ?\DateTimeImmutable $notificationQueuedAt;
 
-    #[ORM\Column(name: 'feedback_queued_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    public ?\DateTime $feedbackQueuedAt;
+    #[ORM\Column(name: 'feedback_queued_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public ?\DateTimeImmutable $feedbackQueuedAt;
 
-    #[ORM\Column(name: 'delivered_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    public ?\DateTime $deliveredAt;
+    #[ORM\Column(name: 'delivered_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public ?\DateTimeImmutable $deliveredAt;
 }

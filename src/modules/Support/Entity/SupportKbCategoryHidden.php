@@ -26,8 +26,8 @@ class SupportKbCategoryHidden
     #[ORM\Column(name: 'category_id', type: Types::BIGINT)]
     private ?int $categoryId = null;
 
-    #[ORM\Column(name: 'hidden_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $hiddenAt = null;
+    #[ORM\Column(name: 'hidden_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $hiddenAt = null;
 
     public function getCategoryId(): ?int
     {
@@ -41,12 +41,12 @@ class SupportKbCategoryHidden
         return $this;
     }
 
-    public function getHiddenAt(): ?\DateTime
+    public function getHiddenAt(): ?\DateTimeImmutable
     {
         return $this->hiddenAt;
     }
 
-    public function setHiddenAt(?\DateTime $hiddenAt): self
+    public function setHiddenAt(?\DateTimeImmutable $hiddenAt): self
     {
         $this->hiddenAt = $hiddenAt;
 

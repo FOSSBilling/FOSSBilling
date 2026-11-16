@@ -527,7 +527,7 @@ test('updatePassword returns true', function (): void {
     $rp = new ReflectionProperty($passwordReset, 'id');
     $rp->setValue($passwordReset, 1);
     $rp = new ReflectionProperty($passwordReset, 'createdAt');
-    $rp->setValue($passwordReset, new DateTime('-300 seconds'));
+    $rp->setValue($passwordReset, new DateTimeImmutable('-300 seconds'));
     $passwordReset->setClient($client);
 
     $passwordResetRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);

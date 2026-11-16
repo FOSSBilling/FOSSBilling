@@ -73,8 +73,8 @@ class PayGatewayCustomer implements TimestampInterface
     private ?string $defaultCard = null;
 
     // The method saved or chosen last pays the client's invoices.
-    #[ORM\Column(name: 'auto_pay_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $autoPayAt = null;
+    #[ORM\Column(name: 'auto_pay_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $autoPayAt = null;
 
     public function getId(): ?int
     {
@@ -165,12 +165,12 @@ class PayGatewayCustomer implements TimestampInterface
         return $this;
     }
 
-    public function getAutoPayAt(): ?\DateTime
+    public function getAutoPayAt(): ?\DateTimeImmutable
     {
         return $this->autoPayAt;
     }
 
-    public function setAutoPayAt(?\DateTime $autoPayAt): self
+    public function setAutoPayAt(?\DateTimeImmutable $autoPayAt): self
     {
         $this->autoPayAt = $autoPayAt;
 

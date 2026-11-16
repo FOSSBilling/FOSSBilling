@@ -66,11 +66,11 @@ class ServiceLicense implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $plugin = null;
 
-    #[ORM\Column(name: 'checked_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $checkedAt = null;
+    #[ORM\Column(name: 'checked_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $checkedAt = null;
 
-    #[ORM\Column(name: 'pinged_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $pingedAt = null;
+    #[ORM\Column(name: 'pinged_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $pingedAt = null;
 
     public function getId(): ?int
     {
@@ -221,24 +221,24 @@ class ServiceLicense implements TimestampInterface
         return $this;
     }
 
-    public function getCheckedAt(): ?\DateTime
+    public function getCheckedAt(): ?\DateTimeImmutable
     {
         return $this->checkedAt;
     }
 
-    public function setCheckedAt(?\DateTime $checkedAt): self
+    public function setCheckedAt(?\DateTimeImmutable $checkedAt): self
     {
         $this->checkedAt = $checkedAt;
 
         return $this;
     }
 
-    public function getPingedAt(): ?\DateTime
+    public function getPingedAt(): ?\DateTimeImmutable
     {
         return $this->pingedAt;
     }
 
-    public function setPingedAt(?\DateTime $pingedAt): self
+    public function setPingedAt(?\DateTimeImmutable $pingedAt): self
     {
         $this->pingedAt = $pingedAt;
 

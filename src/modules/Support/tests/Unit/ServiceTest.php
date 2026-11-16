@@ -58,8 +58,8 @@ function supportKbCategoryFixture(): KbArticleCategory
         ->setTitle('category-title')
         ->setSlug('category-slug')
         ->setDescription('Description');
-    $category->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
-    $category->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    $category->setCreatedAt(new DateTimeImmutable('2013-01-01 12:00:00'));
+    $category->setUpdatedAt(new DateTimeImmutable('2014-01-01 12:00:00'));
     supportSetEntityId($category, 1);
 
     return $category;
@@ -74,8 +74,8 @@ function supportKbArticleFixture(): KbArticle
         ->setViews(1)
         ->setContent('Content')
         ->setStatus(KbArticle::ACTIVE);
-    $article->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
-    $article->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    $article->setCreatedAt(new DateTimeImmutable('2013-01-01 12:00:00'));
+    $article->setUpdatedAt(new DateTimeImmutable('2014-01-01 12:00:00'));
     supportSetEntityId($article, 1);
 
     return $article;
@@ -85,8 +85,8 @@ function supportCannedCategoryFixture(): CannedResponseCategory
 {
     $category = (new CannedResponseCategory())
         ->setTitle('General');
-    $category->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
-    $category->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    $category->setCreatedAt(new DateTimeImmutable('2013-01-01 12:00:00'));
+    $category->setUpdatedAt(new DateTimeImmutable('2014-01-01 12:00:00'));
     supportSetEntityId($category, 1);
 
     return $category;
@@ -98,8 +98,8 @@ function supportCannedResponseFixture(): CannedResponse
         ->setCategory(supportCannedCategoryFixture())
         ->setTitle('Name')
         ->setContent('Content');
-    $response->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
-    $response->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    $response->setCreatedAt(new DateTimeImmutable('2013-01-01 12:00:00'));
+    $response->setUpdatedAt(new DateTimeImmutable('2014-01-01 12:00:00'));
     supportSetEntityId($response, 1);
 
     return $response;
@@ -113,8 +113,8 @@ function helpdeskFixture(): Helpdesk
         ->setCanReopen(true)
         ->setCloseAfter(24)
         ->setSignature('Signature');
-    $helpdesk->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
-    $helpdesk->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    $helpdesk->setCreatedAt(new DateTimeImmutable('2013-01-01 12:00:00'));
+    $helpdesk->setUpdatedAt(new DateTimeImmutable('2014-01-01 12:00:00'));
     supportSetEntityId($helpdesk, 1);
 
     return $helpdesk;
@@ -2625,12 +2625,12 @@ dataset('canClientSubmitNewTicketProvider', function () {
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);
     $ticket->setClientId(5);
-    $ticket->setCreatedAt(new DateTime());
+    $ticket->setCreatedAt(new DateTimeImmutable());
 
     $ticket2 = new SupportTicket();
     setEntityId($ticket2, 1);
     $ticket2->setClientId(5);
-    $ticket2->setCreatedAt(new DateTime('-2 days'));
+    $ticket2->setCreatedAt(new DateTimeImmutable('-2 days'));
 
     return [
         'ticket created today - cannot submit' => [$ticket, 24, false],

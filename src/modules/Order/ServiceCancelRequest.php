@@ -240,7 +240,7 @@ class ServiceCancelRequest implements InjectionAwareInterface
             ->where('r.id = :id')
             ->andWhere('r.status = :pending')
             ->setParameter('status', $status)
-            ->setParameter('now', new \DateTime())
+            ->setParameter('now', new \DateTimeImmutable())
             ->setParameter('id', $request->getId())
             ->setParameter('pending', ClientOrderCancelRequest::STATUS_PENDING)
             ->getQuery()

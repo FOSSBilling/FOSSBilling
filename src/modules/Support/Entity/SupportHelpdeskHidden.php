@@ -26,8 +26,8 @@ class SupportHelpdeskHidden
     #[ORM\Column(name: 'helpdesk_id', type: Types::BIGINT)]
     private ?int $helpdeskId = null;
 
-    #[ORM\Column(name: 'hidden_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $hiddenAt = null;
+    #[ORM\Column(name: 'hidden_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $hiddenAt = null;
 
     public function getHelpdeskId(): ?int
     {
@@ -41,12 +41,12 @@ class SupportHelpdeskHidden
         return $this;
     }
 
-    public function getHiddenAt(): ?\DateTime
+    public function getHiddenAt(): ?\DateTimeImmutable
     {
         return $this->hiddenAt;
     }
 
-    public function setHiddenAt(?\DateTime $hiddenAt): self
+    public function setHiddenAt(?\DateTimeImmutable $hiddenAt): self
     {
         $this->hiddenAt = $hiddenAt;
 

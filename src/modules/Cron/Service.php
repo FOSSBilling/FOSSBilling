@@ -194,8 +194,8 @@ class Service
 
     public function isLate(): bool
     {
-        $t1 = new \DateTime($this->getLastExecutionTime());
-        $t2 = new \DateTime('-6min');
+        $t1 = new \DateTimeImmutable($this->getLastExecutionTime());
+        $t2 = new \DateTimeImmutable('-6min');
 
         return $t1 < $t2;
     }

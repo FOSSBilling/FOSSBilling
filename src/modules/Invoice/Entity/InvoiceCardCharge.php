@@ -34,8 +34,8 @@ class InvoiceCardCharge
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
     private int $attempts = 0;
 
-    #[ORM\Column(name: 'last_attempt_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $lastAttemptAt = null;
+    #[ORM\Column(name: 'last_attempt_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $lastAttemptAt = null;
 
     #[ORM\Column(name: 'last_error', type: Types::STRING, length: 255, nullable: true)]
     private ?string $lastError = null;
@@ -64,12 +64,12 @@ class InvoiceCardCharge
         return $this;
     }
 
-    public function getLastAttemptAt(): ?\DateTime
+    public function getLastAttemptAt(): ?\DateTimeImmutable
     {
         return $this->lastAttemptAt;
     }
 
-    public function setLastAttemptAt(?\DateTime $lastAttemptAt): self
+    public function setLastAttemptAt(?\DateTimeImmutable $lastAttemptAt): self
     {
         $this->lastAttemptAt = $lastAttemptAt;
 

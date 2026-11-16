@@ -29,8 +29,8 @@ class SupportTicketPin
     #[ORM\Column(name: 'pinned_by', type: Types::BIGINT, nullable: true)]
     private ?int $pinnedBy = null;
 
-    #[ORM\Column(name: 'pinned_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $pinnedAt = null;
+    #[ORM\Column(name: 'pinned_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $pinnedAt = null;
 
     public function getTicketId(): ?int
     {
@@ -56,12 +56,12 @@ class SupportTicketPin
         return $this;
     }
 
-    public function getPinnedAt(): ?\DateTime
+    public function getPinnedAt(): ?\DateTimeImmutable
     {
         return $this->pinnedAt;
     }
 
-    public function setPinnedAt(?\DateTime $pinnedAt): self
+    public function setPinnedAt(?\DateTimeImmutable $pinnedAt): self
     {
         $this->pinnedAt = $pinnedAt;
 

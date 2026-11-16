@@ -120,8 +120,9 @@ test('new entity columns ship with a MySQL migration', function (): void {
             static function (string $tableColumn) use ($patcher): bool {
                 [$table, $column] = explode('.', $tableColumn, 2);
 
-                // The new journal is created portably through SchemaSynchronizer before use.
-                return $table !== 'json_migration_record' && !entityMigrationCoverageHasTableColumnMigration($patcher, $table, $column);
+                // Both quarantine storage and the migration journal are created
+                // portably through SchemaSynchronizer before use.
+                return $table !== 'json_migration_record' && $table !== 'json_quarantine' && !entityMigrationCoverageHasTableColumnMigration($patcher, $table, $column);
             }
         ));
 

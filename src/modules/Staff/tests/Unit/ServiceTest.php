@@ -2244,7 +2244,7 @@ test('toActivityAdminHistoryRowApiArray returns paginated history data without a
 });
 
 test('toActivityAdminHistoryApiArray returns history array data', function (): void {
-    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $createdAt = new DateTimeImmutable('2026-01-01 12:00:00');
     $adminHistory = (new ActivityAdminHistory())
         ->setAdminId(2)
         ->setIp('192.0.2.1')

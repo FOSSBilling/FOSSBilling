@@ -44,8 +44,8 @@ class SupportTicketMessageRating
     #[ORM\Column(type: Types::STRING, length: 45)]
     private string $ip = '';
 
-    #[ORM\Column(name: 'rated_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $ratedAt = null;
+    #[ORM\Column(name: 'rated_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $ratedAt = null;
 
     public function getMessageId(): ?int
     {
@@ -131,12 +131,12 @@ class SupportTicketMessageRating
         return $this;
     }
 
-    public function getRatedAt(): ?\DateTime
+    public function getRatedAt(): ?\DateTimeImmutable
     {
         return $this->ratedAt;
     }
 
-    public function setRatedAt(?\DateTime $ratedAt): self
+    public function setRatedAt(?\DateTimeImmutable $ratedAt): self
     {
         $this->ratedAt = $ratedAt;
 

@@ -40,8 +40,8 @@ class SupportTicketMerge
     #[ORM\Column(name: 'merged_by', type: Types::BIGINT, nullable: true)]
     private ?int $mergedBy = null;
 
-    #[ORM\Column(name: 'merged_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $mergedAt = null;
+    #[ORM\Column(name: 'merged_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $mergedAt = null;
 
     public function getTicketId(): ?int
     {
@@ -103,12 +103,12 @@ class SupportTicketMerge
         return $this;
     }
 
-    public function getMergedAt(): ?\DateTime
+    public function getMergedAt(): ?\DateTimeImmutable
     {
         return $this->mergedAt;
     }
 
-    public function setMergedAt(?\DateTime $mergedAt): self
+    public function setMergedAt(?\DateTimeImmutable $mergedAt): self
     {
         $this->mergedAt = $mergedAt;
 

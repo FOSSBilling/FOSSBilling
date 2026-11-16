@@ -30,11 +30,11 @@ class SupportTicketFeedbackRequest
     #[ORM\Column(type: Types::STRING, length: 64)]
     private ?string $token = null;
 
-    #[ORM\Column(name: 'sent_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $sentAt = null;
+    #[ORM\Column(name: 'sent_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $sentAt = null;
 
-    #[ORM\Column(name: 'answered_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $answeredAt = null;
+    #[ORM\Column(name: 'answered_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $answeredAt = null;
 
     public function getTicketId(): ?int
     {
@@ -60,24 +60,24 @@ class SupportTicketFeedbackRequest
         return $this;
     }
 
-    public function getSentAt(): ?\DateTime
+    public function getSentAt(): ?\DateTimeImmutable
     {
         return $this->sentAt;
     }
 
-    public function setSentAt(?\DateTime $sentAt): self
+    public function setSentAt(?\DateTimeImmutable $sentAt): self
     {
         $this->sentAt = $sentAt;
 
         return $this;
     }
 
-    public function getAnsweredAt(): ?\DateTime
+    public function getAnsweredAt(): ?\DateTimeImmutable
     {
         return $this->answeredAt;
     }
 
-    public function setAnsweredAt(?\DateTime $answeredAt): self
+    public function setAnsweredAt(?\DateTimeImmutable $answeredAt): self
     {
         $this->answeredAt = $answeredAt;
 

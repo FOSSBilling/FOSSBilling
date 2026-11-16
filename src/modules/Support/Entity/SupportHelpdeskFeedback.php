@@ -29,8 +29,8 @@ class SupportHelpdeskFeedback
     #[ORM\Column(name: 'feedback_request', type: Types::BOOLEAN, options: ['default' => true])]
     private bool $feedbackRequest = true;
 
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $updatedAt = null;
+    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     public function getHelpdeskId(): ?int
     {
@@ -56,12 +56,12 @@ class SupportHelpdeskFeedback
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTime
+    public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(?\DateTime $updatedAt): self
+    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
 

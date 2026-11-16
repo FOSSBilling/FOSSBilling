@@ -166,7 +166,7 @@ describe('saved methods', function (): void {
         $row->setSavedCards(true);
         $row->setDefaultPaymentMethod('pm_123');
         $row->setDefaultCard('Visa •••• 4242');
-        $row->setAutoPayAt(new DateTime('2026-01-05 10:00:00'));
+        $row->setAutoPayAt(new DateTimeImmutable('2026-01-05 10:00:00'));
 
         $repo = Mockery::mock(PayGatewayCustomerRepository::class);
         $repo->shouldReceive('findSaved')->once()->with(4, true, 7)->andReturn($row);
@@ -196,7 +196,7 @@ describe('saved methods', function (): void {
                 && $row->hasSavedCards()
                 && $row->getDefaultPaymentMethod() === 'pm_1'
                 && $row->getDefaultCard() === 'Visa •••• 4242'
-                && $row->getAutoPayAt() instanceof DateTime;
+                && $row->getAutoPayAt() instanceof DateTimeImmutable;
         }));
         $em->shouldReceive('flush')->once();
         $service = savedCardsService($em);
@@ -234,7 +234,7 @@ describe('saved methods', function (): void {
 
         $service->choose(4, false, 7);
 
-        expect($row->getAutoPayAt())->toBeInstanceOf(DateTime::class);
+        expect($row->getAutoPayAt())->toBeInstanceOf(DateTimeImmutable::class);
     });
 
     test('choose does nothing without a saved method', function (): void {
@@ -258,7 +258,7 @@ describe('holds', function (): void {
         $em->shouldReceive('persist')->once()->with(Mockery::on(function (InvoiceCardCharge $charge): bool {
             return $charge->getInvoiceId() === 9
                 && $charge->getAttempts() === InvoiceCardCharge::HELD
-                && $charge->getLastAttemptAt() instanceof DateTime
+                && $charge->getLastAttemptAt() instanceof DateTimeImmutable
                 && $charge->getLastError() === 'Payment pi_1 is not completed yet.';
         }));
         $em->shouldReceive('flush')->once();

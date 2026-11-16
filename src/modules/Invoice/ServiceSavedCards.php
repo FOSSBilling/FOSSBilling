@@ -175,7 +175,7 @@ class ServiceSavedCards implements InjectionAwareInterface
     /** Keeps a saved method (one per client and gateway) as the method that pays the client's invoices. */
     public function remember(int $gatewayId, bool $testMode, int $clientId, string $customerId, string $paymentMethod, string $label): void
     {
-        $now = new \DateTime();
+        $now = new \DateTimeImmutable();
         $row = $this->getCustomerRepository()->findOneByGatewayAndClient($gatewayId, $clientId, $testMode);
         if (!$row instanceof PayGatewayCustomer) {
             $row = new PayGatewayCustomer();
@@ -203,7 +203,7 @@ class ServiceSavedCards implements InjectionAwareInterface
     {
         $row = $this->getCustomerRepository()->findSaved($gatewayId, $testMode, $clientId);
         if ($row instanceof PayGatewayCustomer) {
-            $row->setAutoPayAt(new \DateTime());
+            $row->setAutoPayAt(new \DateTimeImmutable());
             $this->di['em']->flush();
         }
     }
@@ -298,7 +298,7 @@ class ServiceSavedCards implements InjectionAwareInterface
                 $this->di['mod_service']('Invoice', 'Subscription')->cancel($subscription);
                 $this->di['logger']->info('Subscription #{id} ({sid}): cancelled at PayPal, the saved PayPal account pays from now on', ['id' => $id, 'sid' => $subscription->getSid()]);
             } catch (\Throwable $e) {
-                $subscription->setUpdatedAt(new \DateTime());
+                $subscription->setUpdatedAt(new \DateTimeImmutable());
                 $this->di['em']->flush();
                 $this->di['logger']->warning('Subscription #{id} ({sid}): not cancelled at PayPal: {message}', ['id' => $id, 'sid' => $subscription->getSid(), 'message' => $e->getMessage()]);
             }
@@ -445,7 +445,7 @@ class ServiceSavedCards implements InjectionAwareInterface
             $charge->setAttempts(0);
         }
         $charge->setAttempts($charge->getAttempts() + 1);
-        $charge->setLastAttemptAt(new \DateTime());
+        $charge->setLastAttemptAt(new \DateTimeImmutable());
         if ($isNew) {
             $this->di['em']->persist($charge);
         }
@@ -471,7 +471,7 @@ class ServiceSavedCards implements InjectionAwareInterface
             $charge->setInvoiceId($invoiceId);
         }
         $charge->setAttempts(InvoiceCardCharge::HELD);
-        $charge->setLastAttemptAt(new \DateTime());
+        $charge->setLastAttemptAt(new \DateTimeImmutable());
         $charge->setLastError(mb_substr($note, 0, 255));
         if ($isNew) {
             $this->di['em']->persist($charge);

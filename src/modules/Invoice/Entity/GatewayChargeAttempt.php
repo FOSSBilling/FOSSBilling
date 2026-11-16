@@ -39,9 +39,9 @@ class GatewayChargeAttempt
     #[ORM\Column(type: Types::JSON, nullable: true)]
     public ?array $resolution = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
-    public \DateTime $createdAt;
+    #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
+    public \DateTimeImmutable $createdAt;
 
-    #[ORM\Column(name: 'resolved_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    public ?\DateTime $resolvedAt = null;
+    #[ORM\Column(name: 'resolved_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public ?\DateTimeImmutable $resolvedAt = null;
 }

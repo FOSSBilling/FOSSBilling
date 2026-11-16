@@ -95,7 +95,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->setPeriod($data['period'] ?? $model->getPeriod());
         $model->setAmount($data['amount'] ?? $model->getAmount());
         $model->setCurrency($data['currency'] ?? $model->getCurrency());
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
         $newId = (int) $model->getId();
 
@@ -161,7 +161,7 @@ class ServiceSubscription implements InjectionAwareInterface
     public function unsubscribe(Subscription $model): void
     {
         $model->setStatus('canceled');
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
     }
 
@@ -212,12 +212,28 @@ class ServiceSubscription implements InjectionAwareInterface
         return $payGatewayService->getPaymentAdapter($gateway);
     }
 
-    public function cancelForOrder(Order $order): int
+    public function cancelForOrder(Order $order, bool $force = false): int
     {
         $canceledSubscriptions = 0;
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
-            $this->cancel($subscription);
-            ++$canceledSubscriptions;
+            if ($subscription->getStatus() === 'canceled') {
+                continue;
+            }
+
+            try {
+                $this->cancel($subscription);
+                ++$canceledSubscriptions;
+            } catch (\Exception $e) {
+                if (!$force) {
+                    throw $e;
+                }
+                $this->di['logger']->warning('Forced order deletion left a subscription requiring manual cancellation', [
+                    'order_id' => $order->getId(),
+                    'subscription_id' => $subscription->getId(),
+                    'sid' => $subscription->getSid(),
+                    'gateway_id' => $subscription->getPayGateway()?->getId(),
+                ]);
+            }
         }
 
         return $canceledSubscriptions;

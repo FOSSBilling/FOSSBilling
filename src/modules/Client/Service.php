@@ -480,7 +480,7 @@ class Service implements InjectionAwareInterface
     public function getExpiredPasswordReminders()
     {
         $expireAfterHours = 2;
-        $cutoff = new \DateTime("-{$expireAfterHours} hours");
+        $cutoff = new \DateTimeImmutable("-{$expireAfterHours} hours");
 
         return $this->clientPasswordResetRepository->findExpiredBefore($cutoff);
     }
@@ -770,7 +770,7 @@ class Service implements InjectionAwareInterface
         $client->setGender($data['gender'] ?? null);
         $birthday = $data['birthday'] ?? null;
         if ($birthday) {
-            $client->setBirthday(new \DateTime($birthday));
+            $client->setBirthday(new \DateTimeImmutable($birthday));
         }
         $client->setCompany($data['company'] ?? null);
         $client->setCompanyVat($data['company_vat'] ?? null);
@@ -819,7 +819,7 @@ class Service implements InjectionAwareInterface
 
         $createdAt = $data['created_at'] ?? null;
         if (!empty($createdAt)) {
-            $client->setCreatedAt(new \DateTime((string) $createdAt));
+            $client->setCreatedAt(new \DateTimeImmutable((string) $createdAt));
         }
 
         $this->di['em']->persist($client);
@@ -937,6 +937,14 @@ class Service implements InjectionAwareInterface
 
     public function remove(Client $model): void
     {
+        $orderService = $this->di['mod_service']('Order');
+        $orderService->withClientOrderLocks($model, function (array $lockedOrderIds) use ($model, $orderService): void {
+            $this->removeLockedClient($model, $orderService, $lockedOrderIds);
+        });
+    }
+
+    private function removeLockedClient(Client $model, object $orderService, array $lockedOrderIds): void
+    {
         $this->throwIfActiveServicesRemain($model);
 
         $entityManager = $this->di['em'];
@@ -948,8 +956,7 @@ class Service implements InjectionAwareInterface
             if (!ClientRowLock::acquire($connection, (int) $model->getId())) {
                 throw new InformationException('Client not found');
             }
-            $service = $this->di['mod_service']('Order');
-            $service->rmByClient($model);
+            $orderService->rmByClient($model, $lockedOrderIds);
             $service = $this->di['mod_service']('Invoice');
             $service->rmByClient($model);
             $service = $this->di['mod_service']('Support');
@@ -1186,7 +1193,7 @@ class Service implements InjectionAwareInterface
         $di = $this->di ?? throw new \LogicException('The Client service dependency injection container has not been set.');
 
         try {
-            $cutoff = new \DateTime('-900 seconds');
+            $cutoff = new \DateTimeImmutable('-900 seconds');
             $this->clientPasswordResetRepository
                 ->createQueryBuilder('r')
                 ->delete()

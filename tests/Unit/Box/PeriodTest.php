@@ -70,3 +70,19 @@ test('accepts multi-digit quantities up to each unit\'s upper bound', function (
 test('throws exception for a quantity beyond a unit\'s upper bound', function (): void {
     expect(fn (): FOSSBilling\Core\Period => new FOSSBilling\Core\Period('91D'))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invalid period quantity 91 for unit D. Allowed range is from 1 to 90');
 });
+
+test('keeps month and year periods inside the target month', function (string $code, string $start, string $expected): void {
+    $expiration = (new FOSSBilling\Core\Period($code))->getExpirationTime(strtotime($start));
+
+    expect(date('Y-m-d H:i', $expiration))->toBe($expected);
+})->with([
+    ['1M', '2026-01-31 10:00', '2026-02-28 10:00'],
+    ['1M', '2026-03-31 10:00', '2026-04-30 10:00'],
+    ['3M', '2025-11-30 10:00', '2026-02-28 10:00'],
+    ['1Y', '2028-02-29 10:00', '2029-02-28 10:00'],
+    ['1M', '2026-01-15 10:00', '2026-02-15 10:00'],
+    ['6M', '2025-08-31 10:00', '2026-02-28 10:00'],
+    ['1M', '2025-12-31 10:00', '2026-01-31 10:00'],
+    ['2Y', '2028-02-29 10:00', '2030-02-28 10:00'],
+    ['1M', '2026-02-28 10:00', '2026-03-28 10:00'],
+]);

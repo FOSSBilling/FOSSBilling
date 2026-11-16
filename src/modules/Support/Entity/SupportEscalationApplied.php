@@ -36,11 +36,11 @@ class SupportEscalationApplied
     private ?int $ticketId = null;
 
     /** The last reply the rule acted on. */
-    #[ORM\Column(name: 'reply_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $replyAt = null;
+    #[ORM\Column(name: 'reply_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $replyAt = null;
 
-    #[ORM\Column(name: 'applied_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $appliedAt = null;
+    #[ORM\Column(name: 'applied_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $appliedAt = null;
 
     public function getId(): ?int
     {
@@ -71,24 +71,24 @@ class SupportEscalationApplied
         return $this;
     }
 
-    public function getReplyAt(): ?\DateTime
+    public function getReplyAt(): ?\DateTimeImmutable
     {
         return $this->replyAt;
     }
 
-    public function setReplyAt(?\DateTime $replyAt): self
+    public function setReplyAt(?\DateTimeImmutable $replyAt): self
     {
         $this->replyAt = $replyAt;
 
         return $this;
     }
 
-    public function getAppliedAt(): ?\DateTime
+    public function getAppliedAt(): ?\DateTimeImmutable
     {
         return $this->appliedAt;
     }
 
-    public function setAppliedAt(?\DateTime $appliedAt): self
+    public function setAppliedAt(?\DateTimeImmutable $appliedAt): self
     {
         $this->appliedAt = $appliedAt;
 

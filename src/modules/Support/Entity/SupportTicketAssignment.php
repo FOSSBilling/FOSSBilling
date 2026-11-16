@@ -33,8 +33,8 @@ class SupportTicketAssignment
     #[ORM\Column(name: 'assigned_by', type: Types::BIGINT, nullable: true)]
     private ?int $assignedBy = null;
 
-    #[ORM\Column(name: 'assigned_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $assignedAt = null;
+    #[ORM\Column(name: 'assigned_at', type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $assignedAt = null;
 
     public function getTicketId(): ?int
     {
@@ -72,12 +72,12 @@ class SupportTicketAssignment
         return $this;
     }
 
-    public function getAssignedAt(): ?\DateTime
+    public function getAssignedAt(): ?\DateTimeImmutable
     {
         return $this->assignedAt;
     }
 
-    public function setAssignedAt(?\DateTime $assignedAt): self
+    public function setAssignedAt(?\DateTimeImmutable $assignedAt): self
     {
         $this->assignedAt = $assignedAt;
 
