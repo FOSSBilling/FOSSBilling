@@ -1155,6 +1155,27 @@ document.addEventListener('DOMContentLoaded', function() {
         throw new Payment_Exception('PayPal answered HTTP :status to the payment of invoice #:id', [':status' => $status, ':id' => $invoice->getId()]);
     }
 
+    /** Read-only recovery lookup of a capture created for this invoice. */
+    public function inspectPayment(string $reference, int $invoiceId): array
+    {
+        [$status, $capture] = $this->rest('GET', '/v2/payments/captures/' . rawurlencode($reference));
+        if ($status !== 200 || ($capture['id'] ?? null) !== $reference) {
+            return ['state' => 'unknown', 'reference' => $reference];
+        }
+        if (($capture['custom_id'] ?? null) !== 'fb-invoice-' . $invoiceId) {
+            throw new Payment_Exception('Payment does not belong to this invoice');
+        }
+
+        return [
+            'state' => match ($capture['status'] ?? '') {
+                'COMPLETED' => 'settled', 'PENDING' => 'pending', 'DECLINED', 'FAILED' => 'failed', default => 'unknown',
+            },
+            'reference' => $reference, 'provider_status' => $capture['status'] ?? '',
+            'amount' => (float) ($capture['amount']['value'] ?? 0),
+            'currency' => strtoupper((string) ($capture['amount']['currency_code'] ?? '')),
+        ];
+    }
+
     /** A REST payment (capture) as PayPal reports it: recorded on its transaction and applied to its invoice once. */
     public function processRestCapture($api_admin, int $id, string $captureId): void
     {

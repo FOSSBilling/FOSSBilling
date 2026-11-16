@@ -158,6 +158,8 @@
                             </a>
                         {% endif %}
                         {% if transaction.status == 'processing' %}
+                            <button type="button" class="btn" id="inspect-interrupted-payment" data-transaction-id="{{ transaction.id }}">{{ 'Check gateway (read only)'|trans }}</button>
+                            <pre id="interrupted-payment-result" class="w-100" aria-live="polite"></pre>
                             <form method="post" action="{{ 'invoice/transaction_release_stale'|api_url }}" {{ fb_api_form({reload: true}) }} class="w-100">
                                 <p class="text-warning mb-2">{{ 'Before releasing an interrupted payment, stop the previous worker and check the gateway for an existing payment. Retrying an unverified payment can charge the customer twice.'|trans }}</p>
                                 <label class="form-check mb-2">
@@ -374,4 +376,21 @@
         </div>
     {% endblock %}
 {% endembed %}
+{% endblock %}
+
+{% block js %}
+<script>
+const inspectPayment = document.getElementById('inspect-interrupted-payment');
+inspectPayment?.addEventListener('click', () => {
+    inspectPayment.disabled = true;
+    const result = document.getElementById('interrupted-payment-result');
+    FOSSBilling.api.admin.get('invoice/transaction_inspect_payment', {id: inspectPayment.dataset.transactionId}, response => {
+        result.textContent = JSON.stringify(response, null, 2);
+        inspectPayment.disabled = false;
+    }, error => {
+        result.textContent = error.message;
+        inspectPayment.disabled = false;
+    });
+});
+</script>
 {% endblock %}

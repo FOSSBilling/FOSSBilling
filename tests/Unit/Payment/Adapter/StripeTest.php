@@ -3963,3 +3963,22 @@ describe('bank debits', function (): void {
         expect(invokePrivateMethod($this->adapter, 'handlePaymentIntentFailedWebhook', [null, $tx, (object) ['data' => (object) ['object' => $intent]]]))->toBeTrue();
     });
 });
+
+test('Stripe recovery inspects without confirming and validates invoice and gateway ownership', function (string $status, string $expected, string $invoiceId, string $gatewayId): void {
+    $intents = Mockery::mock();
+    $intents->shouldReceive('retrieve')->once()->with('pi_recovery', [])->andReturn((object) [
+        'id' => 'pi_recovery', 'status' => $status, 'amount' => 1250, 'currency' => 'usd',
+        'metadata' => (object) ['invoice_id' => $invoiceId, 'gateway_id' => $gatewayId],
+    ]);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->paymentIntents = $intents;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    if ($expected === 'reject') {
+        expect(fn () => $this->adapter->inspectPayment('pi_recovery', 21))->toThrow(Payment_Exception::class);
+    } else {
+        expect($this->adapter->inspectPayment('pi_recovery', 21)['state'])->toBe($expected);
+    }
+})->with([
+    ['succeeded', 'settled', '21', '1'], ['processing', 'pending', '21', '1'], ['canceled', 'failed', '21', '1'],
+    ['requires_action', 'unknown', '21', '1'], ['succeeded', 'reject', '22', '1'], ['succeeded', 'reject', '21', '2'],
+]);

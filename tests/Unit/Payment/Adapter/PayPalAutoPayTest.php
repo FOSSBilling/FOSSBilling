@@ -150,7 +150,12 @@ describe('saved agreements', function (): void {
 
         $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD', 'serie' => 'INV-', 'nr' => '00060']);
 
-        expect($adapter->chargeSavedCard($invoice, 'attempt_2'))->toBe('P-1');
+        expect($adapter->chargeSavedCard($invoice, str_repeat('a', 32)))->toBe('P-1');
+        $adapter->getDi()['http_client']->shouldHaveReceived('request')->with('POST', Mockery::any(), Mockery::on(function (array $options): bool {
+            expect(strlen($options['body']['MSGSUBID']))->toBe(38);
+
+            return true;
+        }))->once();
     });
 
     test('a cancelled agreement is forgotten so it is never tried again', function (): void {
@@ -512,3 +517,15 @@ test('a reversal with an unknown amount is left for staff', function (): void {
     ], 5);
     expect(true)->toBeTrue();
 });
+
+test('legacy PayPal recovery reads transaction details and rejects another invoice', function (string $custom, string $status, string $expected): void {
+    $adapter = autopayAdapter();
+    $di = autopayDi();
+    $di['http_client'] = autopayNvpResponder(['ACK=Success&TRANSACTIONID=P-1&CUSTOM=' . $custom . '&PAYMENTSTATUS=' . $status . '&AMT=25.00&CURRENCYCODE=USD']);
+    $adapter->setDi($di);
+    if ($expected === 'reject') {
+        expect(fn () => $adapter->inspectPayment('P-1', 21))->toThrow(Payment_Exception::class);
+    } else {
+        expect($adapter->inspectPayment('P-1', 21)['state'])->toBe($expected);
+    }
+})->with([['fb-invoice-21', 'Completed', 'settled'], ['fb-invoice-21', 'Pending', 'pending'], ['fb-invoice-21', 'Denied', 'failed'], ['fb-invoice-22', 'Completed', 'reject']]);

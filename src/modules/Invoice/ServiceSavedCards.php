@@ -313,6 +313,9 @@ class ServiceSavedCards implements InjectionAwareInterface
      */
     public function charge(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay|\Payment_Adapter_PayPalEmail $adapter, bool $byStaff, bool $byClient = false): array
     {
+        if ($this->di['em']->getConnection()->isTransactionActive()) {
+            throw new \LogicException('Saved payments cannot run inside a transaction.');
+        }
         $lockName = 'fb:card-charge:' . (int) $invoice->getId();
         if (!NamedLock::acquire($this->di['em']->getConnection(), $lockName, 10)) {
             throw new InformationException('Another request is being processed. Please try again.');
@@ -340,6 +343,9 @@ class ServiceSavedCards implements InjectionAwareInterface
         if (!$byStaff && $row['gateway_id'] !== null && !in_array((int) $row['gateway_id'], array_map(static fn (object $a): int => $a->gatewayId(), $this->adapters()), true)) {
             return ['paid' => false, 'error' => null];
         }
+        if (GatewayChargeAttempts::pending($connection, (int) $invoice->getId()) !== null) {
+            return ['paid' => false, 'error' => 'A previous payment attempt needs reconciliation before another charge.'];
+        }
         $charge = $this->di['em']->find(InvoiceCardCharge::class, (int) $invoice->getId());
         $attempt = $charge?->getAttempts() ?? 0;
         // Held after runDue read it (a staff charge holds it): a cron try would charge twice.
@@ -359,9 +365,14 @@ class ServiceSavedCards implements InjectionAwareInterface
         $this->di['mod_service']('Invoice', 'GatewayFees')->apply($invoice, $gateway);
         $card = (string) ($adapter->savedCard((int) $invoice->getClientId())['card'] ?? '');
 
+        $attemptId = GatewayChargeAttempts::begin($connection, (int) $invoice->getId(), $adapter->gatewayId());
+
         try {
-            $paymentId = $adapter->chargeSavedCard($invoice, $byStaff ? 'staff_' . time() : 'attempt_' . ($attempt + 1));
+            $paymentId = $adapter->chargeSavedCard($invoice, $attemptId);
         } catch (\Throwable $e) {
+            if ($e instanceof InformationException) {
+                GatewayChargeAttempts::resolve($connection, $attemptId, 'failed');
+            }
             $error = $e instanceof InformationException ? $e->getMessage() : 'The payment service did not answer. Please try again later.';
             $this->recordError((int) $invoice->getId(), $error);
             if (!$e instanceof InformationException) {
@@ -375,13 +386,14 @@ class ServiceSavedCards implements InjectionAwareInterface
 
             return ['paid' => false, 'error' => $error];
         }
+        GatewayChargeAttempts::recordPayment($connection, $attemptId, $paymentId);
         // Taken: until it is recorded as paid (a bank debit may clear later, or reading it back may fail), never charged again.
         $this->hold((int) $invoice->getId(), 'Payment ' . $paymentId . ' is not completed yet.');
         $txId = $this->di['mod_service']('Invoice', 'Transaction')->createAndProcess([
             'invoice_id' => (int) $invoice->getId(),
             'gateway_id' => $adapter->gatewayId(),
             'source' => 'saved_card',
-            'get' => ['payment_intent' => $paymentId, 'invoice_id' => (int) $invoice->getId()],
+            'get' => [GatewayChargeAttempts::referenceParameter($adapter) => $paymentId, 'invoice_id' => (int) $invoice->getId()],
         ]);
         $this->di['logger']->info('Invoice #{id}: charged the saved method {card} ({payment})', ['id' => $invoice->getId(), 'card' => $card, 'payment' => $paymentId]);
         if ($connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [(int) $invoice->getId()]) !== Invoice::STATUS_PAID) {
@@ -392,6 +404,11 @@ class ServiceSavedCards implements InjectionAwareInterface
             return ['paid' => false, 'error' => $tx?->getTxnStatus() === Transaction::STATUS_PROCESSING
                 ? 'The payment has started. The invoice is marked paid when it clears.'
                 : 'The payment was taken but is not completed yet. Check it with the payment service.'];
+        }
+
+        $table = $connection->quoteSingleIdentifier('transaction');
+        if ($connection->fetchOne("SELECT id FROM {$table} WHERE invoice_id = ? AND gateway_id = ? AND txn_id = ? AND status = 'processed'", [(int) $invoice->getId(), $adapter->gatewayId(), $paymentId]) !== false) {
+            GatewayChargeAttempts::resolve($connection, $attemptId, 'settled');
         }
 
         return ['paid' => true, 'error' => null];

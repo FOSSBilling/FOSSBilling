@@ -253,6 +253,11 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
     {
         $saved = $this->savedCard((int) $invoice->getClientId()) ?? throw new FOSSBilling\Core\Exception\InformationException('The client has no PayPal billing agreement.');
         [$amount, $currency, $custom] = $this->charged($invoice, $this->di['mod_service']('Invoice')->getBalanceDue($invoice));
+        $submissionId = 'fb-invoice-' . $invoice->getId() . '-' . $attempt;
+        // NVP MSGSUBID is limited to 38 bytes, including the namespace.
+        if (strlen($submissionId) > 38) {
+            $submissionId = 'fb-sc-' . substr(hash('sha256', $submissionId), 0, 32);
+        }
         $reply = $this->call('DoReferenceTransaction', [
             'REFERENCEID' => $saved['payment_method'],
             'PAYMENTACTION' => 'Sale',
@@ -261,10 +266,13 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             'DESC' => $this->description($invoice),
             'CUSTOM' => $custom,
             'NOTIFYURL' => $this->notifyUrl((int) $invoice->getId()),
-            'MSGSUBID' => 'fb-invoice-' . $invoice->getId() . '-' . $attempt,
+            'MSGSUBID' => $submissionId,
         ]);
         if ($this->ok($reply) && !empty($reply['TRANSACTIONID'])) {
             return (string) $reply['TRANSACTIONID'];
+        }
+        if ($this->ok($reply)) {
+            throw new Payment_Exception('PayPal accepted the payment but did not return its reference. Reconcile it before retrying.');
         }
         if (in_array((string) ($reply['L_ERRORCODE0'] ?? ''), self::AGREEMENT_GONE, true)) {
             // An agreement the client cancelled at PayPal is removed, so it is not tried again.
@@ -377,6 +385,42 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             $note = 'Pending payment ' . $txnId . ': ' . $status . '.';
         }
         $api_admin->invoice_transaction_update(['id' => $id, 'txn_id' => $txnId ?: null, 'txn_status' => $status ?: ($post['txn_type'] ?? null), 'type' => 'paypal_ipn', 'status' => Transaction::STATUS_PROCESSED, 'error' => null, 'note' => $note, 'updated_at' => date('Y-m-d H:i:s')]);
+    }
+
+    /** Read-only lookup; validates converted amounts with the same signed invoice binding as settlement. */
+    public function inspectPayment(string $reference, int $invoiceId): array
+    {
+        $payment = $this->call('GetTransactionDetails', ['TRANSACTIONID' => $reference]);
+        if (!$this->ok($payment) || ($payment['TRANSACTIONID'] ?? null) !== $reference) {
+            return ['state' => 'unknown', 'reference' => $reference];
+        }
+        if (preg_match('/^fb-invoice-(\d+)(?:-(\d+\.\d+)-([0-9a-f]{16}))?$/', (string) ($payment['CUSTOM'] ?? ''), $match) !== 1 || (int) $match[1] !== $invoiceId) {
+            throw new Payment_Exception('Payment does not belong to this invoice');
+        }
+        $amount = (float) ($payment['AMT'] ?? 0);
+        $currency = strtoupper((string) ($payment['CURRENCYCODE'] ?? ''));
+        if (isset($match[2], $match[3])) {
+            if (!hash_equals($this->askedSignature($invoiceId, $match[2], $this->moneyFormat($amount, $currency), $currency), $match[3])) {
+                throw new Payment_Exception('Payment invoice amount signature is invalid');
+            }
+            $invoice = $this->di['em']->find(Invoice::class, $invoiceId);
+            if (!$invoice instanceof Invoice) {
+                throw new Payment_Exception('Invoice not found');
+            }
+            $amount = (float) $match[2];
+            $currency = strtoupper((string) $invoice->getCurrency());
+        }
+
+        return [
+            'state' => match ($payment['PAYMENTSTATUS'] ?? '') {
+                'Completed', 'Completed-Funds-Held', 'Processed' => 'settled',
+                'Pending', 'In-Progress' => 'pending',
+                'Failed', 'Denied', 'Voided', 'Expired' => 'failed',
+                default => 'unknown',
+            },
+            'reference' => $reference, 'provider_status' => $payment['PAYMENTSTATUS'] ?? '',
+            'amount' => $amount, 'currency' => $currency,
+        ];
     }
 
     /** A payment as PayPal reports it: recorded on transaction $id and applied to its invoice once. */

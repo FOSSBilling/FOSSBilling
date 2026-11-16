@@ -357,3 +357,25 @@ describe('REST capture recording', function (): void {
             ->and($updates[0]['txn_status'])->toBe('Completed');
     });
 });
+
+test('PayPal recovery lookup is read only and binds the capture to its invoice', function (string $status, string $expected): void {
+    $adapter = paypalEmailAdapter();
+    $di = paypalDi();
+    $http = paypalRest([
+        [200, ['access_token' => 'tok']],
+        [200, ['id' => 'cap_recovery', 'custom_id' => 'fb-invoice-21', 'status' => $status, 'amount' => ['value' => '12.50', 'currency_code' => 'USD']]],
+    ]);
+    $di['http_client'] = $http;
+    $adapter->setDi($di);
+    $result = $adapter->inspectPayment('cap_recovery', 21);
+    expect($result['state'])->toBe($expected)->and($result['amount'])->toBe(12.5);
+    $http->shouldHaveReceived('request')->with('GET', Mockery::pattern('#/v2/payments/captures/cap_recovery$#'), Mockery::any())->once();
+})->with([['COMPLETED', 'settled'], ['PENDING', 'pending'], ['DECLINED', 'failed'], ['UNRECOGNIZED', 'unknown']]);
+
+test('PayPal recovery refuses a capture for another invoice', function (): void {
+    $adapter = paypalEmailAdapter();
+    $di = paypalDi();
+    $di['http_client'] = paypalRest([[200, ['access_token' => 'tok']], [200, ['id' => 'cap_other', 'custom_id' => 'fb-invoice-22']]]);
+    $adapter->setDi($di);
+    expect(fn () => $adapter->inspectPayment('cap_other', 21))->toThrow(Payment_Exception::class);
+});

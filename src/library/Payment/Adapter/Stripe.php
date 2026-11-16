@@ -601,6 +601,31 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         return is_array($payload) && isset($payload['type']);
     }
 
+    /** Read-only recovery lookup. Never creates, confirms, or cancels a payment. */
+    public function inspectPayment(string $reference, int $invoiceId): array
+    {
+        if (!str_starts_with($reference, 'pi_')) {
+            return ['state' => 'unknown', 'reference' => $reference];
+        }
+        $intent = $this->stripe->paymentIntents->retrieve($reference, []);
+        if ($intent->id !== $reference || (string) ($intent->metadata->invoice_id ?? '') !== (string) $invoiceId
+            || (string) ($intent->metadata->gateway_id ?? '') !== (string) $this->gatewayId()) {
+            throw new Payment_Exception('Payment does not belong to this invoice and gateway');
+        }
+
+        return [
+            'state' => match ($intent->status) {
+                'succeeded' => 'settled',
+                'processing' => 'pending',
+                'canceled', 'requires_payment_method' => 'failed',
+                default => 'unknown',
+            },
+            'reference' => $reference, 'provider_status' => $intent->status,
+            'amount' => $this->getAmountFromMinorUnits($intent->amount, $intent->currency),
+            'currency' => strtoupper($intent->currency),
+        ];
+    }
+
     private function processPaymentIntent(Transaction $tx, ?Invoice $invoice, array $data): void
     {
         $charge = $this->stripe->paymentIntents->retrieve($data['get']['payment_intent'], []);

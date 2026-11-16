@@ -321,6 +321,10 @@ describe('runDue', function (): void {
         $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
+        $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
+        $connection->shouldReceive('executeStatement')->with(Mockery::pattern('/UPDATE invoice_gateway_charge_attempt/'), Mockery::any())->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
@@ -341,6 +345,10 @@ describe('runDue', function (): void {
 describe('charge', function (): void {
     test('refuses an invoice that is no longer unpaid without touching the gateway', function (): void {
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
+        $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
+        $connection->shouldReceive('executeStatement')->with(Mockery::pattern('/UPDATE invoice_gateway_charge_attempt/'), Mockery::any())->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
         $connection->shouldReceive('fetchOne')->once()->with('SELECT GET_LOCK(:name, :timeout)', Mockery::any())->andReturn(1);
         $connection->shouldReceive('fetchAssociative')->once()->andReturn(['status' => 'paid', 'gateway_id' => null]);
@@ -359,10 +367,14 @@ describe('charge', function (): void {
 
     test('refuses an invoice whose payment is still clearing', function (): void {
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
+        $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
+        $connection->shouldReceive('executeStatement')->with(Mockery::pattern('/UPDATE invoice_gateway_charge_attempt/'), Mockery::any())->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
         $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
         $connection->shouldReceive('fetchOne')->once()->with('SELECT GET_LOCK(:name, :timeout)', Mockery::any())->andReturn(1);
-        $connection->shouldReceive('fetchAssociative')->twice()->andReturn(
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(
             ['status' => 'unpaid', 'gateway_id' => null],
             ['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']
         );
@@ -383,10 +395,14 @@ describe('charge', function (): void {
 describe('charge success', function (): void {
     test('a taken charge records the payment and returns paid', function (): void {
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
+        $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
+        $connection->shouldReceive('executeStatement')->with(Mockery::pattern('/UPDATE invoice_gateway_charge_attempt/'), Mockery::any())->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
         $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
-        $connection->shouldReceive('fetchOne')->twice()->andReturn(1, 'paid');
-        $connection->shouldReceive('fetchAssociative')->twice()->andReturn(
+        $connection->shouldReceive('fetchOne')->times(3)->andReturn(1, 'paid', 44);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(
             ['status' => 'unpaid', 'gateway_id' => null],
             false
         );
@@ -398,7 +414,7 @@ describe('charge success', function (): void {
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $adapter->shouldReceive('gatewayId')->byDefault()->andReturn(5);
         $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00']);
-        $adapter->shouldReceive('chargeSavedCard')->once()->with($invoice, 'attempt_1')->andReturn('pi_ok');
+        $adapter->shouldReceive('chargeSavedCard')->once()->with($invoice, Mockery::pattern('/^[a-f0-9]{32}$/'))->andReturn('pi_ok');
 
         $feesService = Mockery::mock(Box\Mod\Invoice\ServiceGatewayFees::class);
         $feesService->shouldReceive('apply')->once()->with($invoice, $gateway);
@@ -447,14 +463,18 @@ describe('runDue charges', function (): void {
         $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
+        $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
+        $connection->shouldReceive('executeStatement')->with(Mockery::pattern('/UPDATE invoice_gateway_charge_attempt/'), Mockery::any())->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
         $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([
             ['id' => 21, 'client_id' => 7, 'due_at' => $today, 'attempts' => 0],
         ]);
         // NamedLock acquire, then the final invoice status read.
-        $connection->shouldReceive('fetchOne')->twice()->andReturn(1, 'paid');
-        $connection->shouldReceive('fetchAssociative')->twice()->andReturn(['status' => 'unpaid', 'gateway_id' => 5], false);
+        $connection->shouldReceive('fetchOne')->times(3)->andReturn(1, 'paid', 44);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(['status' => 'unpaid', 'gateway_id' => 5], false);
         $connection->shouldReceive('executeStatement')->byDefault();
 
         $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
@@ -544,6 +564,10 @@ describe('paypal subscription teardown', function (): void {
         $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
+        $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
+        $connection->shouldReceive('executeStatement')->with(Mockery::pattern('/UPDATE invoice_gateway_charge_attempt/'), Mockery::any())->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
         $connection->shouldReceive('fetchAllAssociative')->andReturn([]);
         $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([5]);

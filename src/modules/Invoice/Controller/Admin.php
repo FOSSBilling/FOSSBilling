@@ -89,6 +89,7 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
     {
         $app->get('/invoice', 'get_index', [], static::class);
         $app->get('/invoice/subscriptions', 'get_subscriptions', [], static::class);
+        $app->get('/invoice/payment-recovery', 'get_payment_recovery', [], static::class);
         $app->get('/invoice/transactions', 'get_transactions', [], static::class);
         $app->get('/invoice/failed-items', 'get_failed_items', [], static::class);
         $app->get('/invoice/gateways', 'get_gateways', [], static::class);
@@ -150,6 +151,13 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $tx = $api->invoice_transaction_get(['id' => $id]);
 
         return $app->render('mod_invoice_transaction', ['transaction' => $tx]);
+    }
+
+    public function get_payment_recovery(\FOSSBilling\Core\Http\App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_invoice_payment_recovery');
     }
 
     public function get_transactions(\FOSSBilling\Core\Http\App $app): string

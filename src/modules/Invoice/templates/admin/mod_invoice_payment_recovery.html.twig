@@ -1,0 +1,51 @@
+{% extends 'layout_default.html.twig' %}
+{% block meta_title %}{{ 'Payment recovery'|trans }}{% endblock %}
+{% set active_menu = 'invoice' %}
+{% block content %}
+{% set queue = admin.invoice_payment_recovery_list %}
+<h1>{{ 'Payment recovery'|trans }}</h1>
+<p>{{ 'Stop the previous worker and check the gateway before reconciliation. Recovery processes an existing payment; it never sends another charge. Unknown outcomes remain blocked.'|trans }}</p>
+{% for attempt in queue.attempts %}
+<div class="card mb-3"><div class="card-body">
+<h2 class="card-title">{{ 'Invoice'|trans }} #{{ attempt.invoice_id }} · {{ 'Gateway'|trans }} #{{ attempt.gateway_id }}</h2>
+<p>{{ attempt.id }} · {{ attempt.created_at }} · {{ attempt.payment_id|default('No payment reference recorded'|trans) }}</p>
+<form method="post" action="{{ 'invoice/payment_recovery_reconcile'|api_url }}" {{ fb_api_form({reload: true}) }}>
+<input type="hidden" name="id" value="{{ attempt.id }}">
+<label class="form-label">{{ 'Gateway payment reference (if missing above)'|trans }}</label>
+<input class="form-control mb-2" name="reference" value="{{ attempt.payment_id }}" {{ attempt.payment_id ? 'readonly' : '' }}>
+<button type="button" class="btn mb-2" data-inspect-payment>{{ 'Check gateway (read only)'|trans }}</button>
+<pre class="mb-2" data-payment-result aria-live="polite"></pre>
+<label class="form-label">{{ 'Reconciliation note'|trans }}</label><input class="form-control mb-2" name="note" maxlength="1000">
+<label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="no_payment" value="1"><span class="form-check-label">{{ 'I confirmed with the provider that no payment was made. Use only when no payment reference exists.'|trans }}</span></label>
+<label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="confirmed" value="1" required><span class="form-check-label">{{ 'The previous worker has stopped and I checked the gateway outcome.'|trans }}</span></label>
+<button class="btn btn-primary" type="submit">{{ 'Reconcile existing attempt'|trans }}</button>
+</form>
+</div></div>
+{% else %}<p>{{ 'No unresolved saved payment attempts.'|trans }}</p>{% endfor %}
+<h2>{{ 'Interrupted transactions'|trans }}</h2>
+<p>{{ 'These claims are never automatically reclaimed. Open a transaction to review it and release it only after stopping its worker and reconciling the gateway outcome.'|trans }}</p>
+{% for tx in queue.transactions %}
+<p><a href="{{ ('invoice/transaction/' ~ tx.id)|url }}">#{{ tx.id }}</a> · {{ 'Invoice'|trans }} #{{ tx.invoice_id }} · {{ 'Gateway'|trans }} #{{ tx.gateway_id }} · {{ tx.txn_id }} · {{ tx.updated_at }}</p>
+{% else %}<p>{{ 'No interrupted transactions.'|trans }}</p>{% endfor %}
+<p>{{ 'Up to 500 oldest entries are shown in each queue.'|trans }}</p>
+{% endblock %}
+{% block js %}
+<script>
+document.querySelectorAll('[data-inspect-payment]').forEach(button => {
+    button.addEventListener('click', () => {
+        const form = button.closest('form');
+        const result = form.querySelector('[data-payment-result]');
+        button.disabled = true;
+        FOSSBilling.api.admin.get('invoice/payment_recovery_inspect', {
+            id: form.elements.id.value, reference: form.elements.reference.value
+        }, response => {
+            result.textContent = JSON.stringify(response, null, 2);
+            button.disabled = false;
+        }, error => {
+            result.textContent = error.message;
+            button.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

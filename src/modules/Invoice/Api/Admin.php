@@ -1031,6 +1031,43 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return $transactionService->claimForProcessing((int) $data['id']);
     }
 
+    #[RequiredParams(['id' => 'Transaction ID is required'])]
+    public function transaction_inspect_payment($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->inspectTransaction((int) $data['id']);
+    }
+
+    public function payment_recovery_list($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->queue();
+    }
+
+    #[RequiredParams(['id' => 'Payment attempt ID is required'])]
+    public function payment_recovery_inspect($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->inspect((string) $data['id'], isset($data['reference']) ? (string) $data['reference'] : null);
+    }
+
+    #[RequiredParams(['id' => 'Payment attempt ID is required'])]
+    public function payment_recovery_reconcile($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+        if ((string) ($data['confirmed'] ?? '') !== '1') {
+            throw new InformationException('Confirm that the previous worker has stopped and the gateway outcome has been checked.');
+        }
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->reconcile(
+            (string) $data['id'], isset($data['reference']) ? (string) $data['reference'] : null,
+            (string) ($data['no_payment'] ?? '') === '1', (string) ($data['note'] ?? ''), (int) $this->getIdentity()->getId()
+        );
+    }
+
     /** Release an interrupted transaction after checking the worker and gateway. */
     #[RequiredParams(['id' => 'Transaction ID is required'])]
     public function transaction_release_stale($data): bool
