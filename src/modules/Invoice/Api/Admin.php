@@ -910,7 +910,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
-        return $transactionService->toApiArray($model, true);
+        return ['claim_token' => $model->getProcessingToken(), 'credit_recovery_state' => $model->getCreditRecoveryState()] + $transactionService->toApiArray($model, true);
     }
 
     /**
@@ -1068,6 +1068,25 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         );
     }
 
+    #[RequiredParams(['id' => 'Transaction ID is required', 'note' => 'Reconciliation note is required'])]
+    public function transaction_reconcile_wallet($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+        if ((string) ($data['confirmed'] ?? '') !== '1' || !array_key_exists('claim_token', $data) || !is_string($data['claim_token'])
+            || ($data['claim_token'] !== '' && preg_match('/^[a-f0-9]{32}$/', $data['claim_token']) !== 1)) {
+            throw new InformationException('Stop the previous worker, verify the gateway and wallet history, and reload the current processing claim.');
+        }
+        $creditId = ($data['credit_id'] ?? '') === '' ? null : filter_var($data['credit_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($creditId === false) {
+            throw new InformationException('Enter a valid wallet credit ID.');
+        }
+
+        return $this->getDi()['mod_service']('Invoice', 'Transaction')->reconcileWalletCredit(
+            (int) $data['id'], $creditId, (string) ($data['no_credit'] ?? '') === '1', $data['claim_token'] === '' ? null : $data['claim_token'],
+            (int) $this->getIdentity()->getId(), (string) $data['note']
+        );
+    }
+
     /** Release an interrupted transaction after checking the worker and gateway. */
     #[RequiredParams(['id' => 'Transaction ID is required'])]
     public function transaction_release_stale($data): bool
@@ -1077,7 +1096,11 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             throw new InformationException('Confirm that the previous worker has stopped and check the gateway outcome.');
         }
 
-        return $this->getDi()['mod_service']('Invoice', 'Transaction')->releaseStaleProcessing((int) $data['id'], $this->getIdentity()->getId());
+        if (!array_key_exists('claim_token', $data) || !is_string($data['claim_token']) || ($data['claim_token'] !== '' && preg_match('/^[a-f0-9]{32}$/', $data['claim_token']) !== 1)) {
+            throw new InformationException('Reload this transaction and review its current processing claim before releasing it.');
+        }
+
+        return $this->getDi()['mod_service']('Invoice', 'Transaction')->releaseStaleProcessing((int) $data['id'], $this->getIdentity()->getId(), $data['claim_token'] === '' ? null : $data['claim_token']);
     }
 
     /**

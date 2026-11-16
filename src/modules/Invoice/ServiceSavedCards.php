@@ -365,13 +365,27 @@ class ServiceSavedCards implements InjectionAwareInterface
         $this->di['mod_service']('Invoice', 'GatewayFees')->apply($invoice, $gateway);
         $card = (string) ($adapter->savedCard((int) $invoice->getClientId())['card'] ?? '');
 
-        $attemptId = GatewayChargeAttempts::begin($connection, (int) $invoice->getId(), $adapter->gatewayId());
+        $ownerToken = null;
+        $attemptId = GatewayChargeAttempts::begin($connection, (int) $invoice->getId(), $adapter->gatewayId(), $ownerToken);
+
+        try {
+            return \FOSSBilling\Core\Payment\ProcessingFence::charge($connection, $attemptId, $ownerToken, fn (): array => $this->chargePrepared($invoice, $adapter, $byStaff, $card, $attempt, $attemptId));
+        } catch (\Throwable $exception) {
+            $this->di['em']->close();
+
+            throw $exception;
+        }
+    }
+
+    private function chargePrepared(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay|\Payment_Adapter_PayPalEmail $adapter, bool $byStaff, string $card, int $attempt, string $attemptId): array
+    {
+        $connection = $this->di['em']->getConnection();
 
         try {
             $paymentId = $adapter->chargeSavedCard($invoice, $attemptId);
         } catch (\Throwable $e) {
-            if ($e instanceof InformationException) {
-                GatewayChargeAttempts::resolve($connection, $attemptId, 'failed');
+            if ($e instanceof \FOSSBilling\Core\Payment\OwnershipLost) {
+                throw $e;
             }
             $error = $e instanceof InformationException ? $e->getMessage() : 'The payment service did not answer. Please try again later.';
             $this->recordError((int) $invoice->getId(), $error);
@@ -382,6 +396,10 @@ class ServiceSavedCards implements InjectionAwareInterface
             $this->di['logger']->warning('Invoice #{id}: charging the saved method {card} failed: {message}', ['id' => $invoice->getId(), 'card' => $card, 'message' => $e->getMessage()]);
             if (!$byStaff && $e instanceof InformationException) {
                 $this->emailFailure($invoice, $card, $error, $attempt + 1);
+            }
+
+            if ($e instanceof InformationException) {
+                GatewayChargeAttempts::resolve($connection, $attemptId, 'failed');
             }
 
             return ['paid' => false, 'error' => $error];

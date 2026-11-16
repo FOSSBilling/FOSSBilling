@@ -429,7 +429,42 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Funds description is invalid');
         }
 
+        $paymentKey = \Box\Mod\Invoice\PaymentCredit::key($this->di['em'], $data);
+        if ($paymentKey !== null) {
+            $db = $this->di['em']->getConnection();
+            $existing = $db->fetchAssociative('SELECT client_id, amount FROM client_balance WHERE payment_key = ?', [$paymentKey]);
+            if ($existing === false) {
+                \Box\Mod\Invoice\PaymentCredit::assertNoLegacyCredit($this->di['em'], (int) $client->getId(), $data);
+
+                try {
+                    // A savepoint contains a concurrent unique-key collision on
+                    // PostgreSQL without closing the shared ORM manager.
+                    $db->transactional(fn () => $db->insert('client_balance', [
+                        'client_id' => $client->getId(), 'type' => $data['type'] ?? 'gift',
+                        'rel_id' => isset($data['rel_id']) ? (string) $data['rel_id'] : null,
+                        'description' => $description, 'amount' => (string) $amount,
+                        'payment_key' => $paymentKey, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+                    ]));
+
+                    return true;
+                } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $exception) {
+                    // A locking read sees the winning row even when MySQL's
+                    // repeatable-read snapshot predates its committed insert.
+                    $existing = $db->fetchAssociative('SELECT client_id, amount FROM client_balance WHERE payment_key = ?' . RowLock::suffix($db), [$paymentKey]);
+                    if ($existing === false) {
+                        throw $exception;
+                    }
+                }
+            }
+            if ((int) $existing['client_id'] !== $client->getId() || round((float) $existing['amount'], 2) !== round((float) $amount, 2)) {
+                throw new InformationException('This gateway payment already credited a different client or amount. Reconcile its wallet history before continuing.');
+            }
+
+            return true;
+        }
+
         $credit = new ClientBalance();
+        $credit->setPaymentKey($paymentKey);
         $credit->setClient($client);
         $credit->setType($data['type'] ?? 'gift');
         $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);

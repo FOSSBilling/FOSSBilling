@@ -1817,6 +1817,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
             $this->di['mod_service']('client')->addFunds($client, (float) $payment->getAmount(), $gatewayName . ' transaction ' . $payment->getTxnId(), [
                 'type' => $gatewayName === 'PayPal' ? 'PayPal' : 'transaction', 'rel_id' => $gatewayName === 'PayPal' ? $payment->getTxnId() : $payment->getId(),
+                'payment_reference' => $payment->getTxnId(),
             ]);
             if ($state['status'] === Invoice::STATUS_UNPAID) {
                 $isDeposit = $this->isInvoiceTypeDeposit($invoice);

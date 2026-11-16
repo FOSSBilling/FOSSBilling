@@ -20,7 +20,7 @@ use function Tests\Helpers\moduleService;
 
 function chargeRecoveryFixture(?Doctrine\DBAL\Connection $connection = null): array
 {
-    $db = $connection ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $db = $connection ?? Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $realEm = EntityManagerFactory::create($db);
     (new Doctrine\ORM\Tools\SchemaTool($realEm))->createSchema([$realEm->getClassMetadata(GatewayChargeAttempt::class)]);
     $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, gateway_id INTEGER)');
@@ -30,6 +30,7 @@ function chargeRecoveryFixture(?Doctrine\DBAL\Connection $connection = null): ar
     $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7, 'currency' => 'USD']);
     $gateway = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'Stripe']);
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('close')->byDefault();
     $em->shouldReceive('getConnection')->andReturn($db);
     $em->shouldReceive('find')->with(Invoice::class, 21)->andReturn($invoice);
     $em->shouldReceive('find')->with(PayGateway::class, 5)->andReturn($gateway);
@@ -174,7 +175,7 @@ test('payment recovery cannot replace an attempt owned by a live database sessio
     $admin->executeStatement('CREATE DATABASE ' . $admin->quoteSingleIdentifier($database));
     $params['dbname'] = $database;
     $owner = DriverManager::getConnection($params);
-    $recovery = DriverManager::getConnection($params);
+    $recovery = Tests\Helpers\fencedConnection($params);
 
     try {
         [$di, $db] = chargeRecoveryFixture($recovery);
@@ -194,3 +195,28 @@ test('payment recovery cannot replace an attempt owned by a live database sessio
         $admin->close();
     }
 })->with(['mysql', 'pgsql']);
+
+test('recovering a pending payment rotates ownership while preserving its provider request ID', function (): void {
+    [$di, $db] = chargeRecoveryFixture();
+    $owner = null;
+    $id = GatewayChargeAttempts::begin($db, 21, 5, $owner);
+    GatewayChargeAttempts::recordPayment($db, $id, 'pi_pending');
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $adapter->shouldReceive('inspectPayment')->twice()->with('pi_pending', 21)->andReturn(['state' => 'pending', 'reference' => 'pi_pending', 'currency' => 'USD']);
+    $gateways = Mockery::mock();
+    $gateways->shouldReceive('getPaymentAdapter')->andReturn($adapter);
+    $transactions = Mockery::mock();
+    $transactions->shouldReceive('createAndProcess')->once()->andReturn(44);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gateways, 'invoice:transaction' => $transactions]));
+    $service = new ServicePaymentRecovery();
+    $service->setDi($di);
+    $service->inspect($id);
+    expect(GatewayChargeAttempts::pending($db, 21)['owner_token'])->toBe($owner);
+    $service->reconcile($id, null, false, 'Provider reports pending; worker stopped.', 9);
+    $current = GatewayChargeAttempts::pending($db, 21);
+    expect($current['id'])->toBe($id)->and($current['payment_id'])->toBe('pi_pending')
+        ->and($current['owner_token'])->not->toBe($owner)
+        ->and(fn () => GatewayChargeAttempts::takeOwnership($db, $id, $owner))->toThrow(FOSSBilling\Core\Payment\OwnershipLost::class)
+        ->and(fn () => FOSSBilling\Core\Payment\ProcessingFence::charge($db, $id, $owner, fn () => $db->executeStatement("UPDATE invoice SET status = 'paid' WHERE id = 21")))->toThrow(FOSSBilling\Core\Payment\OwnershipLost::class)
+        ->and($db->fetchOne('SELECT status FROM invoice WHERE id = 21'))->toBe('unpaid');
+});

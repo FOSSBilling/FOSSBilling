@@ -27,21 +27,39 @@ final class GatewayChargeAttempts
         return $db->fetchAssociative("SELECT * FROM invoice_gateway_charge_attempt WHERE invoice_id = ? AND state = 'pending' ORDER BY created_at, id LIMIT 1", [$invoiceId]) ?: null;
     }
 
-    public static function begin(Connection $db, int $invoiceId, int $gatewayId): string
+    /** @param-out string $ownerToken */
+    public static function begin(Connection $db, int $invoiceId, int $gatewayId, ?string &$ownerToken = null): string
     {
         if ($db->isTransactionActive()) {
             throw new \LogicException('A payment attempt must be committed before contacting the gateway.');
         }
         $id = bin2hex(random_bytes(16));
+        $ownerToken = bin2hex(random_bytes(16));
         $db->insert('invoice_gateway_charge_attempt', [
             'id' => $id, 'invoice_id' => $invoiceId, 'gateway_id' => $gatewayId,
-            'state' => 'pending', 'created_at' => date('Y-m-d H:i:s'),
+            'state' => 'pending', 'owner_token' => $ownerToken, 'created_at' => date('Y-m-d H:i:s'),
         ]);
 
         return $id;
     }
 
-    /** The immutable attempt ID fences late results from other attempts. */
+    /** Recovery keeps the provider request ID but gives local writes a new owner. */
+    public static function takeOwnership(Connection $db, string $id, ?string $expectedToken): string
+    {
+        $token = bin2hex(random_bytes(16));
+        $predicate = $expectedToken === null ? 'owner_token IS NULL' : 'owner_token = ?';
+        $parameters = [$token, $id];
+        if ($expectedToken !== null) {
+            $parameters[] = $expectedToken;
+        }
+        if ($db->executeStatement("UPDATE invoice_gateway_charge_attempt SET owner_token = ? WHERE id = ? AND state = 'pending' AND {$predicate}", $parameters) !== 1) {
+            throw new \FOSSBilling\Core\Payment\OwnershipLost('The payment attempt changed during recovery. Reload it before continuing.');
+        }
+
+        return $token;
+    }
+
+    /** Called under ProcessingFence with the captured ownership token. */
     public static function recordPayment(Connection $db, string $id, string $paymentId): void
     {
         if ($db->executeStatement("UPDATE invoice_gateway_charge_attempt SET payment_id = ? WHERE id = ? AND state = 'pending' AND payment_id IS NULL", [$paymentId, $id]) !== 1) {

@@ -106,7 +106,9 @@ class DriverManagerFactory
 
         $connectionParams = self::buildConnectionParams($dbConfig, $driverOptions);
 
-        $connection = DriverManager::getConnection($connectionParams);
+        $configuration = new \Doctrine\DBAL\Configuration();
+        $configuration->setMiddlewares([new PaymentFenceMiddleware($dbConfig['driver'])]);
+        $connection = DriverManager::getConnection($connectionParams, $configuration);
         self::applySessionSettings($connection, $dbConfig);
 
         return $connection;

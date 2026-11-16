@@ -35,7 +35,7 @@ class ServicePaymentRecovery implements InjectionAwareInterface
         $table = $db->quoteSingleIdentifier('transaction');
 
         return [
-            'attempts' => $db->fetchAllAssociative("SELECT * FROM invoice_gateway_charge_attempt WHERE state = 'pending' ORDER BY created_at, id LIMIT 500"),
+            'attempts' => $db->fetchAllAssociative("SELECT id, invoice_id, gateway_id, state, payment_id, created_at FROM invoice_gateway_charge_attempt WHERE state = 'pending' ORDER BY created_at, id LIMIT 500"),
             'transactions' => $db->fetchAllAssociative("SELECT id, invoice_id, gateway_id, txn_id, updated_at FROM {$table} WHERE status = 'processing' ORDER BY updated_at, id LIMIT 500"),
         ];
     }
@@ -120,39 +120,50 @@ class ServicePaymentRecovery implements InjectionAwareInterface
 
         try {
             [$attempt, $invoice, $adapter, $result] = $this->context($id, $reference);
-            if ($noPayment) {
-                if (trim($note) === '' || $attempt['payment_id'] !== null || ($reference !== null && $reference !== '') || $result['state'] !== 'unknown') {
-                    throw new InformationException('Manual resolution requires an unknown payment with no recorded reference and a gateway reconciliation note.');
-                }
-                GatewayChargeAttempts::resolve($db, $id, 'failed', $audit);
-            } elseif (in_array($result['state'], ['settled', 'pending', 'failed'], true)) {
-                $paymentId = (string) $result['reference'];
-                if ($attempt['payment_id'] === null) {
-                    GatewayChargeAttempts::recordPayment($db, $id, $paymentId);
-                }
-                $table = $db->quoteSingleIdentifier('transaction');
-                $existing = $db->fetchAssociative("SELECT id, status FROM {$table} WHERE invoice_id = ? AND gateway_id = ? AND txn_id = ? ORDER BY id LIMIT 1", [(int) $invoiceId, (int) $attempt['gateway_id'], $paymentId]);
-                $transactions = $this->di['mod_service']('Invoice', 'Transaction');
-                if ($existing !== false) {
-                    if ($existing['status'] === 'processing') {
-                        throw new InformationException('Release the interrupted transaction after stopping its worker before reconciling this payment.');
-                    }
-                    if ($existing['status'] !== 'processed') {
-                        $transactions->preProcessTransaction($transactions->getTransactionRepository()->find((int) $existing['id']));
-                    }
-                } elseif ($result['state'] !== 'failed') {
-                    $transactions->createAndProcess([
-                        'invoice_id' => (int) $invoiceId, 'gateway_id' => (int) $attempt['gateway_id'], 'source' => 'saved_card',
-                        'get' => [GatewayChargeAttempts::referenceParameter($adapter) => $paymentId, 'invoice_id' => (int) $invoiceId],
-                    ]);
-                }
-                if ($result['state'] === 'failed') {
-                    GatewayChargeAttempts::resolve($db, $id, 'failed', $audit);
-                } elseif ($result['state'] === 'settled' && $db->fetchOne("SELECT id FROM {$table} WHERE invoice_id = ? AND gateway_id = ? AND txn_id = ? AND status = 'processed'", [(int) $invoiceId, (int) $attempt['gateway_id'], $paymentId]) !== false) {
-                    GatewayChargeAttempts::resolve($db, $id, 'settled', $audit);
-                }
-            } else {
+            if ($noPayment && (trim($note) === '' || $attempt['payment_id'] !== null || ($reference !== null && $reference !== '') || $result['state'] !== 'unknown')) {
+                throw new InformationException('Manual resolution requires an unknown payment with no recorded reference and a gateway reconciliation note.');
+            }
+            if (!$noPayment && !in_array($result['state'], ['settled', 'pending', 'failed'], true)) {
                 throw new InformationException('The gateway outcome is unknown. Reconcile it with the provider before continuing.');
+            }
+            $ownerToken = GatewayChargeAttempts::takeOwnership($db, $id, $attempt['owner_token']);
+
+            try {
+                \FOSSBilling\Core\Payment\ProcessingFence::charge($db, $id, $ownerToken, function () use ($db, $id, $attempt, $adapter, $result, $noPayment, $audit, $invoiceId): void {
+                    if ($noPayment) {
+                        GatewayChargeAttempts::resolve($db, $id, 'failed', $audit);
+                    } else {
+                        $paymentId = (string) $result['reference'];
+                        if ($attempt['payment_id'] === null) {
+                            GatewayChargeAttempts::recordPayment($db, $id, $paymentId);
+                        }
+                        $table = $db->quoteSingleIdentifier('transaction');
+                        $existing = $db->fetchAssociative("SELECT id, status FROM {$table} WHERE invoice_id = ? AND gateway_id = ? AND txn_id = ? ORDER BY id LIMIT 1", [(int) $invoiceId, (int) $attempt['gateway_id'], $paymentId]);
+                        $transactions = $this->di['mod_service']('Invoice', 'Transaction');
+                        if ($existing !== false) {
+                            if ($existing['status'] === 'processing') {
+                                throw new InformationException('Release the interrupted transaction after stopping its worker before reconciling this payment.');
+                            }
+                            if ($existing['status'] !== 'processed') {
+                                $transactions->preProcessTransaction($transactions->getTransactionRepository()->find((int) $existing['id']));
+                            }
+                        } elseif ($result['state'] !== 'failed') {
+                            $transactions->createAndProcess([
+                                'invoice_id' => (int) $invoiceId, 'gateway_id' => (int) $attempt['gateway_id'], 'source' => 'saved_card',
+                                'get' => [GatewayChargeAttempts::referenceParameter($adapter) => $paymentId, 'invoice_id' => (int) $invoiceId],
+                            ]);
+                        }
+                        if ($result['state'] === 'failed') {
+                            GatewayChargeAttempts::resolve($db, $id, 'failed', $audit);
+                        } elseif ($result['state'] === 'settled' && $db->fetchOne("SELECT id FROM {$table} WHERE invoice_id = ? AND gateway_id = ? AND txn_id = ? AND status = 'processed'", [(int) $invoiceId, (int) $attempt['gateway_id'], $paymentId]) !== false) {
+                            GatewayChargeAttempts::resolve($db, $id, 'settled', $audit);
+                        }
+                    }
+                });
+            } catch (\Throwable $exception) {
+                $this->di['em']->close();
+
+                throw $exception;
             }
             $this->di['logger']->warning('Staff #{staff} reconciled payment attempt {attempt}: {state}; {note}', [
                 'staff' => $staffId, 'attempt' => $id, 'state' => $noPayment ? 'no payment (manual)' : $result['state'], 'note' => $note,

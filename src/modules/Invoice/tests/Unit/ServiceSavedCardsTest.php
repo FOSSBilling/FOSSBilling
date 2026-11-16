@@ -321,6 +321,9 @@ describe('runDue', function (): void {
         $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('getConfiguration')->byDefault()->andReturn(Tests\Helpers\fencedConfiguration());
+        $connection->shouldReceive('getTransactionNestingLevel')->byDefault()->andReturn(0);
+        $connection->shouldReceive('fetchOne')->with('SELECT 1')->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
@@ -345,6 +348,9 @@ describe('runDue', function (): void {
 describe('charge', function (): void {
     test('refuses an invoice that is no longer unpaid without touching the gateway', function (): void {
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('getConfiguration')->byDefault()->andReturn(Tests\Helpers\fencedConfiguration());
+        $connection->shouldReceive('getTransactionNestingLevel')->byDefault()->andReturn(0);
+        $connection->shouldReceive('fetchOne')->with('SELECT 1')->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
@@ -367,6 +373,9 @@ describe('charge', function (): void {
 
     test('refuses an invoice whose payment is still clearing', function (): void {
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('getConfiguration')->byDefault()->andReturn(Tests\Helpers\fencedConfiguration());
+        $connection->shouldReceive('getTransactionNestingLevel')->byDefault()->andReturn(0);
+        $connection->shouldReceive('fetchOne')->with('SELECT 1')->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
@@ -395,6 +404,9 @@ describe('charge', function (): void {
 describe('charge success', function (): void {
     test('a taken charge records the payment and returns paid', function (): void {
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('getConfiguration')->byDefault()->andReturn(Tests\Helpers\fencedConfiguration());
+        $connection->shouldReceive('getTransactionNestingLevel')->byDefault()->andReturn(0);
+        $connection->shouldReceive('fetchOne')->with('SELECT 1')->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
@@ -463,6 +475,9 @@ describe('runDue charges', function (): void {
         $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('getConfiguration')->byDefault()->andReturn(Tests\Helpers\fencedConfiguration());
+        $connection->shouldReceive('getTransactionNestingLevel')->byDefault()->andReturn(0);
+        $connection->shouldReceive('fetchOne')->with('SELECT 1')->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
@@ -564,6 +579,9 @@ describe('paypal subscription teardown', function (): void {
         $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('getConfiguration')->byDefault()->andReturn(Tests\Helpers\fencedConfiguration());
+        $connection->shouldReceive('getTransactionNestingLevel')->byDefault()->andReturn(0);
+        $connection->shouldReceive('fetchOne')->with('SELECT 1')->zeroOrMoreTimes()->andReturn(1);
         $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT \* FROM invoice_gateway_charge_attempt/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('insert')->with('invoice_gateway_charge_attempt', Mockery::any())->byDefault()->andReturn(1);
@@ -591,7 +609,7 @@ describe('paypal subscription teardown', function (): void {
 });
 
 test('automatic charge query runs against the invoice schema', function (): void {
-    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     foreach ([
         'CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, due_at TEXT, status TEXT, gateway_id INTEGER)',
         'CREATE TABLE pay_gateway_customer (client_id INTEGER, pay_gateway_id INTEGER, test_mode BOOLEAN, saved_cards BOOLEAN, default_payment_method TEXT)',

@@ -20,6 +20,7 @@ use FOSSBilling\Core\Doctrine\TimestampTrait;
 #[ORM\Table(name: 'client_balance')]
 #[ORM\Index(name: 'client_balance_client_id_idx', columns: ['client_id'])]
 #[ORM\UniqueConstraint(name: 'uniq_invoice_item_credit', columns: ['invoice_item_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_payment_credit', columns: ['payment_key'])]
 #[ORM\HasLifecycleCallbacks]
 class ClientBalance implements TimestampInterface
 {
@@ -49,6 +50,21 @@ class ClientBalance implements TimestampInterface
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
+
+    #[ORM\Column(name: 'payment_key', type: Types::STRING, length: 64, nullable: true)]
+    private ?string $paymentKey = null;
+
+    public function getPaymentKey(): ?string
+    {
+        return $this->paymentKey;
+    }
+
+    public function setPaymentKey(?string $key): self
+    {
+        $this->paymentKey = $key;
+
+        return $this;
+    }
 
     public function getId(): ?int
     {

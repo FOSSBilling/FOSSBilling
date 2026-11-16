@@ -54,6 +54,7 @@ require_once __DIR__ . '/../src/vendor/autoload.php';
 
 // Load test helpers
 require_once __DIR__ . '/Helpers/Container.php';
+require_once __DIR__ . '/Helpers/Database.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
 require_once __DIR__ . '/Helpers/Zip.php';

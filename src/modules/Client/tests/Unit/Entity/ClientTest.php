@@ -43,7 +43,7 @@ test('maps client tables without changing their columns', function (): void {
         ->and($client->getFieldMapping('gender')['length'])->toBe(20)
         ->and($balance->getTableName())->toBe('client_balance')
         ->and($balance->getColumnNames())->toBe([
-            'id', 'type', 'rel_id', 'invoice_item_id', 'amount', 'description', 'created_at', 'updated_at',
+            'id', 'type', 'rel_id', 'invoice_item_id', 'amount', 'description', 'payment_key', 'created_at', 'updated_at',
         ])
         ->and($balance->getFieldMapping('amount')['nullable'])->toBeTrue()
         ->and($group->getTableName())->toBe('client_group')

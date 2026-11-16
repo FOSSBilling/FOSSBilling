@@ -114,6 +114,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      */
     private function newIsolatedEntityManager(): Doctrine\ORM\EntityManagerInterface
     {
+        if ($this->entityManagerFactory === null && FOSSBilling\Core\Payment\ProcessingFence::claims() !== []
+            && $this->di['em']->getConnection()->isTransactionActive()) {
+            // A second session would wait on this session's own fence row lock.
+            return EntityManagerFactory::create($this->di['em']->getConnection());
+        }
         if ($this->isolatedEntityManager !== null && $this->isolatedEntityManager->isOpen()) {
             return $this->isolatedEntityManager;
         }
@@ -914,6 +919,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             'id' => $invoice->getClientId(),
             'amount' => $firstCharge,
             'description' => 'Stripe subscription initial payment ' . $latestInvoice->id,
+            'payment_reference' => $latestInvoice->id,
             'type' => 'transaction',
             'rel_id' => $tx->getId(),
         ];
@@ -1251,6 +1257,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 (int) ($stripeInvoice->amount_paid ?? 0),
                 (string) ($stripeInvoice->currency ?? '')
             ),
+            'payment_reference' => $stripeInvoice->id,
             'description' => $isInitialPayment
                 ? 'Stripe subscription initial payment ' . $stripeInvoice->id
                 : 'Stripe subscription recurring payment ' . $stripeInvoice->id,

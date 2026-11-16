@@ -2398,11 +2398,24 @@ test('staff can clear an attempt after confirming PayPal issued no refund', func
 test('releasing a stale transaction requires explicit reconciliation confirmation', function (): void {
     $api = apiEndpoint(new Admin());
     $service = Mockery::mock(ServiceTransaction::class);
-    $service->shouldReceive('releaseStaleProcessing')->once()->with(10, $api->getIdentity()->getId())->andReturnTrue();
+    $service->shouldReceive('releaseStaleProcessing')->once()->with(10, $api->getIdentity()->getId(), str_repeat('a', 32))->andReturnTrue();
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $service]));
     $api->setDi($di);
     expect(fn () => $api->transaction_release_stale(['id' => 10]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Confirm');
-    expect($api->transaction_release_stale(['id' => 10, 'confirmed' => '1']))->toBeTrue();
+    expect(fn () => $api->transaction_release_stale(['id' => 10, 'confirmed' => '1']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Reload');
+    expect($api->transaction_release_stale(['id' => 10, 'confirmed' => '1', 'claim_token' => str_repeat('a', 32)]))->toBeTrue();
+});
+
+test('wallet reconciliation requires confirmation and binds to the reviewed claim', function (): void {
+    $api = apiEndpoint(new Admin());
+    $service = Mockery::mock(ServiceTransaction::class);
+    $service->shouldReceive('reconcileWalletCredit')->once()->with(10, null, true, str_repeat('a', 32), $api->getIdentity()->getId(), 'Wallet checked')->andReturnTrue();
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $service]));
+    $api->setDi($di);
+    expect(fn () => $api->transaction_reconcile_wallet(['id' => 10, 'note' => 'Wallet checked']))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+    expect($api->transaction_reconcile_wallet(['id' => 10, 'note' => 'Wallet checked', 'confirmed' => '1', 'claim_token' => str_repeat('a', 32), 'no_credit' => '1']))->toBeTrue();
 });

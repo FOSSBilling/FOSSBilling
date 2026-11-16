@@ -30,6 +30,9 @@ class GatewayChargeAttempt
     #[ORM\Column(type: Types::STRING, length: 16)]
     public string $state;
 
+    #[ORM\Column(name: 'owner_token', type: Types::STRING, length: 32, nullable: true)]
+    public ?string $ownerToken = null;
+
     #[ORM\Column(name: 'payment_id', type: Types::STRING, length: 255, nullable: true)]
     public ?string $paymentId = null;
 

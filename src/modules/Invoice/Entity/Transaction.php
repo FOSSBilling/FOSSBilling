@@ -69,6 +69,9 @@ class Transaction implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, options: ['default' => self::STATUS_RECEIVED])]
     private string $status = self::STATUS_RECEIVED;
 
+    #[ORM\Column(name: 'processing_token', type: Types::STRING, length: 32, nullable: true)]
+    private ?string $processingToken = null;
+
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true)]
     private ?string $ip = null;
 
@@ -89,6 +92,33 @@ class Transaction implements TimestampInterface
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $note = null;
+
+    #[ORM\Column(name: 'credit_recovery_state', type: Types::SMALLINT, nullable: true)]
+    private ?int $creditRecoveryState = 0;
+
+    public function setProcessingToken(?string $token): self
+    {
+        $this->processingToken = $token;
+
+        return $this;
+    }
+
+    public function getCreditRecoveryState(): ?int
+    {
+        return $this->creditRecoveryState;
+    }
+
+    public function setCreditRecoveryState(?int $state): self
+    {
+        $this->creditRecoveryState = $state;
+
+        return $this;
+    }
+
+    public function getProcessingToken(): ?string
+    {
+        return $this->processingToken;
+    }
 
     public function getId(): ?int
     {
