@@ -146,7 +146,7 @@ test('unsafe legacy documents are quarantined without blocking conversion or exp
     if ($raw === '"{\\"a\\":1}"') {
         expect($result['decoded_values'])->toBe(1)
             ->and($result['quarantined_values'])->toBe(0)
-            ->and($this->connection->fetchOne('SELECT config FROM product WHERE id = 2'))->toBe('{"a":1}');
+            ->and(json_decode($this->connection->fetchOne('SELECT config FROM product WHERE id = 2'), true))->toBe(['a' => 1]);
     } else {
         expect($result['quarantined_values'])->toBe(1)
             ->and($result['decoded_values'])->toBe(0)
@@ -301,7 +301,7 @@ test('unsafe checkbox collections are quarantined while valid defaults still mig
         ->and($result['quarantined'][0]['column'])->toBe('default_value')
         ->and((int) $result['quarantined'][0]['id'])->toBe(3)
         ->and($c->fetchOne('SELECT default_value FROM form_field WHERE id = 3'))->toBeNull()
-        ->and($c->fetchOne('SELECT default_value FROM form_field WHERE id = 2'))->toBe('["valid"]')
+        ->and(json_decode($c->fetchOne('SELECT default_value FROM form_field WHERE id = 2'), true))->toBe(['valid'])
         ->and(json_encode($result, JSON_THROW_ON_ERROR))->not->toContain('private-secret');
     (new JsonMigration())->assertReady($c);
 })->with(['{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}']);

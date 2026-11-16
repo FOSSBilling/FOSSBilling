@@ -89,21 +89,25 @@ test('transaction IPN rows with legacy payloads migrate without blocking the upd
         ->and((int) $result['quarantined'][0]['id'])->toBe(1)
         ->and($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 1'))->toBeNull()
         ->and(json_decode($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 2'), true))->toBe(json_decode($valid, true))
-        ->and($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 3'))->toBe($valid);
+        ->and(json_decode($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 3'), true))->toBe(json_decode($valid, true));
     (new JsonMigration())->assertReady($c);
     expect((new JsonMigration())->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
 });
 
-test('recipient filters keep blocking the migration because NULL would lift all restrictions', function (): void {
+test('fail-open restriction lists keep blocking the migration instead of widening access', function (string $table, string $column, string $raw): void {
     $c = $this->jsonMigrationConnection;
-    $c->executeStatement('CREATE TABLE mod_massmailer (id INTEGER PRIMARY KEY, filter TEXT)');
-    $c->insert('mod_massmailer', ['id' => 1, 'filter' => '{"client_groups":[7],"client_groups":[7]}']);
+    $c->executeStatement(sprintf('CREATE TABLE `%s` (id INTEGER PRIMARY KEY, `%s` TEXT)', $table, $column));
+    $c->insert(sprintf('`%s`', $table), ['id' => 1, $column => $raw]);
 
     expect(fn () => (new JsonMigration())->automatic(EntityManagerFactory::create($c), new Crypt()))
-        ->toThrow(JsonMigrationException::class, 'JSON preflight failed for mod_massmailer.filter id=1');
-    expect($c->fetchOne('SELECT filter FROM mod_massmailer'))->toBe('{"client_groups":[7],"client_groups":[7]}')
+        ->toThrow(JsonMigrationException::class, "JSON preflight failed for $table.$column id=1");
+    expect($c->fetchOne(sprintf('SELECT `%s` FROM `%s` WHERE id = 1', $column, $table)))->toBe($raw)
         ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
-});
+})->with([
+    'massmailer filter' => ['mod_massmailer', 'filter', '{"client_groups":[7],"client_groups":[7]}'],
+    'license ips' => ['service_license', 'ips', '{"0":"192.0.2.10","0":"192.0.2.10"}'],
+    'promo products' => ['promo', 'products', '{"0":"1","0":"1"}'],
+]);
 
 test('customized columns and indexes require review without source changes', function (string $definition): void {
     $c = $this->jsonMigrationConnection;
