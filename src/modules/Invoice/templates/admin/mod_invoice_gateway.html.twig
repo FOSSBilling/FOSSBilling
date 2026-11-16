@@ -83,6 +83,55 @@
                 {% endblock %}
             {% endembed %}
 
+            {% set fee = gateway.config.fee|default({}) %}
+            {% set default_currency = guest.currency_get %}
+            {% embed 'partial_admin_form_card.html.twig' with {
+                title: 'Payment fee'|trans,
+                subtitle: 'Clients who pay with this gateway pay this fee: a line added to the invoice, changed when they pick another gateway. Credit pays no fee. Check that your card scheme and local law allow surcharges.'|trans,
+                card_class: 'mb-4'
+            } %}
+                {% block form_content %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="gateway-fee-percent">{{ 'Percentage of the amount due'|trans }}</label>
+                            <div class="input-group">
+                                <input class="form-control" id="gateway-fee-percent" type="number" name="config[fee][percent]" min="0" max="100" step="0.01" value="{{ fee.percent|default(0) }}" dir="ltr">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="gateway-fee-fixed">{{ 'Fixed amount'|trans }}</label>
+                            <div class="input-group">
+                                <input class="form-control" id="gateway-fee-fixed" type="number" name="config[fee][fixed]" min="0" step="0.01" value="{{ fee.fixed|default(0) }}" dir="ltr">
+                                <span class="input-group-text">{{ default_currency.code|default('') }}</span>
+                            </div>
+                            <small class="form-hint">{{ 'In your default currency; other currencies at the exchange rates.'|trans }}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="hidden" name="config[fee][taxable]" value="0">
+                            <label class="form-check form-switch form-switch-2 mt-md-4">
+                                <input class="form-check-input" type="checkbox" name="config[fee][taxable]" value="1"{% if fee.taxable|default(false) %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Tax the fee'|trans }}</span>
+                            </label>
+                            <small class="form-hint">{{ "At the invoice's tax rate."|trans }}</small>
+                        </div>
+                        {% set groups = has_permission('client') ? admin.client_group_get_pairs : {} %}
+                        {% if groups %}
+                        <div class="col-12">
+                            <label class="form-label" for="gateway-fee-groups">{{ 'Client groups that pay no fee'|trans }}</label>
+                            <select class="form-select" id="gateway-fee-groups" name="config[fee][exempt_groups][]" multiple size="{{ groups|length > 6 ? 6 : groups|length }}">
+                                {% for id, name in groups %}
+                                <option value="{{ id }}"{% if id in fee.exempt_groups|default([]) %} selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% else %}
+                        {% for id in fee.exempt_groups|default([]) %}<input type="hidden" name="config[fee][exempt_groups][]" value="{{ id }}">{% endfor %}
+                        {% endif %}
+                    </div>
+                {% endblock %}
+            {% endembed %}
+
             {% if gateway.form %}
             {% embed 'partial_admin_form_card.html.twig' with {
                 title: 'Gateway Credentials and Adapter Settings'|trans,
@@ -202,6 +251,20 @@
                         <div class="col-12">
                             <label class="form-label" for="gateway_callback">{{ 'IPN Callback URL'|trans }}</label>
                             <input class="form-control" id="gateway_callback" type="text" value="{{ gateway.callback }}" readonly>
+                        </div>
+
+                        {% set replacements = admin.invoice_gateway_get_pairs %}
+                        <div class="col-12">
+                            <label class="form-label" for="gateway-replacement">{{ 'Move unpaid invoices to'|trans }}</label>
+                            <select class="form-select" id="gateway-replacement" name="replacement_id">
+                                <option value="">{{ 'Select a gateway…'|trans }}</option>
+                                {% for id, title in replacements %}
+                                {% if id != gateway.id %}
+                                <option value="{{ id }}">{{ title }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <small class="form-hint">{{ 'When turning this gateway off, its unpaid invoices move to the gateway you choose, with its fee. Paid history stays untouched.'|trans }}</small>
                         </div>
                     </div>
 

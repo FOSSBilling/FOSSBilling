@@ -99,6 +99,7 @@ class Service
             $this->_exec($api, 'invoice_batch_pay_with_credits');
             $this->_exec($api, 'invoice_batch_activate_paid');
             $isolatedTasks = [
+                'invoice_batch_deliver_issued_notifications',
                 'invoice_batch_generate',
                 'invoice_batch_send_reminders',
                 'invoice_batch_invoke_due_event',

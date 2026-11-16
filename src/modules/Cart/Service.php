@@ -67,8 +67,9 @@ class Service implements InjectionAwareInterface
 
     protected function resetEntityManager(): void
     {
+        $connection = $this->di['em']->getConnection();
         unset($this->di['em']);
-        $this->di['em'] = EntityManagerFactory::create();
+        $this->di['em'] = EntityManagerFactory::create($connection);
     }
 
     public function getCartRepository(): CartRepository
@@ -605,6 +606,10 @@ class Service implements InjectionAwareInterface
 
     public function rm(Cart $cart): bool
     {
+        $cart = $this->getCartRepository()->find((int) $cart->getId());
+        if (!$cart instanceof Cart) {
+            return true;
+        }
         $cartProducts = $this->findCartProducts($cart);
 
         foreach ($cartProducts as $cartProduct) {
@@ -1076,6 +1081,7 @@ class Service implements InjectionAwareInterface
         $reservedPromoUsage = [];
         $discountsByOrderAndPromo = [];
         $stockReservedOrders = [];
+        $useCredits = false;
 
         if (!$client->getCurrency()) {
             $client->setCurrency($currencyCode);
@@ -1083,7 +1089,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $activate, $allowDisabledProducts, &$reservedPromoUsage, &$discountsByOrderAndPromo, &$stockReservedOrders) {
+            $result = $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $activate, $allowDisabledProducts, &$reservedPromoUsage, &$discountsByOrderAndPromo, &$stockReservedOrders, &$useCredits) {
                 $effectivePromos = [];
                 if ($promo instanceof Promo) {
                     $this->assertClientAbleToUsePromoForUpdate($client, $promo);
@@ -1266,7 +1272,7 @@ class Service implements InjectionAwareInterface
                     $balanceAmount = $clientBalanceService->getClientBalance($client);
                     $useCredits = $balanceAmount >= $ca['total'];
 
-                    $invoiceService->issueInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
+                    $invoiceService->issueInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => false, 'defer_issue_event' => true, 'deferred_issue_use_credits' => $useCredits]);
 
                     $isUnpaid = $invoiceModel instanceof Invoice
                         && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID;
@@ -1359,6 +1365,40 @@ class Service implements InjectionAwareInterface
 
             throw $e;
         }
+
+        // The credit lock must be acquired outside the checkout transaction.
+        // Checkout is already committed, so a payment failure must not undo
+        // its stock or promo reservations; the unpaid invoice can be retried.
+        $creditAttemptFailed = false;
+        if ($useCredits && $result[1] instanceof Invoice) {
+            try {
+                $this->di['mod_service']('Invoice')->tryPayWithCredits($result[1]);
+            } catch (\Throwable $e) {
+                // Keep the durable intent so cron can retry before the event.
+                $creditAttemptFailed = true;
+                $this->di['logger']->error('Could not apply account credit after checkout: {exception}', ['exception' => $e]);
+                if (!$this->di['em']->isOpen()) {
+                    $invoiceId = (int) $result[1]->getId();
+                    $this->resetEntityManager();
+                    $result[1] = $this->di['em']->find(Invoice::class, $invoiceId);
+                }
+            }
+        }
+
+        if (!$creditAttemptFailed && $result[1] instanceof Invoice) {
+            try {
+                $this->di['mod_service']('Invoice')->notifyDeferredInvoiceIssued($result[1]);
+            } catch (\Throwable $e) {
+                $this->di['logger']->error('Could not notify invoice issuance after checkout: {exception}', ['exception' => $e]);
+                if (!$this->di['em']->isOpen()) {
+                    $invoiceId = (int) $result[1]->getId();
+                    $this->resetEntityManager();
+                    $result[1] = $this->di['em']->find(Invoice::class, $invoiceId);
+                }
+            }
+        }
+
+        return $result;
     }
 
     public function usePromo(Promo $promo): void

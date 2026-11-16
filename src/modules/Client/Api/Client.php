@@ -50,9 +50,8 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
      */
     public function balance_get_total()
     {
-        $service = $this->getDi()['mod_service']('Client', 'Balance');
-
-        return $service->getClientBalance($this->getClientEntity($this->getIdentity()));
+        // The spendable credit, without what is set aside for unpaid invoices.
+        return $this->getDi()['mod_service']('Invoice')->getFreeCredit((int) $this->getClientEntity($this->getIdentity())->getId());
     }
 
     public function is_taxable()

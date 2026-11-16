@@ -14,7 +14,7 @@ use FOSSBilling\Core\Events\Event;
 /** Dispatched after an invoice has been issued and credit payment attempted. */
 final class AfterAdminInvoiceIssueEvent extends Event
 {
-    public function __construct(public readonly int $invoiceId)
+    public function __construct(public readonly int $invoiceId, public readonly bool $retryOnFailure = false)
     {
     }
 }

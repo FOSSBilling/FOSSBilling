@@ -789,3 +789,19 @@ final class PermissiveCallableStub implements Stringable
         return '';
     }
 }
+
+test('offline transaction page exposes completion recovery only while work is pending', function (bool $pending): void {
+    $transaction = new PermissiveCallableStub([
+        'id' => 42, 'status' => 'processed', 'requires_manual_approval' => true,
+        'completion_pending' => $pending,
+    ]);
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Invoice/templates/admin/mod_invoice_transaction.html.twig',
+        ['request' => edgeCaseRequest(), 'transaction' => $transaction],
+    );
+    if ($pending) {
+        expect($html)->toContain('Retry completion');
+    } else {
+        expect($html)->not->toContain('Retry completion');
+    }
+})->with([true, false]);

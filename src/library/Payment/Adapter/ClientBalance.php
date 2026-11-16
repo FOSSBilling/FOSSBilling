@@ -51,6 +51,9 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\Core\Container\Inject
         $sumInBalance = $clientBalanceService->getClientBalance($clientModel);
 
         $invoiceService = $this->di['mod_service']('Invoice');
+        // What other unpaid invoices have received is not spendable.
+        $sumInBalance -= $invoiceService->getReservedCredit((int) $invoice->getClientId(), (int) $invoice->getId());
+
         $totalSumWithTaxes = $invoiceService->getTotalWithTax($invoice);
         if ($totalSumWithTaxes > $sumInBalance) {
             return false;
@@ -131,6 +134,8 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\Core\Container\Inject
         $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->getClientId()]);
 
         if ($tx instanceof Box\Mod\Invoice\Entity\Transaction) {
+            $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find((int) $tx->getId())
+                ?? throw new Payment_Exception('Transaction not found');
             $tx->setError('');
             $tx->setErrorCode(null);
             $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);

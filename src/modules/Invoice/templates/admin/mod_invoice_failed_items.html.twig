@@ -40,6 +40,16 @@
                             <td>{{ item.task }}</td>
                             <td>{{ item.attempts }}</td>
                             <td>
+                                {% if item.renewal_outcome|default(null) == 'pending' %}
+                                    <p class="small text-wrap">{{ 'Check the provider and reconcile the order expiry before resolving an interrupted renewal.'|trans }}</p>
+                                    <a class="btn btn-sm btn-warning" href="{{ 'invoice/item_review_paid_renewal'|api_url(query: {id: item.id, decision: 'retry'}) }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Confirmed that the provider did not renew this order?'|trans}, reload: true}) }}>{{ 'Approve one retry'|trans }}</a>
+                                    <a class="btn btn-sm btn-secondary" href="{{ 'invoice/item_review_paid_renewal'|api_url(query: {id: item.id, decision: 'completed'}) }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Confirmed already renewed and the order expiry reconciled?'|trans}, reload: true}) }}>{{ 'Mark completed'|trans }}</a>
+                                {% elseif item.type == 'order' and item.task == 'renew' and item.price == 0 and item.product_type|default(null) == 'domain' %}
+                                    <p class="small text-wrap">{{ 'Check the registrar and reconcile the order expiry before choosing an action.'|trans }}</p>
+                                    <a class="btn btn-sm btn-warning" href="{{ 'invoice/item_review_domain_renewal'|api_url(query: {id: item.id, decision: 'retry_free'}) }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Confirmed not renewed and eligible for a free hosting renewal?'|trans}, reload: true}) }}>{{ 'Retry free renewal'|trans }}</a>
+                                    <a class="btn btn-sm btn-warning" href="{{ 'invoice/item_review_domain_renewal'|api_url(query: {id: item.id, decision: 'retry_zero'}) }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Confirmed not renewed and the domain renewal price is zero?'|trans}, reload: true}) }}>{{ 'Retry zero-price renewal'|trans }}</a>
+                                    <a class="btn btn-sm btn-secondary" href="{{ 'invoice/item_review_domain_renewal'|api_url(query: {id: item.id, decision: 'completed'}) }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Confirmed already renewed and the order expiry reconciled?'|trans}, reload: true}) }}>{{ 'Mark completed'|trans }}</a>
+                                {% endif %}
                                 <a class="btn btn-icon" href="{{ 'invoice/item_requeue'|api_url(query: { 'id': item.id }) }}"
                                     title="{{ 'Re-queue'|trans }}"
                                     {{ fb_api_link({message: 'Re-queued'|trans, reload: true}) }}>

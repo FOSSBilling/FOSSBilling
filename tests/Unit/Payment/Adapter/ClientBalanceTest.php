@@ -99,3 +99,31 @@ test('rejects a transaction when the callback gateway differs from the invoice g
     expect(fn (): mixed => $adapter->processTransaction(null, 20, ['get' => ['invoice_id' => 10]], 6))
         ->toThrow(Payment_Exception::class, 'Invoice is not configured to use this payment gateway.');
 });
+
+test('enoughInBalanceToCoverInvoice excludes reserved credit', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'client_id' => 42, 'currency' => 'USD']);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 42]);
+
+    $balanceService = Mockery::mock();
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(100.00);
+
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldReceive('getReservedCredit')->once()->with(42, 10)->andReturn(30.00);
+    $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(80.00);
+
+    $clientRepo = Mockery::mock();
+    $clientRepo->shouldReceive('find')->once()->with(42)->andReturn($client);
+
+    $entityManager = Mockery::mock();
+    $entityManager->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (string $name): object => $name === 'Invoice' ? $invoiceService : $balanceService);
+
+    $adapter = new Payment_Adapter_ClientBalance();
+    $adapter->setDi($di);
+
+    // 100 of balance, 30 set aside for other invoices: 70 left, short of the 80 due.
+    expect($adapter->enoughInBalanceToCoverInvoice($invoice))->toBeFalse();
+});

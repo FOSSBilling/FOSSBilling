@@ -3888,3 +3888,222 @@ test('transferReservedPromoRedemptionsForOrders does nothing without orders', fu
 
     expect($serviceMock->transferReservedPromoRedemptionsForOrders([], $replacement))->toBe(0);
 });
+
+/**
+ * @return array{0: Service, 1: Order}
+ */
+function freeDomainRenewalService(array $domainConfig, array $hostingOrders, array $productsById, ?int $paidThrough = null): array
+{
+    $domainOrder = createEntity(Order::class, array_merge([
+        'id' => 20,
+        'clientId' => 7,
+        'productId' => 3,
+        'groupId' => 'group-1',
+        'status' => Order::STATUS_ACTIVE,
+        'period' => '1Y',
+        'expiresAt' => new DateTimeImmutable('2030-01-01 00:00:00'),
+        'config' => $domainConfig,
+    ]));
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('find')->with(20)->andReturn($domainOrder);
+    $orderRepo->shouldReceive('findBy')->withAnyArgs()->andReturnUsing(
+        fn (array $criteria): array => array_values(array_filter(
+            $hostingOrders,
+            fn (Order $candidate): bool => in_array($candidate->getStatus(), (array) ($criteria['status'] ?? []), true)
+                && $candidate->getGroupId() === ($criteria['groupId'] ?? null)
+                && (int) $candidate->getClientId() === (int) ($criteria['clientId'] ?? 0)
+        ))
+    );
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    $productRepo->shouldReceive('find')->withAnyArgs()->andReturnUsing(fn (int $id): ?Product => $productsById[$id] ?? null);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
+    $em->shouldReceive('getRepository')->with(Product::class)->andReturn($productRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')->andReturn($paidThrough === null ? false : (string) $paidThrough);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    return [$service, $domainOrder];
+}
+
+function freeRenewalHostingProduct(array $settings): Product
+{
+    return createEntity(Product::class, [
+        'id' => 5,
+        'type' => Service::HOSTING,
+        'config' => $settings,
+    ]);
+}
+
+function freeRenewalHostingOrder(array $overrides = []): Order
+{
+    return createEntity(Order::class, array_merge([
+        'id' => 21,
+        'clientId' => 7,
+        'productId' => 5,
+        'groupId' => 'group-1',
+        'status' => Order::STATUS_ACTIVE,
+        'period' => '1Y',
+        'expiresAt' => new DateTimeImmutable('2031-01-01 00:00:00'),
+        'config' => ['domain' => ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com']],
+    ], $overrides));
+}
+
+test('a registered domain renews free while its hosting is active', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [freeRenewalHostingOrder()],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeTrue();
+});
+
+test('a transferred domain renews free while its hosting is active', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com'],
+        [freeRenewalHostingOrder(['config' => ['domain' => ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com']]])],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_transfer' => true])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeTrue();
+});
+
+test('a domain renews free while its hosting is suspended', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [freeRenewalHostingOrder(['status' => Order::STATUS_SUSPENDED])],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => [], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeTrue();
+});
+
+test('a domain pays the TLD price once its hosting ends', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [freeRenewalHostingOrder(['status' => Order::STATUS_CANCELED])],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => [], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('a domain pays the TLD price when renewals are not enabled', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [freeRenewalHostingOrder()],
+        [5 => freeRenewalHostingProduct(['free_domain' => true, 'free_tlds' => [], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('a domain pays the TLD price for a TLD outside the free list', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.net'],
+        [freeRenewalHostingOrder(['config' => ['domain' => ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.net']]])],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('a transfer pays the TLD price without free transfers', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com'],
+        [freeRenewalHostingOrder(['config' => ['domain' => ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com']]])],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('a domain pays the TLD price when the hosting period does not qualify', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [freeRenewalHostingOrder(['period' => '1M'])],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => [], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('a domain without a hosting order in its group pays the TLD price', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [],
+        [],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('a non-domain order never renews free', function (): void {
+    [$service] = freeDomainRenewalService(
+        ['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.com'],
+        [freeRenewalHostingOrder()],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => [], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('free domain renewal is bounded by the paid hosting term', function (): void {
+    [$service, $domain] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [freeRenewalHostingOrder()],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']])],
+    );
+
+    expect($service->hasFreeDomainRenewal(20))->toBeTrue();
+    $domain->setExpiresAt(new DateTimeImmutable('2031-01-01 00:00:00'));
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+    $domain->setExpiresAt(new DateTimeImmutable('2030-01-01 00:00:00'));
+    $domain->setPeriod('2Y');
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('free domain renewals consume hosting terms even when renewal dates reset to today', function (): void {
+    $config = ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'];
+    $hosting = [freeRenewalHostingOrder(['expiresAt' => new DateTimeImmutable('2032-01-01 00:00:00')])];
+    $products = [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']])];
+    [$service] = freeDomainRenewalService($config, $hosting, $products, (new DateTimeImmutable('2032-01-01 00:00:00'))->getTimestamp());
+    $service->getDi()['mod_config'] = $service->getDi()->protect(fn (): array => ['order_renewal_logic' => 'from_today']);
+
+    expect($service->hasFreeDomainRenewal(20))->toBeFalse();
+});
+
+test('free renewal offer exists before hosting payment and is consumed only after payment', function (): void {
+    $hosting = freeRenewalHostingOrder(['expiresAt' => new DateTimeImmutable('2030-01-01 00:00:00')]);
+    [$service] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [$hosting],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']])],
+    );
+    expect($service->isFreeDomainRenewalOffered(20))->toBeTrue()->and($service->hasFreeDomainRenewal(20))->toBeFalse();
+    $hosting->setExpiresAt(new DateTimeImmutable('2031-01-01 00:00:00'));
+    expect($service->hasFreeDomainRenewal(20))->toBeTrue();
+});
+
+test('hosting renewed moments before an overdue domain covers the same calendar term', function (string $logic): void {
+    $hosting = freeRenewalHostingOrder(['expiresAt' => (new DateTimeImmutable('today noon'))->modify('+1 year -1 minute')]);
+    [$service, $domain] = freeDomainRenewalService(
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        [$hosting],
+        [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']])],
+    );
+    $domain->setExpiresAt((new DateTimeImmutable())->modify('-1 day'));
+    $service->getDi()['mod_config'] = $service->getDi()->protect(fn (): array => ['order_renewal_logic' => $logic]);
+    expect($service->hasFreeDomainRenewal(20))->toBeTrue();
+})->with(['from_today', 'from_greater']);

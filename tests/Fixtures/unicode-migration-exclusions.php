@@ -63,6 +63,7 @@ return [
         'admin_password_reset.hash',
         'cart.session_id',
         'client.api_token',
+        'client_balance.gateway_receipt_key',
         'client.pass',
         'client_password_reset.hash',
         'invoice.hash',
