@@ -3837,6 +3837,10 @@ test('processes batch pay with credits', function (): void {
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('findBy')
         ->andReturn([$invoiceModel, $failingModel, $skippedModel]);
+    $invoiceRepo->shouldReceive('find')->with(1)->andReturn($invoiceModel);
+    $invoiceRepo->shouldReceive('find')->with(2)->andReturn($failingModel);
+    $invoiceRepo->shouldReceive('find')->with(3)->andReturn($skippedModel);
+    $di['em']->shouldReceive('isOpen')->andReturn(true);
     $logger = new Tests\Helpers\TestLogger();
     $di['logger'] = $logger;
 

@@ -4847,8 +4847,18 @@ class Service implements InjectionAwareInterface
         $covered = 0;
         $skipped = 0;
         $failed = 0;
-        foreach ($models as $model) {
+        foreach ($models as $selected) {
+            $invoiceId = (int) $selected->getId();
+
             try {
+                // A previous failure can replace the manager and detach every
+                // selected entity. Resolve each invoice through the current one.
+                $model = $this->getInvoiceRepository()->find($invoiceId);
+                if (!$model instanceof Invoice) {
+                    ++$skipped;
+
+                    continue;
+                }
                 if ($this->tryPayWithCredits($model)) {
                     ++$covered;
                 } else {
@@ -4857,9 +4867,12 @@ class Service implements InjectionAwareInterface
             } catch (\Exception $e) {
                 ++$failed;
                 $this->di['logger']->warning('Failed to cover invoice #{id} with client credits: {message}', [
-                    'id' => $model->getId(),
+                    'id' => $invoiceId,
                     'message' => $e->getMessage(),
                 ]);
+                if (!$this->di['em']->isOpen()) {
+                    $this->resetEntityManager();
+                }
             }
         }
         $this->di['logger']->info('Covered {covered} of {total} unpaid invoices with client credits ({skipped} skipped, {failed} failed).', [
@@ -5486,12 +5499,14 @@ class Service implements InjectionAwareInterface
         // issued flag goes on, so funds invoices carry a snapshot like any
         // other issued invoice.
         $this->snapshotPartiesFromLiveRecords($proforma);
-        $proforma->setIssued($this->_isAutoIssued());
-        $this->di['em']->persist($proforma);
-        $this->di['em']->flush();
-
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateForAddFunds($proforma, $amount);
+
+        $autoIssued = $this->_isAutoIssued();
+        $proforma->setIssued($autoIssued);
+        $proforma->setIssueNotificationState($autoIssued ? 2 : 0);
+        $this->di['em']->persist($proforma);
+        $this->di['em']->flush();
 
         $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
 

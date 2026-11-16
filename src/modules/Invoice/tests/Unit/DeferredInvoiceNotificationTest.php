@@ -245,3 +245,72 @@ test('ordinary issuance still notifies after credit failure and recovers an inte
     expect($calls)->toBe(2)
         ->and((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(0);
 })->with([false, true]);
+
+function firstIssuanceTestService(Doctrine\ORM\EntityManager $em, bool $autoIssued = true): Service
+{
+    $service = gatewayDepositTestService($em);
+    $settings = Mockery::mock(Box\Mod\System\Service::class);
+    $settings->shouldReceive('getCompany')->andReturn(['name' => 'Issuer']);
+    $settings->shouldReceive('getParamValue')->andReturnUsing(fn (string $key, mixed $default = null): mixed => $key === 'invoice_auto_issue' ? $autoIssued : $default);
+    $clients = Mockery::mock(Box\Mod\Client\Service::class);
+    $clients->shouldReceive('toApiArray')->andReturn(['first_name' => 'Buyer']);
+    $di = $service->getDi();
+    $services = $di['mod_service'];
+    unset($di['mod_service']);
+    $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => match ($module) {
+        'system' => $settings,
+        'Client' => $clients,
+        default => $services($module, $sub),
+    });
+
+    return $service;
+}
+
+test('first issuance commits notification intent from a draft with the default checkpoint', function (bool $deferred): void {
+    [, $em, $client] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid');
+    $em->persist($invoice);
+    $em->flush();
+    expect($invoice->isIssued())->toBeFalse()->and($invoice->getIssueNotificationState())->toBe(0);
+    $service = firstIssuanceTestService($em);
+    $service->shouldReceive('getNextInvoiceNumber')->once()->andReturn(42);
+    if (!$deferred) {
+        $service->shouldReceive('tryPayWithCredits')->once()->andReturnUsing(function () use ($em, $invoice): never {
+            expect((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(2);
+
+            throw new RuntimeException('credit failed after issuance commit');
+        });
+        $events = new Symfony\Component\EventDispatcher\EventDispatcher();
+        $events->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, function () use ($em, $invoice): never {
+            expect((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(2);
+
+            throw new Error('notification interrupted');
+        });
+        $service->getDi()['event_dispatcher'] = $events;
+    }
+    $issue = fn () => $service->issueInvoice($invoice, ['defer_issue_event' => $deferred, 'deferred_issue_use_credits' => $deferred, 'use_credits' => !$deferred]);
+    if ($deferred) {
+        expect($issue())->toBeTrue();
+    } else {
+        expect($issue)->toThrow(Error::class, 'notification interrupted');
+    }
+    expect((int) $em->getConnection()->fetchOne('SELECT issued FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(1)
+        ->and((int) $em->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe($deferred ? 1 : 2);
+})->with([true, false]);
+
+test('Add Funds initializes auto-issued notification intent after creating its deposit line', function (bool $autoIssued): void {
+    [, $em, $client] = receiptTestContext();
+    $service = firstIssuanceTestService($em, $autoIssued);
+    // Configuration defaults are separate from the creation/issuance protocol.
+    $service->shouldReceive('setInvoiceDefaults')->once()->andReturnUsing(function (Invoice $invoice): void { $invoice->setNr('42'); });
+    $events = 0;
+    $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, function () use (&$events): void { ++$events; });
+    $service->getDi()['event_dispatcher'] = $dispatcher;
+    $invoice = $service->generateFundsInvoice($client, 25);
+    expect($invoice->isIssued())->toBe($autoIssued)->and($invoice->getIssueNotificationState())->toBe($autoIssued ? 2 : 0)
+        ->and((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM invoice_item WHERE invoice_id = ? AND type = 'deposit'", [$invoice->getId()]))->toBe(1);
+    expect($service->issueInvoice($invoice, []))->toBeTrue()->and($events)->toBe(1)
+        ->and($invoice->getIssueNotificationState())->toBe(0);
+    expect($service->issueInvoice($invoice, []))->toBeTrue()->and($events)->toBe(1);
+})->with([true, false]);

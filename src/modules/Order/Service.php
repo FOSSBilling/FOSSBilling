@@ -2013,7 +2013,7 @@ class Service implements InjectionAwareInterface
                 $this->updateOrderMeta($order, [
                     self::META_SCHEDULED_CANCEL_CLAIM => '1',
                     self::META_SCHEDULED_CANCEL_PHASE => 'scheduled',
-                    self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['reason' => $reason, 'skip_event' => (bool) $skipEvent], JSON_THROW_ON_ERROR),
+                    self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'immediate', 'reason' => $reason, 'skip_event' => (bool) $skipEvent], JSON_THROW_ON_ERROR),
                 ]);
                 $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
 
@@ -2642,6 +2642,18 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('This order has no scheduled cancellation awaiting review.');
             }
             if ($decision === 'retry') {
+                if (isset($meta[self::META_SCHEDULED_CANCEL_OPTIONS])) {
+                    $options = json_decode($meta[self::META_SCHEDULED_CANCEL_OPTIONS], true, 512, JSON_THROW_ON_ERROR);
+                    // Before execution mode was explicit, only immediate
+                    // cancellation wrote options. Preserve those held requests.
+                    if (($options['mode'] ?? 'immediate') === 'immediate') {
+                        // Claim 1 remains committed throughout this explicitly
+                        // approved attempt; another failure requires review again.
+                        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+
+                        return $this->finalizeCancellationAfterClaim($order, $options['reason'], $options['skip_event']);
+                    }
+                }
                 $phase = $meta[self::META_SCHEDULED_CANCEL_PHASE] ?? null;
                 if ($phase === 'scheduling' || $phase === null) {
                     $subscriptions = $this->di['mod_service']('Invoice', 'Subscription');
