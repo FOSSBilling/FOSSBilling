@@ -2891,6 +2891,17 @@ class Service implements InjectionAwareInterface
                     }
                 }
 
+                // Paid-item re-check through both linkages: the stale-order scan
+                // above matches on the typed linkage only, so a paid item that
+                // missed the backfill (concurrent write during its final page,
+                // manual row, or downgraded writer) would otherwise read as
+                // never paid here. Single-order scope, so both branches of the
+                // lookup stay sargable - unlike that OR inside a correlated
+                // table-wide subquery.
+                if ($this->getOrderRepository()->hasPaidInvoiceItem($this->orderId($order))) {
+                    continue;
+                }
+
                 $this->deleteFromOrder($order);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());

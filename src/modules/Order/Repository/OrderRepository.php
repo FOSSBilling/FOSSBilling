@@ -272,4 +272,36 @@ class OrderRepository extends EntityRepository
 
         return $ids === [] ? [] : $this->findBy(['id' => array_map(intval(...), $ids)]);
     }
+
+    /**
+     * Whether any paid invoice item references the order, through the typed
+     * linkage or - for rows the backfill has not reached yet - the legacy
+     * rel_id reference. Single-order scope, so both branches stay sargable
+     * (unlike the same OR inside a correlated table-wide subquery).
+     *
+     * Used as a last-moment re-check before a destructive batch acts: the
+     * stale-order scan matches on the typed linkage alone, so an order whose
+     * paid item missed the backfill (a concurrent write during its final page,
+     * a manual row, or a downgraded writer) would otherwise read as never paid.
+     */
+    public function hasPaidInvoiceItem(int $orderId): bool
+    {
+        return (bool) $this->getEntityManager()->getConnection()->fetchOne(
+            <<<'SQL'
+                SELECT 1
+                FROM invoice_item ii
+                INNER JOIN invoice pi ON pi.id = ii.invoice_id
+                WHERE (ii.order_id = :order_id OR (ii.order_id IS NULL AND ii.rel_id = :rel_id))
+                  AND ii.type = :item_type
+                  AND pi.status = :paid_status
+                LIMIT 1
+                SQL,
+            [
+                'order_id' => $orderId,
+                'rel_id' => (string) $orderId,
+                'item_type' => InvoiceItem::TYPE_ORDER,
+                'paid_status' => Invoice::STATUS_PAID,
+            ]
+        );
+    }
 }

@@ -4228,6 +4228,49 @@ test('batchCancelUnpaid falls back to the 7 day default when the configured valu
     expect($serviceMock->batchCancelUnpaid())->toBeTrue();
 });
 
+test('batchCancelUnpaid skips a stale order with a paid item the re-check finds', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $paidElsewhere = createEntity(Order::class, ['id' => 1, 'status' => Order::STATUS_PENDING_SETUP]);
+    $neverPaid = createEntity(Order::class, ['id' => 2, 'status' => Order::STATUS_PENDING_SETUP]);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->with(10)
+        ->andReturn([$paidElsewhere, $neverPaid]);
+    // A paid invoice item the typed scan missed (e.g. legacy rel_id, backfill
+    // not yet run) blocks deletion of order 1 only.
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->once()->with(1)->andReturn(true);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->once()->with(2)->andReturn(false);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->twice();
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => '1', 'batch_cancel_unpaid_after_days' => 10];
+        }
+    });
+
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($neverPaid);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelUnpaidOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchCancelUnpaidOrdersEvent::class);
+});
+
 test('batchCancelUnpaid removes the linked unpaid invoice before deleting the order', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 

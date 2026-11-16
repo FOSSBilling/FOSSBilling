@@ -170,6 +170,44 @@ test('lockAndGetUnpaidInvoiceId rejects being called outside of a transaction', 
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'outside of a transaction');
 });
 
+test('paid order check matches the typed linkage with a legacy rel_id fallback', function (): void {
+    // Dedicated mock rather than the shared one: its blanket fetchOne stub
+    // would swallow a withArgs mismatch and turn this into a false positive.
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->withArgs(fn (string $sql, array $parameters): bool => $parameters === [
+            'order_id' => 7,
+            'rel_id' => '7',
+            'item_type' => InvoiceItem::TYPE_ORDER,
+            'paid_status' => Invoice::STATUS_PAID,
+        ]
+            && str_contains($sql, 'ii.order_id = :order_id OR (ii.order_id IS NULL AND ii.rel_id = :rel_id)')
+            && str_contains($sql, 'ii.type = :item_type AND pi.status = :paid_status'))
+        ->andReturn(1);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect($repository->hasPaidInvoiceItem(7))->toBeTrue();
+});
+
+test('paid order check maps a missing link to false', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
+    $connection->shouldReceive('fetchOne')->once()->andReturn(false);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect($repository->hasPaidInvoiceItem(7))->toBeFalse();
+});
+
 test('stale unpaid orders are deferred while the typed linkage backfill is incomplete', function (): void {
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
