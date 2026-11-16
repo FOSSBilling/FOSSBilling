@@ -7595,11 +7595,15 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
     $em->shouldReceive('refresh')->byDefault();
     $newInvoice = null;
+    $copiedItems = [];
     $em->shouldReceive('persist')->atLeast()->once()->andReturnUsing(
-        function (object $entity) use ($original, &$newInvoice): void {
+        function (object $entity) use ($original, &$newInvoice, &$copiedItems): void {
             if ($entity instanceof Invoice && $entity !== $original) {
                 $newInvoice = $entity;
                 setEntityId($entity, 11);
+            }
+            if ($entity instanceof InvoiceItem) {
+                $copiedItems[] = $entity;
             }
         }
     );
@@ -7646,6 +7650,17 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     expect($newInvoice->getSerie())->toBe('FB-');
     expect($newInvoice->getDueAt())->toBe($dueAt);
     expect($replacement)->toBe($newInvoice);
+
+    // Copied lines keep their legacy rel_id and gain the derived order_id,
+    // so the typed linkage survives even when the source predates backfill.
+    expect($copiedItems)->toHaveCount(3);
+    $copiedByRelId = [];
+    foreach ($copiedItems as $copied) {
+        $copiedByRelId[(string) $copied->getRelId()] = $copied;
+    }
+    expect($copiedByRelId['42']->getOrderId())->toBe(42);
+    expect($copiedByRelId['43']->getOrderId())->toBe(43);
+    expect($copiedByRelId['']->getOrderId())->toBeNull();
 });
 
 test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', function (): void {

@@ -2970,7 +2970,10 @@ class Service implements InjectionAwareInterface
                     $pi->setInvoice($new);
                     $pi->setType($item->getType());
                     $pi->setRelId($item->getRelId());
-                    $pi->setOrderId($item->getOrderId());
+                    // Preserve the typed linkage, deriving it when the source predates
+                    // the order_id backfill (a copy flushed before the backfill scans
+                    // past the source would otherwise keep a NULL linkage for good).
+                    $pi->setOrderId($item->getOrderId() ?? ServiceInvoiceItem::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId()));
                     $pi->setRefundedItemId($item->getId());
                     $pi->setTask($item->getTask());
                     $pi->setStatus(InvoiceItem::STATUS_EXECUTED); // Mark refund invoice as executed
@@ -4042,7 +4045,9 @@ class Service implements InjectionAwareInterface
                 $copy->setInvoice($new);
                 $copy->setType($item->getType());
                 $copy->setRelId($item->getRelId());
-                $copy->setOrderId($item->getOrderId());
+                // Preserve the typed linkage, deriving it when the source predates
+                // the order_id backfill (see above).
+                $copy->setOrderId($item->getOrderId() ?? ServiceInvoiceItem::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId()));
                 $copy->setTask($item->getTask());
                 $copy->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
                 $copy->setTitle($item->getTitle());
