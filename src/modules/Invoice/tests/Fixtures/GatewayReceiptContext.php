@@ -40,7 +40,8 @@ function receiptTestContext(?Doctrine\DBAL\Connection $connection = null): array
     return [$service, $em, $client, $gateway, $transaction];
 }
 
-function gatewayDepositTestService(EntityManager $em): Service
+/** @param class-string<Service> $serviceClass */
+function gatewayDepositTestService(EntityManager $em, string $serviceClass = Service::class): Service
 {
     $itemService = new Box\Mod\Invoice\ServiceInvoiceItem();
     $feeService = new Box\Mod\Invoice\ServiceGatewayFees();
@@ -52,7 +53,7 @@ function gatewayDepositTestService(EntityManager $em): Service
     $currencyRepo->shouldReceive('getRateByCode')->with('USD')->andReturn(1.0);
     $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepo);
-    $service = Mockery::mock(Service::class)->makePartial();
+    $service = Mockery::mock($serviceClass)->makePartial();
     $service->shouldReceive('countIncome')->zeroOrMoreTimes();
     $service->shouldReceive('recordJournalEvent')->zeroOrMoreTimes();
     $di = container();

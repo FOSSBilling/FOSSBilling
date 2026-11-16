@@ -4890,7 +4890,7 @@ test('order deletion coordinates backend and gateway failures before local clean
         expect($calls)->toBe(['backend', 'gateway', 'invoice items', 'status', 'meta', 'order']);
     }
 })->with(['none', 'backend', 'gateway'])->with([false, true]);
-test('batchSuspendExpired cancels scheduled orders at expiry instead of suspending them', function (): void {
+test('batchSuspendExpired cancels scheduled orders at expiry instead of suspending them', function (bool $completed): void {
     $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTimeImmutable('-1 minute')]);
     $orders = Mockery::mock(OrderRepository::class);
     $orders->shouldReceive('find')->with(42)->andReturn($order);
@@ -4899,13 +4899,14 @@ test('batchSuspendExpired cancels scheduled orders at expiry instead of suspendi
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getOrderRepository')->andReturn($orders);
     $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
-    $service->shouldReceive('getExpiredOrders')->andReturn([]);
-    $service->shouldReceive('processScheduledCancellation')->once()->with($order)->andReturn(true);
+    $service->shouldReceive('getExpiredOrders')->once()->andReturn([$order]);
+    $service->shouldReceive('processScheduledCancellation')->once()->with($order)->andReturn($completed);
     $service->shouldNotReceive('suspendFromOrder');
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([42]);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('refresh')->once()->with($order);
     $di = container();
     $di['em'] = $em;
     $di['event_dispatcher'] = new OrderServiceTestEventRecorder();
@@ -4919,7 +4920,7 @@ test('batchSuspendExpired cancels scheduled orders at expiry instead of suspendi
     $service->setDi($di);
 
     expect($service->batchSuspendExpired())->toBeTrue();
-});
+})->with([true, false]);
 
 test('interrupted scheduled cancellation is held until staff reviews it', function (): void {
     $order = createEntity(Order::class, ['id' => 821, 'status' => Order::STATUS_ACTIVE, 'expiresAt' => new DateTimeImmutable('-1 minute')]);

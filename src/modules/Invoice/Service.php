@@ -2300,7 +2300,7 @@ class Service implements InjectionAwareInterface
         $this->completePayment($transaction, true);
     }
 
-    private function withPaymentCompletionLock(int $transactionId, callable $operation): mixed
+    protected function withPaymentCompletionLock(int $transactionId, callable $operation): mixed
     {
         $connection = $this->di['em']->getConnection();
         $name = 'fb:gateway-completion:' . $transactionId;
@@ -2655,8 +2655,7 @@ class Service implements InjectionAwareInterface
             }
 
             try {
-                $receiptRepository->reconcileHistoricalGatewayReceiptsForInvoice((int) $id);
-                $walletProcessed = min($transactions[$id] ?? 0.0, $receiptRepository->getGatewayReceiptSumForInvoice((int) $id));
+                $walletProcessed = min($transactions[$id] ?? 0.0, $receiptRepository->getGatewayReceiptReservationForInvoice((int) $id));
             } catch (InformationException) {
                 // Preserve the reservation until staff identifies the legacy receipt.
                 $walletProcessed = $transactions[$id] ?? 0.0;

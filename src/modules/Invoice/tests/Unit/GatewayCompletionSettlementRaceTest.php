@@ -13,6 +13,27 @@ use Symfony\Component\Filesystem\Path;
 
 require_once dirname(__DIR__) . '/Fixtures/GatewayReceiptContext.php';
 
+class CompletionWaitInvoiceService extends Box\Mod\Invoice\Service
+{
+    public ?Closure $onCompletionWait = null;
+
+    protected function withPaymentCompletionLock(int $transactionId, callable $operation): mixed
+    {
+        if ($this->onCompletionWait !== null) {
+            $connection = $this->getDi()['em']->getConnection();
+            $name = 'fb:gateway-completion:' . $transactionId;
+            if (FOSSBilling\Core\Doctrine\NamedLock::acquire($connection, $name, 0)) {
+                FOSSBilling\Core\Doctrine\NamedLock::release($connection, $name);
+
+                throw new LogicException('Expected the older completion worker to own the mutex');
+            }
+            ($this->onCompletionWait)();
+        }
+
+        return parent::withPaymentCompletionLock($transactionId, $operation);
+    }
+}
+
 test('an older partial completion cannot acknowledge a later settlement even if its worker crashes', function (bool $staffReconciliation): void {
     if (!function_exists('pcntl_fork')) {
         $this->markTestSkipped('Requires process control for coordinated concurrent workers.');
@@ -57,11 +78,11 @@ test('an older partial completion cannot acknowledge a later settlement even if 
             try {
                 $waitFor($directory . '/observed');
                 $worker = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $directory . '/test.sqlite']), $em->getConfiguration());
-                $service = gatewayDepositTestService($worker);
+                $service = gatewayDepositTestService($worker, CompletionWaitInvoiceService::class);
+                $service->onCompletionWait = fn () => $filesystem->dumpFile($directory . '/waiting', '1');
                 $service->shouldReceive('completeGatewayPayment')->once()->andThrow(new Error('stopped after settlement commit'));
                 $tx = $worker->find(Transaction::class, $id);
                 $buyer = $worker->find(Client::class, $clientId);
-                $filesystem->dumpFile($directory . '/attempting', '1');
 
                 try {
                     if ($staffReconciliation) {
@@ -96,8 +117,7 @@ test('an older partial completion cannot acknowledge a later settlement even if 
                 }
                 $this->paused = true;
                 $this->filesystem->dumpFile($this->directory . '/observed', '1');
-                ($this->waitFor)($this->directory . '/attempting');
-                usleep(100000);
+                ($this->waitFor)($this->directory . '/waiting');
                 // The settlement worker must still be waiting for this completion owner.
                 expect($this->connection->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_UNPAID);
             }

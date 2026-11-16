@@ -10306,8 +10306,8 @@ test('getReservedCredit sets aside received money on unpaid invoices', function 
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
     $em->shouldReceive('getRepository')->with(InvoiceCredit::class)->andReturn($creditRepo);
     $gatewayBalanceRepo = Mockery::mock(Box\Mod\Client\Repository\ClientBalanceRepository::class)->shouldIgnoreMissing();
-    $gatewayBalanceRepo->shouldReceive('getGatewayReceiptSumForInvoice')->with(10)->andReturn(0.0);
-    $gatewayBalanceRepo->shouldReceive('getGatewayReceiptSumForInvoice')->with(11)->andReturn(0.0);
+    $gatewayBalanceRepo->shouldReceive('getGatewayReceiptReservationForInvoice')->with(10)->andReturn(0.0);
+    $gatewayBalanceRepo->shouldReceive('getGatewayReceiptReservationForInvoice')->with(11)->andReturn(0.0);
     $em->shouldReceive('getRepository')->with(ClientBalance::class)->byDefault()->andReturn($gatewayBalanceRepo);
 
     $di = container();

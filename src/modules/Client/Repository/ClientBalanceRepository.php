@@ -18,18 +18,45 @@ use FOSSBilling\Core\Doctrine\RowLock;
 
 class ClientBalanceRepository extends EntityRepository
 {
-    /** Match historical receipts or hold ambiguous funds for staff review. */
+    /** Caller holds the client credit lock and payment transaction. */
     public function reconcileHistoricalGatewayReceiptsForInvoice(int $invoiceId): void
+    {
+        $classification = $this->classifyGatewayReceiptsForInvoice($invoiceId);
+        $connection = $this->getEntityManager()->getConnection();
+        foreach ($classification['links'] as $link) {
+            $connection->executeStatement('UPDATE client_balance SET gateway_transaction_id = ? WHERE id = ? AND gateway_transaction_id IS NULL', [$link['transaction_id'], $link['receipt_id']]);
+        }
+    }
+
+    /** Read-only reservation, including identifiable historical receipts. */
+    public function getGatewayReceiptReservationForInvoice(int $invoiceId): float
+    {
+        return $this->classifyGatewayReceiptsForInvoice($invoiceId)['sum'];
+    }
+
+    /** @return array{sum: float, links: list<array{receipt_id: int, transaction_id: int}>} */
+    private function classifyGatewayReceiptsForInvoice(int $invoiceId): array
     {
         $connection = $this->getEntityManager()->getConnection();
         $txTable = $connection->quoteSingleIdentifier('transaction');
         // Match historical receipts only when their provider fingerprint and
         // original transaction reference identify one processed transaction.
         $clientId = $connection->fetchOne('SELECT client_id FROM invoice WHERE id = ?', [$invoiceId]);
-        $receipts = $connection->fetchAllAssociative("SELECT id, type, rel_id, description, amount, gateway_receipt_key FROM client_balance WHERE client_id = ? AND amount > 0 AND gateway_transaction_id IS NULL AND (gateway_receipt_key IS NOT NULL OR (type = 'transaction' AND description LIKE 'Stripe %') OR (type = 'PayPal' AND description LIKE 'PayPal transaction %'))", [$clientId]);
+        $receipts = $connection->fetchAllAssociative("SELECT b.id, b.type, b.rel_id, b.description, b.amount, b.gateway_receipt_key, b.gateway_transaction_id, t.invoice_id AS linked_invoice_id, t.status AS linked_status FROM client_balance b LEFT JOIN $txTable t ON t.id = b.gateway_transaction_id WHERE b.client_id = ? AND ((b.gateway_transaction_id IS NOT NULL AND b.gateway_receipt_key IS NOT NULL) OR (b.amount > 0 AND b.gateway_transaction_id IS NULL AND (b.gateway_receipt_key IS NOT NULL OR (b.type = 'transaction' AND b.description LIKE 'Stripe %') OR (b.type = 'PayPal' AND b.description LIKE 'PayPal transaction %')))) ORDER BY b.id", [$clientId]);
+        $sum = 0.0;
+        $links = [];
+        $historical = [];
         $stripeIds = [];
         $paypalIds = [];
         foreach ($receipts as $receipt) {
+            if ($receipt['gateway_transaction_id'] !== null) {
+                if ((int) $receipt['linked_invoice_id'] === $invoiceId && $receipt['linked_status'] === 'processed') {
+                    $sum += (float) $receipt['amount'];
+                }
+
+                continue;
+            }
+            $historical[] = $receipt;
             if ($receipt['type'] === 'transaction' && ctype_digit((string) $receipt['rel_id'])) {
                 $stripeIds[] = (int) $receipt['rel_id'];
             } elseif ($receipt['type'] === 'PayPal') {
@@ -39,12 +66,13 @@ class ClientBalanceRepository extends EntityRepository
                 }
             }
         }
-        $transactions = $receipts === [] ? [] : $connection->executeQuery(
-            "SELECT t.id, t.invoice_id, t.txn_id, t.amount, t.status, t.gateway_id, g.gateway FROM $txTable t LEFT JOIN invoice i ON i.id = t.invoice_id JOIN pay_gateway g ON g.id = t.gateway_id WHERE i.client_id = ? OR (t.invoice_id IS NULL AND ((g.gateway = 'Stripe' AND t.id IN (?)) OR (g.gateway = 'PayPalEmail' AND t.txn_id IN (?))))",
+        $transactions = $historical === [] ? [] : $connection->executeQuery(
+            "SELECT t.id, t.invoice_id, t.txn_id, t.amount, t.status, t.gateway_id, g.gateway, (SELECT MIN(b.id) FROM client_balance b WHERE b.gateway_transaction_id = t.id) AS linked_receipt_id FROM $txTable t LEFT JOIN invoice i ON i.id = t.invoice_id JOIN pay_gateway g ON g.id = t.gateway_id WHERE i.client_id = ? OR (t.invoice_id IS NULL AND ((g.gateway = 'Stripe' AND t.id IN (?)) OR (g.gateway = 'PayPalEmail' AND t.txn_id IN (?))))",
             [$clientId, array_values(array_unique($stripeIds)), array_values(array_unique($paypalIds))],
             [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ArrayParameterType::STRING],
         )->fetchAllAssociative();
-        foreach ($receipts as $receipt) {
+        $claimed = [];
+        foreach ($historical as $receipt) {
             $provider = $this->extractGatewayProviderId((string) $receipt['description']);
             $matches = [];
             foreach ($transactions as $tx) {
@@ -56,8 +84,14 @@ class ClientBalanceRepository extends EntityRepository
                     $matches[] = $tx;
                 }
             }
-            if (count($matches) === 1 && !$connection->fetchOne('SELECT id FROM client_balance WHERE gateway_transaction_id = ?', [$matches[0]['id']])) {
-                $connection->executeStatement('UPDATE client_balance SET gateway_transaction_id = ? WHERE id = ? AND gateway_transaction_id IS NULL', [$matches[0]['id'], $receipt['id']]);
+            if (count($matches) === 1 && !isset($claimed[$matches[0]['id']])
+                && ($matches[0]['linked_receipt_id'] === null || (int) $matches[0]['linked_receipt_id'] === (int) $receipt['id'])) {
+                $match = $matches[0];
+                $claimed[$match['id']] = true;
+                $links[] = ['receipt_id' => (int) $receipt['id'], 'transaction_id' => (int) $match['id']];
+                if ((int) $match['invoice_id'] === $invoiceId) {
+                    $sum += (float) $receipt['amount'];
+                }
 
                 continue;
             }
@@ -80,6 +114,8 @@ class ClientBalanceRepository extends EntityRepository
                 }
             }
         }
+
+        return ['sum' => $sum, 'links' => $links];
     }
 
     private function extractGatewayProviderId(string $description): ?string

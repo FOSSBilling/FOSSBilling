@@ -379,3 +379,122 @@ test('staff reconciliation completion survives listener failures and crashes wit
         ->and((float) $connection->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0)
         ->and($connection->fetchOne('SELECT status FROM invoice_item WHERE invoice_id = ?', [$invoice->getId()]))->toBe('executed');
 })->with([false, true]);
+
+class ReceiptClassificationConnection extends Doctrine\DBAL\Connection
+{
+    public ?Closure $afterReceiptRead = null;
+    public ?Closure $beforeReceiptLink = null;
+
+    public function fetchAllAssociative(string $query, array $params = [], array $types = []): array
+    {
+        $rows = parent::fetchAllAssociative($query, $params, $types);
+        if ($this->afterReceiptRead !== null && str_contains($query, 'FROM client_balance b LEFT JOIN')) {
+            $callback = $this->afterReceiptRead;
+            $this->afterReceiptRead = null;
+            $callback();
+        }
+
+        return $rows;
+    }
+
+    public function executeStatement(string $sql, array $params = [], array $types = []): int|string
+    {
+        if ($this->beforeReceiptLink !== null && str_starts_with($sql, 'UPDATE client_balance SET gateway_transaction_id')) {
+            ($this->beforeReceiptLink)();
+        }
+
+        return parent::executeStatement($sql, $params, $types);
+    }
+}
+
+test('credit previews classify historical receipts without writes and payment links under its credit lock', function (string $provider, bool $ambiguous): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true, 'wrapperClass' => ReceiptClassificationConnection::class]);
+    [, $em, $client, $gateway, $transaction] = receiptTestContext($connection);
+    $gateway->setGateway($provider);
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('void')->setPrice(150)->setQuantity(1));
+    $transaction->setInvoice($invoice)->setAmount('50')->setTxnId('historical-payment')->setStatus(Transaction::STATUS_PROCESSED);
+    $em->persist((new Transaction())->setInvoice($invoice)->setGateway($gateway)->setAmount('40')->setCurrency('USD')->setTxnId('manual-partial')->setStatus(Transaction::STATUS_PROCESSED));
+    $receipt = (new ClientBalance())->setClient($client)->setType($provider === 'Stripe' ? 'transaction' : 'PayPal')->setAmount('50')
+        ->setRelId($ambiguous ? null : (string) $transaction->getId())
+        ->setDescription(($provider === 'Stripe' ? 'Stripe transaction ' : 'PayPal transaction ') . 'historical-payment')
+        ->setGatewayReceiptKey($ambiguous ? null : hash('sha256', $gateway->getId() . ':historical-payment'));
+    $em->persist($receipt);
+    $em->persist((new ClientBalance())->setClient($client)->setType('gift')->setAmount('60'));
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    $clientId = (int) $client->getId();
+    $connection->executeStatement('CREATE TRIGGER reject_preview_writes BEFORE UPDATE ON client_balance BEGIN SELECT RAISE(ABORT, \'credit preview wrote a receipt\'); END');
+    foreach ([1, 2] as $attempt) {
+        expect($service->getReservedCredit($clientId))->toBe($ambiguous ? 90.0 : 50.0)
+            ->and($service->getReservedCreditForClients([$clientId]))->toBe([$clientId => $ambiguous ? 90.0 : 50.0])
+            ->and($service->getFreeCredit($clientId))->toBe($ambiguous ? 20.0 : 60.0)
+            ->and($connection->fetchOne('SELECT gateway_transaction_id FROM client_balance WHERE id = ?', [$receipt->getId()]))->toBeNull();
+    }
+    $connection->executeStatement('DROP TRIGGER reject_preview_writes');
+    $writes = 0;
+    $connection->beforeReceiptLink = function () use ($connection, $clientId, &$writes): void {
+        ++$writes;
+        $name = 'fb:credit_payment:client:' . $clientId;
+        $unlocked = FOSSBilling\Core\Doctrine\NamedLock::acquire($connection, $name, 0);
+        if ($unlocked) {
+            FOSSBilling\Core\Doctrine\NamedLock::release($connection, $name);
+        }
+        expect($connection->isTransactionActive())->toBeTrue()->and($unlocked)->toBeFalse();
+    };
+    if ($ambiguous) {
+        expect(fn () => $service->tryPayWithCredits($invoice))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'staff reconciliation');
+        expect($writes)->toBe(0)->and($connection->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_UNPAID)
+            ->and((float) $connection->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(110.0);
+    } else {
+        expect($service->tryPayWithCredits($invoice))->toBeTrue()->and($writes)->toBe(1)
+            ->and((int) $connection->fetchOne('SELECT gateway_transaction_id FROM client_balance WHERE id = ?', [$receipt->getId()]))->toBe($transaction->getId())
+            ->and($em->getRepository(ClientBalance::class)->getGatewayReceiptSumForInvoice((int) $invoice->getId()))->toBe(50.0)
+            ->and((float) $connection->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0)
+            ->and($service->tryPayWithCredits($invoice))->toBeFalse()->and($writes)->toBe(1);
+    }
+})->with(['Stripe', 'PayPalEmail'])->with([false, true]);
+
+test('a receipt linked between preview reads is counted exactly once', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true, 'wrapperClass' => ReceiptClassificationConnection::class]);
+    [, $em, $client, $gateway, $transaction] = receiptTestContext($connection);
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('custom')->setPrice(100)->setQuantity(1));
+    $transaction->setInvoice($invoice)->setAmount('50')->setStatus(Transaction::STATUS_PROCESSED);
+    $receipt = (new ClientBalance())->setClient($client)->setType('transaction')->setRelId((string) $transaction->getId())->setDescription('Stripe transaction pi_preview')->setAmount('50')->setGatewayReceiptKey(hash('sha256', $gateway->getId() . ':pi_preview'));
+    $em->persist($receipt);
+    $em->flush();
+    $connection->afterReceiptRead = fn () => $connection->update('client_balance', ['gateway_transaction_id' => $transaction->getId()], ['id' => $receipt->getId()]);
+    $service = gatewayDepositTestService($em);
+    expect($service->getReservedCredit((int) $client->getId()))->toBe(50.0)
+        ->and($service->getReservedCredit((int) $client->getId()))->toBe(50.0)
+        ->and($service->getFreeCredit((int) $client->getId()))->toBe(0.0);
+});
+
+test('receipt classification retains signed linked entries alongside historical receipts', function (): void {
+    [, $em, $client, $gateway, $transaction] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $transaction->setInvoice($invoice)->setStatus(Transaction::STATUS_PROCESSED)->setAmount('50');
+    foreach ([60, -10] as $amount) {
+        $em->persist((new ClientBalance())->setClient($client)->setAmount((string) $amount)
+            ->setGatewayTransactionId($transaction->getId())->setGatewayReceiptKey(hash('sha256', 'linked:' . $amount)));
+    }
+    $historicalTransaction = (new Transaction())->setInvoice($invoice)->setGateway($gateway)->setAmount('15')->setStatus(Transaction::STATUS_PROCESSED);
+    $em->persist($historicalTransaction);
+    $em->flush();
+    $receipt = (new ClientBalance())->setClient($client)->setType('transaction')->setRelId((string) $historicalTransaction->getId())
+        ->setDescription('Stripe transaction pi_signed_preview')->setAmount('15')
+        ->setGatewayReceiptKey(hash('sha256', $gateway->getId() . ':pi_signed_preview'));
+    $em->persist($receipt);
+    $em->flush();
+    $repository = $em->getRepository(ClientBalance::class);
+    expect($repository->getGatewayReceiptReservationForInvoice((int) $invoice->getId()))->toBe(65.0)
+        ->and($repository->getGatewayReceiptSumForInvoice((int) $invoice->getId()))->toBe(50.0)
+        ->and($em->getConnection()->fetchOne('SELECT gateway_transaction_id FROM client_balance WHERE id = ?', [$receipt->getId()]))->toBeNull();
+});
