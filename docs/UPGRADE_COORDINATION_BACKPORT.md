@@ -1,6 +1,6 @@
 # Upgrade coordination backport for 0.8-next
 
-This local PR candidate is based on `da1f48896d`. The branch tracks the next
+This coordination-only backport targets `0.8-next`, which tracks the next
 maintenance release, currently planned as 0.8.10, with its other planned changes.
 It adds a shared bootstrap request/cron gate and exclusive updater extraction,
 private temporary downloads, archive path/runtime-state protection, session
@@ -24,7 +24,7 @@ If the maintenance backport is unsuitable, include coordination and Phase B/C in
 0.9.0 with the same first-transition limitation. Users receive normal application
 releases; they are not asked to apply patches or run manual schema migrations.
 
-Local validation: full Unit and Modules suite, 3427 tests / 13083 assertions.
-Focused tests cover active request/cron draining, exclusion of new work during
+Regression tests cover active request/cron draining, exclusion of new work during
 extraction, bootstrap freshness, stale markers, safe handoff, protected runtime
-files, and cache deletion before/during download. No push or deployment performed.
+files, and cache deletion before/during download. The maintenance PR should run
+the full unit and module suite with its own locked dependencies.
