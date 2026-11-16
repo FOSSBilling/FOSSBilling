@@ -282,7 +282,7 @@ class Patcher implements InjectionAwareInterface
         $crypt = $this->di['crypt'];
         $result = (new \FOSSBilling\Core\Doctrine\JsonMigration())->automatic($em, $crypt);
         foreach (array_slice($result['quarantined'] ?? [], 0, 20) as $entry) {
-            $this->logUpdate('warning', sprintf('Quarantined %s.%s id=%s (%s); value was set to NULL. Review the transaction and re-enter any needed data.', $entry['table'], $entry['column'], $entry['id'], $entry['issue']));
+            $this->logUpdate('warning', sprintf('Quarantined %s.%s id=%s (%s); value was set to NULL. Review the row and re-enter any needed data.', $entry['table'], $entry['column'], $entry['id'], $entry['issue']));
         }
         if (($result['quarantined_values'] ?? 0) > 20) {
             $this->logUpdate('warning', sprintf('Quarantined %d JSON value(s) in total; see database:json:audit --quarantined for the full list.', $result['quarantined_values']));

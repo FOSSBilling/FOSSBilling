@@ -42,11 +42,7 @@ final class JsonMigration
             $quarantine = new JsonQuarantineStore($em->getConnection(), $crypt);
             $result = $this->convert($em->getConnection(), $journal, $quarantine);
             $this->assertReady($em->getConnection(), $journal);
-            $journal->complete([
-                'quarantined' => $result['quarantined'],
-                'quarantined_values' => $result['quarantined_values'],
-                'decoded_values' => $result['decoded_values'],
-            ]);
+            $journal->complete();
 
             return $result;
         } catch (\Doctrine\DBAL\Exception) {
@@ -172,7 +168,7 @@ final class JsonMigration
                     });
                 }
             }
-            // Normalize the empty sentinel plus quarantined values that cannot safely become JSON.
+            // Normalize only the empty sentinel; ambiguous documents were rejected during preflight.
             foreach (JsonFields::rows($connection, $table, $column) as $row) {
                 if ($row['value'] !== null && trim($row['value']) === '') {
                     $connection->transactional(function () use ($connection, $journal, $table, $column, $row): void {

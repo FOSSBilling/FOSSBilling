@@ -23,7 +23,7 @@ use FOSSBilling\Core\Security\Crypt;
  * until an administrator restores or dismisses them. Originals stay encrypted
  * at rest and are only decrypted for explicit single-row inspection.
  */
-final class JsonQuarantineStore
+final readonly class JsonQuarantineStore
 {
     public const string TABLE = 'json_quarantine';
 

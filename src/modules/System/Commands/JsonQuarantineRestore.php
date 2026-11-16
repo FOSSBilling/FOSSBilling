@@ -18,6 +18,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 
 #[AsCommand(name: 'database:json:quarantine:restore', description: 'Write a corrected value back for a quarantined JSON field')]
@@ -61,7 +62,7 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
 
         try {
             $candidate = (new Filesystem())->readFile($file);
-        } catch (\Symfony\Component\Filesystem\Exception\IOException) {
+        } catch (IOException) {
             $output->writeln(sprintf('<error>Could not read %s.</error>', $file));
 
             return Command::INVALID;

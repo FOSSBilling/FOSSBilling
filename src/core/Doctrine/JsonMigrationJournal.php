@@ -40,11 +40,11 @@ final readonly class JsonMigrationJournal
         return $connection->fetchOne('SELECT id FROM json_migration_record WHERE record_key = ?', [hash('sha256', $key)], [Types::BINARY]) !== false;
     }
 
-    public function complete(array $summary = []): void
+    public function complete(): void
     {
-        $this->connection->transactional(function () use ($summary): void {
+        $this->connection->transactional(function (): void {
             $this->connection->executeStatement('DELETE FROM json_migration_record');
-            $this->save(self::COMPLETE, ['complete' => true] + $summary);
+            $this->save(self::COMPLETE, ['complete' => true]);
         });
     }
 
