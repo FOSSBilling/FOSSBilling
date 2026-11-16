@@ -115,7 +115,7 @@ final class JsonMigration
                                     $batch[] = ['row' => $row, 'value' => $repaired];
                                     $bytes += strlen($repaired);
                                 } elseif (in_array($table . '.' . $column, JsonFields::QUARANTINE_BLOCKED, true)) {
-                                    // NULL is fail-open here (unrestricted recipients), so keep blocking for review.
+                                    // NULL is fail-open here (drops an enforced restriction), so keep blocking for review.
                                     throw new JsonMigrationException("JSON preflight failed for $table.$column id=" . JsonFields::displayId($table, $row['id']) . '; no source data was changed. Review this row with database:json:audit.');
                                 } else {
                                     $pending[] = ['row' => $row, 'value' => null, 'original' => $raw, 'issue' => JsonAudit::classifyIssue($prepared ?? $raw, $scalarColumn)];

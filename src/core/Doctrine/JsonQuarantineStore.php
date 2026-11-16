@@ -168,7 +168,7 @@ final readonly class JsonQuarantineStore
      * original, so dismissal and validated restores work even when the
      * payload can no longer be decrypted.
      *
-     * @return array{column: string, entry: array{table: string, column: string, id: string, issue: string}, id_binary: bool, row_id: string}|null
+     * @return array{entry: array{table: string, column: string, id: string, issue: string}, id_binary: bool, row_id: string}|null
      */
     public function locate(string $table, string $column, string $identifier): ?array
     {
@@ -182,7 +182,6 @@ final readonly class JsonQuarantineStore
         }
 
         return [
-            'column' => (string) $row['column_name'],
             'entry' => [
                 'table' => (string) $row['table_name'],
                 'column' => (string) $row['column_name'],
