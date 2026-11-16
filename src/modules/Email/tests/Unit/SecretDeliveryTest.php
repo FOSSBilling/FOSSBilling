@@ -20,6 +20,7 @@ use function Tests\Helpers\container;
 function secretDeliveryContext(string $code = 'mod_client_password_reset_request', array $settings = [], ?Closure $beforeSend = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 4)], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
