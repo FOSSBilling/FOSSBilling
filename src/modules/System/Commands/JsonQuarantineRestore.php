@@ -91,6 +91,14 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
 
             return Command::INVALID;
         }
+
+        try {
+            $candidate = $this->encryptAdapterSecrets($table, $column, $found['row_id'], $candidate);
+        } catch (\JsonException|\FOSSBilling\Core\Exception\InformationException $exception) {
+            $output->writeln(sprintf('<error>Could not store %s: %s; nothing was changed.</error>', $file, $exception->getMessage()));
+
+            return Command::INVALID;
+        }
         $idType = $found['id_binary'] ? \Doctrine\DBAL\ParameterType::BINARY : \Doctrine\DBAL\ParameterType::STRING;
         $current = $connection->fetchOne(
             'SELECT ' . $connection->quoteSingleIdentifier($column) . ' FROM ' . $connection->quoteSingleIdentifier($table) . ' WHERE id = ?',
@@ -132,5 +140,31 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
         $output->writeln(sprintf('Restored %s.%s id=%s from %s and dropped its quarantine record.', $table, $column, $found['entry']['id'], $file));
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Encrypt declared adapter secrets before a restored gateway or registrar
+     * configuration reaches storage, mirroring the normal write path. Other
+     * columns have no secret fields and pass through unchanged.
+     */
+    private function encryptAdapterSecrets(string $table, string $column, string $rowId, string $candidate): string
+    {
+        if (($table !== 'pay_gateway' && $table !== 'tld_registrar') || $column !== 'config') {
+            return $candidate;
+        }
+        if ($table === 'pay_gateway') {
+            $model = $this->di['em']->getRepository(\Box\Mod\Invoice\Entity\PayGateway::class)->find((int) $rowId);
+            $fields = $model === null ? [] : $this->di['mod_service']('Invoice', 'PayGateway')->getSecretFields($model);
+        } else {
+            $model = $this->di['em']->getRepository(\Box\Mod\Servicedomain\Entity\TldRegistrar::class)->find((int) $rowId);
+            $fields = $model === null ? [] : $this->di['mod_service']('Servicedomain')->registrarGetSecretFields($model);
+        }
+        if ($fields === []) {
+            return $candidate;
+        }
+        $decoded = json_decode($candidate, true, 512, JSON_THROW_ON_ERROR);
+        $protected = (new \FOSSBilling\Core\Security\SecretFields($this->di['crypt']))->store($decoded, $fields);
+
+        return json_encode($protected, JSON_THROW_ON_ERROR);
     }
 }

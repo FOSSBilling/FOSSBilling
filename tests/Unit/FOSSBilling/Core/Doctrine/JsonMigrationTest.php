@@ -107,6 +107,7 @@ test('fail-open restriction lists keep blocking the migration instead of widenin
     'massmailer filter' => ['mod_massmailer', 'filter', '{"client_groups":[7],"client_groups":[7]}'],
     'license ips' => ['service_license', 'ips', '{"0":"192.0.2.10","0":"192.0.2.10"}'],
     'promo products' => ['promo', 'products', '{"0":"1","0":"1"}'],
+    'gateway currencies' => ['pay_gateway', 'accepted_currencies', '{"0":"USD","0":"USD"}'],
 ]);
 
 test('customized columns and indexes require review without source changes', function (string $definition): void {

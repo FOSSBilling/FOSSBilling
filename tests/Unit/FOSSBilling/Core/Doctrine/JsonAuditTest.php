@@ -222,3 +222,61 @@ test('quarantine forget drops the record without decrypting it and keeps the NUL
         ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull()
         ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
 });
+
+test('quarantine restore encrypts declared gateway secrets before writing', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\PayGateway::class)]);
+    $connection->insert('pay_gateway', ['gateway' => 'Custom', 'config' => null]);
+    $id = (int) $connection->lastInsertId();
+    seedQuarantine($connection, 'pay_gateway', 'config', $id);
+    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
+    file_put_contents($file, '{"api_key":"sk_live_secret","pub_key":"pk_live_visible"}');
+
+    try {
+        $payGateway = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+        $payGateway->shouldReceive('getSecretFields')->andReturn(['api_key']);
+        $di = quarantineCommandContainer($connection);
+        $di['mod_service'] = $di->protect(static fn (string $name = '', string $sub = ''): object => $payGateway);
+        $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
+        $command->setDi($di);
+        $tester = new CommandTester($command);
+        expect($tester->execute(['--table' => 'pay_gateway', '--column' => 'config', '--id' => (string) $id, '--from-file' => $file]))->toBe(0);
+        $stored = json_decode((string) $connection->fetchOne('SELECT config FROM pay_gateway WHERE id = ?', [$id]), true);
+        expect($stored['pub_key'])->toBe('pk_live_visible')
+            ->and($stored['api_key'])->toBeArray()
+            ->and($stored['api_key'])->toHaveKey('_fossbilling_encrypted')
+            ->and((new FOSSBilling\Core\Security\SecretFields(new FOSSBilling\Core\Security\Crypt()))->reveal($stored)['api_key'])->toBe('sk_live_secret')
+            ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
+    } finally {
+        unlink($file);
+    }
+});
+
+test('quarantine restore encrypts declared registrar secrets before writing', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Servicedomain\Entity\TldRegistrar::class)]);
+    $connection->insert('tld_registrar', ['registrar' => 'Custom', 'config' => null]);
+    $id = (int) $connection->lastInsertId();
+    seedQuarantine($connection, 'tld_registrar', 'config', $id);
+    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
+    file_put_contents($file, '{"api_key":"sk_live_secret","endpoint":"https://example.test"}');
+
+    try {
+        $service = Mockery::mock(Box\Mod\Servicedomain\Service::class);
+        $service->shouldReceive('registrarGetSecretFields')->andReturn(['api_key']);
+        $di = quarantineCommandContainer($connection);
+        $di['mod_service'] = $di->protect(static fn (string $name = '', string $sub = ''): object => $service);
+        $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
+        $command->setDi($di);
+        $tester = new CommandTester($command);
+        expect($tester->execute(['--table' => 'tld_registrar', '--column' => 'config', '--id' => (string) $id, '--from-file' => $file]))->toBe(0);
+        $stored = json_decode((string) $connection->fetchOne('SELECT config FROM tld_registrar WHERE id = ?', [$id]), true);
+        expect($stored['endpoint'])->toBe('https://example.test')
+            ->and($stored['api_key'])->toBeArray()
+            ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
+    } finally {
+        unlink($file);
+    }
+});

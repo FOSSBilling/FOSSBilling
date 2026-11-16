@@ -23,8 +23,9 @@ final class JsonFields
      * Columns where NULL is fail-open (removes an enforced restriction), so
      * incompatible values keep blocking the migration for manual review
      * instead of being quarantined: recipient filters would mail everyone,
-     * license bindings would accept and record any value, and promos would
-     * apply without their product, period, group or bundle limits.
+     * license bindings would accept and record any value, promos would apply
+     * without their product, period, group or bundle limits, and gateways
+     * would fall back to every installed currency.
      */
     public const array QUARANTINE_BLOCKED = [
         'mod_massmailer.filter',
@@ -36,6 +37,7 @@ final class JsonFields
         'service_license.hosts',
         'service_license.paths',
         'service_license.versions',
+        'pay_gateway.accepted_currencies',
     ];
 
     /** @var array<string, array{entity: class-string, columns: array<string, string>}> */
