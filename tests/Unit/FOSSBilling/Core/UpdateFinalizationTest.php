@@ -300,7 +300,7 @@ test('application readers share a lock that blocks an updater until active work 
     }
 });
 
-test('normal finalization migrates JSON and clears retired previews before restoring maintenance mode', function (): void {
+test('normal finalization quarantines invalid JSON and clears retired previews before restoring maintenance mode', function (): void {
     $config = Config::getConfig();
     $config['maintenance_mode']['enabled'] = false;
     Config::setConfig($config, false);
@@ -337,17 +337,15 @@ test('normal finalization migrates JSON and clears retired previews before resto
     $patcher->setDi($di);
     $finalization = finalizationWithStubPatcher($patcher);
     $finalization->setDi($di);
-    expect(fn () => $finalization->finalizeAndComplete())->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class)
-        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
-        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('pending')
-        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('old-live-reset-token');
-    $c->update('product', ['config' => ''], ['id' => 1]);
     $finalization->finalizeAndComplete();
     expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
         ->and($c->fetchOne('SELECT vars FROM email_template'))->toBeNull()
         ->and(Config::getProperty('maintenance_mode.enabled'))->toBeFalse()
         ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete')
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+    $status = $finalization->getStatus(false);
+    expect($status['json_migration']['quarantined'])->toHaveCount(1)
+        ->and($status['json_migration']['quarantined'][0]['table'])->toBe('product');
 });
 
 test('manual update entry point delegates to the same locked finalization flow', function (): void {

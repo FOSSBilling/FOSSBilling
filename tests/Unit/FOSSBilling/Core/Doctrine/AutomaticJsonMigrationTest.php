@@ -28,7 +28,7 @@ test('automatic migration encrypts changed originals, resumes interrupted work a
         ->and($journal->find('original:product.config:2'))->toBeNull();
     $c->executeStatement('DROP TRIGGER interrupt_json');
     expect($migration->automatic($em, $crypt)['empty_values'])->toBe(1)
-        ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0])
+        ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0])
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1)
         ->and($journal->find('original:product.config:1'))->toBeNull();
 });
