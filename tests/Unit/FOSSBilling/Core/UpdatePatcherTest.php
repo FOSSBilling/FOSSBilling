@@ -2056,6 +2056,7 @@ test('healSchemaDrift converts legacy type rows on a same-version deploy', funct
     $patcher = Mockery::mock(Patcher::class)->makePartial();
     $patcher->shouldReceive('migrateExtensionTypeValues')->once();
     $patcher->shouldReceive('syncSeededModuleVersions')->once();
+    $patcher->shouldReceive('backfillInvoiceItemOrderIds')->once()->with(1);
     $patcher->shouldReceive('isSchemaOutOfSync')->once()->andReturnFalse();
 
     $finalization = new class($patcher) extends FOSSBilling\Core\Update\Finalization {
@@ -3464,6 +3465,10 @@ test('invoice item order_id backfill links order references and leaves other row
                 ->and($rows[3]['order_id'])->toBe(11)
                 ->and($rows[4]['order_id'])->toBe(99);
 
+            // Completion is recorded and the resume marker cleared.
+            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('1')
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
+
             // Idempotent: a second run changes nothing.
             $patcher->backfillInvoiceItemOrderIds();
             expect(array_column($connection->fetchAllAssociative('SELECT order_id FROM invoice_item ORDER BY id'), 'order_id'))
@@ -3499,14 +3504,150 @@ test('invoice item order_id backfill pages bounded runs', function (): void {
             $patcher->setDi($di);
             $patcher->backfillInvoiceItemOrderIds(1);
 
-            expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(500);
+            // First page done, resume marker stored, completion not yet recorded.
+            expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(500)
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe('500')
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(false);
 
             $patcher->backfillInvoiceItemOrderIds();
-            expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(550);
+            expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(550)
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('1')
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
         } finally {
             (new Filesystem())->remove($dbFile);
         }
     });
+});
+
+test('invoice item order_id backfill converges past unresolvable rows across bounded runs', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-skips-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            // A hook_call JSON payload ahead of the order rows: skipped, but must
+            // not strand the rows behind it when only one page runs at a time.
+            $connection->executeStatement(
+                "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES
+                    (1, 'order', 'renew', 'pending_payment', '{\"hook\":\"call\"}'),
+                    (1, 'order', 'renew', 'pending_payment', '7'),
+                    (1, 'order', 'renew', 'pending_payment', '8')"
+            );
+
+            $di = new Pimple\Container();
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new Patcher();
+            $patcher->setDi($di);
+            $patcher->backfillInvoiceItemOrderIds(1);
+
+            expect($connection->fetchAllAssociative('SELECT rel_id, order_id FROM invoice_item ORDER BY id'))
+                ->toEqual([
+                    ['rel_id' => '{"hook":"call"}', 'order_id' => null],
+                    ['rel_id' => '7', 'order_id' => 7],
+                    ['rel_id' => '8', 'order_id' => 8],
+                ])
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(false);
+
+            // A second bounded run finds no more pages and records completion.
+            $patcher->backfillInvoiceItemOrderIds(1);
+            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('1');
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('invoice item order_id backfill short-circuits bounded runs once completion is recorded', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-done-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            $connection->executeStatement(
+                "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '10')"
+            );
+            $connection->executeStatement(
+                "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_item_order_id_backfill_done', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+            );
+
+            $di = new Pimple\Container();
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new Patcher();
+            $patcher->setDi($di);
+            $patcher->backfillInvoiceItemOrderIds(1);
+
+            // Untouched: the flag short-circuits bounded runs before any scan or marker write.
+            expect($connection->fetchOne('SELECT order_id FROM invoice_item'))->toBeNull()
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('invoice item order_id backfill still rescans unbounded runs after completion', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-rescan-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            // Rows written while the flag was set (e.g. by a downgraded codebase
+            // that does not know order_id yet) are still picked up by the next
+            // versioned update's unbounded run.
+            $connection->executeStatement(
+                "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '10')"
+            );
+            $connection->executeStatement(
+                "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_item_order_id_backfill_done', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+            );
+
+            $di = new Pimple\Container();
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new Patcher();
+            $patcher->setDi($di);
+            $patcher->backfillInvoiceItemOrderIds();
+
+            expect((int) $connection->fetchOne('SELECT order_id FROM invoice_item'))->toBe(10);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('invoice item order_id backfill never throws without a usable database', function (): void {
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container());
+    expect(fn () => $patcher->backfillInvoiceItemOrderIds())->not->toThrow(Throwable::class);
+
+    $di = new Pimple\Container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andThrow(new RuntimeException('database unreachable'));
+    $di['em'] = $em;
+
+    $patcher = new Patcher();
+    $patcher->setDi($di);
+    expect(fn () => $patcher->backfillInvoiceItemOrderIds())->not->toThrow(Throwable::class);
 });
 
 test('journal baseline writes are claimed per invoice', function (): void {

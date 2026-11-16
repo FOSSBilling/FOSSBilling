@@ -197,6 +197,11 @@ class Finalization implements InjectionAwareInterface
         $patcher->migrateExtensionTypeValues();
         $patcher->syncSeededModuleVersions();
 
+        // The invoice item order_id backfill likewise converges without a version
+        // change: one bounded page per request from the stored scan position, a
+        // no-op once a pass reaches the end and records completion. Never throws.
+        $patcher->backfillInvoiceItemOrderIds(1);
+
         if ($patcher->isSchemaOutOfSync()) {
             $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());
         }
