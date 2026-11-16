@@ -14,13 +14,17 @@ use Box\Mod\Support\TicketMerge;
 
 use function Tests\Helpers\container;
 
-function ticketMergeConnection(): array
+function ticketMergeConnection(bool $enforceForeignKeys = false): array
 {
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    if ($enforceForeignKeys) {
+        $connection->executeStatement('PRAGMA foreign_keys = ON');
+    }
     $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER, author_email VARCHAR(255), subject VARCHAR(255), status VARCHAR(30), rel_type VARCHAR(30) DEFAULT NULL, rel_id INTEGER DEFAULT NULL, rel_task VARCHAR(30) DEFAULT NULL, rel_new_value VARCHAR(255) DEFAULT NULL, rel_status VARCHAR(30) DEFAULT NULL, access_hash VARCHAR(255) DEFAULT NULL, updated_at DATETIME)');
-    $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER, created_at DATETIME)');
+    $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER' . ($enforceForeignKeys ? ' REFERENCES support_ticket(id) ON DELETE CASCADE' : '') . ', created_at DATETIME)');
     $connection->executeStatement('CREATE TABLE support_ticket_note (id INTEGER PRIMARY KEY, support_ticket_id INTEGER)');
     $connection->executeStatement('CREATE TABLE support_ticket_file (token CHAR(32) NOT NULL, ticket_id BIGINT DEFAULT NULL, message_id BIGINT DEFAULT NULL, PRIMARY KEY (token))');
+    $connection->executeStatement('CREATE TABLE support_ticket_close_event (id TEXT PRIMARY KEY, ticket_id INTEGER, delivered_at DATETIME)');
     $connection->executeStatement('CREATE TABLE support_ticket_secret (id INTEGER PRIMARY KEY, ticket_id BIGINT NOT NULL)');
     $connection->executeStatement('CREATE TABLE support_ticket_secret_event (id INTEGER PRIMARY KEY, ticket_id BIGINT NOT NULL)');
     $connection->executeStatement('CREATE TABLE support_ticket_message_rating (message_id BIGINT NOT NULL, ticket_id BIGINT NOT NULL, PRIMARY KEY (message_id))');
@@ -182,3 +186,54 @@ test('merge lookups degrade without the table', function (): void {
     expect(TicketMerge::targetForClient($di, 1, 1))->toBeNull();
     expect(TicketMerge::mergedInto($di, 1))->toBe([]);
 });
+
+test('merge preserves source replies with foreign keys enabled', function (): void {
+    [$di, $connection] = ticketMergeConnection(true);
+    ticketMergeTicket($connection, 1, 7, 'First', 'open', '2026-01-01 10:00:00');
+    ticketMergeTicket($connection, 2, 7, 'Second', 'open', '2026-01-01 11:00:00');
+    $connection->insert('support_ticket_message', ['id' => 4, 'support_ticket_id' => 2, 'created_at' => '2026-01-01 11:00:00']);
+
+    TicketMerge::merge($di, [1, 2], null, 1);
+
+    expect($connection->fetchOne('SELECT support_ticket_id FROM support_ticket_message WHERE id = 4'))->toBe(1);
+});
+
+test('merge requests row locks on databases that support them', function (Doctrine\DBAL\Platforms\AbstractPlatform $platform, bool $expected): void {
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn($platform);
+    $method = new ReflectionMethod(TicketMerge::class, 'supportsRowLocks');
+
+    expect($method->invoke(null, $connection))->toBe($expected);
+})->with([
+    [new Doctrine\DBAL\Platforms\PostgreSQLPlatform(), true],
+    [new Doctrine\DBAL\Platforms\MySQLPlatform(), true],
+    [new Doctrine\DBAL\Platforms\SQLitePlatform(), false],
+]);
+
+test('merge rolls back when secret history cannot be purged', function (): void {
+    [$di, $connection] = ticketMergeConnection();
+    ticketMergeTicket($connection, 10, 1, 'First', 'open', '2026-01-01 10:00:00');
+    ticketMergeTicket($connection, 11, 1, 'Second', 'open', '2026-01-01 11:00:00');
+    $connection->insert('support_ticket_secret', ['id' => 1, 'ticket_id' => 11]);
+    $connection->insert('support_ticket_secret_event', ['id' => 1, 'ticket_id' => 11]);
+    $connection->executeStatement("CREATE TRIGGER reject_secret_event_delete BEFORE DELETE ON support_ticket_secret_event BEGIN SELECT RAISE(ABORT, 'event purge failed'); END");
+
+    expect(fn () => TicketMerge::merge($di, [10, 11], null, 7))
+        ->toThrow(Doctrine\DBAL\Exception\DriverException::class, 'event purge failed');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket'))->toBe(2)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(1)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_merge'))->toBe(0);
+});
+
+test('merge waits for pending close events and removes delivered source events', function (int $pendingTicket): void {
+    [$di, $connection] = ticketMergeConnection();
+    ticketMergeTicket($connection, 10, 1, 'First', 'open', '2026-01-01 10:00:00');
+    ticketMergeTicket($connection, 11, 1, 'Second', 'open', '2026-01-01 11:00:00');
+    $connection->insert('support_ticket_close_event', ['id' => 'event', 'ticket_id' => $pendingTicket, 'delivered_at' => null]);
+    expect(fn () => TicketMerge::merge($di, [10, 11], null, 7))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'pending close event');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket'))->toBe(2);
+    $connection->update('support_ticket_close_event', ['delivered_at' => '2026-01-01 12:00:00'], ['id' => 'event']);
+    expect(TicketMerge::merge($di, [10, 11], null, 7)['id'])->toBe(10);
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_close_event'))->toBe($pendingTicket === 10 ? 1 : 0);
+})->with([10, 11]);

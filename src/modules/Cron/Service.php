@@ -142,6 +142,15 @@ class Service
 
             $this->di['event_dispatcher']->dispatch(new AfterAdminCronRunEvent());
 
+            // Delivery may close Doctrine's manager after a failed flush. Run it
+            // last so that failure cannot prevent unrelated cron tasks.
+            try {
+                $this->_exec($api, 'support_batch_ticket_retry_close_events');
+            } catch (\Throwable $exception) {
+                $failedTasks[] = 'support_batch_ticket_retry_close_events';
+                $this->di['logger']->withChannel('cron')->error('Failed to retry support close events: {exception}', ['exception' => $exception]);
+            }
+
             if ($failedTasks !== []) {
                 $this->di['logger']->withChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');
 

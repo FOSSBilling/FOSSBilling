@@ -173,3 +173,59 @@ test('ticket secret prune expires old secrets with an event', function (): void 
     TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer());
     expect(TicketSecrets::prune($di))->toBe(0);
 });
+
+test('adding a secret rechecks ticket status after preparing the encrypted value', function (): void {
+    [$di, $connection] = ticketSecretsConnection();
+    $crypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
+    $crypt->shouldReceive('encrypt')->once()->andReturnUsing(function () use ($connection): string {
+        $connection->executeStatement("UPDATE support_ticket SET status = 'closed' WHERE id = 60");
+
+        return 'encrypted';
+    });
+    $di['crypt'] = $crypt;
+
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'Key', 'value' => 'secret']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'closed ticket');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(0);
+});
+
+test('secret access and deletion stop when the ticket is removed before the lock', function (string $action): void {
+    [$di, $connection] = ticketSecretsConnection();
+    $secret = TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'key', 'value' => 'secret']);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $calls = 0;
+    $em->shouldReceive('getConnection')->andReturnUsing(function () use ($connection, &$calls): Doctrine\DBAL\Connection {
+        if (++$calls === 2) {
+            $connection->delete('support_ticket_secret', ['ticket_id' => 60]);
+            $connection->delete('support_ticket', ['id' => 60]);
+        }
+
+        return $connection;
+    });
+    $di['em'] = $em;
+    $call = $action === 'open'
+        ? fn () => TicketSecrets::openForStaff($di, $secret['id'], 1)
+        : fn () => TicketSecrets::delete($di, $secret['id'], null, 5);
+
+    expect($call)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Ticket not found')
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
+})->with(['open', 'delete']);
+
+test('staff cannot open a secret purged by a close before the lock', function (): void {
+    [$di, $connection] = ticketSecretsConnection();
+    $secret = TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'key', 'value' => 'secret']);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $calls = 0;
+    $em->shouldReceive('getConnection')->andReturnUsing(function () use ($connection, &$calls): Doctrine\DBAL\Connection {
+        if (++$calls === 2) {
+            $connection->delete('support_ticket_secret', ['ticket_id' => 60]);
+            $connection->update('support_ticket', ['status' => 'closed'], ['id' => 60]);
+        }
+
+        return $connection;
+    });
+    $di['em'] = $em;
+    expect(fn () => TicketSecrets::openForStaff($di, $secret['id'], 1))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Secret not found')
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
+});

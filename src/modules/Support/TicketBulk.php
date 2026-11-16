@@ -13,6 +13,7 @@ namespace Box\Mod\Support;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use FOSSBilling\Core\Doctrine\RowLock;
 
 /**
  * The ticket list's bulk actions Pin, Unpin and Close ("With Selected").
@@ -49,17 +50,18 @@ final class TicketBulk
     public static function pin(\Pimple\Container $di, array $ids, ?int $adminId): int
     {
         $db = self::db($di);
-        $existing = $db->fetchFirstColumn('SELECT id FROM support_ticket WHERE id IN (?)', [$ids], [ArrayParameterType::INTEGER]);
         $pinned = 0;
-        foreach ($existing as $id) {
-            if ($db->fetchOne('SELECT 1 FROM ' . self::PINS . ' WHERE ticket_id = ?', [(int) $id]) === false) {
-                try {
-                    $db->insert(self::PINS, ['ticket_id' => (int) $id, 'pinned_by' => $adminId, 'pinned_at' => date('Y-m-d H:i:s')]);
-                } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
-                    // Pinned at the same moment by another click: already pinned.
+        foreach (array_unique(array_map(intval(...), $ids)) as $id) {
+            $pinned += (int) $db->transactional(function (Connection $db) use ($id, $adminId): bool {
+                if ($db->fetchOne('SELECT 1 FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [(int) $id]) === false) {
+                    return false;
                 }
-            }
-            ++$pinned;
+                if ($db->fetchOne('SELECT 1 FROM ' . self::PINS . ' WHERE ticket_id = ?', [(int) $id]) === false) {
+                    $db->insert(self::PINS, ['ticket_id' => (int) $id, 'pinned_by' => $adminId, 'pinned_at' => date('Y-m-d H:i:s')]);
+                }
+
+                return true;
+            });
         }
 
         return $pinned;

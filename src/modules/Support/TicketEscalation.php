@@ -292,7 +292,7 @@ final class TicketEscalation
             'status' => $rule['new_status'] !== '' ? $rule['new_status'] : null,
         ], static fn ($value): bool => $value !== null);
         if ($changes !== []) {
-            $support->ticketUpdate($ticket, $changes);
+            $support->ticketUpdate($ticket, $changes, true);
         }
         if ($rule['assign_to'] !== null) {
             TicketAssign::assign($di, $ticketId, (int) $rule['assign_to'], null);

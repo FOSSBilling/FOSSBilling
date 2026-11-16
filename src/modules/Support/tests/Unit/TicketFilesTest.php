@@ -21,6 +21,8 @@ function ticketFilesConnection(): array
     putenv('FOSSBILLING_TICKET_FILES_DIR=' . $dir);
 
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY)');
+    $connection->insert('client', ['id' => 7]);
     $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER, status VARCHAR(30))');
     $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER, admin_id INTEGER, client_id INTEGER)');
     $connection->executeStatement('CREATE TABLE support_ticket_file (
@@ -215,7 +217,7 @@ test('ticket file prune expires old attachments and drops orphans', function ():
 
 test('ticket mail attachments store and skip by type', function (): void {
     [$di, $connection, $dir] = ticketFilesConnection();
-    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 0, 'status' => 'open']);
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => null, 'status' => 'open']);
     $connection->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'admin_id' => null, 'client_id' => null]);
 
     $skipped = TicketFiles::attachFromMail($di, 0, 60, 70, [
@@ -251,3 +253,273 @@ test('ticket files annotate messages and vanish without the table', function ():
     $bare['em'] = $bareEm;
     expect(TicketFiles::withFiles($bare, ['id' => 60, 'messages' => [['id' => 70]]]))->toBe(['id' => 60, 'messages' => [['id' => 70]]]);
 });
+
+test('reply attachments follow the requested message even when a newer reply exists', function (): void {
+    [$di, $connection] = ticketFilesConnection();
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $connection->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'admin_id' => null, 'client_id' => 7]);
+    $connection->insert('support_ticket_message', ['id' => 71, 'support_ticket_id' => 60, 'admin_id' => null, 'client_id' => 7]);
+    $uploaded = TicketFiles::uploadForClient($di, 7, 60, ticketFilesUpload($di['request'], 'note.txt', 'hello', 'text/plain'));
+    $di['request']->request->set('ticket_files', [$uploaded['id']]);
+
+    expect(TicketFiles::attachFromRequest($di, 60, false, 70))->toBe(1)
+        ->and((int) $connection->fetchOne('SELECT message_id FROM support_ticket_file WHERE token = ?', [$uploaded['id']]))->toBe(70);
+});
+
+test('a reply attachment cannot target a message belonging to another ticket', function (): void {
+    [$di, $connection] = ticketFilesConnection();
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $connection->insert('support_ticket', ['id' => 61, 'client_id' => 7, 'status' => 'open']);
+    $connection->insert('support_ticket_message', ['id' => 71, 'support_ticket_id' => 61, 'admin_id' => null, 'client_id' => 7]);
+    $uploaded = TicketFiles::uploadForClient($di, 7, 60, ticketFilesUpload($di['request'], 'note.txt', 'hello', 'text/plain'));
+    $di['request']->request->set('ticket_files', [$uploaded['id']]);
+
+    expect(TicketFiles::attachFromRequest($di, 60, false, 71))->toBe(0)
+        ->and($connection->fetchOne('SELECT message_id FROM support_ticket_file WHERE token = ?', [$uploaded['id']]))->toBeNull();
+});
+
+test('client file cleanup waits for commit and survives a rollback', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    $uploaded = TicketFiles::uploadForClient($di, 7, null, ticketFilesUpload($di['request'], 'private.txt', 'private', 'text/plain'));
+    $path = $dir . '/7/' . $uploaded['id'];
+    $db->beginTransaction();
+    TicketFiles::forgetClient($db, 7);
+    expect(is_file($path))->toBeTrue();
+    $db->rollBack();
+    expect($db->fetchOne('SELECT name FROM support_ticket_file WHERE token = ?', [$uploaded['id']]))->toBe('private.txt')
+        ->and(is_file($path))->toBeTrue();
+    $db->beginTransaction();
+    TicketFiles::forgetClient($db, 7);
+    $db->commit();
+    expect($db->fetchOne('SELECT name FROM support_ticket_file WHERE token = ?', [$uploaded['id']]))->toBe('')
+        ->and(is_file($path))->toBeTrue();
+    TicketFiles::prune($di);
+    expect(is_file($path))->toBeFalse()
+        ->and($db->fetchOne('SELECT token FROM support_ticket_file WHERE token = ?', [$uploaded['id']]))->toBeFalse();
+});
+
+test('invalid cleanup paths stay queued instead of being removed', function (): void {
+    [$di, $db] = ticketFilesConnection();
+    $db->insert('support_ticket_file', [
+        'token' => '../outside', 'client_id' => 7, 'uploader_kind' => '', 'uploader_id' => 0,
+        'session_hash' => '', 'name' => '', 'mime' => '', 'size' => 0,
+        'created_at' => date('Y-m-d H:i:s'), 'removed_at' => date('Y-m-d H:i:s'), 'removed_reason' => 'client_deleted',
+    ]);
+    TicketFiles::prune($di);
+    expect($db->fetchOne('SELECT token FROM support_ticket_file WHERE token = ?', ['../outside']))->toBe('../outside');
+});
+
+test('staff can attach files to a guest ticket', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => null, 'status' => 'open']);
+    $file = TicketFiles::uploadForStaff($di, 1, 60, ticketFilesUpload($di['request'], 'guest.txt', 'guest', 'text/plain'));
+    expect(is_file($dir . '/0/' . $file['id']))->toBeTrue();
+});
+
+test('attachment recovery follows the enclosing transaction outcome', function (string $kind, bool $commit): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'admin_id' => null, 'client_id' => 7]);
+    $db->beginTransaction();
+    if ($kind === 'mail') {
+        expect(TicketFiles::attachFromMail($di, 7, 60, 70, [['name' => 'file.txt', 'content' => 'hello']]))->toBe([]);
+        $token = $db->fetchOne('SELECT token FROM support_ticket_file');
+    } else {
+        $file = ticketFilesUpload($di['request'], 'file.txt', 'hello', 'text/plain');
+        $result = $kind === 'staff' ? TicketFiles::uploadForStaff($di, 1, 60, $file) : TicketFiles::uploadForClient($di, 7, 60, $file);
+        $token = $result['id'];
+    }
+    $path = $dir . '/7/' . $token;
+    expect(is_file($path))->toBeTrue()->and(is_file($path . '.pending'))->toBeTrue();
+    if ($commit) {
+        $db->commit();
+    } else {
+        $db->rollBack();
+    }
+    TicketFiles::prune($di);
+    expect(is_file($path))->toBe($commit)
+        ->and(is_file($path . '.pending'))->toBeFalse()
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file'))->toBe($commit ? 1 : 0);
+})->with(['client', 'staff', 'mail'])->with([false, true]);
+
+test('legacy cleanup removes only old unmarked files without metadata', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $filesystem->mkdir([$dir . '/7', $dir . '/0', $dir . '/bad']);
+    $old = time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 2) * 3600;
+    $orphan = str_repeat('a', 32);
+    $guest = str_repeat('b', 32);
+    $kept = str_repeat('c', 32);
+    $recent = str_repeat('d', 32);
+    $staged = str_repeat('e', 32);
+    foreach (["7/$orphan", "0/$guest", "7/$kept", "7/$recent", "7/$staged", 'bad/' . str_repeat('f', 32), '7/not-a-token'] as $path) {
+        file_put_contents($dir . '/' . $path, 'private');
+        if ($path !== "7/$recent") {
+            touch($dir . '/' . $path, $old);
+        }
+    }
+    file_put_contents($dir . '/7/' . $staged . '.pending', 'invalid');
+    $db->insert('support_ticket_file', [
+        'token' => $kept, 'client_id' => 7, 'uploader_kind' => 'client', 'uploader_id' => 7,
+        'session_hash' => 'session', 'name' => 'saved.txt', 'mime' => 'text/plain', 'size' => 7,
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
+    TicketFiles::cleanupLegacyOrphans($di, true);
+    expect(is_file($dir . '/7/' . $orphan))->toBeFalse()
+        ->and(is_file($dir . '/0/' . $guest))->toBeFalse()
+        ->and(is_file($dir . '/7/' . $kept))->toBeTrue()
+        ->and(is_file($dir . '/7/' . $recent))->toBeTrue()
+        ->and(is_file($dir . '/7/' . $staged))->toBeTrue()
+        ->and(is_file($dir . '/bad/' . str_repeat('f', 32)))->toBeTrue()
+        ->and(is_file($dir . '/7/not-a-token'))->toBeTrue();
+});
+
+test('legacy cleanup skips files while an outer transaction is active', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/7');
+    $path = $dir . '/7/' . str_repeat('a', 32);
+    file_put_contents($path, 'private');
+    touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
+    $db->beginTransaction();
+    expect(fn () => TicketFiles::cleanupLegacyOrphans($di, true))->toThrow(LogicException::class);
+    expect(is_file($path))->toBeTrue();
+    $db->rollBack();
+    TicketFiles::cleanupLegacyOrphans($di, true);
+    expect(is_file($path))->toBeFalse();
+});
+
+test('legacy cleanup processes orphaned files in bounded batches', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/7');
+    for ($i = 0; $i < 501; ++$i) {
+        $path = $dir . '/7/' . str_pad(dechex($i), 32, '0', STR_PAD_LEFT);
+        file_put_contents($path, 'x');
+        touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
+    }
+    TicketFiles::cleanupLegacyOrphans($di, true);
+    $files = (new Symfony\Component\Finder\Finder())->files()->in($dir . '/7');
+    expect(iterator_count($files))->toBe(1);
+    TicketFiles::cleanupLegacyOrphans($di, true);
+    $files = (new Symfony\Component\Finder\Finder())->files()->in($dir . '/7');
+    expect(iterator_count($files))->toBe(0);
+});
+
+test('legacy cleanup does not follow attachment symlinks', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/7');
+    $target = $dir . '/outside.txt';
+    $link = $dir . '/7/' . str_repeat('a', 32);
+    file_put_contents($target, 'keep');
+    touch($target, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
+    symlink($target, $link);
+    TicketFiles::cleanupLegacyOrphans($di, true);
+    expect(is_link($link))->toBeTrue()->and(file_get_contents($target))->toBe('keep');
+});
+
+test('automatic cleanup never deletes old unmarked in-flight uploads', function (int $clientId): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/' . $clientId);
+    $token = str_repeat('a', 32);
+    $path = $dir . '/' . $clientId . '/' . $token;
+    file_put_contents($path, 'legacy upload still running');
+    touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 48) * 3600);
+    TicketFiles::prune($di);
+    expect(is_file($path))->toBeTrue();
+    expect(fn () => TicketFiles::cleanupLegacyOrphans($di, false))->toThrow(InvalidArgumentException::class);
+    expect(is_file($path))->toBeTrue();
+    $db->insert('support_ticket_file', [
+        'token' => $token, 'client_id' => $clientId, 'uploader_kind' => 'client', 'uploader_id' => $clientId,
+        'session_hash' => 'session', 'name' => 'legacy.txt', 'mime' => 'text/plain', 'size' => 7,
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
+    expect(TicketFiles::cleanupLegacyOrphans($di, true))->toBe(0)->and(is_file($path))->toBeTrue();
+})->with([0, 7]);
+
+test('legacy cleanup command requires an explicit drained-writers confirmation', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/7');
+    $path = $dir . '/7/' . str_repeat('a', 32);
+    file_put_contents($path, 'orphan');
+    touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
+    $command = new Box\Mod\Support\Commands\CleanupLegacyFiles();
+    $command->setDi($di);
+    $tester = new Symfony\Component\Console\Tester\CommandTester($command);
+    expect($tester->execute([]))->toBe(Symfony\Component\Console\Command\Command::INVALID)
+        ->and($tester->getDisplay())->toContain('--legacy-uploads-drained')
+        ->and(is_file($path))->toBeTrue();
+    expect($tester->execute(['--legacy-uploads-drained' => true]))->toBe(Symfony\Component\Console\Command\Command::SUCCESS)
+        ->and($tester->getDisplay())->toContain('Removed 1 legacy orphan')
+        ->and(is_file($path))->toBeFalse();
+});
+
+test('legacy cleanup reports database failure without deleting the candidate', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/7');
+    $path = $dir . '/7/' . str_repeat('a', 32);
+    file_put_contents($path, 'orphan');
+    touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
+    $db->executeStatement('DROP TABLE support_ticket_file');
+    $command = new Box\Mod\Support\Commands\CleanupLegacyFiles();
+    $command->setDi($di);
+    $tester = new Symfony\Component\Console\Tester\CommandTester($command);
+    expect(fn () => $tester->execute(['--legacy-uploads-drained' => true]))
+        ->toThrow(Doctrine\DBAL\Exception\DriverException::class);
+    expect(is_file($path))->toBeTrue();
+});
+
+test('retention cleanup waits for its outer transaction and retries after commit', function (bool $commit): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    $upload = TicketFiles::uploadForClient($di, 7, null, ticketFilesUpload($di['request'], 'waiting.txt', 'waiting', 'text/plain'));
+    $path = $dir . '/7/' . $upload['id'];
+    $db->update('support_ticket_file', ['created_at' => date('Y-m-d H:i:s', time() - 2 * 86400)], ['token' => $upload['id']]);
+    $db->beginTransaction();
+    expect(TicketFiles::prune($di))->toBe(1)->and(is_file($path))->toBeTrue();
+    if ($commit) {
+        $db->commit();
+        expect($db->fetchOne('SELECT removed_reason FROM support_ticket_file WHERE token = ?', [$upload['id']]))->toBe('orphan_cleanup');
+        TicketFiles::prune($di);
+        expect(is_file($path))->toBeFalse()->and($db->fetchOne('SELECT id FROM support_ticket_file WHERE token = ?', [$upload['id']]))->toBeFalse();
+    } else {
+        $db->rollBack();
+        expect(is_file($path))->toBeTrue()
+            ->and($db->fetchOne('SELECT removed_reason FROM support_ticket_file WHERE token = ?', [$upload['id']]))->toBeNull();
+    }
+})->with([false, true]);
+
+test('invalid retention cleanup paths remain queued for retry', function (): void {
+    [$di, $db] = ticketFilesConnection();
+    $db->insert('support_ticket_file', [
+        'token' => '../invalid', 'client_id' => 7, 'uploader_kind' => 'client', 'uploader_id' => 7,
+        'session_hash' => '', 'name' => '', 'mime' => '', 'size' => 0,
+        'created_at' => date('Y-m-d H:i:s'), 'removed_at' => date('Y-m-d H:i:s'), 'removed_reason' => 'orphan_cleanup',
+    ]);
+    TicketFiles::prune($di);
+    expect($db->fetchOne('SELECT removed_reason FROM support_ticket_file WHERE token = ?', ['../invalid']))->toBe('orphan_cleanup');
+});
+
+test('discard and staff removal wait for the enclosing transaction', function (string $action, bool $commit): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $upload = TicketFiles::uploadForClient($di, 7, 60, ticketFilesUpload($di['request'], 'file.txt', 'data', 'text/plain'));
+    if ($action === 'staff') {
+        $db->update('support_ticket_file', ['message_id' => 70], ['token' => $upload['id']]);
+        $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'client_id' => 7]);
+    }
+    $path = $dir . '/7/' . $upload['id'];
+    $db->beginTransaction();
+    if ($action === 'staff') {
+        TicketFiles::remove($di, $upload['id'], 1);
+    } else {
+        TicketFiles::discard($di, $upload['id'], 'client', 7);
+    }
+    expect(is_file($path))->toBeTrue();
+    if ($commit) {
+        $db->commit();
+        TicketFiles::prune($di);
+        expect(is_file($path))->toBeFalse();
+    } else {
+        $db->rollBack();
+        expect($db->fetchOne('SELECT removed_at FROM support_ticket_file WHERE token = ?', [$upload['id']]))->toBeNull()
+            ->and(is_file($path))->toBeTrue();
+    }
+})->with(['discard', 'staff'])->with([false, true]);

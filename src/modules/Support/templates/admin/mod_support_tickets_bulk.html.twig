@@ -26,7 +26,7 @@
                 return;
             }
             Modals.create({
-                type: 'confirm',
+                type: 'small-confirm',
                 title: confirmTitle,
                 content: confirmText,
                 confirmCallback: () => {
@@ -65,35 +65,5 @@
             });
         });
 
-        document.querySelectorAll('[data-merge-form]').forEach((form) => {
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const own = parseInt(form.getAttribute('data-merge-form'), 10);
-                const raw = form.querySelector('[data-merge-ids]').value || '';
-                const others = Array.from(new Set(String(raw).split(/[\s,#]+/).map((id) => parseInt(id, 10)).filter((id) => id > 0 && id !== own))).sort((a, b) => a - b);
-                if (!others.length) {
-                    Modals.create({
-                        type: 'small',
-                        title: "{{ 'No tickets selected'|trans }}",
-                        content: "{{ 'Enter at least one other ticket id.'|trans }}",
-                    });
-                    return;
-                }
-                const ids = [own].concat(others).sort((a, b) => a - b);
-                const survivor = ids[0];
-                Modals.create({
-                    type: 'danger',
-                    title: form.getAttribute('data-merge-title'),
-                    content: form.getAttribute('data-merge-text').replace('%list%', '#' + others.join(', #')).replace('%id%', '#' + survivor),
-                    confirmCallback: () => {
-                        const data = { id: own, ids: others.join(','), subject: form.querySelector('[name=subject]').value };
-                        FOSSBilling.api.admin.post('support/ticket_merge', data,
-                            (result) => {
-                                window.location = form.getAttribute('data-merge-url') + '/' + result + '?merged=' + others.join(',');
-                            });
-                    }
-                });
-            });
-        });
     });
 </script>

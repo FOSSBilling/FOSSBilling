@@ -168,14 +168,31 @@ function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleReposit
         ->with(SupportTicketMessageHistory::class)
         ->byDefault()
         ->andReturn($supportTicketMessageHistoryRepo);
-    $em->shouldReceive('getConnection')
-        ->byDefault()
-        ->andReturnUsing(function (): object {
-            $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-            $connection->shouldReceive('delete')->byDefault()->andReturn(0);
+    $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('refresh')->byDefault();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $records = [];
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('delete')->byDefault()->andReturn(0);
+    $connection->shouldReceive('insert')->byDefault()->andReturnUsing(function (string $table, array $data) use (&$records): int {
+        $records[$data['id']] = $data;
 
-            return $connection;
-        });
+        return 1;
+    });
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturnUsing(function (string $sql, array $params) use (&$records): array|false { return $records[$params[0]] ?? false; });
+    $connection->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+    $connection->shouldReceive('update')->byDefault()->andReturn(1);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
+    $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+}
+
+function supportWireSecretSchema(Mockery\MockInterface $connection): void
+{
+    $schema = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schema->shouldReceive('tablesExist')->byDefault()->andReturnTrue();
+    $connection->shouldReceive('createSchemaManager')->byDefault()->andReturn($schema);
 }
 
 /*
@@ -2721,6 +2738,7 @@ test('close ticket is idempotent without resending events', function (): void {
 
     $ticket = new SupportTicket();
     $ticket->setStatus(SupportTicket::STATUS_CLOSED);
+    setEntityId($ticket, 1);
 
     $dispatcher = new EventDispatcher();
     $dispatched = [];
@@ -2728,7 +2746,16 @@ test('close ticket is idempotent without resending events', function (): void {
         $dispatched[] = true;
     });
 
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('fetchOne')->andReturn(SupportTicket::STATUS_CLOSED);
+    $connection->shouldReceive('delete')->andReturn(0);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($em);
+    $em->shouldReceive('getConnection')->andReturn($connection);
     $di = container();
+    $di['em'] = $em;
     $di['event_dispatcher'] = $dispatcher;
     $service->setDi($di);
 
@@ -2744,6 +2771,12 @@ test('closing a ticket purges its secrets', function (): void {
 
     $deleted = [];
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $connection->shouldReceive('insert')->byDefault()->andReturn(1);
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('delete')->andReturnUsing(function (string $table) use (&$deleted): int {
         $deleted[] = $table;
 
@@ -2771,6 +2804,12 @@ test('removing a ticket cleans its pins, assignment, ratings, feedback and merge
 
     $deleted = [];
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $connection->shouldReceive('insert')->byDefault()->andReturn(1);
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('delete')->andReturnUsing(function (string $table, array $where) use (&$deleted): int {
         $deleted[] = $table . ':' . json_encode($where);
 
@@ -2794,4 +2833,23 @@ test('removing a ticket cleans its pins, assignment, ratings, feedback and merge
     }
     expect($deleted)->toContain('support_ticket_merge:{"ticket_id":60}');
     expect($deleted)->toContain('support_ticket_merge:{"merged_into":60}');
+});
+
+test('a retried close email uses its stored admin and propagates delivery failure', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $ticket = createEntity(SupportTicket::class, ['id' => 10]);
+    $admin = Tests\Helpers\admin(['id' => 7]);
+    $service->shouldReceive('getTicketById')->once()->with(10)->andReturn($ticket);
+    $service->shouldReceive('toApiArray')->once()->with($ticket, true, $admin)->andReturn([]);
+    $email = Mockery::mock(EmailService::class);
+    $email->shouldReceive('sendTemplate')->once()->andThrow(new RuntimeException('mail queue unavailable'));
+    $di = container();
+    $adminRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepo->shouldReceive('find')->once()->with(7)->andReturn($admin);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\Admin::class)->andReturn($adminRepo);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['support' => $service, 'email' => $email]));
+    $service->setDi($di);
+
+    expect(fn () => $service->notifyTicketClosed(new AfterTicketClosedEvent(10, TicketActorRole::ADMIN, 7)))
+        ->toThrow(RuntimeException::class, 'mail queue unavailable');
 });

@@ -1621,6 +1621,8 @@ test('ticket files upload, list and remove round-trip', function (): void {
     putenv('FOSSBILLING_TICKET_FILES_DIR=' . $dir);
 
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY)');
+    $connection->insert('client', ['id' => 7]);
     $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER)');
     $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER, admin_id INTEGER, client_id INTEGER)');
     $connection->executeStatement('CREATE TABLE support_ticket_file (
@@ -1664,7 +1666,8 @@ test('ticket files update validates the keep period', function (): void {
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
     $extension = Mockery::mock(Box\Mod\Extension\Service::class);
     $extension->shouldReceive('hasManagePermission')->atLeast()->once()->with('mod_support');
-    $extension->shouldReceive('setConfig')->once()->with(['ext' => 'mod_support', 'ticket_files_days' => '30'])->andReturn(true);
+    $extension->shouldReceive('getConfig')->once()->with('mod_support')->andReturn(['ext' => 'mod_support', 'ticket_rating' => 'false']);
+    $extension->shouldReceive('setConfig')->once()->with(['ext' => 'mod_support', 'ticket_rating' => 'false', 'ticket_files_days' => '30'])->andReturn(true);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $name): object => $extension);
@@ -1736,12 +1739,16 @@ test('ticket update to closed asks for closing feedback', function (): void {
     $connection->executeStatement('CREATE TABLE support_helpdesk_feedback (
         helpdesk_id BIGINT NOT NULL, feedback_request TINYINT(1) NOT NULL DEFAULT 1,
         updated_at DATETIME NOT NULL, PRIMARY KEY (helpdesk_id))');
+    $connection->executeStatement('CREATE TABLE support_ticket_close_event (id TEXT PRIMARY KEY, ticket_id INTEGER, actor TEXT, actor_id INTEGER, created_at TEXT, attempted_at TEXT, notification_queued_at TEXT, feedback_queued_at TEXT, delivered_at TEXT)');
     $connection->insert('support_ticket', ['id' => 60, 'subject' => 'H', 'status' => 'open', 'client_id' => 5, 'author_name' => 'A', 'author_email' => 'a@x.test', 'access_hash' => '', 'support_helpdesk_id' => 1]);
 
     $di = container();
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getConnection')->andReturn($connection);
-    $em->shouldReceive('flush')->andReturnNull();
+    $em->shouldReceive('getRepository')->andReturnUsing(fn (string $entity): object => Mockery::mock(str_replace('\\Entity\\', '\\Repository\\', $entity) . 'Repository')->shouldIgnoreMissing());
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $fn): mixed => $connection->transactional(fn (): mixed => $fn()));
+    $em->shouldReceive('refresh')->andReturnUsing(function (SupportTicket $ticket) use ($connection): void { $ticket->setStatus((string) $connection->fetchOne('SELECT status FROM support_ticket WHERE id = ?', [60])); });
+    $em->shouldReceive('flush')->andReturnUsing(function () use ($connection): void { $connection->update('support_ticket', ['status' => SupportTicket::STATUS_CLOSED], ['id' => 60]); });
     $di['em'] = $em;
     $di['mod_config'] = $di->protect(fn (): array => []);
     $emails = [];
@@ -1763,12 +1770,7 @@ test('ticket update to closed asks for closing feedback', function (): void {
     Tests\Helpers\setEntityId($ticketModel, 60);
     $ticketModel->setStatus(SupportTicket::STATUS_OPEN);
     $service->shouldReceive('getTicketById')->with(60)->andReturn($ticketModel);
-    $service->shouldReceive('ticketUpdate')->andReturnUsing(function (SupportTicket $model) use ($connection): bool {
-        $model->setStatus(SupportTicket::STATUS_CLOSED);
-        $connection->update('support_ticket', ['status' => SupportTicket::STATUS_CLOSED], ['id' => 60]);
-
-        return true;
-    });
+    $service->setDi($di);
     $api->setService($service);
 
     $ticket = new SupportTicket();
@@ -1817,6 +1819,7 @@ test('ticket merge merges into the oldest and fires the event', function (): voi
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
 
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE support_ticket_close_event (id TEXT PRIMARY KEY, ticket_id INTEGER, delivered_at DATETIME)');
     $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER, author_email VARCHAR(255), subject VARCHAR(255), status VARCHAR(30), rel_type VARCHAR(30) DEFAULT NULL, rel_id INTEGER DEFAULT NULL, rel_task VARCHAR(30) DEFAULT NULL, rel_new_value VARCHAR(255) DEFAULT NULL, rel_status VARCHAR(30) DEFAULT NULL, access_hash VARCHAR(255) DEFAULT NULL, updated_at DATETIME)');
     $connection->executeStatement('CREATE TABLE support_ticket_message (id INTEGER PRIMARY KEY, support_ticket_id INTEGER, created_at DATETIME)');
     $connection->executeStatement('CREATE TABLE support_ticket_note (id INTEGER PRIMARY KEY, support_ticket_id INTEGER)');

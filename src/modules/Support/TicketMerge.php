@@ -63,7 +63,7 @@ final class TicketMerge
         try {
             $sql = 'SELECT id, client_id, author_email, subject, status, rel_type, rel_id, rel_task, rel_new_value, rel_status, access_hash, updated_at
                       FROM support_ticket WHERE id IN (?) ORDER BY id';
-            if (self::isMysql($db)) {
+            if (self::supportsRowLocks($db)) {
                 $sql .= ' FOR UPDATE';
             }
             $tickets = [];
@@ -76,6 +76,9 @@ final class TicketMerge
                 }
             }
             self::checkOwner($tickets);
+            if ($db->fetchOne('SELECT 1 FROM ' . TicketCloseOutbox::TABLE . ' WHERE ticket_id IN (?) AND delivered_at IS NULL LIMIT 1', [$ids], [ArrayParameterType::INTEGER]) !== false) {
+                throw new \FOSSBilling\Core\Exception\InformationException('A ticket has a pending close event. Retry after it has been delivered.');
+            }
 
             $masterId = $ids[0];
             $master = $tickets[$masterId];
@@ -120,10 +123,12 @@ final class TicketMerge
             if ($update['status'] === SupportTicket::STATUS_CLOSED) {
                 TicketSecrets::forgetTicket($db, $masterId);
             }
-            $db->executeStatement('DELETE FROM support_ticket WHERE id IN (:ids)', $list, $types);
-            // Reply stars and closing feedback go with the replies.
+            // Move replies before deleting their parent: fresh installs enforce ON DELETE CASCADE.
+            $db->executeStatement('UPDATE support_ticket_message SET support_ticket_id = :master WHERE support_ticket_id IN (:ids)', ['master' => $masterId] + $list, $types);
             TicketFeedback::moveForMerge($db, $masterId, $others);
-            // Last, so a reply saved while this ran still moves.
+            $db->executeStatement('DELETE FROM ' . TicketCloseOutbox::TABLE . ' WHERE ticket_id IN (:ids)', $list, $types);
+            $db->executeStatement('DELETE FROM support_ticket WHERE id IN (:ids)', $list, $types);
+            // Older schemas lack foreign keys; pick up replies written concurrently.
             $db->executeStatement('UPDATE support_ticket_message SET support_ticket_id = :master WHERE support_ticket_id IN (:ids)', ['master' => $masterId] + $list, $types);
             $db->commit();
         } catch (\Throwable $e) {
@@ -334,9 +339,12 @@ final class TicketMerge
         }
     }
 
-    private static function isMysql(Connection $db): bool
+    private static function supportsRowLocks(Connection $db): bool
     {
-        return $db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+        $platform = $db->getDatabasePlatform();
+
+        return $platform instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform
+            || $platform instanceof \Doctrine\DBAL\Platforms\PostgreSQLPlatform;
     }
 
     private static function db(\Pimple\Container $di): Connection

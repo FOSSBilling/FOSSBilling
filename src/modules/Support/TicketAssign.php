@@ -13,6 +13,7 @@ namespace Box\Mod\Support;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use FOSSBilling\Core\Doctrine\RowLock;
 
 /**
  * Tickets assigned to a staff member, shown as "Assigned To". Staff
@@ -55,35 +56,37 @@ final class TicketAssign
     {
         $adminId = (int) $adminId > 0 ? (int) $adminId : null;
         $db = self::db($di);
-        if ($db->fetchOne('SELECT 1 FROM support_ticket WHERE id = ?', [$ticketId]) === false) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
-        }
         if ($adminId !== null && !isset(self::staff($di)[$adminId])) {
             throw new \FOSSBilling\Core\Exception\InformationException('Choose an active staff member.');
         }
-        if (self::assignee($di, $ticketId) === $adminId) {
-            return false;
-        }
-
-        if ($adminId === null) {
-            $db->executeStatement('DELETE FROM ' . self::TABLE . ' WHERE ticket_id = ?', [$ticketId]);
-            $di['logger']->info('Unassigned ticket #{id}', ['id' => $ticketId]);
+        $changed = $db->transactional(function (Connection $db) use ($di, $ticketId, $adminId, $byAdminId): bool {
+            if ($db->fetchOne('SELECT 1 FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$ticketId]) === false) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
+            }
+            if (self::assignee($di, $ticketId) === $adminId) {
+                return false;
+            }
+            if ($adminId === null) {
+                $db->executeStatement('DELETE FROM ' . self::TABLE . ' WHERE ticket_id = ?', [$ticketId]);
+            } else {
+                $row = ['admin_id' => $adminId, 'assigned_by' => $byAdminId, 'assigned_at' => date('Y-m-d H:i:s')];
+                if ($db->update(self::TABLE, $row, ['ticket_id' => $ticketId]) === 0) {
+                    $db->insert(self::TABLE, ['ticket_id' => $ticketId] + $row);
+                }
+            }
 
             return true;
+        });
+        if (!$changed) {
+            return false;
         }
-
-        $row = ['admin_id' => $adminId, 'assigned_by' => $byAdminId, 'assigned_at' => date('Y-m-d H:i:s')];
-        if ($db->update(self::TABLE, $row, ['ticket_id' => $ticketId]) === 0) {
-            try {
-                $db->insert(self::TABLE, ['ticket_id' => $ticketId] + $row);
-            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
-                // Assigned at the same moment elsewhere: this choice wins.
-                $db->update(self::TABLE, $row, ['ticket_id' => $ticketId]);
+        if ($adminId === null) {
+            $di['logger']->info('Unassigned ticket #{id}', ['id' => $ticketId]);
+        } else {
+            $di['logger']->info('Assigned ticket #{id} to staff member #{staff}', ['id' => $ticketId, 'staff' => $adminId]);
+            if ($notify && $adminId !== $byAdminId) {
+                self::notify($di, $ticketId, $adminId, $byAdminId);
             }
-        }
-        $di['logger']->info('Assigned ticket #{id} to staff member #{staff}', ['id' => $ticketId, 'staff' => $adminId]);
-        if ($notify && $adminId !== $byAdminId) {
-            self::notify($di, $ticketId, $adminId, $byAdminId);
         }
 
         return true;

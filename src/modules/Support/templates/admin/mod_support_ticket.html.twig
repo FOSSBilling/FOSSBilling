@@ -322,6 +322,7 @@
                         {% endblock %}
                     {% endembed %}
                 </form>
+                {{ include('mod_support_ticket_merge_script.html.twig') }}
                 <form method="post" action="{{ 'support/ticket_merge'|api_url }}" class="mt-3" data-merge-form="{{ ticket.id }}" data-merge-url="{{ 'support/ticket'|url }}" data-merge-title="{{ 'Merge tickets?'|trans }}" data-merge-text="{{ 'Tickets %list% will be merged into this ticket. The oldest stays and gets all their messages, notes and attachments, and the others are deleted. This cannot be undone.'|trans }}" data-merge-confirm="{{ 'Merge'|trans }}" data-merge-cancel="{{ 'Cancel'|trans }}">
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Merge Tickets'|trans,

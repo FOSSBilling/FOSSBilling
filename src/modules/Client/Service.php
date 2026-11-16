@@ -910,6 +910,9 @@ class Service implements InjectionAwareInterface
         $entityManager->beginTransaction();
 
         try {
+            if (!ClientRowLock::acquire($connection, (int) $model->getId())) {
+                throw new InformationException('Client not found');
+            }
             $service = $this->di['mod_service']('Order');
             $service->rmByClient($model);
             $service = $this->di['mod_service']('Invoice');

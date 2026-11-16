@@ -100,8 +100,6 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getService()->getTicketById((int) $data['id']);
-        $wasClosed = $model->getStatus() === SupportTicket::STATUS_CLOSED;
-        $closesTicket = isset($data['status']) && $data['status'] === SupportTicket::STATUS_CLOSED;
 
         // Sanitize subject if provided — plain text, no HTML
         if (isset($data['subject'])) {
@@ -109,10 +107,6 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         $result = $this->getService()->ticketUpdate($model, $data);
-
-        if (!$wasClosed && $closesTicket) {
-            TicketFeedback::afterClose($this->getDi(), (int) $model->getId());
-        }
 
         if (array_key_exists('assigned_to', $data)) {
             TicketAssign::assign($this->getDi(), (int) $model->getId(), (int) $data['assigned_to'] > 0 ? (int) $data['assigned_to'] : null, (int) $this->getIdentity()->getId());
@@ -246,6 +240,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
                 $this->getDi()['logger']->error('Support: auto-closing ticket {ticket_id} failed: {error}', ['ticket_id' => $ticketArr['id'] ?? '?', 'error' => $e->getMessage()]);
             }
         }
+
         TicketBulk::sweep($this->getDi());
         TicketAssign::sweep($this->getDi());
         TicketFeedback::sweep($this->getDi());
@@ -273,6 +268,17 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             TicketSecrets::prune($this->getDi());
         } catch (\Throwable $e) {
             $this->getDi()['logger']->error('Support: expiring old ticket secrets failed: {error}', ['error' => $e->getMessage()]);
+        }
+
+        return true;
+    }
+
+    /** Deliver pending close notifications after the rest of cron has completed. */
+    public function batch_ticket_retry_close_events($data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+        if (!\Box\Mod\Support\TicketCloseOutbox::retryPending($this->getDi())) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The close-event retry stopped after a database error; pending events will be retried on the next run.');
         }
 
         return true;
@@ -788,7 +794,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Keep attached files between 0 and 3650 days.');
         }
 
-        return $this->getDi()['mod_service']('extension')->setConfig(['ext' => 'mod_support', 'ticket_files_days' => (string) $days]);
+        $extension = $this->getDi()['mod_service']('extension');
+
+        return $extension->setConfig(array_merge($extension->getConfig('mod_support'), ['ext' => 'mod_support', 'ticket_files_days' => (string) $days]));
     }
 
     /**

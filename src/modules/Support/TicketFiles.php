@@ -11,8 +11,14 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support;
 
+use Box\Mod\Client\ClientRowLock;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
+use FOSSBilling\Core\Doctrine\RowLock;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
@@ -37,6 +43,8 @@ final class TicketFiles
     public const MAX_WAITING = 10;
     /** Waiting uploads older than this are deleted. */
     public const WAITING_HOURS = 24;
+    /** Give older unmarked uploads time to finish before checking for orphaned files. */
+    public const LEGACY_ORPHAN_HOURS = 24;
 
     /** extension => mime; never svg or html. 'text' means any text/* or known text type. */
     public const TYPES = [
@@ -78,6 +86,17 @@ final class TicketFiles
         return self::dir() . '/' . $clientId . '/' . $token;
     }
 
+    private static function markerPath(int $clientId, string $token): string
+    {
+        return self::path($clientId, $token) . '.pending';
+    }
+
+    /** Record the lock owner before creating a file that might outlive its database transaction. */
+    private static function stageFile(int $clientId, string $token, ?int $ticketId): void
+    {
+        (new Filesystem())->dumpFile(self::markerPath($clientId, $token), (string) ($ticketId ?? 0));
+    }
+
     /** Waiting files are scoped to the browser session. */
     private static function sessionHash(\Pimple\Container $di): string
     {
@@ -114,6 +133,48 @@ final class TicketFiles
     private static function store(\Pimple\Container $di, mixed $file, int $clientId, ?int $ticketId, string $kind, int $uploaderId, int $perHour): array
     {
         $db = self::db($di);
+        $stored = null;
+
+        try {
+            return $db->transactional(function () use ($di, $db, $file, $clientId, $ticketId, $kind, $uploaderId, $perHour, &$stored): array {
+                if (($clientId < 1 && $kind !== 'admin') || ($clientId > 0 && !ClientRowLock::acquire($db, $clientId))) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Client not found');
+                }
+                if ($ticketId !== null && !self::lockTicketOwner($db, $ticketId, $clientId)) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
+                }
+                $stored = self::storeLocked($di, $file, $clientId, $ticketId, $kind, $uploaderId, $perHour);
+
+                return $stored;
+            });
+        } catch (\Throwable $e) {
+            if ($stored !== null) {
+                (new Filesystem())->remove(self::path($clientId, $stored['id']));
+            }
+
+            throw $e;
+        }
+    }
+
+    private static function lockTicketOwner(Connection $db, int $ticketId, int $clientId): bool
+    {
+        if ($clientId === 0) {
+            if ($db->getDatabasePlatform() instanceof PostgreSQLPlatform) {
+                $db->executeStatement('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['ticket-file-guest:' . $ticketId]);
+            }
+            if ($db->getDatabasePlatform() instanceof SQLitePlatform) {
+                $db->executeStatement('UPDATE support_ticket SET id = id WHERE id = ?', [$ticketId]);
+            }
+
+            return $db->fetchOne('SELECT id FROM support_ticket WHERE id = ? AND (client_id IS NULL OR client_id = 0)' . RowLock::suffix($db), [$ticketId]) !== false;
+        }
+
+        return $db->fetchOne('SELECT id FROM support_ticket WHERE id = ? AND client_id = ?' . RowLock::suffix($db), [$ticketId, $clientId]) !== false;
+    }
+
+    private static function storeLocked(\Pimple\Container $di, mixed $file, int $clientId, ?int $ticketId, string $kind, int $uploaderId, int $perHour): array
+    {
+        $db = self::db($di);
         if (!$file instanceof UploadedFile || !$file->isValid()) {
             throw new \FOSSBilling\Core\Exception\InformationException('Choose a file to attach.');
         }
@@ -148,6 +209,7 @@ final class TicketFiles
         if (!is_dir($folder) && !@mkdir($folder, 0o700, true) && !is_dir($folder)) {
             throw new \FOSSBilling\Core\Exception\InformationException('The file could not be stored.');
         }
+        self::stageFile($clientId, $token, $ticketId);
         $file->move($folder, $token);
         @chmod(self::path($clientId, $token), 0o600);
 
@@ -179,22 +241,21 @@ final class TicketFiles
     public static function discard(\Pimple\Container $di, string $token, string $kind, int $uploaderId): void
     {
         $db = self::db($di);
-        $row = $db->fetchAssociative(
-            'SELECT client_id FROM support_ticket_file WHERE token = ? AND session_hash = ? AND message_id IS NULL AND uploader_kind = ? AND uploader_id = ?',
-            [$token, self::sessionHash($di), $kind, $uploaderId]
+        $claimed = $db->executeStatement(
+            "UPDATE support_ticket_file SET removed_at = ?, removed_reason = 'orphan_cleanup' WHERE token = ? AND session_hash = ? AND message_id IS NULL AND removed_at IS NULL AND uploader_kind = ? AND uploader_id = ?",
+            [date('Y-m-d H:i:s'), $token, self::sessionHash($di), $kind, $uploaderId]
         );
-        if ($row === false) {
+        if ($claimed === 0) {
             throw new \FOSSBilling\Core\Exception\InformationException('File not found.');
         }
-        @unlink(self::path((int) $row['client_id'], $token));
-        $db->delete('support_ticket_file', ['token' => $token]);
+        self::cleanupPrunedFiles($di, $db);
     }
 
     /**
      * Binds the request's waiting uploads to the saved message. Never throws:
      * an attachment failure must not fail the message save.
      */
-    public static function attachFromRequest(\Pimple\Container $di, int $ticketId, bool $staff): int
+    public static function attachFromRequest(\Pimple\Container $di, int $ticketId, bool $staff, ?int $messageId = null): int
     {
         if ($ticketId <= 0) {
             return 0;
@@ -211,7 +272,7 @@ final class TicketFiles
                 return 0;
             }
 
-            return self::attach($di, $ticketId, $staff, $tokens);
+            return self::attach($di, $ticketId, $staff, $tokens, $messageId);
         } catch (\Throwable $e) {
             try {
                 $di['logger']->warning('Support: ticket #{id} attachments failed: {error}', ['id' => $ticketId, 'error' => $e->getMessage()]);
@@ -222,8 +283,8 @@ final class TicketFiles
         }
     }
 
-    /** Binds waiting uploads to the ticket's newest message; returns how many were bound. */
-    public static function attach(\Pimple\Container $di, int $ticketId, bool $staff, array $tokens): int
+    /** Binds waiting uploads to a specific message, or the newest matching message. */
+    public static function attach(\Pimple\Container $di, int $ticketId, bool $staff, array $tokens, ?int $messageId = null): int
     {
         $db = self::db($di);
         $tokens = array_values(array_unique(array_filter(array_map(strval(...), $tokens), static fn (string $token): bool => preg_match('/^[a-f0-9]{32}$/', $token) === 1)));
@@ -235,11 +296,19 @@ final class TicketFiles
         if ($clientId === false) {
             return 0;
         }
-        if ($staff) {
-            $messageId = $db->fetchOne('SELECT id FROM support_ticket_message WHERE support_ticket_id = ? AND admin_id IS NOT NULL ORDER BY id DESC', [$ticketId]);
-        } else {
-            $messageId = $db->fetchOne('SELECT id FROM support_ticket_message WHERE support_ticket_id = ? AND admin_id IS NULL AND client_id = ? ORDER BY id DESC', [$ticketId, (int) $clientId]);
+        $sql = 'SELECT id FROM support_ticket_message WHERE support_ticket_id = ?';
+        $params = [$ticketId];
+        if ($messageId !== null) {
+            $sql .= ' AND id = ?';
+            $params[] = $messageId;
         }
+        if ($staff) {
+            $sql .= ' AND admin_id IS NOT NULL';
+        } else {
+            $sql .= ' AND admin_id IS NULL AND client_id = ?';
+            $params[] = (int) $clientId;
+        }
+        $messageId = $db->fetchOne($sql . ' ORDER BY id DESC', $params);
         if ($messageId === false) {
             return 0;
         }
@@ -275,6 +344,27 @@ final class TicketFiles
     public static function attachFromMail(\Pimple\Container $di, int $clientId, int $ticketId, int $messageId, array $attachments): array
     {
         $db = self::db($di);
+        $paths = [];
+
+        try {
+            return $db->transactional(function () use ($db, $clientId, $ticketId, $messageId, $attachments, &$paths): array {
+                if (($clientId > 0 && !ClientRowLock::acquire($db, $clientId))
+                    || !self::lockTicketOwner($db, $ticketId, $clientId)
+                    || $db->fetchOne('SELECT id FROM support_ticket_message WHERE id = ? AND support_ticket_id = ?', [$messageId, $ticketId]) === false) {
+                    return array_map(static fn (array $attachment): string => self::cleanName((string) ($attachment['name'] ?? '')), $attachments);
+                }
+
+                return self::attachMailLocked($db, $clientId, $ticketId, $messageId, $attachments, $paths);
+            });
+        } catch (\Throwable $e) {
+            (new Filesystem())->remove($paths);
+
+            throw $e;
+        }
+    }
+
+    private static function attachMailLocked(Connection $db, int $clientId, int $ticketId, int $messageId, array $attachments, array &$paths): array
+    {
         $skipped = [];
         $kept = 0;
         foreach ($attachments as $attachment) {
@@ -294,7 +384,9 @@ final class TicketFiles
 
                 continue;
             }
-            file_put_contents(self::path($clientId, $token), (string) $attachment['content']);
+            self::stageFile($clientId, $token, $ticketId);
+            (new Filesystem())->dumpFile(self::path($clientId, $token), (string) $attachment['content']);
+            $paths[] = self::path($clientId, $token);
             @chmod(self::path($clientId, $token), 0o600);
 
             try {
@@ -415,12 +507,14 @@ final class TicketFiles
     public static function remove(\Pimple\Container $di, string $token, ?int $adminId): void
     {
         $db = self::db($di);
-        $row = $db->fetchAssociative('SELECT client_id FROM support_ticket_file WHERE token = ? AND message_id IS NOT NULL AND removed_at IS NULL', [$token]);
-        if ($row === false) {
+        $claimed = $db->executeStatement(
+            "UPDATE support_ticket_file SET removed_at = ?, removed_by = ?, removed_reason = 'staff_pending' WHERE token = ? AND message_id IS NOT NULL AND removed_at IS NULL",
+            [date('Y-m-d H:i:s'), $adminId, $token]
+        );
+        if ($claimed === 0) {
             throw new \FOSSBilling\Core\Exception\InformationException('File not found.');
         }
-        @unlink(self::path((int) $row['client_id'], $token));
-        $db->update('support_ticket_file', ['removed_at' => date('Y-m-d H:i:s'), 'removed_by' => $adminId, 'removed_reason' => 'staff'], ['token' => $token]);
+        self::cleanupPrunedFiles($di, $db);
         $di['logger']->info('Support: ticket file {token} removed by staff member #{staff}', ['token' => $token, 'staff' => $adminId]);
     }
 
@@ -431,46 +525,259 @@ final class TicketFiles
     public static function prune(\Pimple\Container $di): int
     {
         $db = self::db($di);
+        self::cleanupStagedFiles($di, $db);
+        self::cleanupDeletedClients($di, $db);
         $config = $di['mod_config']('support');
         $rawDays = $config['ticket_files_days'] ?? null;
         $days = $rawDays === '' || $rawDays === null ? self::KEEP_DAYS : max(0, (int) $rawDays);
         $pruned = 0;
         if ($days > 0) {
-            $rows = $db->fetchAllAssociative(
-                'SELECT token, client_id FROM support_ticket_file WHERE message_id IS NOT NULL AND removed_at IS NULL AND created_at < ? LIMIT 500',
-                [date('Y-m-d H:i:s', time() - $days * 86400)]
+            $cutoff = date('Y-m-d H:i:s', time() - $days * 86400);
+            $tokens = $db->fetchFirstColumn(
+                'SELECT token FROM support_ticket_file WHERE message_id IS NOT NULL AND removed_at IS NULL AND created_at < ? LIMIT 500',
+                [$cutoff]
             );
-            foreach ($rows as $row) {
-                @unlink(self::path((int) $row['client_id'], (string) $row['token']));
-                $pruned += (int) $db->update('support_ticket_file', ['removed_at' => date('Y-m-d H:i:s'), 'removed_reason' => 'expired'], ['token' => (string) $row['token']]);
+            foreach ($tokens as $token) {
+                $pruned += self::executeRetentionClaim($db,
+                    "UPDATE support_ticket_file SET removed_at = ?, removed_reason = 'expire_pending' WHERE token = ? AND message_id IS NOT NULL AND removed_at IS NULL AND created_at < ?",
+                    [date('Y-m-d H:i:s'), $token, $cutoff]
+                );
             }
         }
-        $rows = $db->fetchAllAssociative(
-            'SELECT f.token, f.client_id FROM support_ticket_file f LEFT JOIN support_ticket_message m ON m.id = f.message_id'
-            . ' WHERE (f.message_id IS NOT NULL AND m.id IS NULL) OR (f.message_id IS NULL AND f.created_at < ?) LIMIT 500',
-            [date('Y-m-d H:i:s', time() - self::WAITING_HOURS * 3600)]
+        $cutoff = date('Y-m-d H:i:s', time() - self::WAITING_HOURS * 3600);
+        $tokens = $db->fetchFirstColumn(
+            'SELECT f.token FROM support_ticket_file f LEFT JOIN support_ticket_message m ON m.id = f.message_id'
+            . " WHERE (f.removed_reason IS NULL OR f.removed_reason NOT IN ('client_deleted', 'expire_pending', 'orphan_cleanup', 'staff_pending'))"
+            . ' AND ((f.message_id IS NOT NULL AND m.id IS NULL) OR (f.message_id IS NULL AND f.created_at < ?)) LIMIT 500',
+            [$cutoff]
         );
-        foreach ($rows as $row) {
-            @unlink(self::path((int) $row['client_id'], (string) $row['token']));
-            $pruned += (int) $db->delete('support_ticket_file', ['token' => (string) $row['token']]);
+        foreach ($tokens as $token) {
+            $pruned += self::executeRetentionClaim($db,
+                "UPDATE support_ticket_file SET removed_at = ?, removed_reason = 'orphan_cleanup' WHERE token = ?"
+                . " AND (removed_reason IS NULL OR removed_reason NOT IN ('client_deleted', 'expire_pending', 'orphan_cleanup', 'staff_pending'))"
+                . ' AND ((message_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM support_ticket_message m WHERE m.id = support_ticket_file.message_id)) OR (message_id IS NULL AND created_at < ?))',
+                [date('Y-m-d H:i:s'), $token, $cutoff]
+            );
         }
+        self::cleanupPrunedFiles($di, $db);
 
         return $pruned;
     }
 
-    /** Deletes every file of a removed client. */
-    public static function forgetClient(Connection $db, int $clientId): void
+    private static function executeRetentionClaim(Connection $db, string $sql, array $params): int
     {
         try {
-            $db->delete('support_ticket_file', ['client_id' => $clientId]);
-        } catch (\Throwable) {
-        }
-        $folder = self::dir() . '/' . $clientId;
-        if (is_dir($folder)) {
-            foreach (glob($folder . '/*') ?: [] as $file) {
-                @unlink($file);
+            return (int) $db->executeStatement($sql, $params);
+        } catch (\Doctrine\DBAL\Exception\RetryableException $e) {
+            // A failed statement inside an outer transaction must be rolled back by its owner.
+            if ($db->isTransactionActive()) {
+                throw $e;
             }
-            @rmdir($folder);
+
+            return (int) $db->executeStatement($sql, $params);
+        }
+    }
+
+    /** Retry committed retention removals without losing their metadata on filesystem failure. */
+    private static function cleanupPrunedFiles(\Pimple\Container $di, Connection $db): void
+    {
+        if ($db->isTransactionActive()) {
+            return;
+        }
+        $filesystem = new Filesystem();
+        $rows = $db->fetchAllAssociative("SELECT token, client_id, removed_reason FROM support_ticket_file WHERE removed_reason IN ('expire_pending', 'orphan_cleanup', 'staff_pending') LIMIT 500");
+        foreach ($rows as $row) {
+            $token = (string) $row['token'];
+            $clientId = (int) $row['client_id'];
+            $reason = (string) $row['removed_reason'];
+            if ($clientId < 0 || preg_match('/^[a-f0-9]{32}$/', $token) !== 1) {
+                $di['logger']->warning('Support: invalid queued ticket file path for client #{client}', ['client' => $clientId]);
+
+                continue;
+            }
+
+            try {
+                $filesystem->remove(self::path($clientId, $token));
+                if ($reason === 'expire_pending' || $reason === 'staff_pending') {
+                    $db->update(self::TABLE, ['removed_reason' => $reason === 'staff_pending' ? 'staff' : 'expired'], ['token' => $token, 'removed_reason' => $reason]);
+                } else {
+                    $db->delete(self::TABLE, ['token' => $token, 'removed_reason' => $reason]);
+                }
+            } catch (\Throwable $e) {
+                $di['logger']->warning('Support: ticket file retention cleanup failed: {message}', ['message' => $e->getMessage()]);
+            }
+        }
+    }
+
+    /** Reconcile files written by transactions that committed, rolled back, or crashed. */
+    private static function cleanupStagedFiles(\Pimple\Container $di, Connection $db): void
+    {
+        if ($db->isTransactionActive() || !(new Filesystem())->exists(self::dir())) {
+            return;
+        }
+        $finder = (new Finder())->files()->in(self::dir())->depth('== 1')->name('/^[a-f0-9]{32}\.pending$/');
+        $filesystem = new Filesystem();
+        $processed = 0;
+        foreach ($finder as $marker) {
+            if (++$processed > 500) {
+                break;
+            }
+            $clientName = $marker->getRelativePath();
+            if (!ctype_digit($clientName) || (string) (int) $clientName !== $clientName) {
+                continue;
+            }
+            $clientId = (int) $clientName;
+            $token = substr($marker->getFilename(), 0, 32);
+
+            try {
+                $ticketText = trim($marker->getContents());
+                if (!ctype_digit($ticketText) || ($clientId === 0 && (int) $ticketText < 1)) {
+                    throw new \RuntimeException('Invalid attachment recovery marker');
+                }
+                $db->transactional(function () use ($db, $filesystem, $clientId, $token, $ticketText): void {
+                    // The owner may commit while we wait for its advisory lock.
+                    if ($db->getDatabasePlatform() instanceof PostgreSQLPlatform) {
+                        $db->executeStatement('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
+                    }
+                    if ($clientId > 0) {
+                        ClientRowLock::acquire($db, $clientId);
+                    } else {
+                        self::lockTicketOwner($db, (int) $ticketText, 0);
+                    }
+                    $row = $db->fetchOne('SELECT id FROM support_ticket_file WHERE token = ? AND client_id = ?' . RowLock::suffix($db), [$token, $clientId]);
+                    if ($row === false) {
+                        $filesystem->remove(self::path($clientId, $token));
+                    }
+                    $filesystem->remove(self::markerPath($clientId, $token));
+                });
+            } catch (\Throwable $e) {
+                $di['logger']->warning('Support: attachment recovery failed: {message}', ['message' => $e->getMessage()]);
+            }
+        }
+    }
+
+    /** Remove unmarked files only after every legacy writer and request has stopped. */
+    public static function cleanupLegacyOrphans(\Pimple\Container $di, bool $legacyUploadsDrained): int
+    {
+        if (!$legacyUploadsDrained) {
+            throw new \InvalidArgumentException('Legacy attachment writers must be stopped and their requests drained.');
+        }
+        $db = self::db($di);
+        if ($db->isTransactionActive()) {
+            throw new \LogicException('Legacy attachment cleanup cannot run inside a transaction.');
+        }
+        $filesystem = new Filesystem();
+        if (!$filesystem->exists(self::dir())) {
+            return 0;
+        }
+        $cutoff = time() - self::LEGACY_ORPHAN_HOURS * 3600;
+        $finder = (new Finder())->files()->in(self::dir())->depth('== 1')->name('/^[a-f0-9]{32}$/');
+        $batch = [];
+        $removed = 0;
+        foreach ($finder as $file) {
+            $clientName = $file->getRelativePath();
+            if ($file->isLink() || !ctype_digit($clientName) || (string) (int) $clientName !== $clientName || $file->getMTime() >= $cutoff) {
+                continue;
+            }
+            $clientId = (int) $clientName;
+            $token = $file->getFilename();
+            if ($filesystem->exists(self::markerPath($clientId, $token))) {
+                continue;
+            }
+            $batch[] = [$clientId, $token];
+            if (count($batch) === 250) {
+                $removed += self::removeLegacyOrphanBatch($db, $filesystem, $batch, 500 - $removed);
+                $batch = [];
+                if ($removed >= 500) {
+                    return $removed;
+                }
+            }
+        }
+        if ($batch !== []) {
+            $removed += self::removeLegacyOrphanBatch($db, $filesystem, $batch, 500 - $removed);
+        }
+
+        return $removed;
+    }
+
+    /** @param list<array{int, string}> $batch */
+    private static function removeLegacyOrphanBatch(Connection $db, Filesystem $filesystem, array $batch, int $limit): int
+    {
+        $tokens = array_column($batch, 1);
+        $existing = array_fill_keys($db->executeQuery(
+            'SELECT token FROM support_ticket_file WHERE token IN (?)', [$tokens], [ArrayParameterType::STRING]
+        )->fetchFirstColumn(), true);
+        $removed = 0;
+        foreach ($batch as [$clientId, $token]) {
+            if (isset($existing[$token])) {
+                continue;
+            }
+            $didRemove = $db->transactional(function () use ($db, $filesystem, $clientId, $token): bool {
+                if ($db->getDatabasePlatform() instanceof PostgreSQLPlatform) {
+                    $db->executeStatement('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
+                }
+                if ($clientId > 0) {
+                    ClientRowLock::acquire($db, $clientId);
+                } elseif ($db->getDatabasePlatform() instanceof SQLitePlatform) {
+                    $db->executeStatement('UPDATE support_ticket_file SET id = id WHERE token = ?', [$token]);
+                }
+                if ($filesystem->exists(self::markerPath($clientId, $token))
+                    || $db->fetchOne('SELECT id FROM support_ticket_file WHERE token = ?' . RowLock::suffix($db), [$token]) !== false) {
+                    return false;
+                }
+                $path = self::path($clientId, $token);
+                if (is_link($path)) {
+                    return false;
+                }
+                $filesystem->remove($path);
+
+                return true;
+            });
+            $removed += (int) $didRemove;
+            if ($removed >= $limit) {
+                break;
+            }
+        }
+
+        return $removed;
+    }
+
+    /** Queue file removal in the same transaction as client deletion. */
+    public static function forgetClient(Connection $db, int $clientId): void
+    {
+        if (!$db->createSchemaManager()->tablesExist([self::TABLE])) {
+            return;
+        }
+        $db->update(self::TABLE, [
+            'ticket_id' => null, 'message_id' => null, 'uploader_kind' => '', 'uploader_id' => 0,
+            'session_hash' => '', 'name' => '', 'mime' => '', 'size' => 0,
+            'removed_at' => date('Y-m-d H:i:s'), 'removed_by' => null, 'removed_reason' => 'client_deleted',
+        ], ['client_id' => $clientId]);
+    }
+
+    private static function cleanupDeletedClients(\Pimple\Container $di, Connection $db): void
+    {
+        // Do not unlink anything while the deletion that queued it can still roll back.
+        if ($db->isTransactionActive()) {
+            return;
+        }
+        $filesystem = new Filesystem();
+        $rows = $db->fetchAllAssociative("SELECT token, client_id FROM support_ticket_file WHERE removed_reason = 'client_deleted' LIMIT 500");
+        foreach ($rows as $row) {
+            $token = (string) $row['token'];
+            $clientId = (int) $row['client_id'];
+            if ($clientId < 1 || preg_match('/^[a-f0-9]{32}$/', $token) !== 1) {
+                $di['logger']->warning('Support: invalid queued ticket file path for client #{client}', ['client' => $clientId]);
+
+                continue;
+            }
+
+            try {
+                $filesystem->remove(self::path($clientId, $token));
+                $db->delete(self::TABLE, ['token' => $token, 'removed_reason' => 'client_deleted']);
+            } catch (\Throwable $e) {
+                $di['logger']->warning('Support: ticket file cleanup failed: {message}', ['message' => $e->getMessage()]);
+            }
         }
     }
 

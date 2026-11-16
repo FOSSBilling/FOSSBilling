@@ -285,3 +285,69 @@ test('feedback moves with merged tickets', function (): void {
     TicketFeedback::moveForMerge($connection, 20, []);
     expect(TicketFeedback::sweep($di))->toBe(0);
 });
+
+test('feedback is rejected if the ticket reopens while the submission is prepared', function (): void {
+    [$connection] = ticketFeedbackConnection();
+    $token = str_repeat('a', 64);
+    $connection->insert('support_ticket_feedback_request', ['ticket_id' => 10, 'token' => $token, 'sent_at' => '2026-10-01 00:00:00', 'answered_at' => null]);
+    $emails = [];
+    $di = ticketFeedbackDi($connection, [], $emails);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $calls = 0;
+    $em->shouldReceive('getConnection')->andReturnUsing(function () use ($connection, &$calls): Doctrine\DBAL\Connection {
+        if (++$calls === 3) {
+            $connection->executeStatement("UPDATE support_ticket SET status = 'open' WHERE id = 10");
+        }
+
+        return $connection;
+    });
+    $di['em'] = $em;
+
+    expect(fn () => TicketFeedback::submit($di, $token, [3 => 9], [], null))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'once the ticket is closed');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_feedback'))->toBe(0)
+        ->and($connection->fetchOne('SELECT answered_at FROM support_ticket_feedback_request WHERE ticket_id = 10'))->toBeNull();
+});
+
+test('rating refuses a reply moved before the ticket lock is acquired', function (): void {
+    [$connection] = ticketFeedbackConnection();
+    $emails = [];
+    $di = ticketFeedbackDi($connection, [], $emails);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->once()->andReturnUsing(function () use ($connection): Doctrine\DBAL\Connection {
+        $connection->executeStatement('UPDATE support_ticket_message SET support_ticket_id = 12 WHERE id = 102');
+
+        return $connection;
+    });
+    $di['em'] = $em;
+
+    expect(fn () => TicketFeedback::rate($di, 10, 102, 4, 'client', 5, null))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only staff replies');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_message_rating'))->toBe(0);
+});
+
+test('close-event delivery retries a failed feedback setting lookup without bypassing opt-out', function (): void {
+    [$db] = ticketFeedbackConnection();
+    $emails = [];
+    $di = ticketFeedbackDi($db, [], $emails);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($db);
+    $em->shouldReceive('flush')->zeroOrMoreTimes();
+    $em->shouldReceive('isOpen')->andReturnTrue();
+    $em->shouldReceive('clear')->zeroOrMoreTimes();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $fn): mixed => $db->transactional(fn (): mixed => $fn()));
+    $di['em'] = $em;
+    $di['event_dispatcher'] = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $db->executeStatement('CREATE TABLE support_ticket_close_event (id TEXT PRIMARY KEY, ticket_id INTEGER, actor TEXT, actor_id INTEGER, created_at TEXT, attempted_at TEXT, notification_queued_at TEXT, feedback_queued_at TEXT, delivered_at TEXT)');
+    $db->insert('support_helpdesk_feedback', ['helpdesk_id' => 1, 'feedback_request' => 0, 'updated_at' => date('Y-m-d H:i:s')]);
+    $id = Box\Mod\Support\TicketCloseOutbox::enqueue($db, 10, Box\Mod\Support\Event\TicketActorRole::CLIENT, 5);
+    $db->executeStatement('ALTER TABLE support_helpdesk_feedback RENAME TO feedback_temporarily_unavailable');
+    expect(Box\Mod\Support\TicketCloseOutbox::deliver($di, $id))->toBeFalse()
+        ->and($db->fetchOne('SELECT feedback_queued_at FROM support_ticket_close_event WHERE id = ?', [$id]))->toBeNull()
+        ->and($emails)->toBeEmpty();
+    $db->executeStatement('ALTER TABLE feedback_temporarily_unavailable RENAME TO support_helpdesk_feedback');
+    expect(Box\Mod\Support\TicketCloseOutbox::deliver($di, $id))->toBeTrue()
+        ->and($db->fetchOne('SELECT delivered_at FROM support_ticket_close_event WHERE id = ?', [$id]))->not->toBeNull()
+        ->and($emails)->toBeEmpty()
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_feedback_request WHERE ticket_id = 10'))->toBe(0);
+});

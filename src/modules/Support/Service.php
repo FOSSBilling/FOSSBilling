@@ -37,6 +37,8 @@ use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Doctrine\SqlExpr;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Twig\Markdown\FOSSBillingMarkdown;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -200,23 +202,34 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $supportService = $di['mod_service']('support');
         $emailService = $di['mod_service']('email');
 
-        try {
-            $identity = $di['loggedin_admin'];
-            $ticketObj = $supportService->getTicketById($event->ticketId);
-            $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
+        $send = function () use ($di, $supportService, $emailService, $event): void {
+            try {
+                $identity = $event->actorId !== null
+                    ? $di['em']->getRepository(\Box\Mod\Staff\Entity\Admin::class)->find($event->actorId)
+                    : $di['loggedin_admin'];
+                $ticketObj = $supportService->getTicketById($event->ticketId);
+                $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
-            $email = [];
-            if ($ticketObj->isGuestTicket()) {
-                $email['to'] = $ticketObj->getAuthorEmail();
-                $email['to_name'] = $ticketObj->getAuthorName();
-            } else {
-                $email['to_client'] = $ticketObj->getClientId();
+                $email = [];
+                if ($ticketObj->isGuestTicket()) {
+                    $email['to'] = $ticketObj->getAuthorEmail();
+                    $email['to_name'] = $ticketObj->getAuthorName();
+                } else {
+                    $email['to_client'] = $ticketObj->getClientId();
+                }
+                $email['code'] = 'mod_support_ticket_staff_close';
+                $email['ticket'] = $ticketArr;
+                $emailService->sendTemplate($email);
+            } catch (\Exception $exc) {
+                $di['logger']->withChannel('email')->error('Failed to send ticket close email', ['exception' => $exc]);
+
+                throw $exc;
             }
-            $email['code'] = 'mod_support_ticket_staff_close';
-            $email['ticket'] = $ticketArr;
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->withChannel('email')->error('Failed to send ticket close email', ['exception' => $exc]);
+        };
+        if ($event->deliveryId !== null) {
+            TicketCloseOutbox::once($di, $event->deliveryId, 'notification_queued_at', $send);
+        } else {
+            $send();
         }
     }
 
@@ -320,28 +333,17 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function closeTicket(SupportTicket $ticket, \Box\Mod\Staff\Entity\Admin|Client|\FOSSBilling\Core\Identity\Guest $identity): bool
     {
-        // Repeat closes change nothing: the close event (and any mail it
-        // sends) fires only on the open -> closed transition.
-        if ($ticket->getStatus() === SupportTicket::STATUS_CLOSED) {
-            return true;
-        }
-
-        $ticket->close();
-        $this->di['em']->flush();
-
-        // Closing discards secrets before either close event can email them.
-        TicketSecrets::forgetTicket($this->di['em']->getConnection(), (int) $ticket->getId());
-
         $actor = match (true) {
             $identity instanceof \Box\Mod\Staff\Entity\Admin => TicketActorRole::ADMIN,
             $identity instanceof Client => TicketActorRole::CLIENT,
             default => TicketActorRole::GUEST,
         };
-        $this->di['event_dispatcher']->dispatch(new AfterTicketClosedEvent((int) $ticket->getId(), $actor));
-
-        // Ask for closing feedback once the ticket closed.
-        TicketFeedback::afterClose($this->di, (int) $ticket->getId());
-
+        $actorId = $identity instanceof \Box\Mod\Staff\Entity\Admin || $identity instanceof Client ? $identity->getId() : null;
+        $result = $this->closeTicketInTransaction($ticket, false, $actor, $actorId);
+        if (!$result['closed']) {
+            return true;
+        }
+        TicketCloseOutbox::deliver($this->di, $result['event_id']);
         $this->di['logger']->info('Closed ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
         return true;
@@ -349,14 +351,58 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function autoClose(SupportTicket $model): bool
     {
-        $model->close();
-        $this->di['em']->flush();
-        // Auto-closing bypasses the close events but not the secret purge.
-        TicketSecrets::forgetTicket($this->di['em']->getConnection(), (int) $model->getId());
-        TicketFeedback::afterClose($this->di, (int) $model->getId());
+        $result = $this->closeTicketInTransaction($model, true, null, null, true);
+        if (!$result['closed']) {
+            return false;
+        }
+        // The cron delivers these after its other work, so a failed ORM flush
+        // cannot prevent later tickets and maintenance tasks from running.
         $this->di['logger']->info('Ticket {model_id} was closed', ['model_id' => $model->getId()]);
 
         return true;
+    }
+
+    /** @return array{closed: bool, event_id: ?string} */
+    private function closeTicketInTransaction(SupportTicket $ticket, bool $requireExpired = false, ?TicketActorRole $actor = null, ?int $actorId = null, bool $feedbackOnly = false): array
+    {
+        $id = $ticket->getId();
+        if ($id === null) {
+            throw new InformationException('Ticket not found.');
+        }
+        $em = $this->di['em'];
+
+        return $em->wrapInTransaction(function () use ($em, $ticket, $id, $requireExpired, $actor, $actorId, $feedbackOnly): array {
+            $db = $em->getConnection();
+            $status = $db->fetchOne('SELECT status FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$id]);
+            if ($status === false) {
+                throw new InformationException('Ticket not found.');
+            }
+            $em->refresh($ticket);
+            if ($requireExpired && $status !== SupportTicket::STATUS_CLOSED) {
+                $expiresAt = SqlExpr::addHours($db, 'st.updated_at', 'sh.close_after');
+                $eligible = $db->fetchOne(
+                    "SELECT 1 FROM support_ticket st LEFT JOIN support_helpdesk sh ON sh.id = st.support_helpdesk_id WHERE st.id = ? AND st.status = ? AND {$expiresAt} < ?",
+                    [$id, SupportTicket::STATUS_ONHOLD, date('Y-m-d H:i:s')]
+                );
+                if ($eligible === false) {
+                    return ['closed' => false, 'event_id' => null];
+                }
+            }
+            if ($status !== SupportTicket::STATUS_CLOSED) {
+                $ticket->close();
+                $em->flush();
+            }
+            // A failed purge rolls back the status change and suppresses events.
+            TicketSecrets::forgetTicket($db, $id);
+
+            $closed = $status !== SupportTicket::STATUS_CLOSED;
+            $eventId = null;
+            if ($closed) {
+                $eventId = $feedbackOnly ? TicketCloseOutbox::enqueueFeedback($db, $id) : ($actor !== null ? TicketCloseOutbox::enqueue($db, $id, $actor, $actorId) : null);
+            }
+
+            return ['closed' => $closed, 'event_id' => $eventId];
+        });
     }
 
     public function canBeReopened(SupportTicket $model): bool
@@ -396,66 +442,61 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function rmByClient(Client $client): void
     {
-        $em = $this->di['em'];
         foreach ($this->getSupportTicketRepository()->findByClientId((int) $client->getId()) as $ticket) {
             $this->removeTicket($ticket);
-            // Secrets and their audit go with the erased tickets.
-            TicketSecrets::forgetTicket($em->getConnection(), (int) $ticket->getId(), true);
         }
-        $em->flush();
         TicketFiles::forgetClient($this->di['em']->getConnection(), (int) $client->getId());
     }
 
     public function rm(SupportTicket $model): bool
     {
-        $em = $this->di['em'];
         $id = $model->getId();
-
         $this->removeTicket($model);
-        TicketSecrets::forgetTicket($em->getConnection(), (int) $id, true);
-        $em->flush();
-
         $this->di['logger']->info('Removed ticket "{id}"', ['id' => $id]);
 
         return true;
     }
 
-    /**
-     * Remove a ticket with its notes, messages, and message edit history.
-     * Shared by admin deletion and client erasure: removing only the ticket
-     * row would orphan message bodies containing personal data.
-     */
+    /** Serialize deletion with ticket replies, ratings, secrets, and close events. */
     private function removeTicket(SupportTicket $ticket): void
     {
-        $em = $this->di['em'];
         $id = $ticket->getId();
-
-        foreach ($this->getSupportTicketNoteRepository()->findByTicketId($id ?? 0) as $note) {
-            $em->remove($note);
+        if ($id === null) {
+            throw new InformationException('Ticket not found.');
         }
-        foreach ($this->getSupportTicketMessageRepository()->findByTicketId($id ?? 0) as $message) {
-            foreach ($this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()) as $history) {
-                $em->remove($history);
-            }
-            $em->remove($message);
-        }
-
-        try {
-            // Side rows the cron sweeps would orphan-clean anyway; removed
-            // here so a deleted ticket leaves nothing behind immediately.
+        $em = $this->di['em'];
+        $em->wrapInTransaction(function () use ($em, $ticket, $id): void {
             $db = $em->getConnection();
-            $db->delete('support_ticket_pin', ['ticket_id' => $id]);
-            $db->delete('support_ticket_assignment', ['ticket_id' => $id]);
-            $db->delete('support_ticket_message_rating', ['ticket_id' => $id]);
-            $db->delete('support_ticket_feedback', ['ticket_id' => $id]);
-            $db->delete('support_ticket_feedback_request', ['ticket_id' => $id]);
-            $db->delete('support_ticket_merge', ['ticket_id' => $id]);
-            $db->delete('support_ticket_merge', ['merged_into' => $id]);
-        } catch (\Throwable) {
-            // Tables arrive with the update patches; the cron sweeps stragglers.
-        }
-
-        $em->remove($ticket);
+            if ($db->fetchOne('SELECT id FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$id]) === false) {
+                throw new InformationException('Ticket not found.');
+            }
+            $em->refresh($ticket);
+            if ($db->fetchOne('SELECT 1 FROM ' . TicketCloseOutbox::TABLE . ' WHERE ticket_id = ? AND delivered_at IS NULL LIMIT 1', [$id]) !== false) {
+                throw new InformationException('This ticket has a pending close event. Retry after it has been delivered.');
+            }
+            foreach ($this->getSupportTicketNoteRepository()->findByTicketId($id) as $note) {
+                $em->remove($note);
+            }
+            foreach ($this->getSupportTicketMessageRepository()->findByTicketId($id) as $message) {
+                foreach ($this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()) as $history) {
+                    $em->remove($history);
+                }
+                $em->remove($message);
+            }
+            $schema = $db->createSchemaManager();
+            foreach (['support_ticket_pin', 'support_ticket_assignment', 'support_ticket_message_rating', 'support_ticket_feedback', 'support_ticket_feedback_request', 'support_ticket_merge'] as $table) {
+                if ($schema->tablesExist([$table])) {
+                    $db->delete($table, ['ticket_id' => $id]);
+                }
+            }
+            if ($schema->tablesExist(['support_ticket_merge'])) {
+                $db->delete('support_ticket_merge', ['merged_into' => $id]);
+            }
+            TicketSecrets::forgetTicket($db, $id, true);
+            $db->delete(TicketCloseOutbox::TABLE, ['ticket_id' => $id]);
+            $em->remove($ticket);
+            $em->flush();
+        });
     }
 
     public function toApiArray(SupportTicket $model, bool $deep = true, \Box\Mod\Staff\Entity\Admin|Client|null $identity = null): array
@@ -962,34 +1003,51 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $data;
     }
 
-    public function ticketUpdate(SupportTicket $model, array $data): bool
+    public function ticketUpdate(SupportTicket $model, array $data, bool $deferFeedback = false): bool
     {
-        $wasClosed = $model->getStatus() === SupportTicket::STATUS_CLOSED;
-        if (isset($data['support_helpdesk_id'])) {
-            $helpdesk = $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id']);
-            if ($helpdesk instanceof Helpdesk) {
-                $model->setSupportHelpdesk($helpdesk);
+        $id = $model->getId();
+        if ($id === null) {
+            throw new InformationException('Ticket not found.');
+        }
+        $em = $this->di['em'];
+        $eventId = $em->wrapInTransaction(function () use ($em, $model, $data, $id): ?string {
+            $db = $em->getConnection();
+            $previousStatus = $db->fetchOne('SELECT status FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$id]);
+            if ($previousStatus === false) {
+                throw new InformationException('Ticket not found.');
             }
-        }
-        if (isset($data['status'])) {
-            $model->setStatus($data['status']);
-        }
-        if (isset($data['subject'])) {
-            $model->setSubject($data['subject']);
-        }
-        if (isset($data['priority'])) {
-            $model->setPriority(TicketPriority::fromInput($data['priority']));
-        }
-        $model->setUpdatedAt(new \DateTime());
+            $em->refresh($model);
+            if (isset($data['support_helpdesk_id'])) {
+                $helpdesk = $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id']);
+                if ($helpdesk instanceof Helpdesk) {
+                    $model->setSupportHelpdesk($helpdesk);
+                }
+            }
+            if (isset($data['status'])) {
+                $model->setStatus($data['status']);
+            }
+            if (isset($data['subject'])) {
+                $model->setSubject($data['subject']);
+            }
+            if (isset($data['priority'])) {
+                $model->setPriority(TicketPriority::fromInput($data['priority']));
+            }
+            $model->setUpdatedAt(new \DateTime());
+            $em->flush();
+            if ($model->getStatus() === SupportTicket::STATUS_CLOSED) {
+                TicketSecrets::forgetTicket($db, $id);
+                if ($previousStatus !== SupportTicket::STATUS_CLOSED) {
+                    return TicketCloseOutbox::enqueueFeedback($db, $id);
+                }
+            }
 
-        $this->di['em']->flush();
-
-        if (!$wasClosed && $model->getStatus() === SupportTicket::STATUS_CLOSED) {
-            // Closed through the update: values go, like a regular close.
-            TicketSecrets::forgetTicket($this->di['em']->getConnection(), (int) $model->getId());
+            return null;
+        });
+        if ($eventId !== null && !$deferFeedback) {
+            TicketCloseOutbox::deliver($this->di, $eventId);
         }
 
-        $this->di['logger']->info('Updated ticket #{model_id}', ['model_id' => $model->getId()]);
+        $this->di['logger']->info('Updated ticket #{model_id}', ['model_id' => $id]);
 
         return true;
     }
@@ -1045,25 +1103,37 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         SupportTicketValidator::validateContent($content);
 
         $em = $this->di['em'];
-        $msg = new SupportTicketMessage();
-        $msg->setSupportTicket($ticket);
-        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $msg->setAdminId((int) $identity->getId());
-        } elseif ($identity instanceof Client) {
-            $msg->setClientId((int) $identity->getId());
+        $id = $ticket->getId();
+        if ($id === null) {
+            throw new InformationException('Ticket not found.');
         }
-        $msg->setContent($content);
-        $msg->setIp($this->di['request']->getClientIp());
-        $em->persist($msg);
-        $em->flush();
+        $msg = $em->wrapInTransaction(function () use ($em, $ticket, $identity, $content, $id): SupportTicketMessage {
+            $db = $em->getConnection();
+            if ($db->fetchOne('SELECT status FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$id]) === false) {
+                throw new InformationException('Ticket not found.');
+            }
+            $em->refresh($ticket);
+            if (!$identity instanceof \Box\Mod\Staff\Entity\Admin && !$ticket->canBeReopen()) {
+                throw new InformationException('Ticket cannot be reopened.');
+            }
+            $msg = new SupportTicketMessage();
+            $msg->setSupportTicket($ticket);
+            if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
+                $msg->setAdminId((int) $identity->getId());
+            } elseif ($identity instanceof Client) {
+                $msg->setClientId((int) $identity->getId());
+            }
+            $msg->setContent($content);
+            $msg->setIp($this->di['request']->getClientIp());
+            $em->persist($msg);
+            $em->flush();
 
-        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $ticket->setStatus(SupportTicket::STATUS_ONHOLD);
-        } else {
-            $ticket->setStatus(SupportTicket::STATUS_OPEN);
-        }
-        $ticket->setUpdatedAt(new \DateTime());
-        $em->flush();
+            $ticket->setStatus($identity instanceof \Box\Mod\Staff\Entity\Admin ? SupportTicket::STATUS_ONHOLD : SupportTicket::STATUS_OPEN);
+            $ticket->setUpdatedAt(new \DateTime());
+            $em->flush();
+
+            return $msg;
+        });
 
         $actor = match (true) {
             $identity instanceof \Box\Mod\Staff\Entity\Admin => TicketActorRole::ADMIN,
@@ -1074,7 +1144,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         $this->di['logger']->info('Replied to ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
-        TicketFiles::attachFromRequest($this->di, (int) $ticket->getId(), $identity instanceof \Box\Mod\Staff\Entity\Admin);
+        TicketFiles::attachFromRequest($this->di, (int) $ticket->getId(), $identity instanceof \Box\Mod\Staff\Entity\Admin, (int) $msg->getId());
 
         return (int) $msg->getId();
     }

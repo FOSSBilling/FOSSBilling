@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Support;
 
 use Doctrine\DBAL\Connection;
+use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Utils\Normalizer;
 
 /**
@@ -106,16 +107,33 @@ final class TicketSecrets
         if (strlen($encrypted) > 65535) {
             throw new \FOSSBilling\Core\Exception\InformationException('This secret is too large.');
         }
-        $db->insert(self::TABLE, [
-            'ticket_id' => $ticketId,
-            'kind' => $kind,
-            'label' => $label,
-            'data' => $encrypted,
-            'added_by_client_id' => $clientId,
-            'created_at' => date('Y-m-d H:i:s'),
-        ]);
 
-        return ['id' => (int) $db->lastInsertId()];
+        return $db->transactional(function (Connection $db) use ($ticketId, $clientId, $kind, $label, $encrypted): array {
+            // Serialize with ticket status updates and recheck after input processing.
+            $row = $db->fetchAssociative(
+                'SELECT status FROM support_ticket WHERE id = ? AND client_id = ?' . RowLock::suffix($db),
+                [$ticketId, $clientId]
+            );
+            if ($row === false) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found.');
+            }
+            if ($row['status'] === Entity\SupportTicket::STATUS_CLOSED) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Secrets cannot be added to a closed ticket.');
+            }
+            if ((int) $db->fetchOne('SELECT COUNT(*) FROM ' . self::TABLE . ' WHERE ticket_id = ?', [$ticketId]) >= self::MAX_SECRETS) {
+                throw new \FOSSBilling\Core\Exception\InformationException('At most :count secrets per ticket.', [':count' => self::MAX_SECRETS]);
+            }
+            $db->insert(self::TABLE, [
+                'ticket_id' => $ticketId,
+                'kind' => $kind,
+                'label' => $label,
+                'data' => $encrypted,
+                'added_by_client_id' => $clientId,
+                'created_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            return ['id' => (int) $db->lastInsertId()];
+        });
     }
 
     /**
@@ -157,17 +175,23 @@ final class TicketSecrets
     public static function openForStaff(\Pimple\Container $di, int $id, int $adminId): array
     {
         $row = self::secret($di, $id, null);
-        $decrypted = $di['crypt']->decrypt((string) $row['data']);
-        if ($decrypted === false) {
-            throw new \FOSSBilling\Core\Exception\InformationException('This secret cannot be opened.');
-        }
-        $fields = json_decode($decrypted, true);
-        if (!is_array($fields)) {
-            throw new \FOSSBilling\Core\Exception\InformationException('This secret cannot be opened.');
-        }
-        self::event(self::db($di), (int) $row['ticket_id'], (string) $row['label'], 'opened', $adminId, null);
+        $db = self::db($di);
 
-        return $fields;
+        return $db->transactional(function (Connection $db) use ($di, $id, $adminId, $row): array {
+            self::lockTicket($db, (int) $row['ticket_id']);
+            $current = self::secret($di, $id, null);
+            $decrypted = $di['crypt']->decrypt((string) $current['data']);
+            if ($decrypted === false) {
+                throw new \FOSSBilling\Core\Exception\InformationException('This secret cannot be opened.');
+            }
+            $fields = json_decode($decrypted, true);
+            if (!is_array($fields)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('This secret cannot be opened.');
+            }
+            self::event($db, (int) $current['ticket_id'], (string) $current['label'], 'opened', $adminId, null);
+
+            return $fields;
+        });
     }
 
     /** Deletes the secret (audited). Either side may delete: staff or its owner. */
@@ -175,30 +199,30 @@ final class TicketSecrets
     {
         $row = self::secret($di, $id, $clientId);
         $db = self::db($di);
-        $db->beginTransaction();
-
-        try {
-            self::event($db, (int) $row['ticket_id'], (string) $row['label'], 'deleted', $adminId, $clientId);
+        $db->transactional(function (Connection $db) use ($di, $id, $adminId, $clientId, $row): void {
+            self::lockTicket($db, (int) $row['ticket_id']);
+            $current = self::secret($di, $id, $clientId);
+            self::event($db, (int) $current['ticket_id'], (string) $current['label'], 'deleted', $adminId, $clientId);
             $db->delete(self::TABLE, ['id' => $id]);
-            $db->commit();
-        } catch (\Throwable $e) {
-            if ($db->isTransactionActive()) {
-                $db->rollBack();
-            }
+        });
+    }
 
-            throw $e;
+    private static function lockTicket(Connection $db, int $ticketId): void
+    {
+        if ($db->fetchOne('SELECT id FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$ticketId]) === false) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found.');
         }
     }
 
-    /** Silently purges a ticket's secrets; events too when asked. */
+    /** Purge values, and optionally events, while tolerating tables not yet installed. */
     public static function forgetTicket(Connection $db, int $ticketId, bool $withEvents = false): void
     {
-        try {
+        $schema = $db->createSchemaManager();
+        if ($schema->tablesExist([self::TABLE])) {
             $db->delete(self::TABLE, ['ticket_id' => $ticketId]);
-            if ($withEvents) {
-                $db->delete(self::EVENTS, ['ticket_id' => $ticketId]);
-            }
-        } catch (\Throwable) {
+        }
+        if ($withEvents && $schema->tablesExist([self::EVENTS])) {
+            $db->delete(self::EVENTS, ['ticket_id' => $ticketId]);
         }
     }
 

@@ -13,6 +13,7 @@ namespace Box\Mod\Support;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Utils\Normalizer;
 
 /**
@@ -52,11 +53,15 @@ final class TicketFeedback
     }
 
     /** Whether the help desk asks for closing feedback (on when unset). */
-    public static function helpdeskOn(\Pimple\Container $di, int $helpdeskId): bool
+    public static function helpdeskOn(\Pimple\Container $di, int $helpdeskId, bool $throwOnFailure = false): bool
     {
         try {
             $row = self::db($di)->fetchOne('SELECT feedback_request FROM ' . self::HELPDESKS . ' WHERE helpdesk_id = ?', [$helpdeskId]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            if ($throwOnFailure) {
+                throw $e;
+            }
+
             return true;
         }
 
@@ -95,25 +100,34 @@ final class TicketFeedback
         if ($stars === false) {
             throw new \FOSSBilling\Core\Exception\InformationException('Choose from 1 to :max stars.', [':max' => self::MAX_STARS]);
         }
-        $adminId = self::db($di)->fetchOne('SELECT admin_id FROM support_ticket_message WHERE id = ? AND support_ticket_id = ?', [$messageId, $ticketId]);
-        if ($adminId === false || $adminId === null) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Only staff replies of this ticket can be rated.');
-        }
+        $db = self::db($di);
+        $adminId = $db->transactional(function (Connection $db) use ($ticketId, $messageId, $stars, $kind, $byId, $ip): int {
+            // Merges take the same ticket lock before moving replies and ratings.
+            if ($db->fetchOne('SELECT id FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$ticketId]) === false) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found.');
+            }
+            $adminId = $db->fetchOne('SELECT admin_id FROM support_ticket_message WHERE id = ? AND support_ticket_id = ?', [$messageId, $ticketId]);
+            if ($adminId === false || $adminId === null) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Only staff replies of this ticket can be rated.');
+            }
 
-        try {
-            self::db($di)->insert(self::RATINGS, [
-                'message_id' => $messageId,
-                'ticket_id' => $ticketId,
-                'admin_id' => (int) $adminId,
-                'rating' => $stars,
-                'rated_by_kind' => $kind === 'guest' ? 'guest' : 'client',
-                'rated_by_id' => $byId,
-                'ip' => mb_substr((string) $ip, 0, 45),
-                'rated_at' => date('Y-m-d H:i:s'),
-            ]);
-        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
-            throw new \FOSSBilling\Core\Exception\InformationException('This reply was already rated.');
-        }
+            try {
+                $db->insert(self::RATINGS, [
+                    'message_id' => $messageId,
+                    'ticket_id' => $ticketId,
+                    'admin_id' => (int) $adminId,
+                    'rating' => $stars,
+                    'rated_by_kind' => $kind === 'guest' ? 'guest' : 'client',
+                    'rated_by_id' => $byId,
+                    'ip' => mb_substr((string) $ip, 0, 45),
+                    'rated_at' => date('Y-m-d H:i:s'),
+                ]);
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+                throw new \FOSSBilling\Core\Exception\InformationException('This reply was already rated.');
+            }
+
+            return (int) $adminId;
+        });
         $di['logger']->info('Support: reply #{message} of ticket #{ticket} rated {stars} stars', ['message' => $messageId, 'ticket' => $ticketId, 'stars' => $stars]);
         if ($stars <= self::LOW_STARS) {
             try {
@@ -141,13 +155,13 @@ final class TicketFeedback
 
     /**
      * Asks for closing feedback once the ticket closed (resending the same
-     * link when it closes again). Never throws.
+     * link when it closes again). Delivery can request errors for retry.
      */
-    public static function afterClose(\Pimple\Container $di, int $ticketId): void
+    public static function afterClose(\Pimple\Container $di, int $ticketId, bool $throwOnFailure = false): void
     {
         try {
             $ticket = self::db($di)->fetchAssociative('SELECT id, subject, status, client_id, author_name, author_email, access_hash, support_helpdesk_id FROM support_ticket WHERE id = ?', [$ticketId]);
-            if ($ticket === false || (string) $ticket['status'] !== Entity\SupportTicket::STATUS_CLOSED || !self::helpdeskOn($di, (int) $ticket['support_helpdesk_id'])) {
+            if ($ticket === false || (string) $ticket['status'] !== Entity\SupportTicket::STATUS_CLOSED || !self::helpdeskOn($di, (int) $ticket['support_helpdesk_id'], $throwOnFailure)) {
                 return;
             }
             if (self::db($di)->fetchOne('SELECT 1 FROM ' . self::FEEDBACK . ' WHERE ticket_id = ?', [$ticketId]) !== false) {
@@ -180,6 +194,9 @@ final class TicketFeedback
             try {
                 $di['logger']->warning('Support: closing feedback for ticket #{id} failed: {error}', ['id' => $ticketId, 'error' => $e->getMessage()]);
             } catch (\Throwable) {
+            }
+            if ($throwOnFailure) {
+                throw $e;
             }
         }
     }
@@ -268,6 +285,10 @@ final class TicketFeedback
         $db->beginTransaction();
 
         try {
+            $status = $db->fetchOne('SELECT status FROM support_ticket WHERE id = ?' . RowLock::suffix($db), [$ticketId]);
+            if ($status !== Entity\SupportTicket::STATUS_CLOSED) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Feedback can be given once the ticket is closed.');
+            }
             if ($db->executeStatement('UPDATE ' . self::REQUESTS . ' SET answered_at = ? WHERE ticket_id = ? AND answered_at IS NULL', [date('Y-m-d H:i:s'), $ticketId]) !== 1
                 || $db->fetchOne('SELECT 1 FROM ' . self::FEEDBACK . ' WHERE ticket_id = ?', [$ticketId]) !== false) {
                 $db->rollBack();
@@ -348,16 +369,16 @@ final class TicketFeedback
             $db = self::db($di);
             $starSums = [];
             for ($star = 1; $star <= self::MAX_STARS; ++$star) {
-                $starSums[] = 'SUM(rating = ' . $star . ') AS s' . $star;
+                $starSums[] = 'SUM(CASE WHEN r.rating = ' . $star . ' THEN 1 ELSE 0 END) AS s' . $star;
             }
             $ratings = $db->fetchAllAssociative(
                 'SELECT r.admin_id, a.name, COUNT(*) AS total, AVG(r.rating) AS average, ' . implode(', ', $starSums)
-                . ' FROM ' . self::RATINGS . ' r LEFT JOIN admin a ON a.id = r.admin_id WHERE r.rated_at >= ? GROUP BY r.admin_id ORDER BY average DESC, total DESC',
+                . ' FROM ' . self::RATINGS . ' r LEFT JOIN admin a ON a.id = r.admin_id WHERE r.rated_at >= ? GROUP BY r.admin_id, a.name ORDER BY average DESC, total DESC',
                 [$since]
             );
             $feedback = $db->fetchAllAssociative(
                 'SELECT f.admin_id, a.name, COUNT(*) AS total, AVG(f.rating) AS average FROM ' . self::FEEDBACK . ' f LEFT JOIN admin a ON a.id = f.admin_id'
-                . ' WHERE f.admin_id IS NOT NULL AND f.created_at >= ? GROUP BY f.admin_id ORDER BY average DESC, total DESC',
+                . ' WHERE f.admin_id IS NOT NULL AND f.created_at >= ? GROUP BY f.admin_id, a.name ORDER BY average DESC, total DESC',
                 [$since]
             );
             $comments = $db->fetchAllAssociative(
