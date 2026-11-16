@@ -527,26 +527,19 @@ class Finalization implements InjectionAwareInterface
      * unreadable database reports no quarantined values, the same
      * recoverability contract as getSchemaDriftStatus().
      *
-     * @return array{quarantined: list<array{table: string, column: string, id: int|string, issue: string}>, decoded_values: int}
+     * @return array{quarantined: list<array{table: string, column: string, id: string, issue: string, quarantined_at: string}>}
      */
     private function getJsonMigrationStatus(): array
     {
         try {
             if (!$this->di instanceof \Pimple\Container || !isset($this->di['em'], $this->di['crypt'])) {
-                return ['quarantined' => [], 'decoded_values' => 0];
+                return ['quarantined' => []];
             }
-            $em = $this->di['em'];
-            $summary = (new \FOSSBilling\Core\Doctrine\JsonMigrationJournal($em, $this->di['crypt']))->find(\FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE);
-            if (!is_array($summary)) {
-                $pending = (new \FOSSBilling\Core\Doctrine\JsonMigrationJournal($em, $this->di['crypt']))->find('quarantine-index:json-fields-v1');
-                $entries = $pending['entries'] ?? [];
-            } else {
-                $entries = $summary['quarantined'] ?? [];
-            }
+            $store = new \FOSSBilling\Core\Doctrine\JsonQuarantineStore($this->di['em']->getConnection(), $this->di['crypt']);
 
-            return ['quarantined' => array_values(is_array($entries) ? $entries : []), 'decoded_values' => (int) ($summary['decoded_values'] ?? 0)];
+            return ['quarantined' => $store->list()];
         } catch (\Throwable) {
-            return ['quarantined' => [], 'decoded_values' => 0];
+            return ['quarantined' => []];
         }
     }
 

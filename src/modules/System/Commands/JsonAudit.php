@@ -38,8 +38,8 @@ final class JsonAudit extends Command implements InjectionAwareInterface
     {
         $this->addOption('table', null, InputOption::VALUE_REQUIRED, 'Inspect one table from the JSON migration inventory')
             ->addOption('batch-size', null, InputOption::VALUE_REQUIRED, 'Rows per read', '500')
-            ->addOption('quarantined', null, InputOption::VALUE_NONE, 'Also list values nulled during migration (from the migration journal)')
-            ->setHelp('Reports row IDs and issue categories without JSON payloads; session IDs are hashed. Uses the automatic migration\'s interpretation of old form defaults and interrupted work. Repair reported rows, then retry normal update finalization. Pass --quarantined to also list values the migration already nulled.');
+            ->addOption('quarantined', null, InputOption::VALUE_NONE, 'Also list values quarantined during migration (ids and issue categories only)')
+            ->setHelp('Reports row IDs and issue categories without JSON payloads; session IDs are hashed. Uses the automatic migration\'s interpretation of old form defaults and interrupted work. Repair reported rows, then retry normal update finalization. Pass --quarantined to also list values the migration already quarantined; inspect one with database:json:quarantine:show.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -58,11 +58,9 @@ final class JsonAudit extends Command implements InjectionAwareInterface
                 ++$count;
             }
             if ($input->getOption('quarantined')) {
-                foreach ($this->quarantined() as $entry) {
-                    if ($input->getOption('table') !== null && $entry['table'] !== $input->getOption('table')) {
-                        continue;
-                    }
-                    $output->writeln(sprintf('%s.%s id=%s quarantined:%s (value was set to NULL during migration)', $entry['table'], $entry['column'], $entry['id'], $entry['issue']));
+                $store = new \FOSSBilling\Core\Doctrine\JsonQuarantineStore($this->di['em']->getConnection(), $this->di['crypt']);
+                foreach ($store->list($input->getOption('table')) as $entry) {
+                    $output->writeln(sprintf('%s.%s id=%s quarantined:%s (value was set to NULL during migration; inspect with database:json:quarantine:show)', $entry['table'], $entry['column'], $entry['id'], $entry['issue']));
                 }
             }
         } catch (\InvalidArgumentException $exception) {
@@ -73,20 +71,5 @@ final class JsonAudit extends Command implements InjectionAwareInterface
         $output->writeln(sprintf('%d JSON field(s) require review. No data was modified.', $count));
 
         return $count === 0 ? Command::SUCCESS : Command::FAILURE;
-    }
-
-    /** @return list<array{table: string, column: string, id: int|string, issue: string}> */
-    private function quarantined(): array
-    {
-        $connection = $this->di['em']->getConnection();
-        if (!$connection->createSchemaManager()->tablesExist(['json_migration_record'])) {
-            return [];
-        }
-        $journal = new \FOSSBilling\Core\Doctrine\JsonMigrationJournal($this->di['em'], $this->di['crypt']);
-        $summary = $journal->find(\FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE)
-            ?? $journal->find('quarantine-index:json-fields-v1');
-        $entries = $summary['quarantined'] ?? $summary['entries'] ?? [];
-
-        return array_values(is_array($entries) ? $entries : []);
     }
 }

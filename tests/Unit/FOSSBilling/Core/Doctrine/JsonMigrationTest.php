@@ -36,6 +36,25 @@ test('an invalid row is quarantined to NULL without blocking earlier source valu
     expect((new JsonMigration())->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
 });
 
+test('quarantined originals survive finalization for later review and repair', function (): void {
+    $c = $this->jsonMigrationConnection;
+    $c->executeStatement('CREATE TABLE `transaction` (id INTEGER PRIMARY KEY, ipn TEXT)');
+    $c->insert('`transaction`', ['id' => 1, 'ipn' => '{broken-payload']);
+
+    $em = EntityManagerFactory::create($c);
+    $crypt = new Crypt();
+    (new JsonMigration())->automatic($em, $crypt);
+    $store = new FOSSBilling\Core\Doctrine\JsonQuarantineStore($c, $crypt);
+    $found = $store->find('transaction', 'ipn', '1');
+    expect($found)->not->toBeNull()
+        ->and($found['original'])->toBe('{broken-payload')
+        ->and($found['entry']['issue'])->toBe('invalid_json')
+        ->and($store->list())->toHaveCount(1)
+        ->and($store->list('transaction'))->toHaveCount(1)
+        ->and($store->list('product'))->toBe([])
+        ->and($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 1'))->toBeNull();
+});
+
 test('automatic conversion normalizes empty configuration values and keeps document meaning', function (): void {
     $c = $this->jsonMigrationConnection;
     $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT, untouched TEXT)');

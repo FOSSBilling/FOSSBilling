@@ -38,7 +38,9 @@ final class JsonMigration
             if ($journal->has(JsonMigrationJournal::COMPLETE)) {
                 return ['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0];
             }
-            $result = $this->convert($em->getConnection(), $journal);
+            JsonQuarantineStore::sync($em);
+            $quarantine = new JsonQuarantineStore($em->getConnection(), $crypt);
+            $result = $this->convert($em->getConnection(), $journal, $quarantine);
             $this->assertReady($em->getConnection(), $journal);
             $journal->complete([
                 'quarantined' => $result['quarantined'],
@@ -52,14 +54,13 @@ final class JsonMigration
         }
     }
 
-    private function convert(Connection $connection, JsonMigrationJournal $journal): array
+    private function convert(Connection $connection, JsonMigrationJournal $journal, JsonQuarantineStore $quarantine): array
     {
         $platform = $connection->getDatabasePlatform();
         $schema = $connection->createSchemaManager();
         $targets = [];
         $temp = 'fb_json_preflight_' . bin2hex(random_bytes(6));
         $quotedTemp = $connection->quoteSingleIdentifier($temp);
-        $quarantineIndex = self::quarantineIndex($journal->find('quarantine-index:json-fields-v1'));
         $decodedTotal = 0;
 
         try {
@@ -127,7 +128,7 @@ final class JsonMigration
                         }
                         if ($rowsRead >= 500 || $bytes >= 262144) {
                             $this->validateBatch($connection, $temp, $batch, $table, $column);
-                            $decodedTotal += $this->applySourceWrites($connection, $journal, $table, $column, $pending, $quarantineIndex);
+                            $decodedTotal += $this->applySourceWrites($connection, $journal, $quarantine, $table, $column, $pending);
                             $journal->checkpoint('scan:' . $table . '.' . $column, ['cursor' => base64_encode((string) $row['id']), 'binary' => $row['id_type'] === \Doctrine\DBAL\ParameterType::BINARY]);
                             $batch = [];
                             $bytes = 0;
@@ -136,7 +137,7 @@ final class JsonMigration
                         }
                     }
                     $this->validateBatch($connection, $temp, $batch, $table, $column);
-                    $decodedTotal += $this->applySourceWrites($connection, $journal, $table, $column, $pending, $quarantineIndex);
+                    $decodedTotal += $this->applySourceWrites($connection, $journal, $quarantine, $table, $column, $pending);
                     $journal->save('scanned:' . $table . '.' . $column, ['validated' => true]);
                 }
             }
@@ -198,32 +199,9 @@ final class JsonMigration
             // SQLite's standard Doctrine JSON declaration is already CLOB/TEXT; no table rebuild.
         }
 
-        if ($quarantineIndex !== []) {
-            $journal->checkpoint('quarantine-index:json-fields-v1', ['entries' => $quarantineIndex]);
-        }
+        $quarantined = $quarantine->list();
 
-        return ['columns' => count($targets), 'empty_values' => $empty, 'quarantined_values' => count($quarantineIndex), 'decoded_values' => $decodedTotal, 'quarantined' => array_values($quarantineIndex)];
-    }
-
-    /** Validate decrypted quarantine-index entries before trusting them. */
-    private static function quarantineIndex(?array $found): array
-    {
-        $index = [];
-        $entries = $found['entries'] ?? null;
-        if (!is_array($entries)) {
-            return [];
-        }
-        foreach ($entries as $key => $entry) {
-            if (!is_string($key) || !is_array($entry)
-                || !isset($entry['table'], $entry['column'], $entry['id'], $entry['issue'])
-                || !is_string($entry['table']) || !is_string($entry['column'])
-                || (!is_int($entry['id']) && !is_string($entry['id'])) || !is_string($entry['issue'])) {
-                continue;
-            }
-            $index[$key] = ['table' => $entry['table'], 'column' => $entry['column'], 'id' => $entry['id'], 'issue' => $entry['issue']];
-        }
-
-        return $index;
+        return ['columns' => count($targets), 'empty_values' => $empty, 'quarantined_values' => count($quarantined), 'decoded_values' => $decodedTotal, 'quarantined' => $quarantined];
     }
 
     /** Decode one double-encoding level when the inner document is a safe object or array. */
@@ -262,55 +240,55 @@ final class JsonMigration
 
     /**
      * Persist repairs and quarantines to the source column with encrypted originals.
-     * Repairs rewrite the decoded document; quarantines set NULL and record a reviewable index entry.
+     * Repairs rewrite the decoded document; quarantines set NULL and record a durable,
+     * reviewable entry. Quarantine records are written in the same transaction as the
+     * source update so a retry never loses them.
      *
      * @param list<array{row: array{id: int|string, value: ?string, type: ?string, id_type: \Doctrine\DBAL\ParameterType}, value: ?string, original: string, issue: ?string}> $writes
-     * @param array<string, array{table: string, column: string, id: int|string, issue: string}>                                                                              $index
      */
-    private function applySourceWrites(Connection $connection, JsonMigrationJournal $journal, string $table, string $column, array $writes, array &$index): int
+    private function applySourceWrites(Connection $connection, JsonMigrationJournal $journal, JsonQuarantineStore $quarantine, string $table, string $column, array $writes): int
     {
         $decoded = 0;
         $quotedTable = $connection->quoteSingleIdentifier($table);
         $quotedColumn = $connection->quoteSingleIdentifier($column);
         foreach ($writes as $write) {
             $row = $write['row'];
-            $repair = $write['issue'] === null;
-            $key = ($repair ? 'repaired:' : 'quarantined:') . $table . '.' . $column . ':' . $row['id'];
-            $displayId = JsonFields::displayId($table, $row['id']);
-            $indexKey = $table . '.' . $column . ':' . $row['id'];
-            if ($journal->has($key)) {
-                if (!$repair) {
-                    $index[$indexKey] ??= ['table' => $table, 'column' => $column, 'id' => $displayId, 'issue' => $write['issue']];
+            if ($write['issue'] === null) {
+                $key = 'repaired:' . $table . '.' . $column . ':' . $row['id'];
+                if ($journal->has($key)) {
+                    continue;
                 }
-
-                continue;
-            }
-            $payload = ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($write['original'])];
-            if (!$repair) {
-                $payload['issue'] = $write['issue'];
-            }
-            $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $table, $column, $row, $write, $key, $payload, $indexKey, $displayId, &$index): void {
-                $journal->save($key, $payload);
-                if ($write['issue'] === null) {
+                $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $table, $column, $row, $write, $key): void {
+                    $journal->save($key, ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($write['original'])]);
                     $connection->executeStatement(
                         'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = ? WHERE id = ? AND ' . $quotedColumn . ' = ?',
                         [$write['value'], $row['id'], $write['original']],
                         [\Doctrine\DBAL\ParameterType::STRING, $row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
                     );
-                } else {
-                    $connection->executeStatement(
-                        'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $quotedColumn . ' = ?',
-                        [$row['id'], $write['original']],
-                        [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
-                    );
-                    // Persist membership with the source update so a retry never loses the entry.
-                    $index[$indexKey] = ['table' => $table, 'column' => $column, 'id' => $displayId, 'issue' => $write['issue']];
-                    $journal->checkpoint('quarantine-index:json-fields-v1', ['entries' => $index]);
-                }
-            });
-            if ($repair) {
+                });
                 ++$decoded;
+
+                continue;
             }
+            $connection->transactional(function () use ($connection, $quarantine, $quotedTable, $quotedColumn, $table, $column, $row, $write): void {
+                $stored = $quarantine->save(
+                    $table,
+                    $column,
+                    $row['id'],
+                    $row['id_type'] === \Doctrine\DBAL\ParameterType::BINARY,
+                    (string) JsonFields::displayId($table, $row['id']),
+                    (string) $write['issue'],
+                    $write['original']
+                );
+                if (!$stored) {
+                    return;
+                }
+                $connection->executeStatement(
+                    'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $quotedColumn . ' = ?',
+                    [$row['id'], $write['original']],
+                    [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
+                );
+            });
         }
 
         return $decoded;
