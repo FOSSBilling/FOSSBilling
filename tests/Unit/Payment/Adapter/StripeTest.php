@@ -28,6 +28,7 @@ beforeEach(function (): void {
         'test_pub_key' => 'pk_test_dummy',
         'test_webhook_secret' => TEST_WEBHOOK_SECRET,
         'gateway_id' => 1,
+        'notify_url' => 'https://billing.example/ipn.php?gateway_id=1',
     ]);
 
     // cacheGatewayCustomer()/cacheGatewayProduct() open their own isolated
@@ -1815,6 +1816,7 @@ describe('_generateSubscriptionForm', function (): void {
                 'test_pub_key' => 'pk_test_dummy',
                 'test_webhook_secret' => TEST_WEBHOOK_SECRET,
                 'gateway_id' => 1,
+                'notify_url' => 'https://billing.example/ipn.php?gateway_id=1',
             ]);
 
             $invoiceModel = createEntity(Invoice::class, [

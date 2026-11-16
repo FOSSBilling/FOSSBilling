@@ -1,19 +1,18 @@
 # Phase B/C pull request and release plan
 
-All preparation remains local. No PR has been published, and nothing has been
-pushed or deployed.
+## Pull request targets
 
-## Targets
+The complete Phase B/C payment, support concurrency and upgrade automation work
+targets `main`. It integrates with main's durable gateway receipt and local
+completion model, immutable timestamps and ORM schema editor, preserving published
+migration numbers and appending the new feature migrations.
 
-- `codex/phase-bc-main` targets `main`, integrating the complete payment, support
-  concurrency and upgrade automation changes with origin/main at `864b9bd1f`.
-  This candidate is under integration validation; do not label it merge-ready
-  until its complete test and concurrency checks pass.
-- `codex/update-coordination-0.8-next` starts at `da1f48896d`. `0.8-next` tracks
-  the next maintenance release, currently planned as 0.8.10, including its other
-  planned changes. The candidate backports request/cron coordination, private
-  update downloads, safe extraction and handoff to newly installed code. It adds
-  no Phase B/C payment or support schema or feature changes.
+A separate coordination-only backport targets `0.8-next`. That branch tracks the
+next maintenance release, currently planned as 0.8.10, including its other planned
+changes. The backport adds request/cron coordination, private update downloads,
+safe extraction and handoff to newly installed code. It adds no Phase B/C payment
+or support schema or feature changes. Review this maintenance PR separately from
+the complete feature PR.
 
 The frozen `0.8.9-coordination.patch` is a historical regression fixture. It is
 not the proposed PR against 0.8-next and is not an installation instruction.
@@ -39,7 +38,14 @@ protocol and complete changes in 0.9.0, with that first-transition limitation
 explicit in its upgrade notes. This is a project release decision, not an
 outstanding migration on a centrally managed production installation.
 
-## Packaging and operation
+## Maintenance policy and packaging
+
+The backport requires native PHP ZIP and writable application uploads for its
+bootstrap lock. These are concrete compatibility decisions for a maintenance
+release; the updater checks ZIP before replacing files. If those requirements
+are unsuitable for 0.8.10, use the 0.9.0 fallback instead of promising an unsafe
+legacy upgrade path.
+
 
 Require native PHP ZIP, writable application uploads and configured data paths,
 and shared lock storage with working advisory locks. Exclude `.update-lock`,
