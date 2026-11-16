@@ -3650,6 +3650,58 @@ test('invoice item order_id backfill never throws without a usable database', fu
     expect(fn () => $patcher->backfillInvoiceItemOrderIds())->not->toThrow(Throwable::class);
 });
 
+test('stale unpaid cleanup excludes a paid legacy item once its backfill completes', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-stalepaid-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            // Two orphaned pending-setup orders old enough to be stale. Only 78 is
+            // genuinely unpaid: 77 has a paid invoice, referenced the legacy way.
+            $connection->executeStatement(
+                "INSERT INTO client_order (id, status, created_at) VALUES (77, 'pending_setup', '2020-01-01 00:00:00'), (78, 'pending_setup', '2020-01-01 00:00:00')"
+            );
+            $connection->executeStatement("INSERT INTO invoice (id, status) VALUES (1, 'paid')");
+            for ($i = 1; $i <= 500; ++$i) {
+                $connection->executeStatement(
+                    "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '900')"
+                );
+            }
+            // Paid renewal item for order 77, sitting past the first bounded page
+            // with a legacy-only reference.
+            $connection->executeStatement(
+                "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '77')"
+            );
+
+            $di = new Pimple\Container();
+            $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+            $em->shouldReceive('getConnection')->andReturn($connection);
+            $di['em'] = $em;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new Patcher();
+            $patcher->setDi($di);
+
+            // While the backfill has not reached the paid item, the stale-order
+            // cleanup is deferred entirely rather than risk deleting order 77.
+            $patcher->backfillInvoiceItemOrderIds(1);
+            $repository = new Box\Mod\Order\Repository\OrderRepository($entityManager, new ORM\ClassMetadata(Order::class));
+            expect($repository->getStaleUnpaid(30))->toBe([]);
+
+            // Once the pass reaches the end, the paid item is linked and order 77
+            // is excluded - while genuinely unpaid order 78 is still returned.
+            $patcher->backfillInvoiceItemOrderIds();
+            $staleIds = array_map(static fn (Order $order): ?int => $order->getId(), $repository->getStaleUnpaid(30));
+            expect($staleIds)->toBe([78]);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
 test('journal baseline writes are claimed per invoice', function (): void {
     // Two back-to-back writes for the same invoice - what overlapping healers
     // would attempt - must leave exactly one baseline entry behind.
