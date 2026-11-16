@@ -463,6 +463,13 @@ class Updater implements InjectionAwareInterface
              * patches and removed-file cleanup are applied safely.
              */
             try {
+                // A different updater may have completed extraction while this
+                // request downloaded its archive. Recheck under the extraction
+                // lock, without running finalization from the old loaded code.
+                if ($finalization->isRequired(false)) {
+                    throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
+                }
+
                 // Extract latest version archive on top of the current version.
                 try {
                     (new ZipExtractor())->extract($archiveFile, PATH_ROOT, static function (string $entryName): void {

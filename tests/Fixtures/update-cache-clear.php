@@ -26,20 +26,22 @@ $release = [
     'version' => '0.8.5-test',
     'minimum_php_version' => '8.3',
     'download_url' => 'https://github.com/FOSSBilling/FOSSBilling/releases/download/test/update.zip',
-    'digest' => 'sha256:' . hash('sha256', $content),
+    'digest' => 'sha256:' . hash('sha256', $scenario === 'integrity_failure' ? 'different archive' : $content),
     'update_type' => 0,
 ];
 $finalization = new class {
     public bool $pending = false;
+    public bool $created = false;
 
-    public function isRequired(): bool
+    public function isRequired(bool $ensure = true): bool
     {
-        return false;
+        return $this->pending;
     }
 
     public function createPendingState(...$args): void
     {
         $this->pending = true;
+        $this->created = true;
     }
 };
 $di = new Pimple\Container();
@@ -62,13 +64,16 @@ $di['logger'] = new class extends Psr\Log\NullLogger {
         return $this;
     }
 };
-$di['http_client'] = new MockHttpClient(function () use ($filesystem, $scenario, $content): MockResponse {
+$di['http_client'] = new MockHttpClient(function () use ($filesystem, $scenario, $content, $finalization): MockResponse {
     if ($scenario === 'before_download') {
         $filesystem->remove(PATH_CACHE);
     }
 
-    return new MockResponse((function () use ($filesystem, $scenario, $content): Generator {
+    return new MockResponse((function () use ($filesystem, $scenario, $content, $finalization): Generator {
         yield substr($content, 0, 10);
+        if ($scenario === 'pending_during_download') {
+            $finalization->pending = true;
+        }
         if ($scenario === 'during_download') {
             $filesystem->remove(PATH_CACHE);
             $filesystem->mkdir(PATH_CACHE);
@@ -118,7 +123,8 @@ try {
 }
 echo json_encode([
     'error' => $error,
-    'pending' => $finalization->pending,
+    'pending' => $finalization->created,
     'extracted' => $filesystem->exists(PATH_ROOT . '/updated.txt'),
+    'locked' => $filesystem->exists(PATH_ROOT . '/' . Updater::LOCK_FILENAME),
     'archives' => array_keys(iterator_to_array(Finder::create()->files()->in(PATH_DATA))),
 ], JSON_THROW_ON_ERROR);

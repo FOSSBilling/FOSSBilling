@@ -25,10 +25,11 @@ test('update archives survive cache clearing and are always removed', function (
         if ($error === null) {
             expect($result['error'])->toBeNull();
         } else {
-            expect($result['error'])->toContain($error);
+            expect($result['error'])->toBeString()->toContain($error);
         }
         expect($result['pending'])->toBe($error === null)
             ->and($result['extracted'])->toBe($error === null)
+            ->and($result['locked'])->toBe($scenario === 'locked')
             ->and($result['archives'])->toBe([]);
     } finally {
         $filesystem->remove($root);
@@ -38,7 +39,9 @@ test('update archives survive cache clearing and are always removed', function (
     'cache cleared while streaming the archive' => ['during_download', null],
     'transport failure' => ['transport_failure', 'Failed to download'],
     'extraction failure' => ['extraction_failure', 'Failed to extract'],
+    'integrity failure' => ['integrity_failure', 'failed integrity verification'],
     'another updater owns the lock' => ['locked', 'Another update'],
+    'another updater finished extraction during download' => ['pending_during_download', 'An update finalization is already pending'],
 ]);
 
 function createUpdateTestArchive(string $content): string
@@ -72,7 +75,8 @@ test('does not finalize an update in the request that extracts it', function ():
     ];
 
     $finalization = Mockery::mock(Finalization::class);
-    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->with(
         Version::VERSION,
         $latestVersion,
@@ -157,7 +161,8 @@ test('resets the opcode cache after extracting the update archive', function ():
     ];
 
     $finalization = Mockery::mock(Finalization::class);
-    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->andReturn(['status' => 'pending']);
 
     $readiness = Mockery::mock();
@@ -238,7 +243,8 @@ test('does not create pending state when archive extraction fails', function ():
     $archiveContent = 'not a zip archive';
 
     $finalization = Mockery::mock(Finalization::class);
-    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldNotReceive('createPendingState');
 
     $readiness = Mockery::mock();
