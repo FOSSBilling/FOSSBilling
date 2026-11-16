@@ -119,6 +119,7 @@ function container(): Container
         $queryBuilder->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
         $queryBuilder->shouldReceive('fetchOne')->byDefault()->andReturn(false);
 
+        $dbal->shouldReceive('fetchAssociative')->with(\Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), \Mockery::any())->byDefault()->andReturn(false);
         $dbal->shouldReceive('fetchAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchOne')->byDefault()->andReturn(null);

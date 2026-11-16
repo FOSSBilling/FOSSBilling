@@ -17,44 +17,24 @@ class Patch146 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Ticket escalation rules and the replies they already acted on.
-        // Installs upgrading past it rely on this patch on MySQL; fresh
-        // installs and other drivers get the tables from the portable schema
-        // sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('support_escalation_rule')) {
+        // Cancellation requests ship with a new client_order_cancel_request
+        // entity table. Installs upgrading past it rely on this patch on
+        // MySQL; fresh installs and other drivers get the table from the
+        // portable schema sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('client_order_cancel_request')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_escalation_rule` (
+                'CREATE TABLE `client_order_cancel_request` (
                     `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `name` VARCHAR(100) NOT NULL,
-                    `active` TINYINT(1) NOT NULL DEFAULT 1,
-                    `helpdesks` TEXT NOT NULL,
-                    `statuses` TEXT NOT NULL,
-                    `priorities` TEXT NOT NULL,
-                    `minutes` INT NOT NULL,
-                    `new_helpdesk_id` BIGINT DEFAULT NULL,
-                    `new_status` VARCHAR(30) NOT NULL DEFAULT \'\',
-                    `new_priority` VARCHAR(10) NOT NULL DEFAULT \'\',
-                    `assign_to` BIGINT DEFAULT NULL,
-                    `notify` TEXT NOT NULL,
-                    `reply` TEXT NOT NULL,
-                    `created_at` DATETIME NOT NULL,
-                    `updated_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
-            );
-        }
-
-        if (!$patcher->tableExists('support_escalation_applied')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_escalation_applied` (
-                    `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `rule_id` BIGINT NOT NULL,
-                    `ticket_id` BIGINT NOT NULL,
-                    `reply_at` DATETIME NOT NULL,
-                    `applied_at` DATETIME NOT NULL,
+                    `client_order_id` BIGINT DEFAULT NULL,
+                    `client_id` BIGINT DEFAULT NULL,
+                    `type` VARCHAR(32) DEFAULT NULL,
+                    `reason` TEXT DEFAULT NULL,
+                    `status` VARCHAR(32) DEFAULT NULL,
+                    `created_at` DATETIME DEFAULT NULL,
+                    `updated_at` DATETIME DEFAULT NULL,
                     PRIMARY KEY (`id`),
-                    UNIQUE KEY `rule_ticket` (`rule_id`, `ticket_id`),
-                    KEY `ticket` (`ticket_id`)
+                    KEY `client_order_cancel_request_order_id_idx` (`client_order_id`),
+                    KEY `client_order_cancel_request_status_idx` (`status`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
             );
         }

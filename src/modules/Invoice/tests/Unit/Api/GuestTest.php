@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore gatewayfees
+
 use Box\Mod\Invoice\Api\Guest;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
@@ -102,7 +104,9 @@ test('lists per-gateway fees for an unpaid invoice', function (): void {
     $model = createEntity(Invoice::class, ['status' => Invoice::STATUS_UNPAID, 'currency' => 'USD', 'client_id' => 7, 'taxrate' => 0]);
 
     $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')->with($model)->andReturn(false);
     $serviceMock->shouldReceive('checkInvoiceAuth')->atLeast()->once();
+    $serviceMock->shouldReceive('getAmountPaid')->once()->with($model)->andReturn(0.0);
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn(
         Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class, function (Mockery\MockInterface $repo) use ($model): void {
             $repo->shouldReceive('findByHash')->atLeast()->once()->andReturn($model);
@@ -121,7 +125,8 @@ test('lists per-gateway fees for an unpaid invoice', function (): void {
 
     $di = container();
 
-    $feesService = Mockery::mock(ServiceGatewayFees::class);
+    $feesService = Mockery::mock(ServiceGatewayFees::class)->makePartial();
+    $feesService->setDi($di);
     $feesService->shouldReceive('base')->once()->with($model)->andReturn(100.00);
     $feesService->shouldReceive('charge')->once()->with($model, $withFee, 100.00)->andReturn(2.50);
 
@@ -130,6 +135,7 @@ test('lists per-gateway fees for an unpaid invoice', function (): void {
 
     $di['mod_service'] = $di->protect(moduleService([
         'invoice:gatewayfees' => $feesService,
+        'invoice' => $serviceMock,
         'invoice:paygateway' => $payGatewayService,
         'invoice:subscription' => $subscribeService,
     ]));
@@ -159,6 +165,8 @@ test('lists no fees for a paid invoice', function (): void {
     );
 
     $di = container();
+    $fees = new ServiceGatewayFees();
+    $di['mod_service'] = $di->protect(fn (): object => $fees);
     $api->setDi($di);
     $api->setService($serviceMock);
     $api->setIdentity(\Tests\Helpers\admin());
@@ -408,3 +416,40 @@ test('an exhausted payment budget is refused before the gateway is contacted', f
 
     expect(fn () => $api->payment(['hash' => str_repeat('a', 32), 'gateway_id' => 1]))->toThrow(FOSSBilling\Core\Security\RateLimitException::class);
 });
+
+test('fee quote authorization and both public rate buckets precede shared calculation', function (bool $denied): void {
+    $log = [];
+    $di = container();
+    $di['rate_limiter'] = invoiceRecordingLimiter($log);
+    $model = createEntity(Invoice::class, ['status' => Invoice::STATUS_UNPAID]);
+    $service = Mockery::mock(Service::class);
+    $service->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $di['em']->getRepository(Invoice::class)->shouldReceive('findByHash')->andReturn($model);
+    $service->shouldReceive('checkInvoiceAuth')->andReturnUsing(function () use (&$log, $denied): void {
+        $log[] = 'auth';
+        if ($denied) {
+            throw new FOSSBilling\Core\Exception\InformationException('denied');
+        }
+    });
+    $fees = Mockery::mock(ServiceGatewayFees::class);
+    if ($denied) {
+        $fees->shouldNotReceive('quote');
+    } else {
+        $fees->shouldReceive('quote')->once()->with($model)->andReturnUsing(function () use (&$log): array {
+            $log[] = 'quote';
+
+            return ['base' => 100.0, 'fees' => [1 => ['fee' => 2.5, 'total' => 102.5]]];
+        });
+    }
+    $di['mod_service'] = $di->protect(fn (): object => $fees);
+    $api = apiEndpoint(new Guest());
+    $api->setDi($di);
+    $api->setService($service);
+    if ($denied) {
+        expect(fn () => $api->gateway_fees(['hash' => md5('invoice')]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'denied');
+        expect($log)->toBe(['consume:invoice_gateway_fees_ip', 'probe:invoice_gateway_fees_hash', 'auth']);
+    } else {
+        expect($api->gateway_fees(['hash' => md5('invoice')])['fees'][1]['fee'])->toBe(2.5);
+        expect($log)->toBe(['consume:invoice_gateway_fees_ip', 'probe:invoice_gateway_fees_hash', 'auth', 'consume:invoice_gateway_fees_hash', 'quote']);
+    }
+})->with([true, false]);

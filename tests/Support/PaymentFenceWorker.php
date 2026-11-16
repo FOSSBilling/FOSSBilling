@@ -68,40 +68,11 @@ $work = function () use ($db, $em, $tx, $invoice, $client, $prepared, $clients, 
         $di = new Pimple\Container();
         $di['em'] = $em;
         $di['logger'] = new Psr\Log\NullLogger();
-        $di['mod_service'] = $di->protect(fn () => new class($em, $action === 'stripe_initial_unpaid') {
-            public function __construct(private Doctrine\ORM\EntityManagerInterface $em, private bool $leaveUnpaid)
-            {
-            }
-
-            public function isInvoiceTypeDeposit(Invoice $invoice): bool
-            {
-                return false;
-            }
-
-            public function payInvoiceWithCredits(Invoice $invoice): bool
-            {
-                if ($this->leaveUnpaid) {
-                    return false;
-                }
-                $invoice->setStatus(Invoice::STATUS_PAID);
-                $this->em->flush();
-
-                return true;
-            }
-        });
-        $adapter->setDi($di);
-        $api = new class($clients, $client) {
-            public function __construct(private Box\Mod\Client\Service $clients, private Client $client)
-            {
-            }
-
-            public function client_balance_add_funds(array $data): void
-            {
-                $this->clients->addFunds($this->client, $data['amount'], $data['description'], $data);
-                fwrite(STDOUT, "credited\n");
-                paymentWorkerWait();
-            }
-        };
+        require_once __DIR__ . '/../Helpers/Container.php';
+        require_once __DIR__ . '/../../src/modules/Invoice/tests/Fixtures/GatewayReceiptContext.php';
+        $billing = gatewayDepositTestService($em);
+        $adapter->setDi($billing->getDi());
+        $api = new stdClass();
         $latest = Stripe\Invoice::constructFrom(['id' => 'in_initial_' . $db->getDatabase(), 'status' => 'paid', 'amount_paid' => 1000, 'currency' => 'usd']);
         $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_initial', 'latest_invoice' => $latest]);
         if ($action === 'stripe_invoice') {
@@ -119,10 +90,12 @@ $work = function () use ($db, $em, $tx, $invoice, $client, $prepared, $clients, 
             }
         } else {
             $amount = (new ReflectionMethod($adapter, 'processInitialSubscriptionPayment'))->invoke($adapter, $api, $tx, $invoice, $subscription);
-            $tx->setAmount((string) $amount);
+            $tx->setAmount((string) ($amount ?? 0));
         }
         $tx->setStatus(Transaction::STATUS_PROCESSED);
         $em->flush();
+        fwrite(STDOUT, "settled\n");
+        paymentWorkerWait();
 
         return;
     }

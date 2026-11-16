@@ -339,7 +339,7 @@ test('uses the API digest for archive verification without querying GitHub', fun
 
         expect($releaseInfo['digest'])->toBe($digest)
             ->and($requests)->toBe([
-                ['method' => 'GET', 'url' => 'https://api.fossbilling.net/versions/v1/latest?' . http_build_query(['update_protocol' => 1, 'current_version' => Version::VERSION])],
+                ['method' => 'GET', 'url' => 'https://api.fossbilling.net/versions/v1/latest'],
             ]);
     } finally {
         (new Filesystem())->remove($archive);

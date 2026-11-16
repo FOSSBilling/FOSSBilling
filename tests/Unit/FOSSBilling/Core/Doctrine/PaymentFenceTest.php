@@ -41,7 +41,7 @@ function paymentFenceDatabase(string $driver): array
     }
     $db = DriverManagerFactory::getConnection(dbConfig: $config);
     $em = EntityManagerFactory::create($db);
-    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, PayGateway::class, Invoice::class, Transaction::class, ClientBalance::class, GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\InvoiceCardCharge::class]));
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Invoice\Entity\InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Client::class, PayGateway::class, Invoice::class, Transaction::class, ClientBalance::class, GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\InvoiceCardCharge::class]));
     $client = (new Client())->setCurrency('USD');
     $gateway = (new PayGateway())->setGateway('Stripe');
     $em->persist($client);
@@ -275,7 +275,7 @@ test('legacy payment rows gain fencing through additive and repeatable upgrades'
                     $this->connection->executeStatement($sql, $params);
                 }
             };
-            $patch = new FOSSBilling\Core\Update\Patch\Patch154();
+            $patch = new FOSSBilling\Core\Update\Patch\Patch160();
             $patch->apply($patcher);
             $patch->apply($patcher);
         }
@@ -619,63 +619,32 @@ test('a duplicate credit arriving after an earlier transaction read remains idem
     }
 })->with(['mysql']);
 
-test('Stripe initial payment contenders refresh the invoice under one receipt lock', function (string $driver): void {
+test('concurrent Stripe callbacks preserve one atomically settled receipt', function (string $driver, string $action): void {
     [$db, $config, $service, $cleanup] = paymentFenceDatabase($driver);
 
     try {
         $em = $service->getDi()['em'];
-        $second = (new Transaction())->setInvoice($em->find(Invoice::class, 1))->setGateway($em->find(PayGateway::class, 1))->setStatus('received');
+        $second = (new Transaction())->setInvoice($em->find(Invoice::class, 1))->setGateway($em->find(PayGateway::class, 1))->setStatus('received')->setCurrency('USD');
         $em->persist($second);
         $em->flush();
         $firstWorker = paymentFenceWorker($config, 'stripe_initial');
-        $secondWorker = paymentFenceWorker($config, 'stripe_initial', id: 2);
         fwrite($firstWorker[1][0], "go\n");
-        expect(trim((string) fgets($firstWorker[1][1])))->toBe('credited');
+        expect(trim((string) fgets($firstWorker[1][1])))->toBe('settled');
+        // The first callback is still live. Its money and invoice already committed together.
+        expect($db->fetchOne('SELECT status FROM invoice WHERE id = 1'))->toBe('paid')
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10.0);
+        $secondWorker = paymentFenceWorker($config, $action, id: 2);
         fwrite($secondWorker[1][0], "go\n");
-        usleep(150000);
-        expect(proc_get_status($secondWorker[0])['running'])->toBeTrue();
+        expect(trim((string) fgets($secondWorker[1][1])))->toBe('settled');
+        fwrite($secondWorker[1][0], "go\n");
         fwrite($firstWorker[1][0], "go\n");
         expect(paymentFenceResult($firstWorker)['completed'])->toBeTrue()
             ->and(paymentFenceResult($secondWorker)['completed'])->toBeTrue()
             ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10.0)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
+            ->and((int) $db->fetchOne('SELECT gateway_transaction_id FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
             ->and((float) $db->fetchOne('SELECT amount FROM ' . $db->quoteSingleIdentifier('transaction') . ' WHERE id = 2'))->toBe(0.0);
-        // Simulate interruption after settlement, before the winner's final transaction flush.
-        $db->executeStatement('UPDATE ' . $db->quoteSingleIdentifier('transaction') . " SET status = 'error', amount = NULL WHERE id = 1");
-        $retry = paymentFenceWorker($config, 'stripe_initial');
-        fwrite($retry[1][0], "go\n");
-        expect(paymentFenceResult($retry)['completed'])->toBeTrue()
-            ->and((float) $db->fetchOne('SELECT amount FROM ' . $db->quoteSingleIdentifier('transaction') . ' WHERE id = 1'))->toBe(10.0)
-            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10.0);
     } finally {
         $cleanup();
     }
-})->with(['sqlite', 'mysql', 'pgsql']);
-
-test('Stripe setup and invoice callbacks count a reused wallet receipt once', function (string $driver, string $secondAction): void {
-    [$db, $config, $service, $cleanup] = paymentFenceDatabase($driver);
-
-    try {
-        $em = $service->getDi()['em'];
-        $second = (new Transaction())->setInvoice($em->find(Invoice::class, 1))->setGateway($em->find(PayGateway::class, 1))->setStatus('received');
-        $em->persist($second);
-        $em->flush();
-        foreach ([1, 2] as $id) {
-            $worker = paymentFenceWorker($config, $id === 1 ? 'stripe_initial_unpaid' : $secondAction, id: $id);
-            fwrite($worker[1][0], "go\n");
-            expect(trim((string) fgets($worker[1][1])))->toBe('credited');
-            fwrite($worker[1][0], "go\n");
-            expect(paymentFenceResult($worker)['completed'])->toBeTrue();
-        }
-        if ($secondAction === 'stripe_invoice') {
-            $db->executeStatement('UPDATE ' . $db->quoteSingleIdentifier('transaction') . " SET status = 'error', amount = NULL WHERE id = 1");
-            $retry = paymentFenceWorker($config, 'stripe_initial');
-            fwrite($retry[1][0], "go\n");
-            expect(paymentFenceResult($retry)['completed'])->toBeTrue();
-        }
-        expect($db->fetchOne('SELECT status FROM invoice WHERE id = 1'))->toBe($secondAction === 'stripe_invoice' ? 'paid' : 'unpaid')
-            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10.0)
-            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM ' . $db->quoteSingleIdentifier('transaction') . " WHERE status = 'processed'"))->toBe(10.0);
-    } finally {
-        $cleanup();
-    }
-})->with(['sqlite', 'mysql', 'pgsql'])->with(['stripe_initial_unpaid', 'stripe_invoice']);
+})->with(['sqlite', 'mysql', 'pgsql'])->with(['stripe_initial', 'stripe_invoice']);

@@ -32,13 +32,24 @@ coordinated rollout appropriate to their infrastructure.
 
 ## Transition from older releases
 
-The release path must first provide the coordination intermediate release.
-Already-running processes from earlier releases cannot be enrolled retroactively.
-The next release must only be enabled after those old processes have ended; a
-fixed waiting period cannot prove this for an indefinitely running old cron job.
-See the repository's `tools/upgrade-bridge/README.md` for the tested backport and
-release-routing requirements. The bridge and routing must be published as release
-work before this can be described as the available upgrade path for users.
+The coordination protocol is proposed for `0.8-next`, which tracks the next
+maintenance release (currently planned as 0.8.10). It can ship with that release's
+other changes; a separate mandatory bridge release is not required. The complete
+Phase B/C implementation targets `main`. Maintainers should review the two PRs
+and select their release versions through the project's normal release process.
+See `tools/upgrade-bridge/README.md` for the local candidates and transition plan.
+
+Already-running processes from releases without this protocol cannot be enrolled
+retroactively. A coordination-capable maintenance release prepares subsequent
+built-in updates to drain participating requests automatically, but it cannot
+prove that an indefinitely running older worker has ended. Release notes should
+explain this first-transition limitation and the existing maintenance procedure
+for installations that cannot establish that older workers have finished.
+There is no new release-service query or permanent API routing requirement.
+
+If the maintenance backport is unsuitable, include coordination with Phase B/C
+in 0.9.0 and document the same first-transition limitation. Do not describe direct
+upgrades from an uncoordinated release as automatically draining old requests.
 
 Historical SQL/config upgrade tests cover 0.7.2, 0.8.1 and 0.8.9 on MySQL/MariaDB,
 including interruption and retry. Portable schema and concurrency tests also

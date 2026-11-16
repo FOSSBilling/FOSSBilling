@@ -29,7 +29,7 @@ test('normal finalization upgrades a previous release without manual SQL', funct
         expect($process->getErrorOutput())->toBe('');
         $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
         expect($result['old_patch'])->toBe($patch)
-            ->and($result['new_patch'])->toBe(155)
+            ->and($result['new_patch'])->toBe(160)
             ->and($result['status_before_completion'])->toBe('finalized')
             ->and($result['required'])->toBeFalse()
             ->and($result['salt'])->toBe('fixture-encryption-key')

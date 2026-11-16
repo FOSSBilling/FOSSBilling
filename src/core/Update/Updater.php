@@ -200,7 +200,6 @@ class Updater implements InjectionAwareInterface
                 ];
             });
         }
-        // Keep coordination-aware release routing separate from cached legacy metadata.
         $key = "Update.latest_{$branch}_version_info_v3";
 
         // Delete the cached result to force a refetch
@@ -212,10 +211,7 @@ class Updater implements InjectionAwareInterface
             $item->expiresAfter(3600);
 
             try {
-                $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest?' . http_build_query([
-                    'update_protocol' => 1,
-                    'current_version' => Version::VERSION,
-                ]);
+                $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
                 $httpClient = $this->di['http_client'];
                 $response = $httpClient->request('GET', $releaseInfoUrl);
                 $releaseInfo = $response->toArray()['result'];

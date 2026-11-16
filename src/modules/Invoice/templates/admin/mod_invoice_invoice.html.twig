@@ -132,7 +132,7 @@
                                         {{ invoice.amount_paid|format_currency(invoice.currency ?? default_currency) }}
                                         {% if invoice.credit_applied > 0 %}
                                             ({{ 'credit :amount'|trans({ ':amount': invoice.credit_applied|format_currency(invoice.currency ?? default_currency) }) }},
-                                            <a href="#" {{ fb_api_link({href: 'invoice/remove_credit'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Remove the credit applied to this invoice?'|trans}, reload: true}) }}>{{ 'Remove credit'|trans }}</a>)
+                                            <a {{ fb_api_link({href: 'invoice/remove_credit'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Remove the credit applied to this invoice?'|trans}, reload: true}) }}>{{ 'Remove credit'|trans }}</a>)
                                         {% endif %}
                                     </td>
                                 </tr>

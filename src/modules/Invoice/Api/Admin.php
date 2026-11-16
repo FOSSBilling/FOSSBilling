@@ -439,7 +439,20 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
         $items = $invoiceItemService->getFailedItems();
 
-        return array_map(fn (\Box\Mod\Invoice\Entity\InvoiceItem $item): array => $item->toApiArray(), $items);
+        return array_map(function (\Box\Mod\Invoice\Entity\InvoiceItem $item): array {
+            $data = $item->toApiArray();
+            if ($item->getType() === \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER && $item->getTask() === \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW) {
+                $order = $this->getDi()['em']->find(Order::class, (int) $item->getRelId());
+                $product = $order instanceof Order ? $this->getDi()['em']->find(\Box\Mod\Product\Entity\Product::class, (int) $order->getProductId()) : null;
+                $data['product_type'] = $product?->getType();
+                $meta = $this->getDi()['mod_service']('Order')->getOrderMetaRepository()->getPairsForOrder((int) $item->getRelId());
+                if (isset($meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()])) {
+                    $data['renewal_outcome'] = $meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()];
+                }
+            }
+
+            return $data;
+        }, $items);
     }
 
     /**
@@ -452,6 +465,39 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->requeueItem((int) $data['id']);
+
+        return true;
+    }
+
+    /** Resolve an interrupted paid renewal after checking its provider outcome. */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed', 'decision' => 'Review decision was not passed'])]
+    public function item_review_paid_renewal($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'InvoiceItem')->reviewPaidRenewal((int) $data['id'], (string) $data['decision']);
+
+        return true;
+    }
+
+    /** Record a staff decision after checking a held zero-priced domain renewal. */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed', 'decision' => 'Review decision was not passed'])]
+    public function item_review_domain_renewal($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'InvoiceItem')->reviewDomainRenewal((int) $data['id'], (string) $data['decision']);
+
+        return true;
+    }
+
+    /**
+     * Link a legacy gateway receipt after checking the payment at the provider.
+     */
+    #[RequiredParams(['receipt_id' => 'Receipt ID is missing', 'transaction_id' => 'Transaction ID is missing', 'provider_object_id' => 'Provider payment ID is missing'])]
+    public function transaction_reconcile_receipt($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('client', 'manage_balance');
+        $this->getService()->reconcileGatewayReceipt((int) $data['receipt_id'], (int) $data['transaction_id'], (string) $data['provider_object_id']);
 
         return true;
     }
@@ -570,9 +616,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Action to activate paid invoices lines.
-     *
-     * @return bool
      */
+    public function batch_deliver_issued_notifications(): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->doBatchDeliverIssuedNotifications();
+    }
+
     public function batch_activate_paid()
     {
         $this->checkPermissions('invoice', 'manage_invoices');

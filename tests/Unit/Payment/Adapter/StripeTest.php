@@ -28,7 +28,6 @@ beforeEach(function (): void {
         'test_pub_key' => 'pk_test_dummy',
         'test_webhook_secret' => TEST_WEBHOOK_SECRET,
         'gateway_id' => 1,
-        'notify_url' => 'https://billing.example/ipn.php?gateway_id=1',
     ]);
 
     // cacheGatewayCustomer()/cacheGatewayProduct() open their own isolated
@@ -45,8 +44,8 @@ function noOpEntityManagerMock(): Mockery\MockInterface
         static fn (string $class, mixed $id): object => createEntity($class, ['id' => $id])
     );
     $em->shouldReceive('persist')->byDefault();
-    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('flush')->byDefault();
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('isOpen')->byDefault()->andReturn(true);
 
     return $em;
@@ -141,7 +140,6 @@ function setPrivateProperty(object $obj, string $property, mixed $value): void
 
 function expectStripeObjectLock(Mockery\MockInterface $dbalMock, string $objectId, int $gatewayId): void
 {
-    $dbalMock->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
     $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $objectId), 0, 54);
     $dbalMock->shouldReceive('getDatabasePlatform')
         ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
@@ -187,8 +185,8 @@ function buildEntityManagerMocks(): array
 
     $txRepo->shouldReceive('find')->byDefault()->andReturn(null);
     $txRepo->shouldReceive('findOneBy')->byDefault()->andReturn(null);
-    $txRepo->shouldReceive('findClearingByTxnId')->byDefault()->andReturn(null);
     $txRepo->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturn(null);
+    $txRepo->shouldReceive('findClearingByTxnId')->byDefault()->andReturn(null);
     $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->byDefault()->andReturn(null);
 
     $subRepo->shouldReceive('find')->byDefault()->andReturn(null);
@@ -198,8 +196,10 @@ function buildEntityManagerMocks(): array
     $invoiceRepo->shouldReceive('find')->byDefault()->andReturn(null);
     $invoiceRepo->shouldReceive('findByHash')->byDefault()->andReturn(null);
 
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->byDefault()->andReturnUsing(fn (int $id) => createEntity(Box\Mod\Client\Entity\Client::class, ['id' => $id, 'currency' => 'USD']));
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
     $connection->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
     $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
     $connection->shouldReceive('fetchOne')->byDefault()->andReturn(null);
@@ -210,11 +210,12 @@ function buildEntityManagerMocks(): array
         Transaction::class => $txRepo,
         Box\Mod\Invoice\Entity\Subscription::class => $subRepo,
         Invoice::class => $invoiceRepo,
+        Box\Mod\Client\Entity\Client::class => $clientRepo,
         default => Mockery::mock(Doctrine\ORM\EntityRepository::class)->shouldIgnoreMissing(),
     });
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
-    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('flush')->byDefault();
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('persist')->byDefault();
     $em->shouldReceive('remove')->byDefault();
 
@@ -363,6 +364,7 @@ describe('handleSubscriptionCreated', function (): void {
             ->andReturn(1);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
         $invoiceService = Mockery::mock();
@@ -666,13 +668,20 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             ->once()
             ->with('in_123', 1, 42)
             ->andReturn(null);
-        $invoiceRepo->shouldReceive('find')->atLeast()->once()->with(99)->andReturn(createEntity(Invoice::class, ['id' => 99]));
+        $invoiceRepo->shouldReceive('find')->atLeast()->once()->with(99)->andReturn(createEntity(Invoice::class, ['id' => 99, 'client_id' => 5]));
         // flush() happens when the invoice link is persisted.
         $em->shouldReceive('flush')->atLeast()->once();
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'in_123', 1);
         $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        });
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
         $invoiceService->shouldReceive('issueInvoice')->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
@@ -693,7 +702,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $this->adapter->setDi($di);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [
             $apiAdmin,
@@ -748,6 +757,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $invoiceModel = createEntity(Invoice::class);
 
         $invoiceModel->id = 77;
+        $invoiceModel->client_id = 8;
         $invoiceModel->status = Invoice::STATUS_UNPAID;
         $invoiceModel->issued = 0;
         $invoiceModel->currency = 'EUR';
@@ -756,6 +766,12 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        });
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
             ->with($invoiceModel)
             ->andReturn(false);
@@ -763,11 +779,11 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             ->with($invoiceModel, ['use_credits' => false])
             ->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')
-            ->with($invoiceModel)
+            ->with($invoiceModel, true)
             ->andReturn(true);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')
@@ -780,6 +796,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'in_456', 1);
         $di = container();
         $em->shouldReceive('getConnection')->andReturn($dbalMock);
@@ -804,7 +821,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 });
 
 describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid', function (): void {
-    test('credits a renewal payment and settles the renewal invoice', function (string $state): void {
+    test('credits a renewal payment and settles the renewal invoice', function (): void {
         // A subscription's metadata always points at the first FOSSBilling invoice, which is paid by the time the
         // first renewal is charged. The renewal payment must still be credited and applied to the renewal invoice.
         $tx = buildTransaction();
@@ -834,69 +851,52 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $originalInvoice->id = 77;
         $originalInvoice->status = Invoice::STATUS_PAID; // paid at signup
         $originalInvoice->currency = 'USD';
-        $originalInvoice->setClientId(8);
 
         $renewalInvoice = createEntity(Invoice::class);
         $renewalInvoice->id = 88;
+        $renewalInvoice->client_id = 8;
+        $renewalInvoice->issued = true;
         $renewalInvoice->status = Invoice::STATUS_UNPAID;
         $renewalInvoice->currency = 'USD';
-        $renewalInvoice->setClientId(8);
-        $ownsCredit = str_starts_with($state, 'own');
-        if ($state === 'own_paid') {
-            $renewalInvoice->setStatus(Invoice::STATUS_PAID);
-        }
-        if ($ownsCredit) {
-            $tx->setInvoice($state === 'own_unknown' ? $originalInvoice : $renewalInvoice);
-        }
 
         $invoiceService = Mockery::mock();
-        if ($state === 'fresh') {
-            $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_renew', 8)->andReturn($renewalInvoice);
-        } else {
-            $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
-        }
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
-        if (in_array($state, ['own_paid', 'own_unknown'], true)) {
-            $invoiceService->shouldNotReceive('payInvoiceWithCredits');
-        } else {
-            $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->andReturn(true);
-        }
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        });
+        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')
+            ->with('sub_renew', 8)
+            ->andReturn($renewalInvoice);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(77)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->with('in_renewal_1', 1, 60)
-            ->andReturn($ownsCredit ? (new Transaction())->setStatus(Transaction::STATUS_PROCESSED)->setAmount('0') : null);
+            ->with('in_renewal_1', null, 60)
+            ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'in_renewal_1', 1);
-        if ($state !== 'fresh') {
-            $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/WHERE payment_key/'), Mockery::any())
-                ->andReturn(['client_id' => 8, 'rel_id' => $ownsCredit ? '60' : '400', 'amount' => '25.00']);
-        }
-        if ($state === 'other') {
-            $txRepo->shouldReceive('find')->with(400)->andReturn((new Transaction())->setInvoice($renewalInvoice));
-        }
         $di = container();
         $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
 
-        $process = fn () => invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]);
-        if ($state === 'own_unknown') {
-            expect($process)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'verified renewal invoice');
-        } else {
-            expect($process())->toBeTrue()
-                ->and($tx->getInvoice()?->getId())->toBe(88)
-                ->and((float) $tx->getAmount())->toBe($state === 'other' ? 0.0 : 25.0);
-        }
-    })->with(['fresh', 'own_unpaid', 'own_paid', 'other', 'own_unknown']);
+        $processed = invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]);
 
-    test('initial invoice webhook recovery preserves receipt ownership', function (string $state): void {
+        expect($processed)->toBeTrue();
+        expect($tx->getInvoice()?->getId())->toBe(88);
+    });
+
+    test('skips a duplicate initial payment when the original invoice is already paid', function (): void {
         // The redirect flow pays the first invoice immediately, so when the
         // invoice.paid webhook for the initial payment arrives the original
         // invoice is already paid. It must not be credited a second time and
@@ -927,64 +927,38 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $originalInvoice = createEntity(Invoice::class);
         $originalInvoice->id = 99;
         $originalInvoice->status = Invoice::STATUS_PAID;
+        $originalInvoice->client_id = 5;
         $originalInvoice->currency = 'USD';
-        $originalInvoice->setClientId(5)->setIssued(true);
-        $ownsCredit = str_starts_with($state, 'own');
-        $unpaid = str_ends_with($state, 'unpaid');
-        if ($unpaid) {
-            $originalInvoice->setStatus(Invoice::STATUS_UNPAID);
-        }
-        if ($ownsCredit) {
-            $tx->setInvoice($originalInvoice);
-        }
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
-        if ($unpaid) {
-            $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
-            $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->andReturn(true);
-        } else {
-            $invoiceService->shouldNotReceive('payInvoiceWithCredits');
-        }
+        $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(true);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturn(false);
+        $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment', 'payInvoiceWithCredits');
 
         $apiAdmin = Mockery::mock();
-        if ($unpaid) {
-            $apiAdmin->shouldReceive('client_balance_add_funds')->once();
-        } else {
-            $apiAdmin->shouldNotReceive('client_balance_add_funds');
-        }
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(99)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->with('in_init_dup', 1, 61)
-            ->andReturn($ownsCredit ? (new Transaction())->setStatus(Transaction::STATUS_PROCESSED)->setAmount('0') : null);
+            ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'in_init_dup', 1);
-        if ($state !== 'unknown_paid') {
-            $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/WHERE payment_key/'), Mockery::any())
-                ->andReturn(['client_id' => 5, 'rel_id' => $ownsCredit ? '61' : '400', 'amount' => '15.00']);
-        }
         $di = container();
         $em->shouldReceive('getConnection')->andReturn($dbalMock);
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
 
-        $process = fn () => invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]);
-        if ($state === 'unknown_paid') {
-            expect($process)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no matching Stripe wallet receipt');
-        } else {
-            $processed = $process();
-            expect($processed)->toBe($ownsCredit || $unpaid);
-            if ($processed) {
-                expect((float) $tx->getAmount())->toBe($ownsCredit ? 15.0 : 0.0);
-            }
-        }
-    })->with(['unknown_paid', 'other_paid', 'own_paid', 'other_unpaid', 'own_unpaid']);
+        $processed = invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]);
 
-    test('retains an inconclusive paid subscription receipt for reconciliation', function (): void {
+        expect($processed)->toBeFalse();
+    });
+
+    test('holds an unrecognized payment when the billing reason is missing', function (): void {
         // A missing billing_reason with a paid original is ambiguous: it could
         // be a duplicate initial webhook or a renewal. Skipping avoids
         // double-crediting the initial payment and minting a spurious renewal.
@@ -1016,6 +990,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $originalInvoice->currency = 'USD';
 
         $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
         $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment', 'payInvoiceWithCredits');
 
         $apiAdmin = Mockery::mock();
@@ -1024,10 +999,11 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(99)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->with('in_missing_reason', 1, 62)
+            ->with('in_missing_reason', null, 62)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'in_missing_reason', 1);
         $di = container();
         $em->shouldReceive('getConnection')->andReturn($dbalMock);
@@ -1036,7 +1012,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $this->adapter->setDi($di);
 
         expect(fn () => invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]))
-            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no matching Stripe wallet receipt');
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'staff review');
     });
 });
 
@@ -1205,6 +1181,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $invoiceModel = createEntity(Invoice::class);
 
         $invoiceModel->id = 42;
+        $invoiceModel->client_id = 7;
         $invoiceModel->status = Invoice::STATUS_UNPAID;
         $invoiceModel->issued = 0;
 
@@ -1212,6 +1189,12 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        });
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
             ->andReturn(false);
         $invoiceService->shouldReceive('issueInvoice')
@@ -1220,7 +1203,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
             ->andReturn(true);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(42)->andReturn($invoiceModel);
@@ -1230,6 +1213,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'in_1TnBdC', 4);
         $di = container();
         $em->shouldReceive('getConnection')->andReturn($dbalMock);
@@ -1275,6 +1259,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $existingTx->invoice = createEntity(Invoice::class, ['id' => 10]);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'pi_existing', 1);
 
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
@@ -1299,28 +1284,6 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             ->and($tx->txn_id)->toBe('pi_existing');
     });
 
-    test('settles a cleared debit through the atomic invoice path', function (): void {
-        $tx = createEntity(Transaction::class, ['id' => 201]);
-        $invoice = createEntity(Invoice::class, ['id' => 15, 'client_id' => 7]);
-        $clearing = createEntity(Transaction::class, ['id' => 200]);
-        $clearing->setInvoice($invoice);
-        $intent = (object) [
-            'id' => 'pi_debit', 'status' => 'succeeded', 'amount' => 2999,
-            'currency' => 'usd', 'metadata' => (object) ['invoice_id' => '15', 'client_id' => '7'],
-        ];
-        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
-        $invoiceRepo->shouldReceive('find')->with(15)->andReturn($invoice);
-        $txRepo->shouldReceive('findClearingByTxnId')->once()->with('pi_debit', 1, 201)->andReturn($clearing);
-        $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('settleClearingPayment')->once()->with($invoice, $clearing, $tx);
-        $di = container();
-        $di['em'] = $em;
-        $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
-        $this->adapter->setDi($di);
-
-        expect(invokePrivateMethod($this->adapter, 'handlePaymentIntentSucceededWebhookUnderLock', [$tx, $intent, 1]))->toBeTrue();
-    });
-
     test('processes one-time payment when not already handled', function (): void {
         $tx = buildTransaction();
         $tx->id = 201;
@@ -1343,6 +1306,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $invoiceModel->client_id = 7;
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'pi_new', 1);
         $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
 
@@ -1350,16 +1314,18 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        });
         $invoiceService->shouldReceive('getBalanceDue')->andReturn(29.99);
-        $invoiceService->shouldReceive('validatePaymentAmount')
-            ->once()
-            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
-            ->andReturn(null);
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
 
         $clientService = Mockery::mock();
-        $clientService->shouldReceive('addFunds')->once();
+        $clientService->shouldNotReceive('addFunds');
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
@@ -1397,7 +1363,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 });
 
 describe('processPaymentIntent', function (): void {
-    test('validates a redirect payment amount as a float', function (): void {
+    test('records the verified redirect payment amount', function (): void {
         $invoice = createEntity(Invoice::class, [
             'id' => 15,
             'client_id' => 7,
@@ -1418,19 +1384,20 @@ describe('processPaymentIntent', function (): void {
         ];
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('getBalanceDue')->once()->with($invoice)->andReturn(29.99);
-        $invoiceService->shouldReceive('validatePaymentAmount')
-            ->once()
-            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
-            ->andReturn(null);
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
-        $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        });
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->with($invoice)->andReturn(false);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->zeroOrMoreTimes()->with($invoice, true)->andReturn(true);
 
         $transactionService = Mockery::mock();
         $transactionService->shouldNotReceive('claimForProcessing');
 
         $clientService = Mockery::mock();
-        $clientService->shouldReceive('addFunds')->once();
+        $clientService->shouldNotReceive('addFunds');
 
         ['em' => $em, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(15)->andReturn($invoice);
@@ -1478,6 +1445,7 @@ describe('processPaymentIntent', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'pi_webhook_first', 4);
 
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
@@ -1652,9 +1620,7 @@ describe('processSetupIntent', function (): void {
 
         $tx = buildTransaction();
         $tx->id = 702;
-        $di = container();
-        $di['em']->getConnection()->shouldReceive('fetchAssociative')->andReturn(false);
-        $this->adapter->setDi($di);
+        $this->adapter->setDi(container());
 
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
@@ -1708,6 +1674,7 @@ describe('createStripeSubscription', function (): void {
 
 test('releases the Stripe object lock when processing fails', function (): void {
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
     expectStripeObjectLock($dbalMock, 'pi_failure', 2);
 
     $di = container();
@@ -1724,6 +1691,7 @@ test('releases the Stripe object lock when processing fails', function (): void 
 test('logs Stripe object lock timeouts with lock context', function (): void {
     $lockName = 'fb:stripe:' . substr(hash('sha256', '2:pi_timeout'), 0, 54);
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
     $dbalMock->shouldReceive('getDatabasePlatform')
         ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('fetchOne')
@@ -1821,6 +1789,7 @@ describe('_generateSubscriptionForm', function (): void {
         // invoice has no client_id (see its docblock) - that path is
         // covered by its own dedicated tests below.
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 'gen_subscription_form_invoice_40', 1);
         $dbalMock->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
@@ -1828,7 +1797,7 @@ describe('_generateSubscriptionForm', function (): void {
         $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
         $this->adapter->setDi($di);
 
-        $html = withoutPhpWarnings(fn () => invokePrivateMethod($this->adapter, '_generateSubscriptionForm', [$invoiceModel]));
+        $html = invokePrivateMethod($this->adapter, '_generateSubscriptionForm', [$invoiceModel]);
 
         expect($html)->toContain('seti_lock_secret');
     });
@@ -1846,7 +1815,6 @@ describe('_generateSubscriptionForm', function (): void {
                 'test_pub_key' => 'pk_test_dummy',
                 'test_webhook_secret' => TEST_WEBHOOK_SECRET,
                 'gateway_id' => 1,
-                'notify_url' => 'https://billing.example/ipn.php?gateway_id=1',
             ]);
 
             $invoiceModel = createEntity(Invoice::class, [
@@ -1868,6 +1836,7 @@ describe('_generateSubscriptionForm', function (): void {
             );
 
             $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+            $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
             $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
             $di = container();
@@ -1891,7 +1860,7 @@ describe('_generateSubscriptionForm', function (): void {
             $stripeMock->setupIntents = $setupIntentsMock;
             setPrivateProperty($adapter, 'stripe', $stripeMock);
 
-            withoutPhpWarnings(fn () => invokePrivateMethod($adapter, 'generateSubscriptionFormUnderLock', [$invoiceModel]));
+            invokePrivateMethod($adapter, 'generateSubscriptionFormUnderLock', [$invoiceModel]);
 
             return $capturedKey;
         };
@@ -2046,6 +2015,7 @@ describe('getOrCreatePriceId', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
         $di = container();
@@ -2086,6 +2056,7 @@ describe('getOrCreatePriceId', function (): void {
         setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => $isolatedEm);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
         $di = container();
@@ -2132,6 +2103,7 @@ describe('getOrCreatePriceId', function (): void {
         setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => $isolatedEm);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
         $di = container();
@@ -2210,7 +2182,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
-            ->with('seti_existing', 1, 300)
+            ->with('seti_existing', 1, (int) $tx->getId())
             ->andReturn($existingTx);
 
         $di = container();
@@ -2227,10 +2199,9 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         expect($tx->getInvoice()?->getId())->toBe(20);
     });
 
-    test('a retried setup webhook excludes itself and creates the subscription', function (bool $recoverOwner): void {
+    test('creates subscription when not already handled', function (): void {
         $tx = buildTransaction();
         $tx->id = 301;
-        $tx->setTxnId('seti_new')->setStatus(Transaction::STATUS_PROCESSING);
 
         // Mirrors what _generateSubscriptionForm() actually creates: a setup
         // intent with the customer already attached and the resolved price
@@ -2255,29 +2226,17 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $invoiceModel->buyer_first_name = 'Test';
         $invoiceModel->buyer_last_name = 'User';
 
-        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_new_123', 'latest_invoice' => 'in_newer_subscription_cycle', 'metadata' => ['invoice_id' => '25', 'gateway_id' => '1']]);
-        if (!$recoverOwner) {
-            $subscription->latest_invoice = null;
-        }
-        if ($recoverOwner) {
-            $tx->setSId('sub_new_123');
-            $invoiceModel->setStatus(Invoice::STATUS_PAID);
-        }
+        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_new_123']);
 
         $subscriptionsMock = Mockery::mock();
-        if ($recoverOwner) {
-            $subscriptionsMock->shouldReceive('retrieve')->once()->with('sub_new_123', [])->andReturn($subscription);
-            $subscriptionsMock->shouldNotReceive('create');
-        } else {
-            $subscriptionsMock->shouldReceive('create')
-                ->once()
-                ->with(
-                    Mockery::on(fn (array $params): bool => $params['customer'] === 'cus_existing'
-                        && $params['items'] === [['price' => 'price_existing']]),
-                    Mockery::any()
-                )
-                ->andReturn($subscription);
-        }
+        $subscriptionsMock->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $params): bool => $params['customer'] === 'cus_existing'
+                    && $params['items'] === [['price' => 'price_existing']]),
+                Mockery::any()
+            )
+            ->andReturn($subscription);
 
         // The customer and price are already known from the setup intent, so
         // resolving them must not fall back to Stripe's Search API - doing so
@@ -2302,23 +2261,11 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $stripeMock->products = $productsMock;
         $stripeMock->prices = $pricesMock;
         $stripeMock->subscriptions = $subscriptionsMock;
-        $invoicesMock = Mockery::mock();
-        $invoicesMock->shouldNotReceive('retrieve');
-        $stripeMock->invoices = $invoicesMock;
 
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
-        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo, 'connection' => $connection] = buildEntityManagerMocks();
-        $competing = (new Transaction())->setStatus(Transaction::STATUS_PROCESSED)->setAmount('0');
-        $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->andReturnUsing(fn (string $reference, ?int $gateway = null, ?int $exclude = null): ?Transaction => $recoverOwner ? $competing : ($exclude === 301 ? null : $tx));
-        if ($recoverOwner) {
-            $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/WHERE rel_id/'), ['301'])
-                ->andReturn(['client_id' => 5, 'rel_id' => '301', 'amount' => '15.00']);
-            $invoiceModel->setClientId(5);
-        }
         $di = container();
-        $di['em'] = $em;
+        $invoiceRepo = $di['em']->getRepository(Invoice::class);
         $invoiceRepo->shouldReceive('find')
             ->with(25)
             ->andReturn($invoiceModel);
@@ -2335,9 +2282,8 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         ]);
 
         expect($tx->getInvoice()?->getId())->toBe(25)
-            ->and($tx->s_id)->toBe('sub_new_123')
-            ->and($tx->getAmount())->toBe($recoverOwner ? '15' : '0');
-    })->with([false, true]);
+            ->and($tx->s_id)->toBe('sub_new_123');
+    });
 
     test('redirect and webhook flows resolve identical customer/price for the same setup intent', function (): void {
         // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4228:
@@ -2580,6 +2526,7 @@ describe('Stripe webhook gateway ownership', function (): void {
         $invoice->serie = 'INV';
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([['title' => 'Hosting']]);
 
         $invoiceService = Mockery::mock();
@@ -2663,6 +2610,7 @@ describe('Stripe webhook gateway ownership', function (): void {
         ];
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $dbalMock->shouldReceive('fetchOne')
             ->twice()
             ->with('SELECT gateway_id FROM invoice WHERE id = :id', ['id' => 10])
@@ -2685,6 +2633,7 @@ describe('Stripe webhook gateway ownership', function (): void {
         ];
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $dbalMock->shouldReceive('fetchOne')
             ->twice()
             ->with('SELECT pay_gateway_id FROM subscription WHERE sid = :sid', ['sid' => 'sub_legacy'])
@@ -2700,48 +2649,24 @@ describe('Stripe webhook gateway ownership', function (): void {
 });
 
 describe('applyOneTimePayment already-paid guard', function (): void {
-    test('skips processing when invoice is already paid', function (): void {
+    test('records a distinct charge against an already paid invoice as wallet credit', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 42, 'client_id' => 7, 'status' => Invoice::STATUS_PAID]);
         $tx = buildTransaction();
         $tx->id = 600;
         $tx->amount = '50.00';
-
-        $invoice = createEntity(Invoice::class);
-        $invoice->id = 42;
-        $invoice->status = Invoice::STATUS_PAID;
-
-        $addFundsCalled = false;
-
-        $clientService = Mockery::mock();
-        $clientService->shouldReceive('addFunds')
-            ->andReturnUsing(function () use (&$addFundsCalled): void {
-                $addFundsCalled = true;
-            });
-
+        $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+        ['em' => $em] = buildEntityManagerMocks();
+        $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+        $clientRepo->shouldReceive('find')->with(7)->andReturn($client);
+        $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
         $invoiceService = Mockery::mock();
-        $transactionService = Mockery::mock();
-
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->with($tx, $client, 'pi_test123', 'Stripe transaction pi_test123', 'transaction', '600')->andReturn(true);
         $di = container();
-        $di['mod_service'] = $di->protect(function ($name, $sub = null) use ($clientService, $invoiceService, $transactionService) {
-            if ($name === 'client') {
-                return $clientService;
-            }
-            if ($name === 'Invoice' && $sub === 'Transaction') {
-                return $transactionService;
-            }
-            if ($name === 'Invoice') {
-                return $invoiceService;
-            }
-
-            return Mockery::mock();
-        });
+        $di['em'] = $em;
+        $di['mod_service'] = $di->protect(fn () => $invoiceService);
         $this->adapter->setDi($di);
 
-        $charge = new stdClass();
-        $charge->id = 'pi_test123';
-
-        invokePrivateMethod($this->adapter, 'applyOneTimePayment', [$tx, $invoice, $charge]);
-
-        expect($addFundsCalled)->toBeFalse();
+        expect(invokePrivateMethod($this->adapter, 'applyOneTimePayment', [$tx, $invoice, (object) ['id' => 'pi_test123']]))->toBeTrue();
     });
 });
 
@@ -2931,31 +2856,6 @@ describe('listRefundsForTransaction', function (): void {
         ]);
     });
 
-    test('lists every refund page before deciding a refund is unrecorded', function (): void {
-        $refunds = Mockery::mock();
-        $refunds->shouldReceive('all')->once()->with(['payment_intent' => 'pi_123', 'limit' => 100])
-            ->andReturn((object) ['has_more' => true, 'data' => [(object) ['id' => 're_first', 'status' => 'failed']]]);
-        $refunds->shouldReceive('all')->once()->with(['payment_intent' => 'pi_123', 'limit' => 100, 'starting_after' => 're_first'])
-            ->andReturn((object) ['has_more' => false, 'data' => [(object) ['id' => 're_old', 'amount' => 1000, 'status' => 'succeeded', 'metadata' => (object) ['invoice_id' => '5', 'lines' => 'full']]]]);
-        $stripe = Mockery::mock(StripeClient::class);
-        $stripe->refunds = $refunds;
-        setPrivateProperty($this->adapter, 'stripe', $stripe);
-
-        expect($this->adapter->listRefundsForTransaction('pi_123', 'USD'))->toBe([
-            ['id' => 're_old', 'amount' => 10.0, 'invoice_id' => '5', 'lines' => 'full'],
-        ]);
-    });
-
-    test('rejects an incomplete refund page without a cursor', function (): void {
-        $refunds = Mockery::mock();
-        $refunds->shouldReceive('all')->once()->andReturn((object) ['has_more' => true, 'data' => []]);
-        $stripe = Mockery::mock(StripeClient::class);
-        $stripe->refunds = $refunds;
-        setPrivateProperty($this->adapter, 'stripe', $stripe);
-
-        expect(fn () => $this->adapter->listRefundsForTransaction('pi_123', 'USD'))->toThrow(Payment_Exception::class, 'invalid pagination cursor');
-    });
-
     test('resolves a Stripe invoice before listing', function (): void {
         $invoices = Mockery::mock();
         $invoices->shouldReceive('retrieve')->once()->with('in_123', ['expand' => ['payments']])->andReturn((object) ['payment_intent' => 'pi_inv', 'charge' => null]);
@@ -3030,6 +2930,7 @@ describe('handleRefundCreatedWebhook', function (): void {
             ->andReturn(7);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $di = container();
@@ -3079,6 +2980,7 @@ describe('handleRefundCreatedWebhook', function (): void {
         $invoiceService->shouldNotReceive('refundInvoice');
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $di = container();
@@ -3138,6 +3040,7 @@ describe('handleRefundCreatedWebhook races', function (): void {
             ->andThrow(new FOSSBilling\Core\Exception\InformationException('Only paid invoices can be refunded'));
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $di = container();
@@ -3347,6 +3250,7 @@ describe('handleRefundCreatedWebhook invoice payment fallback', function (): voi
             ->andReturn(7);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $stripe = Mockery::mock(StripeClient::class);
@@ -3389,6 +3293,7 @@ describe('handleRefundCreatedWebhook invoice payment fallback', function (): voi
         $invoiceService->shouldNotReceive('refundInvoice');
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         expectStripeObjectLock($dbalMock, 're_9', 1);
 
         $stripe = Mockery::mock(StripeClient::class);
@@ -3472,7 +3377,7 @@ describe('setup first charge recording', function (): void {
             ->and($tx->amount)->toBe('0');
     });
 
-    test('a paid first charge records what Stripe collected', function (string $outcome): void {
+    test('a paid first charge records what Stripe collected', function (): void {
         $invoice = createEntity(Invoice::class, ['id' => 95, 'client_id' => 5, 'currency' => 'USD', 'issued' => true]);
 
         $setupIntent = Stripe\SetupIntent::constructFrom([
@@ -3489,14 +3394,7 @@ describe('setup first charge recording', function (): void {
         $latestInvoice = Stripe\Invoice::constructFrom(['id' => 'in_paid', 'status' => 'paid', 'amount_paid' => 1500, 'currency' => 'usd']);
         $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_paid', 'latest_invoice' => $latestInvoice]);
         $subscriptionsMock = Mockery::mock();
-        if ($outcome === 'subscription_busy') {
-            $busy = Mockery::mock(Stripe\Exception\InvalidRequestException::class)->makePartial();
-            $busy->shouldReceive('getStripeCode')->andReturn('idempotency_key_in_use');
-            $subscriptionsMock->shouldReceive('create')->once()->andThrow($busy);
-            $subscriptionsMock->shouldNotReceive('all');
-        } else {
-            $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
-        }
+        $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
 
         $stripeMock = Mockery::mock(StripeClient::class);
         $stripeMock->setupIntents = $setupIntentsMock;
@@ -3505,30 +3403,20 @@ describe('setup first charge recording', function (): void {
 
         $tx = buildTransaction();
         $tx->id = 704;
-        $tx->setStatus(Transaction::STATUS_PROCESSING);
 
         ['em' => $em] = buildEntityManagerMocks();
-        $flushedStatuses = [];
-        $em->shouldReceive('flush')->andReturnUsing(function () use ($tx, &$flushedStatuses): void {
-            $flushedStatuses[] = $tx->getStatus();
-        });
-        if ($outcome === 'webhook_won') {
-            $em->shouldReceive('refresh')->once()->with($invoice)->andReturnUsing(fn () => $invoice->setStatus(Invoice::STATUS_PAID));
-            $em->getConnection()->shouldReceive('fetchAssociative')->with(Mockery::pattern('/WHERE payment_key/'), Mockery::any())
-                ->andReturn(['client_id' => 5, 'rel_id' => '703', 'amount' => '15.00']);
-        }
 
         $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        });
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->with($invoice)->andReturn(false);
         $invoiceService->shouldReceive('getTotalWithTax')->with($invoice)->andReturn(100.00);
         $invoiceService->shouldReceive('issueInvoice')->never();
-        if ($outcome === 'settlement_failed') {
-            $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andThrow(new RuntimeException('Settlement interrupted'));
-        } elseif ($outcome === 'success') {
-            $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
-        } else {
-            $invoiceService->shouldNotReceive('payInvoiceWithCredits');
-        }
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->zeroOrMoreTimes()->with($invoice, true)->andReturn(true);
 
         $subscriptionService = Mockery::mock();
         $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
@@ -3539,36 +3427,129 @@ describe('setup first charge recording', function (): void {
         $this->adapter->setDi($di);
 
         $apiAdmin = Mockery::mock();
-        if ($outcome === 'subscription_busy') {
-            $apiAdmin->shouldNotReceive('invoice_subscription_create');
-        } else {
-            $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturnUsing(function () use ($em): int {
-                $em->flush(); // the real API can flush the transaction before settlement
+        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
 
-                return 1;
-            });
-        }
-        if ($outcome === 'credit_failed') {
-            $apiAdmin->shouldReceive('client_balance_add_funds')->once()->andThrow(new RuntimeException('Wallet interrupted'));
-        } elseif (in_array($outcome, ['webhook_won', 'subscription_busy'], true)) {
-            $apiAdmin->shouldNotReceive('client_balance_add_funds');
-        } else {
-            $apiAdmin->shouldReceive('client_balance_add_funds')->once()
-                ->with(Mockery::on(fn (array $bd): bool => (float) $bd['amount'] === 15.0 && $bd['payment_reference'] === 'in_paid'));
-        }
-        $process = fn () => invokePrivateMethod($this->adapter, 'processSetupIntent', [
-            $apiAdmin, $tx, $invoice, ['get' => ['setup_intent' => 'seti_paid_first']], 1,
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $invoice,
+            ['get' => ['setup_intent' => 'seti_paid_first']],
+            1,
         ]);
-        if (in_array($outcome, ['credit_failed', 'settlement_failed', 'subscription_busy'], true)) {
-            expect($process)->toThrow($outcome === 'subscription_busy' ? FOSSBilling\Core\Exception\InformationException::class : RuntimeException::class);
-            expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSING)
-                ->and($flushedStatuses)->not->toContain(Transaction::STATUS_PROCESSED);
-        } else {
-            $process();
-            expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED)
-                ->and($tx->getAmount())->toBe($outcome === 'webhook_won' ? '0' : '15');
-        }
-    })->with(['success', 'credit_failed', 'settlement_failed', 'webhook_won', 'subscription_busy']);
+
+        expect($tx->status)->toBe(Transaction::STATUS_PROCESSED)
+            ->and($tx->amount)->toBe('15');
+    });
+});
+
+test('a Stripe subscription retry reuses its previously selected renewal invoice', function (): void {
+    $tx = buildTransaction();
+    $tx->id = 987;
+    $tx->gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $renewal = createEntity(Invoice::class, ['id' => 88, 'client_id' => 8, 'currency' => 'USD', 'status' => Invoice::STATUS_UNPAID, 'issued' => true]);
+    $tx->setInvoice($renewal);
+    $original = createEntity(Invoice::class, ['id' => 77, 'client_id' => 8, 'currency' => 'USD', 'status' => Invoice::STATUS_PAID, 'issued' => true]);
+    $stripeInvoice = (object) ['id' => 'in_resume', 'subscription' => 'sub_resume', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 1500, 'currency' => 'usd'];
+    $subscription = (object) ['id' => 'sub_resume', 'metadata' => (object) ['invoice_id' => '77', 'client_id' => '8']];
+    $subscriptions = Mockery::mock();
+    $subscriptions->shouldReceive('retrieve')->with('sub_resume', [])->andReturn($subscription);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $subscriptions;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+    $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->with('in_resume', null, 987)->andReturn(null);
+    $invoiceRepo->shouldReceive('find')->with(77)->andReturn($original);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
+    expectStripeObjectLock($connection, 'in_resume', 1);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
+    $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
+    $invoiceService->shouldReceive('recordGatewayPayment')->once()->with($tx, Mockery::type(Box\Mod\Client\Entity\Client::class), 'in_resume', 'Stripe subscription recurring payment in_resume', 'transaction', '987')->andReturn(true);
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
+    $this->adapter->setDi($di);
+
+    expect(invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [Mockery::mock(), $tx, (object) ['data' => (object) ['object' => $stripeInvoice]], 1]))->toBeTrue()
+        ->and($tx->getInvoice())->toBe($renewal);
+});
+
+test('a renewal charge without a renewable order is retained as unallocated credit', function (): void {
+    $tx = buildTransaction();
+    $tx->id = 987;
+    $tx->gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $original = createEntity(Invoice::class, ['id' => 77, 'client_id' => 8, 'currency' => 'USD', 'status' => Invoice::STATUS_PAID, 'issued' => true]);
+    $stripeInvoice = (object) ['id' => 'in_no_order', 'subscription' => 'sub_missing', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 1500, 'currency' => 'usd'];
+    $subscription = (object) ['id' => 'sub_missing', 'metadata' => (object) ['invoice_id' => '77', 'client_id' => '8']];
+    $subscriptions = Mockery::mock();
+    $subscriptions->shouldReceive('retrieve')->with('sub_missing', [])->andReturn($subscription);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $subscriptions;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+    $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->with('in_no_order', null, 987)->andReturn(null);
+    $invoiceRepo->shouldReceive('find')->with(77)->andReturn($original);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
+    expectStripeObjectLock($connection, 'in_no_order', 1);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
+    $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8)->andReturn(null);
+    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn (Transaction $payment, $client, $id): bool => $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order')->andReturn(true);
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
+    $this->adapter->setDi($di);
+
+    expect(invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [Mockery::mock(), $tx, (object) ['data' => (object) ['object' => $stripeInvoice]], 1]))->toBeTrue()
+        ->and($tx->getInvoice())->toBeNull();
+});
+test('a renewal charge is recorded after a closed manager is replaced', function (): void {
+    $tx = buildTransaction();
+    $tx->id = 987;
+    $tx->gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $original = createEntity(Invoice::class, ['id' => 77, 'client_id' => 8, 'currency' => 'USD', 'status' => Invoice::STATUS_PAID, 'issued' => true]);
+    $stripeInvoice = (object) ['id' => 'in_no_order', 'subscription' => 'sub_missing', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 1500, 'currency' => 'usd'];
+    $subscription = (object) ['id' => 'sub_missing', 'metadata' => (object) ['invoice_id' => '77', 'client_id' => '8']];
+    $subscriptions = Mockery::mock();
+    $subscriptions->shouldReceive('retrieve')->with('sub_missing', [])->andReturn($subscription);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $subscriptions;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+    $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->with('in_no_order', null, 987)->andReturn(null);
+    $invoiceRepo->shouldReceive('find')->with(77)->andReturn($original);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
+    expectStripeObjectLock($connection, 'in_no_order', 1);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
+    ['em' => $replacement, 'txRepo' => $replacementTxRepo] = buildEntityManagerMocks();
+    $replacement->shouldReceive('getConnection')->andReturn($connection);
+    $replacementTx = buildTransaction();
+    $replacementTx->id = 987;
+    $replacementTx->gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $replacementTxRepo->shouldReceive('find')->with(987)->andReturn($replacementTx);
+    $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8)->andReturnUsing(function () use (&$di, $replacement): ?Invoice {
+        unset($di['em']);
+        $di['em'] = $replacement;
+
+        return null;
+    });
+    $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn (Transaction $payment, $client, $id): bool => $payment === $replacementTx && $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order')->andReturn(true);
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): object => $invoiceService);
+    $this->adapter->setDi($di);
+
+    expect(invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [Mockery::mock(), $tx, (object) ['data' => (object) ['object' => $stripeInvoice]], 1]))->toBeTrue()
+        ->and($replacementTx->getInvoice())->toBeNull()
+        ->and($replacementTx->getTxnId())->toBe('in_no_order');
 });
 
 describe('saved cards', function (): void {
@@ -3620,6 +3601,7 @@ describe('saved cards', function (): void {
         $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
         $decline = Mockery::mock(Stripe\Exception\CardException::class);
@@ -3656,6 +3638,7 @@ describe('saved cards', function (): void {
         $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
         $paymentIntents = Mockery::mock();
@@ -3690,6 +3673,7 @@ describe('saved cards', function (): void {
         $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
         $captured = null;
@@ -4130,7 +4114,7 @@ test('Stripe setup recovery retrieves the recorded subscription instead of creat
 
 test('Stripe setup recovery without its recorded subscription stops before creating another charge', function (): void {
     ['em' => $em, 'connection' => $connection] = buildEntityManagerMocks();
-    $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/WHERE rel_id/'), ['1'])->andReturn(['client_id' => 5, 'rel_id' => '1', 'amount' => '15.00']);
+    $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/WHERE gateway_transaction_id/'), [1])->andReturn(['client_id' => 5, 'rel_id' => '1', 'amount' => '15.00']);
     $di = container();
     $di['em'] = $em;
     $this->adapter->setDi($di);

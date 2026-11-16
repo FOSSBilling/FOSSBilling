@@ -17,24 +17,65 @@ class Patch155 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Cancellation requests ship with a new client_order_cancel_request
-        // entity table. Installs upgrading past it rely on this patch on
-        // MySQL; fresh installs and other drivers get the table from the
-        // portable schema sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('client_order_cancel_request')) {
+        // Reply ratings, closing feedback and its request links, and the per
+        // help desk feedback switch. Installs upgrading past it rely on this
+        // patch on MySQL; fresh installs and other drivers get the tables
+        // from the portable schema sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('support_ticket_message_rating')) {
             $patcher->executeSql(
-                'CREATE TABLE `client_order_cancel_request` (
+                'CREATE TABLE `support_ticket_message_rating` (
+                    `message_id` BIGINT NOT NULL,
+                    `ticket_id` BIGINT NOT NULL,
+                    `admin_id` BIGINT NOT NULL,
+                    `rating` SMALLINT NOT NULL,
+                    `rated_by_kind` VARCHAR(10) NOT NULL,
+                    `rated_by_id` BIGINT NOT NULL,
+                    `ip` VARCHAR(45) NOT NULL DEFAULT \'\',
+                    `rated_at` DATETIME NOT NULL,
+                    PRIMARY KEY (`message_id`),
+                    KEY `ticket` (`ticket_id`),
+                    KEY `admin_rated` (`admin_id`, `rated_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+            );
+        }
+
+        if (!$patcher->tableExists('support_ticket_feedback')) {
+            $patcher->executeSql(
+                'CREATE TABLE `support_ticket_feedback` (
                     `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `client_order_id` BIGINT DEFAULT NULL,
-                    `client_id` BIGINT DEFAULT NULL,
-                    `type` VARCHAR(32) DEFAULT NULL,
-                    `reason` TEXT DEFAULT NULL,
-                    `status` VARCHAR(32) DEFAULT NULL,
-                    `created_at` DATETIME DEFAULT NULL,
-                    `updated_at` DATETIME DEFAULT NULL,
+                    `ticket_id` BIGINT NOT NULL,
+                    `admin_id` BIGINT DEFAULT NULL,
+                    `rating` SMALLINT DEFAULT NULL,
+                    `comments` TEXT NOT NULL,
+                    `ip` VARCHAR(45) NOT NULL DEFAULT \'\',
+                    `created_at` DATETIME NOT NULL,
                     PRIMARY KEY (`id`),
-                    KEY `client_order_cancel_request_order_id_idx` (`client_order_id`),
-                    KEY `client_order_cancel_request_status_idx` (`status`)
+                    KEY `ticket` (`ticket_id`),
+                    KEY `admin_created` (`admin_id`, `created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+            );
+        }
+
+        if (!$patcher->tableExists('support_ticket_feedback_request')) {
+            $patcher->executeSql(
+                'CREATE TABLE `support_ticket_feedback_request` (
+                    `ticket_id` BIGINT NOT NULL,
+                    `token` CHAR(64) NOT NULL,
+                    `sent_at` DATETIME NOT NULL,
+                    `answered_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`ticket_id`),
+                    UNIQUE KEY `token` (`token`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+            );
+        }
+
+        if (!$patcher->tableExists('support_helpdesk_feedback')) {
+            $patcher->executeSql(
+                'CREATE TABLE `support_helpdesk_feedback` (
+                    `helpdesk_id` BIGINT NOT NULL,
+                    `feedback_request` TINYINT(1) NOT NULL DEFAULT 1,
+                    `updated_at` DATETIME NOT NULL,
+                    PRIMARY KEY (`helpdesk_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
             );
         }

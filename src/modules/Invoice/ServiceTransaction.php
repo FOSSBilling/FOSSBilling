@@ -22,11 +22,11 @@ use Box\Mod\Invoice\Event\BeforeAdminTransactionCreateEvent;
 use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
-use FOSSBilling\Core\Payment\OwnershipLost;
-use FOSSBilling\Core\Payment\ProcessingFence;
 use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Payment\OwnershipLost;
+use FOSSBilling\Core\Payment\ProcessingFence;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
@@ -39,7 +39,6 @@ class ServiceTransaction implements InjectionAwareInterface
 
     protected ?\Pimple\Container $di = null;
     private ?bool $transactionIpnHashColumnExists = null;
-    private ?TransactionRepository $transactionRepository = null;
 
     /** @var array<int, string> tokens acquired by this worker, independent of ORM refreshes */
     private array $processingTokens = [];
@@ -51,9 +50,9 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function getTransactionRepository(): TransactionRepository
     {
-        $this->transactionRepository ??= $this->di['em']->getRepository(Transaction::class);
-
-        return $this->transactionRepository;
+        // Another service can replace a closed entity manager during recovery.
+        // Repositories belong to their manager and must not outlive it.
+        return $this->di['em']->getRepository(Transaction::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -107,13 +106,13 @@ class ServiceTransaction implements InjectionAwareInterface
             if ($db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
                 $db->executeStatement("UPDATE {$table} SET status = status WHERE id = ?", [$id]);
             }
-            $status = $db->fetchOne("SELECT status FROM {$table} WHERE id = ?" . \FOSSBilling\Core\Doctrine\RowLock::suffix($db), [$id]);
+            $status = $db->fetchOne("SELECT status FROM {$table} WHERE id = ?" . RowLock::suffix($db), [$id]);
             if ($status === false) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Transaction not found.');
+                throw new InformationException('Transaction not found.');
             }
             if ($status === Transaction::STATUS_PROCESSING && ProcessingFence::claims() === []) {
                 foreach (array_diff(array_keys($data), ['id', 'note', 'error', 'error_code']) as $field) {
-                    throw new \FOSSBilling\Core\Exception\InformationException('Release the interrupted transaction before editing payment fields.');
+                    throw new InformationException('Release the interrupted transaction before editing payment fields.');
                 }
             }
             if ($status === Transaction::STATUS_PROCESSED || $status !== $model->getStatus()) {
@@ -139,12 +138,23 @@ class ServiceTransaction implements InjectionAwareInterface
             $this->assertNoProcessedHistoryChange($model, $data);
         }
 
+        $invoice = !empty($data['invoice_id'])
+            ? $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id'])
+            : $model->getInvoice();
+        if ($model->getStatus() !== Transaction::STATUS_PROCESSED
+            && ($data['status'] ?? $model->getStatus()) === Transaction::STATUS_PROCESSED
+            && (float) ($data['amount'] ?? $model->getAmount()) != 0.0 && $invoice instanceof Invoice
+            && strcasecmp((string) ($data['currency'] ?? $model->getCurrency()), (string) $invoice->getCurrency()) !== 0) {
+            throw new InformationException('Payment currency does not match the invoice.');
+        }
         if (!empty($data['invoice_id'])) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
             if (!$invoice instanceof Invoice) {
                 throw new InformationException('Invoice not found');
             }
-            $this->assertInvoiceAcceptsTransactions($invoice);
+            if ($model->getStatus() !== Transaction::STATUS_PROCESSED) {
+                $this->assertInvoiceAcceptsTransactions($invoice);
+            }
             $model->setInvoice($invoice);
         }
         $model->setTxnId(isset($data['txn_id']) ? (string) $data['txn_id'] : $model->getTxnId());
@@ -181,7 +191,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($tx === null) {
             return $id;
         }
-        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError()) && $tx->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
             return $id;
         }
 
@@ -211,7 +221,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($tx === null) {
             return;
         }
-        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError()) && $tx->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
             return;
         }
 
@@ -486,8 +496,8 @@ class ServiceTransaction implements InjectionAwareInterface
                     $connection->executeStatement('UPDATE ' . $table . ' SET status = status WHERE id = :id', ['id' => $id]);
                 }
                 if ($connection->fetchOne(
-                    'SELECT id FROM client_balance WHERE (type = :credit AND rel_id = :id) OR type = :refund LIMIT 1',
-                    ['credit' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $id, 'refund' => ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $id],
+                    'SELECT id FROM client_balance WHERE (type = :credit AND rel_id = :id) OR type = :refund OR gateway_transaction_id = :transaction_id LIMIT 1',
+                    ['credit' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $id, 'refund' => ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $id, 'transaction_id' => $id],
                 ) !== false) {
                     throw new InformationException('Transactions backing gateway receipt balance entries cannot be deleted.');
                 }
@@ -593,6 +603,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'currency' => $model->getCurrency(),
             'type' => $model->getType(),
             'status' => $model->getStatus(),
+            'completion_pending' => $model->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE,
             'ip' => $model->getIp(),
             'error' => $model->getError(),
             'error_code' => $model->getErrorCode(),
@@ -635,6 +646,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'currency' => $transaction->getCurrency(),
             'type' => $transaction->getType(),
             'status' => $transaction->getStatus(),
+            'completion_pending' => $transaction->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE,
             'ip' => $transaction->getIp(),
             'error' => $transaction->getError(),
             'error_code' => $transaction->getErrorCode(),
@@ -715,10 +727,16 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         // `transaction` is a reserved word (bare use is a syntax error on SQLite): quote it.
         $table = $this->di['em']->getConnection()->quoteSingleIdentifier('transaction');
-        $sql = "SELECT m.* FROM {$table} as m WHERE m.status = :received_status ORDER BY m.id DESC";
+        $sql = "SELECT m.*
+                FROM {$table} as m
+                WHERE m.status = :received_status
+                    OR (m.status = :processed_status AND (m.gateway_completion_state = 1 OR (m.gateway_completion_state = 2 AND (m.updated_at IS NULL OR m.updated_at <= :completion_retry_after))))
+                ORDER BY m.id DESC";
 
         return $this->di['em']->getConnection()->fetchAllAssociative($sql, [
             'received_status' => Transaction::STATUS_RECEIVED,
+            'processed_status' => Transaction::STATUS_PROCESSED,
+            'completion_retry_after' => $this->getProcessingRecoveryThreshold(),
         ]);
     }
 
@@ -734,8 +752,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $table = $connection->quoteSingleIdentifier('transaction');
         $token = bin2hex(random_bytes(16));
         $affectedRows = $connection->executeStatement(
-            "UPDATE {$table} SET status = ?, updated_at = ?, processing_token = ? WHERE id = ? AND status IN (?, ?, ?)",
-            [Transaction::STATUS_PROCESSING, date('Y-m-d H:i:s'), $token, $id, Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR, Transaction::STATUS_APPROVED]
+            "UPDATE {$table} SET gateway_completion_state = CASE WHEN status = 'processed' THEN 2 ELSE gateway_completion_state END, status = CASE WHEN status = 'processed' THEN status ELSE ? END, updated_at = ?, processing_token = ? WHERE id = ? AND (status IN (?, ?, ?) OR (status = 'processed' AND (gateway_completion_state = 1 OR (gateway_completion_state = 2 AND (updated_at IS NULL OR updated_at <= ?)))))",
+            [Transaction::STATUS_PROCESSING, date('Y-m-d H:i:s'), $token, $id, Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR, Transaction::STATUS_APPROVED, $this->getProcessingRecoveryThreshold()]
         );
 
         if ($affectedRows > 0) {
@@ -760,7 +778,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $parameters
         );
         if ($updated === 0) {
-            throw new \FOSSBilling\Core\Exception\InformationException('This transaction is not eligible for recovery yet or its status has changed.');
+            throw new InformationException('This transaction is not eligible for recovery yet or its status has changed.');
         }
         $this->di['logger']->warning('Staff member #{staff} released stale transaction #{id} after confirming that processing stopped and the gateway outcome was checked.', ['staff' => $staffId, 'id' => $id]);
 
@@ -771,7 +789,7 @@ class ServiceTransaction implements InjectionAwareInterface
     public function reconcileWalletCredit(int $id, ?int $creditId, bool $noCredit, ?string $expectedToken, int $staffId, string $note): bool
     {
         if (trim($note) === '' || ($creditId === null) === !$noCredit) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Choose an existing wallet credit or confirm that no credit exists, and enter a reconciliation note.');
+            throw new InformationException('Choose an existing wallet credit or confirm that no credit exists, and enter a reconciliation note.');
         }
         $em = $this->di['em'];
         $em->wrapInTransaction(function () use ($em, $id, $creditId, $noCredit, $expectedToken, $staffId, $note): void {
@@ -780,33 +798,45 @@ class ServiceTransaction implements InjectionAwareInterface
             if ($db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
                 $db->executeStatement("UPDATE {$table} SET status = status WHERE id = ?", [$id]);
             }
-            $row = $db->fetchAssociative("SELECT status, processing_token FROM {$table} WHERE id = ?" . \FOSSBilling\Core\Doctrine\RowLock::suffix($db), [$id]);
+            $row = $db->fetchAssociative("SELECT status, processing_token FROM {$table} WHERE id = ?" . RowLock::suffix($db), [$id]);
             if (!$row || $row['status'] === Transaction::STATUS_PROCESSED || $row['processing_token'] !== $expectedToken) {
-                throw new \FOSSBilling\Core\Exception\InformationException('The transaction or its processing claim changed. Reload it before reconciling the wallet.');
+                throw new InformationException('The transaction or its processing claim changed. Reload it before reconciling the wallet.');
             }
             $model = $em->find(Transaction::class, $id);
             if (!$model instanceof Transaction) {
-                throw new \FOSSBilling\Core\Exception\InformationException('Transaction not found.');
+                throw new InformationException('Transaction not found.');
             }
             $em->refresh($model);
             if (!$noCredit) {
-                $credit = $db->fetchAssociative('SELECT client_id, amount, type, payment_key FROM client_balance WHERE id = ?' . \FOSSBilling\Core\Doctrine\RowLock::suffix($db), [$creditId]);
+                $credit = $db->fetchAssociative('SELECT client_id, amount, type, payment_key, gateway_transaction_id, gateway_receipt_key FROM client_balance WHERE id = ?' . RowLock::suffix($db), [$creditId]);
                 $type = match ($model->getGateway()?->getGateway()) {
                     'Stripe' => 'transaction', 'PayPalEmail', 'PayPalAutoPay' => 'PayPal', 'Custom' => 'gift',
-                    default => throw new \FOSSBilling\Core\Exception\InformationException('This gateway does not support linking a wallet credit.'),
+                    default => throw new InformationException('This gateway does not support linking a wallet credit.'),
                 };
                 if (!$credit || $model->getInvoice() === null || (int) $credit['client_id'] !== $model->getInvoice()->getClientId()
                     || $model->getAmount() === null || (float) $credit['amount'] <= 0 || round((float) $credit['amount'], 2) !== round((float) $model->getAmount(), 2) || $credit['type'] !== $type) {
-                    throw new \FOSSBilling\Core\Exception\InformationException('The wallet credit must match this invoice client, payment amount and gateway credit type.');
+                    throw new InformationException('The wallet credit must match this invoice client, payment amount and gateway credit type.');
                 }
                 if ($model->getGateway()->getGateway() !== 'Custom' && str_starts_with(PaymentCredit::reference($model, []), 'transaction:')) {
-                    throw new \FOSSBilling\Core\Exception\InformationException('Record the verified gateway payment reference in the transaction details before linking a wallet credit.');
+                    throw new InformationException('Record the verified gateway payment reference in the transaction details before linking a wallet credit.');
                 }
                 $key = PaymentCredit::forTransaction($model, ['type' => $type]);
                 if ($credit['payment_key'] !== null && $credit['payment_key'] !== $key) {
-                    throw new \FOSSBilling\Core\Exception\InformationException('This wallet entry already belongs to another payment.');
+                    throw new InformationException('This wallet entry already belongs to another payment.');
                 }
-                $db->update('client_balance', ['payment_key' => $key], ['id' => $creditId]);
+                if ($credit['gateway_transaction_id'] !== null && (int) $credit['gateway_transaction_id'] !== $id) {
+                    throw new InformationException('This wallet entry already belongs to another payment.');
+                }
+                $receiptFields = ['payment_key' => $key];
+                if ($model->getGateway()->getGateway() !== 'Custom') {
+                    $reference = PaymentCredit::reference($model, []);
+                    $receiptFields['gateway_receipt_key'] = hash('sha256', $model->getGateway()->getId() . ':' . $reference);
+                    $receiptFields['gateway_transaction_id'] = $id;
+                    if ($credit['gateway_receipt_key'] !== null && !hash_equals($credit['gateway_receipt_key'], $receiptFields['gateway_receipt_key'])) {
+                        throw new InformationException('This wallet entry already belongs to another payment.');
+                    }
+                }
+                $db->update('client_balance', $receiptFields, ['id' => $creditId]);
             }
             $model->setProcessingToken(null)->setCreditRecoveryState($noCredit ? 1 : 2)->setStatus(Transaction::STATUS_ERROR);
             $model->setNote(trim((string) $model->getNote() . "\nStaff #{$staffId} reconciled wallet credit " . ($noCredit ? 'absence' : '#' . $creditId) . ': ' . mb_substr($note, 0, 1000)));
@@ -852,9 +882,15 @@ class ServiceTransaction implements InjectionAwareInterface
         $db = $this->di['em']->getConnection();
         $table = $db->quoteSingleIdentifier('transaction');
         $updated = $db->executeStatement(
-            "UPDATE {$table} SET status = ?, error = ?, error_code = ?, updated_at = ? WHERE id = ? AND status <> ? AND processing_token = ?",
-            [Transaction::STATUS_ERROR, $e->getMessage(), (int) $e->getCode(), date('Y-m-d H:i:s'), $id, Transaction::STATUS_PROCESSED, $this->processingTokens[$id] ?? null]
+            "UPDATE {$table} SET gateway_completion_state = CASE WHEN status = 'processed' THEN 1 ELSE gateway_completion_state END, status = CASE WHEN status = 'processed' THEN status ELSE 'error' END, error = ?, error_code = ?, updated_at = ? WHERE id = ? AND (status <> 'processed' OR gateway_completion_state <> 0) AND processing_token = ?",
+            [$e->getMessage(), (int) $e->getCode(), date('Y-m-d H:i:s'), $id, $this->processingTokens[$id] ?? null]
         );
+        if ($this->di['em']->isOpen()) {
+            $transaction = $this->getTransactionRepository()->find($id);
+            if ($transaction instanceof Transaction) {
+                $this->di['em']->refresh($transaction);
+            }
+        }
         if ($updated > 0) {
             $this->di['logger']->error('Failed to process transaction #{id}: {exception}', ['id' => $id, 'exception' => $e]);
         }
@@ -896,6 +932,18 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         return $this->withProcessingFence((int) $id, function () use ($tx, $gtw, $id) {
+            // The claim leaves financially committed receipts processed. Their
+            // remaining work is local, so recovery must never recreate a provider
+            // subscription or resolve a different latest renewal invoice.
+            $this->di['em']->refresh($tx);
+            if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
+                if ($tx->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
+                    $this->di['mod_service']('Invoice')->completeGatewayPayment($tx);
+                }
+
+                return true;
+            }
+
             $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
             $adapter = $payGatewayService->getPaymentAdapter($gtw);
             if (!method_exists($adapter, 'processTransaction')) {
@@ -922,12 +970,6 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('This payment gateway does not require manual approval.', [], 7003);
         }
 
-        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        $adapter = $payGatewayService->getPaymentAdapter($gtw);
-        if (!method_exists($adapter, 'approveTransaction')) {
-            throw new \FOSSBilling\Core\Exception\BaseException('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'approveTransaction'], 705);
-        }
-
         // Serialize concurrent approvals the same way processing claims do:
         // a double-clicked Approve button converges on a single approver.
         if (!$this->claimForProcessing((int) $model->getId())) {
@@ -936,18 +978,24 @@ class ServiceTransaction implements InjectionAwareInterface
             return true;
         }
 
-        $this->withProcessingFence((int) $model->getId(), function () use ($model, $gtw, $adapter): void {
-            // Mirror the SQL claim in Doctrine and keep it until settlement finishes.
-            // Approved is claimable, so persisting it here would allow a second approver.
-            $model->setStatus(Transaction::STATUS_PROCESSING);
-            $model->setError(null);
-            $model->setErrorCode(null);
-            $model->setUpdatedAt(new \DateTimeImmutable());
-            $this->di['em']->flush();
+        $this->withProcessingFence((int) $model->getId(), function () use ($model, $gtw): void {
+            $this->di['em']->refresh($model);
 
             try {
-                $this->di['logger']->info('Confirmed offline payment for transaction #{id}: settling', ['id' => $model->getId()]);
-                $adapter->approveTransaction($this->di['api_system'], (int) $model->getId(), (int) $gtw->getId());
+                if ($model->getStatus() === Transaction::STATUS_PROCESSED) {
+                    $this->di['mod_service']('Invoice')->completeOfflinePayment($model);
+                } else {
+                    $model->setError(null);
+                    $model->setErrorCode(null);
+                    $this->di['em']->flush();
+                    $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+                    $adapter = $payGatewayService->getPaymentAdapter($gtw);
+                    if (!method_exists($adapter, 'approveTransaction')) {
+                        throw new \FOSSBilling\Core\Exception\BaseException('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'approveTransaction'], 705);
+                    }
+                    $this->di['logger']->info('Confirmed offline payment for transaction #{id}: settling', ['id' => $model->getId()]);
+                    $adapter->approveTransaction($this->di['api_system'], (int) $model->getId(), (int) $gtw->getId());
+                }
             } catch (\Throwable $e) {
                 $this->markTransactionError((int) $model->getId(), $e);
 

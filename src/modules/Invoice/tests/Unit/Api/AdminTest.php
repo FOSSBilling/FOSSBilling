@@ -2090,6 +2090,41 @@ test('refunds an invoice to account credit instead of the gateway', function ():
     expect($api->refund($data))->toBeInt()->toBe(3);
 });
 
+test('domain renewal review requires permission to manage invoices', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $staff = $di['mod_service']('staff');
+    $staff->shouldReceive('checkPermissionsAndThrowException')
+        ->once()->with('invoice', 'manage_invoices', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+
+    expect(fn () => $api->item_review_domain_renewal(['id' => 11, 'decision' => 'retry_zero']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('paid renewal review requires permission to manage invoices', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $di['mod_service']('staff')->shouldReceive('checkPermissionsAndThrowException')
+        ->once()->with('invoice', 'manage_invoices', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+    expect(fn () => $api->item_review_paid_renewal(['id' => 11, 'decision' => 'retry']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('receipt reconciliation requires permission to manage both invoices and client balances', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $staff = $di['mod_service']('staff');
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('invoice', 'manage_invoices', null, Mockery::any())->andReturn(true);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('client', 'manage_balance', null, Mockery::any())->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+    expect(fn () => $api->transaction_reconcile_receipt(['receipt_id' => 1, 'transaction_id' => 2, 'provider_object_id' => 'pi_1']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
 test('charges saved cards in batch', function (): void {
     $api = apiEndpoint(new Admin());
 

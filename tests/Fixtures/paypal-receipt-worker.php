@@ -28,9 +28,11 @@ $client = $em->find(Box\Mod\Client\Entity\Client::class, $invoice->getClientId()
 if ($argv[4] === 'claim') {
     $transactions = new Box\Mod\Invoice\ServiceTransaction();
     $transactions->setDi($di);
-    if (!$transactions->claimForProcessing($receipt->getId())) {
-        throw new RuntimeException('Could not reclaim the expired processing lease');
+    if ($transactions->claimForProcessing($receipt->getId())) {
+        throw new RuntimeException('An expired ambiguous processing claim must not be reclaimed');
     }
+    echo "ready\nretained\n";
+    exit;
 }
 echo "ready\n";
 flush();

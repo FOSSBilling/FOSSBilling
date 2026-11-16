@@ -79,12 +79,10 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
      * Per-gateway payment fees for an invoice, so the client sees each
      * method's surcharge before paying. Read-only: nothing is changed.
      *
-     * @return array
-     *
      * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function gateway_fees($data)
+    public function gateway_fees($data): array
     {
         if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
             throw new \FOSSBilling\Core\Exception\InformationException('Invalid invoice hash', null, 4001);
@@ -104,35 +102,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
 
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_gateway_fees_hash', (string) $data['hash']);
 
-        if ($model->getStatus() !== Invoice::STATUS_UNPAID) {
-            return ['base' => 0.0, 'fees' => []];
-        }
-
-        $feesService = $this->getDi()['mod_service']('Invoice', 'GatewayFees');
-        $payGatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
-        $subscribeService = $this->getDi()['mod_service']('Invoice', 'Subscription');
-
-        $base = $feesService->base($model);
-        $currency = (string) $model->getCurrency();
-        $clientId = $model->getClientId();
-        $subscribable = $subscribeService->isSubscribable((int) $model->getId());
-
-        $fees = [];
-        foreach ($payGatewayService->getPayGatewayRepository()->findEnabledOrderedByIdDesc() as $gateway) {
-            if (!in_array($currency, $payGatewayService->getAcceptedCurrencies($gateway), true)) {
-                continue;
-            }
-            if (!$gateway->isAllowSingle() && !($subscribable && $gateway->isAllowRecurrent())) {
-                continue;
-            }
-            $charge = $feesService->charge($model, $gateway, $base);
-            $fees[(int) $gateway->getId()] = [
-                'fee' => $charge,
-                'total' => round($base + $charge, 2),
-            ];
-        }
-
-        return ['base' => $base, 'fees' => $fees];
+        return $this->getDi()['mod_service']('Invoice', 'GatewayFees')->quote($model);
     }
 
     /**

@@ -34,6 +34,42 @@ class ServiceGatewayFees implements InjectionAwareInterface
         return $this->di;
     }
 
+    /** Read-only display quote shared by authorized pages and the public API. */
+    public function quote(Invoice $invoice): array
+    {
+        if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
+            return ['base' => 0.0, 'fees' => []];
+        }
+
+        $invoiceService = $this->di['mod_service']('Invoice');
+        if ($invoiceService->isInvoiceTypeDeposit($invoice)) {
+            return ['base' => 0.0, 'fees' => []];
+        }
+        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
+
+        $base = $this->base($invoice);
+        $currency = (string) $invoice->getCurrency();
+        $subscribable = $invoiceService->getAmountPaid($invoice) <= 0.0 && $subscribeService->isSubscribable((int) $invoice->getId());
+
+        $fees = [];
+        foreach ($payGatewayService->getPayGatewayRepository()->findEnabledOrderedByIdDesc() as $gateway) {
+            if (!in_array($currency, $payGatewayService->getAcceptedCurrencies($gateway), true)) {
+                continue;
+            }
+            if (!$gateway->isAllowSingle() && !($subscribable && $gateway->isAllowRecurrent())) {
+                continue;
+            }
+            $charge = $this->charge($invoice, $gateway, $base);
+            $fees[(int) $gateway->getId()] = [
+                'fee' => $charge,
+                'total' => round($base + $charge, 2),
+            ];
+        }
+
+        return ['base' => $base, 'fees' => $fees];
+    }
+
     public function settings(PayGateway $gateway): array
     {
         $config = $gateway->getConfig() ?? [];
@@ -97,9 +133,10 @@ class ServiceGatewayFees implements InjectionAwareInterface
     public function base(Invoice $invoice): float
     {
         $line = $this->line($invoice);
-        $total = $this->di['mod_service']('Invoice')->getTotalWithTax($invoice);
+        $invoiceService = $this->di['mod_service']('Invoice');
+        $total = $invoiceService->getTotalWithTax($invoice);
 
-        return round($total - ($line === null ? 0.0 : $this->lineTotal($invoice, $line)), 2);
+        return max(0.0, round($total - ($line === null ? 0.0 : $this->lineTotal($invoice, $line)) - $invoiceService->getAmountPaid($invoice), 2));
     }
 
     public function lineTotal(Invoice $invoice, InvoiceItem $line): float
@@ -160,6 +197,10 @@ class ServiceGatewayFees implements InjectionAwareInterface
             if ($invoice->getStatus() !== Invoice::STATUS_UNPAID
                 || $invoiceService->isInvoiceTypeDeposit($invoice)) {
                 return;
+            }
+
+            if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+                return; // The provider is already collecting the quoted amount.
             }
 
             $items = $this->di['mod_service']('Invoice', 'InvoiceItem');

@@ -36,7 +36,9 @@ function deferredPayPalApi(array $c): object
             $service = new Box\Mod\Invoice\ServiceTransaction();
             $service->setDi($this->c['di']);
 
-            return $service->update($this->c['em']->find(Box\Mod\Invoice\Entity\Transaction::class, $data['id']), $data);
+            // This adapter harness supplies the trusted API, without the outer processing
+            // claim. ServiceTransaction and PaymentFence tests cover that boundary.
+            return (new ReflectionMethod($service, 'applyUpdate'))->invoke($service, $this->c['em']->find(Box\Mod\Invoice\Entity\Transaction::class, $data['id']), $data);
         }
 
         public function invoice_get(array $data): array
@@ -100,7 +102,7 @@ function heldOrderPaymentContext(?string $databasePath = null): array
     $config->setProxyNamespace('HeldOrderPaymentProxies');
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
     $em = new EntityManager($connection, $config);
-    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Order::class, OrderMeta::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Invoice\Entity\GatewayRefundAttempt::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Order::class, OrderMeta::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
     $order = (new Order())->setServiceType('custom')->setServiceId(1)->setStatus(Order::STATUS_ACTIVE)->setGroupMaster(false)
         ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTimeImmutable('+1 day'));
     $em->persist($order);

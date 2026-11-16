@@ -16,7 +16,9 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
+use Doctrine\DBAL\LockMode;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -272,9 +274,6 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function update(PayGateway $model, array $data, ?UploadedFile $file = null): bool
     {
-        $wasEnabled = $model->isEnabled();
-        $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
-        $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
         $existingConfig = $model->getConfig() ?? [];
         $mergedConfig = $existingConfig;
         $secretFields = [];
@@ -290,11 +289,8 @@ class ServicePayGateway implements InjectionAwareInterface
             }
         }
 
-        if ($newEnabled) {
-            $this->validateGatewayConfig($model, $this->secretCodec()->reveal($mergedConfig), $newTestMode);
-        }
-
         $customLogo = $model->getCustomLogo();
+        $logoChanged = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['remove_custom_logo'] ?? false) || $file !== null || (!empty($data['logo_url']));
         if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['remove_custom_logo'] ?? false)) {
             $customLogo = null;
         } elseif ($file !== null) {
@@ -303,29 +299,40 @@ class ServicePayGateway implements InjectionAwareInterface
             $customLogo = $this->importGatewayLogo($data['logo_url']);
         }
 
-        $model->setName($data['title'] ?? $model->getName());
-        $model->setCustomLogo($customLogo);
-
-        if (isset($data['config']) && is_array($data['config'])) {
-            $model->setConfig($this->secretCodec()->store($mergedConfig, $this->getSecretFields($model)));
-        }
-
-        if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
-            $model->setAcceptedCurrencies($data['accepted_currencies']);
-        }
-
-        $model->setEnabled($newEnabled);
-        $model->setAllowSingle((bool) ($data['allow_single'] ?? $model->isAllowSingle()));
-        $model->setAllowRecurrent((bool) ($data['allow_recurrent'] ?? $model->isAllowRecurrent()));
-        $model->setTestMode($newTestMode);
-        $this->di['em']->flush();
-
-        // Turning a gateway off moves its unpaid invoices to a replacement,
-        // with the replacement's fee. Paid history stays untouched.
-        if ($wasEnabled && !$newEnabled) {
+        $this->withGatewayTransaction(function () use ($model, $data, $customLogo, $logoChanged, $mergedConfig): void {
             $replacementId = isset($data['replacement_id']) && $data['replacement_id'] !== '' ? (int) $data['replacement_id'] : null;
-            $this->moveUnpaidInvoices((int) $model->getId(), $replacementId);
-        }
+            if ($model->getId() !== null) {
+                $this->lockGatewayRows([$model->getId(), $replacementId]);
+                $this->di['em']->refresh($model, LockMode::PESSIMISTIC_WRITE);
+            }
+            $wasEnabled = $model->isEnabled();
+            $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $wasEnabled;
+            $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
+            if ($newEnabled) {
+                $this->validateGatewayConfig($model, $this->secretCodec()->reveal($mergedConfig), $newTestMode);
+            }
+            // Validate and move unpaid invoices before disabling the gateway.
+            // Any failure rolls back both migration and gateway configuration.
+            if ($wasEnabled && !$newEnabled) {
+                $this->moveUnpaidInvoicesLocked((int) $model->getId(), $replacementId);
+            }
+
+            $model->setName($data['title'] ?? $model->getName());
+            if ($logoChanged) {
+                $model->setCustomLogo($customLogo);
+            }
+            if (isset($data['config']) && is_array($data['config'])) {
+                $model->setConfig($this->secretCodec()->store($mergedConfig, $this->getSecretFields($model)));
+            }
+            if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
+                $model->setAcceptedCurrencies($data['accepted_currencies']);
+            }
+            $model->setEnabled($newEnabled);
+            $model->setAllowSingle((bool) ($data['allow_single'] ?? $model->isAllowSingle()));
+            $model->setAllowRecurrent((bool) ($data['allow_recurrent'] ?? $model->isAllowRecurrent()));
+            $model->setTestMode($newTestMode);
+            $this->di['em']->flush();
+        });
 
         $this->di['logger']->info('Updated payment gateway {model_gateway}', ['model_gateway' => $model->getGateway()]);
 
@@ -339,7 +346,40 @@ class ServicePayGateway implements InjectionAwareInterface
      */
     public function moveUnpaidInvoices(int $gatewayId, ?int $replacementId): void
     {
-        $invoices = $this->di['em']->getRepository(Invoice::class)->findUnpaidByGatewayId($gatewayId);
+        $this->withGatewayTransaction(fn () => $this->moveUnpaidInvoicesLocked($gatewayId, $replacementId));
+    }
+
+    private function withGatewayTransaction(callable $action): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $mysql = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+        $isolation = $mysql ? $connection->getTransactionIsolation() : null;
+        if ($connection->isTransactionActive()) {
+            if ($mysql && $isolation !== \Doctrine\DBAL\TransactionIsolationLevel::READ_COMMITTED) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Gateway changes require a fresh READ COMMITTED transaction. Retry the whole operation outside the current transaction.');
+            }
+            $this->di['em']->wrapInTransaction($action);
+
+            return;
+        }
+        if ($mysql) {
+            $connection->setTransactionIsolation(\Doctrine\DBAL\TransactionIsolationLevel::READ_COMMITTED);
+        }
+
+        try {
+            $this->di['em']->wrapInTransaction($action);
+        } finally {
+            if ($mysql) {
+                $connection->setTransactionIsolation($isolation);
+            }
+        }
+    }
+
+    private function moveUnpaidInvoicesLocked(int $gatewayId, ?int $replacementId): void
+    {
+        $this->lockGatewayRows([$gatewayId, $replacementId]);
+        $invoiceRepository = $this->di['em']->getRepository(Invoice::class);
+        $invoices = $invoiceRepository->findUnpaidByGatewayId($gatewayId);
         if ($invoices === []) {
             return;
         }
@@ -347,19 +387,49 @@ class ServicePayGateway implements InjectionAwareInterface
         $replacement = $replacementId !== null && $replacementId !== $gatewayId
             ? $this->di['em']->getRepository(PayGateway::class)->find($replacementId)
             : null;
+        if ($replacement instanceof PayGateway) {
+            $this->di['em']->refresh($replacement, LockMode::PESSIMISTIC_WRITE);
+        }
         if (!$replacement instanceof PayGateway || !$replacement->isEnabled()) {
             throw new \FOSSBilling\Core\Exception\InformationException('Choose an enabled gateway for the unpaid invoices of this gateway.');
         }
 
         $feesService = $this->di['mod_service']('Invoice', 'GatewayFees');
         foreach ($invoices as $invoice) {
-            $invoice->setGateway($replacement);
-            $this->di['em']->persist($invoice);
-            $this->di['em']->flush();
-            $feesService->apply($invoice, $replacement);
+            $moveInvoice = function () use ($invoiceRepository, $invoice, $gatewayId, $replacement, $feesService): void {
+                $state = $invoiceRepository->lockAndGetState((int) $invoice->getId());
+                if ($state === null || $state['status'] !== Invoice::STATUS_UNPAID) {
+                    return;
+                }
+                // A plain refresh can reuse an older MySQL transaction snapshot.
+                $this->di['em']->refresh($invoice, LockMode::PESSIMISTIC_WRITE);
+                // Selection may precede a concurrent payment or gateway change.
+                if ($invoice->getStatus() !== Invoice::STATUS_UNPAID || $invoice->getGateway()?->getId() !== $gatewayId) {
+                    return;
+                }
+                if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('A payment is still clearing on this gateway. Retry the gateway change after it settles.');
+                }
+                $invoice->setGateway($replacement);
+                $this->di['em']->persist($invoice);
+                $this->di['em']->flush();
+                $feesService->apply($invoice, $replacement);
+            };
+            $moveInvoice();
         }
 
         $this->di['logger']->info('Moved {count} unpaid invoices from gateway #{gateway_id} to gateway #{replacement_id}', ['count' => count($invoices), 'gateway_id' => $gatewayId, 'replacement_id' => $replacementId]);
+    }
+
+    /** Gateway rows precede invoice locks; every updater uses the same ID order. */
+    private function lockGatewayRows(array $ids): void
+    {
+        $ids = array_unique(array_filter($ids, static fn (?int $id): bool => $id !== null && $id > 0));
+        sort($ids, SORT_NUMERIC);
+        $connection = $this->di['em']->getConnection();
+        foreach ($ids as $id) {
+            $connection->fetchOne('SELECT id FROM pay_gateway WHERE id = ?' . RowLock::suffix($connection), [$id]);
+        }
     }
 
     /**

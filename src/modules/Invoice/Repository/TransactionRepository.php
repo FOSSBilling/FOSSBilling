@@ -32,18 +32,23 @@ class TransactionRepository extends EntityRepository
         }
 
         $rows = $this->createQueryBuilder('t')
-            ->select('IDENTITY(t.invoice) AS invoice_id, SUM(t.amount) AS amount')
+            ->select('IDENTITY(t.invoice) AS invoice_id, SUM(t.amount) AS amount, t.currency, i.currency AS invoice_currency')
+            ->join('t.invoice', 'i')
             ->where('IDENTITY(t.invoice) IN (:invoice_ids)')
             ->andWhere('t.status = :status')
             ->setParameter('invoice_ids', $invoiceIds)
             ->setParameter('status', Transaction::STATUS_PROCESSED)
-            ->groupBy('t.invoice')
+            ->groupBy('t.invoice', 't.currency', 'i.currency')
             ->getQuery()
             ->getScalarResult();
 
         $sums = [];
         foreach ($rows as $row) {
-            $sums[(int) $row['invoice_id']] = round((float) $row['amount'], 2);
+            if ((float) $row['amount'] != 0.0 && ($row['currency'] === null || $row['currency'] === '' || strcasecmp($row['currency'], (string) $row['invoice_currency']) !== 0)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('A processed payment currency does not match its invoice and needs staff reconciliation.');
+            }
+            $id = (int) $row['invoice_id'];
+            $sums[$id] = round(($sums[$id] ?? 0.0) + (float) $row['amount'], 2);
         }
 
         return $sums;
@@ -252,6 +257,10 @@ class TransactionRepository extends EntityRepository
      */
     public function findActiveByTxnIdAndGatewayId(string $txnId, int $gatewayId, int $excludeId): ?Transaction
     {
+        if ($this->ownsRecordedGatewayReceipt($excludeId, $txnId, $gatewayId)) {
+            return null;
+        }
+
         return $this->competingTransactionQuery($txnId, $gatewayId, $excludeId, [
             Transaction::STATUS_RECEIVED,
             Transaction::STATUS_PROCESSING,
@@ -266,10 +275,25 @@ class TransactionRepository extends EntityRepository
      */
     public function findProcessingOrProcessedByTxnId(string $txnId, ?int $gatewayId = null, ?int $excludeId = null): ?Transaction
     {
+        if ($excludeId !== null && $this->ownsRecordedGatewayReceipt($excludeId, $txnId, $gatewayId)) {
+            return null;
+        }
+
         return $this->competingTransactionQuery($txnId, $gatewayId, $excludeId, [
             Transaction::STATUS_PROCESSING,
             Transaction::STATUS_PROCESSED,
         ])->getQuery()->getOneOrNullResult();
+    }
+
+    private function ownsRecordedGatewayReceipt(int $id, string $txnId, ?int $gatewayId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        $table = $connection->quoteSingleIdentifier('transaction');
+
+        return $connection->fetchOne(
+            "SELECT b.id FROM client_balance b JOIN $table t ON t.id = b.gateway_transaction_id WHERE t.id = :id AND t.txn_id = :txn_id AND (:any_gateway = 1 OR t.gateway_id = :gateway_id) LIMIT 1",
+            ['id' => $id, 'txn_id' => $txnId, 'any_gateway' => $gatewayId === null ? 1 : 0, 'gateway_id' => $gatewayId],
+        ) !== false;
     }
 
     /**
