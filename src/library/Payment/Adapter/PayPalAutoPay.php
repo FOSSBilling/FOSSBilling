@@ -346,7 +346,6 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
      */
     public function processTransaction($api_admin, int $id, array $data, int $gateway_id): void
     {
-        $id = (int) $id;
         // Only this install's own pages pass a payment ID: a request to ipn.php naming one is never trusted.
         if (isset($data['get']['paypal_txn']) && ($data['source'] ?? '') !== 'ipn') {
             $this->recordPayment($api_admin, $id, (string) $data['get']['paypal_txn']);
@@ -761,7 +760,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
     /** Payers write CUSTOM on payments of their own: the asked amount is signed with this install's secret. */
     private function askedSignature(int $invoiceId, string $asked, string $charged, string $currency): string
     {
-        return substr(hash_hmac('sha256', $invoiceId . '|' . $asked . '|' . $charged . '|' . strtoupper($currency), 'fossbilling-paypal-autopay|' . (string) FOSSBilling\Core\System\Config::getProperty('info.salt', '')), 0, 16);
+        return substr(hash_hmac('sha256', $invoiceId . '|' . $asked . '|' . $charged . '|' . strtoupper($currency), 'fossbilling-paypal-autopay|' . FOSSBilling\Core\System\Config::getProperty('info.salt', '')), 0, 16);
     }
 
     /** At the portal's exchange rates, which are to the default currency. */

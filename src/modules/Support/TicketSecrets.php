@@ -25,10 +25,10 @@ use FOSSBilling\Core\Utils\Normalizer;
  */
 final class TicketSecrets
 {
-    public const TABLE = 'support_ticket_secret';
-    public const EVENTS = 'support_ticket_secret_event';
+    public const string TABLE = 'support_ticket_secret';
+    public const string EVENTS = 'support_ticket_secret_event';
     /** Most secrets on one ticket. */
-    public const MAX_SECRETS = 10;
+    public const int MAX_SECRETS = 10;
 
     /**
      * Which kinds clients may add ({server, other}) and after how many days
@@ -96,7 +96,7 @@ final class TicketSecrets
             }
             $fields['port'] = $port === '' ? null : (int) $port;
             $typeTitle = ['ssh' => 'SSH', 'panel' => 'Panel', 'other' => 'Other'][$fields['type']];
-            $label = mb_substr($typeTitle . ' ' . (string) $fields['host'], 0, 100);
+            $label = mb_substr($typeTitle . ' ' . $fields['host'], 0, 100);
         } else {
             $label = self::text($data['label'] ?? null, 'Label', 100, false);
             $value = self::text($data['value'] ?? null, 'Value', 5000, true);
@@ -104,7 +104,7 @@ final class TicketSecrets
                 throw new \FOSSBilling\Core\Exception\InformationException('Enter a label and a value.');
             }
             $fields = ['label' => $label, 'value' => $value];
-            $label = mb_substr((string) $label, 0, 100);
+            $label = mb_substr($label, 0, 100);
         }
 
         $encrypted = $di['crypt']->encrypt(json_encode($fields, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));

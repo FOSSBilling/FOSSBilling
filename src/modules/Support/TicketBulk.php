@@ -23,9 +23,9 @@ use FOSSBilling\Core\Doctrine\RowLock;
  */
 final class TicketBulk
 {
-    public const PINS = 'support_ticket_pin';
+    public const string PINS = 'support_ticket_pin';
     /** Most tickets one bulk action takes (a list page holds 25 to 100). */
-    public const MAX = 100;
+    public const int MAX = 100;
 
     /**
      * The selected ticket ids: positive, unique, at most MAX.

@@ -26,9 +26,9 @@ use FOSSBilling\Core\Doctrine\RowLock;
  */
 final class TicketAssign
 {
-    public const TABLE = 'support_ticket_assignment';
+    public const string TABLE = 'support_ticket_assignment';
     /** Most ticket ids an assignee filter passes to the list query. */
-    public const MAX_FILTER = 5000;
+    public const int MAX_FILTER = 5000;
 
     /**
      * Staff members a ticket can be assigned to: active, not the system's cron

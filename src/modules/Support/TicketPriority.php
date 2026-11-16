@@ -21,11 +21,11 @@ namespace Box\Mod\Support;
  */
 final class TicketPriority
 {
-    public const LOW = 50;
-    public const MEDIUM = 100;
-    public const HIGH = 150;
+    public const int LOW = 50;
+    public const int MEDIUM = 100;
+    public const int HIGH = 150;
 
-    public const LEVELS = ['low' => self::LOW, 'medium' => self::MEDIUM, 'high' => self::HIGH];
+    public const array LEVELS = ['low' => self::LOW, 'medium' => self::MEDIUM, 'high' => self::HIGH];
 
     /**
      * The stored number for a level ('low', 'medium', 'high', any case) or for

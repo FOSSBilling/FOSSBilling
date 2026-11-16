@@ -121,7 +121,7 @@ test('closing a ticket asks for feedback once, reusing the link', function (): v
     expect($emails)->toHaveCount(1);
     expect($emails[0]['code'])->toBe('mod_support_ticket_feedback_request');
     expect($emails[0]['to_client'])->toBe(5);
-    $urlToken = (string) substr((string) $emails[0]['feedback_url'], -64);
+    $urlToken = substr((string) $emails[0]['feedback_url'], -64);
     expect(preg_match('/^[a-f0-9]{64}$/', $urlToken))->toBe(1);
     expect(TicketFeedback::openLink($di, 10))->toBe($emails[0]['feedback_url']);
 

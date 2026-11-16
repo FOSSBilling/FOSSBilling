@@ -77,7 +77,7 @@ test('creates one pending state and keeps it unchanged across repeated checks', 
     $maintenanceMode = Config::getProperty('maintenance_mode');
     expect($maintenanceMode['enabled'])->toBeTrue()
         ->and($maintenanceMode['allowed_urls'])->toContain('/existing-finalization-url')
-        ->and($maintenanceMode['allowed_urls'])->toContain(rtrim((string) ADMIN_PREFIX, '/') . '/system/update/finalize');
+        ->and($maintenanceMode['allowed_urls'])->toContain(rtrim(ADMIN_PREFIX, '/') . '/system/update/finalize');
 });
 
 test('does not re-run a finalized update before the session service is initialized', function (): void {

@@ -666,10 +666,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Charges the saved payment methods of invoices whose next automatic
      * try is due (see ServiceSavedCards). Run from the cron.
-     *
-     * @return bool
      */
-    public function batch_charge_saved_cards($data)
+    public function batch_charge_saved_cards($data): bool
     {
         $this->checkPermissions('invoice', 'manage_invoices');
         $this->getDi()['mod_service']('Invoice', 'SavedCards')->runDue();
@@ -680,10 +678,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Updates the automatic saved-method charge schedule (days before the
      * due date, retries, days between retries).
-     *
-     * @return bool
      */
-    public function card_settings_update($data)
+    public function card_settings_update($data): bool
     {
         $this->checkPermissions('invoice', 'manage_invoices');
         $this->getDi()['mod_service']('Invoice', 'SavedCards')->saveSettings($data);
@@ -729,8 +725,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
-     * Finds saved cards at Stripe for clients without one (a move from
-     * another system), 25 clients after `after_id` per call:
+     * Checks available cards on already-owned Stripe customers without
+     * enabling automatic payments, 25 clients after `after_id` per call:
      * {checked, found, next}.
      */
     public function card_find($data): array

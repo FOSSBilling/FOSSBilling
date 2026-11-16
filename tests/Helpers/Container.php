@@ -29,7 +29,7 @@ function container(): Container
     ];
     $di['url'] = function (): \FOSSBilling\Core\Url {
         $url = new \FOSSBilling\Core\Url();
-        $url->setBaseUri(defined('SYSTEM_URL') ? (string) SYSTEM_URL : '/');
+        $url->setBaseUri(defined('SYSTEM_URL') ? SYSTEM_URL : '/');
 
         return $url;
     };

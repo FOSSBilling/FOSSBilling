@@ -267,7 +267,7 @@
         </form>
         <div class="card-body border-top" data-card-find data-done-text="{{ 'Checked :checked clients, found :found saved cards.'|trans }}">
             <label class="form-label">{{ 'Find saved cards in Stripe'|trans }}</label>
-            <p class="text-secondary">{{ 'After a move from another system with the same Stripe account: for each client without a saved card, takes the default card (or the newest card) of the Stripe customer with the client\'s email.'|trans }}</p>
+            <p class="text-secondary">{{ 'Checks for available cards on Stripe customer records already linked to clients. Clients choose a card on their Payment methods page to enable automatic payments.'|trans }}</p>
             <button class="btn btn-outline-primary" type="button">{{ 'Find saved cards'|trans }}</button>
             <div class="form-text" role="status" data-card-find-status></div>
         </div>

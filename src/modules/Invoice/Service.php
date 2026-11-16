@@ -2900,15 +2900,13 @@ class Service implements InjectionAwareInterface
     /** Staff confirmed in PayPal that no money was returned. */
     public function dismissGatewayRefundAttempt(Invoice $invoice, string $attemptId, int $adminId): bool
     {
-        $this->withInvoiceRefundLock($invoice, function () use ($invoice, $attemptId, $adminId): Invoice {
-            return $this->di['em']->wrapInTransaction(function () use ($invoice, $attemptId, $adminId): Invoice {
-                $this->lockAndRefreshInvoice($invoice);
-                GatewayRefundAttempt::dismiss($this->di['em']->getConnection(), (int) $invoice->getId(), $attemptId);
-                $this->addNote($invoice, 'Staff #' . $adminId . ' confirmed that PayPal did not issue refund attempt ' . $attemptId . '.');
+        $this->withInvoiceRefundLock($invoice, fn (): Invoice => $this->di['em']->wrapInTransaction(function () use ($invoice, $attemptId, $adminId): Invoice {
+            $this->lockAndRefreshInvoice($invoice);
+            GatewayRefundAttempt::dismiss($this->di['em']->getConnection(), (int) $invoice->getId(), $attemptId);
+            $this->addNote($invoice, 'Staff #' . $adminId . ' confirmed that PayPal did not issue refund attempt ' . $attemptId . '.');
 
-                return $invoice;
-            });
-        });
+            return $invoice;
+        }));
 
         return true;
     }

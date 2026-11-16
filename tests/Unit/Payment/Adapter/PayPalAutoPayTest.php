@@ -500,9 +500,7 @@ test('a reversal with an unknown amount is left for staff', function (): void {
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $api = Mockery::mock();
-    $api->shouldReceive('invoice_transaction_update')->once()->with(Mockery::on(function (array $data): bool {
-        return str_contains((string) ($data['note'] ?? ''), 'unknown, settle it by hand');
-    }));
+    $api->shouldReceive('invoice_transaction_update')->once()->with(Mockery::on(fn (array $data): bool => str_contains((string) ($data['note'] ?? ''), 'unknown, settle it by hand')));
 
     $adapter = autopayAdapter();
     $adapter->setDi(autopayDi([], $em));

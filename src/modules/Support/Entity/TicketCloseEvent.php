@@ -28,20 +28,20 @@ class TicketCloseEvent
     public string $actor;
 
     #[ORM\Column(name: 'actor_id', type: Types::BIGINT, nullable: true)]
-    public ?int $actorId;
+    public ?int $actorId = null;
 
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt;
 
     #[ORM\Column(name: 'attempted_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public ?\DateTimeImmutable $attemptedAt;
+    public ?\DateTimeImmutable $attemptedAt = null;
 
     #[ORM\Column(name: 'notification_queued_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public ?\DateTimeImmutable $notificationQueuedAt;
+    public ?\DateTimeImmutable $notificationQueuedAt = null;
 
     #[ORM\Column(name: 'feedback_queued_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public ?\DateTimeImmutable $feedbackQueuedAt;
+    public ?\DateTimeImmutable $feedbackQueuedAt = null;
 
     #[ORM\Column(name: 'delivered_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public ?\DateTimeImmutable $deliveredAt;
+    public ?\DateTimeImmutable $deliveredAt = null;
 }

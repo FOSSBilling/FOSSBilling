@@ -45,11 +45,7 @@ function ticketEscalationDi(Doctrine\DBAL\Connection $connection, array &$calls)
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $support = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $support->shouldReceive('getTicketById')->andReturnUsing(function (int $id): SupportTicket {
-        $ticket = createEntity(SupportTicket::class, ['id' => $id, 'client_id' => 1]);
-
-        return $ticket;
-    });
+    $support->shouldReceive('getTicketById')->andReturnUsing(fn (int $id): SupportTicket => createEntity(SupportTicket::class, ['id' => $id, 'client_id' => 1]));
     $support->shouldReceive('ticketReply')->andReturnUsing(function () use (&$calls): int {
         $calls['replies'][] = func_get_args();
 

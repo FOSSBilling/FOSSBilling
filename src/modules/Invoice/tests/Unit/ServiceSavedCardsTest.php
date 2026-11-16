@@ -189,15 +189,13 @@ describe('saved methods', function (): void {
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($repo);
         $em->shouldReceive('getReference')->once()->with(PayGateway::class, 4)->andReturn(createEntity(PayGateway::class, ['id' => 4]));
-        $em->shouldReceive('persist')->once()->with(Mockery::on(function (PayGatewayCustomer $row): bool {
-            return $row->getClientId() === 7
-                && $row->isTestMode() === false
-                && $row->getExternalCustomerId() === 'cus_1'
-                && $row->hasSavedCards()
-                && $row->getDefaultPaymentMethod() === 'pm_1'
-                && $row->getDefaultCard() === 'Visa •••• 4242'
-                && $row->getAutoPayAt() instanceof DateTimeImmutable;
-        }));
+        $em->shouldReceive('persist')->once()->with(Mockery::on(fn (PayGatewayCustomer $row): bool => $row->getClientId() === 7
+            && $row->isTestMode() === false
+            && $row->getExternalCustomerId() === 'cus_1'
+            && $row->hasSavedCards()
+            && $row->getDefaultPaymentMethod() === 'pm_1'
+            && $row->getDefaultCard() === 'Visa •••• 4242'
+            && $row->getAutoPayAt() instanceof DateTimeImmutable));
         $em->shouldReceive('flush')->once();
         $service = savedCardsService($em);
 
@@ -255,12 +253,10 @@ describe('holds', function (): void {
     test('hold creates a held row when the invoice was never tried', function (): void {
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('find')->once()->with(InvoiceCardCharge::class, 9)->andReturn(null);
-        $em->shouldReceive('persist')->once()->with(Mockery::on(function (InvoiceCardCharge $charge): bool {
-            return $charge->getInvoiceId() === 9
-                && $charge->getAttempts() === InvoiceCardCharge::HELD
-                && $charge->getLastAttemptAt() instanceof DateTimeImmutable
-                && $charge->getLastError() === 'Payment pi_1 is not completed yet.';
-        }));
+        $em->shouldReceive('persist')->once()->with(Mockery::on(fn (InvoiceCardCharge $charge): bool => $charge->getInvoiceId() === 9
+            && $charge->getAttempts() === InvoiceCardCharge::HELD
+            && $charge->getLastAttemptAt() instanceof DateTimeImmutable
+            && $charge->getLastError() === 'Payment pi_1 is not completed yet.'));
         $em->shouldReceive('flush')->once();
         $service = savedCardsService($em);
 

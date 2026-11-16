@@ -2142,17 +2142,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     }
 
     /**
-     * Finds saved cards at Stripe for clients who have none here (a move from
-     * another system, which saved them in the same Stripe account): the Stripe
-     * customer with the client's email, and its default card or else its newest
-     * one. Checks up to $limit clients after $afterId: {checked, found, next}
+     * Checks available cards only for clients with an established saved-card
+     * customer. Discovery is read-only: the client must choose a card before
+     * it can pay invoices automatically. Never adopt customers by email or
+     * promote a subscription cache into card ownership.
+     * Checks up to $limit clients after $afterId: {checked, found, next}
      * (next: the id to continue after, or null when all were checked).
      */
     public function findCards(int $afterId, int $limit): array
     {
         $connection = $this->di['em']->getConnection();
         $rows = $connection->fetchAllAssociative(
-            'SELECT c.id, c.email FROM client c LEFT JOIN pay_gateway_customer g ON g.client_id = c.id AND g.pay_gateway_id = ? AND g.test_mode = ?
+            'SELECT c.id FROM client c LEFT JOIN pay_gateway_customer g ON g.client_id = c.id AND g.pay_gateway_id = ? AND g.test_mode = ?
               WHERE c.id > ? AND (g.default_payment_method IS NULL OR g.default_payment_method = ?) ORDER BY c.id LIMIT ' . max(1, $limit),
             [$this->gatewayId(), (int) $this->testMode(), $afterId, '']
         );
@@ -2161,24 +2162,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $clientId = (int) $row['id'];
             $customerId = $this->ownedCustomer($clientId);
             if ($customerId === null) {
-                $email = filter_var((string) ($row['email'] ?? ''), FILTER_VALIDATE_EMAIL);
-                $match = $email === false ? [] : $this->stripe->customers->search(['query' => "email:'" . $this->escapeStripeSearchValue($email) . "'", 'limit' => 1])->data;
-                // A customer another client here already uses is theirs, whatever its email says now.
-                if (count($match) === 0 || $connection->fetchOne(
-                    'SELECT 1 FROM pay_gateway_customer WHERE pay_gateway_id = ? AND test_mode = ? AND external_customer_id = ? AND client_id <> ?',
-                    [$this->gatewayId(), (int) $this->testMode(), $match[0]->id, $clientId]
-                ) !== false) {
-                    continue;
-                }
-                $customerId = $match[0]->id;
-                $this->linkCustomer($clientId, $customerId);
+                continue;
             }
             $customer = $this->stripe->customers->retrieve($customerId, []);
             $default = $customer->invoice_settings->default_payment_method ?? null;
             $method = is_string($default) ? $default : ($default->id ?? null);
             $method ??= $this->stripe->customers->allPaymentMethods($customerId, ['type' => 'card', 'limit' => 1])->data[0]->id ?? null;
             if ($method !== null) {
-                $this->rememberCard($clientId, $method, false);
                 ++$found;
             }
         }

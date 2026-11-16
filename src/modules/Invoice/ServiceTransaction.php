@@ -839,7 +839,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 $db->update('client_balance', $receiptFields, ['id' => $creditId]);
             }
             $model->setProcessingToken(null)->setCreditRecoveryState($noCredit ? 1 : 2)->setStatus(Transaction::STATUS_ERROR);
-            $model->setNote(trim((string) $model->getNote() . "\nStaff #{$staffId} reconciled wallet credit " . ($noCredit ? 'absence' : '#' . $creditId) . ': ' . mb_substr($note, 0, 1000)));
+            $model->setNote(trim($model->getNote() . "\nStaff #{$staffId} reconciled wallet credit " . ($noCredit ? 'absence' : '#' . $creditId) . ': ' . mb_substr($note, 0, 1000)));
             $model->setError('Wallet history reconciled. Process the existing gateway payment to finish settlement.');
             $model->setUpdatedAt(new \DateTimeImmutable());
             $em->flush();

@@ -26,19 +26,19 @@ use FOSSBilling\Core\Utils\Normalizer;
  */
 final class TicketFeedback
 {
-    public const RATINGS = 'support_ticket_message_rating';
-    public const FEEDBACK = 'support_ticket_feedback';
-    public const REQUESTS = 'support_ticket_feedback_request';
-    public const HELPDESKS = 'support_helpdesk_feedback';
+    public const string RATINGS = 'support_ticket_message_rating';
+    public const string FEEDBACK = 'support_ticket_feedback';
+    public const string REQUESTS = 'support_ticket_feedback_request';
+    public const string HELPDESKS = 'support_helpdesk_feedback';
 
-    public const MAX_STARS = 5;
-    public const MAX_SCORE = 10;
-    public const LOW_STARS = 2;
-    public const LOW_SCORE = 4;
-    public const MAX_COMMENT = 5000;
+    public const int MAX_STARS = 5;
+    public const int MAX_SCORE = 10;
+    public const int LOW_STARS = 2;
+    public const int LOW_SCORE = 4;
+    public const int MAX_COMMENT = 5000;
 
     /** Report periods in days (all: everything). */
-    public const PERIODS = ['30' => 30, '90' => 90, '365' => 365, 'all' => 0];
+    public const array PERIODS = ['30' => 30, '90' => 90, '365' => 365, 'all' => 0];
 
     /** Whether clients may rate replies (support setting, on by default). */
     public static function ratingsOn(\Pimple\Container $di): bool

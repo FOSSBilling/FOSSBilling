@@ -200,7 +200,7 @@ class ServiceCancelRequest implements InjectionAwareInterface
         $id = (int) $request->getId();
         $order = $request->getOrder();
         $client = $request->getClient();
-        $clientName = $client instanceof Client ? trim((string) $client->getFirstName() . ' ' . (string) $client->getLastName()) : '';
+        $clientName = $client instanceof Client ? trim($client->getFirstName() . ' ' . $client->getLastName()) : '';
 
         try {
             $this->di['mod_service']('email')->sendTemplate([

@@ -14,9 +14,9 @@ use Doctrine\DBAL\Driver\Middleware;
 use Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware;
 
 /** Applies equally to ORM flushes, raw DBAL SQL, prepared statements and isolated managers. */
-final class PaymentFenceMiddleware implements Middleware
+final readonly class PaymentFenceMiddleware implements Middleware
 {
-    public function __construct(private readonly string $driver)
+    public function __construct(private string $driver)
     {
     }
 

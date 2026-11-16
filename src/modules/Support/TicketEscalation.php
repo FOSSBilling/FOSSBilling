@@ -37,15 +37,15 @@ use FOSSBilling\Core\Utils\Normalizer;
  */
 final class TicketEscalation
 {
-    public const RULES = 'support_escalation_rule';
-    public const APPLIED = 'support_escalation_applied';
+    public const string RULES = 'support_escalation_rule';
+    public const string APPLIED = 'support_escalation_applied';
 
-    public const STATUSES = ['open', 'on_hold', 'closed'];
+    public const array STATUSES = ['open', 'on_hold', 'closed'];
     /** A year. */
-    public const MAX_MINUTES = 525600;
-    public const MAX_REPLY = 10000;
+    public const int MAX_MINUTES = 525600;
+    public const int MAX_REPLY = 10000;
     /** Most tickets one rule acts on in one cron run (the rest in the next runs). */
-    public const BATCH = 100;
+    public const int BATCH = 100;
 
     /**
      * Every rule, by name.
@@ -357,7 +357,7 @@ final class TicketEscalation
             [$ticketId]
         ) ?: [];
         $first = trim((string) ($row['first_name'] ?? ''));
-        $name = trim($first . ' ' . (string) ($row['last_name'] ?? ''));
+        $name = trim($first . ' ' . ($row['last_name'] ?? ''));
         if ($name === '') {
             $name = trim((string) ($row['author_name'] ?? ''));
             $first = (string) strtok($name, ' ');
@@ -403,8 +403,8 @@ final class TicketEscalation
             'name' => (string) $row['name'],
             'active' => (int) $row['active'] === 1,
             'helpdesks' => array_map(intval(...), $list($row['helpdesks'])),
-            'statuses' => array_map('strval', $list($row['statuses'])),
-            'priorities' => array_map('strval', $list($row['priorities'])),
+            'statuses' => array_map(strval(...), $list($row['statuses'])),
+            'priorities' => array_map(strval(...), $list($row['priorities'])),
             'minutes' => (int) $row['minutes'],
             'new_helpdesk_id' => $row['new_helpdesk_id'] === null ? null : (int) $row['new_helpdesk_id'],
             'new_status' => (string) $row['new_status'],

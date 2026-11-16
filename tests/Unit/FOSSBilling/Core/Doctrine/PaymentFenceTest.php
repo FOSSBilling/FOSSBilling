@@ -255,7 +255,7 @@ test('legacy payment rows gain fencing through additive and repeatable upgrades'
         $db->executeStatement('ALTER TABLE client_balance DROP COLUMN payment_key');
         if ($driver === 'mysql') {
             $patcher = new class($db) extends FOSSBilling\Core\Update\Patcher {
-                public function __construct(private Doctrine\DBAL\Connection $connection)
+                public function __construct(private readonly Doctrine\DBAL\Connection $connection)
                 {
                     parent::__construct();
                 }
@@ -305,7 +305,7 @@ test('a fenced adapter may deduplicate its own row without emitting a completion
         $di = $service->getDi();
         $em = $di['em'];
         $model = $em->find(Transaction::class, 1);
-        $adapter = new class($em) {
+        $adapter = new readonly class($em) {
             public function __construct(private Doctrine\ORM\EntityManagerInterface $em)
             {
             }
@@ -339,7 +339,7 @@ test('suppressed ownership loss closes the transaction worker manager before sta
         $di = $service->getDi();
         $em = $di['em'];
         $model = $em->find(Transaction::class, 1);
-        $adapter = new class($db, $admin, $model) {
+        $adapter = new readonly class($db, $admin, $model) {
             public function __construct(private Doctrine\DBAL\Connection $db, private Doctrine\DBAL\Connection $admin, private Transaction $model)
             {
             }

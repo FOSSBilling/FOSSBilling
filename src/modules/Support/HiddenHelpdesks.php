@@ -28,7 +28,7 @@ use FOSSBilling\Core\Utils\Normalizer;
  */
 final class HiddenHelpdesks
 {
-    public const TABLE = 'support_helpdesk_hidden';
+    public const string TABLE = 'support_helpdesk_hidden';
 
     /**
      * The hidden help desks' ids.

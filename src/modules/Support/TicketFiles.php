@@ -32,22 +32,22 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  */
 final class TicketFiles
 {
-    public const TABLE = 'support_ticket_file';
+    public const string TABLE = 'support_ticket_file';
     /** Attached files are kept this long unless the settings say otherwise. */
-    public const KEEP_DAYS = 180;
-    public const MAX_FILES = 5;
+    public const int KEEP_DAYS = 180;
+    public const int MAX_FILES = 5;
     public const MAX_BYTES = 10 * 1024 * 1024;
-    public const UPLOADS_PER_HOUR = 30;
-    public const UPLOADS_PER_HOUR_STAFF = 120;
+    public const int UPLOADS_PER_HOUR = 30;
+    public const int UPLOADS_PER_HOUR_STAFF = 120;
     /** Waiting uploads kept per session before sending is required first. */
-    public const MAX_WAITING = 10;
+    public const int MAX_WAITING = 10;
     /** Waiting uploads older than this are deleted. */
-    public const WAITING_HOURS = 24;
+    public const int WAITING_HOURS = 24;
     /** Give older unmarked uploads time to finish before checking for orphaned files. */
-    public const LEGACY_ORPHAN_HOURS = 24;
+    public const int LEGACY_ORPHAN_HOURS = 24;
 
     /** extension => mime; never svg or html. 'text' means any text/* or known text type. */
-    public const TYPES = [
+    public const array TYPES = [
         'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif',
         'pdf' => 'application/pdf',
         'txt' => 'text', 'log' => 'text', 'csv' => 'text',
@@ -56,8 +56,8 @@ final class TicketFiles
         'tar' => 'application/x-tar',
     ];
 
-    public const IMAGES = ['image/jpeg', 'image/png', 'image/gif'];
-    public const TEXT_TYPES = ['application/json', 'application/xml', 'text/csv', 'application/x-ndjson'];
+    public const array IMAGES = ['image/jpeg', 'image/png', 'image/gif'];
+    public const array TEXT_TYPES = ['application/json', 'application/xml', 'text/csv', 'application/x-ndjson'];
 
     /**
      * The upload form's limits: extensions, accept attribute, per-message and per-file caps.
@@ -71,7 +71,7 @@ final class TicketFiles
             'accept' => '.' . implode(',.', $extensions),
             'max_files' => self::MAX_FILES,
             'max_bytes' => self::MAX_BYTES,
-            'max_mb' => (int) (self::MAX_BYTES / 1024 / 1024),
+            'max_mb' => self::MAX_BYTES / 1024 / 1024,
         ];
     }
 
@@ -195,7 +195,7 @@ final class TicketFiles
 
         $size = $file->getSize() ?: 0;
         if ($size < 1 || $size > self::MAX_BYTES) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Each file must be smaller than :size MB.', [':size' => (int) (self::MAX_BYTES / 1024 / 1024)]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Each file must be smaller than :size MB.', [':size' => self::MAX_BYTES / 1024 / 1024]);
         }
         $name = self::cleanName($file->getClientOriginalName());
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));

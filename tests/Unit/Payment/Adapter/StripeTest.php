@@ -3683,13 +3683,11 @@ describe('saved cards', function (): void {
         $paymentIntents->shouldReceive('create')
             ->once()
             ->with(
-                Mockery::on(function (array $params): bool {
-                    return $params['customer'] === 'cus_1'
-                        && $params['payment_method'] === 'pm_1'
-                        && $params['off_session'] === true
-                        && $params['confirm'] === true
-                        && ($params['metadata']['auto_pay'] ?? null) === '1';
-                }),
+                Mockery::on(fn (array $params): bool => $params['customer'] === 'cus_1'
+                    && $params['payment_method'] === 'pm_1'
+                    && $params['off_session'] === true
+                    && $params['confirm'] === true
+                    && ($params['metadata']['auto_pay'] ?? null) === '1'),
                 Mockery::on(function (array $options) use (&$captured): bool {
                     $captured = $options['idempotency_key'] ?? null;
 
@@ -3763,11 +3761,9 @@ describe('card management', function (): void {
         $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($row);
 
         $setupIntents = Mockery::mock();
-        $setupIntents->shouldReceive('create')->once()->with(Mockery::on(function (array $params): bool {
-            return $params['customer'] === 'cus_1'
-                && $params['usage'] === 'off_session'
-                && $params['payment_method_types'] === ['card'];
-        }))->andReturn(Stripe\SetupIntent::constructFrom(['client_secret' => 'secret_x']));
+        $setupIntents->shouldReceive('create')->once()->with(Mockery::on(fn (array $params): bool => $params['customer'] === 'cus_1'
+            && $params['usage'] === 'off_session'
+            && $params['payment_method_types'] === ['card']))->andReturn(Stripe\SetupIntent::constructFrom(['client_secret' => 'secret_x']));
 
         $stripeMock = Mockery::mock(StripeClient::class);
         $stripeMock->setupIntents = $setupIntents;
@@ -3988,9 +3984,7 @@ describe('bank debits', function (): void {
         $setupIntents->shouldReceive('create')->once()->andThrow(
             Mockery::mock(Stripe\Exception\InvalidRequestException::class)->makePartial()
         );
-        $setupIntents->shouldReceive('create')->once()->with(Mockery::on(function (array $params): bool {
-            return $params['payment_method_types'] === ['card'];
-        }))->andReturn(Stripe\SetupIntent::constructFrom(['client_secret' => 'secret_card']));
+        $setupIntents->shouldReceive('create')->once()->with(Mockery::on(fn (array $params): bool => $params['payment_method_types'] === ['card']))->andReturn(Stripe\SetupIntent::constructFrom(['client_secret' => 'secret_card']));
 
         $stripeMock = Mockery::mock(StripeClient::class);
         $stripeMock->setupIntents = $setupIntents;

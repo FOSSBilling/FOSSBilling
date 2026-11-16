@@ -93,7 +93,7 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $page = ['ticket' => [], 'staff' => [], 'state' => 'invalid'];
         }
 
-        return $app->render('mod_support_feedback', ['feedback' => $page, 'feedback_token' => (string) $token]);
+        return $app->render('mod_support_feedback', ['feedback' => $page, 'feedback_token' => $token]);
     }
 
     public function get_ticket_file(\FOSSBilling\Core\Http\App $app, string $id): Response

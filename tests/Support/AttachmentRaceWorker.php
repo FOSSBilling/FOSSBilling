@@ -18,7 +18,7 @@ if (in_array(getenv('ATTACHMENT_RACE_ACTION'), ['prune', 'legacy_cleanup'], true
     $db->executeStatement('SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL REPEATABLE READ');
 }
 $di = new Pimple\Container();
-$di['em'] = new class($db) {
+$di['em'] = new readonly class($db) {
     public function __construct(private Doctrine\DBAL\Connection $db)
     {
     }

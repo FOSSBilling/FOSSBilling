@@ -26,7 +26,7 @@ use FOSSBilling\Core\Utils\Normalizer;
  */
 final class HiddenKbCategories
 {
-    public const TABLE = 'support_kb_category_hidden';
+    public const string TABLE = 'support_kb_category_hidden';
 
     /**
      * The hidden categories' ids.

@@ -11812,9 +11812,7 @@ test('reconciliation records the already returned refund and completes the attem
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($systemService, $emailService) {
-        return moduleService(['system' => $systemService, 'email' => $emailService])($name, (string) $sub);
-    });
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => moduleService(['system' => $systemService, 'email' => $emailService])($name, (string) $sub));
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 

@@ -79,9 +79,7 @@ test('feedback page renders the form for an open link', function (): void {
     $connection->insert('support_ticket_feedback_request', ['ticket_id' => 60, 'token' => $token, 'sent_at' => date('Y-m-d H:i:s'), 'answered_at' => null]);
 
     $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
-    $app->shouldReceive('render')->once()->with('mod_support_feedback', Mockery::on(function (array $params) use ($token): bool {
-        return $params['feedback_token'] === $token && $params['feedback']['state'] === 'form' && $params['feedback']['staff'] === [3 => 'Agent'];
-    }))->andReturn('feedback-html');
+    $app->shouldReceive('render')->once()->with('mod_support_feedback', Mockery::on(fn (array $params): bool => $params['feedback_token'] === $token && $params['feedback']['state'] === 'form' && $params['feedback']['staff'] === [3 => 'Agent']))->andReturn('feedback-html');
 
     $di = container();
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);

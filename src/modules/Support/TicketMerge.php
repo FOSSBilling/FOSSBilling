@@ -33,10 +33,10 @@ use Doctrine\DBAL\Connection;
  */
 final class TicketMerge
 {
-    public const TABLE = 'support_ticket_merge';
+    public const string TABLE = 'support_ticket_merge';
     /** Tickets merged in one go, at most. */
-    public const MAX_TICKETS = 50;
-    public const SUFFIX = ' [MERGED]';
+    public const int MAX_TICKETS = 50;
+    public const string SUFFIX = ' [MERGED]';
 
     /**
      * Merges the tickets into the oldest; returns its id. The caller checks the staff
