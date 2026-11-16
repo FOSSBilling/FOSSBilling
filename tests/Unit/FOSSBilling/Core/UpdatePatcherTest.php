@@ -3599,9 +3599,9 @@ test('invoice item order_id backfill short-circuits bounded runs once completion
     });
 });
 
-test('invoice item order_id backfill still rescans unbounded runs after completion', function (): void {
+test('invoice item order_id backfill repeats unbounded runs after completion', function (): void {
     withNonMysqlDbDriver(function (): void {
-        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-rescan-' . bin2hex(random_bytes(8)) . '.sqlite');
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-repeat-' . bin2hex(random_bytes(8)) . '.sqlite');
 
         try {
             $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
