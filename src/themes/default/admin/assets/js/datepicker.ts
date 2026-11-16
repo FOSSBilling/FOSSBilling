@@ -86,6 +86,9 @@ export default function initDatepickers() {
         return;
       }
       picker.setSelectedDates(parts.filter(Boolean));
+      // setSelectedDates rewrites ranges with Tabler's en-dash separator;
+      // restore the " to " format so typed and pasted values match publish().
+      if (range && parts[1]) input.value = `${parts[0]} to ${parts[1]}`;
       input.setCustomValidity('');
       if (from && to) {
         from.value = parts[0] ?? '';
