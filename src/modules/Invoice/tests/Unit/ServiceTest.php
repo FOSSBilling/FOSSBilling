@@ -5219,6 +5219,8 @@ test('generates funds invoice', function (): void {
     $serviceMock->shouldReceive('setInvoiceDefaults')
         ->atLeast()->once();
 
+    $serviceMock->shouldReceive('getNextInvoiceNumber')->once()->andReturn(42);
+
     $minAmount = 10;
     $maxAmount = 50;
 
@@ -5227,6 +5229,7 @@ test('generates funds invoice', function (): void {
     $systemService->shouldReceive('getParamValue')->with('funds_min_amount', null)->andReturn($minAmount);
     $systemService->shouldReceive('getParamValue')->with('funds_max_amount', null)->andReturn($maxAmount);
     $systemService->shouldReceive('getParamValue')->with('invoice_auto_issue', true)->andReturn(true);
+    $systemService->shouldReceive('getParamValue')->with('invoice_series')->andReturn('INV');
     $systemService->shouldReceive('getCompany')
         ->atLeast()->once()
         ->andReturn([
@@ -5286,6 +5289,9 @@ test('generates funds invoice', function (): void {
         // Auto-issued funds invoices are born issued, so the parties must be
         // frozen at creation rather than waiting for the issue path.
         ->and($result->isIssued())->toBeTrue()
+        ->and($result->getNr())->toBe('42')
+        ->and($result->getSerie())->toBe('INV')
+        ->and($result->getIssueNotificationState())->toBe(2)
         ->and($result->getSellerCompany())->toBe('Acme')
         ->and($result->getBuyerFirstName())->toBe('John')
         ->and($result->getBuyerEmail())->toBe('john@example.com');

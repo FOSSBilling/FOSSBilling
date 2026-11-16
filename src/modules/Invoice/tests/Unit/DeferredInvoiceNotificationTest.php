@@ -302,15 +302,89 @@ test('Add Funds initializes auto-issued notification intent after creating its d
     [, $em, $client] = receiptTestContext();
     $service = firstIssuanceTestService($em, $autoIssued);
     // Configuration defaults are separate from the creation/issuance protocol.
-    $service->shouldReceive('setInvoiceDefaults')->once()->andReturnUsing(function (Invoice $invoice): void { $invoice->setNr('42'); });
+    $service->shouldReceive('setInvoiceDefaults')->once();
+    $service->shouldReceive('getNextInvoiceNumber')->once()->andReturn(42);
     $events = 0;
     $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
     $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, function () use (&$events): void { ++$events; });
     $service->getDi()['event_dispatcher'] = $dispatcher;
     $invoice = $service->generateFundsInvoice($client, 25);
-    expect($invoice->isIssued())->toBe($autoIssued)->and($invoice->getIssueNotificationState())->toBe($autoIssued ? 2 : 0)
+    expect($invoice->getNr())->toBe($autoIssued ? '42' : null)
+        ->and($invoice->isIssued())->toBe($autoIssued)->and($invoice->getIssueNotificationState())->toBe($autoIssued ? 2 : 0)
         ->and((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM invoice_item WHERE invoice_id = ? AND type = 'deposit'", [$invoice->getId()]))->toBe(1);
     expect($service->issueInvoice($invoice, []))->toBeTrue()->and($events)->toBe(1)
         ->and($invoice->getIssueNotificationState())->toBe(0);
     expect($service->issueInvoice($invoice, []))->toBeTrue()->and($events)->toBe(1);
 })->with([true, false]);
+
+test('Add Funds publishes its number and notification atomically and rolls back interrupted creation', function (bool $crash): void {
+    $path = Symfony\Component\Filesystem\Path::join(sys_get_temp_dir(), 'funds-issuance-' . bin2hex(random_bytes(8)) . '.sqlite');
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+    $reader = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+
+    try {
+        [, $em, $client] = receiptTestContext($connection);
+        $clientId = $client->getId();
+        $configuration = $em->getConfiguration();
+        $connection->executeStatement('CREATE TABLE setting (id INTEGER PRIMARY KEY AUTOINCREMENT, param VARCHAR(255) UNIQUE, value TEXT, created_at TEXT, updated_at TEXT)');
+        $connection->insert('setting', ['param' => 'invoice_starting_number', 'value' => '42']);
+        $makeService = function (Doctrine\ORM\EntityManagerInterface $manager) {
+            $service = firstIssuanceTestService($manager);
+            $service->shouldReceive('setInvoiceDefaults')->once();
+            $settings = new Box\Mod\System\Service();
+            $settings->setDi(new Pimple\Container(['em' => $manager, 'dbal' => $manager->getConnection()]));
+            $service->shouldReceive('getNextInvoiceNumber')->once()->andReturnUsing(fn () => $settings->reserveNextNumericParamValue('invoice_starting_number'));
+
+            return $service;
+        };
+        $service = $makeService($em);
+        $observer = new class($reader, $crash) {
+            public int $checks = 0;
+
+            public function __construct(private readonly Doctrine\DBAL\Connection $reader, private readonly bool $crash)
+            {
+            }
+
+            public function postFlush(Doctrine\ORM\Event\PostFlushEventArgs $event): void
+            {
+                ++$this->checks;
+                expect((int) $this->reader->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(0)
+                    ->and($this->reader->fetchOne("SELECT value FROM setting WHERE param = 'invoice_starting_number'"))->toBe('42');
+                if ($this->crash && $event->getObjectManager()->getConnection()->fetchOne('SELECT issue_notification_state FROM invoice') == 2) {
+                    throw new Error('creation interrupted before commit');
+                }
+            }
+        };
+        $em->getEventManager()->addEventListener(['postFlush'], $observer);
+        if ($crash) {
+            expect(fn () => $service->generateFundsInvoice($client, 25))->toThrow(Error::class, 'creation interrupted before commit');
+            expect((int) $reader->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(0)
+                ->and((int) $reader->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(0)
+                ->and($reader->fetchOne("SELECT value FROM setting WHERE param = 'invoice_starting_number'"))->toBe('42');
+            $em = new Doctrine\ORM\EntityManager($connection, $configuration);
+            $service = $makeService($em);
+            $client = $em->find(Box\Mod\Client\Entity\Client::class, $clientId);
+        }
+        $invoice = $service->generateFundsInvoice($client, 25);
+        $em->getEventManager()->removeEventListener(['postFlush'], $observer);
+        expect($observer->checks)->toBeGreaterThan(1)
+            ->and($reader->fetchAssociative('SELECT nr, issued, issue_notification_state FROM invoice'))->toMatchArray(['nr' => '42', 'issued' => 1, 'issue_notification_state' => 2])
+            ->and((int) $reader->fetchOne("SELECT COUNT(*) FROM invoice_item WHERE type = 'deposit'"))->toBe(1)
+            ->and($reader->fetchOne("SELECT value FROM setting WHERE param = 'invoice_starting_number'"))->toBe('43');
+        $events = 0;
+        $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+        $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, function () use (&$events, $reader): void {
+            ++$events;
+            expect($reader->fetchOne('SELECT nr FROM invoice'))->toBe('42');
+        });
+        $service->getDi()['event_dispatcher'] = $dispatcher;
+        $service->issueInvoice($invoice, []);
+        $service->issueInvoice($invoice, []);
+        expect($events)->toBe(1)->and($invoice->getNr())->toBe('42')
+            ->and((int) $reader->fetchOne('SELECT issue_notification_state FROM invoice'))->toBe(0);
+    } finally {
+        $reader->close();
+        $connection->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove($path);
+    }
+})->with([false, true]);

@@ -1893,11 +1893,7 @@ class Service implements InjectionAwareInterface
             // inside the issuance lock. Already-issued invoices skip both;
             // legacy drafts keep their number when present.
             $this->snapshotPartiesFromLiveRecords($invoice);
-            if (!is_numeric($invoice->getNr() ?? null)) {
-                $serie = $this->di['mod_service']('system')->getParamValue('invoice_series');
-                $invoice->setSerie($serie !== null ? (string) $serie : null);
-                $invoice->setNr($this->getNextInvoiceNumber());
-            }
+            $this->assignInvoiceNumberIfMissing($invoice);
 
             if (!$invoice->isIssued()) {
                 $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) ? 1 : 2);
@@ -1936,6 +1932,15 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Issued invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return true;
+    }
+
+    private function assignInvoiceNumberIfMissing(Invoice $invoice): void
+    {
+        if (!is_numeric($invoice->getNr() ?? null)) {
+            $serie = $this->di['mod_service']('system')->getParamValue('invoice_series');
+            $invoice->setSerie($serie !== null ? (string) $serie : null);
+            $invoice->setNr($this->getNextInvoiceNumber());
+        }
     }
 
     public function notifyInvoiceIssued(Invoice $invoice, bool $retryOnFailure = false): void
@@ -5485,32 +5490,38 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
-        $proforma = new Invoice();
-        $proforma->setClientId($client->getId() ?? null);
-        $proforma->setStatus(Invoice::STATUS_UNPAID);
-        $proforma->setCurrency($client->getCurrency());
-        $this->di['em']->persist($proforma);
-        $this->di['em']->flush();
+        // Publish the complete invoice, its number and notification intent together.
+        return $this->di['em']->wrapInTransaction(function () use ($client, $amount): Invoice {
+            $proforma = new Invoice();
+            $proforma->setClientId($client->getId() ?? null);
+            $proforma->setStatus(Invoice::STATUS_UNPAID);
+            $proforma->setCurrency($client->getCurrency());
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
 
-        $this->setInvoiceDefaults($proforma);
+            $this->setInvoiceDefaults($proforma);
 
-        // With auto-issue the invoice is born issued, so the issue path's
-        // snapshot never runs for it. Freeze the parties here, before the
-        // issued flag goes on, so funds invoices carry a snapshot like any
-        // other issued invoice.
-        $this->snapshotPartiesFromLiveRecords($proforma);
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $invoiceItemService->generateForAddFunds($proforma, $amount);
+            // With auto-issue the invoice is born issued, so the issue path's
+            // snapshot never runs for it. Freeze the parties here, before the
+            // issued flag goes on, so funds invoices carry a snapshot like any
+            // other issued invoice.
+            $this->snapshotPartiesFromLiveRecords($proforma);
+            $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+            $invoiceItemService->generateForAddFunds($proforma, $amount);
 
-        $autoIssued = $this->_isAutoIssued();
-        $proforma->setIssued($autoIssued);
-        $proforma->setIssueNotificationState($autoIssued ? 2 : 0);
-        $this->di['em']->persist($proforma);
-        $this->di['em']->flush();
+            $autoIssued = $this->_isAutoIssued();
+            if ($autoIssued) {
+                $this->assignInvoiceNumberIfMissing($proforma);
+            }
+            $proforma->setIssued($autoIssued);
+            $proforma->setIssueNotificationState($autoIssued ? 2 : 0);
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
 
-        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
+            $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
 
-        return $proforma;
+            return $proforma;
+        });
     }
 
     private function invoiceHasDeletionHold(Invoice $invoice): bool
