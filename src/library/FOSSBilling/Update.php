@@ -310,6 +310,10 @@ class Update implements InjectionAwareInterface
             throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
         }
 
+        if ($this->filesystem->exists(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME)) {
+            throw new InformationException('A previous update extraction did not complete. Restore a complete verified release before clearing the extraction recovery marker.');
+        }
+
         if (!class_exists(\ZipArchive::class)) {
             throw new InformationException('The PHP ZIP extension must be installed and enabled before updating FOSSBilling.');
         }
@@ -425,6 +429,10 @@ class Update implements InjectionAwareInterface
                         throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
                     }
 
+                    if ($this->filesystem->exists(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME)) {
+                        throw new InformationException('A previous update extraction did not complete. Restore a complete verified release before clearing the extraction recovery marker.');
+                    }
+
                     // Extract latest version archive on top of the current version.
                     try {
                         require_once PATH_ROOT . '/core/Filesystem/ZipExtractor.php';
@@ -432,6 +440,8 @@ class Update implements InjectionAwareInterface
                             if (!self::isSafeArchiveEntry($entryName)) {
                                 throw new Exception('The update archive contains an unsafe file path and cannot be extracted.');
                             }
+                        }, beforeWrite: function (): void {
+                            $this->filesystem->dumpFile(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME, 'Core update extraction has started. Remove only after restoring a complete verified release.');
                         });
                     } catch (\RuntimeException $e) {
                         $this->di['logger']->setChannel('update')->error($e->getMessage());
@@ -455,6 +465,8 @@ class Update implements InjectionAwareInterface
                         'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
                         'source' => 'auto-update',
                     ]);
+                    // Only a verified extraction and durable finalization handoff clear recovery.
+                    $this->filesystem->remove(PATH_ROOT . '/' . Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME);
                 });
             } finally {
                 try {
@@ -518,7 +530,7 @@ class Update implements InjectionAwareInterface
         // A release must never replace live lock inodes, finalization state,
         // or an installation's configuration and encryption key.
         return !in_array($canonical, [
-            '.update-lock', Core\Update\RuntimeLock::FILENAME,
+            '.update-lock', Core\Update\RuntimeLock::FILENAME, Core\Update\RuntimeLock::EXTRACTION_MARKER_FILENAME,
             'data/update-finalization.lock', 'data/update-finalization.json',
             'config.php', 'config.old.php',
         ], true);

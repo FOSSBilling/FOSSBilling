@@ -8,6 +8,7 @@ namespace FOSSBilling\Core\Update;
 final class RuntimeLock
 {
     public const string FILENAME = 'data/uploads/.update-runtime.lock';
+    public const string EXTRACTION_MARKER_FILENAME = '.update-extraction-pending';
 
     /** @var array<string, resource> */
     private static array $readers = [];
@@ -66,6 +67,24 @@ final class RuntimeLock
             throw new \RuntimeException('Unable to acquire the application update lock.');
         }
         self::$readers[$root] = $handle;
+    }
+
+    /** Older coordination releases retain this reader until process shutdown. */
+    public static function acquireFinalizationReader(string $dataPath): void
+    {
+        $key = 'finalization:' . $dataPath;
+        if (isset(self::$readers[$key])) {
+            return;
+        }
+        $handle = @fopen($dataPath . '/update-finalization.lock', 'c');
+        if ($handle === false || !flock($handle, LOCK_SH)) {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+
+            throw new \RuntimeException('Unable to acquire the update finalization reader.');
+        }
+        self::$readers[$key] = $handle;
     }
 
     public static function release(string $root): void

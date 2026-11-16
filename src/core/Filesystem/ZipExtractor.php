@@ -21,8 +21,9 @@ final class ZipExtractor
      * The caller supplies the path/type policy for core or extension packages.
      *
      * @param callable(string, int): void $validateEntry
+     * @param (callable(): void)|null     $beforeWrite   Called once after validation and before changing any destination path
      */
-    public function extract(string $archive, string $destination, callable $validateEntry, int $maxEntries = PHP_INT_MAX, int $maxBytes = PHP_INT_MAX): void
+    public function extract(string $archive, string $destination, callable $validateEntry, int $maxEntries = PHP_INT_MAX, int $maxBytes = PHP_INT_MAX, ?callable $beforeWrite = null): void
     {
         if (!class_exists(\ZipArchive::class)) {
             throw new \RuntimeException('The PHP ZIP extension must be installed and enabled to extract archives.');
@@ -66,6 +67,12 @@ final class ZipExtractor
 
             if (!is_dir($destination) || !is_writable($destination)) {
                 throw new \RuntimeException('The ZIP extraction destination must be a writable directory.');
+            }
+
+            // Core updates publish a durable recovery marker only after archive
+            // validation succeeds, but before any application path is changed.
+            if ($beforeWrite !== null && $entries !== []) {
+                $beforeWrite();
             }
 
             $directories = [];

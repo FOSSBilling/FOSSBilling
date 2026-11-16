@@ -248,3 +248,7 @@ test('opcode cache reset is best-effort and never throws', function (): void {
 
     expect(true)->toBeTrue();
 });
+
+test('release archives cannot replace the extraction recovery marker', function (): void {
+    expect(Update::isSafeArchiveEntry('.update-extraction-pending'))->toBeFalse();
+});
