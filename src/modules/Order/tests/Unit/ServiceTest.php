@@ -4231,8 +4231,13 @@ test('batchCancelUnpaid falls back to the 7 day default when the configured valu
 test('batchCancelUnpaid skips a stale order with a paid item the re-check finds', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
-    $paidElsewhere = createEntity(Order::class, ['id' => 1, 'status' => Order::STATUS_PENDING_SETUP]);
+    // Paid elsewhere (legacy rel_id, backfill not yet run) but still linked to
+    // an unpaid draft invoice: the re-check must skip the order before that
+    // invoice is touched, not just before the order itself is deleted.
+    $paidElsewhere = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
     $neverPaid = createEntity(Order::class, ['id' => 2, 'status' => Order::STATUS_PENDING_SETUP]);
+    $unpaidInvoice = orderServiceCreateInvoiceModel(55);
+    $unpaidInvoice->setStatus(Invoice::STATUS_UNPAID);
 
     $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepository->shouldReceive('getStaleUnpaid')
@@ -4248,6 +4253,16 @@ test('batchCancelUnpaid skips a stale order with a paid item the re-check finds'
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
 
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')
+        ->once()
+        ->with(['id' => [55]])
+        ->andReturn([$unpaidInvoice]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldNotReceive('deleteInvoiceByAdmin');
+
     $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
@@ -4260,6 +4275,7 @@ test('batchCancelUnpaid skips a stale order with a paid item the re-check finds'
             return ['batch_cancel_unpaid' => '1', 'batch_cancel_unpaid_after_days' => 10];
         }
     });
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
     $serviceMock->shouldReceive('deleteFromOrder')->once()->with($neverPaid);
 

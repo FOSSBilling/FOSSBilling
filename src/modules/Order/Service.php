@@ -2866,6 +2866,19 @@ class Service implements InjectionAwareInterface
                 }
 
                 $invoiceId = $order->getUnpaidInvoiceId();
+
+                // Paid-item re-check through both linkages before touching anything:
+                // the stale-order scan above matches on the typed linkage only, so a
+                // paid item that missed the backfill (concurrent write during its
+                // final page, manual row, or downgraded writer) would otherwise
+                // read as never paid here. Single-order scope, so both branches of
+                // the lookup can still use an index - unlike that OR inside a
+                // correlated table-wide subquery. Placed before the invoice
+                // handling below so a skipped order keeps its linked invoice.
+                if ($this->getOrderRepository()->hasPaidInvoiceItem($this->orderId($order))) {
+                    continue;
+                }
+
                 if ($invoiceId !== null) {
                     if (!array_key_exists($invoiceId, $invoiceHandled)) {
                         $invoice = $invoicesById[$invoiceId] ?? null;
@@ -2889,17 +2902,6 @@ class Service implements InjectionAwareInterface
                     if (!$invoiceHandled[$invoiceId]) {
                         continue;
                     }
-                }
-
-                // Paid-item re-check through both linkages: the stale-order scan
-                // above matches on the typed linkage only, so a paid item that
-                // missed the backfill (concurrent write during its final page,
-                // manual row, or downgraded writer) would otherwise read as
-                // never paid here. Single-order scope, so both branches of the
-                // lookup can still use an index - unlike that OR inside a
-                // correlated table-wide subquery.
-                if ($this->getOrderRepository()->hasPaidInvoiceItem($this->orderId($order))) {
-                    continue;
                 }
 
                 $this->deleteFromOrder($order);
