@@ -34,6 +34,7 @@ class Patcher implements InjectionAwareInterface
     private const string SCHEMA_METADATA_HASH_PARAM = 'schema_metadata_hash';
     private const string SCHEMA_METADATA_HASH_FAILED_PARAM = 'schema_metadata_hash_failed';
     private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
+    private bool $schemaSyncFailed = false;
     public ?\Pimple\Container $di = null;
     public Filesystem $filesystem;
 
@@ -359,6 +360,7 @@ class Patcher implements InjectionAwareInterface
      */
     public function syncPortableSchema(): ?array
     {
+        $this->schemaSyncFailed = false;
         if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return null;
         }
@@ -445,6 +447,7 @@ class Patcher implements InjectionAwareInterface
             $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage(), [
                 'metadata_hash' => $metadataHash,
             ]);
+            $this->schemaSyncFailed = true;
 
             return null;
         }
@@ -468,6 +471,11 @@ class Patcher implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    public function schemaSyncFailed(): bool
+    {
+        return $this->schemaSyncFailed;
     }
 
     /**
@@ -1828,21 +1836,23 @@ class Patcher implements InjectionAwareInterface
      */
     private function writeBackfillJournalEntry(\Doctrine\DBAL\Connection $dbal, array $row, int $padding): void
     {
+        $dbal->transactional(function () use ($dbal, $row, $padding): void {
+            $invoiceId = (int) $row['id'];
+            if ($dbal->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
+                $dbal->executeStatement('UPDATE invoice SET updated_at = updated_at WHERE id = ?', [$invoiceId]);
+            }
+            $current = $dbal->fetchAssociative('SELECT * FROM invoice WHERE id = ?' . \FOSSBilling\Core\Doctrine\RowLock::suffix($dbal), [$invoiceId]);
+            if ($current === false || $dbal->fetchOne('SELECT id FROM invoice_event WHERE invoice_id = ? LIMIT 1' . \FOSSBilling\Core\Doctrine\RowLock::suffix($dbal), [$invoiceId]) !== false) {
+                return;
+            }
+            $this->writeBackfillJournalSnapshot($dbal, $current, $padding);
+        });
+    }
+
+    /** @param array<string, mixed> $row */
+    private function writeBackfillJournalSnapshot(\Doctrine\DBAL\Connection $dbal, array $row, int $padding): void
+    {
         $invoiceId = (int) $row['id'];
-
-        // Claim the baseline first: concurrent healers (overlapping cron runs, or drift
-        // healing racing cron) select the same event-less rows. This conditional UPDATE
-        // is atomic on every driver, so exactly one winner per invoice proceeds while
-        // losers - including runs that arrive after a live event landed - skip instead
-        // of writing a duplicate baseline.
-        $claimed = (bool) $dbal->executeStatement(
-            'UPDATE invoice SET updated_at = updated_at WHERE id = :id AND NOT EXISTS (SELECT 1 FROM invoice_event WHERE invoice_id = :id)',
-            ['id' => $invoiceId]
-        );
-        if (!$claimed) {
-            return;
-        }
-
         $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : $invoiceId;
         $snapshot = [
             'serie_nr' => ($row['serie'] ?? '') . sprintf('%0' . $padding . 's', $nr),

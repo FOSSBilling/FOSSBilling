@@ -252,6 +252,9 @@ class Finalization implements InjectionAwareInterface
             $patcher = $this->createPatcher();
             $patcher->applyConfigPatches(force: true);
             $patcher->applyCorePatches(force: true);
+            if ($patcher->schemaSyncFailed()) {
+                throw new BaseException('The database schema update could not finish. Maintenance mode remains enabled. Check the update log and retry finalization.');
+            }
 
             if ($this->shouldRemoveInstallDirectory()) {
                 $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
@@ -272,7 +275,7 @@ class Finalization implements InjectionAwareInterface
         return $this->getStatus(false);
     }
 
-    private function withFinalizationLock(\Closure $callback): mixed
+    private function withFinalizationLock(\Closure $callback, ?float $timeout = null): mixed
     {
         // Another reader can be waiting for this session while holding a shared runtime lock.
         // Save it before waiting for exclusivity, so that reader can finish and release its lock.
@@ -286,10 +289,22 @@ class Finalization implements InjectionAwareInterface
             throw new BaseException('Unable to acquire the update finalization lock.');
         }
 
-        if (!flock($handle, LOCK_EX)) {
+        $locked = false;
+        if ($timeout === null) {
+            $locked = flock($handle, LOCK_EX);
+        } else {
+            $deadline = microtime(true) + $timeout;
+            do {
+                $locked = flock($handle, LOCK_EX | LOCK_NB);
+                if (!$locked) {
+                    usleep(10000);
+                }
+            } while (!$locked && microtime(true) < $deadline);
+        }
+        if (!$locked) {
             fclose($handle);
 
-            throw new BaseException('Unable to acquire the update finalization lock.');
+            throw new InformationException('Active requests or cron jobs are still finishing. No update files were extracted. Please retry the update shortly.', [], 503);
         }
 
         try {
@@ -315,6 +330,26 @@ class Finalization implements InjectionAwareInterface
             throw new BaseException('Unable to acquire the application update lock.');
         }
         $this->runtimeLock = $handle;
+    }
+
+    /** Drain HTTP and cron readers before replacing application files. */
+    public function withUpdateLock(\Closure $callback, float $timeout = 30): mixed
+    {
+        if (session_status() === PHP_SESSION_ACTIVE && $this->di !== null && isset($this->di['session'])) {
+            $this->di['session']->save();
+        }
+        $held = is_resource($this->runtimeLock);
+        // An updater must not retain a finalization reader while waiting for
+        // bootstrap readers, which may themselves be waiting for finalization.
+        $this->releaseRuntimeLock();
+
+        try {
+            return RuntimeLock::exclusively(PATH_ROOT, fn () => $this->withFinalizationLock($callback, $timeout), $timeout);
+        } finally {
+            if ($held) {
+                $this->acquireRuntimeLock();
+            }
+        }
     }
 
     public function releaseRuntimeLock(): void

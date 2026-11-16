@@ -80,3 +80,17 @@ test('isCoreUpdateLockActive treats a lock past the staleness window as abandone
         expect(isCoreUpdateLockActive())->toBeFalse();
     });
 });
+
+test('a live updater never expires merely because extraction is slow', function (): void {
+    withCoreUpdateLock(time() - 700, function (): void {
+        $handle = fopen(lockFilePath(), 'r');
+        flock($handle, LOCK_EX);
+
+        try {
+            expect(isCoreUpdateLockActive())->toBeTrue();
+        } finally {
+            fclose($handle);
+        }
+        expect(isCoreUpdateLockActive())->toBeFalse();
+    });
+});

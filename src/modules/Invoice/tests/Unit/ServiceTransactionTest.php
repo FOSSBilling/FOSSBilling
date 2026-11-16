@@ -1236,6 +1236,7 @@ test('stale processing claims are never reclaimed automatically', function (): v
 });
 
 test('staff can release only a stale processing transaction', function (string $status, ?string $updatedAt, bool $eligible): void {
+    $updatedAt = $updatedAt === 'now' ? date('Y-m-d H:i:s') : $updatedAt;
     $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $db->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, status TEXT NOT NULL, updated_at TEXT, error TEXT, error_code INTEGER, processing_token TEXT)');
     $db->executeStatement('INSERT INTO "transaction" (id, status, updated_at) VALUES (?, ?, ?)', [1, $status, $updatedAt]);
@@ -1260,7 +1261,7 @@ test('staff can release only a stale processing transaction', function (string $
 })->with([
     [Transaction::STATUS_PROCESSING, '2000-01-01 00:00:00', true],
     [Transaction::STATUS_PROCESSING, null, true],
-    [Transaction::STATUS_PROCESSING, date('Y-m-d H:i:s'), false],
+    [Transaction::STATUS_PROCESSING, 'now', false],
     [Transaction::STATUS_PROCESSED, '2000-01-01 00:00:00', false],
     [Transaction::STATUS_RECEIVED, '2000-01-01 00:00:00', false],
 ]);

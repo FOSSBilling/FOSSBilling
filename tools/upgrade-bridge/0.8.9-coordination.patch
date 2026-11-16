@@ -1,0 +1,742 @@
+--- a/src/load.php
++++ b/src/load.php
+@@ -178,13 +178,22 @@
+  */
+ function isCoreUpdateLockActive(?int $now = null): bool
+ {
+-    $mtime = @filemtime(PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock');
++    $path = PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock';
++    $mtime = @filemtime($path);
++    $handle = @fopen($path, 'r');
++    if ($handle !== false) {
++        try {
++            if (!flock($handle, LOCK_SH | LOCK_NB)) {
++                return true;
++            }
++            flock($handle, LOCK_UN);
++        } finally {
++            fclose($handle);
++        }
++    }
+     $now ??= time();
+ 
+-    // No lock file, or it's old enough that the process which created it must
+-    // have died without cleaning up (e.g. a host-side request timeout killed
+-    // it before the update's `finally` block could run). Treat an old lock as
+-    // abandoned rather than blocking the site forever.
++    // A marker with no live owner retains the legacy recovery window.
+     return $mtime !== false && ($now - $mtime) <= 600;
+ }
+ 
+@@ -220,6 +229,11 @@
+     define('PATH_ROOT', __DIR__);
+ 
+     blockWhileCoreUpdateIsRunning();
++    require_once PATH_ROOT . '/core/Update/RuntimeLock.php';
++    if (getenv('APP_ENV') !== 'test') {
++        FOSSBilling\Core\Update\RuntimeLock::acquire(PATH_ROOT);
++        blockWhileCoreUpdateIsRunning();
++    }
+ 
+     // Check vendor folder exists and load Composer autoloader.
+     define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
+--- a/src/library/FOSSBilling/Update.php
++++ b/src/library/FOSSBilling/Update.php
+@@ -11,8 +11,6 @@
+ 
+ namespace FOSSBilling;
+ 
+-use PhpZip\Exception\ZipException;
+-use PhpZip\ZipFile;
+ use Symfony\Component\Filesystem\Exception\IOException;
+ use Symfony\Component\Filesystem\Filesystem;
+ use Symfony\Component\Filesystem\Path;
+@@ -155,7 +153,7 @@
+                 'minimum_php_version' => 'unknown',
+             ];
+         }
+-        $key = "Update.latest_{$branch}_version_info";
++        $key = "Update.latest_{$branch}_version_info_coordinated";
+ 
+         // Delete the cached result to force a refetch
+         if ($refetch) {
+@@ -166,7 +164,7 @@
+             $item->expiresAfter(3600);
+ 
+             try {
+-                $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
++                $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest?' . http_build_query(['update_protocol' => 1, 'current_version' => Version::VERSION]);
+                 $httpClient = $this->di['http_client'];
+                 $response = $httpClient->request('GET', $releaseInfoUrl);
+                 $releaseInfo = $response->toArray()['result'];
+@@ -312,6 +310,10 @@
+             throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
+         }
+ 
++        if (!class_exists(\ZipArchive::class)) {
++            throw new InformationException('The PHP ZIP extension must be installed and enabled before updating FOSSBilling.');
++        }
++
+         $readiness = $this->di['update_readiness']->check();
+         if (!$readiness['can_update']) {
+             throw new Exception('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
+@@ -324,159 +326,154 @@
+ 
+         $this->di['logger']->setChannel('update')->info('Started FOSSBilling auto-update script');
+         $latestVersionNum = $this->getLatestVersion();
+-        $archiveFile = Path::join(PATH_CACHE, "{$latestVersionNum}.zip");
+-
+-        $releaseInfo = $this->getLatestVersionInfo($updateBranch);
+-
+-        // Validate the required PHP version is met
+-        $requiredPHPVersion = $releaseInfo['minimum_php_version'];
+-        if ($requiredPHPVersion !== 'unknown' && version_compare(PHP_VERSION, $requiredPHPVersion, '<')) {
+-            throw new InformationException('FOSSBilling :version: requires at least PHP :min_php:, but you are running :current_php:.', [':version:' => $latestVersionNum, ':min_php:' => $requiredPHPVersion, ':current_php:' => PHP_VERSION]);
+-        }
+-
+-        // Perform a sanity check that the download URL is a trusted one
+-        if ($updateBranch !== 'preview') {
+-            $allowed = false;
+-            foreach ($this->allowedDownloadPrefixes as $prefix) {
+-                $allowed = $allowed ? true : str_starts_with((string) $releaseInfo['download_url'], (string) $prefix);
+-            }
+-
+-            if (!$allowed) {
+-                throw new InformationException('The download URL for this release was not specified as a trusted one. Update canceled for security reasons.');
+-            }
+-        }
+-
+-        // Download latest version archive for configured update branch.
++        $archiveFile = $this->filesystem->tempnam(PATH_DATA, 'fossbilling-update-', '.zip');
++
+         try {
+-            $httpClient = $this->di['http_client']->withOptions([
+-                'timeout' => 30,
+-                'max_duration' => 120,
+-            ]);
+-            $downloadOptions = [];
+-            if (str_starts_with((string) $releaseInfo['download_url'], 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/')) {
+-                $downloadOptions['headers'] = ['Accept' => 'application/octet-stream'];
+-            }
+-
+-            $response = $httpClient->request('GET', $releaseInfo['download_url'], $downloadOptions);
+-
+-            $fileHandler = fopen($archiveFile, 'w');
+-            if ($fileHandler === false) {
+-                throw new \RuntimeException('Unable to create the update archive.');
+-            }
+-
++            $releaseInfo = $this->getLatestVersionInfo($updateBranch);
++
++            // Validate the required PHP version is met
++            $requiredPHPVersion = $releaseInfo['minimum_php_version'];
++            if ($requiredPHPVersion !== 'unknown' && version_compare(PHP_VERSION, $requiredPHPVersion, '<')) {
++                throw new InformationException('FOSSBilling :version: requires at least PHP :min_php:, but you are running :current_php:.', [':version:' => $latestVersionNum, ':min_php:' => $requiredPHPVersion, ':current_php:' => PHP_VERSION]);
++            }
++
++            // Perform a sanity check that the download URL is a trusted one
++            if ($updateBranch !== 'preview') {
++                $allowed = false;
++                foreach ($this->allowedDownloadPrefixes as $prefix) {
++                    $allowed = $allowed ? true : str_starts_with((string) $releaseInfo['download_url'], (string) $prefix);
++                }
++
++                if (!$allowed) {
++                    throw new InformationException('The download URL for this release was not specified as a trusted one. Update canceled for security reasons.');
++                }
++            }
++
++            // Download latest version archive for configured update branch.
+             try {
+-                foreach ($httpClient->stream($response) as $chunk) {
+-                    $content = (string) $chunk->getContent();
+-                    $written = fwrite($fileHandler, $content);
+-                    if ($written === false || $written !== strlen($content)) {
+-                        throw new \RuntimeException('Unable to write the update archive.');
++                $httpClient = $this->di['http_client']->withOptions([
++                    'timeout' => 30,
++                    'max_duration' => 120,
++                ]);
++                $downloadOptions = [];
++                if (str_starts_with((string) $releaseInfo['download_url'], 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/')) {
++                    $downloadOptions['headers'] = ['Accept' => 'application/octet-stream'];
++                }
++
++                $response = $httpClient->request('GET', $releaseInfo['download_url'], $downloadOptions);
++
++                $fileHandler = fopen($archiveFile, 'w');
++                if ($fileHandler === false) {
++                    throw new \RuntimeException('Unable to create the update archive.');
++                }
++
++                try {
++                    foreach ($httpClient->stream($response) as $chunk) {
++                        $content = (string) $chunk->getContent();
++                        $written = fwrite($fileHandler, $content);
++                        if ($written === false || $written !== strlen($content)) {
++                            throw new \RuntimeException('Unable to write the update archive.');
++                        }
+                     }
++                } finally {
++                    fclose($fileHandler);
+                 }
++            } catch (\Throwable $e) {
++                $this->removeDownloadedArchive($archiveFile);
++                $this->di['logger']->setChannel('update')->error($e->getMessage());
++
++                throw new Exception('Failed to download the update archive. Further details are available in the error log.');
++            }
++
++            // The preview branch's release info isn't sourced from the versions API this
++            // digest comes from, so it has nothing to verify against here.
++            if ($updateBranch !== 'preview') {
++                $this->validateDownloadedArchive($archiveFile, $releaseInfo);
++            }
++
++            /*
++             * From here until the lock is released below, files under PATH_ROOT are
++             * being overwritten in place while the site may still be serving other
++             * requests (this HTTP request is the only one that knows an update is
++             * running). A request that lands mid-extraction can autoload a mix of
++             * old and new class files and fatal out with an "incompatible
++             * declaration" error - see https://github.com/FOSSBilling/FOSSBilling/issues/4159.
++             *
++             * load.php refuses to serve any request while this lock file exists (and
++             * self-expires it in case this process dies before the `finally` below
++             * runs), so create it before touching any files and make sure PHP keeps
++             * running even if the client triggering the update disconnects mid-request.
++             *
++             * The create is exclusive (fails if the file already exists) so two
++             * updates triggered at the same time can't both extract into PATH_ROOT
++             * concurrently - the loser is turned away instead of corrupting the
++             * extraction. A leftover lock from a run that never reached the
++             * `finally` below (the process was killed outright) is treated as
++             * abandoned once it's older than LOCK_STALE_SECONDS.
++             */
++            $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
++            if ($this->filesystem->exists($lockFile) && !$this->isExtractionActive($lockFile)) {
++                $this->filesystem->remove($lockFile);
++            }
++
++            // fopen(..., 'x') rather than Filesystem here: it's the only way to make the
++            // create atomic (it fails if the file already exists), which is what makes
++            // this a real mutex against two updates racing each other below.
++            $lockHandle = @fopen($lockFile, 'x');
++            if ($lockHandle === false) {
++                throw new InformationException('Another update appears to already be in progress. Please wait for it to finish before trying again.');
++            }
++            flock($lockHandle, LOCK_EX);
++            ignore_user_abort(true);
++
++            try {
++                $this->di['session']->save();
++                Core\Update\RuntimeLock::exclusively(PATH_ROOT, function () use ($archiveFile, $lockFile, $finalization, $latestVersionNum, $updateBranch, $releaseInfo): void {
++                    if ($finalization->isRequired(false)) {
++                        throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
++                    }
++
++                    // Extract latest version archive on top of the current version.
++                    try {
++                        require_once PATH_ROOT . '/core/Filesystem/ZipExtractor.php';
++                        (new Core\Filesystem\ZipExtractor())->extract($archiveFile, PATH_ROOT, static function (string $entryName): void {
++                            if (!self::isSafeArchiveEntry($entryName)) {
++                                throw new Exception('The update archive contains an unsafe file path and cannot be extracted.');
++                            }
++                        });
++                    } catch (\RuntimeException $e) {
++                        $this->di['logger']->setChannel('update')->error($e->getMessage());
++
++                        throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
++                    }
++
++                    // Extraction is the slow part; refresh the lock now so a legitimately
++                    // long-running update isn't mistaken for an abandoned one while the
++                    // patches below are still applying.
++                    $this->filesystem->touch($lockFile);
++
++                    // Files on disk just changed underneath the running workers - reset
++                    // opcache so finalization below runs against the new code rather
++                    // than stale pre-update classes.
++                    $this->invalidateOpcodeCache();
++
++                    // The first request in the new release applies schema/config changes.
++                    $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
++                        'branch' => $updateBranch,
++                        'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
++                        'source' => 'auto-update',
++                    ]);
++                });
+             } finally {
+-                fclose($fileHandler);
+-            }
+-        } catch (\Throwable $e) {
++                $this->filesystem->remove($lockFile);
++                fclose($lockHandle);
++            }
++
++            // Log off the current user and destroy the session.
++            $this->di['session']->destroy('admin');
++        } finally {
+             $this->removeDownloadedArchive($archiveFile);
+-            $this->di['logger']->setChannel('update')->error($e->getMessage());
+-
+-            throw new Exception('Failed to download the update archive. Further details are available in the error log.');
+-        }
+-
+-        // The preview branch's release info isn't sourced from the versions API this
+-        // digest comes from, so it has nothing to verify against here.
+-        if ($updateBranch !== 'preview') {
+-            $this->validateDownloadedArchive($archiveFile, $releaseInfo);
+-        }
+-
+-        $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
+-            'branch' => $updateBranch,
+-            'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
+-            'source' => 'auto-update',
+-        ]);
+-
+-        /*
+-         * From here until the lock is released below, files under PATH_ROOT are
+-         * being overwritten in place while the site may still be serving other
+-         * requests (this HTTP request is the only one that knows an update is
+-         * running). A request that lands mid-extraction can autoload a mix of
+-         * old and new class files and fatal out with an "incompatible
+-         * declaration" error - see https://github.com/FOSSBilling/FOSSBilling/issues/4159.
+-         *
+-         * load.php refuses to serve any request while this lock file exists (and
+-         * self-expires it in case this process dies before the `finally` below
+-         * runs), so create it before touching any files and make sure PHP keeps
+-         * running even if the client triggering the update disconnects mid-request.
+-         *
+-         * The create is exclusive (fails if the file already exists) so two
+-         * updates triggered at the same time can't both extract into PATH_ROOT
+-         * concurrently - the loser is turned away instead of corrupting the
+-         * extraction. A leftover lock from a run that never reached the
+-         * `finally` below (the process was killed outright) is treated as
+-         * abandoned once it's older than LOCK_STALE_SECONDS.
+-         */
+-        $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
+-        if ($this->filesystem->exists($lockFile) && (time() - (int) @filemtime($lockFile)) > self::LOCK_STALE_SECONDS) {
+-            $this->filesystem->remove($lockFile);
+-        }
+-
+-        // fopen(..., 'x') rather than Filesystem here: it's the only way to make the
+-        // create atomic (it fails if the file already exists), which is what makes
+-        // this a real mutex against two updates racing each other below.
+-        $lockHandle = @fopen($lockFile, 'x');
+-        if ($lockHandle === false) {
+-            throw new InformationException('Another update appears to already be in progress. Please wait for it to finish before trying again.');
+-        }
+-        fclose($lockHandle);
+-        ignore_user_abort(true);
+-
+-        try {
+-            // Extract latest version archive on top of the current version.
+-            try {
+-                $zip = new ZipFile();
+-                $zip->openFile($archiveFile);
+-                foreach ($zip->getListFiles() as $entryName) {
+-                    if (!self::isSafeArchiveEntry($entryName)) {
+-                        throw new Exception('The update archive contains an unsafe file path and cannot be extracted.');
+-                    }
+-                }
+-                $zip->extractTo(PATH_ROOT);
+-                $zip->close();
+-            } catch (ZipException $e) {
+-                $this->di['logger']->setChannel('update')->error($e->getMessage());
+-
+-                throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+-            }
+-
+-            // Extraction is the slow part; refresh the lock now so a legitimately
+-            // long-running update isn't mistaken for an abandoned one while the
+-            // patches below are still applying.
+-            $this->filesystem->touch($lockFile);
+-
+-            // Files on disk just changed underneath the running workers - reset
+-            // opcache so finalization below runs against the new code rather
+-            // than stale pre-update classes.
+-            $this->invalidateOpcodeCache();
+-
+-            /*
+-             * Apply pending config/database patches and remove the install folder
+-             * now, while the admin who triggered the update is still authenticated.
+-             *
+-             * This must happen before the session is destroyed below: the login
+-             * screen (and the Doctrine queries it runs to authenticate the admin)
+-             * is generated against the newly extracted code, which can expect
+-             * database columns that only the patches below create. Deferring this
+-             * work until after the forced logout would leave the admin unable to
+-             * log back in - and therefore unable to reach the finalization screen -
+-             * until the schema is patched. See the class docblock on
+-             * UpdateFinalization for the rest of the finalization flow.
+-             */
+-            $finalization->finalizeUpdate();
+-        } finally {
+-            $this->filesystem->remove($lockFile);
+-        }
+-
+-        // Log off the current user and destroy the session.
+-        $this->di['session']->destroy('admin');
++        }
+     }
+ 
+     /**
+@@ -502,15 +499,33 @@
+      * Normalizing backslashes to forward slashes before checking for '..'
+      * segments and absolute paths closes that gap on every platform.
+      */
++    private function isExtractionActive(string $path): bool
++    {
++        $handle = @fopen($path, 'r');
++        if ($handle !== false) {
++            try {
++                if (!flock($handle, LOCK_SH | LOCK_NB)) {
++                    return true;
++                }
++                flock($handle, LOCK_UN);
++            } finally {
++                fclose($handle);
++            }
++        }
++
++        return time() - (int) @filemtime($path) <= self::LOCK_STALE_SECONDS;
++    }
++
+     public static function isSafeArchiveEntry(string $entryName): bool
+     {
+         $normalized = str_replace('\\', '/', $entryName);
+ 
+-        if (str_starts_with($normalized, '/') || preg_match('#^[a-zA-Z]:#', $normalized)) {
++        if (str_starts_with($normalized, '/') || str_contains($normalized, ':') || str_contains($normalized, "\0")) {
+             return false;
+         }
+ 
+-        foreach (explode('/', $normalized) as $segment) {
++        $segments = explode('/', $normalized);
++        foreach ($segments as $segment) {
+             // Windows strips trailing spaces and periods from path components, so
+             // '.. .' or '...' resolve to '..' at extraction time even though they
+             // don't match it literally here. Reject any segment that is nothing
+@@ -520,6 +535,14 @@
+             }
+         }
+ 
+-        return true;
++        $canonical = strtolower(implode('/', array_filter(array_map(static fn (string $segment): string => rtrim($segment, ' .'), $segments), static fn (string $segment): bool => $segment !== '')));
++
++        // A release must never replace live lock inodes, finalization state,
++        // or an installation's configuration and encryption key.
++        return !in_array($canonical, [
++            '.update-lock', Core\Update\RuntimeLock::FILENAME,
++            'data/update-finalization.lock', 'data/update-finalization.json',
++            'config.php', 'config.old.php',
++        ], true);
+     }
+ }
+--- /dev/null
++++ b/src/core/Update/RuntimeLock.php
+@@ -0,0 +1,70 @@
++<?php
++
++declare(strict_types=1);
++
++namespace FOSSBilling\Core\Update;
++
++/** Bootstrap-safe lock: readers enter before loading application classes. */
++final class RuntimeLock
++{
++    public const string FILENAME = 'data/uploads/.update-runtime.lock';
++
++    /** @var array<string, resource> */
++    private static array $readers = [];
++
++    public static function acquire(string $root): void
++    {
++        if (isset(self::$readers[$root])) {
++            return;
++        }
++        $handle = @fopen($root . '/' . self::FILENAME, 'c');
++        if ($handle === false || !flock($handle, LOCK_SH)) {
++            if (is_resource($handle)) {
++                fclose($handle);
++            }
++
++            throw new \RuntimeException('Unable to acquire the application update lock.');
++        }
++        self::$readers[$root] = $handle;
++    }
++
++    public static function release(string $root): void
++    {
++        if (isset(self::$readers[$root])) {
++            flock(self::$readers[$root], LOCK_UN);
++            fclose(self::$readers[$root]);
++            unset(self::$readers[$root]);
++        }
++    }
++
++    public static function exclusively(string $root, \Closure $callback, float $timeout = 30): mixed
++    {
++        $held = isset(self::$readers[$root]);
++        $handle = $held ? self::$readers[$root] : @fopen($root . '/' . self::FILENAME, 'c');
++        if ($handle === false) {
++            throw new \RuntimeException('Unable to acquire the application update lock.');
++        }
++        // Release our reader before waiting: two updaters must not keep each
++        // other alive with shared locks while each waits for exclusivity.
++        flock($handle, LOCK_UN);
++        $deadline = microtime(true) + $timeout;
++
++        try {
++            while (!flock($handle, LOCK_EX | LOCK_NB)) {
++                if (microtime(true) >= $deadline) {
++                    throw new \RuntimeException('Active requests or cron jobs are still finishing. No update files were extracted. Please retry the update shortly.');
++                }
++                usleep(10000);
++            }
++
++            return $callback();
++        } finally {
++            if ($held) {
++                flock($handle, LOCK_SH);
++            } else {
++                flock($handle, LOCK_UN);
++                fclose($handle);
++            }
++        }
++    }
++}
+--- /dev/null
++++ b/src/core/Filesystem/ZipExtractor.php
+@@ -0,0 +1,230 @@
++<?php
++
++declare(strict_types=1);
++/**
++ * Copyright 2022-2026 FOSSBilling
++ * SPDX-License-Identifier: Apache-2.0.
++ *
++ * @copyright FOSSBilling (https://www.fossbilling.org)
++ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
++ */
++
++namespace FOSSBilling\Core\Filesystem;
++
++use Symfony\Component\Filesystem\Filesystem;
++use Symfony\Component\Filesystem\Path;
++
++final class ZipExtractor
++{
++    /**
++     * Validate the entire archive before writing, then restore its Unix modes.
++     * The caller supplies the path/type policy for core or extension packages.
++     *
++     * @param callable(string, int): void $validateEntry
++     */
++    public function extract(string $archive, string $destination, callable $validateEntry, int $maxEntries = PHP_INT_MAX, int $maxBytes = PHP_INT_MAX): void
++    {
++        if (!class_exists(\ZipArchive::class)) {
++            throw new \RuntimeException('The PHP ZIP extension must be installed and enabled to extract archives.');
++        }
++
++        $zip = new \ZipArchive();
++        $result = @$zip->open($archive, \ZipArchive::RDONLY | \ZipArchive::CHECKCONS);
++        if ($result !== true) {
++            throw new \RuntimeException(sprintf('Unable to open ZIP archive (error %s).', $result));
++        }
++
++        $filesystem = new Filesystem();
++
++        try {
++            if ($zip->numFiles > $maxEntries) {
++                throw new \RuntimeException('The ZIP archive exceeds its entry limit.');
++            }
++            $this->validateRawNames($archive, $zip);
++            $entries = [];
++            $remainingBytes = $maxBytes;
++            for ($index = 0; $index < $zip->numFiles; ++$index) {
++                $entry = $zip->statIndex($index);
++                if ($entry === false || !$zip->getExternalAttributesIndex($index, $platform, $attributes)) {
++                    throw new \RuntimeException('Unable to read ZIP entry metadata.');
++                }
++
++                $name = $entry['name'];
++                $directory = str_ends_with(str_replace('\\', '/', $name), '/') || ($attributes & 0x10) !== 0;
++                $mode = $platform === \ZipArchive::OPSYS_UNIX ? ($attributes >> 16) & 0xFFFF : 0;
++                $mode = $mode ?: ($directory ? 0o040755 : 0o100644);
++                $directory = $directory || ($mode & 0o170000) === 0o040000;
++                $validateEntry($name, $mode);
++                if (!$directory && ($mode & 0o170000) !== 0o120000) {
++                    if ($entry['size'] < 0 || $entry['size'] > $remainingBytes) {
++                        throw new \RuntimeException('The ZIP archive exceeds its extracted size limit.');
++                    }
++                    $remainingBytes -= $entry['size'];
++                }
++                $entries[] = $entry + ['mode' => $mode, 'directory' => $directory];
++            }
++
++            if (!is_dir($destination) || !is_writable($destination)) {
++                throw new \RuntimeException('The ZIP extraction destination must be a writable directory.');
++            }
++
++            $directories = [];
++            foreach ($entries as $entry) {
++                // Core updates skip symlinks; extension validation rejects them.
++                if (($entry['mode'] & 0o170000) === 0o120000) {
++                    continue;
++                }
++
++                $path = $destination . '/' . str_replace('\\', '/', $entry['name']);
++                $directory = $entry['directory'] ? rtrim($path, '/') : Path::getDirectory($path);
++                $this->createDirectory($directory, rtrim($destination, '/'), $filesystem, $directories);
++
++                if ($entry['directory']) {
++                    if (isset($directories[$directory])) {
++                        $directories[$directory] = $entry['mode'] & 0o7777;
++                    }
++
++                    continue;
++                }
++
++                if (is_link($path)) {
++                    throw new \RuntimeException('Cannot extract a ZIP entry over a symbolic link.');
++                }
++
++                $this->extractFile($zip, $entry, $path, $filesystem);
++            }
++
++            // Apply directory modes last so a read-only archived directory does
++            // not prevent its children being extracted. Existing dirs keep theirs.
++            uksort($directories, static fn (string $left, string $right): int => strlen($right) <=> strlen($left));
++            foreach ($directories as $directory => $mode) {
++                $filesystem->chmod($directory, $mode);
++            }
++        } finally {
++            $zip->close();
++        }
++    }
++
++    /** @param array{index: int, size: int, crc: int, mode: int, mtime: int} $entry */
++    private function extractFile(\ZipArchive $zip, array $entry, string $path, Filesystem $filesystem): void
++    {
++        $temporary = $filesystem->tempnam(Path::getDirectory($path), '.fossbilling-zip-');
++
++        try {
++            $input = false;
++            $output = false;
++
++            try {
++                $input = @$zip->getStreamIndex($entry['index']);
++                $output = @fopen($temporary, 'wb');
++                if ($input === false || $output === false) {
++                    throw new \RuntimeException('Unable to read or stage ZIP entry contents.');
++                }
++                // Bound the actual write as well as checking the declared size.
++                $written = @stream_copy_to_stream($input, $output, $entry['size']);
++                $extra = @fread($input, 1);
++            } finally {
++                if ($input !== false) {
++                    fclose($input);
++                }
++                if ($output !== false) {
++                    fclose($output);
++                }
++            }
++
++            if ($written !== $entry['size'] || $extra !== '' || filesize($temporary) !== $entry['size']
++                || hash_file('crc32b', $temporary) !== sprintf('%08x', $entry['crc'])) {
++                throw new \RuntimeException('ZIP entry failed its size or CRC check.');
++            }
++
++            $filesystem->chmod($temporary, $entry['mode'] & 0o7777);
++            $filesystem->touch($temporary, $entry['mtime']);
++            $filesystem->rename($temporary, $path, true);
++        } finally {
++            $filesystem->remove($temporary);
++        }
++    }
++
++    /** Older libzip versions replace NUL bytes with spaces before exposing names. */
++    private function validateRawNames(string $archive, \ZipArchive $zip): void
++    {
++        $stream = @fopen($archive, 'rb');
++        if ($stream === false) {
++            throw new \RuntimeException('Unable to read ZIP entry names.');
++        }
++
++        try {
++            $comment = $zip->getArchiveComment(\ZipArchive::FL_ENC_RAW);
++            if (fseek($stream, -22 - strlen($comment), SEEK_END) !== 0) {
++                throw new \RuntimeException('Unable to read the ZIP central directory.');
++            }
++            $footer = fread($stream, 22);
++            if ($footer === false || strlen($footer) !== 22 || !str_starts_with($footer, "PK\x05\x06")) {
++                throw new \RuntimeException('Invalid ZIP central directory footer.');
++            }
++            $offset = unpack('Voffset', substr($footer, 16, 4))['offset'];
++
++            if ($offset === 0xFFFFFFFF) {
++                // ZIP64 stores the directory offset in its extended footer.
++                fseek($stream, -42 - strlen($comment), SEEK_END);
++                $locator = fread($stream, 20);
++                if ($locator === false || strlen($locator) !== 20 || !str_starts_with($locator, "PK\x06\x07")) {
++                    throw new \RuntimeException('Invalid ZIP64 central directory locator.');
++                }
++                $footerOffset = unpack('Poffset', substr($locator, 8, 8))['offset'];
++                if (fseek($stream, $footerOffset) !== 0) {
++                    throw new \RuntimeException('Unable to read the ZIP64 footer.');
++                }
++                $footer = fread($stream, 56);
++                if ($footer === false || strlen($footer) !== 56 || !str_starts_with($footer, "PK\x06\x06")) {
++                    throw new \RuntimeException('Invalid ZIP64 central directory footer.');
++                }
++                $offset = unpack('Poffset', substr($footer, 48, 8))['offset'];
++            }
++
++            if (fseek($stream, $offset) !== 0) {
++                throw new \RuntimeException('Unable to read the ZIP central directory.');
++            }
++            for ($index = 0; $index < $zip->numFiles; ++$index) {
++                $header = fread($stream, 46);
++                if ($header === false || strlen($header) !== 46 || !str_starts_with($header, "PK\x01\x02")) {
++                    throw new \RuntimeException('Invalid ZIP central directory entry.');
++                }
++                $lengths = unpack('vname/vextra/vcomment', substr($header, 28, 6));
++                $name = $lengths['name'] > 0 ? fread($stream, $lengths['name']) : '';
++                if ($name === false || strlen($name) !== $lengths['name'] || str_contains($name, "\0")) {
++                    throw new \RuntimeException('The ZIP archive contains an invalid file name.');
++                }
++                if (fseek($stream, $lengths['extra'] + $lengths['comment'], SEEK_CUR) !== 0) {
++                    throw new \RuntimeException('Unable to read the next ZIP directory entry.');
++                }
++            }
++        } finally {
++            fclose($stream);
++        }
++    }
++
++    /** @param array<string, int> $directories */
++    private function createDirectory(string $path, string $root, Filesystem $filesystem, array &$directories): void
++    {
++        $missing = [];
++        for ($directory = $path; $directory !== $root && $directory !== ''; $directory = $parent) {
++            if (is_link($directory)) {
++                throw new \RuntimeException('Cannot extract a ZIP entry through a symbolic link.');
++            }
++            if (!is_dir($directory)) {
++                $missing[] = $directory;
++            }
++            $parent = Path::getDirectory($directory);
++            if ($parent === $directory) {
++                break;
++            }
++        }
++
++        foreach (array_reverse($missing) as $directory) {
++            $filesystem->mkdir($directory, 0o755);
++            $filesystem->chmod($directory, 0o755);
++            $directories[$directory] = 0o755;
++        }
++    }
++}

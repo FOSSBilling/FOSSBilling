@@ -60,6 +60,7 @@ final readonly class ReadinessCheck
         $issues = array_merge($issues, $this->checkFileOrParentDir($dataFile, 'data/update-finalization.json (used to track the update state machine)'));
 
         $writableFolders = [
+            Path::join($this->pathRoot, 'data', 'uploads') => 'data/uploads/ (application update coordination)',
             $this->pathData => 'data/ (download destination for the update archive)',
             Path::join($this->pathData, 'cache') => 'data/cache/',
             Path::join($this->pathData, 'log') => 'data/log/',

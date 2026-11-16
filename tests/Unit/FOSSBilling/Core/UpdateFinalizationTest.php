@@ -185,6 +185,12 @@ function stubUpdatePatcherWithPendingPatches(): object
     return new class extends Patcher {
         public int $pendingPatches = 1;
         public bool $corePatchesApplied = false;
+        public bool $schemaFailed = false;
+
+        public function schemaSyncFailed(): bool
+        {
+            return $this->schemaFailed;
+        }
 
         public function availablePatches(): int
         {
@@ -264,6 +270,35 @@ test('completion reports the pending patch levels instead of a bare message', fu
     expect(function () use ($finalization): void {
         $finalization->completeFinalization();
     })->toThrow(InformationException::class, 'There are still 1 pending update patches (database level 120, code level 124)');
+});
+
+test('schema sync failures keep the upgrade pending until a successful retry', function (): void {
+    $patcher = stubUpdatePatcherWithPendingPatches();
+    $patcher->schemaFailed = true;
+    $service = finalizationWithStubPatcher($patcher);
+
+    expect(fn () => $service->finalizeUpdate())->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'schema update could not finish')
+        ->and($service->getStatus(false)['status'])->toBe('pending')
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue();
+    $patcher->schemaFailed = false;
+    $service->finalizePendingUpdate();
+    expect($service->getStatus(false)['status'])->toBe('finalized');
+});
+
+test('extraction times out safely while an older cron reader is active', function (): void {
+    (new Filesystem())->mkdir(PATH_ROOT . '/data/uploads');
+    $handle = fopen(Path::join(PATH_DATA, 'update-finalization.lock'), 'c');
+    flock($handle, LOCK_SH);
+    $extracted = false;
+
+    try {
+        expect(fn () => (new Finalization())->withUpdateLock(function () use (&$extracted): void {
+            $extracted = true;
+        }, 0.02))->toThrow(InformationException::class, 'still finishing');
+        expect($extracted)->toBeFalse();
+    } finally {
+        fclose($handle);
+    }
 });
 
 test('reports schema drift state alongside the finalization status', function (): void {
@@ -414,17 +449,17 @@ test('same-version deployments finalize pending JSON before serving application 
     expect($patcher->runs)->toBe(1);
 });
 
-test('finalization releases the active session before waiting for another runtime reader', function (): void {
+test('finalization releases the active session before waiting for another runtime reader', function (string $operation): void {
     $directory = sys_get_temp_dir() . '/fb-session-lock-' . bin2hex(random_bytes(6));
     $filesystem = new Filesystem();
     $filesystem->mkdir($directory);
 
     try {
-        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/finalization-session-lock.php', $directory]);
+        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/finalization-session-lock.php', $directory, $operation]);
         $process->setTimeout(10);
         $process->mustRun();
         expect($process->getOutput())->toBe('complete');
     } finally {
         $filesystem->remove($directory);
     }
-});
+})->with(['finalization', 'update']);

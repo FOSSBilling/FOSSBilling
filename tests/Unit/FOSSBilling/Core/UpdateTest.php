@@ -40,6 +40,7 @@ test('update archives survive cache clearing and are always removed', function (
     'transport failure' => ['transport_failure', 'Failed to download'],
     'extraction failure' => ['extraction_failure', 'Failed to extract'],
     'integrity failure' => ['integrity_failure', 'failed integrity verification'],
+    'runtime state in release archive' => ['protected_runtime', 'unsafe file path'],
     'another updater owns the lock' => ['locked', 'Another update'],
     'another updater finished extraction during download' => ['pending_during_download', 'An update finalization is already pending'],
 ]);
@@ -75,6 +76,7 @@ test('does not finalize an update in the request that extracts it', function ():
     ];
 
     $finalization = Mockery::mock(Finalization::class);
+    $finalization->shouldReceive('withUpdateLock')->once()->andReturnUsing(fn ($callback) => $callback());
     $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
     $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->with(
@@ -161,6 +163,7 @@ test('resets the opcode cache after extracting the update archive', function ():
     ];
 
     $finalization = Mockery::mock(Finalization::class);
+    $finalization->shouldReceive('withUpdateLock')->once()->andReturnUsing(fn ($callback) => $callback());
     $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
     $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->andReturn(['status' => 'pending']);
@@ -243,6 +246,7 @@ test('does not create pending state when archive extraction fails', function ():
     $archiveContent = 'not a zip archive';
 
     $finalization = Mockery::mock(Finalization::class);
+    $finalization->shouldReceive('withUpdateLock')->once()->andReturnUsing(fn ($callback) => $callback());
     $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
     $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldNotReceive('createPendingState');
@@ -335,7 +339,7 @@ test('uses the API digest for archive verification without querying GitHub', fun
 
         expect($releaseInfo['digest'])->toBe($digest)
             ->and($requests)->toBe([
-                ['method' => 'GET', 'url' => 'https://api.fossbilling.net/versions/v1/latest'],
+                ['method' => 'GET', 'url' => 'https://api.fossbilling.net/versions/v1/latest?' . http_build_query(['update_protocol' => 1, 'current_version' => Version::VERSION])],
             ]);
     } finally {
         (new Filesystem())->remove($archive);
@@ -452,6 +456,14 @@ test('rejects update metadata without an API digest', function (): void {
 test('isSafeArchiveEntry accepts a normal relative entry', function (): void {
     expect(Updater::isSafeArchiveEntry('src/core/Update/Updater.php'))->toBeTrue();
 });
+
+test('release archives cannot overwrite installation state or live locks', function (string $path): void {
+    expect(Updater::isSafeArchiveEntry($path))->toBeFalse();
+})->with([
+    'config.php', 'config.old.php', '.update-lock',
+    'data/uploads/.update-runtime.lock', 'data/update-finalization.lock', 'data/update-finalization.json',
+    'DATA\\uploads\\.update-runtime.lock.', 'data//uploads/.update-runtime.lock',
+]);
 
 test('isSafeArchiveEntry rejects a forward-slash traversal segment', function (): void {
     expect(Updater::isSafeArchiveEntry('../../etc/passwd'))->toBeFalse();

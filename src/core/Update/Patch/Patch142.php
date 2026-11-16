@@ -17,6 +17,12 @@ class Patch142 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
+        // Older releases created this cache lazily. If it was never used,
+        // the portable schema sync below the patch loop creates the full table.
+        if (!$patcher->tableExists('pay_gateway_customer')) {
+            return;
+        }
+
         // Saved payment methods for automatic charges live on the gateway
         // customer row. Installs upgrading past it rely on this patch on
         // MySQL; fresh installs and other drivers get the columns from the

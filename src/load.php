@@ -225,20 +225,28 @@ function exceptionHandler(Exception|Error $e): void
  * The lock filename below is duplicated as a literal (see
  * Update::LOCK_FILENAME) because this check has to run before that class -
  * or anything else - can be autoloaded. Keep both copies in sync if it
- * changes. The 600-second staleness window only exists here; performUpdate()
- * always removes the lock itself via a `finally` block, so this is purely a
- * failsafe for the rare case that PHP is killed outright (host timeout, OOM)
- * before that block can run.
+ * changes. A live writer holds an advisory lock regardless of duration.
+ * Unlocked markers left by older updaters or killed processes expire after
+ * 600 seconds. performUpdate() removes its marker in a finally block.
  */
 function isCoreUpdateLockActive(?int $now = null): bool
 {
-    $mtime = @filemtime(PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock');
+    $path = PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock';
+    $mtime = @filemtime($path);
+    $handle = @fopen($path, 'r');
+    if ($handle !== false) {
+        try {
+            if (!flock($handle, LOCK_SH | LOCK_NB)) {
+                return true;
+            }
+            flock($handle, LOCK_UN);
+        } finally {
+            fclose($handle);
+        }
+    }
     $now ??= time();
 
-    // No lock file, or it's old enough that the process which created it must
-    // have died without cleaning up (e.g. a host-side request timeout killed
-    // it before the update's `finally` block could run). Treat an old lock as
-    // abandoned rather than blocking the site forever.
+    // A marker with no live owner retains the legacy recovery window.
     return $mtime !== false && ($now - $mtime) <= 600;
 }
 
@@ -274,6 +282,12 @@ function preInit(): void
     define('PATH_ROOT', __DIR__);
 
     blockWhileCoreUpdateIsRunning();
+    // Enter before Composer can load classes that extraction may replace.
+    require_once PATH_ROOT . '/core/Update/RuntimeLock.php';
+    if (getenv('APP_ENV') !== 'test') {
+        FOSSBilling\Core\Update\RuntimeLock::acquire(PATH_ROOT);
+        blockWhileCoreUpdateIsRunning();
+    }
 
     // Check vendor folder exists and load Composer autoloader.
     define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');

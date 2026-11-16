@@ -20,8 +20,12 @@ define('PATH_CONFIG', PATH_ROOT . '/config.php');
 $scenario = $argv[2];
 $filesystem = new Filesystem();
 $filesystem->mkdir(PATH_CACHE);
+$filesystem->mkdir(PATH_DATA . '/uploads');
 $filesystem->dumpFile(PATH_CONFIG, '<?php return [];');
 $content = $scenario === 'extraction_failure' ? 'invalid zip' : Tests\Helpers\zipArchive(['updated.txt' => 'updated']);
+if ($scenario === 'protected_runtime') {
+    $content = Tests\Helpers\zipArchive(['updated.txt' => 'updated', 'data/uploads/.update-runtime.lock' => 'must not replace']);
+}
 $release = [
     'version' => '0.8.5-test',
     'minimum_php_version' => '8.3',
@@ -32,6 +36,11 @@ $release = [
 $finalization = new class {
     public bool $pending = false;
     public bool $created = false;
+
+    public function withUpdateLock(Closure $callback): mixed
+    {
+        return $callback();
+    }
 
     public function isRequired(bool $ensure = true): bool
     {
@@ -54,11 +63,20 @@ $di['update_readiness'] = new class {
     }
 };
 $di['session'] = new class {
+    public function save(): void
+    {
+    }
+
     public function destroy(string $area): void
     {
     }
 };
 $di['logger'] = new class extends Psr\Log\NullLogger {
+    public function setChannel(string $channel): static
+    {
+        return $this;
+    }
+
     public function withChannel(string $channel): static
     {
         return $this;
@@ -84,7 +102,17 @@ $di['http_client'] = new MockHttpClient(function () use ($filesystem, $scenario,
         yield substr($content, 10);
     })());
 });
-$updater = new class($release) extends Updater {
+if (($argv[3] ?? '') === 'bridge') {
+    class_alias(FOSSBilling\Core\Container\InjectionAwareInterface::class, 'FOSSBilling\\InjectionAwareInterface');
+    class_alias(FOSSBilling\Core\System\Version::class, 'FOSSBilling\\Version');
+    class_alias(FOSSBilling\Core\Exception\BaseException::class, 'FOSSBilling\\Exception');
+    class_alias(FOSSBilling\Core\Exception\InformationException::class, 'FOSSBilling\\InformationException');
+    require PATH_ROOT . '/library/FOSSBilling/Update.php';
+    class_alias(FOSSBilling\Update::class, 'UpdateFixtureBase');
+} else {
+    class_alias(Updater::class, 'UpdateFixtureBase');
+}
+$updater = new class($release) extends UpdateFixtureBase {
     public function __construct(private readonly array $release)
     {
         parent::__construct();
@@ -111,6 +139,9 @@ $updater = new class($release) extends Updater {
     }
 };
 $updater->setDi($di);
+if ($scenario === 'stale_lock') {
+    $filesystem->touch(PATH_ROOT . '/' . Updater::LOCK_FILENAME, time() - 700);
+}
 if ($scenario === 'locked') {
     $filesystem->touch(PATH_ROOT . '/' . Updater::LOCK_FILENAME);
 }
@@ -126,5 +157,5 @@ echo json_encode([
     'pending' => $finalization->created,
     'extracted' => $filesystem->exists(PATH_ROOT . '/updated.txt'),
     'locked' => $filesystem->exists(PATH_ROOT . '/' . Updater::LOCK_FILENAME),
-    'archives' => array_keys(iterator_to_array(Finder::create()->files()->in(PATH_DATA))),
+    'archives' => array_keys(iterator_to_array(Finder::create()->files()->in(PATH_DATA)->name('*.zip'))),
 ], JSON_THROW_ON_ERROR);
