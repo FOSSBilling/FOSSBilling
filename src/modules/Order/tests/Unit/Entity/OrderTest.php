@@ -37,8 +37,8 @@ test('maps the existing order tables without changing their columns', function (
 });
 
 test('preserves explicitly supplied order timestamps on persist', function (): void {
-    $createdAt = new DateTime('2026-01-01 12:00:00');
-    $updatedAt = new DateTime('2026-01-02 12:00:00');
+    $createdAt = new DateTimeImmutable('2026-01-01 12:00:00');
+    $updatedAt = new DateTimeImmutable('2026-01-02 12:00:00');
     $order = new Order();
     $order->setCreatedAt($createdAt);
     $order->setUpdatedAt($updatedAt);

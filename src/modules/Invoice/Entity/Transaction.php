@@ -31,6 +31,13 @@ class Transaction implements TimestampInterface
     final public const string STATUS_PROCESSED = 'processed';
     final public const string STATUS_ERROR = 'error';
 
+    final public const int GATEWAY_COMPLETION_DONE = 0;
+    final public const int GATEWAY_COMPLETION_PENDING = 1;
+    final public const int GATEWAY_COMPLETION_RUNNING = 2;
+
+    #[ORM\Column(name: 'gateway_completion_state', type: Types::SMALLINT, options: ['default' => 0])]
+    private int $gatewayCompletionState = self::GATEWAY_COMPLETION_DONE;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]
@@ -96,6 +103,18 @@ class Transaction implements TimestampInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getGatewayCompletionState(): int
+    {
+        return $this->gatewayCompletionState;
+    }
+
+    public function setGatewayCompletionState(int $state): self
+    {
+        $this->gatewayCompletionState = $state;
+
+        return $this;
     }
 
     public function getOriginalInvoiceId(): ?int

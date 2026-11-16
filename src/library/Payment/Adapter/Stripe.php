@@ -506,7 +506,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $tx->setTxnStatus($err['type']);
         $tx->setError($err['message']);
         $tx->setStatus(Transaction::STATUS_ERROR);
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
 
         $this->debugLog((string) json_encode($e->getJsonBody()));
@@ -630,9 +630,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
 
         if ($charge->status === 'succeeded') {
-            if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
-                return;
-            }
             $tx->setStatus(Transaction::STATUS_PROCESSING);
             if (!$this->applyOneTimePayment($tx, $invoice, $charge)) {
                 $this->di['em']->remove($tx);
@@ -656,7 +653,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         };
 
         $tx->setStatus($paymentStatus);
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
     }
 
@@ -698,7 +695,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
                 if ($subscription === null) {
                     $tx->setStatus(Transaction::STATUS_PROCESSED);
-                    $tx->setUpdatedAt(new DateTime());
+                    $tx->setUpdatedAt(new DateTimeImmutable());
                     $this->di['em']->flush();
 
                     return;
@@ -733,7 +730,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $tx->setStatus(Transaction::STATUS_ERROR);
         }
 
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
     }
 
@@ -915,7 +912,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return;
         }
 
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
     }
 
@@ -1078,7 +1075,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         // whichever event arrives second sees the first is already processing/done.
         $tx->setTxnId($stripeInvoice->id);
         $existing = $this->di['em']->getRepository(Transaction::class)
-            ->findProcessingOrProcessedByTxnId($stripeInvoice->id, null, (int) $tx->getId());
+            ->findProcessingOrProcessedByTxnId($stripeInvoice->id, (int) $tx->getGateway()?->getId(), (int) $tx->getId());
         if ($existing instanceof Transaction) {
             return false;
         }
@@ -1131,7 +1128,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
         $description = $isInitialPayment ? 'Stripe subscription initial payment ' : 'Stripe subscription recurring payment ';
         if ($invoiceService->gatewayReceiptExists((int) $tx->getGateway()?->getId(), (string) $stripeInvoice->id, $client, $amount, $description . $stripeInvoice->id, 'transaction')) {
-            return false;
+            $tx->setAmount((string) $amount);
+            $tx->setCurrency((string) $stripeInvoice->currency);
+
+            return $invoiceService->recordGatewayPayment($tx, $client, (string) $stripeInvoice->id, $description . $stripeInvoice->id, 'transaction', (string) $tx->getId());
         }
         if ($ambiguousPaidInvoice) {
             throw new FOSSBilling\Core\Exception\InformationException('Stripe subscription payment needs staff review because its billing reason is missing.');
@@ -1323,7 +1323,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         if ($setupIntent->status !== 'succeeded') {
             $tx->setStatus(Transaction::STATUS_ERROR);
-            $tx->setUpdatedAt(new DateTime());
+            $tx->setUpdatedAt(new DateTimeImmutable());
             $this->di['em']->flush();
 
             return false;
@@ -1331,7 +1331,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         // Dedup: skip if already processed or being processed via the redirect flow.
         $existing = $this->di['em']->getRepository(Transaction::class)
-            ->findProcessingOrProcessedByTxnId($setupIntent->id);
+            ->findProcessingOrProcessedByTxnId($setupIntent->id, $gateway_id, (int) $tx->getId());
         if ($existing instanceof Transaction) {
             $tx->setInvoice($existing->getInvoice());
 
@@ -1376,7 +1376,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $tx->setSPeriod($this->getSubscriptionPeriodForInvoice($invoice));
         $tx->setCurrency($invoice->getCurrency());
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
-        $tx->setUpdatedAt(new DateTime());
+        $tx->setUpdatedAt(new DateTimeImmutable());
         $this->di['em']->flush();
 
         // Create the FOSSBilling subscription record immediately.
@@ -1639,7 +1639,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             throw new FOSSBilling\Core\Exception\InformationException('Client not found');
         }
         if ($invoice instanceof Invoice && $invoice->getStatus() !== Invoice::STATUS_PAID) {
-            $invoiceService->validatePaymentAmount((float) $tx->getAmount(), $invoiceService->getBalanceDue($invoice));
             if (!$invoice->isIssued()) {
                 $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }

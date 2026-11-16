@@ -188,6 +188,27 @@ test('rounds invoice tax once on the subtotal', function (): void {
     expect($service->getTax($invoiceModel))->toEqual(0.10);
 });
 
+test('invoice and tax services agree on mixed taxable lines and rounding', function (array $lines, int $rate, float $expected): void {
+    $invoice = createEntity(Invoice::class, ['id' => 17, 'taxrate' => $rate]);
+    $items = array_map(fn (array $line): InvoiceItem => createEntity(InvoiceItem::class, $line), $lines);
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $repo->shouldReceive('findByInvoiceId')->with(17)->andReturn($items);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+    $tax = taxService(Mockery::mock(TaxRepository::class), $em);
+    $billing = new Box\Mod\Invoice\Service();
+    $billing->setDi($tax->getDi());
+
+    expect($billing->getTax($invoice))->toBe($expected)
+        ->and($tax->getTax($invoice))->toEqual($expected);
+})->with([
+    'mixed lines' => [[['quantity' => 3, 'price' => 0.33, 'taxed' => true], ['quantity' => 2, 'price' => 10, 'taxed' => false], ['quantity' => 1, 'price' => 0.06, 'taxed' => true]], 10, 0.11],
+    'no items' => [[], 10, 0.0],
+    'zero tax rate' => [[['quantity' => 1, 'price' => 10, 'taxed' => true]], 0, 0.0],
+    'rounds to zero' => [[['quantity' => 1, 'price' => 0.01, 'taxed' => true]], 10, 0.0],
+    'negative line' => [[['quantity' => 1, 'price' => -1, 'taxed' => true]], 10, -0.1],
+]);
+
 test('deletes a tax', function (): void {
     $taxEntity = createEntity(Tax::class, ['id' => 1, 'name' => 'VAT']);
 

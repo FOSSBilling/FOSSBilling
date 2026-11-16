@@ -4202,16 +4202,16 @@ test('upstream refund tax migration remains patch 140', function (bool $exists):
     (new FOSSBilling\Core\Update\Patch\Patch140())->apply($patcher);
 })->with([true, false]);
 
-test('cancellation table migration runs after main patch 140 and is idempotent', function (bool $exists): void {
+test('cancellation table migration runs after billing patch 145 and is idempotent', function (bool $exists): void {
     $patcher = Mockery::mock(Patcher::class);
     $patcher->shouldReceive('tableExists')->once()->with('client_order_cancel_request')->andReturn($exists);
     if ($exists) {
         $patcher->shouldNotReceive('executeSql');
     } else {
-        $patcher->shouldReceive('executeSql')->once()->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `client_order_cancel_request`') && str_contains($sql, '`id` BIGINT NOT NULL AUTO_INCREMENT')));
+        $patcher->shouldReceive('executeSql')->once()->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `client_order_cancel_request`') && str_contains($sql, '`id` BIGINT NOT NULL AUTO_INCREMENT') && str_contains($sql, 'DEFAULT CHARSET=utf8mb4')));
     }
-    (new FOSSBilling\Core\Update\Patch\Patch145())->apply($patcher);
-    expect((new Patcher())->latestPatchLevel())->toBe(145);
+    (new FOSSBilling\Core\Update\Patch\Patch146())->apply($patcher);
+    expect((new Patcher())->latestPatchLevel())->toBe(146);
 })->with([true, false]);
 
 test('gateway receipt migration adds both columns and the unique index', function (): void {
@@ -4449,3 +4449,16 @@ test('refund backfill writes guard the update with the values read', function ()
         ->and((float) $params['tax'])->toBe(20.0)
         ->and((int) $params['id'])->toBe(30);
 });
+
+test('patch 145 installs the durable gateway completion checkpoint once', function (bool $exists): void {
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableHasColumn')->once()->with('transaction', 'gateway_completion_state')->andReturn($exists);
+    $patcher->shouldReceive('tableHasIndex')->once()->with('client_balance', 'client_balance_gateway_transaction_id_idx')->andReturn($exists);
+    if ($exists) {
+        $patcher->shouldNotReceive('executeSql');
+    } else {
+        $patcher->shouldReceive('executeSql')->once()->with('CREATE INDEX `client_balance_gateway_transaction_id_idx` ON `client_balance` (`gateway_transaction_id`)');
+        $patcher->shouldReceive('executeSql')->once()->with('ALTER TABLE `transaction` ADD COLUMN `gateway_completion_state` SMALLINT NOT NULL DEFAULT 0');
+    }
+    (new FOSSBilling\Core\Update\Patch\Patch145())->apply($patcher);
+})->with([false, true]);

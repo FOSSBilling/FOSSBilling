@@ -61,7 +61,7 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $app->get('/client', 'get_index', [], static::class);
         $app->get('/client/', 'get_index', [], static::class);
         $app->get('/client/index', 'get_index', [], static::class);
-        $app->get('/client/login/:id', 'get_login', ['id' => '[0-9]+'], static::class);
+        $app->post('/client/login/:id', 'post_login', ['id' => '[0-9]+'], static::class);
         $app->get('/client/manage/:id', 'get_manage', ['id' => '[0-9]+'], static::class);
         $app->get('/client/group/:id', 'get_group', ['id' => '[0-9]+'], static::class);
         $app->get('/client/create', 'get_create', [], static::class);
@@ -98,11 +98,13 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $app->render('mod_client_login_history');
     }
 
-    public function get_login(\FOSSBilling\Core\Http\App $app, $id): Response
+    public function post_login(\FOSSBilling\Core\Http\App $app, $id): Response
     {
-        // Switching client identity via a plain GET link is CSRF-able,
-        // so require the session's CSRF token.
-        $token = $this->di['request']->query->get('CSRFToken');
+        $request = $this->di['request'];
+        if (!$request->isMethod('POST')) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Client impersonation requires POST', null, 405);
+        }
+        $token = $request->request->get('CSRFToken');
         $sessionToken = $this->di['session']->get('csrf_token');
         if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
             throw new \FOSSBilling\Core\Exception\InformationException('CSRF token invalid', null, 403);
@@ -119,6 +121,6 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $redirect_to = '/' . trim((string) $r, '/');
         }
 
-        return $app->redirectUrl($this->di['url']->link($redirect_to), 301);
+        return $app->redirectUrl($this->di['url']->link($redirect_to), 303);
     }
 }

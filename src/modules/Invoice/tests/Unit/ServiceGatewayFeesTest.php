@@ -101,6 +101,10 @@ test('skips the fee for exempt client groups', function (): void {
     // Client::getGroupIds() on a fresh entity is empty; exempt group 9 does not match.
     $service = gatewayFeesService($em, $currencyService);
     expect($service->fee(gatewayWithFee(['percent' => 5, 'exempt_groups' => [9]]), 100.0, 'USD', 7))->toEqual(5.0);
+    $group = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 9]);
+    $membership = (new Box\Mod\Client\Entity\ClientGroupMembership())->setClientGroup($group);
+    $client->getGroupMemberships()->add($membership);
+    expect($service->fee(gatewayWithFee(['percent' => 5, 'exempt_groups' => [9]]), 100.0, 'USD', 7))->toEqual(0.0);
 });
 
 function gatewayFeesInvoice(array $properties = []): Box\Mod\Invoice\Entity\Invoice
@@ -172,13 +176,11 @@ test('apply adds the fee line and remove takes it off', function (): void {
     $membershipRepo->shouldReceive('getGroupIdsForClient')->with(7)->andReturn([]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->andReturnUsing(static function (string $class) use ($itemRepo, $clientRepo, $membershipRepo): object {
-        return match ($class) {
-            Box\Mod\Invoice\Entity\InvoiceItem::class => $itemRepo,
-            Client::class => $clientRepo,
-            ClientGroupMembershipRepository::class => $membershipRepo,
-            default => Mockery::mock()->shouldIgnoreMissing(),
-        };
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Box\Mod\Invoice\Entity\InvoiceItem::class => $itemRepo,
+        Client::class => $clientRepo,
+        ClientGroupMembershipRepository::class => $membershipRepo,
+        default => Mockery::mock()->shouldIgnoreMissing(),
     });
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $em->shouldReceive('refresh')->andReturnNull();

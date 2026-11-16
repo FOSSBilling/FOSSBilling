@@ -150,6 +150,7 @@ return [
         'transaction.s_period',
     ],
     // State, adapter, relation and configuration keys. Formbuilder names are transliterated to ASCII.
+    // json_quarantine review references are machine-generated identifiers, never content.
     'machine_keys' => [
         'admin.status',
         'client.auth_type',
@@ -184,6 +185,10 @@ return [
         'invoice_item.status',
         'invoice_item.task',
         'invoice_item.type',
+        'json_quarantine.column_name',
+        'json_quarantine.display_id',
+        'json_quarantine.issue',
+        'json_quarantine.table_name',
         'mod_massmailer.status',
         'pay_gateway.gateway',
         'post.status',

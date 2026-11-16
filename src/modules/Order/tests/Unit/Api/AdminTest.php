@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+// cspell:words cancelrequest
+
 use Box\Mod\Order\Api\Admin;
 use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service;

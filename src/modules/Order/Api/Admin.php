@@ -408,11 +408,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Accepts a cancellation request: the service is cancelled now or at the
      * end of its period.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Request ID was not passed'])]
-    public function cancel_request_accept($data)
+    public function cancel_request_accept($data): bool
     {
         $this->checkPermissions('order', 'manage');
         $this->di['mod_service']('Order', 'CancelRequest')->accept((int) $data['id']);
@@ -422,11 +420,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Stops a cancellation request; the service is not cancelled.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Request ID was not passed'])]
-    public function cancel_request_stop($data)
+    public function cancel_request_stop($data): bool
     {
         $this->checkPermissions('order', 'manage');
         $this->di['mod_service']('Order', 'CancelRequest')->stop((int) $data['id']);

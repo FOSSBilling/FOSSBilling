@@ -164,7 +164,9 @@ test('offline settlement of a mixed deposit consumes prior gateway funds and cre
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)
         ->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(20)->setQuantity(1)->setCharged(false));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-mixed');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-mixed');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -215,7 +217,9 @@ test('staff settlement allocates aggregate tax consistently for mixed deposits',
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_DEPOSIT)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(100)->setQuantity(1)->setCharged(true)->setTaxed(false));
     $em->persist((new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_CUSTOM)->setTask(InvoiceItem::TASK_VOID)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(0.05)->setQuantity(2)->setCharged(false)->setTaxed(true));
     $transaction->setInvoice($invoice)->setAmount('40');
-    $offline = (new Transaction())->setGateway($gateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-tax');
+    $manualGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Custom');
+    $em->persist($manualGateway);
+    $offline = (new Transaction())->setGateway($manualGateway)->setInvoice($invoice)->setCurrency('USD')->setStatus(Transaction::STATUS_PROCESSING)->setTxnId('offline-tax');
     $em->persist($offline);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -267,7 +271,7 @@ test('mixed manual and split gateway deposit funding credits all payments exactl
     $service->recordGatewayPayment($last, $client, 'pi_manual_last', 'Stripe transaction pi_manual_last', 'transaction', (string) $last->getId());
     expect($invoice->getStatus())->toBe(Invoice::STATUS_PAID)
         ->and($service->getFreeCredit((int) $client->getId()))->toBe(100.0 - $serviceCharge);
-    expect($service->recordGatewayPayment($last, $client, 'pi_manual_last', 'Stripe transaction pi_manual_last', 'transaction', (string) $last->getId()))->toBeFalse();
+    expect($service->recordGatewayPayment($last, $client, 'pi_manual_last', 'Stripe transaction pi_manual_last', 'transaction', (string) $last->getId()))->toBeTrue();
     expect((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM client_balance WHERE description LIKE 'Manual payment funding%'"))->toBe(1)
         ->and($service->getFreeCredit((int) $client->getId()))->toBe(100.0 - $serviceCharge);
 })->with(['pure deposit' => [0.0], 'deposit and service' => [20.0]]);
@@ -296,6 +300,6 @@ test('mixed deposit settlement rolls back and recovers manual credit across inte
     expect($retry->recordGatewayPayment($last, $client, 'pi_crash_last', 'Stripe transaction pi_crash_last', 'transaction', (string) $lastId))->toBeTrue()
         ->and($retryEm->find(Invoice::class, $invoiceId)->getStatus())->toBe(Invoice::STATUS_PAID)
         ->and($retry->getFreeCredit((int) $clientId))->toBe(80.0);
-    expect($retry->recordGatewayPayment($last, $client, 'pi_crash_last', 'Stripe transaction pi_crash_last', 'transaction', (string) $lastId))->toBeFalse()
+    expect($retry->recordGatewayPayment($last, $client, 'pi_crash_last', 'Stripe transaction pi_crash_last', 'transaction', (string) $lastId))->toBeTrue()
         ->and($retry->getFreeCredit((int) $clientId))->toBe(80.0);
 })->with(['paid state', 'manual credit']);

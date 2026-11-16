@@ -53,8 +53,8 @@ class MassmailerMessage implements ArrayInterface, TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $status = self::STATUS_DRAFT;
 
-    #[ORM\Column(name: 'sent_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $sentAt = null;
+    #[ORM\Column(name: 'sent_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $sentAt = null;
 
     public function toApiArray(): array
     {
@@ -149,12 +149,12 @@ class MassmailerMessage implements ArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getSentAt(): ?\DateTime
+    public function getSentAt(): ?\DateTimeImmutable
     {
         return $this->sentAt;
     }
 
-    public function setSentAt(?\DateTime $sentAt): self
+    public function setSentAt(?\DateTimeImmutable $sentAt): self
     {
         $this->sentAt = $sentAt;
 

@@ -53,6 +53,7 @@ function gatewayLogoService(MockHttpClient $client, Filesystem $filesystem): Ser
     $di = container();
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
     $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
     $em->shouldReceive('flush')->byDefault();

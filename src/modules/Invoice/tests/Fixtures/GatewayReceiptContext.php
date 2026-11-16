@@ -17,12 +17,12 @@ use Symfony\Component\Filesystem\Path;
 
 use function Tests\Helpers\container;
 
-function receiptTestContext(): array
+function receiptTestContext(?Doctrine\DBAL\Connection $connection = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', '..')], true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
-    $em = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    $em = new EntityManager($connection ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
     (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Transaction::class]));
     $client = (new Client())->setCurrency('USD');
     $gateway = (new PayGateway())->setGateway('Stripe');
@@ -40,7 +40,8 @@ function receiptTestContext(): array
     return [$service, $em, $client, $gateway, $transaction];
 }
 
-function gatewayDepositTestService(EntityManager $em): Service
+/** @param class-string<Service> $serviceClass */
+function gatewayDepositTestService(EntityManager $em, string $serviceClass = Service::class): Service
 {
     $itemService = new Box\Mod\Invoice\ServiceInvoiceItem();
     $feeService = new Box\Mod\Invoice\ServiceGatewayFees();
@@ -52,7 +53,7 @@ function gatewayDepositTestService(EntityManager $em): Service
     $currencyRepo->shouldReceive('getRateByCode')->with('USD')->andReturn(1.0);
     $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepo);
-    $service = Mockery::mock(Service::class)->makePartial();
+    $service = Mockery::mock($serviceClass)->makePartial();
     $service->shouldReceive('countIncome')->zeroOrMoreTimes();
     $service->shouldReceive('recordJournalEvent')->zeroOrMoreTimes();
     $di = container();

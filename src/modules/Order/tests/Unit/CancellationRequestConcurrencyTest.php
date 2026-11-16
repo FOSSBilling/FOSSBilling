@@ -32,7 +32,7 @@ function cancellationRequestConcurrencyContext(string $type = ClientOrderCancelR
     $client = (new Client())->setCurrency('USD');
     $em->persist($client);
     $em->flush();
-    $order = (new Order())->setClientId($client->getId())->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTime('+1 month'));
+    $order = (new Order())->setClientId($client->getId())->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTimeImmutable('+1 month'));
     $em->persist($order);
     $em->flush();
     $request = (new ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setType($type)->setStatus(ClientOrderCancelRequest::STATUS_PENDING);
@@ -168,8 +168,27 @@ test('failed subscription scheduling retains its durable hold and releases the r
     expect(fn () => $requests->accept($request->getId()))->toThrow(RuntimeException::class, 'outcome uncertain');
     expect(fn () => $requests->accept($request->getId()))->toThrow(InformationException::class, 'staff review');
     expect($em->getConnection()->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe('pending')
-        ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [Service::META_SCHEDULED_CANCEL_CLAIM]))->toBe('1');
+        ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [Service::META_SCHEDULED_CANCEL_CLAIM]))->toBe('1')
+        ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [Service::META_SCHEDULED_CANCEL_PHASE]))->toBe('scheduling');
     $lock = 'fb:cancel-request:' . $request->getId();
     expect(NamedLock::acquire($em->getConnection(), $lock, 0))->toBeTrue();
     NamedLock::release($em->getConnection(), $lock);
+});
+
+test('accepted subscription requests commit scheduling checkpoints before provider work', function (): void {
+    [$requests, $em, $request, , , , $subscriptions] = cancellationRequestConcurrencyContext();
+    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(true);
+    $subscriptions->shouldReceive('canCancelAtPeriodEndForOrder')->once()->andReturn(true);
+    $subscriptions->shouldReceive('scheduleCancellationForOrder')->once()->andReturnUsing(function () use ($em): int {
+        expect($em->getConnection()->isTransactionActive())->toBeFalse()
+            ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [Service::META_SCHEDULED_CANCEL_CLAIM]))->toBe('1')
+            ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [Service::META_SCHEDULED_CANCEL_PHASE]))->toBe('scheduling')
+            ->and($em->getConnection()->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe('pending');
+
+        return 1;
+    });
+    $requests->accept($request->getId());
+    expect($em->getConnection()->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe('accepted')
+        ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [Service::META_SCHEDULED_CANCEL_CLAIM]))->toBe('0')
+        ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [Service::META_SCHEDULED_CANCEL_PHASE]))->toBe('scheduled');
 });

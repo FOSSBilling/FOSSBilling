@@ -41,7 +41,7 @@ function cancelRequestService(?object $em = null): ServiceCancelRequest
 
 function cancelRequestOrder(array $properties = []): Order
 {
-    return createEntity(Order::class, array_merge(['id' => 11, 'client_id' => 7, 'status' => Order::STATUS_ACTIVE, 'expires_at' => new DateTime('+30 days')], $properties));
+    return createEntity(Order::class, array_merge(['id' => 11, 'client_id' => 7, 'status' => Order::STATUS_ACTIVE, 'expires_at' => new DateTimeImmutable('+30 days')], $properties));
 }
 
 test('create stores a pending request', function (): void {

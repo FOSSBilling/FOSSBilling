@@ -48,6 +48,7 @@ use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
+use Doctrine\DBAL\LockMode;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Doctrine\RowLock;
@@ -101,6 +102,13 @@ class Service implements InjectionAwareInterface
 
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     public const META_SCHEDULED_CANCEL_CLAIM = 'scheduled_cancel_claim';
+    public const META_SCHEDULED_CANCEL_PHASE = 'scheduled_cancel_phase';
+    public const META_SCHEDULED_CANCEL_OPTIONS = 'scheduled_cancel_options';
+
+    public const META_DELETION_STATE = DeletionRecovery::META_NAME;
+
+    /** @var array<string, true> Locks shared by service instances using the same connection. */
+    private static array $lifecycleLocks = [];
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
     public const META_MERGE_RENEWALS = 'merge_renewals';
@@ -465,6 +473,11 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
                 WHERE co.status = :status
                 AND co.invoice_option = :invoice_option
+                AND NOT EXISTS (
+                    SELECT 1 FROM client_order_meta deletion_meta
+                    WHERE deletion_meta.client_order_id = co.id
+                    AND deletion_meta.name = :deletion_meta_name
+                )
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
                 AND i.id IS NULL
@@ -517,6 +530,7 @@ class Service implements InjectionAwareInterface
         $bindings['status'] = Order::STATUS_ACTIVE;
         $bindings['invoice_option'] = 'issue-invoice';
         $bindings['unpaid_invoice_status'] = Invoice::STATUS_UNPAID;
+        $bindings['deletion_meta_name'] = self::META_DELETION_STATE;
         $bindings['cancellation_meta_name'] = self::META_CANCEL_AT_PERIOD_END;
         $bindings['cancellation_meta_value'] = '1';
         $bindings['pending_item_type'] = \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER;
@@ -1053,15 +1067,15 @@ class Service implements InjectionAwareInterface
 
             $order->setNotes($data['notes'] ?? null);
             if (isset($data['created_at'])) {
-                $order->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', strtotime((string) $data['created_at']))));
+                $order->setCreatedAt(new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $data['created_at']))));
             } else {
-                $order->setCreatedAt(new \DateTime());
+                $order->setCreatedAt(new \DateTimeImmutable());
             }
 
             if (isset($data['updated_at'])) {
-                $order->setUpdatedAt(new \DateTime(date('Y-m-d H:i:s', strtotime((string) $data['updated_at']))));
+                $order->setUpdatedAt(new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $data['updated_at']))));
             } else {
-                $order->setUpdatedAt(new \DateTime());
+                $order->setUpdatedAt(new \DateTimeImmutable());
             }
 
             $this->di['em']->persist($order);
@@ -1075,10 +1089,10 @@ class Service implements InjectionAwareInterface
                         $mm = new OrderMeta();
                         $mm->setOrder($order);
                         $mm->setName($k);
-                        $mm->setCreatedAt(new \DateTime());
+                        $mm->setCreatedAt(new \DateTimeImmutable());
                     }
                     $mm->setValue($v);
-                    $mm->setUpdatedAt(new \DateTime());
+                    $mm->setUpdatedAt(new \DateTimeImmutable());
                     $this->di['em']->persist($mm);
                 }
                 $this->di['em']->flush();
@@ -1239,13 +1253,23 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Finish or review the scheduled cancellation before reactivating this order.');
                 }
 
-                return $this->activateOrderLocked($order, $data);
+                return $this->activateOrderWithLifecycleLock($order, $data);
             } finally {
                 NamedLock::release($connection, $name);
             }
         }
 
-        return $this->activateOrderLocked($order, $data);
+        return $this->activateOrderWithLifecycleLock($order, $data);
+    }
+
+    private function activateOrderWithLifecycleLock(Order $order, $data): bool
+    {
+        return $this->withLifecycleLock($order, function () use ($order, $data): bool {
+            $this->refreshLockedOrder($order);
+            $this->assertOrderNotDeleting($order);
+
+            return $this->activateOrderLocked($order, $data);
+        });
     }
 
     private function activateOrderLocked(Order $order, $data): bool
@@ -1283,6 +1307,27 @@ class Service implements InjectionAwareInterface
 
     public function createFromOrder(Order $order)
     {
+        return $this->withLifecycleLock($order, function () use ($order) {
+            $this->refreshLockedOrder($order);
+
+            return $this->createServiceFromOrder($order);
+        });
+    }
+
+    private function refreshLockedOrder(Order $order): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $id = $this->orderId($order);
+        $suffix = $connection->isTransactionActive() ? RowLock::suffix($connection) : '';
+        if ($connection->fetchOne('SELECT id FROM client_order WHERE id = :id' . $suffix, ['id' => $id]) === false) {
+            throw new InformationException('Order :id not found', [':id' => $id]);
+        }
+        $this->di['em']->refresh($order, $connection->isTransactionActive() ? LockMode::PESSIMISTIC_WRITE : null);
+    }
+
+    private function createServiceFromOrder(Order $order)
+    {
+        $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
         $serviceType = $order->getServiceType();
 
@@ -1298,7 +1343,7 @@ class Service implements InjectionAwareInterface
 
                 $serviceId = method_exists($service, 'getId') ? $service->getId() : $service->id;
                 $order->setServiceId((int) $serviceId);
-                $order->setUpdatedAt(new \DateTime());
+                $order->setUpdatedAt(new \DateTimeImmutable());
                 $this->persistOrder($order);
             }
         }
@@ -1320,14 +1365,14 @@ class Service implements InjectionAwareInterface
 
                 $periodObj = $this->di['period']($period);
                 $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
-                $order->setExpiresAt(new \DateTime($newExpires));
+                $order->setExpiresAt(new \DateTimeImmutable($newExpires));
             }
 
             $order->setStatus(Order::STATUS_ACTIVE);
-            $order->setActivatedAt(new \DateTime());
+            $order->setActivatedAt(new \DateTimeImmutable());
             $order->setSuspendedAt(null);
             $order->setCanceledAt(null);
-            $order->setUpdatedAt(new \DateTime());
+            $order->setUpdatedAt(new \DateTimeImmutable());
 
             $this->persistOrder($order);
         } catch (\Throwable $e) {
@@ -1372,6 +1417,17 @@ class Service implements InjectionAwareInterface
      * service row no longer exists, and null when the order has no service yet.
      */
     protected function _callOnService(Order $order, $action, mixed ...$arguments)
+    {
+        return $this->withLifecycleLock($order, function () use ($order, $action, $arguments) {
+            if ($action !== Order::ACTION_DELETE) {
+                $this->assertOrderNotDeleting($order, true);
+            }
+
+            return $this->dispatchToService($order, $action, ...$arguments);
+        });
+    }
+
+    private function dispatchToService(Order $order, $action, mixed ...$arguments)
     {
         $serviceType = $order->getServiceType();
         $serviceId = $order->getServiceId();
@@ -1448,7 +1504,7 @@ class Service implements InjectionAwareInterface
         $this->updateOrderMeta($order, [self::META_MERGE_RENEWALS => \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($value) ? '1' : '0']);
     }
 
-    public function updateOrderMeta(Order $order, $meta): int
+    public function updateOrderMeta(Order $order, $meta, bool $protectLifecycleCheckpoints = false): int
     {
         if (!is_array($meta)) {
             return 0;
@@ -1457,26 +1513,48 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
 
         if (empty($meta)) {
-            $this->getOrderMetaRepository()->deleteByOrderId($orderId);
+            if ($protectLifecycleCheckpoints && $this->getOrderMetaRepository()->getLifecycleCheckpointRows($orderId) !== []) {
+                throw new InformationException('Lifecycle recovery checkpoints must be resolved through staff review.');
+            }
+            $this->getOrderMetaRepository()->deleteEditableByOrderId($orderId);
 
             return 1;
         }
-        foreach ($meta as $k => $v) {
-            $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
-            if ($mm instanceof OrderMeta && $k === self::META_SCHEDULED_CANCEL_CLAIM) {
-                $this->di['em']->refresh($mm);
-            }
-            if (!$mm instanceof OrderMeta) {
-                $mm = new OrderMeta();
-                $mm->setOrder($order);
-                $mm->setName($k);
-                $mm->setCreatedAt(new \DateTime());
-            }
-            $mm->setValue($v);
-            $mm->setUpdatedAt(new \DateTime());
-            $this->di['em']->persist($mm);
+        if (array_key_exists(self::META_DELETION_STATE, $meta)) {
+            throw new InformationException('Deletion recovery state cannot be edited. Retry order deletion instead.');
         }
-        $this->di['em']->flush();
+        $this->di['em']->wrapInTransaction(function () use ($order, $orderId, $meta, $protectLifecycleCheckpoints): void {
+            $checkpoints = $protectLifecycleCheckpoints ? $this->getOrderMetaRepository()->getLifecycleCheckpointRows($orderId) : null;
+            $edited = [];
+            foreach ($meta as $k => $v) {
+                $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
+                if ($mm instanceof OrderMeta) {
+                    $this->di['em']->refresh($mm);
+                }
+                if (!$mm instanceof OrderMeta) {
+                    $mm = new OrderMeta();
+                    $mm->setOrder($order);
+                    $mm->setName($k);
+                    $mm->setCreatedAt(new \DateTimeImmutable());
+                }
+                $mm->setValue($v);
+                $mm->setUpdatedAt(new \DateTimeImmutable());
+                $this->di['em']->persist($mm);
+                $edited[] = $mm;
+            }
+            $this->di['em']->flush();
+            // Check persisted names using the column's actual collation. This
+            // also catches aliases inserted before a checkpoint exists. Roll
+            // back the entire batch before any such write can become visible.
+            foreach ($edited as $mm) {
+                if ($this->getOrderMetaRepository()->isDeletionCheckpoint($mm)) {
+                    throw new InformationException('Deletion recovery state cannot be edited. Retry order deletion instead.');
+                }
+            }
+            if ($checkpoints !== null && $checkpoints !== $this->getOrderMetaRepository()->getLifecycleCheckpointRows($orderId)) {
+                throw new InformationException('Lifecycle recovery checkpoints must be resolved through staff review.');
+            }
+        });
 
         return 2;
     }
@@ -1493,7 +1571,7 @@ class Service implements InjectionAwareInterface
     private function isRenewalCheckpointKey(string $key): bool
     {
         foreach ([self::META_PAID_RENEWAL_OUTCOME_PREFIX, self::META_FREE_RENEWAL_CLAIM_PREFIX, self::META_FREE_RENEWAL_RETRY_PREFIX] as $prefix) {
-            if (str_starts_with($key, $prefix)) {
+            if (stripos($key, $prefix) === 0) {
                 return true;
             }
         }
@@ -1519,7 +1597,8 @@ class Service implements InjectionAwareInterface
                 }
             }
             if (is_array($metaInput) && (array_key_exists(self::META_SCHEDULED_CANCEL_CLAIM, $metaInput)
-                || array_key_exists(self::META_CANCEL_AT_PERIOD_END, $metaInput))) {
+                || array_key_exists(self::META_CANCEL_AT_PERIOD_END, $metaInput) || array_key_exists(self::META_SCHEDULED_CANCEL_PHASE, $metaInput)
+                || array_key_exists(self::META_SCHEDULED_CANCEL_OPTIONS, $metaInput))) {
                 throw new InformationException('Scheduled cancellation metadata cannot be changed through order updates.');
             }
             if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)
@@ -1553,19 +1632,19 @@ class Service implements InjectionAwareInterface
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
             $createdAtDate = date('Y-m-d H:i:s', strtotime((string) $created_at));
-            $order->setCreatedAt(new \DateTime($createdAtDate));
+            $order->setCreatedAt(new \DateTimeImmutable($createdAtDate));
         }
 
         $activated_at = $data['activated_at'] ?? null;
         if (!empty($activated_at)) {
             $activatedAtDate = date('Y-m-d H:i:s', strtotime((string) $activated_at));
-            $order->setActivatedAt(new \DateTime($activatedAtDate));
+            $order->setActivatedAt(new \DateTimeImmutable($activatedAtDate));
         }
 
         $expires_at = $data['expires_at'] ?? null;
         if (!empty($expires_at)) {
             $expiresAtDate = date('Y-m-d H:i:s', strtotime((string) $expires_at));
-            $order->setExpiresAt(new \DateTime($expiresAtDate));
+            $order->setExpiresAt(new \DateTimeImmutable($expiresAtDate));
         }
         if (empty($expires_at) && !is_null($expires_at)) {
             $order->setExpiresAt(null);
@@ -1606,9 +1685,9 @@ class Service implements InjectionAwareInterface
             $this->setMergeRenewalsOverride($order, $data['merge_renewals']);
         }
 
-        $this->updateOrderMeta($order, $data['meta'] ?? null);
+        $this->updateOrderMeta($order, $data['meta'] ?? null, true);
 
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminOrderUpdateEvent($orderId));
@@ -1628,18 +1707,36 @@ class Service implements InjectionAwareInterface
         return $this->renewOrderWithCheckpoint($order, self::META_PAID_RENEWAL_OUTCOME_PREFIX . $itemId);
     }
 
-    public function renewFreeDomainInvoiceItem(Order $order, int $itemId): bool
+    public function renewFreeDomainInvoiceItem(Order $order, int $itemId, ?callable $prepare = null): bool
     {
-        return $this->renewOrderWithCheckpoint($order, self::META_FREE_RENEWAL_CLAIM_PREFIX . $itemId);
+        $checkpoint = self::META_FREE_RENEWAL_CLAIM_PREFIX . $itemId;
+        if ($prepare === null) {
+            return $this->renewOrderWithCheckpoint($order, $checkpoint);
+        }
+
+        return $this->withCancellationScheduleLock($order, function () use ($order, $checkpoint, $prepare): bool {
+            $this->di['em']->refresh($order);
+            $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+            if (($meta[$checkpoint] ?? null) !== self::RENEWAL_OUTCOME_COMPLETED) {
+                $this->assertOrderCanRenew($order, $meta, $checkpoint);
+            }
+            if (!$prepare()) {
+                return false;
+            }
+
+            return $this->renewOrderWithCheckpoint($order, $checkpoint, true);
+        }, 0);
     }
 
-    private function renewOrderWithCheckpoint(Order $order, ?string $checkpoint): bool
+    private function renewOrderWithCheckpoint(Order $order, ?string $checkpoint, bool $alreadyLocked = false): bool
     {
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderRenewEvent($orderId));
 
         if ($checkpoint === null) {
             $this->renewFromOrder($order);
+        } elseif ($alreadyLocked) {
+            $this->renewFromOrderWithRowLock($order, $checkpoint);
         } else {
             $this->renewFromOrderWithCheckpoint($order, $checkpoint);
         }
@@ -1688,6 +1785,7 @@ class Service implements InjectionAwareInterface
      */
     private function assertOrderCanRenew(Order $order, array $meta, ?string $checkpoint): void
     {
+        $this->assertOrderNotDeleting($order);
         $connection = $this->di['em']->getConnection();
         foreach ($meta as $name => $outcome) {
             if (str_starts_with((string) $name, self::META_PAID_RENEWAL_OUTCOME_PREFIX)
@@ -1747,7 +1845,7 @@ class Service implements InjectionAwareInterface
             // Both provider actions must stay under the cancellation lock and
             // follow the refreshed hold check, including for suspended orders.
             if ($order->getStatus() === Order::STATUS_SUSPENDED) {
-                $this->unsuspendFromOrder($order);
+                $this->unsuspendFromOrderLocked($order);
             }
             $this->renewFromOrderLocked($order, $serviceFailed);
             if ($checkpoint !== null) {
@@ -1771,6 +1869,8 @@ class Service implements InjectionAwareInterface
 
     private function renewFromOrderLocked(Order $order, ?bool &$serviceFailed = null): void
     {
+        $this->assertOrderNotDeleting($order);
+
         try {
             $this->_callOnService($order, Order::ACTION_RENEW);
         } catch (\Exception $e) {
@@ -1803,14 +1903,14 @@ class Service implements InjectionAwareInterface
             }
             $periodObj = $this->di['period']($period);
             $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
-            $order->setExpiresAt(new \DateTime($newExpires));
+            $order->setExpiresAt(new \DateTimeImmutable($newExpires));
         }
 
         $order->setStatus(Order::STATUS_ACTIVE);
         $order->setSuspendedAt(null);
         $order->setUnsuspendedAt(null);
         $order->setCanceledAt(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Order renewed');
@@ -1834,8 +1934,8 @@ class Service implements InjectionAwareInterface
 
         $order->setStatus(Order::STATUS_SUSPENDED);
         $order->setReason($reason);
-        $order->setSuspendedAt(new \DateTime());
-        $order->setUpdatedAt(new \DateTime());
+        $order->setSuspendedAt(new \DateTimeImmutable());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $note = ($reason === null) ? 'Order suspended' : 'Order suspended for ' . $reason;
@@ -1852,6 +1952,24 @@ class Service implements InjectionAwareInterface
 
     public function unsuspendFromOrder(Order $order): bool
     {
+        if ($order->getId() === null) {
+            return $this->unsuspendFromOrderLocked($order);
+        }
+
+        return $this->withCancellationScheduleLock($order, function () use ($order): bool {
+            $this->di['em']->refresh($order);
+
+            return $this->unsuspendFromOrderLocked($order);
+        });
+    }
+
+    private function unsuspendFromOrderLocked(Order $order): bool
+    {
+        $this->assertOrderNotDeleting($order);
+        $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+        if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
+            throw new InformationException('Scheduled cancellation needs staff review before this order can be unsuspended.');
+        }
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUnsuspendEvent($orderId));
 
@@ -1860,8 +1978,8 @@ class Service implements InjectionAwareInterface
         $order->setStatus(Order::STATUS_ACTIVE);
         $order->setReason(null);
         $order->setSuspendedAt(null);
-        $order->setUnsuspendedAt(new \DateTime());
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUnsuspendedAt(new \DateTimeImmutable());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Order unsuspended');
@@ -1890,6 +2008,24 @@ class Service implements InjectionAwareInterface
             $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
             if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
                 throw new InformationException('The service cancellation requires staff review.');
+            }
+
+            if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+                if ($connection->isTransactionActive()) {
+                    throw new InformationException('Scheduled cancellation requires a committed claim before external actions.');
+                }
+                $this->assertOrderCanBeCanceled($order);
+                // Match cron's external-action ordering: the subscription is
+                // canceled before service termination. Claim 2 then means only
+                // local cleanup remains, with no intermediate protocol needed.
+                $this->updateOrderMeta($order, [
+                    self::META_SCHEDULED_CANCEL_CLAIM => '1',
+                    self::META_SCHEDULED_CANCEL_PHASE => 'scheduled',
+                    self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'immediate', 'reason' => $reason, 'skip_event' => (bool) $skipEvent], JSON_THROW_ON_ERROR),
+                ]);
+                $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+
+                return $this->finalizeCancellationAfterClaim($order, $reason, $skipEvent);
             }
 
             return $this->cancelFromOrderLocked($order, $reason, $skipEvent);
@@ -1963,15 +2099,15 @@ class Service implements InjectionAwareInterface
 
             // Commit a review hold before provider I/O. A crash or ambiguous
             // response must not leave a provider cancellation with no local marker.
-            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1']);
+            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1', self::META_SCHEDULED_CANCEL_PHASE => 'scheduling']);
             if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
                 throw new InformationException('No active gateway subscription is linked to this order.');
             }
-            $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
+            $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0', self::META_SCHEDULED_CANCEL_PHASE => 'scheduled']);
         }
 
         $order->setReason($reason);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
         $this->saveStatusChange($order, 'Cancellation scheduled at the end of the current billing period');
         $this->di['logger']->info('Scheduled cancellation for order #{order_id} at the end of the current billing period', ['order_id' => $orderId]);
@@ -1992,7 +2128,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            return $operation();
+            return $this->withLifecycleLock($order, fn (): mixed => $operation());
         } finally {
             NamedLock::release($connection, $name);
         }
@@ -2030,7 +2166,7 @@ class Service implements InjectionAwareInterface
                     $this->di['em']->refresh($order);
                     $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
                     if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
-                        || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)
+                        || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)
                         || $order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
                         $connection->commit();
 
@@ -2051,17 +2187,17 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    protected function finalizeCancellationAfterClaim(Order $order, $reason = null): bool
+    protected function finalizeCancellationAfterClaim(Order $order, $reason = null, bool $skipEvent = false): bool
     {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
-        $this->beginCancellation($order, false);
+        $this->beginCancellation($order, $skipEvent);
 
         $meta = $this->getOrderMetaRepository()->getPairsForOrder($orderId);
         if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
             $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '2']);
 
-            return $this->finishScheduledCancellation($order, $reason);
+            return $this->finishScheduledCancellation($order, $reason, $skipEvent);
         }
 
         $this->completeCancellation($order, $reason, false);
@@ -2079,8 +2215,14 @@ class Service implements InjectionAwareInterface
     }
 
     /** Finish local cancellation and its queued lifecycle notification atomically. */
-    protected function finishScheduledCancellation(Order $order, ?string $reason): bool
+    protected function finishScheduledCancellation(Order $order, ?string $reason, bool $skipEvent = false): bool
     {
+        $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+        if (isset($meta[self::META_SCHEDULED_CANCEL_OPTIONS])) {
+            $options = json_decode($meta[self::META_SCHEDULED_CANCEL_OPTIONS], true, 512, JSON_THROW_ON_ERROR);
+            $reason = $options['reason'];
+            $skipEvent = $options['skip_event'];
+        }
         $connection = $this->di['em']->getConnection();
         $connection->beginTransaction();
 
@@ -2090,12 +2232,19 @@ class Service implements InjectionAwareInterface
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
             $productService->releaseReservedStockForOrder($order, 'order_canceled');
             $this->saveStatusChange($order, $reason === null ? 'Order canceled' : 'Canceled order for ' . $reason);
-            $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($this->orderId($order), true));
+            if (!$skipEvent) {
+                $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($this->orderId($order), true));
+            }
             $connection->commit();
         } catch (\Throwable $e) {
             $connection->rollBack();
             if ($this->di['em']->isOpen()) {
                 $this->di['em']->refresh($order);
+                foreach ($this->di['em']->getUnitOfWork()->getIdentityMap()[\Box\Mod\Product\Entity\PromoRedemption::class] ?? [] as $redemption) {
+                    if ($redemption->getClientOrderId() === $order->getId()) {
+                        $this->di['em']->refresh($redemption);
+                    }
+                }
             }
 
             throw $e;
@@ -2130,16 +2279,16 @@ class Service implements InjectionAwareInterface
 
         $order->setStatus(Order::STATUS_CANCELED);
         $order->setReason($reason);
-        $order->setCanceledAt(new \DateTime());
+        $order->setCanceledAt(new \DateTimeImmutable());
         $order->setExpiresAt(null);
         $order->setSuspendedAt(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
-        // Remove both checkpoints in one statement. If this process stops
+        // Remove the schedule checkpoints in one statement. If this process stops
         // before it, claim 2 remains discoverable for cleanup recovery.
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name)',
-            ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM],
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name, :options_name)',
+            ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => self::META_SCHEDULED_CANCEL_PHASE, 'options_name' => self::META_SCHEDULED_CANCEL_OPTIONS],
         );
     }
 
@@ -2170,6 +2319,7 @@ class Service implements InjectionAwareInterface
 
     private function uncancelFromOrderLocked(Order $order): bool
     {
+        $this->assertOrderNotDeleting($order);
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUncancelEvent($orderId));
 
@@ -2185,11 +2335,11 @@ class Service implements InjectionAwareInterface
 
         $order->setStatus(Order::STATUS_ACTIVE);
         $order->setReason(null);
-        $order->setActivatedAt(new \DateTime());
-        $order->setExpiresAt($expiresAt ? new \DateTime($expiresAt) : null);
+        $order->setActivatedAt(new \DateTimeImmutable());
+        $order->setExpiresAt($expiresAt ? new \DateTimeImmutable($expiresAt) : null);
         $order->setSuspendedAt(null);
         $order->setCanceledAt(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Activated canceled order');
@@ -2239,37 +2389,89 @@ class Service implements InjectionAwareInterface
 
     public function deleteFromOrder(Order $order, bool $forceDelete = false): bool
     {
+        if ($this->di['em']->getConnection()->isTransactionActive()) {
+            throw new InformationException('Order deletion cannot run inside a database transaction.');
+        }
+
+        return $this->withLifecycleLock($order, fn (): bool => $this->deleteHeldOrder($order, $forceDelete));
+    }
+
+    private function deleteHeldOrder(Order $order, bool $forceDelete): bool
+    {
+        $this->di['em']->refresh($order);
         $orderId = $this->orderId($order);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
 
-        // Deleting an order must not leak its gateway subscription.
-        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+        $state = DeletionRecovery::getState($this->di['em']->getConnection(), $orderId);
+        if ($state !== null && $state !== DeletionRecovery::SERVICE_DELETED && !$forceDelete) {
+            throw new InformationException('A previous deletion was interrupted. Staff must review the service before retrying with force_delete.');
+        }
+        if ($state !== DeletionRecovery::SERVICE_DELETED) {
+            DeletionRecovery::setState($this->di['em']->getConnection(), $orderId, DeletionRecovery::STARTED);
+            $this->di['em']->refresh($order);
 
-        $orderStatus = $order->getStatus();
-        if ($orderStatus == Order::STATUS_PENDING_SETUP) {
+            try {
+                $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
+            } catch (\Exception $e) {
+                if (!$forceDelete) {
+                    // A timeout can mean the remote deletion succeeded. Keep the
+                    // hold until staff review; do not cancel billing on refusal.
+                    throw $e;
+                }
+                $this->di['logger']->info('Backend deletion failed during forced removal: {message}', ['message' => $e->getMessage()]);
+            }
+            DeletionRecovery::setState($this->di['em']->getConnection(), $orderId, DeletionRecovery::SERVICE_DELETED);
+        }
+
+        // Keep subscription links until cancellation succeeds. A failure must
+        // leave both the hold and the confirmed backend outcome available.
+        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order, $forceDelete);
+        if ($order->getStatus() === Order::STATUS_PENDING_SETUP) {
             $this->rmInvoiceItemByOrder($order);
         }
 
-        try {
-            $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
-        } catch (\Exception $e) {
-            if (!$forceDelete) {
-                throw $e;
-            }
-            $this->di['logger']->info("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
-        }
-
-        $productService = $this->di['mod_service']('Product');
-        $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
-        $productService->releaseReservedStockForOrder($order, 'order_deleted');
-        $this->rmClientOrderStatusByOrder($order);
-        $this->getOrderMetaRepository()->deleteByOrderId($orderId);
-        $this->rmOrder($order);
+        // Keep the recovery hold until the order is removed in the same commit.
+        $this->di['em']->wrapInTransaction(function () use ($order, $orderId): void {
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
+            $productService->releaseReservedStockForOrder($order, 'order_deleted');
+            $this->rmClientOrderStatusByOrder($order);
+            $this->getOrderMetaRepository()->deleteByOrderId($orderId);
+            $this->rmOrder($order);
+        });
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminOrderDeleteEvent($orderId));
         $this->di['logger']->info('Deleted order #{order_id}', ['order_id' => $orderId]);
 
         return true;
+    }
+
+    public function assertOrderNotDeleting(Order|int $order, bool $lockRow = false): void
+    {
+        $orderId = $order instanceof Order ? $this->orderId($order) : $order;
+        DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId, $lockRow);
+    }
+
+    public function withLifecycleLock(Order $order, \Closure $operation): mixed
+    {
+        $id = $this->orderId($order);
+        $connection = $this->di['em']->getConnection();
+        $key = spl_object_id($connection) . ':' . $id;
+        if (isset(self::$lifecycleLocks[$key])) {
+            return $operation();
+        }
+        $name = 'order_lifecycle_' . $id;
+        if (!NamedLock::acquire($connection, $name, 10)) {
+            throw new InformationException('Another worker is changing this order. Please retry.');
+        }
+        self::$lifecycleLocks[$key] = true;
+
+        try {
+            return $operation();
+        } finally {
+            unset(self::$lifecycleLocks[$key]);
+            NamedLock::release($connection, $name);
+        }
     }
 
     public function getExpiredOrders()
@@ -2380,13 +2582,14 @@ class Service implements InjectionAwareInterface
                 return false;
             }
             if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '2'
-                && in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_CANCELED], true)) {
+                && in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW, Order::STATUS_CANCELED], true)) {
                 return $this->finishScheduledCancellation($order, 'Cancellation requested at end of period');
             }
-            if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+            if (!in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
                 return false;
             }
-            if ($order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
+            $expiresAt = $order->getExpiresAt();
+            if ($expiresAt === null || $expiresAt->getTimestamp() > time()) {
                 return false;
             }
             if (($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) === '1') {
@@ -2404,7 +2607,7 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->refresh($order);
                 $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
                 if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
-                    || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)
+                    || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)
                     || $order->getExpiresAt() === null || $order->getExpiresAt()->getTimestamp() > time()) {
                     $connection->commit();
 
@@ -2435,8 +2638,8 @@ class Service implements InjectionAwareInterface
             throw new InformationException('The cancellation claim needs staff review before this order can be changed.');
         }
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :claim_name AND value = :claim_value',
-            ['order_id' => $order->getId(), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'claim_value' => '2'],
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND ((name = :claim_name AND value = :claim_value) OR name = :options_name)',
+            ['order_id' => $order->getId(), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'claim_value' => '2', 'options_name' => self::META_SCHEDULED_CANCEL_OPTIONS],
         );
 
         return true;
@@ -2448,21 +2651,40 @@ class Service implements InjectionAwareInterface
         if (!in_array($decision, ['retry', 'completed'], true)) {
             throw new InformationException('Choose retry or completed after checking the gateway and service provider.');
         }
-        $connection = $this->di['em']->getConnection();
-        $name = 'fb:scheduled-cancel:' . $this->orderId($order);
-        if (!NamedLock::acquire($connection, $name, 30)) {
-            throw new InformationException('Scheduled cancellation is already being processed.');
-        }
 
-        try {
+        return $this->withCancellationScheduleLock($order, function () use ($order, $decision): bool {
             $this->di['em']->refresh($order);
             $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
             if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) !== '1'
                 || ($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null) !== '1'
-                || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+                || !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
                 throw new InformationException('This order has no scheduled cancellation awaiting review.');
             }
             if ($decision === 'retry') {
+                if (isset($meta[self::META_SCHEDULED_CANCEL_OPTIONS])) {
+                    $options = json_decode($meta[self::META_SCHEDULED_CANCEL_OPTIONS], true, 512, JSON_THROW_ON_ERROR);
+                    // Before execution mode was explicit, only immediate
+                    // cancellation wrote options. Preserve those held requests.
+                    if (($options['mode'] ?? 'immediate') === 'immediate') {
+                        // Claim 1 remains committed throughout this explicitly
+                        // approved attempt; another failure requires review again.
+                        $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+
+                        return $this->finalizeCancellationAfterClaim($order, $options['reason'], $options['skip_event']);
+                    }
+                }
+                $phase = $meta[self::META_SCHEDULED_CANCEL_PHASE] ?? null;
+                if ($phase === 'scheduling' || $phase === null) {
+                    $subscriptions = $this->di['mod_service']('Invoice', 'Subscription');
+                    // Older claims have no phase. An active subscription must
+                    // be scheduled again after staff approves the retry.
+                    if ($phase === 'scheduling' || $subscriptions->hasActiveSubscriptionForOrder($order)) {
+                        if ($subscriptions->scheduleCancellationForOrder($order) === 0 && $subscriptions->hasActiveSubscriptionForOrder($order)) {
+                            throw new InformationException('The gateway cancellation has not been scheduled.');
+                        }
+                    }
+                    $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_PHASE => 'scheduled']);
+                }
                 $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '0']);
 
                 return true;
@@ -2473,9 +2695,7 @@ class Service implements InjectionAwareInterface
             $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '2']);
 
             return $this->finishScheduledCancellation($order, 'Scheduled cancellation confirmed by staff');
-        } finally {
-            NamedLock::release($connection, $name);
-        }
+        });
     }
 
     public function batchSuspendExpired(): bool
@@ -2491,8 +2711,8 @@ class Service implements InjectionAwareInterface
         // Scheduled cancellations take effect at expiry, independently of
         // suspension grace periods and gateway webhook delivery.
         $ids = $this->di['em']->getConnection()->fetchFirstColumn(
-            "SELECT DISTINCT o.id FROM client_order o LEFT JOIN client_order_meta m ON m.client_order_id = o.id AND m.name = :name AND m.value = :value WHERE (m.id IS NOT NULL AND ((o.status IN (:active, :suspended) AND o.expires_at <= :now) OR (o.status IN (:active2, :suspended2, :canceled) AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2')))) OR (o.status = :orphan_canceled AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2'))",
-            ['name' => self::META_CANCEL_AT_PERIOD_END, 'value' => '1', 'active' => Order::STATUS_ACTIVE, 'suspended' => Order::STATUS_SUSPENDED, 'active2' => Order::STATUS_ACTIVE, 'suspended2' => Order::STATUS_SUSPENDED, 'canceled' => Order::STATUS_CANCELED, 'orphan_canceled' => Order::STATUS_CANCELED, 'now' => date('Y-m-d H:i:s'), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM]
+            "SELECT DISTINCT o.id FROM client_order o LEFT JOIN client_order_meta m ON m.client_order_id = o.id AND m.name = :name AND m.value = :value WHERE (m.id IS NOT NULL AND ((o.status IN (:active, :suspended, :failed_renew) AND o.expires_at <= :now) OR (o.status IN (:active2, :suspended2, :failed_renew2, :canceled) AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2')))) OR (o.status = :orphan_canceled AND EXISTS (SELECT 1 FROM client_order_meta c WHERE c.client_order_id = o.id AND c.name = :claim_name AND c.value = '2'))",
+            ['name' => self::META_CANCEL_AT_PERIOD_END, 'value' => '1', 'active' => Order::STATUS_ACTIVE, 'suspended' => Order::STATUS_SUSPENDED, 'failed_renew' => Order::STATUS_FAILED_RENEW, 'failed_renew2' => Order::STATUS_FAILED_RENEW, 'active2' => Order::STATUS_ACTIVE, 'suspended2' => Order::STATUS_SUSPENDED, 'canceled' => Order::STATUS_CANCELED, 'orphan_canceled' => Order::STATUS_CANCELED, 'now' => date('Y-m-d H:i:s'), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM]
         );
         foreach ($ids as $id) {
             try {
@@ -2573,7 +2793,8 @@ class Service implements InjectionAwareInterface
                 // Re-check: the order may have been unsuspended/paid while
                 // earlier orders in this run were processed.
                 $this->di['em']->refresh($order);
-                if ($order->getStatus() !== Order::STATUS_SUSPENDED) {
+                $status = $order->getStatus();
+                if ($status !== Order::STATUS_SUSPENDED) {
                     continue;
                 }
                 // Scheduled cancellations, including uncertain attempts, are
@@ -2730,7 +2951,7 @@ class Service implements InjectionAwareInterface
         $oldConfig = $order->getConfig();
 
         $order->setConfig($config);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->persist($order);
         $this->di['em']->flush();
 
@@ -2897,14 +3118,14 @@ class Service implements InjectionAwareInterface
     public function setUnpaidInvoice(Order $order, Invoice $proforma): void
     {
         $order->setUnpaidInvoiceId((int) $proforma->getId());
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
     }
 
     public function unsetUnpaidInvoice(Order $order): void
     {
         $order->setUnpaidInvoiceId(null);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->persistOrder($order);
     }
 
@@ -2917,24 +3138,52 @@ class Service implements InjectionAwareInterface
         return $o instanceof Order ? $o->getId() : null;
     }
 
-    public function rmByClient(ClientEntity $client): void
+    /** Acquire lifecycle locks before the client-removal transaction starts. */
+    public function withClientOrderLocks(ClientEntity $client, \Closure $operation): mixed
     {
-        $productService = $this->di['mod_service']('Product');
-        $clientId = (int) $client->getId();
-        $orders = $this->getOrderRepository()->findByClientId($clientId);
-        foreach ($orders as $order) {
-            $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
-            $productService->releaseReservedStockForOrder($order, 'client_deleted');
-            $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
-            $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
+        if ($this->di['em']->getConnection()->isTransactionActive()) {
+            throw new InformationException('Client deletion cannot run inside a database transaction.');
+        }
+        $orders = $this->getOrderRepository()->findByClientId((int) $client->getId());
+        usort($orders, fn (Order $a, Order $b): int => $this->orderId($a) <=> $this->orderId($b));
+        $ids = array_map($this->orderId(...), $orders);
+        $lockedOperation = fn () => $operation($ids);
+        foreach (array_reverse($orders) as $order) {
+            $next = $lockedOperation;
+            $lockedOperation = fn (): mixed => $this->withLifecycleLock($order, $next);
         }
 
-        $query = $this->di['em']->getConnection()->createQueryBuilder();
-        $query
-            ->delete('client_order')
-            ->where('client_id = :id')
-            ->setParameter('id', $clientId)
-            ->executeStatement();
+        return $lockedOperation();
+    }
+
+    public function rmByClient(ClientEntity $client, ?array $lockedOrderIds = null): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $connection->transactional(function () use ($client, $connection, $lockedOrderIds): void {
+            $clientId = (int) $client->getId();
+            $orders = $this->getOrderRepository()->findByClientId($clientId);
+            usort($orders, fn (Order $a, Order $b): int => $this->orderId($a) <=> $this->orderId($b));
+            if ($lockedOrderIds !== null && array_diff(array_map($this->orderId(...), $orders), $lockedOrderIds) !== []) {
+                throw new InformationException('Client orders changed while preparing deletion. Please retry.');
+            }
+            foreach ($orders as $order) {
+                $this->di['em']->refresh($order, LockMode::PESSIMISTIC_WRITE);
+                if ($order->getClientId() === $clientId) {
+                    $this->assertOrderNotDeleting($order, true);
+                }
+            }
+            $productService = $this->di['mod_service']('Product');
+            foreach ($orders as $order) {
+                if ($order->getClientId() !== $clientId) {
+                    continue;
+                }
+                $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
+                $productService->releaseReservedStockForOrder($order, 'client_deleted');
+                $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
+                $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
+                $connection->delete('client_order', ['id' => $this->orderId($order), 'client_id' => $clientId]);
+            }
+        });
     }
 
     public function exportCSV(array $headers): Response

@@ -28,6 +28,7 @@ test('cron skips a renewal owned by another worker and recovers it once the item
     $connection = $em->getConnection();
     $name = 'fb:invoice-item-renewal:' . $item->getId();
     expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($connection, $name, 0))->toBeTrue();
+
     try {
         $cron->doBatchPaidInvoiceActivation();
         expect($item->getStatus())->toBe('pending_setup')->and($item->getAttempts())->toBe(0);
@@ -183,6 +184,7 @@ test('an interrupted outcome commit holds the provider attempt for staff review'
     $newOrders->shouldNotReceive('_callOnService');
     $newCron->doBatchPaidInvoiceActivation();
     expect($connection->fetchOne('SELECT status FROM invoice_item WHERE id = ?', [$item->getId()]))->toBe('failed');
+    (new Doctrine\ORM\Tools\SchemaTool($newEm))->createSchema([$newEm->getClassMetadata(Box\Mod\Product\Entity\Product::class)]);
     $api = Mockery::mock(Box\Mod\Invoice\Api\Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $api->shouldReceive('checkPermissions')->once()->with('invoice', 'view');
     $api->setDi($newCron->getDi());
@@ -235,6 +237,7 @@ test('direct renewal execution respects a busy item lock without consuming attem
     $executor = ($cron->getDi()['mod_service'])('Invoice', 'InvoiceItem');
     $name = 'fb:invoice-item-renewal:' . $item->getId();
     expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($em->getConnection(), $name, 0))->toBeTrue();
+
     try {
         expect($executor->executeTask($item))->toBeFalse()
             ->and($item->getAttempts())->toBe(0)->and($item->getStatus())->toBe('pending_setup');
@@ -256,4 +259,21 @@ test('suspended renewal keeps the cancellation lock across unsuspension and rene
     $orders->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_RENEW)->ordered()->andReturnUsing($assertLocked);
     $cron->doBatchPaidInvoiceActivation();
     expect($order->getStatus())->toBe(Order::STATUS_ACTIVE)->and($item->getStatus())->toBe('executed');
+});
+
+test('renewal pending outcome replaces a stale cached pending value before provider I/O', function (): void {
+    [$em, $order, $item, $orders, $cron] = cronRenewalRegressionContext();
+    $key = 'paid_renewal_outcome_' . $item->getId();
+    $meta = (new OrderMeta())->setOrder($order)->setName($key)->setValue('pending');
+    $em->persist($meta);
+    $em->flush();
+    $em->getConnection()->update('client_order_meta', ['value' => 'retry'], ['id' => $meta->getId()]);
+    $orders->shouldReceive('_callOnService')->once()->andReturnUsing(function () use ($em, $key): void {
+        expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [$key]))->toBe('pending');
+
+        throw new Error('crash at provider');
+    });
+    expect(fn () => $orders->renewInvoiceItem($order, $item->getId()))->toThrow(Error::class);
+    expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', [$key]))->toBe('pending');
+    expect(fn () => $orders->renewInvoiceItem($order, $item->getId()))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'unresolved');
 });

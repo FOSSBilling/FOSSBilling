@@ -11,7 +11,7 @@ use function Tests\Helpers\container;
 
 require_once dirname(__DIR__) . '/Fixtures/GatewayReceiptContext.php';
 
-test('Phase A partial refunds preserve main net income and gross wallet accounting', function (bool $toCredit, float $baseRate): void {
+test('Phase A partial refunds preserve main net income and gross wallet accounting', function (bool $toCredit, float $baseRate, string $clientCurrency): void {
     [, $em, $client] = receiptTestContext();
     $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_PAID)->setIssued(true)->setTaxrate('20');
     $em->persist($invoice);
@@ -32,7 +32,10 @@ test('Phase A partial refunds preserve main net income and gross wallet accounti
     $currency = Mockery::mock(Box\Mod\Currency\Service::class);
     $currency->shouldReceive('toBaseCurrency')->andReturnUsing(fn (string $code, float|int $amount): float => $amount * $baseRate);
     $service = Mockery::mock(Service::class)->makePartial();
-    $service->shouldReceive('recordJournalEvent')->twice();
+    $journal = $service->shouldReceive('recordJournalEvent');
+    if (!$toCredit || $clientCurrency !== 'EUR') {
+        $journal->twice();
+    }
     $service->shouldReceive('addNote')->andReturn(true);
     $service->shouldReceive('toApiArray')->andReturn([]);
     $itemService = new Box\Mod\Invoice\ServiceInvoiceItem();
@@ -47,7 +50,20 @@ test('Phase A partial refunds preserve main net income and gross wallet accounti
     });
     $service->setDi($di);
     $itemService->setDi($di);
+    $client->setCurrency($clientCurrency);
+    $em->flush();
     $options = ['to_credit' => $toCredit, 'gateway_refund' => false];
+    if ($toCredit && $clientCurrency === 'EUR') {
+        $connection = $em->getConnection();
+        expect(fn () => $service->refundInvoice($invoice, null, [$item->getId() => 1], $options))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'currency');
+        expect($connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(Invoice::STATUS_PAID)
+            ->and((float) $connection->fetchOne('SELECT refund FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(0.0)
+            ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
+            ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+
+        return;
+    }
     $firstId = $service->refundInvoice($invoice, null, [$item->getId() => 1], $options);
     expect($em->find(Invoice::class, $firstId)->getCreditNoteForInvoiceId())->toBe($invoice->getId())
         ->and((float) $invoice->getRefund())->toBe(60.0)
@@ -62,4 +78,4 @@ test('Phase A partial refunds preserve main net income and gross wallet accounti
         ->and($em->getRepository(ClientBalance::class)->getClientBalanceSum((int) $client->getId()))->toBe($toCredit ? 120.0 : 0.0);
     expect(fn () => $service->refundInvoice($invoice, null, null, $options))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
     expect($em->getRepository(Invoice::class)->count(['creditNoteForInvoiceId' => $invoice->getId()]))->toBe(2);
-})->with([true, false])->with([1.0, 2.0]);
+})->with([true, false])->with([1.0, 2.0])->with(['USD', 'usd', 'EUR']);

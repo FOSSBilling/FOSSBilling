@@ -585,6 +585,9 @@ test('rm returns true', function (): void {
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
+    $cartRepo = Mockery::mock(CartRepository::class);
+    $cartRepo->shouldReceive('find')->once()->with(1)->andReturn($cart);
+    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
 
@@ -692,9 +695,9 @@ test('promoCanBeApplied returns expected result', function (Promo $promo, bool $
 })->with([
     [createPromoEntity(1)->setActive(false), false],
     [createPromoEntity(2)->setActive(true)->setMaxUses(5)->setUsed(5), false],
-    [createPromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('tomorrow')), false],
-    [createPromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('yesterday')), false],
-    [createPromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('tomorrow')), true],
+    [createPromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('tomorrow')), false],
+    [createPromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('yesterday'))->setEndAt(new DateTimeImmutable('yesterday')), false],
+    [createPromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTimeImmutable('yesterday'))->setEndAt(new DateTimeImmutable('tomorrow')), true],
 ]);
 
 test('getCartProducts returns array of cart products', function (): void {
@@ -2905,6 +2908,7 @@ test('cart with a discounted domain is not subscribable even with a recurring pr
 
 test('checkout notifies after the credit attempt and transaction commit', function (string $outcome): void {
     $paid = $outcome === 'paid';
+    $closed = in_array($outcome, ['exception', 'notification_exception'], true);
     $cart = createEntity(Cart::class);
     $cart->id = 3;
     $cart->currency_id = 2;
@@ -2967,7 +2971,10 @@ test('checkout notifies after the credit attempt and transaction commit', functi
     if ($outcome === 'exception') {
         $invoiceService->shouldNotReceive('notifyDeferredInvoiceIssued');
     } else {
-        $invoiceService->shouldReceive('notifyDeferredInvoiceIssued')->once()->with($invoice)->globally()->ordered()->andReturnUsing(function (Invoice $issued) use (&$inTransaction, $paid): void {
+        $invoiceService->shouldReceive('notifyDeferredInvoiceIssued')->once()->with($invoice)->globally()->ordered()->andReturnUsing(function (Invoice $issued) use (&$inTransaction, $paid, $outcome): void {
+            if ($outcome === 'notification_exception') {
+                throw new RuntimeException('notification flush failed');
+            }
             expect($inTransaction)->toBeFalse()->and($issued->getStatus())->toBe($paid ? Invoice::STATUS_PAID : Invoice::STATUS_UNPAID);
         });
     }
@@ -2993,14 +3000,27 @@ test('checkout notifies after the credit attempt and transaction commit', functi
     });
     $emMock->shouldReceive('persist')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
-    if ($outcome === 'exception') {
+    if ($closed) {
         $emMock->shouldReceive('isOpen')->once()->andReturn(false);
     }
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    if ($outcome === 'exception') {
+    $reloadedInvoice = $invoice;
+    if ($closed) {
         $replacement = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-        $replacement->shouldReceive('find')->once()->with(Invoice::class, 555)->andReturn($invoice);
+        $reloadedInvoice = clone $invoice;
+        $replacement->shouldReceive('find')->once()->with(Invoice::class, 555)->andReturn($reloadedInvoice);
+        $reloadedCart = clone $cart;
+        $reloadedProduct = clone $cartProduct;
+        $cartRepo = Mockery::mock(CartRepository::class);
+        $cartRepo->shouldReceive('find')->once()->with(3)->andReturn($reloadedCart);
+        $productsRepo = Mockery::mock(CartProductRepository::class);
+        $productsRepo->shouldReceive('findByCartId')->once()->with(3)->andReturn([$reloadedProduct]);
+        $replacement->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
+        $replacement->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($productsRepo);
+        $replacement->shouldReceive('remove')->once()->with($reloadedCart);
+        $replacement->shouldReceive('remove')->once()->with($reloadedProduct);
+        $replacement->shouldReceive('flush')->once();
         $serviceMock->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use (&$di, $replacement): void {
             unset($di['em']);
             $di['em'] = $replacement;
@@ -3043,7 +3063,10 @@ test('checkout notifies after the credit attempt and transaction commit', functi
     $serviceMock->setDi($di);
     [$masterOrder, $invoiceModel, $ids] = $serviceMock->createFromCart($client);
 
-    expect($invoiceModel)->toBe($invoice);
+    expect($invoiceModel)->toBe($reloadedInvoice);
+    if ($closed) {
+        expect($serviceMock->rm($cart))->toBeTrue();
+    }
     expect($masterOrder->getUnpaidInvoiceId())->toBe(555);
     expect($ids)->toBeArray()->toHaveCount(1);
-})->with(['credit payment succeeds' => 'paid', 'credit payment is unavailable' => 'unpaid', 'credit transaction fails' => 'exception']);
+})->with(['credit payment succeeds' => 'paid', 'credit payment is unavailable' => 'unpaid', 'credit transaction fails' => 'exception', 'notification flush fails' => 'notification_exception']);

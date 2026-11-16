@@ -519,7 +519,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->remove($cartProduct);
         }
         $cart->setPromoId(null);
-        $cart->setUpdatedAt(new \DateTime());
+        $cart->setUpdatedAt(new \DateTimeImmutable());
         $this->persistCart($cart);
 
         return true;
@@ -528,7 +528,7 @@ class Service implements InjectionAwareInterface
     public function removePromo(Cart $cart): bool
     {
         $cart->setPromoId(null);
-        $cart->setUpdatedAt(new \DateTime());
+        $cart->setUpdatedAt(new \DateTimeImmutable());
         $this->persistCart($cart);
 
         $this->di['logger']->info('Removed promo code from shopping cart #{cart_id}', ['cart_id' => $cart->getId()]);
@@ -606,6 +606,10 @@ class Service implements InjectionAwareInterface
 
     public function rm(Cart $cart): bool
     {
+        $cart = $this->getCartRepository()->find((int) $cart->getId());
+        if (!$cart instanceof Cart) {
+            return true;
+        }
         $cartProducts = $this->findCartProducts($cart);
 
         foreach ($cartProducts as $cartProduct) {
@@ -1386,6 +1390,11 @@ class Service implements InjectionAwareInterface
                 $this->di['mod_service']('Invoice')->notifyDeferredInvoiceIssued($result[1]);
             } catch (\Throwable $e) {
                 $this->di['logger']->error('Could not notify invoice issuance after checkout: {exception}', ['exception' => $e]);
+                if (!$this->di['em']->isOpen()) {
+                    $invoiceId = (int) $result[1]->getId();
+                    $this->resetEntityManager();
+                    $result[1] = $this->di['em']->find(Invoice::class, $invoiceId);
+                }
             }
         }
 

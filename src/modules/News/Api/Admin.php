@@ -112,7 +112,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
              ->setStatus($data['status'] ?? $post->getStatus());
 
         if (!empty($data['created_at'])) {
-            $post->setCreatedAt(new \DateTime($data['created_at']));
+            $post->setCreatedAt(new \DateTimeImmutable($data['created_at']));
         }
 
         $post->setAdminId($this->getIdentity()->getId());

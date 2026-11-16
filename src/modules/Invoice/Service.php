@@ -705,10 +705,11 @@ class Service implements InjectionAwareInterface
                 $known = new \SplObjectStorage();
                 foreach ($em->getUnitOfWork()->getIdentityMap() as $entities) {
                     foreach ($entities as $entity) {
-                        $known->attach($entity);
+                        $known[$entity] = true;
                     }
                 }
                 $connection->beginTransaction();
+
                 try {
                     $this->lockAndRefreshInvoice($invoiceModel);
                     $deliver();
@@ -720,18 +721,19 @@ class Service implements InjectionAwareInterface
                         // Detach them so reused IDs cannot collide on retry.
                         foreach ($em->getUnitOfWork()->getIdentityMap() as $entities) {
                             foreach ($entities as $entity) {
-                                if (!$known->contains($entity)) {
+                                if (!isset($known[$entity])) {
                                     $em->detach($entity);
                                 }
                             }
                         }
                         foreach ($em->getUnitOfWork()->getScheduledEntityInsertions() as $entity) {
-                            if (!$known->contains($entity)) {
+                            if (!isset($known[$entity])) {
                                 $em->detach($entity);
                             }
                         }
                         $em->refresh($invoiceModel);
                     }
+
                     throw $e;
                 }
             } else {
@@ -1161,7 +1163,7 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTime $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTimeImmutable $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
     {
         /** @var InvoiceItem[] $invoiceItems */
         $invoiceItems = [];
@@ -1170,8 +1172,8 @@ class Service implements InjectionAwareInterface
         });
         $actuallyPaid = $paid;
 
-        // Another payment request may have acquired the row lock first and completed the payment.
-        // Treat that as an idempotent success, but do not send duplicate events or execute tasks.
+        // Replays and deletion holds do not settle another payment. Accept the
+        // receipt without sending payment events or executing service tasks.
         if (!$paid) {
             return true;
         }
@@ -1200,7 +1202,7 @@ class Service implements InjectionAwareInterface
      *
      * @param InvoiceItem[] $invoiceItems
      */
-    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTime $paidAtOverride = null): bool
+    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTimeImmutable $paidAtOverride = null): bool
     {
         $state = $this->lockAndRefreshInvoice($invoice);
         if ($state['status'] === Invoice::STATUS_PAID) {
@@ -1208,6 +1210,16 @@ class Service implements InjectionAwareInterface
         }
         if ($state['status'] === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
             throw new InformationException('This invoice was canceled and cannot be marked as paid');
+        }
+
+        if ($state['status'] !== Invoice::STATUS_UNPAID) {
+            throw new InformationException('Only an unpaid invoice can be marked as paid.');
+        }
+
+        // A gateway may already have credited incoming funds. Keep those funds
+        // available for staff reconciliation without settling a held invoice.
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            return false;
         }
 
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
@@ -1232,7 +1244,7 @@ class Service implements InjectionAwareInterface
         $invoice->setCurrencyRate($currencyRate);
 
         $invoice->setStatus(Invoice::STATUS_PAID);
-        $invoice->setPaidAt($paidAtOverride ?? new \DateTime());
+        $invoice->setPaidAt($paidAtOverride ?? new \DateTimeImmutable());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
@@ -1265,13 +1277,11 @@ class Service implements InjectionAwareInterface
             if ($paidAtTimestamp === false) {
                 throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $data['paid_at']]);
             }
-            $paidAt = new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp));
+            $paidAt = new \DateTimeImmutable(date('Y-m-d H:i:s', $paidAtTimestamp));
         }
 
-        if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
-            $invoice->setGateway($payGateway);
-            $this->di['em']->persist($invoice);
-            $this->di['em']->flush();
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
         }
 
         if ($payGateway->getGateway() === 'Custom') {
@@ -1293,6 +1303,14 @@ class Service implements InjectionAwareInterface
                     $locked = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
                     if ($state['status'] === Invoice::STATUS_CANCELED || ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null)) {
                         throw new InformationException('This invoice was canceled and cannot be marked as paid');
+                    }
+
+                    if ($this->invoiceHasDeletionHold($invoice)) {
+                        throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
+                    }
+                    if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+                        $invoice->setGateway($payGateway);
+                        $this->di['em']->flush();
                     }
 
                     $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
@@ -1321,6 +1339,9 @@ class Service implements InjectionAwareInterface
                         if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
                             throw new InformationException('Transaction ID is already associated with another invoice.');
                         }
+                        if ($transaction->getStatus() === Transaction::STATUS_PROCESSED) {
+                            throw new InformationException('Transaction ID has already been processed. Use a distinct reference for an additional payment.');
+                        }
                     }
 
                     $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
@@ -1334,7 +1355,7 @@ class Service implements InjectionAwareInterface
                         $transaction->setStatus(Transaction::STATUS_PROCESSED);
                         $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
                         $transaction->setNote(sprintf('%s transaction No: %s', $gatewayTitle, $transactionId));
-                        $transaction->setUpdatedAt(new \DateTime());
+                        $transaction->setUpdatedAt(new \DateTimeImmutable());
                         $this->di['em']->flush();
                     }
 
@@ -1372,6 +1393,17 @@ class Service implements InjectionAwareInterface
         $actuallyPaid = null;
         $paid = $this->withCreditLock((int) $invoice->getClientId(), function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
             return $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
+                $state = $this->lockAndRefreshInvoice($invoice);
+                if ($state['status'] === Invoice::STATUS_PAID) {
+                    return false;
+                }
+                if ($this->invoiceHasDeletionHold($invoice)) {
+                    throw new InformationException('Order deletion is awaiting recovery. Retry deletion before recording a manual payment.');
+                }
+                if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+                    $invoice->setGateway($payGateway);
+                    $this->di['em']->flush();
+                }
                 $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
                 if ($actuallyPaid ?? $result) {
                     $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId);
@@ -1400,37 +1432,37 @@ class Service implements InjectionAwareInterface
     {
         $invoice = $transaction->getInvoice() ?? throw new InformationException('Invoice not found');
         $gateway = $transaction->getGateway() ?? throw new InformationException('Payment gateway not found');
-        $paid = $this->withCreditLock((int) $invoice->getClientId(), function () use ($invoice, $gateway, $transaction): bool {
-            return $this->di['em']->wrapInTransaction(function () use ($invoice, $gateway, $transaction): bool {
-                $state = $this->lockAndRefreshInvoice($invoice);
-                if ($state['status'] !== Invoice::STATUS_UNPAID || $invoice->getReplacedByInvoiceId() !== null) {
-                    throw new InformationException('Only an unpaid invoice can be approved for payment.');
-                }
-                $received = $this->getBalanceDue($invoice);
-                $actuallyPaid = null;
-                $this->markAsPaid($invoice, false, false, true, null, $actuallyPaid);
-                if (!$actuallyPaid) {
-                    throw new InformationException('The invoice was already paid.');
-                }
-                $this->creditDepositBalanceIfNeeded($invoice, $gateway, $transaction->getTxnId());
-                $this->consumeInvoiceWalletFunds($invoice);
-                $gatewayName = $gateway->getName() ?: $gateway->getGateway();
-                $transaction->setStatus(Transaction::STATUS_PROCESSED);
-                $transaction->setAmount((string) $received);
-                $transaction->setNote($gatewayName . ' transaction No: ' . $transaction->getTxnId());
-                $transaction->setCurrency($invoice->getCurrency());
-                $transaction->setUpdatedAt(new \DateTime());
-                $this->di['em']->flush();
+        if (!ServicePayGateway::isManualApprovalGateway($gateway->getGateway())) {
+            throw new InformationException('Offline settlement requires a manual payment gateway.');
+        }
+        $paid = $this->withPaymentCompletionLock((int) $transaction->getId(), fn (): bool => $this->withCreditLock((int) $invoice->getClientId(), fn (): bool => $this->di['em']->wrapInTransaction(function () use ($invoice, $gateway, $transaction): bool {
+            $state = $this->lockAndRefreshInvoice($invoice);
+            if ($state['status'] !== Invoice::STATUS_UNPAID || $invoice->getReplacedByInvoiceId() !== null) {
+                throw new InformationException('Only an unpaid invoice can be approved for payment.');
+            }
+            $received = $this->getBalanceDue($invoice);
+            $actuallyPaid = null;
+            $this->markAsPaid($invoice, false, false, true, null, $actuallyPaid);
+            if (!$actuallyPaid) {
+                throw new InformationException('The invoice was already paid.');
+            }
+            $this->creditDepositBalanceIfNeeded($invoice, $gateway, $transaction->getTxnId());
+            $this->consumeInvoiceWalletFunds($invoice);
+            $gatewayName = $gateway->getName() ?: $gateway->getGateway();
+            $transaction->setStatus(Transaction::STATUS_PROCESSED);
+            $transaction->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_RUNNING);
+            $transaction->setError(null);
+            $transaction->setErrorCode(null);
+            $transaction->setAmount((string) $received);
+            $transaction->setNote($gatewayName . ' transaction No: ' . $transaction->getTxnId());
+            $transaction->setCurrency($invoice->getCurrency());
+            $transaction->setUpdatedAt(new \DateTimeImmutable());
+            $this->di['em']->flush();
 
-                return true;
-            });
-        });
+            return true;
+        })));
         if ($paid) {
-            $this->firePaymentReceivedEvent($invoice);
-            $this->executeInvoiceItemTasks(
-                $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
-                $this->di['mod_service']('Invoice', 'InvoiceItem')
-            );
+            $this->completeOfflinePayment($transaction);
         }
 
         return $paid;
@@ -1755,7 +1787,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['issue']) && $data['issue']) {
             try {
-                $this->issueInvoice($model, ['id' => $invoiceId]);
+                if (!$this->issueInvoice($model, ['id' => $invoiceId])) {
+                    throw new InformationException('Invoice issuance was deferred because an order is awaiting recovery.');
+                }
                 $this->di['logger']->info('Issued invoice #{invoice_id} instantly', ['invoice_id' => $invoiceId]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning('Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => $invoiceId, 'message' => $e->getMessage()]);
@@ -1779,7 +1813,7 @@ class Service implements InjectionAwareInterface
             $invoice_due_days = 1;
         }
         $due_time = strtotime("+{$invoice_due_days} day");
-        $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $due_time)));
+        $model->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $due_time)));
 
         $serie = $systemService->getParamValue('invoice_series');
         $model->setSerie($serie !== null ? (string) $serie : null);
@@ -1849,7 +1883,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceIssueEvent((int) $invoice->getId()));
 
-        $this->di['em']->wrapInTransaction(function () use ($invoice, $data): void {
+        $issued = $this->di['em']->wrapInTransaction(function () use ($invoice, $data): bool {
             $this->lockAndRefreshInvoice($invoice);
 
             // First issuance is only valid from the unpaid state. Re-issuing
@@ -1858,40 +1892,62 @@ class Service implements InjectionAwareInterface
             if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Only unpaid draft invoices can be issued.');
             }
+            if ($this->invoiceHasDeletionHold($invoice)) {
+                return false;
+            }
 
             // Freeze the parties from the live records and claim the number
             // inside the issuance lock. Already-issued invoices skip both;
             // legacy drafts keep their number when present.
             $this->snapshotPartiesFromLiveRecords($invoice);
-            if (!is_numeric($invoice->getNr() ?? null)) {
-                $serie = $this->di['mod_service']('system')->getParamValue('invoice_series');
-                $invoice->setSerie($serie !== null ? (string) $serie : null);
-                $invoice->setNr($this->getNextInvoiceNumber());
-            }
+            $this->assignInvoiceNumberIfMissing($invoice);
 
-            $invoice->setIssued(true);
-            if (!empty($data['defer_issue_event'])) {
+            if (!$invoice->isIssued()) {
                 $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) ? 1 : 2);
             }
+            $invoice->setIssued(true);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
 
             // Commits atomically with the issuance above: a crash can no
             // longer leave an issued invoice without its journal entry.
             $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
-        });
 
-        if (isset($data['use_credits']) && $data['use_credits']) {
-            $this->tryPayWithCredits($invoice);
+            return true;
+        });
+        if (!$issued) {
+            return false;
+        }
+
+        if (!empty($data['use_credits'])) {
+            try {
+                $this->tryPayWithCredits($invoice);
+            } catch (\Throwable $e) {
+                $this->di['logger']->warning('Could not apply credit to issued invoice #{id}: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+                if (!$this->di['em']->isOpen()) {
+                    $id = (int) $invoice->getId();
+                    $this->resetEntityManager();
+                    $invoice = $this->getInvoiceRepository()->find($id) ?? throw new InformationException('Invoice not found');
+                }
+            }
         }
 
         if (empty($data['defer_issue_event'])) {
-            $this->notifyInvoiceIssued($invoice);
+            $this->notifyDeferredInvoiceIssued($invoice);
         }
 
         $this->di['logger']->info('Issued invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return true;
+    }
+
+    private function assignInvoiceNumberIfMissing(Invoice $invoice): void
+    {
+        if (!is_numeric($invoice->getNr() ?? null)) {
+            $serie = $this->di['mod_service']('system')->getParamValue('invoice_series');
+            $invoice->setSerie($serie !== null ? (string) $serie : null);
+            $invoice->setNr($this->getNextInvoiceNumber());
+        }
     }
 
     public function notifyInvoiceIssued(Invoice $invoice, bool $retryOnFailure = false): void
@@ -1930,15 +1986,19 @@ class Service implements InjectionAwareInterface
     public function doBatchDeliverIssuedNotifications(): bool
     {
         $invoices = $this->getInvoiceRepository()->findBy(['issueNotificationState' => [1, 2, 5, 6]]);
-        foreach ($invoices as $invoice) {
+        $invoiceIds = array_map(static fn (Invoice $invoice): int => (int) $invoice->getId(), $invoices);
+        foreach ($invoiceIds as $invoiceId) {
             try {
+                // A prior failure may have replaced the manager and detached the selection.
+                $invoice = $this->getInvoiceRepository()->find($invoiceId);
+                if (!$invoice instanceof Invoice) {
+                    continue;
+                }
                 $this->notifyDeferredInvoiceIssued($invoice, true);
             } catch (\Throwable $e) {
-                $this->di['logger']->warning('Could not deliver deferred invoice issuance #{id}: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+                $this->di['logger']->warning('Could not deliver deferred invoice issuance #{id}: {error}', ['id' => $invoiceId, 'error' => $e->getMessage()]);
                 if (!$this->di['em']->isOpen()) {
                     $this->resetEntityManager();
-
-                    break;
                 }
             }
         }
@@ -2009,7 +2069,11 @@ class Service implements InjectionAwareInterface
         if (!$state['issued']) {
             return false;
         }
-        if ($state['status'] === Invoice::STATUS_PAID) {
+        if ($state['status'] !== Invoice::STATUS_UNPAID) {
+            return false;
+        }
+
+        if ($this->invoiceHasDeletionHold($invoice)) {
             return false;
         }
 
@@ -2017,6 +2081,16 @@ class Service implements InjectionAwareInterface
         // would be deducted without ever topping the wallet up.
         if ($this->isInvoiceTypeDeposit($invoice)) {
             return false;
+        }
+
+        $clientId = (int) $invoice->getClientId();
+        $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+        if (!$client instanceof Client) {
+            throw new InformationException('Client not found');
+        }
+        $this->di['em']->refresh($client, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
+        if (strcasecmp((string) $client->getCurrency(), (string) $invoice->getCurrency()) !== 0) {
+            throw new InformationException('The credit is in :currency and cannot pay an invoice in another currency.', [':currency' => (string) $client->getCurrency()]);
         }
 
         // Credit pays without the gateway fee. Remove it before measuring
@@ -2027,7 +2101,6 @@ class Service implements InjectionAwareInterface
             $this->di['mod_service']('Invoice', 'GatewayFees')->remove($invoice);
         }
 
-        $clientId = (int) $invoice->getClientId();
         $cbrepo = $this->di['mod_service']('Client', 'Balance');
 
         // Locks the balance for the rest of this transaction, so a concurrent request cannot
@@ -2041,6 +2114,7 @@ class Service implements InjectionAwareInterface
         // A staff-recorded payment has no matching wallet receipt. Only the
         // remainder (including receipt-backed gateway payments) consumes credit.
         $processed = $this->getTransactionRepository()->getProcessedSumsByInvoiceIds([$invoiceId]);
+
         try {
             $receipts = $this->di['em']->getRepository(ClientBalance::class);
             $receipts->reconcileHistoricalGatewayReceiptsForInvoice($invoiceId);
@@ -2126,8 +2200,8 @@ class Service implements InjectionAwareInterface
 
     /**
      * Record a verified provider payment and settle its invoice atomically.
-     * Returns false if the provider payment was already recorded by another
-     * callback; callers must discard that duplicate transaction.
+     * Returns false only for a separate duplicate transaction. The canonical
+     * receipt owner is retained and resumes post-commit completion on retry.
      */
     public function recordGatewayPayment(Transaction $transaction, Client $client, string $providerObjectId, string $description, string $legacyType, ?string $legacyRelId = null): bool
     {
@@ -2152,53 +2226,159 @@ class Service implements InjectionAwareInterface
         }
         $key = hash('sha256', $gatewayId . ':' . $providerObjectId);
         $paid = false;
-        $created = $this->withCreditLock((int) $client->getId(), function () use ($transaction, $client, $invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid): bool {
-            if ($this->gatewayReceiptExists((int) $transaction->getGateway()->getId(), $providerObjectId, $client, $amount, $description, $legacyType)) {
-                return false;
-            }
-
-            return $this->di['em']->wrapInTransaction(function () use ($transaction, $client, $invoice, $key, $amount, $description, $legacyType, $legacyRelId, &$paid): bool {
-                $receipt = (new ClientBalance())
-                    ->setClient($client)
-                    ->setType($legacyType)
-                    ->setRelId($legacyRelId)
-                    ->setDescription($description)
-                    ->setAmount((string) $amount)
-                    ->setGatewayReceiptKey($key)
-                    ->setGatewayTransactionId($transaction->getId());
-                $this->di['em']->persist($receipt);
-                $transaction->setStatus(Transaction::STATUS_PROCESSED);
-                $transaction->setError(null);
-                $transaction->setUpdatedAt(new \DateTime());
-                $this->di['em']->persist($transaction);
-                // The processed transaction reserves the incoming credit for its
-                // invoice before any other credit operation can spend it.
-                $this->di['em']->flush();
-
-                if ($invoice instanceof Invoice && $invoice->getStatus() !== Invoice::STATUS_PAID) {
-                    $this->settleGatewayInvoiceInTransaction($invoice, $client, $paid);
+        $resume = false;
+        $complete = true;
+        // Settlement and acknowledgement share one mutex: an older completion
+        // must not acknowledge work created by a concurrent receipt retry.
+        $created = $this->withPaymentCompletionLock((int) $transaction->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete): bool {
+            return $this->withCreditLock((int) $client->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete): bool {
+                if ($this->gatewayReceiptExists((int) $transaction->getGateway()->getId(), $providerObjectId, $client, $amount, $description, $legacyType)) {
+                    $receipt = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayReceiptKey' => $key]);
+                    if (!$receipt instanceof ClientBalance || $receipt->getGatewayTransactionId() !== $transaction->getId()) {
+                        return false;
+                    }
+                    // Restore the original target rather than a retry's tentative binding.
+                    $this->di['em']->refresh($transaction);
+                    $invoice = $transaction->getInvoice();
+                    $complete = $transaction->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE || !empty($transaction->getError());
+                    $resume = true;
                 }
 
-                return true;
+                return $this->di['em']->wrapInTransaction(function () use ($transaction, $client, $invoice, $key, $amount, $description, $legacyType, $legacyRelId, &$paid, $resume, &$complete): bool {
+                    if (!$resume) {
+                        $receipt = (new ClientBalance())
+                        ->setClient($client)
+                        ->setType($legacyType)
+                        ->setRelId($legacyRelId)
+                        ->setDescription($description)
+                        ->setAmount((string) $amount)
+                        ->setGatewayReceiptKey($key)
+                        ->setGatewayTransactionId($transaction->getId());
+                        $this->di['em']->persist($receipt);
+                    }
+                    $transaction->setStatus(Transaction::STATUS_PROCESSED);
+                    if ($complete) {
+                        $transaction->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_RUNNING);
+                    }
+                    $transaction->setError(null);
+                    $transaction->setErrorCode(null);
+                    $transaction->setUpdatedAt(new \DateTimeImmutable());
+                    $this->di['em']->persist($transaction);
+                    // The processed transaction reserves the incoming credit for its
+                    // invoice before any other credit operation can spend it.
+                    $this->di['em']->flush();
+
+                    if ($invoice instanceof Invoice && $invoice->getStatus() !== Invoice::STATUS_PAID) {
+                        $this->settleGatewayInvoiceInTransaction($invoice, $client, $paid);
+                        if ($paid && !$complete) {
+                            $complete = true;
+                            $transaction->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_RUNNING);
+                            $this->di['em']->flush();
+                        }
+                    }
+
+                    return true;
+                });
             });
         });
-        if ($paid && $invoice instanceof Invoice) {
-            $this->firePaymentReceivedEvent($invoice);
-            $this->executeInvoiceItemTasks($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()), $this->di['mod_service']('Invoice', 'InvoiceItem'));
+        if ($created && $complete) {
+            $this->completeGatewayPayment($transaction);
         }
 
         return $created;
     }
 
+    /** Resume committed receipt work without repeating any provider operation. */
+    public function completeGatewayPayment(Transaction $transaction): void
+    {
+        $this->completePayment($transaction, false);
+    }
+
+    /** Resume only local work for a payment already confirmed by staff. */
+    public function completeOfflinePayment(Transaction $transaction): void
+    {
+        $this->completePayment($transaction, true);
+    }
+
+    protected function withPaymentCompletionLock(int $transactionId, callable $operation): mixed
+    {
+        $connection = $this->di['em']->getConnection();
+        $name = 'fb:gateway-completion:' . $transactionId;
+        if (!NamedLock::acquire($connection, $name, 30)) {
+            throw new InformationException('Gateway payment completion is already being processed.');
+        }
+
+        try {
+            return $operation();
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    private function completePayment(Transaction $transaction, bool $offline): void
+    {
+        $this->withPaymentCompletionLock((int) $transaction->getId(), function () use ($transaction, $offline): void {
+            $em = $this->di['em'];
+            $connection = $em->getConnection();
+            $em->refresh($transaction);
+            if ($transaction->getStatus() !== Transaction::STATUS_PROCESSED) {
+                throw new InformationException('Gateway payment has not been committed.');
+            }
+            if ($transaction->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
+                return;
+            }
+            $invoice = $transaction->getInvoice();
+            if ($invoice instanceof Invoice) {
+                $em->refresh($invoice);
+            }
+            if ($offline) {
+                $gateway = $transaction->getGateway();
+                if (!$gateway instanceof PayGateway || !ServicePayGateway::isManualApprovalGateway($gateway->getGateway())
+                    || !$invoice instanceof Invoice || strcasecmp((string) $transaction->getCurrency(), (string) $invoice->getCurrency()) !== 0) {
+                    throw new InformationException('Offline payment completion requires a committed staff-approved invoice payment.');
+                }
+            } else {
+                $receipt = $em->getRepository(ClientBalance::class)->findOneBy(['gatewayTransactionId' => $transaction->getId()]);
+                $client = $receipt?->getClient();
+                $amount = (float) $transaction->getAmount();
+                $currency = (string) $transaction->getCurrency();
+                if (!$receipt instanceof ClientBalance || !$client instanceof Client || !$receipt->getGatewayReceiptKey()
+                    || !is_finite($amount) || $amount <= 0.0 || round((float) $receipt->getAmount(), 2) !== round($amount, 2)
+                    || $currency === '' || strcasecmp($currency, (string) $client->getCurrency()) !== 0
+                    || ($invoice instanceof Invoice && ((int) $invoice->getClientId() !== (int) $client->getId()
+                        || strcasecmp($currency, (string) $invoice->getCurrency()) !== 0))) {
+                    throw new InformationException('Gateway payment completion does not match its committed receipt.');
+                }
+            }
+            if ($invoice instanceof Invoice && $invoice->getStatus() === Invoice::STATUS_PAID) {
+                $this->firePaymentReceivedEvent($invoice);
+                $this->executeInvoiceItemTasks($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()), $this->di['mod_service']('Invoice', 'InvoiceItem'));
+            }
+            // Native acknowledgement also clears diagnostics written by a
+            // timed-out worker without relying on Doctrine's cached values.
+            $connection->executeStatement('UPDATE ' . $connection->quoteSingleIdentifier('transaction')
+                . ' SET gateway_completion_state = 0, error = NULL, error_code = NULL, updated_at = ? WHERE id = ? AND status = ?',
+                [date('Y-m-d H:i:s'), $transaction->getId(), Transaction::STATUS_PROCESSED]);
+            $em->refresh($transaction);
+        });
+    }
+
     /** Caller holds the client lock and payment transaction. */
     private function settleGatewayInvoiceInTransaction(Invoice $invoice, Client $client, bool &$paid): void
     {
+        // Keep verified incoming money even when its invoice can no longer settle.
+        $state = $this->lockAndRefreshInvoice($invoice);
+        if ($state['status'] !== Invoice::STATUS_UNPAID) {
+            return;
+        }
+
         if ($this->isInvoiceTypeDeposit($invoice)) {
             if (round($this->getAmountPaid($invoice), 2) < round($this->getTotalWithTax($invoice), 2)) {
                 return;
             }
             $invoiceId = (int) $invoice->getId();
             $processed = $this->getTransactionRepository()->getProcessedSumsByInvoiceIds([$invoiceId]);
+
             try {
                 $receipts = $this->di['em']->getRepository(ClientBalance::class);
                 $receipts->reconcileHistoricalGatewayReceiptsForInvoice($invoiceId);
@@ -2217,7 +2397,9 @@ class Service implements InjectionAwareInterface
                 }
             }
             $adjustment = round($itemCharges - $this->getNonDepositTotalWithTax($invoice, $items), 2);
-            $this->markAsPaid($invoice, true, false, true, null, $paid);
+            $newlyPaid = null;
+            $markedPaid = $this->markAsPaid($invoice, true, false, true, null, $newlyPaid);
+            $paid = $newlyPaid ?? $markedPaid;
             if ($paid && $manualPayment > 0.0) {
                 // Provider receipts already credited the wallet; staff-recorded
                 // payments did not. Commit their credit with the paid state so
@@ -2260,77 +2442,83 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Gateway receipt details are invalid.');
         }
         $paid = false;
-        $settledInvoice = null;
-        $this->withCreditLock((int) $clientId, function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$settledInvoice): void {
-            $this->di['em']->wrapInTransaction(function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$settledInvoice): void {
-                $this->di['em']->refresh($receipt);
-                $connection = $this->di['em']->getConnection();
-                $txTable = $connection->quoteIdentifier('transaction');
-                $connection->fetchOne("SELECT id FROM $txTable WHERE id = ?" . RowLock::suffix($connection), [$transactionId]);
-                $tx = $this->di['em']->find(Transaction::class, $transactionId);
-                if ($tx instanceof Transaction) {
-                    $this->di['em']->refresh($tx);
-                }
-                $gateway = $tx?->getGateway();
-                $invoice = $tx?->getInvoice();
-                $client = $receipt->getClient();
-                if (!$tx instanceof Transaction || !$gateway || !$client
-                    || ($invoice instanceof Invoice && (int) $invoice->getClientId() !== (int) $clientId)
-                    || !in_array($tx->getStatus(), [Transaction::STATUS_PROCESSED, Transaction::STATUS_ERROR], true)
-                    || (float) $receipt->getAmount() <= 0
-                    || round((float) $tx->getAmount(), 2) !== round((float) $receipt->getAmount(), 2)
-                    || strcasecmp((string) $tx->getCurrency(), (string) $client->getCurrency()) !== 0
-                    || ($invoice instanceof Invoice && strcasecmp((string) $tx->getCurrency(), (string) $invoice->getCurrency()) !== 0)
-                    || ($receipt->getGatewayReceiptKey() !== null
-                        && !hash_equals($receipt->getGatewayReceiptKey(), hash('sha256', $gateway->getId() . ':' . $providerObjectId)))
-                    || ($receipt->getGatewayTransactionId() !== null && $receipt->getGatewayTransactionId() !== $transactionId)) {
-                    throw new InformationException('The receipt and transaction do not match.');
-                }
-                $descriptions = match ([$gateway->getGateway(), $receipt->getType()]) {
-                    ['Stripe', 'transaction'] => ['Stripe transaction ' . $providerObjectId, 'Stripe subscription initial payment ' . $providerObjectId, 'Stripe subscription recurring payment ' . $providerObjectId],
-                    ['PayPalEmail', 'PayPal'] => ['PayPal transaction ' . $providerObjectId],
-                    default => [],
-                };
-                if (!in_array($receipt->getDescription(), $descriptions, true)) {
-                    throw new InformationException('The receipt and provider payment do not match.');
-                }
-                // Stripe's historical rel_id is its local transaction ID;
-                // subscription txn_id can instead identify a setup intent.
-                // PayPal's transaction ID is the provider payment ID.
-                $reference = $receipt->getRelId();
-                $matchesReference = match ($gateway->getGateway()) {
-                    'Stripe' => $reference !== null && $reference !== ''
-                        ? $reference === (string) $transactionId
-                        : $tx->getTxnId() === $providerObjectId,
-                    'PayPalEmail' => $tx->getTxnId() === $providerObjectId,
-                    default => false,
-                };
-                if (!$matchesReference || (!$invoice instanceof Invoice && $gateway->getGateway() !== 'Stripe')) {
-                    throw new InformationException('The receipt and transaction do not match.');
-                }
-                $key = hash('sha256', $gateway->getId() . ':' . $providerObjectId);
-                $existingKey = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayReceiptKey' => $key]);
-                if ($existingKey instanceof ClientBalance && $existingKey->getId() !== $receipt->getId()) {
-                    throw new InformationException('This provider payment already has a gateway receipt.');
-                }
-                $existing = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayTransactionId' => $transactionId]);
-                if ($existing instanceof ClientBalance && $existing->getId() !== $receipt->getId()) {
-                    throw new InformationException('This transaction already has a gateway receipt.');
-                }
-                $receipt->setGatewayReceiptKey($key)->setGatewayTransactionId($transactionId);
-                if ($tx->getStatus() === Transaction::STATUS_ERROR) {
-                    $tx->setStatus(Transaction::STATUS_PROCESSED)->setError(null)->setErrorCode(null)->setUpdatedAt(new \DateTime());
-                }
-                $this->di['em']->flush();
-                if ($invoice instanceof Invoice && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
-                    $this->settleGatewayInvoiceInTransaction($invoice, $client, $paid);
-                    $settledInvoice = $invoice;
-                }
+        $completion = null;
+        $this->withPaymentCompletionLock($transactionId, function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$completion): void {
+            $this->withCreditLock((int) $clientId, function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$completion): void {
+                $this->di['em']->wrapInTransaction(function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$completion): void {
+                    $this->di['em']->refresh($receipt);
+                    $connection = $this->di['em']->getConnection();
+                    $txTable = $connection->quoteIdentifier('transaction');
+                    $connection->fetchOne("SELECT id FROM $txTable WHERE id = ?" . RowLock::suffix($connection), [$transactionId]);
+                    $tx = $this->di['em']->find(Transaction::class, $transactionId);
+                    if ($tx instanceof Transaction) {
+                        $this->di['em']->refresh($tx);
+                    }
+                    $gateway = $tx?->getGateway();
+                    $invoice = $tx?->getInvoice();
+                    $client = $receipt->getClient();
+                    if (!$tx instanceof Transaction || !$gateway || !$client
+                        || ($invoice instanceof Invoice && (int) $invoice->getClientId() !== (int) $clientId)
+                        || !in_array($tx->getStatus(), [Transaction::STATUS_PROCESSED, Transaction::STATUS_ERROR], true)
+                        || (float) $receipt->getAmount() <= 0
+                        || round((float) $tx->getAmount(), 2) !== round((float) $receipt->getAmount(), 2)
+                        || strcasecmp((string) $tx->getCurrency(), (string) $client->getCurrency()) !== 0
+                        || ($invoice instanceof Invoice && strcasecmp((string) $tx->getCurrency(), (string) $invoice->getCurrency()) !== 0)
+                        || ($receipt->getGatewayReceiptKey() !== null
+                            && !hash_equals($receipt->getGatewayReceiptKey(), hash('sha256', $gateway->getId() . ':' . $providerObjectId)))
+                        || ($receipt->getGatewayTransactionId() !== null && $receipt->getGatewayTransactionId() !== $transactionId)) {
+                        throw new InformationException('The receipt and transaction do not match.');
+                    }
+                    $descriptions = match ([$gateway->getGateway(), $receipt->getType()]) {
+                        ['Stripe', 'transaction'] => ['Stripe transaction ' . $providerObjectId, 'Stripe subscription initial payment ' . $providerObjectId, 'Stripe subscription recurring payment ' . $providerObjectId],
+                        ['PayPalEmail', 'PayPal'] => ['PayPal transaction ' . $providerObjectId],
+                        default => [],
+                    };
+                    if (!in_array($receipt->getDescription(), $descriptions, true)) {
+                        throw new InformationException('The receipt and provider payment do not match.');
+                    }
+                    // Stripe's historical rel_id is its local transaction ID;
+                    // subscription txn_id can instead identify a setup intent.
+                    // PayPal's transaction ID is the provider payment ID.
+                    $reference = $receipt->getRelId();
+                    $matchesReference = match ($gateway->getGateway()) {
+                        'Stripe' => $reference !== null && $reference !== ''
+                            ? $reference === (string) $transactionId
+                            : $tx->getTxnId() === $providerObjectId,
+                        'PayPalEmail' => $tx->getTxnId() === $providerObjectId,
+                        default => false,
+                    };
+                    if (!$matchesReference || (!$invoice instanceof Invoice && $gateway->getGateway() !== 'Stripe')) {
+                        throw new InformationException('The receipt and transaction do not match.');
+                    }
+                    $key = hash('sha256', $gateway->getId() . ':' . $providerObjectId);
+                    $existingKey = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayReceiptKey' => $key]);
+                    if ($existingKey instanceof ClientBalance && $existingKey->getId() !== $receipt->getId()) {
+                        throw new InformationException('This provider payment already has a gateway receipt.');
+                    }
+                    $existing = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayTransactionId' => $transactionId]);
+                    if ($existing instanceof ClientBalance && $existing->getId() !== $receipt->getId()) {
+                        throw new InformationException('This transaction already has a gateway receipt.');
+                    }
+                    $receipt->setGatewayReceiptKey($key)->setGatewayTransactionId($transactionId);
+                    if ($tx->getStatus() === Transaction::STATUS_ERROR) {
+                        $tx->setStatus(Transaction::STATUS_PROCESSED)->setError(null)->setErrorCode(null)->setUpdatedAt(new \DateTimeImmutable());
+                        $tx->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_PENDING);
+                    }
+                    $this->di['em']->flush();
+                    if ($invoice instanceof Invoice && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
+                        $this->settleGatewayInvoiceInTransaction($invoice, $client, $paid);
+                    }
+                    if ($paid || $tx->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
+                        $tx->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_PENDING);
+                        $this->di['em']->flush();
+                        $completion = $tx;
+                    }
+                });
             });
         });
-        if ($paid && $settledInvoice instanceof Invoice) {
-            $this->firePaymentReceivedEvent($settledInvoice);
-            $this->executeInvoiceItemTasks($this->getInvoiceItemRepository()->findByInvoiceId((int) $settledInvoice->getId()), $this->di['mod_service']('Invoice', 'InvoiceItem'));
+        if ($completion instanceof Transaction) {
+            $this->completeGatewayPayment($completion);
         }
         $this->di['logger']->withChannel('billing')->info('Staff reconciled gateway receipt #{receipt_id} to transaction #{transaction_id}', ['receipt_id' => $receiptId, 'transaction_id' => $transactionId]);
     }
@@ -2370,22 +2558,7 @@ class Service implements InjectionAwareInterface
 
         $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
 
-        if (empty($items)) {
-            return 0.0;
-        }
-
-        $taxable_subtotal = 0.0;
-        foreach ($items as $item) {
-            if ($item->getTaxed()) {
-                $taxable_subtotal += (($item->getPrice() ?? 0) * ($item->getQuantity() ?? 1));
-            }
-        }
-
-        if ($taxable_subtotal == 0) {
-            return 0.0;
-        }
-
-        return round($taxable_subtotal * (float) $invoice->getTaxrate() / 100, 2);
+        return (float) ServiceTax::calculateInvoiceTax($invoice, $items);
     }
 
     public function getTotal(Invoice $invoice): float
@@ -2480,15 +2653,15 @@ class Service implements InjectionAwareInterface
             if ($row['taxrate'] > 0 && $taxable != 0) {
                 $total += round($taxable * $row['taxrate'] / 100, 2);
             }
+
             try {
-                $receiptRepository->reconcileHistoricalGatewayReceiptsForInvoice((int) $id);
-                $walletProcessed = min($transactions[$id] ?? 0.0, $receiptRepository->getGatewayReceiptSumForInvoice((int) $id));
+                $walletProcessed = min($transactions[$id] ?? 0.0, $receiptRepository->getGatewayReceiptReservationForInvoice((int) $id));
             } catch (InformationException) {
                 // Preserve the reservation until staff identifies the legacy receipt.
                 $walletProcessed = $transactions[$id] ?? 0.0;
             }
             $paid = $walletProcessed + ($credits[$id] ?? 0.0);
-            $reserved[$row['client_id']] = ($reserved[$row['client_id']] ?? 0.0) + min($paid, round($total, 2));
+            $reserved[$row['client_id']] = ($reserved[$row['client_id']] ?? 0.0) + max(0.0, min($paid, round($total, 2)));
         }
 
         foreach ($reserved as $clientId => $amount) {
@@ -2684,6 +2857,9 @@ class Service implements InjectionAwareInterface
     {
         $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
         $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
+        $expectedAmount = array_key_exists('expected_amount', $options)
+            ? PriceValidator::validateAmount($options['expected_amount'], 'Expected refund amount')
+            : null;
 
         // A dashboard refund already returned the card payment, so a deposit
         // invoice's wallet credit must be reversed when recording it.
@@ -2720,7 +2896,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $expectedAmount, $toCredit): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -2784,7 +2960,7 @@ class Service implements InjectionAwareInterface
                     : $systemService->getParamValue('invoice_cn_series', 'CN-'));
                 $new->setNr($nextNumber);
 
-                $new->setPaidAt(new \DateTime());
+                $new->setPaidAt(new \DateTimeImmutable());
                 $this->di['em']->persist($new);
                 $this->di['em']->flush();
 
@@ -2811,6 +2987,9 @@ class Service implements InjectionAwareInterface
                 // Credit notes carry no income themselves; the offset is
                 // tracked on the original below so reporting nets out.
                 $creditAmount = round(abs($this->getTotalWithTax($new)), 2);
+                if ($expectedAmount !== null && abs($creditAmount - $expectedAmount) > 0.005) {
+                    throw new InformationException('Refund amount changed during reconciliation. Review the invoice before retrying.');
+                }
                 $remaining = round($total - (float) ($invoice->getRefund() ?? 0), 2);
                 if ($creditAmount - $remaining > 0.005) {
                     throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);
@@ -3158,10 +3337,15 @@ class Service implements InjectionAwareInterface
         $applied = $this->getInvoiceCreditRepository()->getSumByInvoiceId((int) $invoice->getId());
         $receipts = $this->di['em']->getRepository(ClientBalance::class);
         $receipts->reconcileHistoricalGatewayReceiptsForInvoice((int) $invoice->getId());
-        $applied += $receipts->getGatewayReceiptSumForInvoice((int) $invoice->getId());
-        if ($applied > 0) {
-            $applied = min($applied, round($this->getTotalWithTax($invoice), 2));
+        $receiptBacked = $receipts->getGatewayReceiptSumForInvoice((int) $invoice->getId());
+        $applied += $receiptBacked;
+        if ($applied <= 0.0) {
+            return;
         }
+        $processed = $this->getTransactionRepository()->getProcessedSumsByInvoiceIds([(int) $invoice->getId()]);
+        $manualPayment = max(0.0, ($processed[$invoice->getId()] ?? 0.0) - $receiptBacked);
+        $required = max(0.0, round($this->getTotalWithTax($invoice) - $manualPayment, 2));
+        $applied = min($applied, $required);
         if ($applied <= 0) {
             return;
         }
@@ -3187,9 +3371,13 @@ class Service implements InjectionAwareInterface
     private function addRefundToCredit(Invoice $invoice, Invoice $creditNote, float $amount): void
     {
         $clientId = (int) $invoice->getClientId();
+        $client = $this->di['em']->find(Client::class, $clientId);
+        if (!$client instanceof Client || strcasecmp((string) $client->getCurrency(), (string) $invoice->getCurrency()) !== 0) {
+            throw new InformationException('The invoice currency must match the client currency to refund to account credit.');
+        }
 
         $credit = new ClientBalance();
-        $credit->setClient($this->di['em']->getReference(Client::class, $clientId));
+        $credit->setClient($client);
         $credit->setType('invoice');
         $credit->setRelId((string) $creditNote->getId());
         $credit->setDescription('Refund of invoice ' . $invoice->getSerie() . $invoice->getNr() . ' to account credit');
@@ -3263,7 +3451,7 @@ class Service implements InjectionAwareInterface
         $tx->setType(\Payment_Transaction::TXTYPE_REFUND);
         $tx->setStatus(Transaction::STATUS_PROCESSED);
         $tx->setNote('Gateway refund for invoice #' . $invoice->getId());
-        $tx->setUpdatedAt(new \DateTime());
+        $tx->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->persist($tx);
         $this->di['em']->flush();
     }
@@ -3490,7 +3678,7 @@ class Service implements InjectionAwareInterface
             if (!is_numeric($invoice_due_days)) {
                 $invoice_due_days = 1;
             }
-            $new->setDueAt(new \DateTime(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
+            $new->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
             $this->di['em']->persist($new);
             $this->di['em']->flush();
 
@@ -4143,7 +4331,7 @@ class Service implements InjectionAwareInterface
                 if ($paidAtTimestamp === false) {
                     throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $paid_at]);
                 }
-                $model->setPaidAt(new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp)));
+                $model->setPaidAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $paidAtTimestamp)));
             }
 
             $due_at = $data['due_at'] ?? ($model->getDueAt() ? $model->getDueAt()->format('Y-m-d H:i:s') : null);
@@ -4154,7 +4342,7 @@ class Service implements InjectionAwareInterface
                 if ($dueAtTimestamp === false) {
                     throw new InformationException('Invalid date format for due_at: :value', [':value' => (string) $due_at]);
                 }
-                $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $dueAtTimestamp)));
+                $model->setDueAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $dueAtTimestamp)));
             }
 
             $model->setSerie($data['serie'] ?? $model->getSerie());
@@ -4176,7 +4364,7 @@ class Service implements InjectionAwareInterface
                 if ($createdAtTimestamp === false) {
                     throw new InformationException('Invalid date format for created_at: :value', [':value' => (string) $created_at]);
                 }
-                $model->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', $createdAtTimestamp)));
+                $model->setCreatedAt(new \DateTimeImmutable(date('Y-m-d H:i:s', $createdAtTimestamp)));
             }
 
             $ni = $data['new_item'] ?? [];
@@ -4694,8 +4882,18 @@ class Service implements InjectionAwareInterface
         $covered = 0;
         $skipped = 0;
         $failed = 0;
-        foreach ($models as $model) {
+        foreach ($models as $selected) {
+            $invoiceId = (int) $selected->getId();
+
             try {
+                // A previous failure can replace the manager and detach every
+                // selected entity. Resolve each invoice through the current one.
+                $model = $this->getInvoiceRepository()->find($invoiceId);
+                if (!$model instanceof Invoice) {
+                    ++$skipped;
+
+                    continue;
+                }
                 if ($this->tryPayWithCredits($model)) {
                     ++$covered;
                 } else {
@@ -4704,9 +4902,12 @@ class Service implements InjectionAwareInterface
             } catch (\Exception $e) {
                 ++$failed;
                 $this->di['logger']->warning('Failed to cover invoice #{id} with client credits: {message}', [
-                    'id' => $model->getId(),
+                    'id' => $invoiceId,
                     'message' => $e->getMessage(),
                 ]);
+                if (!$this->di['em']->isOpen()) {
+                    $this->resetEntityManager();
+                }
             }
         }
         $this->di['logger']->info('Covered {covered} of {total} unpaid invoices with client credits ({skipped} skipped, {failed} failed).', [
@@ -4725,7 +4926,7 @@ class Service implements InjectionAwareInterface
         if ($paid) {
             $this->di['logger']->info('Covered invoice #{id} with client credits.', ['id' => $model->getId()]);
         } else {
-            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued or already paid.', ['id' => $model->getId()]);
+            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued, already paid, or awaiting order deletion recovery.', ['id' => $model->getId()]);
         }
 
         return $paid;
@@ -4746,6 +4947,9 @@ class Service implements InjectionAwareInterface
      */
     public function resolveRenewalLine(Order $order): array
     {
+        if ($order->getId() !== null) {
+            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+        }
         $price = $order->getPrice();
         $line = [
             'price' => $order->getPrice(),
@@ -4805,6 +5009,9 @@ class Service implements InjectionAwareInterface
      */
     public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
     {
+        if ($order->getId() !== null) {
+            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+        }
         // check if we do have invoice prepared already
         if ($order->getUnpaidInvoiceId() !== null) {
             $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
@@ -4818,7 +5025,7 @@ class Service implements InjectionAwareInterface
 
         ['price' => $price, 'line' => $line] = $this->resolveRenewalLine($order);
 
-        if (!empty($line['free_domain_renewal'])) {
+        if (array_key_exists('free_domain_renewal', $line)) {
             $pending = $this->getInvoiceItemRepository()->findPaidPendingRenewal((int) $order->getId());
             if ($pending?->getInvoice() instanceof Invoice) {
                 return $pending->getInvoice();
@@ -4844,7 +5051,7 @@ class Service implements InjectionAwareInterface
 
         // invoice due date
         if ($due_days > 0) {
-            $proforma->setDueAt(new \DateTime('+' . $due_days . ' days'));
+            $proforma->setDueAt(new \DateTimeImmutable('+' . $due_days . ' days'));
             $this->di['em']->persist($proforma);
             $this->di['em']->flush();
         } else {
@@ -4903,7 +5110,7 @@ class Service implements InjectionAwareInterface
         return implode('|', [
             $order->getClientId(),
             $order->getCurrency(),
-            $expiresAt instanceof \DateTime ? $expiresAt->format('Y-m-d') : '',
+            $expiresAt instanceof \DateTimeInterface ? $expiresAt->format('Y-m-d') : '',
             $order->getPeriod() ?? '',
         ]);
     }
@@ -4933,15 +5140,21 @@ class Service implements InjectionAwareInterface
             throw new InformationException('No orders were provided for the merged renewal invoice.');
         }
 
+        foreach ($orders as $order) {
+            if ($order->getId() !== null) {
+                \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+            }
+        }
+
         $client = $this->di['em']->getRepository(Client::class)->find($first->getClientId())
             ?? throw new InformationException('Client not found');
 
         $resolved = [];
         foreach ($orders as $order) {
             $line = $this->resolveRenewalLine($order);
-            if (!empty($line['line']['free_domain_renewal'])
+            if (array_key_exists('free_domain_renewal', $line['line'])
                 && $this->getInvoiceItemRepository()->findPaidPendingRenewal((int) $order->getId()) instanceof InvoiceItem) {
-                throw new InformationException('The domain renewal is already waiting for its hosting term.');
+                throw new InformationException('The domain renewal is already waiting for completion.');
             }
             $resolved[] = [$order, $line];
         }
@@ -4963,12 +5176,12 @@ class Service implements InjectionAwareInterface
                 $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
 
                 $expiresAt = $order->getExpiresAt();
-                if ($expiresAt instanceof \DateTime && ($dueAt === null || $expiresAt > $dueAt)) {
+                if ($expiresAt instanceof \DateTimeInterface && ($dueAt === null || $expiresAt > $dueAt)) {
                     $dueAt = $expiresAt;
                 }
             }
 
-            if ($dueAt instanceof \DateTime) {
+            if ($dueAt instanceof \DateTimeInterface) {
                 $proforma->setDueAt($dueAt);
                 $this->di['em']->persist($proforma);
                 $this->di['em']->flush();
@@ -4994,9 +5207,14 @@ class Service implements InjectionAwareInterface
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
 
-        /** @var array<string, list<Order>> $buckets */
+        /** @var array<string, list<int>> $buckets */
         $buckets = [];
-        foreach ($models as $model) {
+        foreach ($models as $selected) {
+            // Issuance of a previous renewal can replace the manager.
+            $model = $this->di['em']->getRepository(Order::class)->find($selected->getId());
+            if (!$model instanceof Order) {
+                continue;
+            }
             $mergeable = false;
 
             try {
@@ -5019,10 +5237,20 @@ class Service implements InjectionAwareInterface
                 continue;
             }
 
-            $buckets[$this->renewalMergeKey($model)][] = $model;
+            $buckets[$this->renewalMergeKey($model)][] = (int) $model->getId();
         }
 
-        foreach ($buckets as $bucket) {
+        foreach ($buckets as $bucketIds) {
+            $bucket = [];
+            foreach ($bucketIds as $orderId) {
+                $order = $this->di['em']->getRepository(Order::class)->find($orderId);
+                if ($order instanceof Order) {
+                    $bucket[] = $order;
+                }
+            }
+            if ($bucket === []) {
+                continue;
+            }
             $invoices = [];
 
             try {
@@ -5058,8 +5286,12 @@ class Service implements InjectionAwareInterface
 
             // Issuance runs outside generation: an issue failure retries
             // neither generation (which would duplicate lines) nor credits.
-            foreach ($invoices as $invoice) {
+            foreach ($invoices as $selected) {
                 try {
+                    $invoice = $this->getInvoiceRepository()->find($selected->getId());
+                    if (!$invoice instanceof Invoice) {
+                        continue;
+                    }
                     $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
                 } catch (\Exception $e) {
                     $this->di['logger']->warning($e->getMessage());
@@ -5095,7 +5327,8 @@ class Service implements InjectionAwareInterface
 
                     continue;
                 }
-                $connection->transactional(function () use ($connection, $item, $invoiceItemService): void {
+                $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
+                $process = fn () => $connection->transactional(function () use ($connection, $item, $invoiceItemService, $model): void {
                     // Claim the row so concurrent cron processes cannot execute the same item twice.
                     $status = $connection->fetchOne(
                         'SELECT status FROM invoice_item WHERE id = :id' . RowLock::suffix($connection),
@@ -5105,12 +5338,19 @@ class Service implements InjectionAwareInterface
                         return;
                     }
 
-                    $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
                     if (!$model instanceof InvoiceItem) {
                         throw new InformationException('Invoice item was not found');
                     }
                     $invoiceItemService->executeTask($model);
                 });
+                $order = $model instanceof InvoiceItem && $model->getType() === InvoiceItem::TYPE_ORDER
+                    ? $this->di['em']->getRepository(Order::class)->find((int) $model->getRelId()) : null;
+                if ($order instanceof Order) {
+                    // Keep provisioning and its outer commit under one lifecycle lock.
+                    $this->di['mod_service']('Order')->withLifecycleLock($order, $process);
+                } else {
+                    $process();
+                }
             } catch (\Exception $e) {
                 $this->di['logger']->error($e->getMessage());
 
@@ -5233,7 +5473,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceSendReminderEvent((int) $invoice->getId()));
 
-        $invoice->setRemindedAt(new \DateTime());
+        $invoice->setRemindedAt(new \DateTimeImmutable());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
@@ -5305,30 +5545,57 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
-        $proforma = new Invoice();
-        $proforma->setClientId($client->getId() ?? null);
-        $proforma->setStatus(Invoice::STATUS_UNPAID);
-        $proforma->setCurrency($client->getCurrency());
-        $this->di['em']->persist($proforma);
-        $this->di['em']->flush();
+        // Publish the complete invoice, its number and notification intent together.
+        return $this->di['em']->wrapInTransaction(function () use ($client, $amount): Invoice {
+            $proforma = new Invoice();
+            $proforma->setClientId($client->getId() ?? null);
+            $proforma->setStatus(Invoice::STATUS_UNPAID);
+            $proforma->setCurrency($client->getCurrency());
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
 
-        $this->setInvoiceDefaults($proforma);
+            $this->setInvoiceDefaults($proforma);
 
-        // With auto-issue the invoice is born issued, so the issue path's
-        // snapshot never runs for it. Freeze the parties here, before the
-        // issued flag goes on, so funds invoices carry a snapshot like any
-        // other issued invoice.
-        $this->snapshotPartiesFromLiveRecords($proforma);
-        $proforma->setIssued($this->_isAutoIssued());
-        $this->di['em']->persist($proforma);
-        $this->di['em']->flush();
+            // With auto-issue the invoice is born issued, so the issue path's
+            // snapshot never runs for it. Freeze the parties here, before the
+            // issued flag goes on, so funds invoices carry a snapshot like any
+            // other issued invoice.
+            $this->snapshotPartiesFromLiveRecords($proforma);
+            $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+            $invoiceItemService->generateForAddFunds($proforma, $amount);
 
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $invoiceItemService->generateForAddFunds($proforma, $amount);
+            $autoIssued = $this->_isAutoIssued();
+            if ($autoIssued) {
+                $this->assignInvoiceNumberIfMissing($proforma);
+            }
+            $proforma->setIssued($autoIssued);
+            $proforma->setIssueNotificationState($autoIssued ? 2 : 0);
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
 
-        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
+            $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
 
-        return $proforma;
+            return $proforma;
+        });
+    }
+
+    private function invoiceHasDeletionHold(Invoice $invoice): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        $orderIds = $connection->fetchFirstColumn(
+            'SELECT DISTINCT rel_id FROM invoice_item WHERE invoice_id = :invoice_id AND type = :type AND rel_id IS NOT NULL ORDER BY rel_id',
+            ['invoice_id' => $invoice->getId(), 'type' => InvoiceItem::TYPE_ORDER],
+        );
+        // Consistent lock order for multi-order invoices.
+        $orderIds = array_unique(array_map(intval(...), $orderIds));
+        sort($orderIds);
+        foreach ($orderIds as $orderId) {
+            if (\Box\Mod\Order\DeletionRecovery::isHeld($connection, $orderId, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function processInvoice(array $data): array
@@ -5349,6 +5616,10 @@ class Service implements InjectionAwareInterface
 
         if ($invoice->getStatus() === Invoice::STATUS_PAID) {
             throw new InformationException('This invoice is already paid', [], 403);
+        }
+
+        if ($this->invoiceHasDeletionHold($invoice)) {
+            throw new InformationException('Order deletion is awaiting recovery. Retry deletion before billing or changing the service.');
         }
 
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -5929,6 +6200,19 @@ class Service implements InjectionAwareInterface
         $mpi->setBuyer($buyer);
         $mpi->setCurrency($proforma['currency']);
         $mpi->setTitle($title);
+        if (!$subscribe && (float) ($proforma['amount_paid'] ?? 0) > 0.0) {
+            // Legacy adapters read the DTO's items as well as its total. A
+            // balance-only item prevents either contract charging paid funds.
+            $items = [(new \Payment_Invoice_Item())->setId($invoice->getId())
+                ->setTitle(__trans('Remaining balance for invoice :id', [':id' => $proforma['nr']]))
+                ->setPrice(max(0.0, round((float) $proforma['balance_due'], 2)))->setTax(0)->setQuantity(1)];
+        } else {
+            $lineTax = array_sum(array_map(static fn (\Payment_Invoice_Item $item): float => (float) $item->getTax() * $item->getQuantity(), $items));
+            $tax = round((float) ($proforma['tax'] ?? 0) - $lineTax, 2);
+            if ($tax != 0.0) {
+                $items[] = (new \Payment_Invoice_Item())->setTitle(__trans('Invoice tax'))->setPrice(0)->setTax($tax)->setQuantity(1);
+            }
+        }
         $mpi->setItems($items);
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -6027,7 +6311,12 @@ class Service implements InjectionAwareInterface
 
     public function checkInvoiceAuth(Invoice $invoice, InvoiceOperation $operation = InvoiceOperation::READ): void
     {
-        if ($this->di['auth']->isAdminLoggedIn() || Environment::isCLI()) {
+        if (Environment::isCLI()) {
+            return;
+        }
+        if ($this->di['auth']->isAdminLoggedIn()) {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+
             return;
         }
 
@@ -6055,14 +6344,14 @@ class Service implements InjectionAwareInterface
      * Computes the hash_expires_at timestamp. Returns null when the admin
      * has disabled hash expiration (invoice_hash_lifetime_days = 0).
      */
-    private function computeHashExpiration(): ?\DateTime
+    private function computeHashExpiration(): ?\DateTimeImmutable
     {
         $days = (int) $this->di['mod_service']('system')->getParamValue('invoice_hash_lifetime_days', '90');
         if ($days <= 0) {
             return null;
         }
 
-        return new \DateTime("+{$days} days");
+        return new \DateTimeImmutable("+{$days} days");
     }
 
     /**

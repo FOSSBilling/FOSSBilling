@@ -142,11 +142,9 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Asks to cancel the service, with a type (immediate or end_of_period)
      * and a reason.
-     *
-     * @return bool
      */
     #[RequiredParams(['type' => 'Choose when the service ends', 'reason' => 'Please tell us why you want to cancel.'])]
-    public function cancel_request($data)
+    public function cancel_request($data): bool
     {
         $this->di['mod_service']('Order', 'CancelRequest')->create($this->_getOrder($data), (string) $data['type'], (string) $data['reason']);
 
@@ -167,10 +165,8 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Takes back the waiting cancellation request of the service.
-     *
-     * @return bool
      */
-    public function cancel_request_withdraw($data)
+    public function cancel_request_withdraw($data): bool
     {
         $identity = $this->getIdentity();
         if (!$identity instanceof ClientEntity) {

@@ -203,7 +203,7 @@ class ServiceCancelRequest implements InjectionAwareInterface
         $id = (int) $request->getId();
         $order = $request->getOrder();
         $client = $request->getClient();
-        $clientName = $client instanceof Client ? trim((string) $client->getFirstName() . ' ' . (string) $client->getLastName()) : '';
+        $clientName = $client instanceof Client ? trim($client->getFirstName() . ' ' . $client->getLastName()) : '';
 
         try {
             $this->di['mod_service']('email')->sendTemplate([
@@ -261,7 +261,7 @@ class ServiceCancelRequest implements InjectionAwareInterface
             ->where('r.id = :id')
             ->andWhere('r.status = :pending')
             ->setParameter('status', $status)
-            ->setParameter('now', new \DateTime())
+            ->setParameter('now', new \DateTimeImmutable())
             ->setParameter('id', $request->getId())
             ->setParameter('pending', ClientOrderCancelRequest::STATUS_PENDING)
             ->getQuery()

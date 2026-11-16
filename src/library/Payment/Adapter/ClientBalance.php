@@ -134,10 +134,12 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\Core\Container\Inject
         $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->getClientId()]);
 
         if ($tx instanceof Box\Mod\Invoice\Entity\Transaction) {
+            $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find((int) $tx->getId())
+                ?? throw new Payment_Exception('Transaction not found');
             $tx->setError('');
             $tx->setErrorCode(null);
             $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
-            $tx->setUpdatedAt(new DateTime());
+            $tx->setUpdatedAt(new DateTimeImmutable());
             $this->di['em']->flush();
         }
 

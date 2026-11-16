@@ -53,14 +53,14 @@ class Post implements ArrayInterface, TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
     private string $status = self::STATUS_ACTIVE;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $publishAt = null;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $publishAt = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $publishedAt = null;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $publishedAt = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $expiresAt = null;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $expiresAt = null;
 
     /** @todo Temporary until Admin entity is migrated */
     private array $adminData = [];
@@ -154,17 +154,17 @@ class Post implements ArrayInterface, TimestampInterface
         return $this->status;
     }
 
-    public function getPublishAt(): ?\DateTime
+    public function getPublishAt(): ?\DateTimeImmutable
     {
         return $this->publishAt;
     }
 
-    public function getPublishedAt(): ?\DateTime
+    public function getPublishedAt(): ?\DateTimeImmutable
     {
         return $this->publishedAt;
     }
 
-    public function getExpiresAt(): ?\DateTime
+    public function getExpiresAt(): ?\DateTimeImmutable
     {
         return $this->expiresAt;
     }
@@ -231,21 +231,21 @@ class Post implements ArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function setPublishAt(?\DateTime $publishAt): self
+    public function setPublishAt(?\DateTimeImmutable $publishAt): self
     {
         $this->publishAt = $publishAt;
 
         return $this;
     }
 
-    public function setPublishedAt(?\DateTime $publishedAt): self
+    public function setPublishedAt(?\DateTimeImmutable $publishedAt): self
     {
         $this->publishedAt = $publishedAt;
 
         return $this;
     }
 
-    public function setExpiresAt(?\DateTime $expiresAt): self
+    public function setExpiresAt(?\DateTimeImmutable $expiresAt): self
     {
         $this->expiresAt = $expiresAt;
 
