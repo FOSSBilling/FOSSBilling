@@ -271,7 +271,7 @@ test('automatic updates convert mixed defaults and real binary session identifie
     expect(count(iterator_to_array((new FOSSBilling\Core\Doctrine\JsonAudit())->inspect($c, 'session', 100))))->toBe(503);
     $result = $migration->automatic($sessionEm, new FOSSBilling\Core\Security\Crypt());
     expect($result['empty_values'])->toBe(503)
-        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM session WHERE fingerprint IS NULL'))->toBe(503)
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM session'))->toBe(0)
         ->and(array_map(fn ($value) => json_decode($value, true), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe(['false', '0', str_repeat('x', 255), ['one', 'two']])
         ->and($migration->automatic($sessionEm, new FOSSBilling\Core\Security\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
 });
