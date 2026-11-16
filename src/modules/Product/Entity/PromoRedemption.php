@@ -67,11 +67,11 @@ class PromoRedemption implements ArrayInterface, TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 20, nullable: true)]
     private ?string $currency = null;
 
-    #[ORM\Column(name: 'committed_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $committedAt = null;
+    #[ORM\Column(name: 'committed_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $committedAt = null;
 
-    #[ORM\Column(name: 'released_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $releasedAt = null;
+    #[ORM\Column(name: 'released_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $releasedAt = null;
 
     #[ORM\Column(name: 'release_reason', type: \Doctrine\DBAL\Types\Types::STRING, length: 100, nullable: true)]
     private ?string $releaseReason = null;
@@ -197,24 +197,24 @@ class PromoRedemption implements ArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getCommittedAt(): ?\DateTime
+    public function getCommittedAt(): ?\DateTimeImmutable
     {
         return $this->committedAt;
     }
 
-    public function setCommittedAt(?\DateTime $committedAt): self
+    public function setCommittedAt(?\DateTimeImmutable $committedAt): self
     {
         $this->committedAt = $committedAt;
 
         return $this;
     }
 
-    public function getReleasedAt(): ?\DateTime
+    public function getReleasedAt(): ?\DateTimeImmutable
     {
         return $this->releasedAt;
     }
 
-    public function setReleasedAt(?\DateTime $releasedAt): self
+    public function setReleasedAt(?\DateTimeImmutable $releasedAt): self
     {
         $this->releasedAt = $releasedAt;
 

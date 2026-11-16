@@ -43,10 +43,10 @@ class JsonQuarantine
         #[ORM\GeneratedValue]
         #[ORM\Column(type: Types::BIGINT)]
         private ?int $id = null,
-        #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
-        private ?\DateTime $createdAt = null,
+        #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
+        private ?\DateTimeImmutable $createdAt = null,
     ) {
-        $this->createdAt ??= new \DateTime();
+        $this->createdAt ??= new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -89,7 +89,7 @@ class JsonQuarantine
         return $this->original;
     }
 
-    public function getCreatedAt(): ?\DateTime
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
     }

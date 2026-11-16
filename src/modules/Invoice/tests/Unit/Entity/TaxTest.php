@@ -63,8 +63,8 @@ test('tax toApiArray matches the legacy RedBeanPHP toArray keys', function (): v
     $entity->setCountry('US');
     $entity->setState('CA');
     $entity->setTaxrate('8.25');
-    $entity->setCreatedAt(new DateTime('2026-01-02 03:04:05'));
-    $entity->setUpdatedAt(new DateTime('2026-01-02 03:04:05'));
+    $entity->setCreatedAt(new DateTimeImmutable('2026-01-02 03:04:05'));
+    $entity->setUpdatedAt(new DateTimeImmutable('2026-01-02 03:04:05'));
 
     expect($entity->toApiArray())->toBe([
         'id' => 5,

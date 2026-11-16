@@ -666,7 +666,7 @@ class Service implements InjectionAwareInterface
 
             if ($validFor === 0) {
                 // ExchangeRate-API is great and will tell us exactly when the data will next have an update, so we will use that for the cache expiration when "auto" is the sync mode.
-                $item->expiresAt(new \DateTime($array['time_next_update_utc']));
+                $item->expiresAt(new \DateTimeImmutable($array['time_next_update_utc']));
             } else {
                 $item->expiresAfter($validFor);
             }

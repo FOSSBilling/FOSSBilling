@@ -318,7 +318,7 @@ test('to api array', function (): void {
     $clientHistoryModel = (new ActivityClientHistory())
         ->setClientId(1)
         ->setIp('192.0.2.1')
-        ->setCreatedAt(new DateTime('2026-01-01 12:00:00'));
+        ->setCreatedAt(new DateTimeImmutable('2026-01-01 12:00:00'));
 
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
     $resultMock->shouldReceive('fetchAssociative')

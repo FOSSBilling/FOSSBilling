@@ -364,7 +364,7 @@ class Service implements InjectionAwareInterface
             $config[self::FILES_CONFIG_KEY] ??= [];
             $config[self::FILES_CONFIG_KEY][] = $fileDefinition;
             $productModel->setConfig($config);
-            $productModel->setUpdatedAt(new \DateTime());
+            $productModel->setUpdatedAt(new \DateTimeImmutable());
 
             if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->addFileToExistingOrders($productModel, $fileDefinition);
@@ -488,7 +488,7 @@ class Service implements InjectionAwareInterface
     {
         $config = $productModel->getConfig() ?: [];
         $config['update_orders'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['update_orders'] ?? false);
-        $updatedAt = new \DateTime();
+        $updatedAt = new \DateTimeImmutable();
         $productModel->setConfig($config);
         $productModel->setUpdatedAt($updatedAt);
         $this->di['em']->flush();
@@ -709,7 +709,7 @@ class Service implements InjectionAwareInterface
     {
         $updatedAt = date('Y-m-d H:i:s');
         $order->setConfig($config);
-        $order->setUpdatedAt(new \DateTime($updatedAt));
+        $order->setUpdatedAt(new \DateTimeImmutable($updatedAt));
         $this->di['em']->getConnection()->update('client_order', [
             'config' => $config,
             'updated_at' => $updatedAt,

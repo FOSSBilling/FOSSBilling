@@ -106,8 +106,8 @@ test('invoice item toApiArray matches the legacy toArray keys', function (): voi
     $entity->setCharged(true);
     $entity->setTaxed(true);
     $entity->setAttempts(2);
-    $entity->setCreatedAt(new DateTime('2026-01-02 03:04:05'));
-    $entity->setUpdatedAt(new DateTime('2026-01-02 03:04:05'));
+    $entity->setCreatedAt(new DateTimeImmutable('2026-01-02 03:04:05'));
+    $entity->setUpdatedAt(new DateTimeImmutable('2026-01-02 03:04:05'));
 
     expect($entity->toApiArray())->toBe([
         'id' => 5,

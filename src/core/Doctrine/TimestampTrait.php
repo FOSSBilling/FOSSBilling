@@ -22,7 +22,7 @@ use Doctrine\ORM\Mapping as ORM;
  *
  * The trait provides:
  *  - `createdAt` and `updatedAt` properties mapped to the `created_at` / `updated_at`
- *    `DATETIME_MUTABLE` columns
+ *    `DATETIME_IMMUTABLE` columns
  *  - `onPrePersist()` lifecycle callback that initialises both timestamps
  *  - `onPreUpdate()` lifecycle callback that bumps `updatedAt`
  *  - Getter and setter methods satisfying {@see TimestampInterface}
@@ -37,16 +37,16 @@ use Doctrine\ORM\Mapping as ORM;
  */
 trait TimestampTrait
 {
-    #[ORM\Column(name: 'created_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
+    #[ORM\Column(name: 'created_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
+    #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        $now = new \DateTime();
+        $now = new \DateTimeImmutable();
         $this->createdAt ??= $now;
         $this->updatedAt ??= $now;
     }
@@ -54,27 +54,27 @@ trait TimestampTrait
     #[ORM\PreUpdate]
     public function onPreUpdate(): void
     {
-        $this->updatedAt = new \DateTime();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public function getCreatedAt(): ?\DateTime
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(?\DateTime $createdAt): self
+    public function setCreatedAt(?\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?\DateTime
+    public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(?\DateTime $updatedAt): self
+    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
 

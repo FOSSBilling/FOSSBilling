@@ -253,7 +253,7 @@ class Service implements InjectionAwareInterface
             $model->setReseller($config['reseller']);
         }
         $order->setConfig($config);
-        $order->setUpdatedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
         $this->di['logger']->info('Refreshed hosting provisioning configuration for order #{order_id}', ['order_id' => $order->getId()]);
 
@@ -1808,7 +1808,7 @@ class Service implements InjectionAwareInterface
         return array_values($array);
     }
 
-    private function formatDateTime(?\DateTime $dateTime): ?string
+    private function formatDateTime(?\DateTimeInterface $dateTime): ?string
     {
         return $dateTime?->format('Y-m-d H:i:s');
     }

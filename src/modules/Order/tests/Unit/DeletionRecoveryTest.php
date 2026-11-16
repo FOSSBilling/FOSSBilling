@@ -33,7 +33,7 @@ function deletionRecoveryContext(?string $databasePath = null): array
     $em->persist($license);
     $em->flush();
     $order = (new Order())->setServiceType('license')->setServiceId($license->getId())->setStatus(Order::STATUS_ACTIVE)->setGroupMaster(false)
-        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTime('+1 day'));
+        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTimeImmutable('+1 day'));
     $em->persist($order);
     $em->flush();
     $di = container();

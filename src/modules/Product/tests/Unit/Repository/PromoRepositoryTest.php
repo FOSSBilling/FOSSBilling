@@ -38,7 +38,7 @@ test('decrementUsage floors at zero rather than going negative on SQLite', funct
     $entityManager->flush();
 
     $repository = $entityManager->getRepository(Promo::class);
-    $repository->decrementUsage($promo->getId(), 5, new DateTime());
+    $repository->decrementUsage($promo->getId(), 5, new DateTimeImmutable());
 
     $entityManager->clear();
     $reloaded = $entityManager->getRepository(Promo::class)->find($promo->getId());
@@ -54,7 +54,7 @@ test('decrementUsage subtracts normally when it would not go negative', function
     $entityManager->flush();
 
     $repository = $entityManager->getRepository(Promo::class);
-    $repository->decrementUsage($promo->getId(), 3, new DateTime());
+    $repository->decrementUsage($promo->getId(), 3, new DateTimeImmutable());
 
     $entityManager->clear();
     $reloaded = $entityManager->getRepository(Promo::class)->find($promo->getId());

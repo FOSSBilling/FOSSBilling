@@ -53,7 +53,7 @@ $system = new class {
 $di['mod_service'] = $di->protect(fn (string $name): object => strtolower($name) === 'staff' ? $staff : $system);
 $invoice = new Invoice();
 $invoice->setClientId(7);
-$invoice->setHashExpiresAt(new DateTime(($_GET['expired'] ?? '') === '1' ? '-1 day' : '+1 day'));
+$invoice->setHashExpiresAt(new DateTimeImmutable(($_GET['expired'] ?? '') === '1' ? '-1 day' : '+1 day'));
 $service = new Service();
 $service->setDi($di);
 

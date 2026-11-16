@@ -125,7 +125,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->setStatus($data['status'] ?? $model->getStatus());
         $model->setError($data['error'] ?? $model->getError());
         $model->setErrorCode(isset($data['error_code']) ? (int) $data['error_code'] : $model->getErrorCode());
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
         $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionUpdateEvent($transactionId));
 
@@ -773,7 +773,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $tx->setStatus(Transaction::STATUS_ERROR);
         $tx->setError($e->getMessage());
         $tx->setErrorCode((int) $e->getCode());
-        $tx->setUpdatedAt(new \DateTime());
+        $tx->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
 
         $this->di['logger']->error('Failed to process transaction #{id}: {exception}', ['id' => $id, 'exception' => $e]);
@@ -858,7 +858,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->setStatus(Transaction::STATUS_PROCESSING);
         $model->setError(null);
         $model->setErrorCode(null);
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
 
         try {

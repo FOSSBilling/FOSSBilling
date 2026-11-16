@@ -77,8 +77,8 @@ test('converts an admin client list entity to the legacy API shape', function ()
         'tax_exempt' => 0,
         'merge_renewals' => 1,
         'custom_15' => 'VIP',
-        'createdAt' => new DateTime('2026-07-19 10:00:00'),
-        'updatedAt' => new DateTime('2026-07-19 10:00:00'),
+        'createdAt' => new DateTimeImmutable('2026-07-19 10:00:00'),
+        'updatedAt' => new DateTimeImmutable('2026-07-19 10:00:00'),
     ];
 
     foreach ($values as $property => $value) {

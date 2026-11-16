@@ -36,7 +36,7 @@ test('removes expired password reset requests on typed before cron event', funct
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
     $queryBuilder->shouldReceive('delete')->once()->andReturnSelf();
     $queryBuilder->shouldReceive('where')->once()->with('r.createdAt < :cutoff')->andReturnSelf();
-    $queryBuilder->shouldReceive('setParameter')->once()->with('cutoff', Mockery::type(DateTime::class))->andReturnSelf();
+    $queryBuilder->shouldReceive('setParameter')->once()->with('cutoff', Mockery::type(DateTimeImmutable::class))->andReturnSelf();
     $queryBuilder->shouldReceive('getQuery')->once()->andReturn($query);
 
     $di = container();
