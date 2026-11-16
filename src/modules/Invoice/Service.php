@@ -2366,6 +2366,12 @@ class Service implements InjectionAwareInterface
     /** Caller holds the client lock and payment transaction. */
     private function settleGatewayInvoiceInTransaction(Invoice $invoice, Client $client, bool &$paid): void
     {
+        // Keep verified incoming money even when its invoice can no longer settle.
+        $state = $this->lockAndRefreshInvoice($invoice);
+        if ($state['status'] !== Invoice::STATUS_UNPAID) {
+            return;
+        }
+
         if ($this->isInvoiceTypeDeposit($invoice)) {
             if (round($this->getAmountPaid($invoice), 2) < round($this->getTotalWithTax($invoice), 2)) {
                 return;
