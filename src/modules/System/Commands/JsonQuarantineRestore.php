@@ -103,22 +103,26 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
         }
 
         try {
-            $changed = $connection->executeStatement(
-                'UPDATE ' . $connection->quoteSingleIdentifier($table) . ' SET ' . $connection->quoteSingleIdentifier($column) . ' = ? WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' IS NULL',
-                [$candidate, $found['row_id']],
-                [\Doctrine\DBAL\ParameterType::STRING, $idType]
-            );
+            $connection->transactional(function () use ($connection, $store, $table, $column, $candidate, $found, $id, $idType): void {
+                $changed = $connection->executeStatement(
+                    'UPDATE ' . $connection->quoteSingleIdentifier($table) . ' SET ' . $connection->quoteSingleIdentifier($column) . ' = ? WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' IS NULL',
+                    [$candidate, $found['row_id']],
+                    [\Doctrine\DBAL\ParameterType::STRING, $idType]
+                );
+                if ($changed !== 1) {
+                    throw new \RuntimeException(sprintf('Concurrent modification of %s.%s id=%s during restore.', $table, $column, $found['entry']['id']));
+                }
+                $store->delete($table, $column, $id);
+            });
         } catch (\Doctrine\DBAL\Exception) {
             $output->writeln(sprintf('<error>The database rejected the replacement for %s.%s; nothing was changed.</error>', $table, $column));
 
             return Command::FAILURE;
-        }
-        if ($changed !== 1) {
-            $output->writeln(sprintf('<error>Could not restore %s.%s id=%s; nothing was changed.</error>', $table, $column, $found['entry']['id']));
+        } catch (\RuntimeException) {
+            $output->writeln(sprintf('<error>Could not restore %s.%s id=%s; the row changed concurrently and nothing was changed.</error>', $table, $column, $found['entry']['id']));
 
             return Command::FAILURE;
         }
-        $store->delete($table, $column, $id);
         $output->writeln(sprintf('Restored %s.%s id=%s from %s and dropped its quarantine record.', $table, $column, $found['entry']['id'], $file));
 
         return Command::SUCCESS;
