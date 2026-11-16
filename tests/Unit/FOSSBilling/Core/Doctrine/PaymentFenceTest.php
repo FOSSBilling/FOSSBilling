@@ -618,3 +618,35 @@ test('a duplicate credit arriving after an earlier transaction read remains idem
         $cleanup();
     }
 })->with(['mysql']);
+
+test('Stripe initial payment contenders refresh the invoice under one receipt lock', function (string $driver): void {
+    [$db, $config, $service, $cleanup] = paymentFenceDatabase($driver);
+
+    try {
+        $em = $service->getDi()['em'];
+        $second = (new Transaction())->setInvoice($em->find(Invoice::class, 1))->setGateway($em->find(PayGateway::class, 1))->setStatus('received');
+        $em->persist($second);
+        $em->flush();
+        $firstWorker = paymentFenceWorker($config, 'stripe_initial');
+        $secondWorker = paymentFenceWorker($config, 'stripe_initial', id: 2);
+        fwrite($firstWorker[1][0], "go\n");
+        expect(trim((string) fgets($firstWorker[1][1])))->toBe('credited');
+        fwrite($secondWorker[1][0], "go\n");
+        usleep(150000);
+        expect(proc_get_status($secondWorker[0])['running'])->toBeTrue();
+        fwrite($firstWorker[1][0], "go\n");
+        expect(paymentFenceResult($firstWorker)['completed'])->toBeTrue()
+            ->and(paymentFenceResult($secondWorker)['completed'])->toBeTrue()
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10.0)
+            ->and((float) $db->fetchOne('SELECT amount FROM ' . $db->quoteSingleIdentifier('transaction') . ' WHERE id = 2'))->toBe(0.0);
+        // Simulate interruption after settlement, before the winner's final transaction flush.
+        $db->executeStatement('UPDATE ' . $db->quoteSingleIdentifier('transaction') . " SET status = 'error', amount = NULL WHERE id = 1");
+        $retry = paymentFenceWorker($config, 'stripe_initial');
+        fwrite($retry[1][0], "go\n");
+        expect(paymentFenceResult($retry)['completed'])->toBeTrue()
+            ->and((float) $db->fetchOne('SELECT amount FROM ' . $db->quoteSingleIdentifier('transaction') . ' WHERE id = 1'))->toBe(10.0)
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10.0);
+    } finally {
+        $cleanup();
+    }
+})->with(['sqlite', 'mysql', 'pgsql']);

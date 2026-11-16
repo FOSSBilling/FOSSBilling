@@ -44,6 +44,7 @@ function noOpEntityManagerMock(): Mockery\MockInterface
         static fn (string $class, mixed $id): object => createEntity($class, ['id' => $id])
     );
     $em->shouldReceive('persist')->byDefault();
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('flush')->byDefault();
     $em->shouldReceive('isOpen')->byDefault()->andReturn(true);
 
@@ -196,7 +197,9 @@ function buildEntityManagerMocks(): array
     $invoiceRepo->shouldReceive('findByHash')->byDefault()->andReturn(null);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
     $connection->shouldReceive('fetchOne')->byDefault()->andReturn(null);
     $connection->shouldReceive('executeStatement')->byDefault()->andReturn(1);
 
@@ -208,6 +211,7 @@ function buildEntityManagerMocks(): array
         default => Mockery::mock(Doctrine\ORM\EntityRepository::class)->shouldIgnoreMissing(),
     });
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+    $em->shouldReceive('refresh')->byDefault();
     $em->shouldReceive('flush')->byDefault();
     $em->shouldReceive('persist')->byDefault();
     $em->shouldReceive('remove')->byDefault();
@@ -658,7 +662,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
-            ->with('in_123', null, 42)
+            ->with('in_123', 1, 42)
             ->andReturn(null);
         $invoiceRepo->shouldReceive('find')->atLeast()->once()->with(99)->andReturn(createEntity(Invoice::class, ['id' => 99]));
         // flush() happens when the invoice link is persisted.
@@ -770,7 +774,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         // Duplicate-event check — no prior transaction processed this Stripe invoice.
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
-            ->with('in_456', null, 50)
+            ->with('in_456', 1, 50)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -847,7 +851,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(77)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->with('in_renewal_1', null, 60)
+            ->with('in_renewal_1', 1, 60)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -906,7 +910,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(99)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->with('in_init_dup', null, 61)
+            ->with('in_init_dup', 1, 61)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -962,7 +966,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(99)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->with('in_missing_reason', null, 62)
+            ->with('in_missing_reason', 1, 62)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -1165,7 +1169,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $invoiceRepo->shouldReceive('find')->with(42)->andReturn($invoiceModel);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
-            ->with('in_1TnBdC', null, 101)
+            ->with('in_1TnBdC', 1, 101)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -2146,7 +2150,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
-            ->with('seti_existing')
+            ->with('seti_existing', 1, 300)
             ->andReturn($existingTx);
 
         $di = container();
@@ -2163,9 +2167,10 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         expect($tx->getInvoice()?->getId())->toBe(20);
     });
 
-    test('creates subscription when not already handled', function (): void {
+    test('a retried setup webhook excludes itself and creates the subscription', function (): void {
         $tx = buildTransaction();
         $tx->id = 301;
+        $tx->setTxnId('seti_new')->setStatus(Transaction::STATUS_PROCESSING);
 
         // Mirrors what _generateSubscriptionForm() actually creates: a setup
         // intent with the customer already attached and the resolved price
@@ -2229,6 +2234,8 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $di = container();
+        $di['em']->getRepository(Transaction::class)->shouldReceive('findProcessingOrProcessedByTxnId')
+            ->andReturnUsing(fn (string $reference, ?int $gateway = null, ?int $exclude = null): ?Transaction => $exclude === 301 ? null : $tx);
         $invoiceRepo = $di['em']->getRepository(Invoice::class);
         $invoiceRepo->shouldReceive('find')
             ->with(25)
@@ -3382,7 +3389,7 @@ describe('setup first charge recording', function (): void {
             ->and($tx->amount)->toBe('0');
     });
 
-    test('a paid first charge records what Stripe collected', function (): void {
+    test('a paid first charge records what Stripe collected', function (string $outcome): void {
         $invoice = createEntity(Invoice::class, ['id' => 95, 'client_id' => 5, 'currency' => 'USD', 'issued' => true]);
 
         $setupIntent = Stripe\SetupIntent::constructFrom([
@@ -3399,7 +3406,14 @@ describe('setup first charge recording', function (): void {
         $latestInvoice = Stripe\Invoice::constructFrom(['id' => 'in_paid', 'status' => 'paid', 'amount_paid' => 1500, 'currency' => 'usd']);
         $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_paid', 'latest_invoice' => $latestInvoice]);
         $subscriptionsMock = Mockery::mock();
-        $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
+        if ($outcome === 'subscription_busy') {
+            $busy = Mockery::mock(Stripe\Exception\InvalidRequestException::class)->makePartial();
+            $busy->shouldReceive('getStripeCode')->andReturn('idempotency_key_in_use');
+            $subscriptionsMock->shouldReceive('create')->once()->andThrow($busy);
+            $subscriptionsMock->shouldNotReceive('all');
+        } else {
+            $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
+        }
 
         $stripeMock = Mockery::mock(StripeClient::class);
         $stripeMock->setupIntents = $setupIntentsMock;
@@ -3408,14 +3422,28 @@ describe('setup first charge recording', function (): void {
 
         $tx = buildTransaction();
         $tx->id = 704;
+        $tx->setStatus(Transaction::STATUS_PROCESSING);
 
         ['em' => $em] = buildEntityManagerMocks();
+        $flushedStatuses = [];
+        $em->shouldReceive('flush')->andReturnUsing(function () use ($tx, &$flushedStatuses): void {
+            $flushedStatuses[] = $tx->getStatus();
+        });
+        if ($outcome === 'webhook_won') {
+            $em->shouldReceive('refresh')->once()->with($invoice)->andReturnUsing(fn () => $invoice->setStatus(Invoice::STATUS_PAID));
+        }
 
         $invoiceService = Mockery::mock();
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->with($invoice)->andReturn(false);
         $invoiceService->shouldReceive('getTotalWithTax')->with($invoice)->andReturn(100.00);
         $invoiceService->shouldReceive('issueInvoice')->never();
-        $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
+        if ($outcome === 'settlement_failed') {
+            $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andThrow(new RuntimeException('Settlement interrupted'));
+        } elseif ($outcome === 'success') {
+            $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
+        } else {
+            $invoiceService->shouldNotReceive('payInvoiceWithCredits');
+        }
 
         $subscriptionService = Mockery::mock();
         $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
@@ -3426,22 +3454,36 @@ describe('setup first charge recording', function (): void {
         $this->adapter->setDi($di);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
-        $apiAdmin->shouldReceive('client_balance_add_funds')
-            ->once()
-            ->with(Mockery::on(fn (array $bd): bool => (float) $bd['amount'] === 15.0));
+        if ($outcome === 'subscription_busy') {
+            $apiAdmin->shouldNotReceive('invoice_subscription_create');
+        } else {
+            $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturnUsing(function () use ($em): int {
+                $em->flush(); // the real API can flush the transaction before settlement
 
-        invokePrivateMethod($this->adapter, 'processSetupIntent', [
-            $apiAdmin,
-            $tx,
-            $invoice,
-            ['get' => ['setup_intent' => 'seti_paid_first']],
-            1,
+                return 1;
+            });
+        }
+        if ($outcome === 'credit_failed') {
+            $apiAdmin->shouldReceive('client_balance_add_funds')->once()->andThrow(new RuntimeException('Wallet interrupted'));
+        } elseif (in_array($outcome, ['webhook_won', 'subscription_busy'], true)) {
+            $apiAdmin->shouldNotReceive('client_balance_add_funds');
+        } else {
+            $apiAdmin->shouldReceive('client_balance_add_funds')->once()
+                ->with(Mockery::on(fn (array $bd): bool => (float) $bd['amount'] === 15.0 && $bd['payment_reference'] === 'in_paid'));
+        }
+        $process = fn () => invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin, $tx, $invoice, ['get' => ['setup_intent' => 'seti_paid_first']], 1,
         ]);
-
-        expect($tx->status)->toBe(Transaction::STATUS_PROCESSED)
-            ->and($tx->amount)->toBe('15');
-    });
+        if (in_array($outcome, ['credit_failed', 'settlement_failed', 'subscription_busy'], true)) {
+            expect($process)->toThrow($outcome === 'subscription_busy' ? FOSSBilling\Core\Exception\InformationException::class : RuntimeException::class);
+            expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSING)
+                ->and($flushedStatuses)->not->toContain(Transaction::STATUS_PROCESSED);
+        } else {
+            $process();
+            expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED)
+                ->and($tx->getAmount())->toBe($outcome === 'webhook_won' ? '0' : '15');
+        }
+    })->with(['success', 'credit_failed', 'settlement_failed', 'webhook_won', 'subscription_busy']);
 });
 
 describe('saved cards', function (): void {

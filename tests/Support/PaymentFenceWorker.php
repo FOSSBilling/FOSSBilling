@@ -63,6 +63,50 @@ $chargeToken = $claim === '' ? null : $db->fetchOne('SELECT owner_token FROM inv
 $work = function () use ($db, $em, $tx, $invoice, $client, $prepared, $clients, $invoices, $service, $otherEm, $otherTx, $action): void {
     fwrite(STDOUT, "ready\n");
     paymentWorkerWait();
+    if ($action === 'stripe_initial') {
+        $adapter = new Payment_Adapter_Stripe(['test_mode' => true, 'test_api_key' => 'sk_test_dummy', 'test_pub_key' => 'pk_test_dummy', 'gateway_id' => 1]);
+        $di = new Pimple\Container();
+        $di['em'] = $em;
+        $di['logger'] = new Psr\Log\NullLogger();
+        $di['mod_service'] = $di->protect(fn () => new class($em) {
+            public function __construct(private Doctrine\ORM\EntityManagerInterface $em)
+            {
+            }
+
+            public function isInvoiceTypeDeposit(Invoice $invoice): bool
+            {
+                return false;
+            }
+
+            public function payInvoiceWithCredits(Invoice $invoice): bool
+            {
+                $invoice->setStatus(Invoice::STATUS_PAID);
+                $this->em->flush();
+
+                return true;
+            }
+        });
+        $adapter->setDi($di);
+        $api = new class($clients, $client) {
+            public function __construct(private Box\Mod\Client\Service $clients, private Client $client)
+            {
+            }
+
+            public function client_balance_add_funds(array $data): void
+            {
+                $this->clients->addFunds($this->client, $data['amount'], $data['description'], $data);
+                fwrite(STDOUT, "credited\n");
+                paymentWorkerWait();
+            }
+        };
+        $latest = Stripe\Invoice::constructFrom(['id' => 'in_initial_' . $db->getDatabase(), 'status' => 'paid', 'amount_paid' => 1000, 'currency' => 'usd']);
+        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_initial', 'latest_invoice' => $latest]);
+        $amount = (new ReflectionMethod($adapter, 'processInitialSubscriptionPayment'))->invoke($adapter, $api, $tx, $invoice, $subscription);
+        $tx->setAmount((string) $amount)->setStatus(Transaction::STATUS_PROCESSED);
+        $em->flush();
+
+        return;
+    }
     if ($action === 'prefix_credit') {
         $clients->addFunds($client, 10, 'Credit before takeover');
         fwrite(STDOUT, "credited\n");
