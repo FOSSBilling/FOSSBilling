@@ -39,6 +39,7 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
     protected function configure(): void
     {
         $this->addOption('table', null, InputOption::VALUE_REQUIRED, 'Quarantined table from the JSON migration inventory')
+            ->addOption('column', null, InputOption::VALUE_REQUIRED, 'Quarantined column, as listed by database:json:audit --quarantined')
             ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Quarantined row ID (or hashed session ID) as listed by database:json:audit --quarantined')
             ->addOption('from-file', null, InputOption::VALUE_REQUIRED, 'File containing the corrected JSON document')
             ->setHelp('Validates the replacement with the migration\'s own checks and writes it back only into the still-empty slot, then drops the quarantine record. Refuses invalid documents and never overwrites a value set since.');
@@ -47,15 +48,16 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $table = $input->getOption('table');
+        $column = $input->getOption('column');
         $id = $input->getOption('id');
         $file = $input->getOption('from-file');
-        if (!is_string($table) || $table === '' || !is_string($id) || $id === '' || !is_string($file) || $file === '') {
-            $output->writeln('<error>--table, --id and --from-file are required.</error>');
+        if (!is_string($table) || $table === '' || !is_string($column) || $column === '' || !is_string($id) || $id === '' || !is_string($file) || $file === '') {
+            $output->writeln('<error>--table, --column, --id and --from-file are required.</error>');
 
             return Command::INVALID;
         }
-        if (!isset(\FOSSBilling\Core\Doctrine\JsonFields::FIELDS[$table]['columns'])) {
-            $output->writeln('<error>Unknown JSON migration table.</error>');
+        if (!isset(\FOSSBilling\Core\Doctrine\JsonFields::FIELDS[$table]['columns'][$column])) {
+            $output->writeln('<error>Unknown JSON migration column.</error>');
 
             return Command::INVALID;
         }
@@ -69,13 +71,12 @@ final class JsonQuarantineRestore extends Command implements InjectionAwareInter
         }
         $connection = $this->di['em']->getConnection();
         $store = new \FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, $this->di['crypt']);
-        $found = $store->findInTable($table, $id);
+        $found = $store->locate($table, $column, $id);
         if ($found === null) {
-            $output->writeln(sprintf('<error>No quarantined value for %s id=%s.</error>', $table, $id));
+            $output->writeln(sprintf('<error>No quarantined value for %s.%s id=%s.</error>', $table, $column, $id));
 
             return Command::INVALID;
         }
-        $column = $found['column'];
 
         try {
             \FOSSBilling\Core\Doctrine\JsonMigrationValidation::assertCompatible($candidate, $table === 'form_field' && $column === 'default_value');

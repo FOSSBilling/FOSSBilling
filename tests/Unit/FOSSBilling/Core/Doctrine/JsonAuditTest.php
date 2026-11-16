@@ -60,26 +60,27 @@ function quarantineCommandContainer(Doctrine\DBAL\Connection $connection, ?FOSSB
     ]);
 }
 
-function seedQuarantine(Doctrine\DBAL\Connection $connection, string $table = 'product', string $column = 'config', int $id = 1): void
+function seedQuarantine(Doctrine\DBAL\Connection $connection, string $table = 'product', string $column = 'config', int $id = 1, string $original = '{broken-secret'): void
 {
     $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
     FOSSBilling\Core\Doctrine\JsonQuarantineStore::sync($em);
     (new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->save(
-        $table, $column, $id, false, (string) $id, 'invalid_json', '{broken-secret'
+        $table, $column, $id, false, (string) $id, 'invalid_json', $original
     );
 }
 
-test('quarantine show prints the original once and hides nothing else', function (): void {
+test('quarantine show prints the original verbatim', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    seedQuarantine($connection);
+    seedQuarantine($connection, original: '<info>not-a-tag</info>{"a":1}');
 
     $command = new Box\Mod\System\Commands\JsonQuarantineShow();
     $command->setDi(quarantineCommandContainer($connection));
     $tester = new CommandTester($command);
-    expect($tester->execute(['--table' => 'product', '--id' => '1']))->toBe(0)
-        ->and($tester->getDisplay())->toContain('product.config id=1 quarantined:invalid_json', '{broken-secret');
-    expect($tester->execute(['--table' => 'product']))->toBe(2);
-    expect($tester->execute(['--table' => 'product', '--id' => '2']))->toBe(2);
+    expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1']))->toBe(0)
+        ->and($tester->getDisplay())->toContain('product.config id=1 quarantined:invalid_json', '<info>not-a-tag</info>{"a":1}');
+    expect($tester->execute(['--table' => 'product', '--column' => 'config']))->toBe(2);
+    expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '2']))->toBe(2);
+    expect($tester->execute(['--table' => 'product', '--column' => 'addons', '--id' => '1']))->toBe(2);
 
     // Undecryptable originals surface instead of printing a clean bill of health.
     $badCrypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
@@ -87,7 +88,7 @@ test('quarantine show prints the original once and hides nothing else', function
     $command = new Box\Mod\System\Commands\JsonQuarantineShow();
     $command->setDi(quarantineCommandContainer($connection, $badCrypt));
     $tester = new CommandTester($command);
-    expect(fn () => $tester->execute(['--table' => 'product', '--id' => '1']))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
+    expect(fn () => $tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1']))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
 });
 
 test('quarantine restore validates before writing and drops the record', function (): void {
@@ -104,17 +105,17 @@ test('quarantine restore validates before writing and drops the record', functio
         $tester = new CommandTester($command);
         // Invalid documents are refused without touching anything.
         file_put_contents($file, '{broken');
-        expect($tester->execute(['--table' => 'product', '--id' => '1', '--from-file' => $file]))->toBe(2)
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(2)
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull()
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toHaveCount(1);
 
         // Missing files and unknown records are usage errors.
-        expect($tester->execute(['--table' => 'product', '--id' => '1', '--from-file' => $file . '.missing']))->toBe(2);
-        expect($tester->execute(['--table' => 'product', '--id' => '9', '--from-file' => $file]))->toBe(2);
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file . '.missing']))->toBe(2);
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '9', '--from-file' => $file]))->toBe(2);
 
         // A valid document is written back and the record dropped.
         file_put_contents($file, '{"label":"fixed"}');
-        expect($tester->execute(['--table' => 'product', '--id' => '1', '--from-file' => $file]))->toBe(0)
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(0)
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBe('{"label":"fixed"}')
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
     } finally {
@@ -134,7 +135,7 @@ test('quarantine restore refuses to overwrite a value set since', function (): v
         $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
         $command->setDi(quarantineCommandContainer($connection));
         $tester = new CommandTester($command);
-        expect($tester->execute(['--table' => 'product', '--id' => '1', '--from-file' => $file]))->toBe(2)
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(2)
             ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBe('{"label":"someone-fixed-it"}')
             ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toHaveCount(1);
     } finally {
@@ -142,7 +143,40 @@ test('quarantine restore refuses to overwrite a value set since', function (): v
     }
 });
 
-test('quarantine forget drops the record and keeps the NULL', function (): void {
+test('quarantine commands address the exact column when one row has several', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE product (id BIGINT PRIMARY KEY, config TEXT, plugin_config TEXT)');
+    $connection->insert('product', ['id' => 1, 'config' => null, 'plugin_config' => null]);
+    seedQuarantine($connection);
+    seedQuarantine($connection, 'product', 'plugin_config', 1);
+    $file = sys_get_temp_dir() . '/fb-quarantine-restore-' . bin2hex(random_bytes(4)) . '.json';
+    file_put_contents($file, '{"label":"fixed"}');
+
+    try {
+        // Restoring one column leaves the other column's record untouched.
+        $command = new Box\Mod\System\Commands\JsonQuarantineRestore();
+        $command->setDi(quarantineCommandContainer($connection));
+        $tester = new CommandTester($command);
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1', '--from-file' => $file]))->toBe(0)
+            ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBe('{"label":"fixed"}')
+            ->and($connection->fetchOne('SELECT plugin_config FROM product WHERE id = 1'))->toBeNull();
+        $remaining = (new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list();
+        expect($remaining)->toHaveCount(1)
+            ->and($remaining[0]['column'])->toBe('plugin_config');
+
+        // Forgetting one column leaves the other column's record untouched.
+        $command = new Box\Mod\System\Commands\JsonQuarantineForget();
+        $command->setDi(quarantineCommandContainer($connection));
+        $tester = new CommandTester($command);
+        expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1']))->toBe(2);
+        expect($tester->execute(['--table' => 'product', '--column' => 'plugin_config', '--id' => '1']))->toBe(0)
+            ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
+    } finally {
+        unlink($file);
+    }
+});
+
+test('quarantine forget drops the record without decrypting it and keeps the NULL', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE product (id BIGINT PRIMARY KEY, config TEXT)');
     $connection->insert('product', ['id' => 1, 'config' => null]);
@@ -151,8 +185,15 @@ test('quarantine forget drops the record and keeps the NULL', function (): void 
     $command = new Box\Mod\System\Commands\JsonQuarantineForget();
     $command->setDi(quarantineCommandContainer($connection));
     $tester = new CommandTester($command);
-    expect($tester->execute(['--table' => 'product', '--id' => '9']))->toBe(2);
-    expect($tester->execute(['--table' => 'product', '--id' => '1']))->toBe(0)
+    expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '9']))->toBe(2);
+
+    // An undecryptable original must not block dismissal once the NULL is accepted.
+    $badCrypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
+    $badCrypt->shouldReceive('decrypt')->andReturn(false);
+    $command = new Box\Mod\System\Commands\JsonQuarantineForget();
+    $command->setDi(quarantineCommandContainer($connection, $badCrypt));
+    $tester = new CommandTester($command);
+    expect($tester->execute(['--table' => 'product', '--column' => 'config', '--id' => '1']))->toBe(0)
         ->and($connection->fetchOne('SELECT config FROM product WHERE id = 1'))->toBeNull()
         ->and((new FOSSBilling\Core\Doctrine\JsonQuarantineStore($connection, new FOSSBilling\Core\Security\Crypt()))->list())->toBe([]);
 });

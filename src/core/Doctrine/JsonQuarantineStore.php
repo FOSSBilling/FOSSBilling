@@ -148,26 +148,34 @@ final readonly class JsonQuarantineStore
     }
 
     /**
-     * @return array{column: string, entry: array{table: string, column: string, id: string, issue: string}, original: string, id_binary: bool, row_id: string}|null
+     * Metadata-only lookup: identifies the record without decrypting the
+     * original, so dismissal and validated restores work even when the
+     * payload can no longer be decrypted.
+     *
+     * @return array{column: string, entry: array{table: string, column: string, id: string, issue: string}, id_binary: bool, row_id: string}|null
      */
-    public function findInTable(string $table, string $identifier): ?array
+    public function locate(string $table, string $column, string $identifier): ?array
     {
-        if (!$this->exists()) {
+        $row = $this->findRow($table, $column, $identifier, $identifier);
+        if ($row === null) {
             return null;
         }
-        $columns = $this->connection->fetchFirstColumn(
-            'SELECT DISTINCT column_name FROM ' . self::TABLE . ' WHERE table_name = ?',
-            [$table],
-            [Types::STRING]
-        );
-        foreach ($columns as $column) {
-            $found = $this->find($table, (string) $column, $identifier);
-            if ($found !== null) {
-                return ['column' => (string) $column] + $found;
-            }
+        $rawId = $row['row_id'];
+        if (is_resource($rawId)) {
+            $rawId = stream_get_contents($rawId);
         }
 
-        return null;
+        return [
+            'column' => (string) $row['column_name'],
+            'entry' => [
+                'table' => (string) $row['table_name'],
+                'column' => (string) $row['column_name'],
+                'id' => (string) $row['display_id'],
+                'issue' => (string) $row['issue'],
+            ],
+            'id_binary' => (bool) $row['id_binary'],
+            'row_id' => (string) $rawId,
+        ];
     }
 
     /** @return array<string, mixed>|null */

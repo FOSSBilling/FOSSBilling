@@ -21,6 +21,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'json_quarantine')]
+#[ORM\Index(name: 'json_quarantine_lookup_idx', columns: ['table_name', 'column_name', 'display_id'])]
 class JsonQuarantine
 {
     public function __construct(
