@@ -447,7 +447,10 @@ test('legacy cleanup command requires an explicit drained-writers confirmation',
     expect($tester->execute([]))->toBe(Symfony\Component\Console\Command\Command::INVALID)
         ->and($tester->getDisplay())->toContain('--legacy-uploads-drained')
         ->and(is_file($path))->toBeTrue();
-    expect($tester->execute(['--legacy-uploads-drained' => true]))->toBe(Symfony\Component\Console\Command\Command::SUCCESS)
+    expect($tester->execute(['--inventory' => true]))->toBe(0);
+    $manifest = $dir . '/reviewed.json';
+    file_put_contents($manifest, $tester->getDisplay());
+    expect($tester->execute(['--legacy-uploads-drained' => true, '--manifest' => $manifest]))->toBe(Symfony\Component\Console\Command\Command::SUCCESS)
         ->and($tester->getDisplay())->toContain('Removed 1 legacy orphan')
         ->and(is_file($path))->toBeFalse();
 });
@@ -458,11 +461,13 @@ test('legacy cleanup reports database failure without deleting the candidate', f
     $path = $dir . '/7/' . str_repeat('a', 32);
     file_put_contents($path, 'orphan');
     touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
+    $manifest = $dir . '/reviewed.json';
+    file_put_contents($manifest, json_encode(TicketFiles::legacyOrphanInventory($di)));
     $db->executeStatement('DROP TABLE support_ticket_file');
     $command = new Box\Mod\Support\Commands\CleanupLegacyFiles();
     $command->setDi($di);
     $tester = new Symfony\Component\Console\Tester\CommandTester($command);
-    expect(fn () => $tester->execute(['--legacy-uploads-drained' => true]))
+    expect(fn () => $tester->execute(['--legacy-uploads-drained' => true, '--manifest' => $manifest]))
         ->toThrow(Doctrine\DBAL\Exception\DriverException::class);
     expect(is_file($path))->toBeTrue();
 });
@@ -523,3 +528,37 @@ test('discard and staff removal wait for the enclosing transaction', function (s
             ->and(is_file($path))->toBeTrue();
     }
 })->with(['discard', 'staff'])->with([false, true]);
+
+test('reviewed legacy inventory skips changed files and rechecks metadata and markers', function (string $change): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/7');
+    $token = str_repeat('b', 32);
+    $path = $dir . '/7/' . $token;
+    file_put_contents($path, 'before');
+    $mtime = time() - 2 * 86400;
+    touch($path, $mtime);
+    $inventory = TicketFiles::legacyOrphanInventory($di);
+    expect(count($inventory['files']))->toBe(1)->and(is_file($path))->toBeTrue();
+    if ($change === 'content') {
+        file_put_contents($path, 'after!'); // same size and timestamp: requires content fingerprint
+        touch($path, $mtime);
+    } elseif ($change === 'marker') {
+        file_put_contents($path . '.pending', '0');
+    } elseif ($change === 'metadata') {
+        $db->insert('support_ticket_file', [
+            'token' => $token, 'client_id' => 7, 'uploader_kind' => 'client', 'uploader_id' => 7,
+            'session_hash' => '', 'name' => 'file.txt', 'mime' => 'text/plain', 'size' => 6, 'created_at' => date('Y-m-d H:i:s'),
+        ]);
+    } else {
+        unlink($path);
+        symlink(__FILE__, $path);
+    }
+    expect(TicketFiles::cleanupLegacyInventory($di, $inventory, true))->toBe(0)
+        ->and(is_file($path))->toBeTrue();
+})->with(['content', 'marker', 'metadata', 'symlink']);
+
+test('reviewed legacy cleanup requires drain and rejects invalid paths before deletion', function (): void {
+    [$di, $db, $dir] = ticketFilesConnection();
+    expect(fn () => TicketFiles::cleanupLegacyInventory($di, ['version' => 1, 'files' => []], false))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => TicketFiles::cleanupLegacyInventory($di, ['version' => 1, 'files' => [['client_id' => 7, 'token' => '../secret']]], true))->toThrow(InvalidArgumentException::class);
+});

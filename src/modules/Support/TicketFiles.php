@@ -656,6 +656,66 @@ final class TicketFiles
         }
     }
 
+    /** Read-only, bounded inventory for an operator to review before deleting legacy files. */
+    public static function legacyOrphanInventory(\Pimple\Container $di): array
+    {
+        $db = self::db($di);
+        if ($db->isTransactionActive()) {
+            throw new \LogicException('Legacy attachment inventory cannot run inside a transaction.');
+        }
+        $files = [];
+        $filesystem = new Filesystem();
+        if ($filesystem->exists(self::dir())) {
+            $finder = (new Finder())->files()->in(self::dir())->depth('== 1')->name('/^[a-f0-9]{32}$/')->sortByName();
+            foreach ($finder as $file) {
+                $client = $file->getRelativePath();
+                if ($file->isLink() || !ctype_digit($client) || (string) (int) $client !== $client
+                    || $file->getMTime() >= time() - self::LEGACY_ORPHAN_HOURS * 3600
+                    || $filesystem->exists(self::markerPath((int) $client, $file->getFilename()))
+                    || $db->fetchOne('SELECT id FROM support_ticket_file WHERE token = ?', [$file->getFilename()]) !== false) {
+                    continue;
+                }
+                $files[] = [
+                    'client_id' => (int) $client, 'token' => $file->getFilename(),
+                    'size' => $file->getSize(), 'mtime' => $file->getMTime(),
+                    'sha256' => hash_file('sha256', $file->getPathname()),
+                ];
+                if (count($files) === 500) {
+                    break;
+                }
+            }
+        }
+
+        return ['version' => 1, 'generated_at' => gmdate(DATE_ATOM), 'files' => $files];
+    }
+
+    /** Delete only reviewed, unchanged candidates; the legacy writer drain remains mandatory. */
+    public static function cleanupLegacyInventory(\Pimple\Container $di, array $inventory, bool $legacyUploadsDrained): int
+    {
+        if (!$legacyUploadsDrained) {
+            throw new \InvalidArgumentException('Legacy attachment writers must be stopped and their requests drained.');
+        }
+        if (($inventory['version'] ?? null) !== 1 || !is_array($inventory['files'] ?? null) || count($inventory['files']) > 500) {
+            throw new \InvalidArgumentException('Invalid legacy attachment inventory.');
+        }
+        $batch = [];
+        foreach ($inventory['files'] as $file) {
+            if (!is_array($file) || !is_int($file['client_id'] ?? null) || $file['client_id'] < 0
+                || !is_string($file['token'] ?? null) || preg_match('/^[a-f0-9]{32}$/', $file['token']) !== 1
+                || !is_int($file['size'] ?? null) || $file['size'] < 0 || !is_int($file['mtime'] ?? null)
+                || !is_string($file['sha256'] ?? null) || preg_match('/^[a-f0-9]{64}$/', $file['sha256']) !== 1) {
+                throw new \InvalidArgumentException('Invalid legacy attachment inventory entry.');
+            }
+            $batch[] = [$file['client_id'], $file['token'], $file];
+        }
+        $db = self::db($di);
+        if ($db->isTransactionActive()) {
+            throw new \LogicException('Legacy attachment cleanup cannot run inside a transaction.');
+        }
+
+        return self::removeLegacyOrphanBatch($db, new Filesystem(), $batch, 500, $di);
+    }
+
     /** Remove unmarked files only after every legacy writer and request has stopped. */
     public static function cleanupLegacyOrphans(\Pimple\Container $di, bool $legacyUploadsDrained): int
     {
@@ -700,19 +760,21 @@ final class TicketFiles
         return $removed;
     }
 
-    /** @param list<array{int, string}> $batch */
-    private static function removeLegacyOrphanBatch(Connection $db, Filesystem $filesystem, array $batch, int $limit): int
+    /** @param list<array{0: int, 1: string, 2?: array}> $batch */
+    private static function removeLegacyOrphanBatch(Connection $db, Filesystem $filesystem, array $batch, int $limit, ?\Pimple\Container $di = null): int
     {
         $tokens = array_column($batch, 1);
         $existing = array_fill_keys($db->executeQuery(
             'SELECT token FROM support_ticket_file WHERE token IN (?)', [$tokens], [ArrayParameterType::STRING]
         )->fetchFirstColumn(), true);
         $removed = 0;
-        foreach ($batch as [$clientId, $token]) {
+        foreach ($batch as $entry) {
+            [$clientId, $token] = $entry;
+            $reviewed = $entry[2] ?? null;
             if (isset($existing[$token])) {
                 continue;
             }
-            $didRemove = $db->transactional(function () use ($db, $filesystem, $clientId, $token): bool {
+            $didRemove = $db->transactional(function () use ($db, $filesystem, $clientId, $token, $reviewed): bool {
                 if ($db->getDatabasePlatform() instanceof PostgreSQLPlatform) {
                     $db->executeStatement('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
                 }
@@ -726,13 +788,22 @@ final class TicketFiles
                     return false;
                 }
                 $path = self::path($clientId, $token);
-                if (is_link($path)) {
+                clearstatcache(true, $path);
+                if (is_link($path) || is_link(dirname($path)) || !$filesystem->exists($path)) {
+                    return false;
+                }
+                if ($reviewed !== null && (filesize($path) !== $reviewed['size'] || filemtime($path) !== $reviewed['mtime']
+                    || filemtime($path) >= time() - self::LEGACY_ORPHAN_HOURS * 3600
+                    || hash_file('sha256', $path) !== $reviewed['sha256'])) {
                     return false;
                 }
                 $filesystem->remove($path);
 
                 return true;
             });
+            if ($didRemove && $di !== null) {
+                $di['logger']->info('Removed reviewed legacy attachment {client}/{token}', ['client' => $clientId, 'token' => $token]);
+            }
             $removed += (int) $didRemove;
             if ($removed >= $limit) {
                 break;
