@@ -622,3 +622,50 @@ test('activation rechecks current status under the lifecycle lock and still supp
     expect($c['service']->activateOrder($c['order'], ['force' => true]))->toBeTrue()
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order_status'))->toBe(1);
 });
+
+test('MySQL renewal checkpoint aliases cannot be forged overwritten or removed through order updates', function (string $prefix, string $form, bool $existing, bool $clear): void {
+    $connection = DriverManager::getConnection([
+        'driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) getenv('DELETION_HOLD_MYSQL_PORT'),
+        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
+    ]);
+    $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('RenewalAliasTestProxies');
+    $em = new EntityManager($connection, $config);
+    $alias = match ($form) {
+        'case' => strtoupper($prefix) . '11',
+        'accent' => str_replace('renewal', 'rénewal', $prefix) . '11', // cspell:ignore rénewal
+        default => $prefix . '11 ',
+    };
+
+    try {
+        (new SchemaTool($em))->createSchema([$em->getClassMetadata(Order::class), $em->getClassMetadata(OrderMeta::class)]);
+        $connection->executeStatement('ALTER TABLE client_order_meta MODIFY name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $connection->executeStatement('SET NAMES utf8mb4 COLLATE utf8mb4_bin');
+        $order = (new Order())->setStatus(Order::STATUS_ACTIVE);
+        $em->persist($order);
+        $em->flush();
+        $connection->insert('client_order_meta', ['client_order_id' => $order->getId(), 'name' => 'ordinary', 'value' => 'original']);
+        if ($existing) {
+            $connection->insert('client_order_meta', ['client_order_id' => $order->getId(), 'name' => $clear ? $alias : $prefix . '11', 'value' => 'pending']);
+        }
+        $di = container();
+        $di['em'] = $em;
+        $service = new Service();
+        $service->setDi($di);
+        expect(fn () => $service->updateOrder($order, ['meta' => $clear ? [] : ['ordinary' => 'changed', $alias => 'completed']]))
+            ->toThrow(InformationException::class);
+        expect($connection->fetchOne("SELECT value FROM client_order_meta WHERE name = 'ordinary'"))->toBe('original')
+            ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_order_meta'))->toBe($existing ? 2 : 1);
+        if ($existing) {
+            expect($connection->fetchOne("SELECT value FROM client_order_meta WHERE name <> 'ordinary'"))->toBe('pending');
+        }
+    } finally {
+        $connection->executeStatement('DROP TABLE IF EXISTS client_order_meta');
+        $connection->executeStatement('DROP TABLE IF EXISTS client_order');
+        $connection->close();
+    }
+})->with([Service::META_PAID_RENEWAL_OUTCOME_PREFIX, Service::META_FREE_RENEWAL_CLAIM_PREFIX, Service::META_FREE_RENEWAL_RETRY_PREFIX])
+    ->with(['case', 'accent', 'space'])
+    ->with(['new alias' => [false, false], 'existing checkpoint' => [true, false], 'clear stored alias' => [true, true]])
+    ->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');

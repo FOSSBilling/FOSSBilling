@@ -57,15 +57,21 @@ test('getList returns array', function (): void {
     ->with($queryBuilder, Mockery::type(FOSSBilling\Core\Pagination\Options::class), Mockery::type(Box\Mod\Staff\Entity\Admin::class))
     ->andReturn($simpleResultArr);
 
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getReservedCreditForClients')->once()->with([1])->andReturn([1 => 4.0]);
+
     $di = container();
     $di['pager'] = $pagerMock;
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice' => $invoiceServiceMock,
+    ]));
 
     $adminClient->setService($serviceMock);
     $adminClient->setDi($di);
     $data = [];
 
     $result = $adminClient->get_list($data);
-    expect($result['list'])->toBe([['id' => 1, 'group' => 'VIP', 'balance' => 10.0]]);
+    expect($result['list'])->toBe([['id' => 1, 'group' => 'VIP', 'balance' => 6.0]]);
 });
 
 test('getPairs returns array', function (): void {

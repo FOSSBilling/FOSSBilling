@@ -81,6 +81,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         // toApiArray, where per-invoice promo lookups would be N+1 queries.
         $result = $this->getService()->toApiArray($model, true, $this->getIdentity());
         $result['promo_applications'] = $this->getService()->getInvoicePromoApplications($model);
+        $result['client_credit'] = $model->getClientId() ? $this->getService()->getFreeCredit((int) $model->getClientId()) : 0.0;
         $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
 
         if (!empty($result['lines'])) {
@@ -185,6 +186,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional float $expected_amount - require this exact refund amount under the invoice lock
      * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      * @optional bool $gateway_refund - also return the money through the payment gateway when it supports refunds (default true). Pass false to record an offline-only refund.
+     * @optional bool $to_credit - add the refunded amount to the client's account credit instead of returning it
      *
      * @return int $id - newly generated refund document ID
      */
@@ -206,6 +208,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
         if (array_key_exists('gateway_refund', $data)) {
             $options['gateway_refund'] = $gatewayRefund;
+        }
+        $toCredit = array_key_exists('to_credit', $data) && \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['to_credit'], false);
+        if ($toCredit) {
+            // Adding funds to the balance needs the same permission as crediting it directly.
+            $this->checkPermissions('client', 'manage_balance');
+            $options['to_credit'] = true;
+            // The credit is the refund destination instead of the gateway.
+            $options['gateway_refund'] = false;
         }
 
         // Refunding a deposit returns wallet credit as card money, so it
@@ -388,7 +398,20 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
         $items = $invoiceItemService->getFailedItems();
 
-        return array_map(fn (\Box\Mod\Invoice\Entity\InvoiceItem $item): array => $item->toApiArray(), $items);
+        return array_map(function (\Box\Mod\Invoice\Entity\InvoiceItem $item): array {
+            $data = $item->toApiArray();
+            if ($item->getType() === \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER && $item->getTask() === \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW) {
+                $order = $this->getDi()['em']->find(Order::class, (int) $item->getRelId());
+                $product = $order instanceof Order ? $this->getDi()['em']->find(\Box\Mod\Product\Entity\Product::class, (int) $order->getProductId()) : null;
+                $data['product_type'] = $product?->getType();
+                $meta = $this->getDi()['mod_service']('Order')->getOrderMetaRepository()->getPairsForOrder((int) $item->getRelId());
+                if (isset($meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()])) {
+                    $data['renewal_outcome'] = $meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()];
+                }
+            }
+
+            return $data;
+        }, $items);
     }
 
     /**
@@ -401,6 +424,39 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->requeueItem((int) $data['id']);
+
+        return true;
+    }
+
+    /** Resolve an interrupted paid renewal after checking its provider outcome. */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed', 'decision' => 'Review decision was not passed'])]
+    public function item_review_paid_renewal($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'InvoiceItem')->reviewPaidRenewal((int) $data['id'], (string) $data['decision']);
+
+        return true;
+    }
+
+    /** Record a staff decision after checking a held zero-priced domain renewal. */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed', 'decision' => 'Review decision was not passed'])]
+    public function item_review_domain_renewal($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'InvoiceItem')->reviewDomainRenewal((int) $data['id'], (string) $data['decision']);
+
+        return true;
+    }
+
+    /**
+     * Link a legacy gateway receipt after checking the payment at the provider.
+     */
+    #[RequiredParams(['receipt_id' => 'Receipt ID is missing', 'transaction_id' => 'Transaction ID is missing', 'provider_object_id' => 'Provider payment ID is missing'])]
+    public function transaction_reconcile_receipt($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('client', 'manage_balance');
+        $this->getService()->reconcileGatewayReceipt((int) $data['receipt_id'], (int) $data['transaction_id'], (string) $data['provider_object_id']);
 
         return true;
     }
@@ -480,6 +536,32 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
+     * Apply part or all of the client's credit to an unpaid invoice.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing', 'amount' => 'Amount is missing'])]
+    public function apply_credit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->applyCredit($this->_getInvoice($data), (float) $data['amount']);
+    }
+
+    /**
+     * Take the credit applied to an unpaid invoice back to the client's credit.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function remove_credit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->removeCredit($this->_getInvoice($data));
+    }
+
+    /**
      * Generate invoices for expiring orders.
      *
      * @return bool
@@ -493,9 +575,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Action to activate paid invoices lines.
-     *
-     * @return bool
      */
+    public function batch_deliver_issued_notifications(): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->doBatchDeliverIssuedNotifications();
+    }
+
     public function batch_activate_paid()
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -957,6 +1044,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional array $config - gateway config array
      * @optional array $accepted_currencies - list of currencies this gateway supports
      * @optional bool $enabled - flag to enable or disable gateway
+     * @optional int $replacement_id - when disabling, move unpaid invoices to this enabled gateway
      * @optional bool $allow_single - flag to enable or disable single payment option
      * @optional bool $allow_recurrent - flag to enable or disable recurrent payment option
      * @optional bool $test_mode - flag to enable or disable test mode for gateway

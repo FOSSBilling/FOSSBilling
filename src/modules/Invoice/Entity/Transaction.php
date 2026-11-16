@@ -31,6 +31,13 @@ class Transaction implements TimestampInterface
     final public const string STATUS_PROCESSED = 'processed';
     final public const string STATUS_ERROR = 'error';
 
+    final public const int GATEWAY_COMPLETION_DONE = 0;
+    final public const int GATEWAY_COMPLETION_PENDING = 1;
+    final public const int GATEWAY_COMPLETION_RUNNING = 2;
+
+    #[ORM\Column(name: 'gateway_completion_state', type: Types::SMALLINT, options: ['default' => 0])]
+    private int $gatewayCompletionState = self::GATEWAY_COMPLETION_DONE;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]
@@ -44,6 +51,9 @@ class Transaction implements TimestampInterface
     #[ORM\ManyToOne(targetEntity: PayGateway::class)]
     #[ORM\JoinColumn(name: 'gateway_id', referencedColumnName: 'id', nullable: true)]
     private ?PayGateway $gateway = null;
+
+    #[ORM\Column(name: 'original_invoice_id', type: Types::BIGINT, nullable: true)]
+    private ?int $originalInvoiceId = null;
 
     #[ORM\Column(name: 'txn_id', type: Types::STRING, length: 255, nullable: true)]
     private ?string $txnId = null;
@@ -93,6 +103,30 @@ class Transaction implements TimestampInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getGatewayCompletionState(): int
+    {
+        return $this->gatewayCompletionState;
+    }
+
+    public function setGatewayCompletionState(int $state): self
+    {
+        $this->gatewayCompletionState = $state;
+
+        return $this;
+    }
+
+    public function getOriginalInvoiceId(): ?int
+    {
+        return $this->originalInvoiceId;
+    }
+
+    public function setOriginalInvoiceId(?int $id): self
+    {
+        $this->originalInvoiceId = $id;
+
+        return $this;
     }
 
     public function getInvoice(): ?Invoice

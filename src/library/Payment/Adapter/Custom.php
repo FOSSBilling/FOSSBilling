@@ -104,30 +104,7 @@ class Payment_Adapter_Custom
         if (!$gateway instanceof Box\Mod\Invoice\Entity\PayGateway) {
             throw new Payment_Exception('Transaction is not linked to a payment gateway', [], 7011);
         }
-        $clientService = $this->di['mod_service']('Client');
-        $client = $clientService->get(['id' => $invoice->getClientId()]);
 
-        // Calculate the total amount of the invoice
-        $invoiceService = $this->di['mod_service']('Invoice');
-        $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
-
-        // Add funds to the client's account and mark the invoice as paid
-        $gatewayName = $gateway->getName() ?: $gateway->getGateway();
-        $tx_desc = $gatewayName . ' transaction No: ' . $tx->getTxnId();
-        $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
-        $invoiceService->markAsPaid($invoice, true, true);
-
-        // Update the transaction status and details
-        $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
-        $tx->setAmount((string) $invoiceTotal);
-        $tx->setNote($gatewayName . ' transaction No: ' . $tx->getTxnId());
-        $tx->setCurrency($invoice->getCurrency());
-        $tx->setUpdatedAt(new DateTimeImmutable());
-
-        // Store the updated transaction and use its return to indicate a success or failure.
-        $this->di['em']->persist($tx);
-        $this->di['em']->flush();
-
-        return true;
+        return $this->di['mod_service']('Invoice')->approveOfflineTransaction($tx);
     }
 }

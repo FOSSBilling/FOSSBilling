@@ -38,6 +38,9 @@
 	<h1>Credit Note</h1>
 	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
 	<p>A credit note <strong>{{ invoice.serie_nr|default('') }}</strong> has been issued against invoice <strong>{{ original_invoice.serie_nr|default('') }}</strong>.</p>
+	{% if to_credit|default(false) %}
+	<p>The refunded amount has been added to your account credit.</p>
+	{% endif %}
     <ul>
         <li><strong>Credited Amount:</strong> {{ invoice.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</li>
         <li><strong>Date Issued:</strong> {{ invoice.created_at|default('')|format_date }}</li>

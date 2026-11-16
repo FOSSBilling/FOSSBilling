@@ -140,13 +140,17 @@
 
                     {% block summary_actions %}
                         {% if transaction.requires_manual_approval %}
-                            {% if transaction.status in ['received', 'error', 'approved'] %}
-                                <p class="text-muted w-100 mb-0">{{ 'Offline payment — approve only after the funds arrived. Approving credits the client and marks the invoice paid.'|trans }}</p>
+                            {% if transaction.status in ['received', 'error', 'approved'] or (transaction.status == 'processed' and transaction.completion_pending) %}
+                                {% if transaction.status == 'processed' %}
+                                    <p class="text-muted w-100 mb-0">{{ 'Payment is recorded. Retry completion to finish notifications and invoice tasks.'|trans }}</p>
+                                {% else %}
+                                    <p class="text-muted w-100 mb-0">{{ 'Offline payment — approve only after the funds arrived. Approving credits the client and marks the invoice paid.'|trans }}</p>
+                                {% endif %}
                                 <a class="btn btn-primary" href="{{ 'invoice/transaction_approve'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Approve this payment?'|trans}, reload: true}) }}>
                                     <svg class="icon" width="24" height="24">
                                         <use href="#check" />
                                     </svg>
-                                    <span>{{ 'Approve'|trans }}</span>
+                                    <span>{{ transaction.status == 'processed' ? 'Retry completion'|trans : 'Approve'|trans }}</span>
                                 </a>
                             {% endif %}
                         {% elseif transaction.status in ['received', 'error'] %}

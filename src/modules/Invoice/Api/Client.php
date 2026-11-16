@@ -110,6 +110,22 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
+     * Apply part or all of the account credit to an unpaid invoice.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['hash' => 'Invoice hash was not passed', 'amount' => 'Amount is missing'])]
+    public function apply_credit($data)
+    {
+        $model = $this->getService()->getInvoiceRepository()->findOneBy(['hash' => $data['hash'], 'clientId' => $this->getIdentity()->getId()]);
+        if (!$model instanceof \Box\Mod\Invoice\Entity\Invoice) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Invoice was not found');
+        }
+
+        return $this->getService()->applyCredit($model, (float) $data['amount']);
+    }
+
+    /**
      * Get paginated list of transactions.
      *
      * @optional string $invoice_hash - filter transactions by invoice hash
