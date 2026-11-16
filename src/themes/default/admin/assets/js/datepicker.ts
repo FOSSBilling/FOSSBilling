@@ -85,14 +85,17 @@ export default function initDatepickers() {
         input.setCustomValidity(input.dataset.invalidDateLabel || 'Enter a valid date in YYYY-MM-DD format.');
         return;
       }
-      picker.setSelectedDates(parts.filter(Boolean));
+      // Keep typed ranges chronological like publish(); leave open-ended
+      // values untouched so an empty side stays on its original side.
+      const ordered = range && parts[0] && parts[1] ? [...parts].sort() : parts;
+      picker.setSelectedDates(ordered.filter(Boolean));
       // setSelectedDates rewrites ranges with Tabler's en-dash separator;
       // restore the " to " format so typed and pasted values match publish().
-      if (range && parts[1]) input.value = `${parts[0]} to ${parts[1]}`;
+      if (range && ordered[1]) input.value = `${ordered[0]} to ${ordered[1]}`;
       input.setCustomValidity('');
       if (from && to) {
-        from.value = parts[0] ?? '';
-        to.value = parts[1] ?? '';
+        from.value = ordered[0] ?? '';
+        to.value = ordered[1] ?? '';
       }
     };
     syncInput();
