@@ -3060,8 +3060,8 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connectionMock->shouldReceive('executeStatement')->once()->with(
-        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name)',
-        ['order_id' => $clientOrderModel->getId(), 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => Service::META_SCHEDULED_CANCEL_PHASE],
+        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name, :options_name)',
+        ['order_id' => $clientOrderModel->getId(), 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => Service::META_SCHEDULED_CANCEL_PHASE, 'options_name' => Service::META_SCHEDULED_CANCEL_OPTIONS],
     );
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldIgnoreMissing();
@@ -3113,8 +3113,8 @@ test('gateway finalized cancellation dispatches both lifecycle events', function
     $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
     $connection->shouldReceive('executeStatement')->once()->with(
-        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name)',
-        ['order_id' => 10, 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => Service::META_SCHEDULED_CANCEL_PHASE],
+        'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name, :options_name)',
+        ['order_id' => 10, 'schedule_name' => Service::META_CANCEL_AT_PERIOD_END, 'claim_name' => Service::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => Service::META_SCHEDULED_CANCEL_PHASE, 'options_name' => Service::META_SCHEDULED_CANCEL_OPTIONS],
     );
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);

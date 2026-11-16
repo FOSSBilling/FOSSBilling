@@ -35,7 +35,7 @@ test('deferred invoice issuance survives listener failure and is retried', funct
 
 test('checkout issuance persists pending notification and credit intent in its transaction', function (): void {
     [, $em, $client] = receiptTestContext();
-    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setNr('42');
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setNr('42')->setIssueNotificationState(1);
     $em->persist($invoice);
     $em->flush();
     $service = gatewayDepositTestService($em);
@@ -100,14 +100,15 @@ test('a deferred issued invoice email is retried after the built-in listener fai
     expect($attempts)->toBe(2);
 });
 
-test('a deferred email is queued once when a later listener repeatedly fails', function (): void {
+test('issuance retries preserve the queued email checkpoint after a later listener fails', function (): void {
     [, $em, $client] = receiptTestContext();
-    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setIssueNotificationState(2);
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setIssueNotificationState(2)->setNr('42');
     $em->persist($invoice);
     $em->flush();
     $email = Mockery::mock(Box\Mod\Email\Service::class);
     $email->shouldReceive('sendTemplate')->once()->andReturn(true);
     $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('recordJournalEvent')->zeroOrMoreTimes();
     $service->shouldReceive('toApiArray')->once()->andReturn(['id' => $invoice->getId(), 'total' => 15.0, 'status' => Invoice::STATUS_UNPAID, 'client' => ['id' => $client->getId()]]);
     $service->shouldReceive('getInvoicePdfAttachment')->once()->andReturnNull();
     $service->shouldReceive('extendInvoiceHashLifetime')->once();
@@ -120,9 +121,9 @@ test('a deferred email is queued once when a later listener repeatedly fails', f
     $di['event_dispatcher'] = $dispatcher;
     $di['mod_service'] = $di->protect(fn (): object => $email);
     $service->setDi($di);
-    expect(fn () => $service->notifyDeferredInvoiceIssued($invoice))->toThrow(RuntimeException::class);
+    expect(fn () => $service->issueInvoice($invoice, []))->toThrow(RuntimeException::class);
     expect($invoice->getIssueNotificationState())->toBe(6);
-    $service->doBatchDeliverIssuedNotifications();
+    expect(fn () => $service->issueInvoice($invoice, []))->toThrow(RuntimeException::class);
     expect($invoice->getIssueNotificationState())->toBe(6);
 });
 
@@ -216,7 +217,7 @@ test('deferred email rechecks invoice status after acquiring its row lock', func
 
 test('ordinary issuance still notifies after credit failure and recovers an interrupted notification', function (bool $closed): void {
     [, $em, $client] = receiptTestContext();
-    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true)->setNr('42');
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true)->setNr('42')->setIssueNotificationState(2);
     $em->persist($invoice);
     $em->flush();
     $service = gatewayDepositTestService($em);

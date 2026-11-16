@@ -103,6 +103,7 @@ class Service implements InjectionAwareInterface
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     public const META_SCHEDULED_CANCEL_CLAIM = 'scheduled_cancel_claim';
     public const META_SCHEDULED_CANCEL_PHASE = 'scheduled_cancel_phase';
+    public const META_SCHEDULED_CANCEL_OPTIONS = 'scheduled_cancel_options';
 
     public const META_DELETION_STATE = DeletionRecovery::META_NAME;
 
@@ -1588,7 +1589,8 @@ class Service implements InjectionAwareInterface
                 }
             }
             if (is_array($metaInput) && (array_key_exists(self::META_SCHEDULED_CANCEL_CLAIM, $metaInput)
-                || array_key_exists(self::META_CANCEL_AT_PERIOD_END, $metaInput) || array_key_exists(self::META_SCHEDULED_CANCEL_PHASE, $metaInput))) {
+                || array_key_exists(self::META_CANCEL_AT_PERIOD_END, $metaInput) || array_key_exists(self::META_SCHEDULED_CANCEL_PHASE, $metaInput)
+                || array_key_exists(self::META_SCHEDULED_CANCEL_OPTIONS, $metaInput))) {
                 throw new InformationException('Scheduled cancellation metadata cannot be changed through order updates.');
             }
             if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)
@@ -2000,6 +2002,24 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('The service cancellation requires staff review.');
             }
 
+            if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+                if ($connection->isTransactionActive()) {
+                    throw new InformationException('Scheduled cancellation requires a committed claim before external actions.');
+                }
+                $this->assertOrderCanBeCanceled($order);
+                // Match cron's external-action ordering: the subscription is
+                // canceled before service termination. Claim 2 then means only
+                // local cleanup remains, with no intermediate protocol needed.
+                $this->updateOrderMeta($order, [
+                    self::META_SCHEDULED_CANCEL_CLAIM => '1',
+                    self::META_SCHEDULED_CANCEL_PHASE => 'scheduled',
+                    self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['reason' => $reason, 'skip_event' => (bool) $skipEvent], JSON_THROW_ON_ERROR),
+                ]);
+                $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
+
+                return $this->finalizeCancellationAfterClaim($order, $reason, $skipEvent);
+            }
+
             return $this->cancelFromOrderLocked($order, $reason, $skipEvent);
         } finally {
             NamedLock::release($connection, $name);
@@ -2148,17 +2168,17 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    protected function finalizeCancellationAfterClaim(Order $order, $reason = null): bool
+    protected function finalizeCancellationAfterClaim(Order $order, $reason = null, bool $skipEvent = false): bool
     {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
-        $this->beginCancellation($order, false);
+        $this->beginCancellation($order, $skipEvent);
 
         $meta = $this->getOrderMetaRepository()->getPairsForOrder($orderId);
         if (($meta[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
             $this->updateOrderMeta($order, [self::META_SCHEDULED_CANCEL_CLAIM => '2']);
 
-            return $this->finishScheduledCancellation($order, $reason);
+            return $this->finishScheduledCancellation($order, $reason, $skipEvent);
         }
 
         $this->completeCancellation($order, $reason, false);
@@ -2176,8 +2196,14 @@ class Service implements InjectionAwareInterface
     }
 
     /** Finish local cancellation and its queued lifecycle notification atomically. */
-    protected function finishScheduledCancellation(Order $order, ?string $reason): bool
+    protected function finishScheduledCancellation(Order $order, ?string $reason, bool $skipEvent = false): bool
     {
+        $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
+        if (isset($meta[self::META_SCHEDULED_CANCEL_OPTIONS])) {
+            $options = json_decode($meta[self::META_SCHEDULED_CANCEL_OPTIONS], true, 512, JSON_THROW_ON_ERROR);
+            $reason = $options['reason'];
+            $skipEvent = $options['skip_event'];
+        }
         $connection = $this->di['em']->getConnection();
         $connection->beginTransaction();
 
@@ -2187,12 +2213,19 @@ class Service implements InjectionAwareInterface
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
             $productService->releaseReservedStockForOrder($order, 'order_canceled');
             $this->saveStatusChange($order, $reason === null ? 'Order canceled' : 'Canceled order for ' . $reason);
-            $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($this->orderId($order), true));
+            if (!$skipEvent) {
+                $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($this->orderId($order), true));
+            }
             $connection->commit();
         } catch (\Throwable $e) {
             $connection->rollBack();
             if ($this->di['em']->isOpen()) {
                 $this->di['em']->refresh($order);
+                foreach ($this->di['em']->getUnitOfWork()->getIdentityMap()[\Box\Mod\Product\Entity\PromoRedemption::class] ?? [] as $redemption) {
+                    if ($redemption->getClientOrderId() === $order->getId()) {
+                        $this->di['em']->refresh($redemption);
+                    }
+                }
             }
 
             throw $e;
@@ -2235,8 +2268,8 @@ class Service implements InjectionAwareInterface
         // Remove the schedule checkpoints in one statement. If this process stops
         // before it, claim 2 remains discoverable for cleanup recovery.
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name)',
-            ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => self::META_SCHEDULED_CANCEL_PHASE],
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name, :options_name)',
+            ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => self::META_SCHEDULED_CANCEL_PHASE, 'options_name' => self::META_SCHEDULED_CANCEL_OPTIONS],
         );
     }
 
@@ -2586,8 +2619,8 @@ class Service implements InjectionAwareInterface
             throw new InformationException('The cancellation claim needs staff review before this order can be changed.');
         }
         $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :claim_name AND value = :claim_value',
-            ['order_id' => $order->getId(), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'claim_value' => '2'],
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND ((name = :claim_name AND value = :claim_value) OR name = :options_name)',
+            ['order_id' => $order->getId(), 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'claim_value' => '2', 'options_name' => self::META_SCHEDULED_CANCEL_OPTIONS],
         );
 
         return true;

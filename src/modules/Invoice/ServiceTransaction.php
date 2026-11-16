@@ -101,7 +101,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $invoice = !empty($data['invoice_id'])
             ? $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id'])
             : $model->getInvoice();
-        if (($data['status'] ?? $model->getStatus()) === Transaction::STATUS_PROCESSED
+        if ($model->getStatus() !== Transaction::STATUS_PROCESSED
+            && ($data['status'] ?? $model->getStatus()) === Transaction::STATUS_PROCESSED
             && (float) ($data['amount'] ?? $model->getAmount()) != 0.0 && $invoice instanceof Invoice
             && strcasecmp((string) ($data['currency'] ?? $model->getCurrency()), (string) $invoice->getCurrency()) !== 0) {
             throw new InformationException('Payment currency does not match the invoice.');
@@ -111,7 +112,9 @@ class ServiceTransaction implements InjectionAwareInterface
             if (!$invoice instanceof Invoice) {
                 throw new InformationException('Invoice not found');
             }
-            $this->assertInvoiceAcceptsTransactions($invoice);
+            if ($model->getStatus() !== Transaction::STATUS_PROCESSED) {
+                $this->assertInvoiceAcceptsTransactions($invoice);
+            }
             $model->setInvoice($invoice);
         }
         $model->setTxnId(isset($data['txn_id']) ? (string) $data['txn_id'] : $model->getTxnId());

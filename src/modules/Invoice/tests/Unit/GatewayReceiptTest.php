@@ -499,3 +499,35 @@ test('staff transaction edits reject foreign currency settlement before mutating
     expect($service->update($transaction, ['status' => 'processed', 'amount' => '60', 'currency' => 'usd']))->toBeTrue()
         ->and($transaction->getCurrency())->toBe('usd');
 });
+
+test('automatic credit settlement rejects another wallet currency before fee or balance writes', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('EUR')->setStatus('unpaid')->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('void')->setPrice(100)->setQuantity(1));
+    $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('gateway_fee')->setPrice(3)->setQuantity(1));
+    $em->persist((new ClientBalance())->setClient($client)->setAmount('103')->setType('credit'));
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    expect(fn () => $service->tryPayWithCredits($invoice))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'another currency');
+    expect((float) $em->getConnection()->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(103.0)
+        ->and($em->getConnection()->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe('unpaid')
+        ->and((int) $em->getConnection()->fetchOne("SELECT COUNT(*) FROM invoice_item WHERE task = 'gateway_fee'"))->toBe(1);
+});
+
+test('historical currency mismatches still allow annotations but no financial edits', function (string $status): void {
+    [, $em, $client, , $transaction] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('EUR')->setStatus($status)->setIssued(true);
+    $em->persist($invoice);
+    $transaction->setInvoice($invoice)->setStatus('processed');
+    $em->flush();
+    $service = new Box\Mod\Invoice\ServiceTransaction();
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+    expect($service->update($transaction, ['invoice_id' => $invoice->getId(), 'currency' => 'USD', 'amount' => '15.0', 'status' => 'processed', 'note' => 'Needs staff reconciliation', 'error' => 'Currency mismatch']))->toBeTrue()
+        ->and($transaction->getNote())->toBe('Needs staff reconciliation');
+    expect(fn () => $service->update($transaction, ['currency' => 'EUR']))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+    expect($transaction->getCurrency())->toBe('USD');
+})->with(['unpaid', 'refunded', 'canceled']);

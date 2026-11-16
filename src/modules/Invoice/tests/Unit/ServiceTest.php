@@ -10534,6 +10534,7 @@ test('tryPayWithCredits leaves reserved credit for other invoices alone', functi
     $receiptRepository = Mockery::mock(Box\Mod\Client\Repository\ClientBalanceRepository::class);
     $receiptRepository->shouldReceive('reconcileHistoricalGatewayReceiptsForInvoice')->with(10);
     $receiptRepository->shouldReceive('getGatewayReceiptSumForInvoice')->once()->with(10)->andReturn(0.0);
+    $em->shouldReceive('getRepository')->with(Client::class)->andReturn(Mockery::mock(ClientRepository::class)->shouldReceive('find')->with(20)->andReturn(createEntity(Client::class))->getMock());
     $em->shouldReceive('getRepository')->with(ClientBalance::class)->andReturn($receiptRepository);
 
     $di = container();

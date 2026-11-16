@@ -1899,8 +1899,10 @@ class Service implements InjectionAwareInterface
                 $invoice->setNr($this->getNextInvoiceNumber());
             }
 
+            if (!$invoice->isIssued()) {
+                $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) ? 1 : 2);
+            }
             $invoice->setIssued(true);
-            $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) ? 1 : 2);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
 
@@ -2065,6 +2067,16 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
+        $clientId = (int) $invoice->getClientId();
+        $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+        if (!$client instanceof Client) {
+            throw new InformationException('Client not found');
+        }
+        $this->di['em']->refresh($client, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
+        if (strcasecmp((string) $client->getCurrency(), (string) $invoice->getCurrency()) !== 0) {
+            throw new InformationException('The credit is in :currency and cannot pay an invoice in another currency.', [':currency' => (string) $client->getCurrency()]);
+        }
+
         // Credit pays without the gateway fee. Remove it before measuring
         // what the credit must cover.
         $invoiceId = (int) $invoice->getId();
@@ -2073,7 +2085,6 @@ class Service implements InjectionAwareInterface
             $this->di['mod_service']('Invoice', 'GatewayFees')->remove($invoice);
         }
 
-        $clientId = (int) $invoice->getClientId();
         $cbrepo = $this->di['mod_service']('Client', 'Balance');
 
         // Locks the balance for the rest of this transaction, so a concurrent request cannot
@@ -2397,9 +2408,9 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Gateway receipt details are invalid.');
         }
         $paid = false;
-        $settledInvoice = null;
-        $this->withCreditLock((int) $clientId, function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$settledInvoice): void {
-            $this->di['em']->wrapInTransaction(function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$settledInvoice): void {
+        $completion = null;
+        $this->withCreditLock((int) $clientId, function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$completion): void {
+            $this->di['em']->wrapInTransaction(function () use ($receipt, $transactionId, $providerObjectId, $clientId, &$paid, &$completion): void {
                 $this->di['em']->refresh($receipt);
                 $connection = $this->di['em']->getConnection();
                 $txTable = $connection->quoteIdentifier('transaction');
@@ -2457,17 +2468,21 @@ class Service implements InjectionAwareInterface
                 $receipt->setGatewayReceiptKey($key)->setGatewayTransactionId($transactionId);
                 if ($tx->getStatus() === Transaction::STATUS_ERROR) {
                     $tx->setStatus(Transaction::STATUS_PROCESSED)->setError(null)->setErrorCode(null)->setUpdatedAt(new \DateTime());
+                    $tx->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_PENDING);
                 }
                 $this->di['em']->flush();
                 if ($invoice instanceof Invoice && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
                     $this->settleGatewayInvoiceInTransaction($invoice, $client, $paid);
-                    $settledInvoice = $invoice;
+                }
+                if ($paid || $tx->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
+                    $tx->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_PENDING);
+                    $this->di['em']->flush();
+                    $completion = $tx;
                 }
             });
         });
-        if ($paid && $settledInvoice instanceof Invoice) {
-            $this->firePaymentReceivedEvent($settledInvoice);
-            $this->executeInvoiceItemTasks($this->getInvoiceItemRepository()->findByInvoiceId((int) $settledInvoice->getId()), $this->di['mod_service']('Invoice', 'InvoiceItem'));
+        if ($completion instanceof Transaction) {
+            $this->completeGatewayPayment($completion);
         }
         $this->di['logger']->withChannel('billing')->info('Staff reconciled gateway receipt #{receipt_id} to transaction #{transaction_id}', ['receipt_id' => $receiptId, 'transaction_id' => $transactionId]);
     }
@@ -6104,6 +6119,19 @@ class Service implements InjectionAwareInterface
         $mpi->setBuyer($buyer);
         $mpi->setCurrency($proforma['currency']);
         $mpi->setTitle($title);
+        if (!$subscribe && (float) ($proforma['amount_paid'] ?? 0) > 0.0) {
+            // Legacy adapters read the DTO's items as well as its total. A
+            // balance-only item prevents either contract charging paid funds.
+            $items = [(new \Payment_Invoice_Item())->setId($invoice->getId())
+                ->setTitle(__trans('Remaining balance for invoice :id', [':id' => $proforma['nr']]))
+                ->setPrice(max(0.0, round((float) $proforma['balance_due'], 2)))->setTax(0)->setQuantity(1)];
+        } else {
+            $lineTax = array_sum(array_map(static fn (\Payment_Invoice_Item $item): float => (float) $item->getTax() * $item->getQuantity(), $items));
+            $tax = round((float) ($proforma['tax'] ?? 0) - $lineTax, 2);
+            if ($tax != 0.0) {
+                $items[] = (new \Payment_Invoice_Item())->setTitle(__trans('Invoice tax'))->setPrice(0)->setTax($tax)->setQuantity(1);
+            }
+        }
         $mpi->setItems($items);
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');

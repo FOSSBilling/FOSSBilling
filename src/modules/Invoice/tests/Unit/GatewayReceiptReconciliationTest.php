@@ -344,3 +344,38 @@ test('a paid historical receipt does not reserve unrelated funds', function (): 
     $service = gatewayDepositTestService($em);
     expect($service->getFreeCredit((int) $client->getId()))->toBe(10.0);
 });
+
+test('staff reconciliation completion survives listener failures and crashes without moving money twice', function (bool $crash): void {
+    [, $em, $client, $gateway, $transaction] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus('unpaid')->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('void')->setStatus('pending_payment')->setPrice(15)->setQuantity(1)->setCharged(false));
+    $transaction->setInvoice($invoice)->setStatus('error')->setTxnId('pi_staff_completion');
+    $receipt = (new ClientBalance())->setClient($client)->setType('transaction')->setAmount('15')
+        ->setRelId((string) $transaction->getId())->setDescription('Stripe transaction pi_staff_completion');
+    $em->persist($receipt);
+    $em->flush();
+    $service = gatewayDepositTestService($em);
+    $calls = 0;
+    $events = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $events->addListener(Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent::class, function () use (&$calls, $crash): void {
+        if (++$calls === 1) {
+            throw $crash ? new Error('crash after staff commit') : new RuntimeException('staff listener failure');
+        }
+    });
+    $service->getDi()['event_dispatcher'] = $events;
+    expect(fn () => $service->reconcileGatewayReceipt($receipt->getId(), $transaction->getId(), 'pi_staff_completion'))->toThrow($crash ? Error::class : RuntimeException::class);
+    $connection = $em->getConnection();
+    expect($transaction->getStatus())->toBe('processed')->and($invoice->getStatus())->toBe('paid')
+        ->and((int) $connection->fetchOne('SELECT gateway_completion_state FROM "transaction" WHERE id = ?', [$transaction->getId()]))->toBe(Transaction::GATEWAY_COMPLETION_PENDING);
+    $retryEm = new EntityManager($connection, $em->getConfiguration());
+    $retry = gatewayDepositTestService($retryEm);
+    $retry->getDi()['event_dispatcher'] = $events;
+    $retry->reconcileGatewayReceipt($receipt->getId(), $transaction->getId(), 'pi_staff_completion');
+    $retry->reconcileGatewayReceipt($receipt->getId(), $transaction->getId(), 'pi_staff_completion');
+    expect($calls)->toBe(2)
+        ->and((int) $connection->fetchOne('SELECT gateway_completion_state FROM "transaction" WHERE id = ?', [$transaction->getId()]))->toBe(Transaction::GATEWAY_COMPLETION_DONE)
+        ->and((float) $connection->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0)
+        ->and($connection->fetchOne('SELECT status FROM invoice_item WHERE invoice_id = ?', [$invoice->getId()]))->toBe('executed');
+})->with([false, true]);

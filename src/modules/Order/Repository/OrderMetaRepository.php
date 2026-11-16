@@ -42,8 +42,8 @@ class OrderMetaRepository extends EntityRepository
     public function getLifecycleCheckpointRows(int $orderId): array
     {
         $service = \Box\Mod\Order\Service::class;
-        $conditions = ['name IN (:cancel, :claim, :phase)'];
-        $parameters = ['order_id' => $orderId, 'cancel' => $service::META_CANCEL_AT_PERIOD_END, 'claim' => $service::META_SCHEDULED_CANCEL_CLAIM, 'phase' => $service::META_SCHEDULED_CANCEL_PHASE];
+        $conditions = ['name IN (:cancel, :claim, :phase, :options)'];
+        $parameters = ['order_id' => $orderId, 'cancel' => $service::META_CANCEL_AT_PERIOD_END, 'claim' => $service::META_SCHEDULED_CANCEL_CLAIM, 'phase' => $service::META_SCHEDULED_CANCEL_PHASE, 'options' => $service::META_SCHEDULED_CANCEL_OPTIONS];
         foreach ([$service::META_PAID_RENEWAL_OUTCOME_PREFIX, $service::META_FREE_RENEWAL_CLAIM_PREFIX, $service::META_FREE_RENEWAL_RETRY_PREFIX] as $i => $prefix) {
             $conditions[] = 'SUBSTRING(name, 1, ' . strlen($prefix) . ') = :prefix' . $i;
             $parameters['prefix' . $i] = $prefix;
