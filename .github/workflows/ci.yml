@@ -208,7 +208,7 @@ jobs:
           rm -f ./src/provenance.json
 
       - name: 'Create Downloadable Preview'
-        run: zip -qr ../FOSSBilling-preview.zip .
+        run: zip -qr ../FOSSBilling-preview.zip . -x '.update-lock' 'data/uploads/.update-runtime.lock' 'data/update-finalization.*' 'config.php' 'config.old.php'
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'

@@ -178,19 +178,28 @@ function exceptionHandler(Exception|Error $e): void
  */
 function isCoreUpdateLockActive(?int $now = null): bool
 {
-    $mtime = @filemtime(PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock');
+    $path = PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock';
+    $mtime = @filemtime($path);
+    $handle = @fopen($path, 'r');
+    if ($handle !== false) {
+        try {
+            if (!flock($handle, LOCK_SH | LOCK_NB)) {
+                return true;
+            }
+            flock($handle, LOCK_UN);
+        } finally {
+            fclose($handle);
+        }
+    }
     $now ??= time();
 
-    // No lock file, or it's old enough that the process which created it must
-    // have died without cleaning up (e.g. a host-side request timeout killed
-    // it before the update's `finally` block could run). Treat an old lock as
-    // abandoned rather than blocking the site forever.
+    // A marker with no live owner retains the legacy recovery window.
     return $mtime !== false && ($now - $mtime) <= 600;
 }
 
-function blockWhileCoreUpdateIsRunning(): void
+function blockWhileCoreUpdateIsRunning(bool $runtimeBusy = false): void
 {
-    if (!isCoreUpdateLockActive()) {
+    if (!$runtimeBusy && !isCoreUpdateLockActive()) {
         return;
     }
 
@@ -220,6 +229,29 @@ function preInit(): void
     define('PATH_ROOT', __DIR__);
 
     blockWhileCoreUpdateIsRunning();
+    // Lock before loading even the helper: an update may replace its API too.
+    // Keep this bootstrap-safe literal in sync with RuntimeLock::FILENAME.
+    $bootstrapLock = null;
+    if (getenv('APP_ENV') !== 'test') {
+        $bootstrapLock = @fopen(PATH_ROOT . '/data/uploads/.update-runtime.lock', 'c');
+        if ($bootstrapLock === false) {
+            throw new RuntimeException('Unable to acquire the application update lock.');
+        }
+        if (!flock($bootstrapLock, LOCK_SH | LOCK_NB, $wouldBlock)) {
+            if ($wouldBlock) {
+                // Retry from a fresh bootstrap after extraction, rather than
+                // resuming functions compiled from the previous release.
+                blockWhileCoreUpdateIsRunning(true);
+            }
+
+            throw new RuntimeException('Unable to acquire the application update lock.');
+        }
+        blockWhileCoreUpdateIsRunning();
+    }
+    require_once PATH_ROOT . '/core/Update/RuntimeLock.php';
+    if (is_resource($bootstrapLock)) {
+        FOSSBilling\Core\Update\RuntimeLock::acquire(PATH_ROOT, $bootstrapLock);
+    }
 
     // Check vendor folder exists and load Composer autoloader.
     define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
