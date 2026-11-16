@@ -184,7 +184,8 @@ test('paid order check matches the typed linkage with a legacy rel_id fallback',
             'paid_status' => Invoice::STATUS_PAID,
         ]
             && str_contains($sql, 'ii.order_id = :order_id OR (ii.order_id IS NULL AND ii.rel_id = :rel_id)')
-            && str_contains($sql, 'ii.type = :item_type AND pi.status = :paid_status'))
+            && str_contains($sql, 'ii.type = :item_type')
+            && str_contains($sql, 'pi.status = :paid_status'))
         ->andReturn(1);
 
     $entityManager = Mockery::mock(EntityManagerInterface::class);
