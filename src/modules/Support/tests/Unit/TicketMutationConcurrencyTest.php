@@ -138,7 +138,7 @@ test('ticket deletion serializes concurrent note message and history writes', fu
     }
 })->with(['sqlite', 'mysql', 'pgsql'])->with(['note', 'message', 'edit']);
 
-test('failed escalation SQL rolls back its actions while retaining the once per reply marker', function (string $driver): void {
+test('failed escalation SQL rolls back its actions while retaining the once per reply marker', function (string $driver, string $failure): void {
     [$db, $params, $service, $ticket, $message, $cleanup] = supportMutationDatabase($driver, [
         Box\Mod\Support\Entity\SupportEscalationRule::class, Box\Mod\Support\Entity\SupportEscalationApplied::class,
     ]);
@@ -153,14 +153,19 @@ test('failed escalation SQL rolls back its actions while retaining the once per 
             'created_at' => date('Y-m-d H:i:s', time() - 120), 'updated_at' => date('Y-m-d H:i:s'),
         ]);
         $di = $service->getDi();
-        $support = Mockery::mock(Service::class);
-        $support->shouldReceive('getTicketById')->andReturn($ticket);
-        $support->shouldReceive('ticketReply')->once()->andReturnUsing(function () use ($db): int {
-            $db->insert('support_ticket_note', ['id' => 99, 'support_ticket_id' => 1, 'note' => 'Must roll back']);
-            $db->executeQuery('SELECT * FROM absent_escalation_dependency');
+        if ($failure === 'orm_flush') {
+            $db->executeStatement('CREATE UNIQUE INDEX reject_second_reply ON support_ticket_message (support_ticket_id)');
+            $support = $service;
+        } else {
+            $support = Mockery::mock(Service::class);
+            $support->shouldReceive('getTicketById')->andReturn($ticket);
+            $support->shouldReceive('ticketReply')->once()->andReturnUsing(function () use ($db): int {
+                $db->insert('support_ticket_note', ['id' => 99, 'support_ticket_id' => 1, 'note' => 'Must roll back']);
+                $db->executeQuery('SELECT * FROM absent_escalation_dependency');
 
-            return 99;
-        });
+                return 99;
+            });
+        }
         $staff = Mockery::mock(Box\Mod\Staff\Service::class);
         $staff->shouldReceive('getCronAdmin')->andReturn(Tests\Helpers\admin(['id' => 9]));
         $di['mod_service'] = $di->protect(fn (string $module): object => $module === 'support' ? $support : $staff);
@@ -168,8 +173,10 @@ test('failed escalation SQL rolls back its actions while retaining the once per 
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_escalation_applied'))->toBe(1)
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_note'))->toBe(0)
             ->and(Box\Mod\Support\TicketEscalation::run($di))->toBe(0)
-            ->and($db->isTransactionActive())->toBeFalse();
+            ->and($db->isTransactionActive())->toBeFalse()
+            ->and($di['em']->isOpen())->toBe($failure !== 'orm_flush')
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_message'))->toBe(1);
     } finally {
         $cleanup();
     }
-})->with(['sqlite', 'mysql', 'pgsql']);
+})->with(['sqlite', 'mysql', 'pgsql'])->with(['raw_sql', 'orm_flush']);

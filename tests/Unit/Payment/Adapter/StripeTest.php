@@ -2253,7 +2253,10 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $invoiceModel->buyer_first_name = 'Test';
         $invoiceModel->buyer_last_name = 'User';
 
-        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_new_123', 'metadata' => ['invoice_id' => '25', 'gateway_id' => '1']]);
+        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_new_123', 'latest_invoice' => 'in_newer_subscription_cycle', 'metadata' => ['invoice_id' => '25', 'gateway_id' => '1']]);
+        if (!$recoverOwner) {
+            $subscription->latest_invoice = null;
+        }
         if ($recoverOwner) {
             $tx->setSId('sub_new_123');
             $invoiceModel->setStatus(Invoice::STATUS_PAID);
@@ -2297,6 +2300,9 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $stripeMock->products = $productsMock;
         $stripeMock->prices = $pricesMock;
         $stripeMock->subscriptions = $subscriptionsMock;
+        $invoicesMock = Mockery::mock();
+        $invoicesMock->shouldNotReceive('retrieve');
+        $stripeMock->invoices = $invoicesMock;
 
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
