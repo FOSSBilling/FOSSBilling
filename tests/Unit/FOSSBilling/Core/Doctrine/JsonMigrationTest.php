@@ -12,21 +12,59 @@ beforeEach(function (): void {
     $this->jsonMigrationConnection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
 });
 
-test('a late invalid row blocks the automatic migration before earlier source values change', function (): void {
+test('an invalid row is quarantined without blocking earlier source values', function (): void {
     $c = $this->jsonMigrationConnection;
     $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
     $c->executeStatement('CREATE TABLE session (id VARCHAR(255) PRIMARY KEY, fingerprint TEXT)');
     $c->insert('product', ['id' => 1, 'config' => '']);
     $c->insert('session', ['id' => 'session-secret', 'fingerprint' => '{payload-secret']);
 
-    try {
-        (new JsonMigration())->automatic(EntityManagerFactory::create($c), new Crypt());
-        $this->fail('Invalid source data was accepted.');
-    } catch (JsonMigrationException $error) {
-        expect($error->getMessage())->toContain('session.fingerprint id=sha256:')->not->toContain('session-secret', 'payload-secret');
-    }
-    expect($c->fetchOne('SELECT config FROM product'))->toBe('')
-        ->and($c->fetchOne('SELECT fingerprint FROM session'))->toBe('{payload-secret');
+    $em = EntityManagerFactory::create($c);
+    $result = (new JsonMigration())->automatic($em, new Crypt());
+    expect($result['columns'])->toBe(2)
+        ->and($result['empty_values'])->toBe(1)
+        ->and($result['quarantined_values'])->toBe(1)
+        ->and($result['decoded_values'])->toBe(0)
+        ->and($result['quarantined'][0]['table'])->toBe('session')
+        ->and($result['quarantined'][0]['column'])->toBe('fingerprint')
+        ->and((string) $result['quarantined'][0]['id'])->toStartWith('sha256:')
+        ->and($result['quarantined'][0]['issue'])->toBe('invalid_json')
+        ->and(json_encode($result))->not->toContain('session-secret', 'payload-secret');
+    expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
+        ->and($c->fetchAssociative('SELECT * FROM session'))->toBeFalse()
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+    expect((new JsonMigration())->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
+});
+
+test('a damaged session fingerprint removes its short-lived row instead of passing the check', function (): void {
+    $c = $this->jsonMigrationConnection;
+    $c->executeStatement('CREATE TABLE session (id VARCHAR(255) PRIMARY KEY, fingerprint TEXT)');
+    $c->insert('session', ['id' => 'session-secret', 'fingerprint' => '']);
+
+    $em = EntityManagerFactory::create($c);
+    $result = (new JsonMigration())->automatic($em, new Crypt());
+    expect($result['empty_values'])->toBe(1)
+        ->and($result['quarantined_values'])->toBe(0)
+        ->and($c->fetchAssociative('SELECT * FROM session'))->toBeFalse();
+});
+
+test('quarantined originals survive finalization for later review and repair', function (): void {
+    $c = $this->jsonMigrationConnection;
+    $c->executeStatement('CREATE TABLE `transaction` (id INTEGER PRIMARY KEY, ipn TEXT)');
+    $c->insert('`transaction`', ['id' => 1, 'ipn' => '{broken-payload']);
+
+    $em = EntityManagerFactory::create($c);
+    $crypt = new Crypt();
+    (new JsonMigration())->automatic($em, $crypt);
+    $store = new FOSSBilling\Core\Doctrine\JsonQuarantineStore($c, $crypt);
+    $found = $store->find('transaction', 'ipn', '1');
+    expect($found)->not->toBeNull()
+        ->and($found['original'])->toBe('{broken-payload')
+        ->and($found['entry']['issue'])->toBe('invalid_json')
+        ->and($store->list())->toHaveCount(1)
+        ->and($store->list('transaction'))->toHaveCount(1)
+        ->and($store->list('product'))->toBe([])
+        ->and($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 1'))->toBeNull();
 });
 
 test('automatic conversion normalizes empty configuration values and keeps document meaning', function (): void {
@@ -38,12 +76,51 @@ test('automatic conversion normalizes empty configuration values and keeps docum
     }
     $em = EntityManagerFactory::create($c);
     $migration = new JsonMigration();
-    expect($migration->automatic($em, new Crypt()))->toBe(['columns' => 1, 'empty_values' => 2])
+    expect($migration->automatic($em, new Crypt()))->toBe(['columns' => 1, 'empty_values' => 2, 'quarantined_values' => 0, 'decoded_values' => 0, 'quarantined' => []])
         ->and($c->fetchFirstColumn('SELECT config FROM product ORDER BY id'))->toBe(array_map(fn ($raw) => $raw !== null && trim($raw) === '' ? null : $raw, $values))
         ->and($c->fetchFirstColumn('SELECT DISTINCT untouched FROM product'))->toBe(['same'])
-        ->and($migration->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0])
+        ->and($migration->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0])
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
 });
+
+test('transaction IPN rows with legacy payloads migrate without blocking the update (#4680)', function (): void {
+    $c = $this->jsonMigrationConnection;
+    $c->executeStatement('CREATE TABLE `transaction` (id INTEGER PRIMARY KEY, ipn TEXT)');
+    $valid = json_encode(['source' => 'ipn', 'get' => [], 'post' => ['txn_id' => 'abc'], 'http_raw_post_data' => 'txn_id=abc', 'server' => []], JSON_THROW_ON_ERROR);
+    $doubleEncoded = json_encode($valid, JSON_THROW_ON_ERROR);
+    $c->insert('`transaction`', ['id' => 1, 'ipn' => '{broken-payload']);
+    $c->insert('`transaction`', ['id' => 2, 'ipn' => $doubleEncoded]);
+    $c->insert('`transaction`', ['id' => 3, 'ipn' => $valid]);
+
+    $em = EntityManagerFactory::create($c);
+    $result = (new JsonMigration())->automatic($em, new Crypt());
+    expect($result['columns'])->toBe(1)
+        ->and($result['quarantined_values'])->toBe(1)
+        ->and($result['decoded_values'])->toBe(1)
+        ->and($result['quarantined'][0]['table'])->toBe('transaction')
+        ->and((int) $result['quarantined'][0]['id'])->toBe(1)
+        ->and($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 1'))->toBeNull()
+        ->and(json_decode($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 2'), true))->toBe(json_decode($valid, true))
+        ->and(json_decode($c->fetchOne('SELECT ipn FROM `transaction` WHERE id = 3'), true))->toBe(json_decode($valid, true));
+    (new JsonMigration())->assertReady($c);
+    expect((new JsonMigration())->automatic($em, new Crypt()))->toBe(['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0]);
+});
+
+test('fail-open restriction lists keep blocking the migration instead of widening access', function (string $table, string $column, string $raw): void {
+    $c = $this->jsonMigrationConnection;
+    $c->executeStatement(sprintf('CREATE TABLE `%s` (id INTEGER PRIMARY KEY, `%s` TEXT)', $table, $column));
+    $c->insert(sprintf('`%s`', $table), ['id' => 1, $column => $raw]);
+
+    expect(fn () => (new JsonMigration())->automatic(EntityManagerFactory::create($c), new Crypt()))
+        ->toThrow(JsonMigrationException::class, "JSON preflight failed for $table.$column id=1");
+    expect($c->fetchOne(sprintf('SELECT `%s` FROM `%s` WHERE id = 1', $column, $table)))->toBe($raw)
+        ->and(FOSSBilling\Core\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Core\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
+})->with([
+    'massmailer filter' => ['mod_massmailer', 'filter', '{"client_groups":[7],"client_groups":[7]}'],
+    'license ips' => ['service_license', 'ips', '{"0":"192.0.2.10","0":"192.0.2.10"}'],
+    'promo products' => ['promo', 'products', '{"0":"1","0":"1"}'],
+    'gateway currencies' => ['pay_gateway', 'accepted_currencies', '{"0":"USD","0":"USD"}'],
+]);
 
 test('customized columns and indexes require review without source changes', function (string $definition): void {
     $c = $this->jsonMigrationConnection;
