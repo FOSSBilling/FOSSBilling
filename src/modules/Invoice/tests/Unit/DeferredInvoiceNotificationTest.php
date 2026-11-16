@@ -166,9 +166,11 @@ test('a failure after queue insertion rolls back the email checkpoint and permit
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('toApiArray')->twice()->andReturn(['id' => $invoice->getId(), 'total' => 15.0, 'status' => Invoice::STATUS_UNPAID, 'client' => ['id' => $client->getId()]]);
     $service->shouldReceive('getInvoicePdfAttachment')->twice()->andReturnNull();
-    $service->shouldReceive('extendInvoiceHashLifetime')->twice()->andReturnUsing(function () use (&$attempt): void { if (++$attempt === 1) {
-        throw new RuntimeException('hash update failed');
-    } });
+    $service->shouldReceive('extendInvoiceHashLifetime')->twice()->andReturnUsing(function () use (&$attempt): void {
+        if (++$attempt === 1) {
+            throw new RuntimeException('hash update failed');
+        }
+    });
     $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
     $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent::class, [$service, 'sendIssuedInvoiceEmail']);
     $di = container();

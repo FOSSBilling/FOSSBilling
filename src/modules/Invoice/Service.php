@@ -705,7 +705,7 @@ class Service implements InjectionAwareInterface
                 $known = new \SplObjectStorage();
                 foreach ($em->getUnitOfWork()->getIdentityMap() as $entities) {
                     foreach ($entities as $entity) {
-                        $known->attach($entity);
+                        $known[$entity] = true;
                     }
                 }
                 $connection->beginTransaction();
@@ -721,13 +721,13 @@ class Service implements InjectionAwareInterface
                         // Detach them so reused IDs cannot collide on retry.
                         foreach ($em->getUnitOfWork()->getIdentityMap() as $entities) {
                             foreach ($entities as $entity) {
-                                if (!$known->contains($entity)) {
+                                if (!isset($known[$entity])) {
                                     $em->detach($entity);
                                 }
                             }
                         }
                         foreach ($em->getUnitOfWork()->getScheduledEntityInsertions() as $entity) {
-                            if (!$known->contains($entity)) {
+                            if (!isset($known[$entity])) {
                                 $em->detach($entity);
                             }
                         }
