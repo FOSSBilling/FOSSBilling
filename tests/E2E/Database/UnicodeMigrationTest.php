@@ -530,7 +530,7 @@ test('Unicode repair normalizes database collations without a utf8mb4 equivalent
 });
 
 test('Unicode repair converts unique slugs when the index fits the server limit', function (): void {
-    $this->pdo->exec("CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
     $this->connection->insert('post', ['id' => 1, 'slug' => 'example']);
     ($this->runPatch)();
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");

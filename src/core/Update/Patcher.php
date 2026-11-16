@@ -2623,6 +2623,7 @@ class Patcher implements InjectionAwareInterface
         // Match in PHP rather than LIKE: table names contain underscores,
         // which are single-character wildcards in a LIKE pattern.
         $rowFormat = '';
+
         foreach ($this->fetchAll('SHOW TABLE STATUS') as $status) {
             if (($status['Name'] ?? null) === $table) {
                 $rowFormat = strtolower((string) ($status['Row_format'] ?? ''));
