@@ -29,7 +29,7 @@ class Patch84 implements PatchInterface
                 `updated_at` datetime DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 KEY `support_ticket_message_id_idx` (`support_ticket_message_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;');
         }
     }
 }

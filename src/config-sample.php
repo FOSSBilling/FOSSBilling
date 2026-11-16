@@ -164,7 +164,8 @@ return [
         'port' => getenv('DB_PORT') ?: '3306',
 
         // MySQL/MariaDB connections default to utf8mb4 and normalize utf8 to utf8mb4.
-        // Other supported charsets override the default; this does not convert existing columns.
+        // Other supported charsets override the default for new columns; existing
+        // legacy utf8/utf8mb3 tables and columns are converted to utf8mb4 by the update patches.
         // 'charset' => 'utf8mb4',
 
         /*

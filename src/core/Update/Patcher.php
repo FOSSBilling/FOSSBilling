@@ -2535,8 +2535,11 @@ class Patcher implements InjectionAwareInterface
             'form_field' => ['label', 'description', 'default_value', 'prefix', 'suffix', 'options'],
             'invoice' => ['serie', 'notes', 'text_1', 'text_2', 'seller_company', 'seller_company_vat', 'seller_company_number', 'seller_phone', 'seller_email', 'seller_address', 'buyer_first_name', 'buyer_last_name',
                 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_zip', 'buyer_phone', 'buyer_email', 'buyer_address', 'buyer_city', 'buyer_state', 'taxname'],
+            'invoice_credit' => [],
             'invoice_event' => [],
             'invoice_item' => ['title', 'unit'],
+            'json_migration_record' => [],
+            'json_quarantine' => [],
             'mod_massmailer' => ['from_email', 'from_name', 'subject', 'content'],
             'pay_gateway' => ['name'],
             'pay_gateway_customer' => [],
@@ -2574,6 +2577,57 @@ class Patcher implements InjectionAwareInterface
             'tld_registrar' => ['name'],
             'transaction' => ['error', 'note', 'output', 'txn_status'],
         ];
+    }
+
+    public function repairDatabaseDefaultCharset(): void
+    {
+        $database = $this->fetchOne('SELECT DATABASE()');
+        if (!is_string($database) || $database === '') {
+            return;
+        }
+
+        $defaults = $this->fetchAll(
+            'SELECT DEFAULT_CHARACTER_SET_NAME AS charset, DEFAULT_COLLATION_NAME AS collation FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'
+        );
+        $charset = $defaults[0]['charset'] ?? null;
+        $collation = $defaults[0]['collation'] ?? null;
+        if (!is_string($charset) || !is_string($collation)) {
+            return;
+        }
+
+        if (!preg_match('/^utf8(?:mb3)?$/', $charset)) {
+            return;
+        }
+
+        $collations = $this->fetchFirstColumn(
+            'SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset',
+            ['charset' => 'utf8mb4']
+        );
+        // MariaDB UCA-1400 collations appear without a charset prefix; normalize for lookup.
+        $normalized = array_map(
+            static fn (string $name): string => str_starts_with($name, 'utf8mb4_') ? $name : 'utf8mb4_' . $name,
+            $collations
+        );
+
+        $targetCollation = null;
+        if (preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
+            $candidate = 'utf8mb4_' . $matches[1];
+            if (in_array($candidate, $normalized, true)) {
+                $targetCollation = $collations[array_search($candidate, $normalized, true)];
+            }
+        }
+
+        if ($targetCollation === null) {
+            $fallback = in_array('utf8mb4_general_ci', $collations, true) ? 'utf8mb4_general_ci' : ($collations[0] ?? 'utf8mb4_general_ci');
+            $this->logUpdate('warning', 'Database default collation ' . $collation . ' has no utf8mb4 equivalent; using ' . $fallback . ' for the database default.');
+            $targetCollation = $fallback;
+        }
+
+        $this->executeSql(sprintf(
+            'ALTER DATABASE `%s` CHARACTER SET utf8mb4 COLLATE %s',
+            $this->quoteIdentifier($database),
+            $this->quoteIdentifier($targetCollation)
+        ));
     }
 
     public function backfillProductCategoryPriorities(\Doctrine\DBAL\Connection $connection): void
