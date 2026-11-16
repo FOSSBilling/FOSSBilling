@@ -2336,8 +2336,8 @@ class Service implements InjectionAwareInterface
     {
         // Matches rows through either linkage: order_id is the typed form, while
         // rel_id covers rows written before the order_id backfill reached them.
-        // Single-order scope, so both branches stay sargable (unlike the same
-        // shape in a table-wide correlated subquery).
+        // Single-order scope, so both branches can still use an index (unlike
+        // the same shape in a table-wide correlated subquery).
         $this->di['em']->getConnection()->executeStatement(
             'DELETE FROM invoice_item WHERE status = :status AND (order_id = :order_id OR (order_id IS NULL AND rel_id = :rel_id))',
             [
@@ -2896,8 +2896,8 @@ class Service implements InjectionAwareInterface
                 // missed the backfill (concurrent write during its final page,
                 // manual row, or downgraded writer) would otherwise read as
                 // never paid here. Single-order scope, so both branches of the
-                // lookup stay sargable - unlike that OR inside a correlated
-                // table-wide subquery.
+                // lookup can still use an index - unlike that OR inside a
+                // correlated table-wide subquery.
                 if ($this->getOrderRepository()->hasPaidInvoiceItem($this->orderId($order))) {
                     continue;
                 }

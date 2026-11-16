@@ -276,8 +276,8 @@ class OrderRepository extends EntityRepository
     /**
      * Whether any paid invoice item references the order, through the typed
      * linkage or - for rows the backfill has not reached yet - the legacy
-     * rel_id reference. Single-order scope, so both branches stay sargable
-     * (unlike the same OR inside a correlated table-wide subquery).
+     * rel_id reference. Single-order scope, so both branches can still use
+     * an index (unlike the same OR inside a correlated table-wide subquery).
      *
      * Used as a last-moment re-check before a destructive batch acts: the
      * stale-order scan matches on the typed linkage alone, so an order whose
