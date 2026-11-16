@@ -715,7 +715,9 @@ test('PayPal records collected funds after checkout credit is removed and retrie
     $services = $c['di']['mod_service'];
     unset($c['di']['mod_service']);
     $c['di']['mod_service'] = $c['di']->protect(fn (string $module, ?string $sub = null): object => match ($sub) {
-        'GatewayFees' => $fees, 'Balance' => $balance, default => $services($module, $sub)
+        'GatewayFees' => $fees,
+        'Balance' => $balance,
+        default => $services($module, $sub),
     });
     $payload = $c['payload'];
     $payload['get'] = signedPayPalGet($c['invoice']->getId(), $c['gateway']->getId());
