@@ -159,3 +159,34 @@ test('an unlocked fresh marker retains the legacy recovery window', function ():
         $filesystem->remove($root);
     }
 });
+
+test('updater restores its finalization reader before reopening bootstrap', function (string $mode): void {
+    $root = sys_get_temp_dir() . '/fb-finalization-gate-' . bin2hex(random_bytes(6));
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($root . '/data/uploads');
+    $process = new Process([PHP_BINARY, PATH_TESTS . '/Fixtures/runtime-update-lock.php', $root, $mode, 'handoff']);
+    $bootstrap = fopen($root . '/' . RuntimeLock::FILENAME, 'c');
+    $finalization = fopen($root . '/data/update-finalization.lock', 'c');
+
+    try {
+        $process->start();
+        awaitRuntimeBarrier($root . '/handoff.ready', $process);
+        // A new request must not enter while the old updater restores its
+        // schema reader: otherwise it can migrate before old session cleanup.
+        expect(flock($bootstrap, LOCK_SH | LOCK_NB))->toBeFalse();
+        $filesystem->touch($root . '/handoff.release');
+        awaitRuntimeBarrier($root . '/tail.ready', $process);
+        expect(flock($bootstrap, LOCK_SH | LOCK_NB))->toBeTrue()
+            ->and(flock($finalization, LOCK_EX | LOCK_NB))->toBeFalse();
+        $filesystem->touch($root . '/tail.release');
+        $process->wait();
+        expect($process->getExitCode())->toBe(0)
+            ->and($process->getOutput())->toBe('complete')
+            ->and(flock($finalization, LOCK_EX | LOCK_NB))->toBeTrue();
+    } finally {
+        $process->stop();
+        fclose($bootstrap);
+        fclose($finalization);
+        $filesystem->remove($root);
+    }
+})->with(['handoff-success', 'handoff-failure']);

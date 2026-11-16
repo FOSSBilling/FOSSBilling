@@ -345,7 +345,17 @@ class Finalization implements InjectionAwareInterface
         $this->releaseRuntimeLock();
 
         try {
-            return RuntimeLock::exclusively(PATH_ROOT, fn () => $this->withFinalizationLock($callback, $timeout), $timeout);
+            return RuntimeLock::exclusively(PATH_ROOT, function () use ($callback, $timeout, $held): mixed {
+                try {
+                    return $this->withFinalizationLock($callback, $timeout);
+                } finally {
+                    // Restore the old request's schema reader before reopening
+                    // bootstrap, so new code cannot migrate ahead of its tail work.
+                    if ($held) {
+                        $this->acquireRuntimeLock();
+                    }
+                }
+            }, $timeout);
         } finally {
             if ($held) {
                 $this->acquireRuntimeLock();

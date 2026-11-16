@@ -23,6 +23,42 @@ function awaitFile(string $path): void
 }
 
 file_put_contents(PATH_ROOT . '/' . $name . '.entering', 'entering');
+if (str_starts_with($mode, 'handoff-')) {
+    $service = new class extends Finalization {
+        public bool $pauseReader = false;
+
+        public function acquireRuntimeLock(): void
+        {
+            if ($this->pauseReader) {
+                $this->pauseReader = false;
+                file_put_contents(PATH_ROOT . '/handoff.ready', 'restoring reader');
+                awaitFile(PATH_ROOT . '/handoff.release');
+            }
+            parent::acquireRuntimeLock();
+        }
+    };
+    RuntimeLock::acquire(PATH_ROOT);
+    $service->acquireRuntimeLock();
+    $service->pauseReader = true;
+
+    try {
+        $service->withUpdateLock(static function () use ($mode): void {
+            if ($mode === 'handoff-failure') {
+                throw new RuntimeException('Extraction failed');
+            }
+        });
+    } catch (RuntimeException $e) {
+        if ($mode !== 'handoff-failure' || $e->getMessage() !== 'Extraction failed') {
+            throw $e;
+        }
+    }
+    RuntimeLock::release(PATH_ROOT);
+    file_put_contents(PATH_ROOT . '/tail.ready', 'old updater tail');
+    awaitFile(PATH_ROOT . '/tail.release');
+    $service->releaseRuntimeLock();
+    echo 'complete';
+    exit;
+}
 $service = new Finalization();
 if ($mode === 'legacy-timeout') {
     define('DEBUG', false);
