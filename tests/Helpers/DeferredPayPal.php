@@ -81,11 +81,11 @@ function deferredPayPalApi(array $c): object
     };
 }
 
-function deferredPayPalMysqlEntityManager(?string $connectionClass = null): EntityManager
+function deferredPayPalMysqlEntityManager(?string $connectionClass = null, string $database = 'hold_regression'): EntityManager
 {
     $connection = Doctrine\DBAL\DriverManager::getConnection([
         'driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) getenv('DELETION_HOLD_MYSQL_PORT'),
-        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
+        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => $database,
     ] + ($connectionClass === null ? [] : ['wrapperClass' => $connectionClass]));
     $connection->executeStatement('SET SESSION innodb_lock_wait_timeout = 4'); // cspell:ignore innodb
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
