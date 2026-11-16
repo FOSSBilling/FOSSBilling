@@ -20,12 +20,8 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      # Fork PRs need a base-repository token to apply labels. Keep this workflow
-      # metadata-only: no checkout, PR code execution, artifacts, or caches.
-      # Without a checkout, labeler reads its config from the base repository API.
-      # The action's commit and repository identity are pinned in actions.lock.
+      # Needs pull_request_target to label fork PRs; do not check out or run PR code here.
+      # Labeler reads its configuration from the base repository through the API.
       - uses: actions/labeler@v7.0.0
         with:
-          repo-token: ${{ github.token }}
-          configuration-path: .github/labeler.yml
           sync-labels: true
