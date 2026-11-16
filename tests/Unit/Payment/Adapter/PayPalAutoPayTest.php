@@ -237,7 +237,7 @@ describe('checkout and agreement setup', function (): void {
         $savedCards->shouldReceive('remember')->once()->with(5, true, 9, '', 'B-new', 'PayPal buyer@example.com');
 
         $adapter = autopayAdapter();
-        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards], $em));
+        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards]));
         $adapter->getDi()['http_client'] = autopayNvpResponder([
             'ACK=Success&PAYMENTREQUEST_0_CUSTOM=fb-invoice-60&PAYERID=PAYER1&PAYMENTREQUEST_0_AMT=25.00&PAYMENTREQUEST_0_CURRENCYCODE=USD&EMAIL=buyer@example.com',
             'ACK=Success&PAYMENTINFO_0_TRANSACTIONID=P-2&BILLINGAGREEMENTID=B-new',
@@ -245,7 +245,7 @@ describe('checkout and agreement setup', function (): void {
 
         $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD']);
 
-        expect($adapter->checkoutPaid($invoice, 'EC-1'))->toBe('P-2');
+        expect(withoutPhpWarnings(fn () => $adapter->checkoutPaid($invoice, 'EC-1')))->toBe('P-2');
     });
 
     test('keeps a setup-only agreement as the saved method', function (): void {
@@ -254,13 +254,13 @@ describe('checkout and agreement setup', function (): void {
         $savedCards->shouldReceive('remember')->once()->with(5, true, 9, '', 'B-setup', 'PayPal buyer@example.com');
 
         $adapter = autopayAdapter();
-        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards], $em));
+        $adapter->setDi(autopayDi(['invoice:savedcards' => $savedCards]));
         $adapter->getDi()['http_client'] = autopayNvpResponder([
             'ACK=Success&PAYMENTREQUEST_0_CUSTOM=fb-client-9&EMAIL=buyer@example.com',
             'ACK=Success&BILLINGAGREEMENTID=B-setup',
         ]);
 
-        $adapter->agreementSaved(9, 'EC-2');
+        withoutPhpWarnings(fn () => $adapter->agreementSaved(9, 'EC-2'));
         expect(true)->toBeTrue();
     });
 });

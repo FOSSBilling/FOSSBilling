@@ -224,7 +224,7 @@ describe('vault lifecycle', function (): void {
 
         $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
         $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
-        $invoiceService->shouldReceive('toApiArray')->once()->andReturn(['serie_nr' => 'INV-00060', 'currency' => 'USD']);
+        $invoiceService->shouldReceive('toApiArray')->once()->andReturn(['nr' => 60, 'serie' => 'INV-', 'currency' => 'USD', 'lines' => [['title' => 'Hosting']]]);
 
         $adapter = paypalEmailAdapter();
         $adapter->setDi(paypalDi(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService]));
@@ -235,7 +235,7 @@ describe('vault lifecycle', function (): void {
 
         $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD']);
 
-        expect($adapter->chargeSavedCard($invoice, 'attempt_2'))->toBe('C-1');
+        expect(withoutPhpWarnings(fn () => $adapter->chargeSavedCard($invoice, 'attempt_2')))->toBe('C-1');
     });
 
     test('a declined vault charge reports the refusal', function (): void {
@@ -244,7 +244,7 @@ describe('vault lifecycle', function (): void {
 
         $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
         $invoiceService->shouldReceive('getBalanceDue')->once()->andReturn(25.00);
-        $invoiceService->shouldReceive('toApiArray')->once()->andReturn(['serie_nr' => 'INV-00060', 'currency' => 'USD']);
+        $invoiceService->shouldReceive('toApiArray')->once()->andReturn(['nr' => 60, 'serie' => 'INV-', 'currency' => 'USD', 'lines' => [['title' => 'Hosting']]]);
 
         $adapter = paypalEmailAdapter();
         $adapter->setDi(paypalDi(['invoice:savedcards' => $savedCards, 'invoice' => $invoiceService]));
@@ -255,7 +255,7 @@ describe('vault lifecycle', function (): void {
 
         $invoice = createEntity(Invoice::class, ['id' => 60, 'client_id' => 9, 'currency' => 'USD']);
 
-        expect(fn () => $adapter->chargeSavedCard($invoice, 'attempt_1'))
+        expect(fn () => withoutPhpWarnings(fn () => $adapter->chargeSavedCard($invoice, 'attempt_1')))
             ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'refused');
     });
 });

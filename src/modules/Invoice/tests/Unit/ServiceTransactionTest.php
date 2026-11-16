@@ -429,7 +429,13 @@ test('a callback without server data stores none', function (): void {
 
     $service->create(['skip_validation' => true, 'source' => 'ipn']);
 
-    expect(json_decode((string) $stored->getIpn(), true)['server'])->toBeNull();
+    expect($stored->getIpn())->toBe([
+        'source' => 'ipn',
+        'get' => null,
+        'post' => null,
+        'http_raw_post_data' => null,
+        'server' => null,
+    ]);
 });
 
 test('deletes a transaction', function (): void {

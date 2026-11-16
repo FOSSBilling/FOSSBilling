@@ -1855,10 +1855,7 @@ test('guest ticket reply', function (): void {
         $steps[] = 'flush';
     });
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $events = [];
     $dispatcher = new EventDispatcher();
@@ -2057,10 +2054,7 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
         $steps[] = 'replied';
     });
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $di = container();
     $di['em'] = $emMock;
@@ -2072,7 +2066,7 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);
 
-    $result = $service->ticketReply($ticket, $identity, 'Content');
+    $result = withoutPhpWarnings(fn () => $service->ticketReply($ticket, $identity, 'Content'));
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
     expect($events)->toHaveCount(1);
@@ -2112,10 +2106,7 @@ test('ticket create for admin', function (): void {
         $steps[] = 'opened';
     });
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $di = container();
     $di['em'] = $emMock;
@@ -2135,7 +2126,7 @@ test('ticket create for admin', function (): void {
 
     $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $fn) => $fn());
 
-    $result = $service->ticketCreateForAdmin(1, $helpdesk, $data, $admin);
+    $result = withoutPhpWarnings(fn () => $service->ticketCreateForAdmin(1, $helpdesk, $data, $admin));
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
     expect($events)->toHaveCount(2);
@@ -2517,10 +2508,7 @@ test('message create for ticket', function (Box\Mod\Staff\Entity\Admin|Client $i
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $di = container();
     $di['em'] = $emMock;
@@ -2531,7 +2519,7 @@ test('message create for ticket', function (Box\Mod\Staff\Entity\Admin|Client $i
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);
 
-    $result = $service->messageCreateForTicket($ticket, $identity, 'Content');
+    $result = withoutPhpWarnings(fn () => $service->messageCreateForTicket($ticket, $identity, 'Content'));
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 })->with('messageCreateForTicketProvider');

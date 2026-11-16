@@ -135,6 +135,26 @@ function withAppEnv(?string $value, callable $callback): mixed
     }
 }
 
+/** Run an operation without PHP warnings, including warnings swallowed by its error handling. */
+function withoutPhpWarnings(callable $callback): mixed
+{
+    $warnings = [];
+    set_error_handler(static function (int $severity, string $message, string $file, int $line) use (&$warnings): bool {
+        if ((error_reporting() & $severity) !== 0) {
+            $warnings[] = sprintf('%s in %s:%d', $message, $file, $line);
+        }
+
+        return true;
+    }, E_WARNING | E_NOTICE | E_USER_WARNING | E_USER_NOTICE);
+
+    try {
+        return $callback();
+    } finally {
+        restore_error_handler();
+        expect($warnings)->toBe([], implode("\n", $warnings));
+    }
+}
+
 // Define TestLogger class after autoloader is registered.
 // This is deferred because FOSSBilling\Core\Logging\Logger is loaded via the autoloader.
 // @phpstan-ignore-next-line

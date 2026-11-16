@@ -28,6 +28,7 @@ beforeEach(function (): void {
         'test_pub_key' => 'pk_test_dummy',
         'test_webhook_secret' => TEST_WEBHOOK_SECRET,
         'gateway_id' => 1,
+        'notify_url' => 'https://billing.example/ipn.php?gateway_id=1',
     ]);
 
     // cacheGatewayCustomer()/cacheGatewayProduct() open their own isolated
@@ -1827,7 +1828,7 @@ describe('_generateSubscriptionForm', function (): void {
         $di['em']->shouldReceive('getConnection')->andReturn($dbalMock);
         $this->adapter->setDi($di);
 
-        $html = invokePrivateMethod($this->adapter, '_generateSubscriptionForm', [$invoiceModel]);
+        $html = withoutPhpWarnings(fn () => invokePrivateMethod($this->adapter, '_generateSubscriptionForm', [$invoiceModel]));
 
         expect($html)->toContain('seti_lock_secret');
     });
@@ -1845,6 +1846,7 @@ describe('_generateSubscriptionForm', function (): void {
                 'test_pub_key' => 'pk_test_dummy',
                 'test_webhook_secret' => TEST_WEBHOOK_SECRET,
                 'gateway_id' => 1,
+                'notify_url' => 'https://billing.example/ipn.php?gateway_id=1',
             ]);
 
             $invoiceModel = createEntity(Invoice::class, [
@@ -1889,7 +1891,7 @@ describe('_generateSubscriptionForm', function (): void {
             $stripeMock->setupIntents = $setupIntentsMock;
             setPrivateProperty($adapter, 'stripe', $stripeMock);
 
-            invokePrivateMethod($adapter, 'generateSubscriptionFormUnderLock', [$invoiceModel]);
+            withoutPhpWarnings(fn () => invokePrivateMethod($adapter, 'generateSubscriptionFormUnderLock', [$invoiceModel]));
 
             return $capturedKey;
         };
