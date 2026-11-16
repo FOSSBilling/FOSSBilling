@@ -280,7 +280,16 @@ class Patcher implements InjectionAwareInterface
     {
         $em = $this->di['em'];
         $crypt = $this->di['crypt'];
-        (new \FOSSBilling\Core\Doctrine\JsonMigration())->automatic($em, $crypt);
+        $result = (new \FOSSBilling\Core\Doctrine\JsonMigration())->automatic($em, $crypt);
+        foreach (array_slice($result['quarantined'] ?? [], 0, 20) as $entry) {
+            $this->logUpdate('warning', sprintf('Quarantined %s.%s id=%s (%s); value was set to NULL. Review the row and re-enter any needed data.', $entry['table'], $entry['column'], $entry['id'], $entry['issue']));
+        }
+        if (($result['quarantined_values'] ?? 0) > 20) {
+            $this->logUpdate('warning', sprintf('Quarantined %d JSON value(s) in total; see database:json:audit --quarantined for the full list.', $result['quarantined_values']));
+        }
+        if (($result['decoded_values'] ?? 0) > 0) {
+            $this->logUpdate('info', sprintf('Decoded %d double-encoded JSON value(s) in place during migration.', $result['decoded_values']));
+        }
         $connection = $em->getConnection();
         (new \FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration())->run($connection, $crypt, $this->di['cache']);
         if ($connection->createSchemaManager()->tablesExist(['email_template']) && $connection->createSchemaManager()->introspectTableByUnquotedName('email_template')->hasColumn('vars')) {

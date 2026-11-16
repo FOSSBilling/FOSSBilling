@@ -36,9 +36,11 @@ final class JsonMigration
         try {
             $journal = new JsonMigrationJournal($em, $crypt);
             if ($journal->has(JsonMigrationJournal::COMPLETE)) {
-                return ['columns' => 0, 'empty_values' => 0];
+                return ['columns' => 0, 'empty_values' => 0, 'quarantined_values' => 0, 'decoded_values' => 0];
             }
-            $result = $this->convert($em->getConnection(), $journal);
+            JsonQuarantineStore::sync($em);
+            $quarantine = new JsonQuarantineStore($em->getConnection(), $crypt);
+            $result = $this->convert($em->getConnection(), $journal, $quarantine);
             $this->assertReady($em->getConnection(), $journal);
             $journal->complete();
 
@@ -48,13 +50,14 @@ final class JsonMigration
         }
     }
 
-    private function convert(Connection $connection, JsonMigrationJournal $journal): array
+    private function convert(Connection $connection, JsonMigrationJournal $journal, JsonQuarantineStore $quarantine): array
     {
         $platform = $connection->getDatabasePlatform();
         $schema = $connection->createSchemaManager();
         $targets = [];
         $temp = 'fb_json_preflight_' . bin2hex(random_bytes(6));
         $quotedTemp = $connection->quoteSingleIdentifier($temp);
+        $decodedTotal = 0;
 
         try {
             // The database itself validates every nonempty value using its native declaration.
@@ -92,28 +95,45 @@ final class JsonMigration
                     $batch = [];
                     $bytes = 0;
                     $rowsRead = 0;
+                    $pending = [];
+                    $scalarColumn = $table === 'form_field' && $column === 'default_value';
                     foreach (JsonFields::rows($connection, $table, $column, after: $after, afterType: $afterType) as $row) {
                         ++$rowsRead;
                         $raw = $row['value'];
                         if ($raw !== null && trim($raw) !== '') {
+                            $prepared = null;
+
                             try {
                                 $prepared = JsonFields::prepareValue($row, $legacyDefault && !$journal->has('prepared:' . $table . '.' . $column . ':' . $row['id']));
-                                JsonMigrationValidation::assertCompatible($prepared, $table === 'form_field' && $column === 'default_value');
+                                JsonMigrationValidation::assertCompatible($prepared, $scalarColumn);
                                 $batch[] = ['row' => $row, 'value' => $prepared];
                                 $bytes += strlen($prepared);
                             } catch (\JsonException) {
-                                throw new JsonMigrationException("JSON preflight failed for $table.$column id=" . JsonFields::displayId($table, $row['id']) . '; no source data was changed. Review this row with database:json:audit.');
+                                $repaired = $this->tryDoubleDecoded($prepared ?? $raw, $scalarColumn);
+                                if ($repaired !== null) {
+                                    $pending[] = ['row' => $row, 'value' => $repaired, 'original' => $raw, 'issue' => null];
+                                    $batch[] = ['row' => $row, 'value' => $repaired];
+                                    $bytes += strlen($repaired);
+                                } elseif (in_array($table . '.' . $column, JsonFields::QUARANTINE_BLOCKED, true)) {
+                                    // NULL is fail-open here (drops an enforced restriction), so keep blocking for review.
+                                    throw new JsonMigrationException("JSON preflight failed for $table.$column id=" . JsonFields::displayId($table, $row['id']) . '; this row was not changed. Repairs and quarantines already applied to earlier rows are kept (see database:json:audit --quarantined). Review this row with database:json:audit.');
+                                } else {
+                                    $pending[] = ['row' => $row, 'value' => null, 'original' => $raw, 'issue' => JsonAudit::classifyIssue($prepared ?? $raw, $scalarColumn)];
+                                }
                             }
                         }
                         if ($rowsRead >= 500 || $bytes >= 262144) {
                             $this->validateBatch($connection, $temp, $batch, $table, $column);
+                            $decodedTotal += $this->applySourceWrites($connection, $journal, $quarantine, $table, $column, $pending);
                             $journal->checkpoint('scan:' . $table . '.' . $column, ['cursor' => base64_encode((string) $row['id']), 'binary' => $row['id_type'] === \Doctrine\DBAL\ParameterType::BINARY]);
                             $batch = [];
                             $bytes = 0;
                             $rowsRead = 0;
+                            $pending = [];
                         }
                     }
                     $this->validateBatch($connection, $temp, $batch, $table, $column);
+                    $decodedTotal += $this->applySourceWrites($connection, $journal, $quarantine, $table, $column, $pending);
                     $journal->save('scanned:' . $table . '.' . $column, ['validated' => true]);
                 }
             }
@@ -153,7 +173,13 @@ final class JsonMigration
                 if ($row['value'] !== null && trim($row['value']) === '') {
                     $connection->transactional(function () use ($connection, $journal, $table, $column, $row): void {
                         $journal->save('original:' . $table . '.' . $column . ':' . $row['id'], ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($row['value'])]);
-                        $connection->executeStatement('UPDATE ' . $connection->quoteSingleIdentifier($table) . ' SET ' . $connection->quoteSingleIdentifier($column) . ' = NULL WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' = ?', [$row['id'], $row['value']], [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]);
+                        if ($table === 'session') {
+                            // Same fail-open as quarantined fingerprints: drop
+                            // the short-lived row instead of NULLing it.
+                            $connection->executeStatement('DELETE FROM ' . $connection->quoteSingleIdentifier($table) . ' WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' = ?', [$row['id'], $row['value']], [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]);
+                        } else {
+                            $connection->executeStatement('UPDATE ' . $connection->quoteSingleIdentifier($table) . ' SET ' . $connection->quoteSingleIdentifier($column) . ' = NULL WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' = ?', [$row['id'], $row['value']], [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]);
+                        }
                     });
                     ++$empty;
                 }
@@ -175,7 +201,131 @@ final class JsonMigration
             // SQLite's standard Doctrine JSON declaration is already CLOB/TEXT; no table rebuild.
         }
 
-        return ['columns' => count($targets), 'empty_values' => $empty];
+        $quarantined = $quarantine->list();
+
+        return ['columns' => count($targets), 'empty_values' => $empty, 'quarantined_values' => count($quarantined), 'decoded_values' => $decodedTotal, 'quarantined' => $quarantined];
+    }
+
+    /** Decode one double-encoding level when the inner document is a safe object or array. */
+    private function tryDoubleDecoded(string $prepared, bool $scalar): ?string
+    {
+        if ($scalar) {
+            return null;
+        }
+
+        try {
+            $outer = json_decode($prepared, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
+        if (!is_string($outer)) {
+            return null;
+        }
+
+        try {
+            $inner = json_decode($outer, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
+        if (!is_array($inner) && !$inner instanceof \stdClass) {
+            return null;
+        }
+
+        try {
+            JsonMigrationValidation::assertCompatible($outer, false);
+        } catch (\JsonException) {
+            return null;
+        }
+
+        return $outer;
+    }
+
+    /**
+     * Persist repairs and quarantines to the source column with encrypted originals.
+     * Repairs rewrite the decoded document; quarantines set NULL and record a durable,
+     * reviewable entry. Quarantine records are written in the same transaction as the
+     * source update so a retry never loses them.
+     *
+     * @param list<array{row: array{id: int|string, value: ?string, type: ?string, id_type: \Doctrine\DBAL\ParameterType}, value: ?string, original: string, issue: ?string}> $writes
+     */
+    private function applySourceWrites(Connection $connection, JsonMigrationJournal $journal, JsonQuarantineStore $quarantine, string $table, string $column, array $writes): int
+    {
+        $decoded = 0;
+        $quotedTable = $connection->quoteSingleIdentifier($table);
+        $quotedColumn = $connection->quoteSingleIdentifier($column);
+        // MySQL's default collations compare case-insensitively (and ignore
+        // trailing spaces), so `col = ?` could match a concurrently corrected
+        // value that merely differs in case and NULL it away. PostgreSQL has
+        // no `=` operator for JSON at all. Mirror Patcher's platform handling:
+        // byte-exact on MySQL, text comparison on PostgreSQL.
+        $platform = $connection->getDatabasePlatform();
+        $match = $quotedColumn . ' = ?';
+        if ($platform instanceof AbstractMySQLPlatform) {
+            $match = 'CAST(' . $quotedColumn . ' AS BINARY) = CAST(? AS BINARY)';
+        } elseif ($platform instanceof PostgreSQLPlatform) {
+            $match = 'CAST(' . $quotedColumn . ' AS TEXT) = ?';
+        }
+        foreach ($writes as $write) {
+            $row = $write['row'];
+            if ($write['issue'] === null) {
+                $key = 'repaired:' . $table . '.' . $column . ':' . $row['id'];
+                if ($journal->has($key)) {
+                    continue;
+                }
+                $connection->transactional(function () use ($connection, $journal, $quotedTable, $quotedColumn, $match, $table, $column, $row, $write, $key): void {
+                    $journal->save($key, ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($write['original'])]);
+                    $changed = $connection->executeStatement(
+                        'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = ? WHERE id = ? AND ' . $match,
+                        [$write['value'], $row['id'], $write['original']],
+                        [\Doctrine\DBAL\ParameterType::STRING, $row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
+                    );
+                    // The repaired value always differs, so no match means a concurrent write won the row.
+                    if ($changed !== 1) {
+                        throw new JsonMigrationException('JSON source value changed during migration; retry update finalization.');
+                    }
+                });
+                ++$decoded;
+
+                continue;
+            }
+            $connection->transactional(function () use ($connection, $quarantine, $quotedTable, $quotedColumn, $match, $table, $column, $row, $write): void {
+                $stored = $quarantine->save(
+                    $table,
+                    $column,
+                    $row['id'],
+                    $row['id_type'] === \Doctrine\DBAL\ParameterType::BINARY,
+                    (string) JsonFields::displayId($table, $row['id']),
+                    (string) $write['issue'],
+                    $write['original']
+                );
+                if (!$stored) {
+                    return;
+                }
+                if ($table === 'session') {
+                    // A NULL fingerprint passes the session check (new sessions
+                    // have none yet), while a damaged one previously destroyed
+                    // the session. Remove the short-lived row so its owner
+                    // signs in again; the quarantine record keeps the audit trail.
+                    $changed = $connection->executeStatement(
+                        'DELETE FROM ' . $quotedTable . ' WHERE id = ? AND ' . $match,
+                        [$row['id'], $write['original']],
+                        [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
+                    );
+                } else {
+                    $changed = $connection->executeStatement(
+                        'UPDATE ' . $quotedTable . ' SET ' . $quotedColumn . ' = NULL WHERE id = ? AND ' . $match,
+                        [$row['id'], $write['original']],
+                        [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]
+                    );
+                }
+                // NULL always differs from the scanned value, so no match means a concurrent write won the row.
+                if ($changed !== 1) {
+                    throw new JsonMigrationException('JSON source value changed during migration; retry update finalization.');
+                }
+            });
+        }
+
+        return $decoded;
     }
 
     /** Prevent update completion from reopening an installation with unconverted JSON fields. */
