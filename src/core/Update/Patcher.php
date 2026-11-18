@@ -35,6 +35,12 @@ class Patcher implements InjectionAwareInterface
     private const string SCHEMA_METADATA_HASH_PARAM = 'schema_metadata_hash';
     private const string SCHEMA_METADATA_HASH_FAILED_PARAM = 'schema_metadata_hash_failed';
     private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
+    private const string INVOICE_ITEM_ORDER_BACKFILL_DONE = 'invoice_item_order_id_backfill_done';
+    /**
+     * Rescan when the derivation rule changes. Rule 3 also recognizes paid
+     * order references ending in ASCII spaces, which older rules skipped.
+     */
+    public const string INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION = '3';
     public ?\Pimple\Container $di = null;
     public Filesystem $filesystem;
 
@@ -271,6 +277,11 @@ class Patcher implements InjectionAwareInterface
         try {
             $this->backfillInvoiceJournal();
             $this->backfillRefundIncomeBasis();
+            // Typed order linkage backfill (see invoice_item.order_id): runs here for
+            // every driver while the column the sync above added is guaranteed present.
+            // Same-version deploys converge through the bounded per-request heal
+            // Finalization::healSchemaDrift() schedules.
+            $this->backfillInvoiceItemOrderIds();
             $this->checkInvoiceNumberCounter();
         } catch (\Doctrine\DBAL\Exception\ConnectionException) {
             return;
@@ -1221,6 +1232,9 @@ class Patcher implements InjectionAwareInterface
             // Same bounded healing for legacy tax-inclusive refunds: a finalization that
             // ran before base_refund_tax existed leaves those rows for the drift sync
             // above to add the column for - converge them a page at a time here.
+            // (The invoice item order_id backfill needs no such call: it is scheduled
+            // on every request from healSchemaDrift(), and short-circuits on its
+            // recorded completion once converged.)
             try {
                 $this->backfillRefundIncomeBasis(1);
             } catch (\Throwable $e) {
@@ -1892,7 +1906,7 @@ class Patcher implements InjectionAwareInterface
         $marker = 'refund_basis_backfill_last_id';
         $lastId = 0;
         if ($maxPages !== 0) {
-            $stored = $this->refundBackfillPosition($dbal, $marker);
+            $stored = $this->backfillPosition($dbal, $marker);
             if ($stored !== null) {
                 $lastId = $stored;
             }
@@ -1978,14 +1992,14 @@ class Patcher implements InjectionAwareInterface
             }
 
             if ($maxPages !== 0) {
-                $this->storeRefundBackfillPosition($dbal, $marker, $lastId);
+                $this->storeBackfillPosition($dbal, $marker, $lastId);
             }
         } while ($maxPages === 0 || $pages < $maxPages);
 
         if ($maxPages === 0 || $rows === []) {
             // Unbounded runs always scan to exhaustion; bounded runs clear the marker
             // once they reach the end so later refunds start fresh from zero.
-            $this->clearRefundBackfillPosition($dbal, $marker);
+            $this->clearBackfillPosition($dbal, $marker);
         }
 
         if ($updated > 0) {
@@ -2044,7 +2058,7 @@ class Patcher implements InjectionAwareInterface
      * Best-effort only - correctness never depends on it thanks to the IS NULL guard -
      * so storage failures are swallowed after logging.
      */
-    private function refundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): ?int
+    private function backfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): ?int
     {
         try {
             $stored = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
@@ -2057,7 +2071,7 @@ class Patcher implements InjectionAwareInterface
         return is_numeric($stored) ? (int) $stored : null;
     }
 
-    private function storeRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker, int $lastId): void
+    private function storeBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker, int $lastId): void
     {
         try {
             $exists = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
@@ -2081,7 +2095,7 @@ class Patcher implements InjectionAwareInterface
         }
     }
 
-    private function clearRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): void
+    private function clearBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): void
     {
         try {
             $dbal->executeStatement('DELETE FROM setting WHERE param = :param', ['param' => $marker]);
@@ -2939,6 +2953,153 @@ class Patcher implements InjectionAwareInterface
         }
 
         $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
+    }
+
+    /**
+     * Backfills invoice_item.order_id from rel_id for rows that reference orders
+     * (see https://github.com/FOSSBilling/FOSSBilling/issues/4688). Portable and
+     * idempotent: the numeric check runs in PHP so no per-platform regex is needed,
+     * and only rows still missing order_id are touched. $maxPages bounds periodic
+     * healing callers: 0 means no limit.
+     *
+     * Only the two shapes this codebase produces for order references are migrated:
+     * type='order' lines and unit='discount' lines (which default to TYPE_CUSTOM but
+     * still name an order). Any other numeric rel_id (invoice/credit-note references,
+     * third-party line types) is deliberately left alone.
+     *
+     * Bounded runs resume from a stored scan position so pages of unresolvable rows
+     * (hook_call JSON, invoice references) never strand later pages behind them;
+     * unbounded runs rescan from zero. Either way the marker is cleared and
+     * completion is recorded once a pass reaches the end. Bounded runs
+     * short-circuit on that flag (so the per-request heal in
+     * Finalization::healSchemaDrift() stays a single indexed lookup once
+     * converged); unbounded runs always rescan, so rows that appeared while
+     * the flag was set - e.g. written by a downgraded codebase that does not
+     * know order_id yet - are still picked up by the next finalization.
+     * Never throws: a failure only logs, and the next run picks up where this
+     * one stopped.
+     */
+    public function backfillInvoiceItemOrderIds(int $maxPages = 0): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return;
+        }
+
+        try {
+            $dbal = $this->di['em']->getConnection();
+
+            // A recorded completion short-circuits bounded runs only: without it the
+            // rescan below would revisit unresolvable rows on every invocation.
+            // Scope the cursor to the rule as well as the completion flag. An
+            // older rule may have skipped rows even if it never reached the end.
+            $marker = 'invoice_item_order_backfill_last_id_v' . self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION;
+            if ($maxPages !== 0) {
+                $completedRule = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE]);
+                if ($completedRule === self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION) {
+                    return;
+                }
+            }
+
+            $schemaManager = $dbal->createSchemaManager();
+            if (!$schemaManager->tablesExist(['invoice_item'])
+                || !$schemaManager->introspectTableByUnquotedName('invoice_item')->hasColumn('order_id')) {
+                return;
+            }
+
+            // Page by ID to bound reads. Written rows drop out via order_id IS NULL, and
+            // the conditional UPDATE keeps a racing writer's newer value intact.
+            // Rows whose rel_id isn't an order id advance the keyset without a write.
+            $lastId = 0;
+            if ($maxPages !== 0) {
+                $stored = $this->backfillPosition($dbal, $marker);
+                if ($stored !== null) {
+                    $lastId = $stored;
+                }
+            }
+
+            $updated = 0;
+            $pages = 0;
+            do {
+                $rows = $dbal->fetchAllAssociative(
+                    "SELECT id, invoice_id, type, unit, rel_id FROM invoice_item WHERE order_id IS NULL AND (type = 'order' OR unit = 'discount') AND id > :last ORDER BY id LIMIT 500",
+                    ['last' => $lastId]
+                );
+                if ($rows === []) {
+                    break;
+                }
+                ++$pages;
+
+                foreach ($rows as $row) {
+                    $lastId = (int) $row['id'];
+                    $orderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveOrderReference($row['type'], $row['unit'], $row['rel_id']);
+                    if ($orderId === null && $row['type'] === \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER) {
+                        $paidOrderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveLegacyPaidOrderReference($row['rel_id']);
+                        // Only historical paid items may use this relaxed rule.
+                        if ($paidOrderId !== null && $dbal->fetchOne('SELECT status FROM invoice WHERE id = :id', ['id' => $row['invoice_id']]) === \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID) {
+                            $orderId = $paidOrderId;
+                        }
+                    }
+                    if ($orderId === null) {
+                        continue;
+                    }
+
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice_item SET order_id = :order_id WHERE id = :id AND order_id IS NULL',
+                        ['order_id' => $orderId, 'id' => $row['id']]
+                    );
+                }
+
+                if ($maxPages !== 0) {
+                    $this->storeBackfillPosition($dbal, $marker, $lastId);
+                }
+            } while ($maxPages === 0 || $pages < $maxPages);
+
+            if ($maxPages === 0 || $rows === []) {
+                // Reached the end (unbounded runs always do; bounded ones just did):
+                // nothing eligible is left behind, so clear the resume marker and
+                // record completion for the short-circuit above.
+                $this->clearBackfillPosition($dbal, $marker);
+                $this->recordInvoiceItemOrderBackfillComplete($dbal);
+            }
+
+            if ($updated > 0) {
+                $this->logUpdate('info', sprintf('Backfilled invoice item order linkage for %d invoice item(s)', $updated));
+            }
+        } catch (\Throwable $e) {
+            // Runs from healSchemaDrift() on every request, which must not throw
+            // (an unreachable database simply reports "nothing to do"). The next
+            // request retries from the stored position.
+            $this->logUpdate('warning', 'Invoice item order linkage backfill skipped: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Records the order_id backfill as complete under the current rule version.
+     * Best-effort like the resume marker: a concurrent healer racing this write
+     * only duplicates an already-true statement. An older recorded version is
+     * upgraded so the next bounded run short-circuits instead of rescanning.
+     */
+    private function recordInvoiceItemOrderBackfillComplete(\Doctrine\DBAL\Connection $dbal): void
+    {
+        try {
+            $now = date('Y-m-d H:i:s');
+            if ($dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE]) === false) {
+                $dbal->insert('setting', [
+                    'param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE,
+                    'value' => self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION,
+                    'public' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                $dbal->executeStatement(
+                    'UPDATE setting SET value = :value, updated_at = :updated WHERE param = :param',
+                    ['value' => self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION, 'updated' => $now, 'param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE]
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', 'Invoice item order linkage backfill completion not recorded: ' . $e->getMessage());
+        }
     }
 
     /**

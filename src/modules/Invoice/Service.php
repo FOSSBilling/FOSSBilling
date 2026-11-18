@@ -47,10 +47,12 @@ use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendRemindersEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\BeforeInvoiceIsDueEvent;
 use Box\Mod\Invoice\Repository\InvoiceCreditRepository;
+use Box\Mod\Invoice\Repository\InvoiceEventRepository;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
@@ -1891,10 +1893,18 @@ class Service implements InjectionAwareInterface
     /** @return list<int> */
     private function renewalOrderIds(Invoice $invoice): array
     {
-        $ids = array_map(intval(...), array_column($this->di['em']->getConnection()->fetchAllAssociative(
-            "SELECT DISTINCT rel_id FROM invoice_item WHERE invoice_id = ? AND type = 'order' AND task = 'renew'",
+        $links = $this->di['em']->getConnection()->fetchAllAssociative(
+            "SELECT DISTINCT order_id, rel_id FROM invoice_item WHERE invoice_id = ? AND type = 'order' AND task = 'renew'",
             [$invoice->getId()]
-        ), 'rel_id'));
+        );
+        $ids = [];
+        foreach ($links as $link) {
+            $id = isset($link['order_id']) ? (int) $link['order_id']
+                : ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, $link['rel_id']);
+            if ($id !== null) {
+                $ids[$id] = $id;
+            }
+        }
         sort($ids);
 
         return $ids;
@@ -1996,7 +2006,8 @@ class Service implements InjectionAwareInterface
         $remaining = 0;
         foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
             $em->refresh($item);
-            $held = in_array((int) $item->getRelId(), $heldOrderIds, true)
+            $orderId = $item->getOrderId() ?? ServiceInvoiceItem::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId());
+            $held = in_array($orderId, $heldOrderIds, true)
                 && (($item->getType() === InvoiceItem::TYPE_ORDER && $item->getTask() === InvoiceItem::TASK_RENEW)
                     || ($item->getType() === InvoiceItem::TYPE_CUSTOM && $item->getUnit() === 'discount'));
             if ($held || $item->getTask() === ServiceGatewayFees::TASK) {
@@ -3063,6 +3074,10 @@ class Service implements InjectionAwareInterface
                     $pi->setInvoice($new);
                     $pi->setType($item->getType());
                     $pi->setRelId($item->getRelId());
+                    // Preserve the typed linkage, deriving it when the source predates
+                    // the order_id backfill (a copy flushed before the backfill scans
+                    // past the source would otherwise keep a NULL linkage for good).
+                    $pi->setOrderId($item->getOrderId() ?? ServiceInvoiceItem::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId()));
                     $pi->setRefundedItemId($item->getId());
                     $pi->setTask($item->getTask());
                     $pi->setStatus(InvoiceItem::STATUS_EXECUTED); // Mark refund invoice as executed
@@ -4138,24 +4153,24 @@ class Service implements InjectionAwareInterface
             $discountOrderIds = [];
             foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $original->getId()) as $item) {
                 $orderToLink = null;
+                $referencedOrderId = $item->getOrderId() ?? ServiceInvoiceItem::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId());
                 if ($item->getType() === InvoiceItem::TYPE_ORDER) {
-                    $orderToLink = $entityManager->getRepository(Order::class)->find((int) $item->getRelId());
+                    $orderToLink = $referencedOrderId === null ? null : $entityManager->getRepository(Order::class)->find($referencedOrderId);
                     if (!$orderToLink instanceof Order) {
-                        throw new InformationException('Order #:id attached to this invoice could not be found', [':id' => $item->getRelId()]);
+                        throw new InformationException('Order #:id attached to this invoice could not be found', [':id' => $referencedOrderId ?? $item->getRelId()]);
                     }
                     if ((int) $orderToLink->getClientId() !== (int) $new->getClientId()) {
                         throw new InformationException('Order #:id does not belong to this invoice\'s client', [':id' => $orderToLink->getId()]);
                     }
-                } elseif ($item->getUnit() === 'discount' && is_numeric($item->getRelId() ?? '')) {
-                    // Same shape findOrderDiscountLine() matches on: a promo
-                    // discount naming its order.
-                    $discountOrderIds[(int) $item->getRelId()] = true;
+                } elseif ($item->getUnit() === 'discount' && $referencedOrderId !== null) {
+                    $discountOrderIds[$referencedOrderId] = true;
                 }
 
                 $copy = new InvoiceItem();
                 $copy->setInvoice($new);
                 $copy->setType($item->getType());
                 $copy->setRelId($item->getRelId());
+                $copy->setOrderId($referencedOrderId);
                 $copy->setTask($item->getTask());
                 $copy->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
                 $copy->setTitle($item->getTitle());
@@ -4168,6 +4183,9 @@ class Service implements InjectionAwareInterface
                 $entityManager->persist($copy);
 
                 if ($orderToLink instanceof Order) {
+                    // Keep the replacement's legacy reference aligned with its validated order.
+                    $copy->setRelId((string) $orderToLink->getId());
+                    $copy->setOrderId((int) $orderToLink->getId());
                     $orderService->setUnpaidInvoice($orderToLink, $new);
                     if ($item->getTask() === InvoiceItem::TASK_RENEW) {
                         $meta = $orderService->getOrderMetaRepository()->getPairsForOrder((int) $orderToLink->getId());
@@ -4911,14 +4929,67 @@ class Service implements InjectionAwareInterface
         return (float) $order->getPrice() * (float) $order->getQuantity();
     }
 
-    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false): bool
+    /**
+     * A guarded removal returns null if the selected order is no longer stale.
+     * A false result means the invoice itself must be kept.
+     *
+     * @param array{id: int, cutoff: \DateTimeImmutable}|null $staleOrder the order that qualified the invoice for automatic removal
+     *
+     * @param-out list<int>|null $detachedOrderIds IDs detached by a successful guarded removal
+     *
+     * @return ($staleOrder is null ? bool : bool|null)
+     */
+    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): ?bool
     {
+        /** @var EntityManagerInterface $entityManager */
         $entityManager = $this->di['em'];
-        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions): void {
-            $this->lockAndRefreshInvoice($model);
+        $requireNoPaidLinkedOrder = $requireNoPaidLinkedOrder || $staleOrder !== null;
+        $removal = $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions, $requireNoPaidLinkedOrder, $staleOrder): array|false|null {
+            $this->lockAndRefreshInvoice($model, $requireNoPaidLinkedOrder);
+
+            $connection = $entityManager->getConnection();
+            $linkedOrderIds = [];
+            if ($requireNoPaidLinkedOrder) {
+                // Lock before reading settings or payment state so MySQL's first
+                // snapshot read sees payments that committed while we waited.
+                $linkedOrderIds = array_map(intval(...), $connection->fetchFirstColumn(
+                    'SELECT id FROM client_order WHERE unpaid_invoice_id = :invoice_id ORDER BY id' . RowLock::suffix($connection),
+                    ['invoice_id' => $model->getId()],
+                ));
+            }
+
+            if ($staleOrder !== null && ($model->getStatus() !== Invoice::STATUS_UNPAID
+                || ($model->getDueAt() !== null && $model->getDueAt() >= $staleOrder['cutoff']))) {
+                return false;
+            }
 
             if ($requireUnissuedUnpaid && !$this->isDeletableByAdmin($model)) {
                 throw new InformationException('Only unissued, unpaid invoices (drafts) can be deleted. Cancel (void) an issued unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.');
+            }
+
+            if ($staleOrder !== null && $connection->fetchOne(
+                'SELECT 1 FROM client_order o INNER JOIN invoice i ON i.id = o.unpaid_invoice_id
+                 WHERE o.id = :order_id AND i.id = :invoice_id AND o.status = :pending_status AND i.status = :unpaid_status
+                 AND COALESCE(i.due_at, o.created_at) < :cutoff',
+                [
+                    'order_id' => $staleOrder['id'],
+                    'invoice_id' => $model->getId(),
+                    'pending_status' => Order::STATUS_PENDING_SETUP,
+                    'unpaid_status' => Invoice::STATUS_UNPAID,
+                    'cutoff' => $staleOrder['cutoff']->format('Y-m-d H:i:s'),
+                ],
+            ) === false) {
+                return null;
+            }
+
+            if ($requireNoPaidLinkedOrder) {
+                /** @var OrderRepository $orderRepository */
+                $orderRepository = $entityManager->getRepository(Order::class);
+                foreach ($linkedOrderIds as $orderId) {
+                    if ($orderRepository->hasPaidInvoiceItem($orderId)) {
+                        return false;
+                    }
+                }
             }
 
             $productService = $this->di['mod_service']('Product');
@@ -4930,7 +5001,7 @@ class Service implements InjectionAwareInterface
                 UPDATE client_order
                 SET unpaid_invoice_id = NULL
                 WHERE unpaid_invoice_id = :id';
-            $entityManager->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
+            $connection->executeStatement($sql, ['id' => $model->getId()]);
 
             // Detach (not delete) transactions referencing this invoice - a transaction is a real
             // record of a payment attempt/event, same reasoning as unpaid_invoice_id above. On the
@@ -4939,7 +5010,9 @@ class Service implements InjectionAwareInterface
             // Runs inside the same transaction as the flushes below: without that, a later flush
             // failing (e.g. removing the invoice itself) would leave these transactions
             // permanently detached from an invoice that was never actually deleted.
-            $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId(), $anonymizeTransactions);
+            /** @var TransactionRepository $transactionRepository */
+            $transactionRepository = $entityManager->getRepository(Transaction::class);
+            $transactionRepository->detachFromInvoice((int) $model->getId(), $anonymizeTransactions);
 
             // Applied credit is an internal earmark, not a payment record: it dies with the invoice.
             $this->getInvoiceCreditRepository()->deleteByInvoiceId((int) $model->getId());
@@ -4953,16 +5026,36 @@ class Service implements InjectionAwareInterface
             // deletions of issued invoices keep it as the audit trail of a
             // numbered document.
             if (!$model->isIssued() || $anonymizeTransactions) {
-                $entityManager->getRepository(InvoiceEvent::class)->deleteByInvoiceId((int) $model->getId());
+                /** @var InvoiceEventRepository $invoiceEventRepository */
+                $invoiceEventRepository = $entityManager->getRepository(InvoiceEvent::class);
+                $invoiceEventRepository->deleteByInvoiceId((int) $model->getId());
             }
             $entityManager->remove($model);
             $entityManager->flush();
-        });
 
-        return true;
+            return $linkedOrderIds;
+        });
+        if (is_array($removal)) {
+            $detachedOrderIds = $removal;
+
+            return true;
+        }
+        $detachedOrderIds = null;
+
+        return $removal;
     }
 
-    public function deleteInvoiceByAdmin(Invoice $model): bool
+    /**
+     * Returns false for an invoice-wide cleanup refusal, or null if only the
+     * selected order failed the stale-order guard.
+     *
+     * @param array{id: int, cutoff: \DateTimeImmutable}|null $staleOrder the order that qualified the invoice for automatic removal
+     *
+     * @param-out list<int>|null $detachedOrderIds IDs detached by a successful guarded removal
+     *
+     * @return ($staleOrder is null ? bool : bool|null)
+     */
+    public function deleteInvoiceByAdmin(Invoice $model, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): ?bool
     {
         // Fast rejection for the common case; rmInvoice rechecks the fresh state under its row
         // lock before detaching or deleting anything.
@@ -4973,7 +5066,10 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDeleteEvent((int) $model->getId()));
 
         $id = $model->getId();
-        $this->rmInvoice($model, true);
+        $removed = $this->rmInvoice($model, true, false, $requireNoPaidLinkedOrder, $detachedOrderIds, $staleOrder);
+        if ($removed !== true) {
+            return $removed;
+        }
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceDeleteEvent((int) $id));
 
@@ -5939,12 +6035,20 @@ class Service implements InjectionAwareInterface
     private function invoiceHasDeletionHold(Invoice $invoice): bool
     {
         $connection = $this->di['em']->getConnection();
-        $orderIds = $connection->fetchFirstColumn(
-            'SELECT DISTINCT rel_id FROM invoice_item WHERE invoice_id = :invoice_id AND type = :type AND rel_id IS NOT NULL ORDER BY rel_id',
+        $orderLinks = $connection->fetchAllAssociative(
+            'SELECT order_id, rel_id FROM invoice_item WHERE invoice_id = :invoice_id AND type = :type',
             ['invoice_id' => $invoice->getId(), 'type' => InvoiceItem::TYPE_ORDER],
         );
+        $orderIds = [];
+        foreach ($orderLinks as $link) {
+            $orderId = $link['order_id'] === null
+                ? ServiceInvoiceItem::resolveLegacyPaidOrderReference($link['rel_id'])
+                : (int) $link['order_id'];
+            if ($orderId !== null) {
+                $orderIds[$orderId] = $orderId;
+            }
+        }
         // Consistent lock order for multi-order invoices.
-        $orderIds = array_unique(array_map(intval(...), $orderIds));
         sort($orderIds);
         foreach ($orderIds as $orderId) {
             if (\Box\Mod\Order\DeletionRecovery::isHeld($connection, $orderId, true)) {
@@ -6478,12 +6582,17 @@ class Service implements InjectionAwareInterface
     /**
      * @return array{status: string, issued: bool}
      */
-    private function lockAndRefreshInvoice(Invoice $invoice): array
+    private function lockAndRefreshInvoice(Invoice $invoice, bool $currentRead = false): array
     {
         $state = $this->lockInvoiceState($invoice);
 
         if ($invoice->getId() !== null) {
-            $this->di['em']->refresh($invoice);
+            if ($currentRead) {
+                // Keep the transaction's first snapshot read after the order locks.
+                $this->di['em']->refresh($invoice, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
+            } else {
+                $this->di['em']->refresh($invoice);
+            }
         }
 
         return $state;
@@ -6501,8 +6610,9 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $this->di['em']->getRepository(Order::class)->lockAndGetUnpaidInvoiceId($order->getId());
-        $this->di['em']->refresh($order);
+        $this->di['em']->getRepository(Order::class)->lockAndGetUnpaidInvoiceId($order->getId(), true);
+        \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId(), true);
+        $this->di['em']->refresh($order, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
     }
 
     /**
@@ -7067,7 +7177,7 @@ class Service implements InjectionAwareInterface
         $item = $this->getInvoiceItemRepository()->findOneByInvoiceIdAndType($invoiceId, InvoiceItem::TYPE_ORDER);
 
         if ($item instanceof InvoiceItem) {
-            return (int) $item->getRelId();
+            return $item->getOrderId() ?? ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, $item->getRelId());
         }
 
         return null;

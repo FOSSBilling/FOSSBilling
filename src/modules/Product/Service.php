@@ -3140,25 +3140,31 @@ class Service implements InjectionAwareInterface
             'clientId' => $order->getClientId(),
             'status' => $observePending ? [...$hostingStatuses, Order::STATUS_FAILED_RENEW] : $hostingStatuses,
         ]);
-        $observed = $observePending && $candidates !== [] ? $this->di['em']->getConnection()->fetchAllAssociativeIndexed(
-            'SELECT o.id, o.expires_at, o.status, CASE WHEN EXISTS (
+        $observed = [];
+        if ($observePending && $candidates !== []) {
+            $connection = $this->di['em']->getConnection();
+            $legacyReference = \Box\Mod\Invoice\Repository\InvoiceItemRepository::normalizedLegacyPaidOrderReference($connection, 'ii.rel_id');
+            $orderReference = \Box\Mod\Invoice\Repository\InvoiceItemRepository::orderIdAsReference($connection, 'o.id');
+            $observed = $connection->fetchAllAssociativeIndexed(
+                "SELECT o.id, o.expires_at, o.status, CASE WHEN EXISTS (
                 SELECT 1 FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id
                 WHERE i.client_id = o.client_id AND i.status = :paid AND ii.type = :item_type
-                AND ii.task = :renew AND ii.rel_id = ' . $this->di['em']->getConnection()->getDatabasePlatform()->getConcatExpression("''", 'o.id') . '
+                AND ii.task = :renew AND (ii.order_id = o.id OR (ii.order_id IS NULL AND $legacyReference = $orderReference))
                 AND ii.status IN (:pending, :awaiting_charge)
             ) THEN 1 ELSE 0 END AS pending FROM client_order o
-            WHERE o.id IN (:hosting_ids) AND o.client_id = :client AND o.group_id = :order_group',
-            [
-                'paid' => Invoice::STATUS_PAID,
-                'item_type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
-                'renew' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
-                'pending' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP,
-                'awaiting_charge' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
-                'hosting_ids' => array_map(static fn (Order $hosting): int => (int) $hosting->getId(), $candidates),
-                'client' => $order->getClientId(), 'order_group' => $groupId,
-            ],
-            ['hosting_ids' => \Doctrine\DBAL\ArrayParameterType::INTEGER],
-        ) : [];
+            WHERE o.id IN (:hosting_ids) AND o.client_id = :client AND o.group_id = :order_group",
+                [
+                    'paid' => Invoice::STATUS_PAID,
+                    'item_type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
+                    'renew' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
+                    'pending' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP,
+                    'awaiting_charge' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
+                    'hosting_ids' => array_map(static fn (Order $hosting): int => (int) $hosting->getId(), $candidates),
+                    'client' => $order->getClientId(), 'order_group' => $groupId,
+                ],
+                ['hosting_ids' => \Doctrine\DBAL\ArrayParameterType::INTEGER],
+            );
+        }
         foreach ($candidates as $hosting) {
             $hostingId = (int) $hosting->getId();
             if ($hostingId === $orderId) {

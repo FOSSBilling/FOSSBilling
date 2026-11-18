@@ -306,6 +306,112 @@ test('adds new item casts a numeric rel_id to string', function (): void {
     expect($persistedItem->getRelId())->toBe('82');
 });
 
+test('adds new item derives the typed order linkage from rel_id', function (): void {
+    $cases = [
+        'order line names its order' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '82'],
+            82,
+        ],
+        'discount line names its order' => [
+            ['title' => 'Discount', 'price' => -10, 'unit' => 'discount', 'rel_id' => '82'],
+            82,
+        ],
+        'custom line keeps a generic reference untyped' => [
+            ['title' => 'Setup', 'price' => 5, 'rel_id' => '19'],
+            null,
+        ],
+        'order line with a non-numeric reference stays untyped' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '{"hook":"call"}'],
+            null,
+        ],
+        'order line with a non-canonical reference stays untyped' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '7.5'],
+            null,
+        ],
+        'order line without a reference stays untyped' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER],
+            null,
+        ],
+    ];
+
+    foreach ($cases as $name => [$data, $expectedOrderId]) {
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $persistedItem = null;
+        $em->shouldReceive('persist')
+            ->once()
+            ->withArgs(function (InvoiceItem $pi) use (&$persistedItem): bool {
+                $persistedItem = $pi;
+
+                return true;
+            });
+        $em->shouldReceive('flush')->once();
+        $repo = Mockery::mock(InvoiceItemRepository::class);
+        $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+
+        $service = new ServiceInvoiceItem();
+        $di = container();
+        $di['em'] = $em;
+        $invoiceServiceMock = Mockery::mock(InvoiceService::class);
+        $invoiceServiceMock->shouldReceive('isInvoiceEditable')->andReturn(true);
+        $di['mod_service'] = $di->protect(moduleService(['invoice' => $invoiceServiceMock]));
+        $service->setDi($di);
+
+        $service->addNew(createEntity(Invoice::class), $data);
+
+        expect($persistedItem->getOrderId())->toBe($expectedOrderId, "order_id for case: {$name}");
+    }
+});
+
+test('resolves the typed order reference only for order shapes', function (): void {
+    expect(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '82'))->toBe(82)
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_CUSTOM, 'discount', '82'))->toBe(82)
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_CUSTOM, null, '19'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '{"hook":"call"}'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, ''))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '7.5'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '07'))->toBe(7)
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '00'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, ' 7'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '0'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, (string) PHP_INT_MAX))->toBe(PHP_INT_MAX)
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '99999999999999999999'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(null, null, null))->toBeNull();
+});
+
+test('getOrderId prefers the typed linkage with a rel_id fallback', function (): void {
+    $typed = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '7']);
+    $typed->setOrderId(42);
+    $legacy = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '7']);
+    $custom = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_CUSTOM, 'rel_id' => '7']);
+
+    $service = invoiceItemService();
+
+    expect($service->getOrderId($typed))->toBe(42)
+        ->and($service->getOrderId($legacy))->toBe(7)
+        ->and($service->getOrderId($custom))->toBe(0);
+});
+
+test('getOrderId accepts trailing spaces only for paid renewal references', function (): void {
+    $invoice = createEntity(Invoice::class, ['status' => Invoice::STATUS_UNPAID]);
+    $item = createEntity(InvoiceItem::class, ['invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'relId' => '004 ']);
+    $service = invoiceItemService();
+
+    expect($service->getOrderId($item))->toBe(0);
+
+    $invoice->setStatus(Invoice::STATUS_PAID);
+    expect($service->getOrderId($item))->toBe(4);
+
+    $item->setRelId('4.5 ');
+    expect($service->getOrderId($item))->toBe(0);
+
+    $item->setRelId("4\t");
+    expect($service->getOrderId($item))->toBe(0);
+
+    $item->setTask(InvoiceItem::TASK_ACTIVATE);
+    $item->setRelId('004 ');
+    expect($service->getOrderId($item))->toBe(0);
+});
+
 test('addNew refuses locked invoices unless bypassed for internal flows', function (): void {
     $invoiceModel = createEntity(Invoice::class);
     $invoiceModel->setIssued(true);
@@ -978,9 +1084,9 @@ test('a free domain renewal records its claim before contacting the registrar', 
     expect($item->getStatus())->toBe(InvoiceItem::STATUS_EXECUTED);
 });
 
-test('a known zero-priced domain renewal proceeds without a free hosting claim', function (): void {
-    $invoice = createEntity(Invoice::class, ['id' => 10]);
-    $item = createEntity(InvoiceItem::class, ['id' => 11, 'invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'status' => InvoiceItem::STATUS_PENDING_SETUP, 'relId' => '20', 'price' => '0.00']);
+test('a known zero-priced domain renewal proceeds without a free hosting claim', function (string $reference): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'status' => Invoice::STATUS_PAID]);
+    $item = createEntity(InvoiceItem::class, ['id' => 11, 'invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'status' => InvoiceItem::STATUS_PENDING_SETUP, 'relId' => $reference, 'price' => '0.00']);
     $order = createEntity(Order::class, ['id' => 20, 'productId' => 5, 'status' => Order::STATUS_ACTIVE]);
     $orderRepo = Mockery::mock(OrderRepository::class);
     $orderRepo->shouldReceive('find')->with(20)->andReturn($order);
@@ -1010,7 +1116,7 @@ test('a known zero-priced domain renewal proceeds without a free hosting claim',
 
     $service->executeTask($item);
     expect($item->getStatus())->toBe(InvoiceItem::STATUS_EXECUTED);
-});
+})->with(['canonical reference' => '20', 'legacy reference' => '020 ']);
 
 test('a newly quoted zero domain price records its provenance', function (): void {
     $order = createEntity(Order::class, ['id' => 20, 'clientId' => 3, 'quantity' => 1, 'title' => 'Domain']);

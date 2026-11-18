@@ -35,10 +35,10 @@ function createSubscriptionDbal(): Connection
 {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE subscription (id INTEGER PRIMARY KEY, rel_type TEXT, rel_id INTEGER, status TEXT, sid TEXT, pay_gateway_id INTEGER, updated_at TEXT)');
-    $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id TEXT COLLATE RTRIM, order_id INTEGER)');
     $connection->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
     $connection->executeStatement("INSERT INTO subscription (id, rel_type, rel_id, status, sid, pay_gateway_id) VALUES (7, 'invoice', 25, 'active', 'sub_123', 2)");
-    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id) VALUES (25, 'order', 10), (25, 'order', 11)");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '10', 10), (25, 'order', '11', 11)");
 
     return $connection;
 }
@@ -305,6 +305,73 @@ test('finalizes a scheduled cancellation after subscription deletion regardless 
         ->and($dbal->fetchOne('SELECT status FROM subscription WHERE id = 7'))->toBe('canceled');
 })->with([ServiceSubscription::STATUS_PENDING_CANCELLATION, 'canceled', 'active']);
 
+test('finalizes a scheduled cancellation through a legacy rel_id link the backfill has not reached', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setStatus(ServiceSubscription::STATUS_PENDING_CANCELLATION);
+    $subscription->setRelType('invoice');
+    $subscription->setRelId(25);
+
+    $dbal = createSubscriptionDbal();
+    $dbal->insert('client_order_meta', [
+        'client_order_id' => 10,
+        'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
+        'value' => '1',
+    ]);
+    $dbal->insert('client_order_meta', [
+        'client_order_id' => 12,
+        'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
+        'value' => '1',
+    ]);
+    // RTRIM makes '10 ' and '10' equal for SQL DISTINCT. Validate both spellings first.
+    $dbal->executeStatement("UPDATE invoice_item SET rel_id = '10 ', order_id = NULL WHERE invoice_id = 25 AND rel_id = '10'");
+    $dbal->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '10', NULL), (25, 'order', '12', 12), (25, 'order', '12', NULL), (25, 'order', '7.5', NULL)");
+
+    $order10 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $order12 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')->once()->with(10)->andReturn($order10);
+    $orderRepoMock->shouldReceive('find')->once()->with(12)->andReturn($order12);
+
+    $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $orderMetaRepoMock->shouldReceive('getPairsForOrder')
+        ->once()
+        ->with(10)
+        ->andReturn([Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END => '1']);
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->once()->with(7)->andReturn($subscription);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('refresh')->once()->with($subscription);
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('getOrderMetaRepository')->andReturn($orderMetaRepoMock);
+    $orderService->shouldReceive('finalizeCancellationFromGateway')
+        ->once()
+        ->with($order10, 'Subscription ended at the payment gateway')
+        ->andReturn(true);
+    $orderService->shouldReceive('finalizeCancellationFromGateway')
+        ->once()
+        ->with($order12, 'Subscription ended at the payment gateway')
+        ->andReturn(true);
+
+    $di = container();
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['em'] = $em;
+    $em->shouldReceive('getConnection')->andReturn($dbal);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+
+    $service = new ServiceSubscription();
+    $service->setDi($di);
+
+    expect($service->finalizeCancellationFromGateway(7, 'sub_123', 2))->toBeTrue()
+        ->and($dbal->fetchOne('SELECT status FROM subscription WHERE id = 7'))->toBe('canceled');
+});
+
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
     $order = createEntity(Order::class, ['id' => 10]);
 
@@ -349,6 +416,29 @@ test('detects orders paid through an active gateway subscription', function (): 
     expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeTrue()
         ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 99])))->toBeFalse();
 });
+
+test('validates legacy subscription order references before backfill', function (string $reference, bool $matches): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('sub_123');
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
+
+    $dbal = createSubscriptionDbal();
+    $dbal->executeStatement("UPDATE invoice_item SET order_id = NULL, rel_id = :reference WHERE invoice_id = 25 AND rel_id = '10'", ['reference' => $reference]);
+
+    $service = subscriptionService(subRepo: $subRepo);
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($dbal);
+
+    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBe($matches)
+        ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 11])))->toBeTrue()
+        ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 12])))->toBeFalse();
+})->with([
+    'canonical' => ['10', true],
+    'zero padded' => ['0010', true],
+    'trailing whitespace' => ['0010 ', false],
+    'fractional' => ['10.5', false],
+]);
 
 test('staff cancellation review still sees a subscription pending at the gateway', function (): void {
     $subscription = createEntity(Subscription::class, ['id' => 7]);
@@ -803,7 +893,7 @@ test('a gateway deletion persists cancellation before attempting local cleanup',
         $em->persist($order);
         $em->persist($invoice);
         $em->flush();
-        $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($invoice)->setType('order')->setRelId((string) $order->getId()));
+        $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($invoice)->setType('order')->setRelId((string) $order->getId())->setOrderId($order->getId()));
         $em->persist((new Box\Mod\Order\Entity\OrderMeta())->setOrder($order)->setName('cancel_at_period_end')->setValue('1'));
         $subscription = (new Subscription())->setPayGateway($gateway)->setSid('sub_old')->setRelId($invoice->getId())->setRelType('invoice')->setStatus('active');
         $em->persist($subscription);

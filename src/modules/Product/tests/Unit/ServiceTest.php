@@ -4139,11 +4139,11 @@ test('domain waits for eligible paid hosting setup across invoices without grant
     $db->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, client_id INTEGER, group_id TEXT, expires_at TEXT, status TEXT)');
     $db->insert('client_order', ['id' => 21, 'client_id' => 7, 'group_id' => 'group-1', 'expires_at' => '2030-01-01', 'status' => 'failed_renew']);
     $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, status TEXT)');
-    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, task TEXT, rel_id TEXT, status TEXT)');
+    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, task TEXT, rel_id TEXT, order_id INTEGER, status TEXT)');
     $db->insert('invoice', ['id' => 10, 'client_id' => 7, 'status' => 'paid']);
     $db->insert('invoice_item', ['invoice_id' => 10, 'type' => 'order', 'task' => 'renew', 'rel_id' => '20', 'status' => 'pending_setup']);
     $db->insert('invoice', ['id' => 99, 'client_id' => $invoiceOwner, 'status' => $invoiceStatus]);
-    $db->insert('invoice_item', ['invoice_id' => 99, 'type' => 'order', 'task' => 'renew', 'rel_id' => '21', 'status' => $taskStatus]);
+    $db->insert('invoice_item', ['invoice_id' => 99, 'type' => 'order', 'task' => 'renew', 'rel_id' => $pending ? '20' : '21', 'order_id' => $pending ? 21 : null, 'status' => $taskStatus]);
     $service->getDi()['em']->shouldReceive('getConnection')->byDefault()->andReturn($db);
     expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => $pending]);
     if ($invoiceStatus === 'unpaid' && $matchingDomain && $invoiceOwner === 7) {

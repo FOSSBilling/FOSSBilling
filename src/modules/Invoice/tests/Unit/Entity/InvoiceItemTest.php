@@ -28,11 +28,13 @@ test('maps invoice_item table without changing columns', function (): void {
 
     expect($meta->getTableName())->toBe('invoice_item')
         ->and($meta->getColumnNames())->toBe([
-            'id', 'type', 'rel_id', 'refunded_item_id', 'task', 'status', 'title',
+            'id', 'type', 'rel_id', 'order_id', 'refunded_item_id', 'task', 'status', 'title',
             'period', 'quantity', 'unit', 'price', 'charged', 'taxed', 'attempts',
             'created_at', 'updated_at',
         ])
         ->and($meta->getFieldMapping('relId')->type)->toBe('text')
+        ->and($meta->getFieldMapping('orderId')->type)->toBe('bigint')
+        ->and($meta->getFieldMapping('orderId')->nullable)->toBeTrue()
         ->and($meta->getFieldMapping('price')->type)->toBe('decimal')
         ->and($meta->getFieldMapping('price')->precision)->toBe(18)
         ->and($meta->getFieldMapping('price')->scale)->toBe(2)
@@ -61,6 +63,7 @@ test('invoice item getters and setters round-trip values', function (): void {
     $entity->setInvoice($invoice);
     $entity->setType(InvoiceItem::TYPE_ORDER);
     $entity->setRelId('77');
+    $entity->setOrderId(77);
     $entity->setTask(InvoiceItem::TASK_RENEW);
     $entity->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
     $entity->setTitle('Hosting');
@@ -75,6 +78,7 @@ test('invoice item getters and setters round-trip values', function (): void {
     expect($entity->getInvoice())->toBe($invoice)
         ->and($entity->getType())->toBe(InvoiceItem::TYPE_ORDER)
         ->and($entity->getRelId())->toBe('77')
+        ->and($entity->getOrderId())->toBe(77)
         ->and($entity->getTask())->toBe(InvoiceItem::TASK_RENEW)
         ->and($entity->getStatus())->toBe(InvoiceItem::STATUS_PENDING_PAYMENT)
         ->and($entity->getTitle())->toBe('Hosting')

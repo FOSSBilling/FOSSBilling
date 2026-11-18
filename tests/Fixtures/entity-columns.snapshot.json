@@ -359,6 +359,7 @@
     "invoice_item.created_at",
     "invoice_item.id",
     "invoice_item.invoice_id",
+    "invoice_item.order_id",
     "invoice_item.period",
     "invoice_item.price",
     "invoice_item.quantity",
