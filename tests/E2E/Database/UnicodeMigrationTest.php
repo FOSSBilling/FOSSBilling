@@ -610,9 +610,10 @@ test('Unicode repair skips columns covered by functional indexes', function (): 
     }
     $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL, UNIQUE KEY slug_lower ((LOWER(slug)))) ENGINE=InnoDB ROW_FORMAT=COMPACT DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
     $this->connection->insert('post', ['id' => 1, 'slug' => 'Example']);
+    $before = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
     ($this->runPatch)();
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
-    expect($column['Collation'])->toBe('utf8_general_ci')
+    expect($column)->toBe($before)
         ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('Example');
     $calls = $this->patcher->getDi()['logger']->calls;
     expect($calls)->toHaveCount(1)
