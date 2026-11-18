@@ -2722,13 +2722,15 @@ class Patcher implements InjectionAwareInterface
                 break;
             }
         }
-        if ($engine === 'myisam' || $engine === 'aria') {
-            // Fixed key-length caps well below InnoDB's. The conservative
-            // 1,000-byte bound keeps conversions safe on both; larger indexes
-            // are skipped with a warning for manual review instead.
-            return 1000;
+        if ($engine !== 'innodb') {
+            // Only InnoDB has large, page-size-dependent key limits. Other
+            // engines fall back to the conservative bound; oversized indexes
+            // are skipped with a warning instead of risking a failed ALTER.
+            // (This also covers COMPRESSED tables, whose real limit follows
+            // the smaller KEY_BLOCK_SIZE rather than the page size.)
+            return 767;
         }
-        if (!in_array($rowFormat, ['dynamic', 'compressed'], true) || !self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
+        if ($rowFormat !== 'dynamic' || !self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
             return 767;
         }
 

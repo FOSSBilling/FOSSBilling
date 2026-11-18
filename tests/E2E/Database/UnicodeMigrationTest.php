@@ -548,6 +548,9 @@ test('Unicode repair preserves NO PAD comparison rules when widening', function 
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'title'");
     expect($column['Collation'])->toBe('utf8mb4_general_nopad_ci')
         ->and($this->connection->fetchOne('SELECT content FROM post'))->toBe('日本語');
+    // Case-insensitivity is preserved while trailing spaces stay significant.
+    expect($this->connection->fetchOne("SELECT id FROM post WHERE title = 'RÉSUMÉ'"))->toBe(1)
+        ->and($this->connection->fetchOne("SELECT id FROM post WHERE title = 'Résumé '"))->toBeFalse();
     $this->connection->executeStatement('UPDATE post SET title = ?', ['🚀']);
     expect($this->connection->fetchOne('SELECT title FROM post'))->toBe('🚀')
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
