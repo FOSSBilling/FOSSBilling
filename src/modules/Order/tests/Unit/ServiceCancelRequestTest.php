@@ -192,3 +192,122 @@ test('accept leaves an unsupported gateway subscription for staff to cancel', fu
 
     expect(fn () => $service->accept(6))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'payment provider');
 });
+
+test('automatic cancellation recovers a failed manager before later requests and cron tasks', function (string $failure): void {
+    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
+        Client::class, Order::class, ClientOrderCancelRequest::class, Box\Mod\Order\Entity\OrderMeta::class, Box\Mod\Order\Entity\OrderStatus::class, Box\Mod\System\Entity\Setting::class,
+    ]));
+    $db->executeStatement('CREATE TABLE session (lifetime INTEGER, created_at INTEGER)');
+    $client = (new Client())->setEmail('cancel@example.com');
+    $em->persist($client);
+    $em->persist((new Box\Mod\System\Entity\Setting())->setParam('cancel_requests_last_day')->setValue('2000-01-01'));
+    $em->flush();
+    $requestIds = [];
+    $orderIds = [];
+    $requestCount = $failure === 'only request' ? 1 : 2;
+    for ($i = 0; $i < $requestCount; ++$i) {
+        $order = (new Order())->setClientId($client->getId())->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTimeImmutable('+1 month'));
+        $em->persist($order);
+        $em->flush();
+        $request = (new ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setType(ClientOrderCancelRequest::TYPE_END_OF_PERIOD)->setStatus(ClientOrderCancelRequest::STATUS_PENDING);
+        $em->persist($request);
+        $em->flush();
+        $requestIds[] = $request->getId();
+        $orderIds[] = $order->getId();
+    }
+    if ($failure === 'daily setting') {
+        $db->executeStatement("CREATE TRIGGER fail_day BEFORE UPDATE OF value ON setting WHEN NEW.param = 'cancel_requests_last_day' BEGIN SELECT RAISE(ABORT, 'daily setting flush failed'); END");
+    } else {
+        $db->executeStatement("CREATE TRIGGER fail_cancel BEFORE INSERT ON client_order_meta WHEN NEW.client_order_id = {$orderIds[0]} BEGIN SELECT RAISE(ABORT, 'cancellation metadata flush failed'); END");
+    }
+    $di = container();
+    $di['em'] = fn (): Doctrine\ORM\EntityManagerInterface => $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (): object => new class {
+        public function getConfig(): array
+        {
+            return ['cancel_requests_auto' => 1];
+        }
+    });
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturnFalse();
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturnFalse();
+    $defaults = Tests\Helpers\moduleService(['invoice:subscription' => $subscriptions]);
+    $di['mod_service'] = $di->protect(function (string $module, string $sub = '') use ($di, $defaults): object {
+        if ($sub === '' && in_array(strtolower($module), ['order', 'system'], true)) {
+            $service = strtolower($module) === 'order' ? new Box\Mod\Order\Service() : new Box\Mod\System\Service();
+            $service->setDi($di);
+
+            return $service;
+        }
+
+        return $defaults($module, $sub);
+    });
+    $service = new ServiceCancelRequest();
+    $service->setDi($di);
+    $oldRepository = $service->getCancelRequestRepository();
+    $listenerManagers = [];
+    $di['event_dispatcher'] = new FOSSBilling\Core\Events\EventDispatcher(fn (): array => ['invoice'], function () use ($di, &$listenerManagers): object {
+        $manager = $di['em'];
+        $listenerManagers[] = $manager;
+        $listener = Mockery::mock(Box\Mod\Invoice\Service::class)->shouldIgnoreMissing();
+        $listener->shouldReceive('healMissingJournalEntries')->zeroOrMoreTimes()->andReturnUsing(function () use ($manager): void {
+            expect($manager->isOpen())->toBeTrue();
+            $manager->persist((new Box\Mod\System\Entity\Setting())->setParam('after_cron_listener')->setValue('healthy'));
+            $manager->flush();
+        });
+
+        return $listener;
+    });
+    $di['api_system'] = new readonly class($service, $di) {
+        public function __construct(private ServiceCancelRequest $service, private Pimple\Container $di)
+        {
+        }
+
+        public function __call(string $method, array $args): void
+        {
+            if ($method === 'order_batch_process_cancel_requests') {
+                $this->service->runAutoProcess();
+            } elseif (in_array($method, ['support_batch_ticket_auto_close', 'client_batch_expire_password_reminders', 'cart_batch_expire', 'email_batch_sendmail'], true)) {
+                $manager = $this->di['em'];
+                expect($manager->isOpen())->toBeTrue();
+                $manager->persist((new Box\Mod\System\Entity\Setting())->setParam($method)->setValue('healthy'));
+                $manager->flush();
+            }
+        }
+    };
+    $finalization = Mockery::mock();
+    $finalization->shouldReceive('withRuntimeLock')->andReturnUsing(fn (callable $work): mixed => $work());
+    $finalization->shouldReceive('isRequired')->andReturnFalse();
+    $finalization->shouldReceive('healSchemaDrift')->andReturnNull();
+    $di['update_finalization'] = $finalization;
+    $cron = new Box\Mod\Cron\Service();
+    $cron->setDi($di);
+    ob_start();
+
+    try {
+        expect($cron->runCrons())->toBe($failure !== 'daily setting')
+            ->and($em->isOpen())->toBeFalse()
+            ->and($di['em']->isOpen())->toBeTrue()
+            ->and($di['em'])->not->toBe($em)
+            ->and($di['em']->getConnection())->toBe($db)
+            ->and($service->getCancelRequestRepository())->not->toBe($oldRepository)
+            ->and($service->getCancelRequestRepository())->toBe($di['em']->getRepository(ClientOrderCancelRequest::class))
+            ->and($listenerManagers)->toHaveCount(2)
+            ->and($listenerManagers[1])->toBe($di['em']);
+        foreach ($requestIds as $i => $requestId) {
+            $failed = $i === 0 && $failure !== 'daily setting';
+            expect($db->fetchOne('SELECT status FROM client_order_cancel_request WHERE id = ?', [$requestId]))->toBe($failed ? 'pending' : 'accepted')
+                ->and($db->fetchOne('SELECT value FROM client_order_meta WHERE client_order_id = ?', [$orderIds[$i]]))->toBe($failed ? false : '1');
+        }
+        expect($db->fetchOne("SELECT value FROM setting WHERE param = 'cancel_requests_last_day'"))->toBe($failure === 'daily setting' ? '2000-01-01' : date('Y-m-d'));
+        foreach (['support_batch_ticket_auto_close', 'client_batch_expire_password_reminders', 'cart_batch_expire', 'email_batch_sendmail', 'after_cron_listener', 'last_cron_exec'] as $param) {
+            expect($db->fetchOne('SELECT value FROM setting WHERE param = ?', [$param]))->not->toBeFalse();
+        }
+    } finally {
+        ob_end_clean();
+        $db->close();
+    }
+})->with(['first request', 'only request', 'daily setting']);

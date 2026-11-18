@@ -589,6 +589,7 @@ class Service implements InjectionAwareInterface
             $this->assertCanRemoveActiveSuperAdministrator($model);
         }
 
+        $oldEmail = $model->getEmail();
         $model->setEmail($data['email'] ?? $model->getEmail());
         $model->setName($data['name'] ?? $model->getName());
         $model->setStatus($newStatus);
@@ -605,6 +606,11 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         } catch (UniqueConstraintViolationException) {
             throw new \FOSSBilling\Core\Exception\InformationException('Staff member with email :email is already registered.', [':email' => $model->getEmail()], 788954);
+        }
+
+        // An email edit revokes reset links sent to the old address.
+        if ($model->getEmail() !== $oldEmail) {
+            $this->adminPasswordResetRepository->deleteResetsForAdmin((int) $model->getId());
         }
 
         if ($model->getStatus() !== Admin::STATUS_ACTIVE && $previousStatus === Admin::STATUS_ACTIVE) {

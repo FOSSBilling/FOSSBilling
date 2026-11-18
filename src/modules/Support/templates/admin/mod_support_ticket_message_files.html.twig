@@ -1,0 +1,25 @@
+{# Files attached to a ticket message, with staff removal. #}
+{% set files = message.ticket_files|default([]) %}
+{% if files is not empty %}
+<div class="mt-2 small">
+    {% for file in files %}
+    <div class="d-flex align-items-center gap-2 py-1">
+        {% if not file.removed %}
+        <svg class="icon"><use href="#paperclip" /></svg>
+        <a href='{{ "support/ticket-file/#{file.id}"|url }}' target="_blank">{{ file.name }}</a>
+        <span class="text-muted">({{ file.size_label }})</span>
+        {% if has_permission('support', 'manage_tickets') %}
+        <a href="{{ 'support/ticket_file_remove'|api_url(query: { 'id': file.id }) }}" class="link-danger ms-1"
+            {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
+            <svg class="icon"><use href="#trash" /></svg>
+        </a>
+        {% endif %}
+        {% elseif file.removed_reason == 'expired' %}
+        <span class="text-muted">{{ 'Removed after the keep period: :name'|trans({ ':name': file.name }) }}</span>
+        {% else %}
+        <span class="text-muted">{{ 'Removed by staff: :name'|trans({ ':name': file.name }) }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

@@ -68,7 +68,7 @@ test('gateway fee badges use supplied quotes and quote failure keeps invoice ren
     $source = (new Filesystem())->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_invoice.html.twig');
     $start = strpos($source, '{% if gateway_fees is not null %}');
     $end = strpos($source, '</form>', $start) + strlen('</form>');
-    $end = strpos($source, '{% endif %}', $end) + strlen('{% endif %}');
+    $end = strpos($source, '{% set free_credit', $end);
     $guest = new class {
         public array $invoice_gateways = [['id' => 1, 'accepted_currencies' => ['EUR'], 'allow_single' => true, 'allow_recurrent' => false, 'title' => 'Gateway', 'logo' => ['height' => '10px', 'width' => '10px', 'logo' => '/logo']]];
 
@@ -78,7 +78,7 @@ test('gateway fee badges use supplied quotes and quote failure keeps invoice ren
         }
     };
     $html = invoiceReviewTemplate(substr($source, $start, $end - $start) . '<footer>Invoice details remain available</footer>')->render('fragment', [
-        'guest' => $guest, 'invoice' => ['hash' => 'example', 'currency' => 'EUR', 'subscribable' => false],
+        'client' => null, 'guest' => $guest, 'invoice' => ['hash' => 'example', 'currency' => 'EUR', 'subscribable' => false],
         'gateway_fees' => $available ? [1 => ['fee' => 2.5]] : null,
     ]);
     expect($html)->toContain('Invoice details remain available')

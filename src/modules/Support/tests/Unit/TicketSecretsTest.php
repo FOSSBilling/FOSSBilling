@@ -1,0 +1,290 @@
+<?php
+
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+declare(strict_types=1);
+
+use Box\Mod\Support\TicketSecrets;
+
+use function Tests\Helpers\container;
+
+function ticketSecretsConnection(array $config = []): array
+{
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE admin (id INTEGER PRIMARY KEY, name VARCHAR(255))');
+    $connection->executeStatement('CREATE TABLE support_ticket (id INTEGER PRIMARY KEY, client_id INTEGER, status VARCHAR(30))');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, kind VARCHAR(10) NOT NULL,
+        label VARCHAR(100) NOT NULL, data TEXT NOT NULL, added_by_client_id BIGINT DEFAULT NULL,
+        created_at DATETIME NOT NULL)');
+    $connection->executeStatement('CREATE TABLE support_ticket_secret_event (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id BIGINT NOT NULL, secret_label VARCHAR(100) NOT NULL,
+        action VARCHAR(10) NOT NULL, admin_id BIGINT DEFAULT NULL, client_id BIGINT DEFAULT NULL,
+        created_at DATETIME NOT NULL)');
+    $connection->insert('admin', ['id' => 1, 'name' => 'Test Admin']);
+    $connection->insert('support_ticket', ['id' => 60, 'client_id' => 5, 'status' => 'open']);
+    $connection->insert('support_ticket', ['id' => 61, 'client_id' => 5, 'status' => 'closed']);
+
+    $di = container();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di['em'] = $em;
+    $di['crypt'] = new FOSSBilling\Core\Security\Crypt();
+    $di['mod_config'] = $di->protect(fn (): array => $config);
+
+    return [$di, $connection];
+}
+
+function ticketSecretsServer(): array
+{
+    return [
+        'host' => 'db.example.com', 'type' => 'ssh', 'username' => 'root',
+        'password' => 's3cr3t', 'port' => '22', 'note' => 'main db',
+    ];
+}
+
+test('ticket secret ports reject invalid types without warnings or writes', function (mixed $port): void {
+    [$di, $connection] = ticketSecretsConnection();
+
+    expect(fn () => withoutPhpWarnings(fn () => TicketSecrets::addForClient($di, 5, 60, 'server', [...ticketSecretsServer(), 'port' => $port])))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'valid port');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
+})->with([
+    'array' => [[]],
+    'object' => [new stdClass()],
+    'boolean' => [false],
+    'float' => [22.0],
+]);
+
+test('ticket secret kinds default on with a week keep', function (): void {
+    [$di] = ticketSecretsConnection();
+    expect(TicketSecrets::kinds($di))->toBe(['server' => true, 'other' => true, 'days' => 7]);
+
+    [$di] = ticketSecretsConnection(['secrets_server' => '0', 'secrets_other' => '1', 'secrets_days' => '200']);
+    expect(TicketSecrets::kinds($di))->toBe(['server' => false, 'other' => true, 'days' => 90]);
+
+    [$di] = ticketSecretsConnection(['secrets_days' => '']);
+    expect(TicketSecrets::kinds($di)['days'])->toBe(7);
+});
+
+test('ticket secret ports accept whole numbers and empty values', function (mixed $port, ?int $expected): void {
+    [$di] = ticketSecretsConnection();
+    $added = withoutPhpWarnings(fn () => TicketSecrets::addForClient($di, 5, 60, 'server', [...ticketSecretsServer(), 'port' => $port]));
+
+    expect(TicketSecrets::openForStaff($di, $added['id'], 1)['port'])->toBe($expected);
+})->with([
+    'integer' => [22, 22],
+    'padded string' => [' 22 ', 22],
+    'maximum' => ['65535', 65535],
+    'empty' => ['', null],
+    'null' => [null, null],
+]);
+
+test('ticket secret add stores encrypted values with a label', function (): void {
+    [$di, $connection] = ticketSecretsConnection(['secrets_server' => '1']);
+
+    $result = TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer());
+    expect($result['id'])->toBeGreaterThan(0);
+
+    $row = $connection->fetchAssociative('SELECT * FROM support_ticket_secret WHERE id = ?', [$result['id']]);
+    expect($row['label'])->toBe('SSH db.example.com');
+    expect($row['data'])->not->toContain('s3cr3t');
+    expect($row['data'])->not->toContain('db.example.com');
+
+    $list = TicketSecrets::listForTicket($di, 60, 5);
+    expect($list['secrets'][0])->toBe(['id' => $result['id'], 'kind' => 'server', 'label' => 'SSH db.example.com', 'created_at' => $row['created_at']]);
+    expect($list['events'])->toBe([]);
+
+    // Other kinds need a label and a value.
+    $other = TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => ' API key ', 'value' => 'abc']);
+    expect($other['id'])->toBeGreaterThan(0);
+    expect($connection->fetchOne('SELECT label FROM support_ticket_secret WHERE id = ?', [$other['id']]))->toBe('API key');
+});
+
+test('ticket secret add refuses closed tickets, guests and bad input', function (): void {
+    [$di] = ticketSecretsConnection();
+
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 61, 'server', ticketSecretsServer()))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'closed ticket');
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 999, 'server', ticketSecretsServer()))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Ticket not found');
+    expect(fn (): array => TicketSecrets::addForClient($di, 6, 60, 'server', ticketSecretsServer()))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Ticket not found');
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'bogus', []))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'valid kind');
+
+    [$di] = ticketSecretsConnection(['secrets_server' => '0']);
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer()))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'turned off');
+
+    [$di] = ticketSecretsConnection();
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'server', [...ticketSecretsServer(), 'password' => '', 'ssh_key' => '']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'password or an SSH key');
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'server', [...ticketSecretsServer(), 'host' => '']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'host');
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'server', [...ticketSecretsServer(), 'port' => '99999']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'valid port');
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'x', 'value' => '']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'label and a value');
+
+    // Ten secrets is the cap.
+    [$di, $connection] = ticketSecretsConnection();
+    for ($i = 0; $i < 10; ++$i) {
+        $connection->insert('support_ticket_secret', ['ticket_id' => 60, 'kind' => 'other', 'label' => "s$i", 'data' => 'x', 'added_by_client_id' => 5, 'created_at' => date('Y-m-d H:i:s')]);
+    }
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'x', 'value' => 'y']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'At most 10');
+});
+
+test('ticket secret open is audited and delete is scoped', function (): void {
+    [$di, $connection] = ticketSecretsConnection();
+
+    $added = TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer());
+    $fields = TicketSecrets::openForStaff($di, $added['id'], 1);
+    expect($fields['password'])->toBe('s3cr3t');
+    expect($fields['host'])->toBe('db.example.com');
+
+    $events = TicketSecrets::listForTicket($di, 60)['events'];
+    expect($events)->toHaveCount(1);
+    expect($events[0]['action'])->toBe('opened');
+    expect($events[0]['staff_name'])->toBe('Test Admin');
+
+    // Another client cannot see the ticket at all.
+    expect(fn (): array => TicketSecrets::listForTicket($di, 60, 6))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Ticket not found');
+    expect(fn () => TicketSecrets::delete($di, $added['id'], null, 6))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Secret not found');
+
+    // The owner deletes; the event stays with the client id.
+    TicketSecrets::delete($di, $added['id'], null, 5);
+    expect(TicketSecrets::listForTicket($di, 60)['secrets'])->toBe([]);
+    $deleted = TicketSecrets::listForTicket($di, 60)['events'];
+    expect(array_column($deleted, 'action'))->toBe(['opened', 'deleted']);
+});
+
+test('ticket close purges values but keeps history; delete purges all', function (): void {
+    [$di, $connection] = ticketSecretsConnection();
+
+    $added = TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer());
+    TicketSecrets::openForStaff($di, $added['id'], 1);
+
+    TicketSecrets::forgetTicket($connection, 60);
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(0);
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(1);
+
+    $added = TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer());
+    TicketSecrets::forgetTicket($connection, 60, true);
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
+    expect($added['id'])->toBeGreaterThan(0);
+});
+
+test('ticket secret prune expires old secrets with an event', function (): void {
+    [$di, $connection] = ticketSecretsConnection(['secrets_days' => '7']);
+
+    TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer());
+    $old = date('Y-m-d H:i:s', time() - 8 * 86400);
+    $connection->executeStatement('UPDATE support_ticket_secret SET created_at = ?', [$old]);
+
+    expect(TicketSecrets::prune($di))->toBe(1);
+    expect(TicketSecrets::listForTicket($di, 60)['secrets'])->toBe([]);
+    expect(TicketSecrets::listForTicket($di, 60)['events'][0]['action'])->toBe('expired');
+
+    // Fresh secrets stay.
+    TicketSecrets::addForClient($di, 5, 60, 'server', ticketSecretsServer());
+    expect(TicketSecrets::prune($di))->toBe(0);
+});
+
+test('adding a secret rechecks ticket status after preparing the encrypted value', function (): void {
+    [$di, $connection] = ticketSecretsConnection();
+    $crypt = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
+    $crypt->shouldReceive('encrypt')->once()->andReturnUsing(function () use ($connection): string {
+        $connection->executeStatement("UPDATE support_ticket SET status = 'closed' WHERE id = 60");
+
+        return 'encrypted';
+    });
+    $di['crypt'] = $crypt;
+
+    expect(fn (): array => TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'Key', 'value' => 'secret']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'closed ticket');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(0);
+});
+
+test('secret access and deletion stop when the ticket is removed before the lock', function (string $action): void {
+    [$di, $connection] = ticketSecretsConnection();
+    $secret = TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'key', 'value' => 'secret']);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $calls = 0;
+    $em->shouldReceive('getConnection')->andReturnUsing(function () use ($connection, &$calls): Doctrine\DBAL\Connection {
+        if (++$calls === 2) {
+            $connection->delete('support_ticket_secret', ['ticket_id' => 60]);
+            $connection->delete('support_ticket', ['id' => 60]);
+        }
+
+        return $connection;
+    });
+    $di['em'] = $em;
+    $call = $action === 'open'
+        ? fn () => TicketSecrets::openForStaff($di, $secret['id'], 1)
+        : fn () => TicketSecrets::delete($di, $secret['id'], null, 5);
+
+    expect($call)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Ticket not found')
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
+})->with(['open', 'delete']);
+
+test('staff cannot open a secret purged by a close before the lock', function (): void {
+    [$di, $connection] = ticketSecretsConnection();
+    $secret = TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => 'key', 'value' => 'secret']);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $calls = 0;
+    $em->shouldReceive('getConnection')->andReturnUsing(function () use ($connection, &$calls): Doctrine\DBAL\Connection {
+        if (++$calls === 2) {
+            $connection->delete('support_ticket_secret', ['ticket_id' => 60]);
+            $connection->update('support_ticket', ['status' => 'closed'], ['id' => 60]);
+        }
+
+        return $connection;
+    });
+    $di['em'] = $em;
+    expect(fn () => TicketSecrets::openForStaff($di, $secret['id'], 1))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Secret not found')
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
+});
+
+test('credentials retain exact whitespace through encrypted storage and staff opening', function (string $credential): void {
+    [$di, $db] = ticketSecretsConnection();
+    $server = TicketSecrets::addForClient($di, 5, 60, 'server', [
+        ...ticketSecretsServer(), 'host' => ' db.example.com ', 'username' => $credential, 'password' => $credential, 'ssh_key' => "\n  private key\n\t",
+    ]);
+    $other = TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => ' API key ', 'value' => "\n" . $credential . "\t\n"]);
+    $opened = TicketSecrets::openForStaff($di, $server['id'], 1);
+    $generic = TicketSecrets::openForStaff($di, $other['id'], 1);
+
+    expect($opened['password'])->toBe($credential)
+        ->and($opened['username'])->toBe($credential)
+        ->and($opened['ssh_key'])->toBe("\n  private key\n\t")
+        ->and($opened['host'])->toBe('db.example.com')
+        ->and($generic['value'])->toBe("\n" . $credential . "\t\n")
+        ->and($generic['label'])->toBe('API key');
+    expect($db->fetchOne('SELECT data FROM support_ticket_secret WHERE id = ?', [$server['id']]))->not->toContain('private key');
+})->with([' padded password ', '   ']);
+
+test('credential validation includes surrounding whitespace and rejects controls', function (string $kind, string $field, string $value): void {
+    [$di, $db] = ticketSecretsConnection();
+    $data = $kind === 'server' ? ticketSecretsServer() : ['label' => 'API key', 'value' => 'valid'];
+    $data[$field] = $value;
+    expect(fn () => TicketSecrets::addForClient($di, 5, 60, $kind, $data))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+    expect((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(0);
+})->with([
+    'password limit' => ['server', 'password', ' ' . str_repeat('p', 1000)],
+    'value limit' => ['other', 'value', str_repeat('v', 5000) . ' '],
+    'password control' => ['server', 'password', "\0password"],
+    'value control' => ['other', 'value', "value\0"],
+]);

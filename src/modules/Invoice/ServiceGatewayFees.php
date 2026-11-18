@@ -199,6 +199,10 @@ class ServiceGatewayFees implements InjectionAwareInterface
                 return;
             }
 
+            if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+                return; // The provider is already collecting the quoted amount.
+            }
+
             $items = $this->di['mod_service']('Invoice', 'InvoiceItem');
             $line = $this->line($invoice);
             if (!$gateway instanceof PayGateway) {

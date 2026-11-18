@@ -23,6 +23,7 @@ test('MySQL completion claims preserve financial status and exclude concurrent p
     $worker = function (Doctrine\DBAL\Connection $connection): ServiceTransaction {
         $di = container();
         $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+        $config->setUseSchemaEditorApi(true);
         $config->setProxyDir(sys_get_temp_dir());
         $config->setProxyNamespace('GatewayCompletionClaimProxies');
         $di['em'] = new EntityManager($connection, $config);
@@ -33,7 +34,7 @@ test('MySQL completion claims preserve financial status and exclude concurrent p
     };
 
     try {
-        $connection->executeStatement('CREATE TABLE `transaction` (id BIGINT PRIMARY KEY, status VARCHAR(30), gateway_completion_state SMALLINT NOT NULL DEFAULT 0, updated_at DATETIME) ENGINE=InnoDB');
+        $connection->executeStatement('CREATE TABLE `transaction` (id BIGINT PRIMARY KEY, status VARCHAR(30), gateway_completion_state SMALLINT NOT NULL DEFAULT 0, updated_at DATETIME, processing_token VARCHAR(32) NULL) ENGINE=InnoDB');
         foreach ([1 => 1, 2 => 2, 3 => 0] as $id => $state) {
             $connection->insert('`transaction`', ['id' => $id, 'status' => 'processed', 'gateway_completion_state' => $state, 'updated_at' => date('Y-m-d H:i:s', time() - 600)]);
         }

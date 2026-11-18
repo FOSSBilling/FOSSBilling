@@ -49,6 +49,13 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
                     'index' => 400,
                     'class' => '',
                 ],
+                [
+                    'location' => 'support',
+                    'label' => __trans('Ratings & Feedback'),
+                    'uri' => $this->di['url']->adminLink('support/ratings'),
+                    'index' => 450,
+                    'class' => '',
+                ],
             ],
         ];
 
@@ -73,6 +80,8 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $app->get('/support/index', 'get_index', [], static::class);
         $app->get('/support/ticket/:id', 'get_ticket', ['id' => '[0-9]+'], static::class);
         $app->get('/support/ticket/:id/message/:messageid', 'get_ticket', ['id' => '[0-9]+', 'messageid' => '[0-9]+'], static::class);
+        $app->get('/support/ticket-file/:id', 'get_ticket_file', ['id' => '[a-f0-9]{32}'], static::class);
+        $app->get('/support/ratings', 'get_ratings', [], static::class);
         $app->get('/support/helpdesks', 'get_helpdesks', [], static::class);
         $app->get('/support/helpdesk/:id', 'get_helpdesk', ['id' => '[0-9]+'], static::class);
         $app->get('/support/canned-responses', 'get_canned_list', [], static::class);
@@ -93,8 +102,11 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $app->render('mod_support_tickets');
     }
 
-    public function get_ticket(\FOSSBilling\Core\Http\App $app, $id, $messageid = ''): string
+    public function get_ticket(\FOSSBilling\Core\Http\App $app, $id, $messageid = ''): string|\Symfony\Component\HttpFoundation\Response
     {
+        if (($merged = \Box\Mod\Support\TicketMerge::target($this->di, (int) $id)) !== null) {
+            return $app->redirectUrl($this->di['url']->adminLink('support/ticket/' . $merged, ['merged' => (int) $id]));
+        }
         $api = $this->di['api_admin'];
         $ticket = $api->support_ticket_get(['id' => $id]);
 
@@ -126,6 +138,34 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $helpdesk = $api->support_helpdesk_get(['id' => $id]);
 
         return $app->render('mod_support_helpdesk', ['helpdesk' => $helpdesk]);
+    }
+
+    public function get_ratings(\FOSSBilling\Core\Http\App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_support_ratings');
+    }
+
+    public function get_ticket_file(\FOSSBilling\Core\Http\App $app, string $id): \Symfony\Component\HttpFoundation\Response
+    {
+        $this->di['is_admin_logged'];
+        $this->di['mod_service']('staff')->checkPermissionsAndThrowException('support', 'view');
+
+        $file = \Box\Mod\Support\TicketFiles::find($this->di, $id);
+        if ($file === null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('File not found.', [], 404);
+        }
+
+        $served = \Box\Mod\Support\TicketFiles::serve($file);
+        $response = $served['disposition'] === 'inline'
+            ? $this->di['response_factory']->file($served['name'], $served['content_type'], $served['path'])
+            : $this->di['response_factory']->download($served['name'], $served['path']);
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Content-Security-Policy', "default-src 'none'; img-src 'self'; sandbox");
+        $response->headers->set('Cache-Control', 'private, no-store');
+
+        return $response;
     }
 
     public function get_helpdesks(\FOSSBilling\Core\Http\App $app): string

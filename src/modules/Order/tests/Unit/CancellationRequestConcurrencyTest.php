@@ -648,6 +648,10 @@ test('automatic selection includes every unlinked request and only the oldest li
 
 test('expiry suspension still applies while a cancellation request awaits acceptance', function (): void {
     [, $em, , $order, , $orders] = cancellationRequestConcurrencyContext();
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
+        Box\Mod\Invoice\Entity\Invoice::class, Box\Mod\Invoice\Entity\InvoiceItem::class,
+        Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Invoice\Entity\Transaction::class,
+    ]));
     $order->setExpiresAt(new DateTimeImmutable('-1 day'));
     $em->flush();
     $di = $orders->getDi();

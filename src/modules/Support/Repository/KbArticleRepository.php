@@ -39,6 +39,12 @@ class KbArticleRepository extends EntityRepository
                 ->setParameter('status', $status);
         }
 
+        $excludeCategoryIds = array_filter(array_map(intval(...), (array) ($data['exclude_category_ids'] ?? [])));
+        if ($excludeCategoryIds !== []) {
+            $qb->andWhere('IDENTITY(a.category) IS NULL OR IDENTITY(a.category) NOT IN (:exclude_category_ids)')
+                ->setParameter('exclude_category_ids', $excludeCategoryIds);
+        }
+
         if ($search !== null && trim($search) !== '') {
             foreach (KbSearch::terms($search) as $index => $term) {
                 $qb->andWhere(sprintf(

@@ -1,0 +1,63 @@
+{% block subject %}[{{ guest.system_company.name }}] {{ 'Ticket #%id% assigned to you: %subject%'|trans({'%id%': ticket.id|default(''), '%subject%': ticket.subject|default('')}) }}{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<style type="text/css">
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 14px;
+			color: #333333;
+		}
+
+		h1 {
+			font-size: 24px;
+			font-weight: bold;
+			margin: 0 0 20px;
+		}
+
+		p {
+			margin: 0 0 10px;
+		}
+
+		strong {
+			font-weight: bold;
+		}
+
+		.signature {
+			font-style: italic;
+			color: #999999;
+			margin-top: 20px;
+			border-top: 1px solid #cccccc;
+			padding-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<h1>{{ 'Ticket assigned to you'|trans }}</h1>
+	<p>Hello {{ staff.name|default('') }},</p>
+
+	{% if assigned_by|default('') %}
+	<p><strong>{{ assigned_by }}</strong> assigned ticket #{{ ticket.id|default('') }} to you.</p>
+	{% else %}
+	<p>An escalation rule assigned ticket #{{ ticket.id|default('') }} to you.</p>
+	{% endif %}
+
+	<p>{{ 'Ticket info'|trans }}</p>
+	<ul>
+		<li><strong>{{ 'Ticket ID'|trans }}:</strong> #{{ ticket.id|default('') }}</li>
+		<li><strong>{{ 'Subject'|trans }}:</strong> {{ ticket.subject|default('') }}</li>
+		<li><strong>{{ 'Helpdesk'|trans }}:</strong> {{ ticket.helpdesk|default('') }}</li>
+		<li><strong>{{ 'Priority'|trans }}:</strong> {{ ticket.priority_title|default('') }}</li>
+		<li><strong>{{ 'Status'|trans }}:</strong> {{ ticket.status_title|default('') }}</li>
+	</ul>
+
+	<a href="{{ ticket.url|default('') }}" target="_blank">{{ 'Open the ticket'|trans }}</a>
+
+	<p>You may <a href="{{ 'staff/login'|url(query: { 'email': staff.email|default('') }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
+
+	<div class="signature">{{ guest.system_email.signature }}</div>
+</body>
+</html>
+{% endblock %}

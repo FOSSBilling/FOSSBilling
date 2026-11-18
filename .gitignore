@@ -5,6 +5,8 @@
 /cache
 /src/config.php
 /src/config.old.php
+/src/.update-lock
+/src/.update-extraction-pending
 /src/data/*
 !/src/data/.htaccess
 !/src/data/index.html

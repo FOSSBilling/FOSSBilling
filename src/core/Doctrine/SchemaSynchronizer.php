@@ -142,7 +142,7 @@ final class SchemaSynchronizer
 
         $diff = $comparator->compareSchemas($fromSchema, $toSchema);
 
-        [$safeDiff, $skipped] = self::splitAdditiveChanges($diff, $toSchema);
+        [$safeDiff, $skipped] = self::splitAdditiveChanges($diff, $schemaManager, $toSchema);
 
         $applied = $platform->getAlterSchemaSQL($safeDiff);
         foreach ($applied as $statement) {
@@ -188,7 +188,7 @@ final class SchemaSynchronizer
      *
      * @return array{0: SchemaDiff, 1: list<string>}
      */
-    private static function splitAdditiveChanges(SchemaDiff $diff, Schema $toSchema): array
+    private static function splitAdditiveChanges(SchemaDiff $diff, AbstractSchemaManager $schemaManager, Schema $toSchema): array
     {
         $skipped = [];
 
@@ -262,10 +262,22 @@ final class SchemaSynchronizer
                 $tableDiff->getAddedColumns(),
                 static fn ($column): bool => !in_array($column->getObjectName()->toString(), $droppedColumnNames, true),
             ));
-            $safeAddedIndexes = array_values(array_filter(
-                $tableDiff->getAddedIndexes(),
-                static fn ($index): bool => !in_array($index->getObjectName()->toString(), $droppedIndexNames, true),
-            ));
+            $safeAddedIndexes = [];
+            foreach ($tableDiff->getAddedIndexes() as $index) {
+                $name = $index->getObjectName()->toString();
+                if ($tableDiff->getOldTable()->hasIndex($name)) {
+                    // Some comparator versions omit the drop half when modified
+                    // indexes are suppressed (for example non-unique -> unique).
+                    if (!in_array($name, $droppedIndexNames, true)) {
+                        $skipped[] = sprintf('index `%s` on `%s` differs from entity metadata; existing index retained', $name, $tableName);
+                    }
+
+                    continue;
+                }
+                if (!in_array($name, $droppedIndexNames, true)) {
+                    $safeAddedIndexes[] = $index;
+                }
+            }
 
             // A pure index rename (same columns/uniqueness, different name only - e.g. several
             // entities moving from MySQL's per-table-scoped short index names to table-prefixed
@@ -277,8 +289,23 @@ final class SchemaSynchronizer
             // (index renames, not added/dropped indexes), so omitting it here means the new
             // name is never created at all, silently, on every sync.
             $renamedIndexes = [];
-            foreach ($tableDiff->getIndexRenames() as $rename) {
-                $renamedIndexes[$rename->getOldName()->getIdentifier()->getValue()] = $rename->getNewIndex();
+            if ($tableDiff->getIndexRenames() !== []) {
+                // DBAL can synthesize a backing index while introspecting foreign
+                // keys, even when MySQL uses a composite unique key instead.
+                // Such an index has no physical name that ALTER can rename.
+                $physicalNames = [];
+                $table = $tableDiff->getOldTable()->getObjectName();
+                foreach ([...$schemaManager->introspectTableIndexes($table), ...$schemaManager->introspectTableUniqueConstraints($table)] as $index) {
+                    $physicalNames[] = strtolower($index->getObjectName()->getIdentifier()->getValue());
+                }
+                foreach ($tableDiff->getIndexRenames() as $rename) {
+                    $oldName = $rename->getOldName()->getIdentifier()->getValue();
+                    if (in_array(strtolower($oldName), $physicalNames, true)) {
+                        $renamedIndexes[$oldName] = $rename->getNewIndex();
+                    } else {
+                        $skipped[] = sprintf('index `%s` on `%s` is virtual; rename left unapplied', $oldName, $tableName);
+                    }
+                }
             }
 
             $safeTableDiff = new TableDiff(

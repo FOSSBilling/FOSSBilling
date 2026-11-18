@@ -141,6 +141,9 @@ test('Stripe keeps the canonical receipt through post-commit failure and competi
         $connection->update($table, ['updated_at' => date('Y-m-d H:i:s', time() - 600)], ['id' => $transactionId]);
     }
     $fresh = new EntityManager($connection, $em->getConfiguration());
+    if ($fresh->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $fresh->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $billing = $install($fresh);
     $canonical = $fresh->find(Transaction::class, $transactionId);
     $target = $fresh->find(Invoice::class, $invoiceId);
@@ -161,6 +164,10 @@ test('Stripe keeps the canonical receipt through post-commit failure and competi
     expect($canonical->getGatewayCompletionState())->toBe(Transaction::GATEWAY_COMPLETION_DONE);
     expect($canonical->getStatus())->toBe(Transaction::STATUS_PROCESSED)->and($canonical->getError())->toBeNull();
     $connection->update($table, ['updated_at' => date('Y-m-d H:i:s', time() - 600)], ['id' => $duplicateId]);
+    $worker->processAndCatchErrors($duplicateId);
+    expect($fresh->find(Transaction::class, $duplicateId)->getStatus())->toBe(Transaction::STATUS_PROCESSING);
+    // Ambiguous processing is never reclaimed just because its timestamp aged.
+    $worker->releaseStaleProcessing($duplicateId, null, null);
     $worker->processAndCatchErrors($duplicateId);
     expect($fresh->find(Transaction::class, $transactionId))->toBe($canonical)
         ->and($fresh->find(Transaction::class, $duplicateId))->toBeNull()

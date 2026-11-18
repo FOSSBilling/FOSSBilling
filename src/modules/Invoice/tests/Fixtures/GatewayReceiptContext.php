@@ -9,7 +9,6 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Service;
-use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -20,10 +19,14 @@ use function Tests\Helpers\container;
 function receiptTestContext(?Doctrine\DBAL\Connection $connection = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', '..')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
-    $em = new EntityManager($connection ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
-    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Box\Mod\Order\Entity\OrderMeta::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Transaction::class]));
+    $em = new EntityManager($connection ?? Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\GatewayRefundAttempt::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Box\Mod\Order\Entity\OrderMeta::class, Transaction::class]));
     $client = (new Client())->setCurrency('USD');
     $gateway = (new PayGateway())->setGateway('Stripe');
     $em->persist($client);

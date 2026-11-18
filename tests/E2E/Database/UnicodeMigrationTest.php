@@ -203,7 +203,7 @@ test('Unicode repair fixes every first-party table default and future schema add
 
     foreach ($tables as $table) {
         expect($this->connection->fetchOne('SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$table]))
-            ->toBe('utf8mb4_unicode_ci');
+            ->toBe('utf8mb4_unicode_ci', 'Table default: ' . $table);
     }
     expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'third_party'"))->toBe($externalDefault)
         ->and($this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'"))->toBe($slugBefore);
@@ -613,7 +613,7 @@ test('Unicode repair skips columns covered by functional indexes', function (): 
     $before = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
     ($this->runPatch)();
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
-    expect($column['Collation'])->toBe($before['Collation'])
+    expect($column)->toBe($before)
         ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('Example');
     $calls = $this->patcher->getDi()['logger']->calls;
     expect($calls)->toHaveCount(1)

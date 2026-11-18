@@ -11,7 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Repository;
 
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\Entity\SupportTicketAssignment;
+use Box\Mod\Support\TicketPriority;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Core\Doctrine\SqlExpr;
@@ -56,8 +59,14 @@ class SupportTicketRepository extends EntityRepository
         }
 
         if (isset($data['priority']) && $data['priority'] !== '') {
-            $qb->andWhere('t.priority = :priority')
-                ->setParameter('priority', (int) $data['priority']);
+            if (is_numeric($data['priority'])) {
+                $qb->andWhere('t.priority = :priority')
+                    ->setParameter('priority', (int) $data['priority']);
+            } else {
+                [$operator, $number] = TicketPriority::filter((string) $data['priority']);
+                $qb->andWhere('t.priority ' . $operator . ' :priority')
+                    ->setParameter('priority', $number);
+            }
         }
 
         if (!empty($data['client_id'])) {
@@ -138,11 +147,39 @@ class SupportTicketRepository extends EntityRepository
             'created_at' => 't.createdAt',
             'updated_at' => 't.updatedAt',
         ]);
+
+        // Apply assignment membership in SQL, before ticket filters and pagination.
+        $assigned = $data['assigned_filter'] ?? null;
+        if (is_int($assigned) || $assigned === 'any' || $assigned === 'none') {
+            $assignments = $this->getEntityManager()->createQueryBuilder()
+                ->select('a.ticketId')
+                ->from(SupportTicketAssignment::class, 'a')
+                ->innerJoin(Admin::class, 'ad', 'WITH', 'ad.id = a.adminId')
+                ->where("ad.status = 'active'")
+                ->andWhere('ad.systemName IS NULL');
+            if (is_int($assigned)) {
+                $assignments->andWhere('a.adminId = :assigned_admin');
+                $qb->setParameter('assigned_admin', $assigned);
+            }
+            $qb->andWhere('t.id ' . ($assigned === 'none' ? 'NOT IN' : 'IN') . ' (' . $assignments->getDQL() . ')');
+        }
+
+        // Pinned tickets first (staff list): the "With Selected" pin action.
+        // Applies to the default newest-first order; an explicit column sort
+        // wins so the sort headers keep working.
+        $pinned = !empty($data['pinned_first'])
+            ? array_slice(array_values(array_filter(array_map(intval(...), (array) $data['pinned_first']))), 0, 500)
+            : [];
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
             if ($sort->expression !== 't.id') {
                 $qb->addOrderBy('t.id', $sort->direction);
             }
+        } elseif ($pinned !== []) {
+            $qb->addSelect('(CASE WHEN t.id IN (:pinned_ids) THEN 0 ELSE 1 END) AS HIDDEN pin_first')
+                ->setParameter('pinned_ids', $pinned)
+                ->orderBy('pin_first', 'ASC')
+                ->addOrderBy('t.id', 'DESC');
         } else {
             $qb->orderBy('t.id', \SortDirection::Descending);
         }
@@ -196,7 +233,9 @@ class SupportTicketRepository extends EntityRepository
     {
         $ticket = $this->findOneByClient($clientId, $id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
+            // Coded so a client probing another client's ticket id gets a
+            // 404 rather than a generic error.
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found', [], 404);
         }
 
         return $ticket;

@@ -21,6 +21,16 @@ use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\HiddenKbCategories;
+use Box\Mod\Support\TicketAssign;
+use Box\Mod\Support\TicketBulk;
+use Box\Mod\Support\TicketEscalation;
+use Box\Mod\Support\TicketFeedback;
+use Box\Mod\Support\TicketFiles;
+use Box\Mod\Support\TicketMerge;
+use Box\Mod\Support\TicketSecrets;
+use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -40,12 +50,26 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('support', 'view');
 
         $repo = $this->getService()->getSupportTicketRepository();
+        // Pinned tickets first; the assignee filter ('assigned': me, none,
+        // any or a staff id) narrows the list.
+        $data['pinned_first'] = TicketBulk::pinnedIds($this->getDi());
+        $data['assigned_filter'] = TicketAssign::listFilter($data['assigned'] ?? '', (int) $this->getIdentity()->getId());
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
             Options::fromArray($data),
             fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, false, $this->getIdentity()),
         );
+    }
+
+    /**
+     * Staff members a ticket can be assigned to: id => name.
+     */
+    public function ticket_assignable_staff(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketAssign::staff($this->getDi());
     }
 
     /**
@@ -67,7 +91,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional int $support_helpdesk_id - ticket helpdesk id
      * @optional string $status - ticket status
      * @optional string $subject - ticket subject
-     * @optional string $priority - ticket priority
+     * @optional string $priority - ticket priority: low, medium or high
+     * @optional int $assigned_to - assignee staff id (0: nobody)
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_update(array $data): bool
@@ -81,7 +106,13 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             $data['subject'] = htmlspecialchars(trim(strip_tags(str_replace("\0", '', $data['subject']))), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
         }
 
-        return $this->getService()->ticketUpdate($model, $data);
+        $result = $this->getService()->ticketUpdate($model, $data);
+
+        if (array_key_exists('assigned_to', $data)) {
+            TicketAssign::assign($this->getDi(), (int) $model->getId(), (int) $data['assigned_to'] > 0 ? (int) $data['assigned_to'] : null, (int) $this->getIdentity()->getId());
+        }
+
+        return $result;
     }
 
     /**
@@ -92,7 +123,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         $model = $this->getService()->getTicketMessageById((int) $data['id']);
 
@@ -135,7 +166,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         $ticket = $this->getService()->getTicketById((int) $data['id']);
 
@@ -172,7 +203,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
@@ -199,10 +230,55 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $expiredArr = $this->getService()->getExpired();
 
         foreach ($expiredArr as $ticketArr) {
-            $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
-            if (!$this->getService()->autoClose($ticketModel)) {
-                $this->getDi()['logger']->info('Ticket {ticket_id} was not closed', ['ticket_id' => $ticketModel->getId()]);
+            try {
+                $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
+                if (!$this->getService()->autoClose($ticketModel)) {
+                    $this->getDi()['logger']->info('Ticket {ticket_id} was not closed', ['ticket_id' => $ticketModel->getId()]);
+                }
+            } catch (\Throwable $e) {
+                // One broken ticket must not stop the cron from closing the rest.
+                $this->getDi()['logger']->error('Support: auto-closing ticket {ticket_id} failed: {error}', ['ticket_id' => $ticketArr['id'] ?? '?', 'error' => $e->getMessage()]);
             }
+        }
+
+        TicketBulk::sweep($this->getDi());
+        TicketAssign::sweep($this->getDi());
+        TicketFeedback::sweep($this->getDi());
+
+        try {
+            TicketMerge::sweep($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: moving replies of merged tickets failed: {error}', ['error' => $e->getMessage()]);
+        }
+
+        try {
+            TicketEscalation::run($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: escalation rules failed: {error}', ['error' => $e->getMessage()]);
+        }
+        TicketEscalation::sweep($this->getDi());
+
+        try {
+            TicketFiles::prune($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: removing old ticket files failed: {error}', ['error' => $e->getMessage()]);
+        }
+
+        try {
+            TicketSecrets::prune($this->getDi());
+        } catch (\Throwable $e) {
+            $this->getDi()['logger']->error('Support: expiring old ticket secrets failed: {error}', ['error' => $e->getMessage()]);
+        }
+
+        return true;
+    }
+
+    /** Deliver pending close notifications after the rest of cron has completed. */
+    public function batch_ticket_retry_close_events($data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+        if (!\Box\Mod\Support\TicketCloseOutbox::retryPending($this->getDi())) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The close-event retry stopped after a database error; pending events will be retried on the next run.');
         }
 
         return true;
@@ -237,7 +313,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity());
+        $result = $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity());
+        $result['list'] = HiddenHelpdesks::withFlags($this->getDi(), $result['list'] ?? []);
+
+        return $result;
     }
 
     /**
@@ -268,7 +347,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Help desk not found');
         }
 
-        return $model->toApiArray($this->getIdentity());
+        return $model->toApiArray($this->getIdentity())
+            + ['hidden' => HiddenHelpdesks::isHidden($this->getDi(), (int) $model->getId())]
+            + ['feedback_request' => TicketFeedback::helpdeskOn($this->getDi(), (int) $model->getId())];
     }
 
     /**
@@ -563,7 +644,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $ticket = $this->getService()->getTicketById((int) $data['ticket_id']);
 
-        $data['note'] = \FOSSBilling\Core\HtmlSanitizerFactory::sanitizePlainText($data['note']);
+        $data['note'] = HtmlSanitizerFactory::sanitizePlainText($data['note']);
 
         if ($data['note'] === '') {
             throw new \FOSSBilling\Core\Exception\InformationException('Note is empty');
@@ -610,11 +691,265 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        foreach ($data['ids'] as $id) {
+        foreach (TicketBulk::ids($data['ids']) as $id) {
             $this->ticket_delete(['id' => $id]);
         }
+        TicketBulk::sweep($this->getDi());
+        TicketAssign::sweep($this->getDi());
 
         return true;
+    }
+
+    /**
+     * Pin tickets so they stay at the top of the staff ticket list.
+     *
+     * @return int - how many tickets are pinned now
+     */
+    #[RequiredParams(['ids' => 'Ticket IDs were not passed'])]
+    public function batch_ticket_pin($data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        return TicketBulk::pin($this->getDi(), TicketBulk::ids($data['ids']), (int) $this->getIdentity()->getId() ?: null);
+    }
+
+    /**
+     * Unpin tickets.
+     *
+     * @return int - how many tickets were pinned
+     */
+    #[RequiredParams(['ids' => 'Ticket IDs were not passed'])]
+    public function batch_ticket_unpin($data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        return TicketBulk::unpin($this->getDi(), TicketBulk::ids($data['ids']));
+    }
+
+    /**
+     * Pinned ticket ids, newest first (for the staff list markers).
+     *
+     * @return list<int>
+     */
+    public function ticket_pinned_ids(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketBulk::pinnedIds($this->getDi());
+    }
+
+    /**
+     * Upload a file for a ticket reply (bound to the message on save).
+     *
+     * @return array{id: string, name: string, size: int, size_label: string}
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID is missing'])]
+    public function ticket_file_upload(array $data): array
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $file = $this->getDi()['request']->files->get('file');
+        $adminId = $this->getIdentity() instanceof \Box\Mod\Staff\Entity\Admin ? (int) $this->getIdentity()->getId() : 0;
+
+        return TicketFiles::uploadForStaff($this->getDi(), $adminId, (int) $data['ticket_id'], $file);
+    }
+
+    /**
+     * Discard a waiting upload.
+     */
+    #[RequiredParams(['id' => 'File ID is missing'])]
+    public function ticket_file_discard(array $data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $adminId = $this->getIdentity() instanceof \Box\Mod\Staff\Entity\Admin ? (int) $this->getIdentity()->getId() : 0;
+        TicketFiles::discard($this->getDi(), (string) $data['id'], 'admin', $adminId);
+
+        return true;
+    }
+
+    /**
+     * Remove an attached file (the message keeps a removed marker).
+     */
+    #[RequiredParams(['id' => 'File ID is missing'])]
+    public function ticket_file_remove(array $data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $adminId = $this->getIdentity() instanceof \Box\Mod\Staff\Entity\Admin ? (int) $this->getIdentity()->getId() : null;
+        TicketFiles::remove($this->getDi(), (string) $data['id'], $adminId);
+
+        return true;
+    }
+
+    /**
+     * How long attached files are kept (days, 0: forever).
+     */
+    public function ticket_files_update(array $data): bool
+    {
+        $this->getDi()['mod_service']('extension')->hasManagePermission('mod_support');
+
+        $days = (int) ($data['ticket_files_days'] ?? TicketFiles::KEEP_DAYS);
+        if ($days < 0 || $days > 3650) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Keep attached files between 0 and 3650 days.');
+        }
+
+        $extension = $this->getDi()['mod_service']('extension');
+
+        return $extension->setConfig(array_merge($extension->getConfig('mod_support'), ['ext' => 'mod_support', 'ticket_files_days' => (string) $days]));
+    }
+
+    /**
+     * Close tickets.
+     *
+     * @return int - how many tickets were closed now
+     */
+    #[RequiredParams(['ids' => 'Ticket IDs were not passed'])]
+    public function batch_ticket_close($data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $closed = 0;
+        foreach (TicketBulk::ids($data['ids']) as $id) {
+            $ticket = $this->getService()->getTicketById($id);
+            if ($ticket->getStatus() !== SupportTicket::STATUS_CLOSED) {
+                $this->getService()->closeTicket($ticket, $this->getIdentity());
+                ++$closed;
+            }
+        }
+
+        return $closed;
+    }
+
+    /*
+     * Support ticket secrets.
+     */
+    /**
+     * A ticket's secrets (metadata only) and their audit history.
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID is missing'])]
+    public function ticket_secret_list(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        $identity = $this->getIdentity();
+        $canOpen = $identity instanceof \Box\Mod\Staff\Entity\Admin
+            && $this->getDi()['mod_service']('staff')->hasPermission($identity, 'support', 'open_secrets');
+        $canDelete = $identity instanceof \Box\Mod\Staff\Entity\Admin
+            && $this->getDi()['mod_service']('staff')->hasPermission($identity, 'support', 'manage_tickets');
+
+        return TicketSecrets::listForTicket($this->getDi(), (int) $data['ticket_id'])
+            + ['can_open' => $canOpen, 'can_delete' => $canDelete];
+    }
+
+    /**
+     * Open a secret (audited). Needs the open_secrets permission.
+     */
+    #[RequiredParams(['id' => 'Secret ID is missing'])]
+    public function ticket_secret_open(array $data): array
+    {
+        $this->checkPermissions('support', 'open_secrets');
+
+        $identity = $this->getIdentity();
+        $adminId = $identity instanceof \Box\Mod\Staff\Entity\Admin ? (int) $identity->getId() : 0;
+
+        return TicketSecrets::openForStaff($this->getDi(), (int) $data['id'], $adminId);
+    }
+
+    /**
+     * Delete a secret (audited).
+     */
+    #[RequiredParams(['id' => 'Secret ID is missing'])]
+    public function ticket_secret_delete(array $data): bool
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $identity = $this->getIdentity();
+        $adminId = $identity instanceof \Box\Mod\Staff\Entity\Admin ? (int) $identity->getId() : null;
+        TicketSecrets::delete($this->getDi(), (int) $data['id'], $adminId, null);
+
+        return true;
+    }
+
+    /*
+     * Support ticket escalation rules.
+     */
+    /**
+     * Staff report on reply ratings, feedback scores and recent comments.
+     */
+    public function ticket_feedback_report(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketFeedback::report($this->getDi(), $data['period'] ?? '90');
+    }
+
+    /**
+     * List escalation rules, by name.
+     */
+    public function escalation_rule_get_list(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketEscalation::rules($this->getDi());
+    }
+
+    /**
+     * Get an escalation rule.
+     */
+    #[RequiredParams(['id' => 'Rule ID was not passed'])]
+    public function escalation_rule_get(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        return TicketEscalation::get($this->getDi(), (int) $data['id']);
+    }
+
+    /**
+     * Create or update an escalation rule; returns its id.
+     */
+    public function escalation_rule_save(array $data): int
+    {
+        $this->getDi()['mod_service']('extension')->hasManagePermission('mod_support');
+
+        return TicketEscalation::save($this->getDi(), $data);
+    }
+
+    /**
+     * Delete an escalation rule.
+     */
+    #[RequiredParams(['id' => 'Rule ID was not passed'])]
+    public function escalation_rule_delete(array $data): bool
+    {
+        $this->getDi()['mod_service']('extension')->hasManagePermission('mod_support');
+
+        TicketEscalation::delete($this->getDi(), (int) $data['id']);
+
+        return true;
+    }
+
+    /**
+     * Merge tickets into the oldest one; returns its id. Cannot be undone.
+     */
+    public function ticket_merge(array $data): int
+    {
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $ids = $data['ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = preg_split('/[\s,#]+/', (string) $ids) ?: [];
+        }
+        if (isset($data['id']) && (is_int($data['id']) || ctype_digit((string) $data['id']))) {
+            $ids[] = (int) $data['id'];
+        }
+        $subject = isset($data['subject']) ? trim(strip_tags((string) $data['subject'])) : null;
+
+        $merged = TicketMerge::merge($this->getDi(), $ids, $subject === '' ? null : $subject, (int) $this->getIdentity()->getId());
+
+        $this->di['event_dispatcher']->dispatch(new \Box\Mod\Support\Event\AfterTicketMergedEvent($merged['id'], $merged['merged']));
+        $this->di['logger']->info('Merged tickets #{ids} into ticket #{id}', ['ids' => implode(',', $merged['merged']), 'id' => $merged['id']]);
+
+        return $merged['id'];
     }
 
     /*
@@ -683,7 +1018,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $status = $data['status'] ?? KbArticle::DRAFT;
 
         $title = trim(strip_tags(str_replace("\0", '', $data['title'])));
-        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
+        $content = isset($data['content']) ? HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -707,7 +1042,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $title = isset($data['title']) ? trim(strip_tags(str_replace("\0", '', $data['title']))) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
+        $content = isset($data['content']) ? HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']) : null;
         $views = isset($data['views']) ? (int) $data['views'] : null;
 
         return $this->getService()->kbUpdateArticle((int) $data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
@@ -750,7 +1085,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
+        $result = $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
+        $result['list'] = HiddenKbCategories::withFlags($this->getDi(), $result['list'] ?? []);
+
+        return $result;
     }
 
     /**
@@ -770,7 +1108,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Article Category not found');
         }
 
-        return $cat->toApiArray($this->getIdentity());
+        return $cat->toApiArray($this->getIdentity()) + ['hidden' => HiddenKbCategories::isHidden($this->getDi(), $cat->getId())];
     }
 
     /**
@@ -814,7 +1152,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $slug = $data['slug'] ?? null;
         $description = $data['description'] ?? null;
 
-        return $this->getService()->kbUpdateCategory($cat, $title, $slug, $description);
+        $result = $this->getService()->kbUpdateCategory($cat, $title, $slug, $description);
+        if (array_key_exists('hidden', $data)) {
+            HiddenKbCategories::save($this->getDi(), (int) $cat->getId(), $data['hidden']);
+        }
+
+        return $result;
     }
 
     /**

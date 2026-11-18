@@ -1,0 +1,22 @@
+{# Files attached to a ticket message. #}
+{% set files = message.ticket_files|default([]) %}
+{% if files is not empty %}
+<div class="mt-2 small">
+    {% for file in files %}
+    <div class="d-flex align-items-center gap-2 py-1">
+        {% if not file.removed %}
+        <svg class="icon"><use href="#paperclip" /></svg>
+        {% set file_path = ticket.author.role|default('') == 'guest' and ticket.hash|default('')
+            ? "support/ticket/#{ticket.hash}/file/#{file.id}"
+            : "support/ticket-file/#{file.id}" %}
+        <a href="{{ file_path|url }}" target="_blank" rel="noopener noreferrer">{{ file.name }}</a>
+        <span class="text-muted">({{ file.size_label }})</span>
+        {% elseif file.removed_reason == 'expired' %}
+        <span class="text-muted">{{ 'Removed after the keep period: :name'|trans({ ':name': file.name }) }}</span>
+        {% else %}
+        <span class="text-muted">{{ 'Removed by staff: :name'|trans({ ':name': file.name }) }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

@@ -51,7 +51,10 @@ test('bundled email previews render using only synthetic contexts in the real sa
         $code = str_replace('.html.twig', '', $file->getFilename());
 
         try {
-            $twig->createTemplate($file->getContents())->render($email->getVars(new Box\Mod\Email\Entity\EmailTemplate($code)));
+            $html = withoutPhpWarnings(fn () => $twig->createTemplate($file->getContents())->render($email->getVars(new Box\Mod\Email\Entity\EmailTemplate($code))));
+            if (in_array($code, ['mod_staff_ticket_assigned', 'mod_staff_ticket_escalated'], true)) {
+                expect($html)->toContain('Support')->not->toContain('Array');
+            }
         } catch (Throwable $e) {
             $errors[$code] = $e->getMessage();
         }

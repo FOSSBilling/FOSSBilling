@@ -184,3 +184,38 @@ test('native extraction does not write through existing destination symlinks', f
     expect(fn () => (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate))->toThrow(RuntimeException::class, 'symbolic link')
         ->and(file_get_contents($this->directory . '/outside/file.txt'))->toBe('original');
 })->with([true, false]);
+
+test('native extraction preserves Darwin executables and symbolic link types', function (): void {
+    $zip = new ZipArchive();
+    $zip->open($this->archive, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $zip->addFromString('script.sh', 'executable');
+    $zip->setExternalAttributesName('script.sh', ZipArchive::OPSYS_OS_X, 0o100755 << 16);
+    $zip->addFromString('link', '../outside');
+    $zip->setExternalAttributesName('link', ZipArchive::OPSYS_OS_X, 0o120777 << 16);
+    $zip->close();
+    (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate);
+    expect(fileperms($this->destination . '/script.sh') & 0o777)->toBe(0o755)
+        ->and($this->filesystem->exists($this->destination . '/link'))->toBeFalse()
+        ->and(is_link($this->destination . '/link'))->toBeFalse();
+});
+
+test('native stored entry size mismatches are rejected before publishing the write marker', function (): void {
+    $zip = new ZipArchive();
+    $zip->open($this->archive, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $zip->addFromString('stored.txt', 'prefix-extra');
+    $zip->setCompressionName('stored.txt', ZipArchive::CM_STORE);
+    $zip->close();
+    $contents = $this->filesystem->readFile($this->archive);
+    $central = strpos($contents, "PK\x01\x02");
+    foreach ([14, $central + 16] as $offset) {
+        $contents = substr_replace($contents, pack('V', crc32('prefix')), $offset, 4);
+    }
+    foreach ([22, $central + 24] as $offset) {
+        $contents = substr_replace($contents, pack('V', strlen('prefix')), $offset, 4);
+    }
+    $this->filesystem->dumpFile($this->archive, $contents);
+    $started = false;
+    expect(fn () => (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate, beforeWrite: function () use (&$started): void { $started = true; }))
+        ->toThrow(RuntimeException::class);
+    expect($started)->toBeFalse()->and(scandir($this->destination))->toBe(['.', '..']);
+});

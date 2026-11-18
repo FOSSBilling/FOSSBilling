@@ -13,6 +13,12 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\HiddenKbCategories;
+use Box\Mod\Support\TicketFeedback;
+use Box\Mod\Support\TicketFiles;
+use Box\Mod\Support\TicketPriority;
+use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -39,7 +45,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', $this->getIp());
         $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
-        $data['content'] = trim(str_replace("\0", '', $content));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($content);
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -54,7 +60,9 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
     {
         $guestTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->toApiArray($guestTicket);
+        // findOneByHash authorizes only guest-owned tickets. Add attachments
+        // here rather than exposing them to every identity-free serialization.
+        return TicketFiles::withFiles($this->getDi(), $this->getService()->toApiArray($guestTicket));
     }
 
     /**
@@ -75,6 +83,13 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
     public function ticket_reply(array $data): int
     {
         $guestTicket = $this->getService()->findOneByHash($data['hash']);
+
+        // A closed ticket whose helpdesk forbids reopening stays closed,
+        // same as for signed-in clients.
+        if (!$this->getService()->canBeReopened($guestTicket)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket cannot be reopened.');
+        }
+
         // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
         $message = $data['content'] ?? $data['message'] ?? null;
 
@@ -82,7 +97,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             throw new \FOSSBilling\Core\Exception\InformationException('Message cannot be empty');
         }
 
-        $message = trim(str_replace("\0", '', $message));
+        $message = HtmlSanitizerFactory::sanitizeMarkdownContent($message);
 
         return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Core\Identity\Guest(), $message);
     }
@@ -108,7 +123,47 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->getHelpdeskRepository()->getPairs();
+        return HiddenHelpdesks::visiblePairs($this->getDi(), $this->getService()->getHelpdeskRepository()->getPairs());
+    }
+
+    /**
+     * The ticket priorities a guest can choose from: {high, medium, low}.
+     */
+    public function ticket_priorities(): array
+    {
+        return TicketPriority::titles();
+    }
+
+    /**
+     * Rate a staff reply 1-5 stars.
+     */
+    #[RequiredParams(['hash' => 'Ticket hash required', 'message_id' => 'Message ID required', 'rating' => 'Rating required'])]
+    public function ticket_message_rate(array $data): bool
+    {
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
+
+        TicketFeedback::rate($this->getDi(), (int) $guestTicket->getId(), (int) $data['message_id'], $data['rating'], 'guest', 0, $this->getIp());
+
+        return true;
+    }
+
+    /**
+     * Submit closing feedback with a link from the email.
+     */
+    #[RequiredParams(['token' => 'Feedback token required'])]
+    public function ticket_feedback_submit(array $data): bool
+    {
+        TicketFeedback::submit($this->getDi(), (string) $data['token'], $data['rate'] ?? [], $data['comments'] ?? [], $this->getIp());
+
+        return true;
+    }
+
+    /**
+     * The attachment rules for ticket forms: extensions, size caps.
+     */
+    public function ticket_file_rules(): array
+    {
+        return TicketFiles::rules();
     }
 
     /*
@@ -156,6 +211,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             'status' => KbArticle::ACTIVE,
             'search' => $search,
             'kb_article_category_id' => $cat,
+            'exclude_category_ids' => HiddenKbCategories::ids($this->getDi()),
         ]);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
@@ -183,7 +239,11 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             : $repo->findOneActiveBySlug($slug);
 
         if (!$article instanceof KbArticle) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found', [], 404);
+        }
+
+        if (HiddenKbCategories::isHidden($this->getDi(), $article->getCategory()?->getId())) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found', [], 404);
         }
 
         $repo->incrementViews($article);
@@ -199,6 +259,7 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
         $this->assertKbEnabled();
 
         $data['article_status'] = KbArticle::ACTIVE;
+        $data['exclude_ids'] = HiddenKbCategories::ids($this->getDi());
         $q = $data['q'] ?? null;
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
@@ -231,7 +292,11 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
             : $repo->findOneBySlug($slug);
 
         if (!$cat instanceof KbArticleCategory) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found', [], 404);
+        }
+
+        if (HiddenKbCategories::isHidden($this->getDi(), $cat->getId())) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found', [], 404);
         }
 
         return $cat->toApiArray($this->getIdentity(), includeArticleViews: $this->getService()->kbArticleViewsEnabled());

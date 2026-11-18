@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\ServiceTransaction;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DriverManager;
 use Symfony\Component\Filesystem\Filesystem;
 
 require_once dirname(__DIR__) . '/Fixtures/GatewayReceiptContext.php';
@@ -36,7 +35,7 @@ class ReceiptRecoveryConnection extends Connection
 }
 
 test('a receipt completed after a recovery claim never resolves a provider adapter', function (string $gatewayName, string $entrypoint): void {
-    [, $em, $client, $gateway, $transaction] = receiptTestContext(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true, 'wrapperClass' => ReceiptRecoveryConnection::class]));
+    [, $em, $client, $gateway, $transaction] = receiptTestContext(Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true, 'wrapperClass' => ReceiptRecoveryConnection::class]));
     $gateway->setGateway($gatewayName);
     $transaction->setStatus(Transaction::STATUS_PROCESSED)->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_RUNNING);
     $em->flush();
@@ -82,7 +81,7 @@ test('error recording respects another workers financial commit and completion a
             $this->markTestSkipped('Set PAYMENT_TEST_MYSQL_PORT for isolated MySQL/MariaDB receipt recovery tests.');
         }
         $params = ['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) $port, 'user' => 'root', 'password' => getenv('PAYMENT_TEST_MYSQL_PASSWORD') ?: ''];
-        $admin = DriverManager::getConnection($params);
+        $admin = Tests\Helpers\fencedConnection($params);
         $database = 'receipt_recovery_' . bin2hex(random_bytes(6));
         $admin->executeStatement('CREATE DATABASE ' . $database);
         $params['dbname'] = $database;
@@ -90,12 +89,14 @@ test('error recording respects another workers financial commit and completion a
         $path = $filesystem->tempnam(sys_get_temp_dir(), 'fb-receipt-recovery-');
         $params = ['driver' => 'pdo_sqlite', 'path' => $path];
     }
-    $connection = DriverManager::getConnection($params + ['wrapperClass' => ReceiptRecoveryConnection::class]);
-    $owner = DriverManager::getConnection($params);
+    $connection = Tests\Helpers\fencedConnection($params + ['wrapperClass' => ReceiptRecoveryConnection::class]);
+    $owner = Tests\Helpers\fencedConnection($params);
 
     try {
         [, $em, , , $transaction] = receiptTestContext($connection);
         $transaction->setStatus($observedStatus)->setGatewayCompletionState($observedStatus === Transaction::STATUS_PROCESSED ? Transaction::GATEWAY_COMPLETION_RUNNING : Transaction::GATEWAY_COMPLETION_DONE);
+        $em->flush();
+        $transaction->setProcessingToken(str_repeat('a', 32));
         $em->flush();
         $id = $transaction->getId();
         $table = $connection->quoteSingleIdentifier('transaction');
@@ -106,6 +107,7 @@ test('error recording respects another workers financial commit and completion a
         }
         $worker = new ServiceTransaction();
         $worker->setDi(gatewayDepositTestService($em)->getDi());
+        (new ReflectionProperty($worker, 'processingTokens'))->setValue($worker, [$id => str_repeat('a', 32)]);
         (new ReflectionMethod($worker, 'markTransactionError'))->invoke($worker, $id, new RuntimeException('completion failed', 123));
         $done = $committedState === Transaction::GATEWAY_COMPLETION_DONE;
         $status = $committedState !== null || $observedStatus === Transaction::STATUS_PROCESSED ? Transaction::STATUS_PROCESSED : Transaction::STATUS_ERROR;

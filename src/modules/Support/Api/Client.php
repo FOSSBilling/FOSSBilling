@@ -17,6 +17,12 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\HiddenHelpdesks;
+use Box\Mod\Support\TicketFeedback;
+use Box\Mod\Support\TicketFiles;
+use Box\Mod\Support\TicketLimit;
+use Box\Mod\Support\TicketSecrets;
+use FOSSBilling\Core\HtmlSanitizerFactory;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -60,7 +66,78 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->getHelpdeskRepository()->getPairs();
+        return HiddenHelpdesks::visiblePairs($this->getDi(), $this->getService()->getHelpdeskRepository()->getPairs());
+    }
+
+    /**
+     * The client's ticket limit for the new-ticket banners: {max, days, limit,
+     * left, date}, or null when the client has no limit.
+     */
+    public function ticket_limit(): ?array
+    {
+        return TicketLimit::status($this->getDi(), $this->getIdentity());
+    }
+
+    /**
+     * Upload a file for a ticket message (bound to the message on save).
+     *
+     * @return array{id: string, name: string, size: int, size_label: string}
+     */
+    public function ticket_file_upload(array $data): array
+    {
+        $ticketId = isset($data['ticket_id']) && $data['ticket_id'] !== '' ? (int) $data['ticket_id'] : null;
+        $file = $this->getDi()['request']->files->get('file');
+
+        return TicketFiles::uploadForClient($this->getDi(), (int) $this->getIdentity()->getId(), $ticketId, $file);
+    }
+
+    /**
+     * Discard a waiting upload.
+     */
+    #[RequiredParams(['id' => 'File ID was not passed'])]
+    public function ticket_file_discard(array $data): bool
+    {
+        TicketFiles::discard($this->getDi(), (string) $data['id'], 'client', (int) $this->getIdentity()->getId());
+
+        return true;
+    }
+
+    /**
+     * Which secret kinds the client may add, and after how many days untouched
+     * secrets expire: {server, other, days}.
+     */
+    public function ticket_secret_kinds(): array
+    {
+        return TicketSecrets::kinds($this->getDi());
+    }
+
+    /**
+     * Add a secret to the client's own ticket; returns its id.
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID was not passed', 'kind' => 'Secret kind was not passed'])]
+    public function ticket_secret_add(array $data): array
+    {
+        return TicketSecrets::addForClient($this->getDi(), (int) $this->getIdentity()->getId(), (int) $data['ticket_id'], (string) $data['kind'], $data);
+    }
+
+    /**
+     * The client's secrets on a ticket (metadata only) and their history.
+     */
+    #[RequiredParams(['ticket_id' => 'Ticket ID was not passed'])]
+    public function ticket_secret_list(array $data): array
+    {
+        return TicketSecrets::listForTicket($this->getDi(), (int) $data['ticket_id'], (int) $this->getIdentity()->getId());
+    }
+
+    /**
+     * Delete the client's own secret.
+     */
+    #[RequiredParams(['id' => 'Secret ID was not passed'])]
+    public function ticket_secret_delete(array $data): bool
+    {
+        TicketSecrets::delete($this->getDi(), (int) $data['id'], null, (int) $this->getIdentity()->getId());
+
+        return true;
     }
 
     /**
@@ -81,17 +158,18 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     ])]
     public function ticket_create(array $data): int
     {
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
 
         $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
-        if (!$helpdesk instanceof Helpdesk) {
+        if (!$helpdesk instanceof Helpdesk || HiddenHelpdesks::isHidden($this->getDi(), (int) $helpdesk->getId())) {
             throw new \FOSSBilling\Core\Exception\InformationException('Helpdesk invalid');
         }
 
         $client = $this->getIdentity();
+        TicketLimit::check($this->getDi(), $client);
 
         return $this->getService()->ticketCreateForClient($client, $helpdesk, $data);
     }
@@ -102,13 +180,13 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID was not passed', 'content' => 'Ticket content required'])]
     public function ticket_reply(array $data): bool
     {
-        $data['content'] = trim(str_replace("\0", '', $data['content']));
+        $data['content'] = HtmlSanitizerFactory::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found', [], 404);
         }
 
         if (!$this->getService()->canBeReopened($ticket)) {
@@ -131,5 +209,23 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         $ticket = $this->getService()->findOneByClient($client, (int) $data['id']);
 
         return $this->getService()->closeTicket($ticket, $this->getIdentity());
+    }
+
+    /**
+     * Rate a staff reply 1-5 stars.
+     */
+    #[RequiredParams(['id' => 'Ticket ID was not passed', 'message_id' => 'Message ID was not passed', 'rating' => 'Rating was not passed'])]
+    public function ticket_message_rate(array $data): bool
+    {
+        $client = $this->getIdentity();
+        $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
+
+        if (!$ticket instanceof SupportTicket) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found', [], 404);
+        }
+
+        TicketFeedback::rate($this->getDi(), (int) $ticket->getId(), (int) $data['message_id'], $data['rating'], 'client', (int) $client->getId(), $this->getIp());
+
+        return true;
     }
 }

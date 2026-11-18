@@ -16,12 +16,17 @@ use Box\Mod\Order\Entity\ClientOrderCancelRequest;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\ClientOrderCancelRequestRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\NamedLock;
+use FOSSBilling\Core\Events\EventDispatcher;
 use FOSSBilling\Core\Exception\InformationException;
 
 class ServiceCancelRequest implements InjectionAwareInterface
 {
     final public const int MAX_REASON = 2000;
+
+    /** @var array<string, true> */
+    private static array $activeRequests = [];
 
     protected ?\Pimple\Container $di = null;
 
@@ -229,20 +234,42 @@ class ServiceCancelRequest implements InjectionAwareInterface
                     }
                     $this->accept($id);
                 } catch (\Throwable $e) {
-                    if (!$this->di['em']->isOpen()) {
-                        $old = $this->di['em'];
-                        unset($this->di['em']);
-                        $this->di['em'] = new \Doctrine\ORM\EntityManager($old->getConnection(), $old->getConfiguration(), $old->getEventManager());
-                        $this->setDi($this->di);
-                    }
+                    $this->recoverEntityManager();
                     $this->di['logger']->error('Order: cancellation request #{id} was not processed: {message}', ['id' => $id, 'message' => $e->getMessage()]);
                 }
             }
 
-            $this->di['mod_service']('system')->setParamValue('cancel_requests_last_day', $today, true);
+            try {
+                $this->di['mod_service']('system')->setParamValue('cancel_requests_last_day', $today, true);
+            } catch (\Throwable $e) {
+                $this->recoverEntityManager();
+
+                throw $e;
+            }
 
             return true;
         });
+    }
+
+    /** Restore the shared manager after a failed cancellation has released its locks. */
+    private function recoverEntityManager(): void
+    {
+        $manager = $this->di['em'];
+        if ($manager->isOpen()) {
+            return;
+        }
+        $connection = $manager->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new \LogicException('Cancellation transactions must unwind before their entity manager can be replaced.');
+        }
+        $connection->fetchOne('SELECT 1');
+        $replacement = EntityManagerFactory::create($connection);
+        unset($this->di['em']);
+        $this->di['em'] = $replacement;
+        $this->setDi($this->di);
+        if ($this->di['event_dispatcher'] instanceof EventDispatcher) {
+            $this->di['event_dispatcher']->refresh();
+        }
     }
 
     private function find(int $id, bool $allowAccepted = false): ClientOrderCancelRequest
@@ -332,13 +359,17 @@ class ServiceCancelRequest implements InjectionAwareInterface
         if ($connection->isTransactionActive()) {
             throw new InformationException('Cancellation requests require a committed transaction before processing.');
         }
-        if (!NamedLock::acquire($connection, $name, 0)) {
+        $key = spl_object_id($connection) . ':' . $name;
+        if (isset(self::$activeRequests[$key]) || !NamedLock::acquire($connection, $name, 0)) {
             throw new InformationException('This cancellation request is already being processed.');
         }
+
+        self::$activeRequests[$key] = true;
 
         try {
             return $operation();
         } finally {
+            unset(self::$activeRequests[$key]);
             NamedLock::release($connection, $name);
         }
     }

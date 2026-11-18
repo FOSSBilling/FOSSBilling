@@ -24,7 +24,13 @@ function gatewayFeesService(?object $em = null, ?object $currencyService = null)
 {
     $service = new ServiceGatewayFees();
     $di = container();
-    $di['em'] = $em ?? Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em ??= Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    if ($em instanceof Mockery\MockInterface) {
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+        $connection->shouldReceive('fetchAssociative')->byDefault()->andReturnFalse();
+        $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+    }
+    $di['em'] = $em;
     if ($currencyService !== null) {
         $di['mod_service'] = $di->protect(fn (): object => $currencyService);
     }
@@ -176,6 +182,9 @@ test('apply adds the fee line and remove takes it off', function (): void {
     $membershipRepo->shouldReceive('getGroupIdsForClient')->with(7)->andReturn([]);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturnFalse();
+    $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
         Box\Mod\Invoice\Entity\InvoiceItem::class => $itemRepo,
         Client::class => $clientRepo,
@@ -247,4 +256,25 @@ test('apply skips paid and deposit invoices', function (): void {
     // Paid status returns after the lock, before any item lookup.
     $service->apply($paid, gatewayWithFee(['percent' => 5]));
     expect(true)->toBeTrue();
+});
+
+test('base excludes the fee line total', function (): void {
+    $invoice = gatewayFeesInvoice(['status' => Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID, 'currency' => 'USD', 'taxrate' => 0]);
+
+    $line = gatewayFeesItem(['price' => '2.00', 'quantity' => 1, 'taxed' => false, 'task' => ServiceGatewayFees::TASK, 'type' => Box\Mod\Invoice\Entity\InvoiceItem::TYPE_CUSTOM]);
+
+    $itemRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceItemRepository::class);
+    $itemRepo->shouldReceive('findOneBy')->andReturn($line);
+
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceService->shouldReceive('getAmountPaid')->once()->with($invoice)->andReturn(0.0);
+    $invoiceService->shouldReceive('getTotalWithTax')->with($invoice)->andReturn(102.00);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\InvoiceItem::class)->andReturn($itemRepo);
+
+    $service = gatewayFeesService($em);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): object => $invoiceService);
+
+    expect($service->base($invoice))->toEqual(100.0);
 });

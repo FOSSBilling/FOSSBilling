@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
@@ -20,6 +22,7 @@ use Symfony\Component\Filesystem\Path;
 function invoiceEntityManager(): EntityManager
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
 
@@ -185,9 +188,13 @@ test('getInvoiceTotals returns empty array for no ids', function (): void {
 
 test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($entityManager->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $entityManager->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     $metadata = array_map(
         $entityManager->getClassMetadata(...),
@@ -223,9 +230,13 @@ test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', fu
 
 test('getInvoiceTotals omits invoices without items', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($entityManager->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $entityManager->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     $metadata = array_map(
         $entityManager->getClassMetadata(...),
@@ -245,13 +256,17 @@ test('getInvoiceTotals omits invoices without items', function (): void {
 
 test('findUnpaidOlderThan returns only unpaid invoices whose due date is far enough in the past', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($entityManager->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $entityManager->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     $metadata = array_map(
         $entityManager->getClassMetadata(...),
-        [Invoice::class, InvoiceItem::class],
+        [Invoice::class, InvoiceItem::class, Transaction::class, PayGateway::class],
     );
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
 
@@ -259,6 +274,22 @@ test('findUnpaidOlderThan returns only unpaid invoices whose due date is far eno
     $farOverdue->setStatus(Invoice::STATUS_UNPAID);
     $farOverdue->setDueAt(new DateTimeImmutable('-10 days'));
     $entityManager->persist($farOverdue);
+
+    // A bank debit still clearing keeps an old unpaid invoice out of expiry cleanup.
+    $clearing = new Invoice();
+    $clearing->setStatus(Invoice::STATUS_UNPAID);
+    $clearing->setDueAt(new DateTimeImmutable('-10 days'));
+    $entityManager->persist($clearing);
+    $entityManager->flush();
+
+    $clearingTx = new Transaction();
+    $clearingTx->setInvoice($clearing);
+    $clearingTx->setStatus(Transaction::STATUS_RECEIVED);
+    $clearingTx->setTxnStatus('processing');
+    $clearingTx->setCreatedAt(new DateTimeImmutable('-1 day'));
+    $entityManager->persist($clearingTx);
+    $entityManager->flush();
+    $entityManager->clear();
 
     $recentlyOverdue = new Invoice();
     $recentlyOverdue->setStatus(Invoice::STATUS_UNPAID);

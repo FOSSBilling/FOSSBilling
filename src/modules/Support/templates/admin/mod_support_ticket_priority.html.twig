@@ -1,0 +1,3 @@
+{# A ticket priority badge: low, medium or high. `level`: low, medium or high. #}
+{% set level = level|default('medium') %}
+{% if level == 'high' %}<span class="badge bg-red-lt">{{ 'High'|trans }}</span>{% elseif level == 'low' %}<span class="badge bg-secondary-lt">{{ 'Low'|trans }}</span>{% else %}<span class="badge bg-azure-lt">{{ 'Medium'|trans }}</span>{% endif %}

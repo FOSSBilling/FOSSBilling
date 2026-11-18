@@ -32,6 +32,9 @@ function payGatewayTestConnection(): Doctrine\DBAL\Connection
     $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(true);
     $connection->shouldReceive('fetchOne')->byDefault()->andReturn(1);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('transaction');
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturnFalse();
+    $connection->shouldReceive('executeStatement')->with(Mockery::pattern('/^DELETE FROM pay_gateway_(customer|product)/'), Mockery::any())->byDefault()->andReturn(0);
 
     return $connection;
 }

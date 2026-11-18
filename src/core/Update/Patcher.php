@@ -41,6 +41,7 @@ class Patcher implements InjectionAwareInterface
      * order references ending in ASCII spaces, which older rules skipped.
      */
     public const string INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION = '3';
+    private bool $schemaSyncFailed = false;
     public ?\Pimple\Container $di = null;
     public Filesystem $filesystem;
 
@@ -249,7 +250,13 @@ class Patcher implements InjectionAwareInterface
         $this->syncSeededModuleVersions();
 
         // Portable invoice settings/rename steps, shared with the drift healer.
-        $this->applyPortableInvoiceMigrations();
+        try {
+            $this->applyPortableInvoiceMigrations();
+        } catch (\Throwable $e) {
+            $this->logUpdate('error', 'Portable invoice migration failed: ' . $e->getMessage());
+
+            throw $e;
+        }
 
         // Heal installs missing product_category.priority independent of patch
         // level (see ensureProductCategoryPriorityColumn()): runs on every
@@ -272,8 +279,9 @@ class Patcher implements InjectionAwareInterface
         // Deliberately outside the drift healer: a large backlog must not stall page loads.
         // A genuine backfill failure propagates so finalization stays pending: invoices
         // that gain a live event before a later run are never revisited by the healer,
-        // so completing finalization here would leave baselines missing for good. Only
-        // an unreachable database is skipped, already recorded by syncPortableSchema.
+        // so completing finalization here would leave baselines missing for good. A
+        // connection failure is tolerated only if schema sync already recorded it;
+        // a connection lost after successful sync must still fail finalization.
         try {
             $this->backfillInvoiceJournal();
             $this->backfillRefundIncomeBasis();
@@ -283,8 +291,10 @@ class Patcher implements InjectionAwareInterface
             // Finalization::healSchemaDrift() schedules.
             $this->backfillInvoiceItemOrderIds();
             $this->checkInvoiceNumberCounter();
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            return;
+        } catch (\Doctrine\DBAL\Exception\ConnectionException $e) {
+            if (!$this->schemaSyncFailed) {
+                throw $e;
+            }
         }
     }
 
@@ -384,6 +394,7 @@ class Patcher implements InjectionAwareInterface
      */
     public function syncPortableSchema(): ?array
     {
+        $this->schemaSyncFailed = false;
         if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
             return null;
         }
@@ -473,6 +484,7 @@ class Patcher implements InjectionAwareInterface
             $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage(), [
                 'metadata_hash' => $metadataHash,
             ]);
+            $this->schemaSyncFailed = true;
 
             return null;
         }
@@ -496,6 +508,11 @@ class Patcher implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    public function schemaSyncFailed(): bool
+    {
+        return $this->schemaSyncFailed;
     }
 
     /**
@@ -1574,6 +1591,9 @@ class Patcher implements InjectionAwareInterface
      */
     private function applyPortableInvoiceMigrations(): void
     {
+        // Failed inspections must stop this attempt: DBAL may reconnect before
+        // additive sync, which could otherwise create issued alongside approved.
+        // Ambient callers already log failures at their outer boundary.
         $this->migrateInvoiceImmutabilitySetting();
 
         // Paid invoices keep their issued number, so the retired paid-only
@@ -1687,14 +1707,7 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        try {
-            $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
-            return;
-        }
+        $table = $this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice');
         if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
             return;
         }
@@ -1721,16 +1734,9 @@ class Patcher implements InjectionAwareInterface
         $old = 'invoice_status_approved_due_at_idx';
         $new = 'invoice_status_issued_due_at_idx';
 
-        try {
-            $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
-            $dropOld = $schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old);
-            $missingNew = !$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new);
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
-            return;
-        }
+        $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+        $dropOld = $schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old);
+        $missingNew = !$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new);
         if ($dropOld) {
             $this->executeSql($this->isLegacyPatchDriver()
                 ? "DROP INDEX `$old` ON `invoice`"
@@ -1754,14 +1760,7 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        try {
-            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
-                return;
-            }
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
+        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
             return;
         }
 
@@ -1783,14 +1782,7 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        try {
-            if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
-                return;
-            }
-        } catch (\Doctrine\DBAL\Exception\ConnectionException) {
-            // Unreachable database: syncPortableSchema's boundary downstream
-            // records it. Any other failure propagates so finalization stays
-            // pending (and records no schema hash) until a retry succeeds.
+        if (!$this->di['em']->getConnection()->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
             return;
         }
 
@@ -2171,21 +2163,23 @@ class Patcher implements InjectionAwareInterface
      */
     private function writeBackfillJournalEntry(\Doctrine\DBAL\Connection $dbal, array $row, int $padding): void
     {
+        $dbal->transactional(function () use ($dbal, $row, $padding): void {
+            $invoiceId = (int) $row['id'];
+            if ($dbal->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform) {
+                $dbal->executeStatement('UPDATE invoice SET updated_at = updated_at WHERE id = ?', [$invoiceId]);
+            }
+            $current = $dbal->fetchAssociative('SELECT * FROM invoice WHERE id = ?' . \FOSSBilling\Core\Doctrine\RowLock::suffix($dbal), [$invoiceId]);
+            if ($current === false || $dbal->fetchOne('SELECT id FROM invoice_event WHERE invoice_id = ? LIMIT 1' . \FOSSBilling\Core\Doctrine\RowLock::suffix($dbal), [$invoiceId]) !== false) {
+                return;
+            }
+            $this->writeBackfillJournalSnapshot($dbal, $current, $padding);
+        });
+    }
+
+    /** @param array<string, mixed> $row */
+    private function writeBackfillJournalSnapshot(\Doctrine\DBAL\Connection $dbal, array $row, int $padding): void
+    {
         $invoiceId = (int) $row['id'];
-
-        // Claim the baseline first: concurrent healers (overlapping cron runs, or drift
-        // healing racing cron) select the same event-less rows. This conditional UPDATE
-        // is atomic on every driver, so exactly one winner per invoice proceeds while
-        // losers - including runs that arrive after a live event landed - skip instead
-        // of writing a duplicate baseline.
-        $claimed = (bool) $dbal->executeStatement(
-            'UPDATE invoice SET updated_at = updated_at WHERE id = :id AND NOT EXISTS (SELECT 1 FROM invoice_event WHERE invoice_id = :id)',
-            ['id' => $invoiceId]
-        );
-        if (!$claimed) {
-            return;
-        }
-
         $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : $invoiceId;
         $snapshot = [
             'serie_nr' => ($row['serie'] ?? '') . sprintf('%0' . $padding . 's', $nr),
@@ -2866,14 +2860,17 @@ class Patcher implements InjectionAwareInterface
             'form_field' => ['label', 'description', 'default_value', 'prefix', 'suffix', 'options'],
             'invoice' => ['serie', 'notes', 'text_1', 'text_2', 'seller_company', 'seller_company_vat', 'seller_company_number', 'seller_phone', 'seller_email', 'seller_address', 'buyer_first_name', 'buyer_last_name',
                 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_zip', 'buyer_phone', 'buyer_email', 'buyer_address', 'buyer_city', 'buyer_state', 'taxname'],
+            'invoice_card_charge' => ['last_error'],
             'invoice_credit' => [],
             'invoice_event' => [],
+            'invoice_gateway_charge_attempt' => [],
+            'invoice_gateway_refund_attempt' => [],
             'invoice_item' => ['title', 'unit'],
             'json_migration_record' => [],
             'json_quarantine' => [],
             'mod_massmailer' => ['from_email', 'from_name', 'subject', 'content'],
             'pay_gateway' => ['name'],
-            'pay_gateway_customer' => [],
+            'pay_gateway_customer' => ['default_card'],
             'pay_gateway_product' => ['name'],
             'post' => ['title', 'description', 'content', 'section', 'image', 'slug'],
             'product' => ['title', 'description', 'unit', 'icon_url', 'plugin_config', 'slug'],
@@ -2894,7 +2891,22 @@ class Patcher implements InjectionAwareInterface
             'session' => [],
             'setting' => ['value'],
             'subscription' => [],
+            'support_escalation_applied' => [],
+            'support_escalation_rule' => ['name', 'reply'],
             'support_helpdesk' => ['name', 'signature', 'email'],
+            'support_helpdesk_feedback' => [],
+            'support_helpdesk_hidden' => [],
+            'support_kb_category_hidden' => [],
+            'support_ticket_assignment' => [],
+            'support_ticket_close_event' => [],
+            'support_ticket_feedback_request' => [],
+            'support_ticket_message_rating' => [],
+            'support_ticket_pin' => [],
+            'support_ticket_file' => ['name'],
+            'support_ticket_feedback' => ['comments'],
+            'support_ticket_merge' => ['subject'],
+            'support_ticket_secret' => ['label'],
+            'support_ticket_secret_event' => ['secret_label'],
             'support_kb_article' => ['title', 'content', 'slug'],
             'support_kb_article_category' => ['title', 'description', 'slug'],
             'support_pr' => ['title', 'content'],
