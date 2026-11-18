@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Repository;
 
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\Entity\SupportTicketAssignment;
 use Box\Mod\Support\TicketPriority;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -146,19 +148,20 @@ class SupportTicketRepository extends EntityRepository
             'updated_at' => 't.updatedAt',
         ]);
 
-        // Assignee filter (staff list): ['in'|'not_in', ids] from TicketAssign::listFilter().
-        if (isset($data['assigned_filter']) && is_array($data['assigned_filter']) && count($data['assigned_filter']) === 2) {
-            [$mode, $assignedIds] = $data['assigned_filter'];
-            $assignedIds = array_values(array_filter(array_map(intval(...), (array) $assignedIds)));
-            if ($mode === 'in' && $assignedIds === []) {
-                $qb->andWhere('1 = 0');
-            } elseif ($mode === 'in') {
-                $qb->andWhere('t.id IN (:assigned_ids)')
-                    ->setParameter('assigned_ids', $assignedIds);
-            } elseif ($mode === 'not_in' && $assignedIds !== []) {
-                $qb->andWhere('t.id NOT IN (:assigned_ids)')
-                    ->setParameter('assigned_ids', $assignedIds);
+        // Apply assignment membership in SQL, before ticket filters and pagination.
+        $assigned = $data['assigned_filter'] ?? null;
+        if (is_int($assigned) || $assigned === 'any' || $assigned === 'none') {
+            $assignments = $this->getEntityManager()->createQueryBuilder()
+                ->select('a.ticketId')
+                ->from(SupportTicketAssignment::class, 'a')
+                ->innerJoin(Admin::class, 'ad', 'WITH', 'ad.id = a.adminId')
+                ->where("ad.status = 'active'")
+                ->andWhere('ad.systemName IS NULL');
+            if (is_int($assigned)) {
+                $assignments->andWhere('a.adminId = :assigned_admin');
+                $qb->setParameter('assigned_admin', $assigned);
             }
+            $qb->andWhere('t.id ' . ($assigned === 'none' ? 'NOT IN' : 'IN') . ' (' . $assignments->getDQL() . ')');
         }
 
         // Pinned tickets first (staff list): the "With Selected" pin action.

@@ -72,9 +72,9 @@ final class TicketSecrets
             $fields = [
                 'host' => self::text($data['host'] ?? null, 'Host', 255, false),
                 'type' => self::text($data['type'] ?? null, 'Type', 10, false),
-                'username' => self::text($data['username'] ?? null, 'Username', 255, false),
-                'password' => self::text($data['password'] ?? null, 'Password', 1000, false),
-                'ssh_key' => self::text($data['ssh_key'] ?? null, 'SSH key', 20000, true),
+                'username' => self::text($data['username'] ?? null, 'Username', 255, false, trim: false),
+                'password' => self::text($data['password'] ?? null, 'Password', 1000, false, trim: false),
+                'ssh_key' => self::text($data['ssh_key'] ?? null, 'SSH key', 20000, true, trim: false),
                 'note' => self::text($data['note'] ?? null, 'Note', 2000, true),
             ];
             if ($fields['host'] === '' || $fields['host'] === null) {
@@ -99,7 +99,7 @@ final class TicketSecrets
             $label = mb_substr($typeTitle . ' ' . $fields['host'], 0, 100);
         } else {
             $label = self::text($data['label'] ?? null, 'Label', 100, false);
-            $value = self::text($data['value'] ?? null, 'Value', 5000, true);
+            $value = self::text($data['value'] ?? null, 'Value', 5000, true, trim: false);
             if ($label === '' || $label === null || $value === '' || $value === null) {
                 throw new \FOSSBilling\Core\Exception\InformationException('Enter a label and a value.');
             }
@@ -311,10 +311,10 @@ final class TicketSecrets
     }
 
     /**
-     * Trims and validates a text field: UTF-8, no control characters (tabs and
-     * newlines only where multiline), at most max characters.
+     * Validates UTF-8 text with a character limit and no controls (tabs and
+     * newlines only where multiline). Only descriptive fields are trimmed.
      */
-    private static function text(mixed $value, string $field, int $max, bool $multiline): ?string
+    private static function text(mixed $value, string $field, int $max, bool $multiline, bool $trim = true): ?string
     {
         if ($value === null) {
             return null;
@@ -322,7 +322,9 @@ final class TicketSecrets
         if (!is_string($value)) {
             throw new \FOSSBilling\Core\Exception\InformationException('The :field field must be text.', [':field' => $field]);
         }
-        $value = trim($value);
+        if ($trim) {
+            $value = trim($value);
+        }
         if (!mb_check_encoding($value, 'UTF-8')) {
             throw new \FOSSBilling\Core\Exception\InformationException('The :field field must be text.', [':field' => $field]);
         }

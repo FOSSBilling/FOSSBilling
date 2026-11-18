@@ -27,8 +27,6 @@ use FOSSBilling\Core\Doctrine\RowLock;
 final class TicketAssign
 {
     public const string TABLE = 'support_ticket_assignment';
-    /** Most ticket ids an assignee filter passes to the list query. */
-    public const int MAX_FILTER = 5000;
 
     /**
      * Staff members a ticket can be assigned to: active, not the system's cron
@@ -133,35 +131,21 @@ final class TicketAssign
         return $assignees;
     }
 
-    /**
-     * The ticket list's assignee filter: 'me' (the signed-in staff member),
-     * 'none', 'any' or a staff member's id. Returns the ids the list keeps
-     * (`in`) or leaves out (`not_in`), or null for no filter.
-     *
-     * @return array{0: 'in'|'not_in', 1: list<int>}|null
-     */
-    public static function listFilter(\Pimple\Container $di, mixed $filter, int $meId): ?array
+    /** Normalize the staff list filter without materializing or limiting ticket IDs. */
+    public static function listFilter(mixed $filter, int $meId): int|string|null
     {
+        if (!is_string($filter) && !is_int($filter)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Unknown assignee filter.');
+        }
         $filter = strtolower(trim((string) $filter));
-        if ($filter === '') {
-            return null;
-        }
-        $active = ' FROM ' . self::TABLE . " a JOIN admin ad ON ad.id = a.admin_id AND ad.status = 'active' AND ad.system_name IS NULL";
-        $db = self::db($di);
 
-        try {
-            $ids = match (true) {
-                $filter === 'none', $filter === 'any' => $db->fetchFirstColumn('SELECT a.ticket_id' . $active . ' ORDER BY a.ticket_id DESC LIMIT ' . self::MAX_FILTER),
-                $filter === 'me' => $db->fetchFirstColumn('SELECT a.ticket_id' . $active . ' WHERE a.admin_id = ? ORDER BY a.ticket_id DESC LIMIT ' . self::MAX_FILTER, [$meId]),
-                ctype_digit($filter) => $db->fetchFirstColumn('SELECT a.ticket_id' . $active . ' WHERE a.admin_id = ? ORDER BY a.ticket_id DESC LIMIT ' . self::MAX_FILTER, [(int) $filter]),
-                default => throw new \FOSSBilling\Core\Exception\InformationException('Unknown assignee filter.'),
-            };
-        } catch (\Doctrine\DBAL\Exception) {
-            $ids = [];
-        }
-        $ids = array_map(intval(...), $ids);
-
-        return $filter === 'none' ? ['not_in', $ids] : ['in', $ids];
+        return match (true) {
+            $filter === '' => null,
+            $filter === 'me' => $meId,
+            $filter === 'none', $filter === 'any' => $filter,
+            ctype_digit($filter) => (int) $filter,
+            default => throw new \FOSSBilling\Core\Exception\InformationException('Unknown assignee filter.'),
+        };
     }
 
     /** Assignments of deleted tickets. */

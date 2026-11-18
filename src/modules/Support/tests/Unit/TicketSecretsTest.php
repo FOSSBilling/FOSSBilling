@@ -256,3 +256,35 @@ test('staff cannot open a secret purged by a close before the lock', function ()
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Secret not found')
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_ticket_secret_event'))->toBe(0);
 });
+
+test('credentials retain exact whitespace through encrypted storage and staff opening', function (string $credential): void {
+    [$di, $db] = ticketSecretsConnection();
+    $server = TicketSecrets::addForClient($di, 5, 60, 'server', [
+        ...ticketSecretsServer(), 'host' => ' db.example.com ', 'username' => $credential, 'password' => $credential, 'ssh_key' => "\n  private key\n\t",
+    ]);
+    $other = TicketSecrets::addForClient($di, 5, 60, 'other', ['label' => ' API key ', 'value' => "\n" . $credential . "\t\n"]);
+    $opened = TicketSecrets::openForStaff($di, $server['id'], 1);
+    $generic = TicketSecrets::openForStaff($di, $other['id'], 1);
+
+    expect($opened['password'])->toBe($credential)
+        ->and($opened['username'])->toBe($credential)
+        ->and($opened['ssh_key'])->toBe("\n  private key\n\t")
+        ->and($opened['host'])->toBe('db.example.com')
+        ->and($generic['value'])->toBe("\n" . $credential . "\t\n")
+        ->and($generic['label'])->toBe('API key');
+    expect($db->fetchOne('SELECT data FROM support_ticket_secret WHERE id = ?', [$server['id']]))->not->toContain('private key');
+})->with([' padded password ', '   ']);
+
+test('credential validation includes surrounding whitespace and rejects controls', function (string $kind, string $field, string $value): void {
+    [$di, $db] = ticketSecretsConnection();
+    $data = $kind === 'server' ? ticketSecretsServer() : ['label' => 'API key', 'value' => 'valid'];
+    $data[$field] = $value;
+    expect(fn () => TicketSecrets::addForClient($di, 5, 60, $kind, $data))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+    expect((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_secret'))->toBe(0);
+})->with([
+    'password limit' => ['server', 'password', ' ' . str_repeat('p', 1000)],
+    'value limit' => ['other', 'value', str_repeat('v', 5000) . ' '],
+    'password control' => ['server', 'password', "\0password"],
+    'value control' => ['other', 'value', "value\0"],
+]);
