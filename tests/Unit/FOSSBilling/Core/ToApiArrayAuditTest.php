@@ -39,9 +39,15 @@ test('toApiArray conditional fields remain intentional', function (): void {
         ],
         'modules/Support/Service.php' => [
             'messages' => ['loop'],
-            'rel' => ['if'],
-            'priority' => ['if'],
-            'notes' => ['if', 'loop'],
+            'ratings_on' => ['if'],
+            'message_ratings' => ['if'],
+            'rel' => ['if (with elseifs)'],
+            'priority' => ['if (with elseifs)'],
+            'assigned_to' => ['if (with elseifs)'],
+            'notes' => ['if (with elseifs)', 'loop'],
+            'feedback' => ['if'],
+            'merged_tickets' => ['if'],
+            'feedback_url' => ['if (with elseifs)'],
         ],
     ]);
 });

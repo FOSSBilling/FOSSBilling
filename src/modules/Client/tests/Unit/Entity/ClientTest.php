@@ -14,9 +14,13 @@ use Doctrine\ORM\ORMSetup;
 
 test('maps client tables without changing their columns', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 3) . '/Entity'], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($entityManager->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $entityManager->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     $client = $entityManager->getClassMetadata(Client::class);
     $balance = $entityManager->getClassMetadata(ClientBalance::class);
@@ -43,7 +47,7 @@ test('maps client tables without changing their columns', function (): void {
         ->and($client->getFieldMapping('gender')['length'])->toBe(20)
         ->and($balance->getTableName())->toBe('client_balance')
         ->and($balance->getColumnNames())->toBe([
-            'id', 'type', 'rel_id', 'invoice_item_id', 'gateway_transaction_id', 'gateway_receipt_key', 'amount', 'description', 'created_at', 'updated_at',
+            'id', 'type', 'rel_id', 'invoice_item_id', 'gateway_transaction_id', 'gateway_receipt_key', 'amount', 'description', 'payment_key', 'created_at', 'updated_at',
         ])
         ->and($balance->getFieldMapping('amount')['nullable'])->toBeTrue()
         ->and($group->getTableName())->toBe('client_group')

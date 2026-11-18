@@ -8,6 +8,19 @@ use Box\Mod\Support\Entity\SupportTicket;
 
 class SupportTicketValidator
 {
+    /**
+     * Ticket message length, far below the column (MEDIUMTEXT) so long
+     * pasted logs fit without hitting the database limit.
+     */
+    public const MAX_CONTENT = 100000;
+
+    public static function validateContent(?string $content): void
+    {
+        if ($content !== null && mb_strlen($content) > self::MAX_CONTENT) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The message is too long: it can have at most :max characters.', [':max' => number_format(self::MAX_CONTENT)]);
+        }
+    }
+
     public static function validateTicketCreation(array $data): void
     {
         $rel_type = isset($data['rel_type']) ? (string) $data['rel_type'] : null;

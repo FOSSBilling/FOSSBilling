@@ -61,6 +61,9 @@
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_content %}
+                        {% if request.merged|default('') matches '/^[0-9]{1,18}$/' %}
+                            <div class="alert alert-info mb-0">{{ 'Ticket #%old% was merged into this ticket.'|trans({ '%old%': request.merged }) }}</div>
+                        {% endif %}
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <tbody>
@@ -78,6 +81,11 @@
                                     {% endif %}
                                     <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
                                     <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>
+                                    <tr><td>{{ 'Assigned To'|trans }}</td><td>{{ ticket.assigned_to.name|default('Nobody'|trans) }}</td></tr>
+                                    {% if ticket.merged_tickets|default([]) is not empty %}
+                                        <tr><td>{{ 'Merged Tickets'|trans }}</td><td class="text-wrap">{% for merged in ticket.merged_tickets %}#{{ merged.id }} {{ merged.subject|truncate(40) }} ({{ merged.merged_at|format_date }}){% if not loop.last %}<br>{% endif %}{% endfor %}</td></tr>
+                                    {% endif %}
+                                    <tr><td>{{ 'Priority'|trans }}</td><td>{{ include('mod_support_ticket_priority.html.twig', { level: ticket.priority_level|default('medium') }) }}</td></tr>
                                     <tr><td>{{ 'Time Opened'|trans }}</td><td>{{ ticket.created_at|format_date }}</td></tr>
                                     {% if task.task %}<tr><td>{{ 'Task'|trans }}</td><td>{{ mf.status_name(task.task) }}</td></tr>{% endif %}
                                     {% if task.type == 'order' %}<tr><td>{{ 'Related To'|trans }}</td><td><a href='{{ "order/manage/#{task.id}"|url }}'>Order #{{ task.id }}</a></td></tr>{% endif %}
@@ -115,6 +123,24 @@
                     {% endblock %}
                 {% endembed %}
 
+                {% if ticket.client_id %}{{ include('mod_support_ticket_secrets.html.twig', { ticket: ticket }) }}{% endif %}
+                {% if ticket.feedback|default(null) %}
+                <div class="card mb-3" id="ticket-feedback">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">{{ 'Client Feedback'|trans }}</h5>
+                        <p class="text-secondary mb-3">{{ 'Given on :date from the feedback email.'|trans({ ':date': ticket.feedback.created_at|format_datetime }) }}</p>
+                        {% for item in ticket.feedback.staff %}
+                        <div class="mb-3">
+                            <strong>{{ item.name }}</strong>: <span class="badge {{ item.rating >= 8 ? 'bg-green-lt' : (item.rating >= 5 ? 'bg-yellow-lt' : 'bg-red-lt') }}">{{ item.rating }}/10</span>
+                            {% if item.comments %}<div class="text-wrap mt-1" dir="auto">{{ item.comments|nl2br }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                        {% if ticket.feedback.comments %}
+                        <div><strong>{{ 'How we can improve'|trans }}</strong><div class="text-wrap mt-1" dir="auto">{{ ticket.feedback.comments|nl2br }}</div></div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
                 <div class="card">
                     <div class="card-body pb-3">
                         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
@@ -163,6 +189,10 @@
                                     <article class="markdown-body bg-transparent text-reset">
                                         {{ (message.content ?? '')|markdown_to_html }}
                                     </article>
+                                    {% if ticket.message_ratings[message.id]|default(null) %}
+                                    <div class="small text-muted mt-1" title="{{ 'Rated :stars of 5 by the client'|trans({ ':stars': ticket.message_ratings[message.id] }) }}">★ {{ ticket.message_ratings[message.id] }}/5</div>
+                                    {% endif %}
+                                    {{ include('mod_support_ticket_message_files.html.twig', { message: message }) }}
                                 </div>
                             </div>
 
@@ -223,6 +253,7 @@
 
 {{ profile.signature }}
 {{ ticket.helpdesk.signature|default('') }}</textarea>
+                            {{ include('mod_support_ticket_reply_files.html.twig') }}
                         </div>
                         <div class="card-footer d-flex flex-wrap align-items-center gap-2">
                             <input type="hidden" name="id" value="{{ ticket.id }}">
@@ -266,8 +297,22 @@
                                     {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), ticket.status, 1) }}
                                 </div>
                                 <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Priority'|trans }}</label>
-                                    <input class="form-control" type="text" name="priority" value="{{ ticket.priority }}">
+                                    <label class="form-label" for="ticket-priority">{{ 'Priority'|trans }}</label>
+                                    <select class="form-select" id="ticket-priority" name="priority">
+                                        {% for level, title in guest.support_ticket_priorities %}
+                                            <option value="{{ level }}"{% if level == ticket.priority_level|default('medium') %} selected{% endif %}>{{ title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="ticket-assigned-to">{{ 'Assigned To'|trans }}</label>
+                                    <select class="form-select" id="ticket-assigned-to" name="assigned_to">
+                                        <option value="0">{{ 'Nobody'|trans }}</option>
+                                        {% for staff_id, staff_name in admin.support_ticket_assignable_staff %}
+                                            <option value="{{ staff_id }}"{% if staff_id == ticket.assigned_to.id|default(0) %} selected{% endif %}>{{ staff_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">{{ 'The assignee is emailed unless they assign it to themselves.'|trans }}</div>
                                 </div>
                             </div>
                             <input type="hidden" name="id" value="{{ ticket.id }}">
@@ -275,6 +320,31 @@
 
                         {% block form_actions %}
                             <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
+                </form>
+                {{ include('mod_support_ticket_merge_script.html.twig') }}
+                <form method="post" action="{{ 'support/ticket_merge'|api_url }}" class="mt-3" data-merge-form="{{ ticket.id }}" data-merge-url="{{ 'support/ticket'|url }}" data-merge-title="{{ 'Merge tickets?'|trans }}" data-merge-text="{{ 'Tickets %list% will be merged into this ticket. The oldest stays and gets all their messages, notes and attachments, and the others are deleted. This cannot be undone.'|trans }}" data-merge-confirm="{{ 'Merge'|trans }}" data-merge-cancel="{{ 'Cancel'|trans }}">
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Merge Tickets'|trans,
+                        subtitle: 'Merge other tickets into this one. The oldest ticket stays and gets all their messages, notes and attachments.'|trans
+                    } %}
+                        {% block form_content %}
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="merge-ticket-ids">{{ 'Other ticket ids'|trans }}</label>
+                                    <input class="form-control" type="text" id="merge-ticket-ids" name="ids" placeholder="12, 15" data-merge-ids>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="merge-ticket-subject">{{ 'Subject (optional)'|trans }}</label>
+                                    <input class="form-control" type="text" id="merge-ticket-subject" name="subject" maxlength="255">
+                                </div>
+                            </div>
+                            <input type="hidden" name="id" value="{{ ticket.id }}">
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-outline-danger" type="submit">{{ 'Merge'|trans }}</button>
                         {% endblock %}
                     {% endembed %}
                 </form>

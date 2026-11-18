@@ -10,6 +10,7 @@
 {% set filter_panel_open = request_has_filters %}
 
 {% block top_content %}
+<a class="btn mb-3" href="{{ 'invoice/payment-recovery'|url }}">{{ 'Payment recovery'|trans }}</a>
 {% if not filter_panel_open %}
 
 {% set statuses = admin.invoice_transaction_get_statuses %}

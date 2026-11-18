@@ -54,17 +54,25 @@ class InvoiceItemRepository extends EntityRepository
 
     public function findPaidPendingRenewal(int $orderId): ?InvoiceItem
     {
-        $item = $this->createQueryBuilder('ii')
-            ->join('ii.invoice', 'i')
-            ->where('ii.type = :type AND ii.task = :task AND ii.relId = :orderId')
-            ->andWhere('ii.status IN (:statuses) AND i.status = :paid')
-            ->setParameter('type', InvoiceItem::TYPE_ORDER)
-            ->setParameter('task', InvoiceItem::TASK_RENEW)
-            ->setParameter('orderId', (string) $orderId)
-            ->setParameter('statuses', [InvoiceItem::STATUS_PENDING_SETUP, InvoiceItem::STATUS_FAILED])
-            ->setParameter('paid', Invoice::STATUS_PAID)
-            ->setMaxResults(1)
-            ->getQuery()->getOneOrNullResult();
+        $connection = $this->getEntityManager()->getConnection();
+        $legacyReference = self::normalizedLegacyPaidOrderReference($connection, 'ii.rel_id');
+        $id = $connection->fetchOne(
+            "SELECT ii.id FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id
+             WHERE ii.type = :type AND ii.task = :task
+               AND (ii.order_id = :order_id OR (ii.order_id IS NULL AND $legacyReference = :legacy_order_id))
+               AND ii.status IN (:pending, :failed) AND i.status = :paid
+             ORDER BY ii.id LIMIT 1",
+            [
+                'type' => InvoiceItem::TYPE_ORDER,
+                'task' => InvoiceItem::TASK_RENEW,
+                'order_id' => $orderId,
+                'legacy_order_id' => (string) $orderId,
+                'pending' => InvoiceItem::STATUS_PENDING_SETUP,
+                'failed' => InvoiceItem::STATUS_FAILED,
+                'paid' => Invoice::STATUS_PAID,
+            ],
+        );
+        $item = $id === false ? null : $this->find((int) $id);
 
         return $item instanceof InvoiceItem ? $item : null;
     }

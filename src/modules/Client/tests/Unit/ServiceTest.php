@@ -695,6 +695,8 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $query->shouldReceive('executeStatement')->once()->andReturn(1);
     // No provisioned services remain: the erasure gate passes on all six tables.
     $connection->shouldReceive('fetchOne')->times(6)->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
+    $connection->shouldReceive('fetchOne')->once()->with('SELECT id FROM client WHERE id = ? FOR UPDATE', [1])->andReturn(1);
     $connection->shouldReceive('executeStatement')->once()
         ->with('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => 1])
         ->andReturn(1);
@@ -742,6 +744,8 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
     $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
     // The erasure gate passes: no provisioned services remain.
     $connection->shouldReceive('fetchOne')->times(6)->andReturn(false);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
+    $connection->shouldReceive('fetchOne')->once()->with('SELECT id FROM client WHERE id = ? FOR UPDATE', [1])->andReturn(1);
 
     $em = $di['em'];
     $em->shouldReceive('getConnection')->twice()->andReturn($connection);

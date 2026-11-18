@@ -69,6 +69,24 @@
                             </label>
                         </div>
                     </div>
+                    {% if helpdesk.hidden is defined %}
+                    <div class="col-12">
+                        <label class="form-check form-switch form-switch-2 mb-0">
+                            <input name="hidden" type="hidden" value="0">
+                            <input class="form-check-input" name="hidden" type="checkbox" value="1"{% if helpdesk.hidden %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Hidden from clients: clients and guests cannot choose it for a new ticket; staff, replies and the system still use it'|trans }}</span>
+                        </label>
+                    </div>
+                    {% endif %}
+                    {% if helpdesk.feedback_request is defined %}
+                    <div class="col-12">
+                        <label class="form-check form-switch form-switch-2 mb-0">
+                            <input name="feedback_request" type="hidden" value="0">
+                            <input class="form-check-input" name="feedback_request" type="checkbox" value="1"{% if helpdesk.feedback_request %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Feedback request: when a ticket closes, email the client a link to rate the staff and comment'|trans }}</span>
+                        </label>
+                    </div>
+                    {% endif %}
                 </div>
                 <input type="hidden" name="id" value="{{ helpdesk.id }}">
             {% endblock %}

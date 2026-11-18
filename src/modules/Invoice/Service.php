@@ -65,6 +65,7 @@ use FOSSBilling\Core\Doctrine\SqlExpr;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Http\ResponseFactory;
 use FOSSBilling\Core\I18n\I18n;
+use FOSSBilling\Core\Payment\ProcessingFence;
 use FOSSBilling\Core\System\Environment;
 use FOSSBilling\Core\Validation\PriceValidator;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -413,6 +414,8 @@ class Service implements InjectionAwareInterface
         $result['amount_paid'] = $unpaid ? min($this->getAmountPaid($invoice), round($result['total'], 2)) : (in_array($row['status'], [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true) ? $result['total'] : 0.0);
         $result['balance_due'] = $unpaid ? max(0.0, round($result['total'] - $result['amount_paid'], 2)) : 0.0;
         $result['credit_applied'] = $unpaid ? $this->getInvoiceCreditRepository()->getSumByInvoiceId((int) $row['id']) : 0.0;
+        // A bank debit still clearing shows the invoice as "Payment pending".
+        $result['pending_payment'] = $unpaid ? PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) : null;
         $result['notes'] = $row['notes'];
         $result['text_1'] = $row['text_1'] ?? null;
         $result['text_2'] = $row['text_2'] ?? null;
@@ -822,8 +825,9 @@ class Service implements InjectionAwareInterface
      * Append an entry to the invoice journal: a trimmed snapshot of the
      * invoice taken after the transition, so the full history (including
      * past buyer/seller details) stays queryable after the fact. Journal
-     * writes never break the business operation: failures are logged and
-     * swallowed, mirroring the mail sends.
+     * writes normally log and swallow failures, mirroring the mail sends.
+     * Required financial receipts instead propagate failures so their
+     * surrounding bookkeeping transaction cannot commit without the receipt.
      *
      * The row is written with a raw DBAL insert rather than through the
      * EntityManager, nested in the caller's transaction via a savepoint when
@@ -835,7 +839,7 @@ class Service implements InjectionAwareInterface
      * would retry — which would fail the surrounding mutation and close the
      * EntityManager.
      */
-    public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null): void
+    public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null, bool $required = false): void
     {
         try {
             $data = $this->toApiArray($invoice);
@@ -887,6 +891,9 @@ class Service implements InjectionAwareInterface
                 );
             });
         } catch (\Throwable $exception) {
+            if ($required) {
+                throw $exception;
+            }
             $this->di['logger']->error('Failed to record invoice journal event', [
                 'invoice_id' => $invoice->getId(),
                 'exception' => $exception,
@@ -956,6 +963,11 @@ class Service implements InjectionAwareInterface
             }
 
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_before_due_days', $event->daysLeft, '', $event->reminderIntervals)) {
+                return;
+            }
+
+            // No reminder before the due date while a bank debit of the invoice is clearing.
+            if (PendingPayments::forInvoice($di['em']->getConnection(), $event->invoiceId) !== null) {
                 return;
             }
 
@@ -1092,6 +1104,11 @@ class Service implements InjectionAwareInterface
             }
 
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', $event->daysPassed, '5', $event->reminderIntervals)) {
+                return;
+            }
+
+            // No overdue reminder while a bank debit of the invoice is clearing.
+            if (PendingPayments::forInvoice($di['em']->getConnection(), $event->invoiceId) !== null) {
                 return;
             }
 
@@ -2204,12 +2221,62 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function tryPayWithCredits(Invoice $invoice, bool $gatewayPayment = false): bool
+    public function tryPayWithCredits(Invoice $invoice, bool $gatewayPayment = false, bool $deferEvents = false): bool
     {
         $paid = $this->withCreditLock((int) $invoice->getClientId(), fn (): bool => $this->di['em']->wrapInTransaction(fn (): bool => $this->payWithCreditsInTransaction($invoice, $gatewayPayment)));
 
-        if ($paid) {
-            $this->firePaymentReceivedEvent($invoice);
+        if ($paid && !$deferEvents) {
+            $this->finishGatewayPayment($invoice, true);
+        } elseif (!$paid && !$gatewayPayment && $invoice->getStatus() === Invoice::STATUS_UNPAID && $invoice->getGateway() instanceof PayGateway) {
+            // Credit did not cover the invoice: what it leaves due gets the
+            // gateway fee again.
+            $this->di['mod_service']('Invoice', 'GatewayFees')->apply($invoice, $invoice->getGateway());
+        }
+
+        return $paid;
+    }
+
+    /** Apply a cleared gateway payment and its pending marker in one database transaction. */
+    public function settleClearingPayment(Invoice $invoice, Transaction $clearing, Transaction $payment, string $gatewayName = 'Stripe'): void
+    {
+        $client = $this->di['em']->getRepository(Client::class)->find((int) $invoice->getClientId());
+        if (!$client instanceof Client) {
+            throw new InformationException('Client not found');
+        }
+        $this->recordGatewayPayment(
+            $payment, $client, (string) $payment->getTxnId(),
+            $gatewayName . ' transaction ' . $payment->getTxnId(),
+            $gatewayName === 'PayPal' ? 'PayPal' : 'transaction',
+            $gatewayName === 'PayPal' ? $payment->getTxnId() : (string) $payment->getId(),
+            function () use ($invoice, $clearing, $payment, $gatewayName): void {
+                $state = $this->lockAndRefreshInvoice($invoice);
+                if ($clearing !== $payment) {
+                    $this->di['em']->refresh($clearing, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
+                }
+                if ($clearing->getInvoice()?->getId() !== $invoice->getId()
+                    || !in_array($clearing->getStatus(), $clearing === $payment ? [Transaction::STATUS_PROCESSING, Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR] : [Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR], true)
+                    || $clearing->getTxnStatus() !== 'processing') {
+                    throw new InformationException('The pending payment no longer matches this invoice.');
+                }
+                if (!in_array($state['status'], [Invoice::STATUS_UNPAID, Invoice::STATUS_PAID], true)) {
+                    throw new InformationException('The invoice cannot accept this payment.');
+                }
+                if ($state['status'] === Invoice::STATUS_UNPAID) {
+                    $this->validatePaymentAmount((float) $payment->getAmount(), $this->getBalanceDue($invoice));
+                }
+                if ($gatewayName === 'PayPal' && $state['status'] === Invoice::STATUS_UNPAID && !$invoice->isIssued() && !$this->isInvoiceTypeDeposit($invoice)) {
+                    $this->issueInvoice($invoice, ['use_credits' => false, 'defer_events' => true]);
+                }
+                $clearing->setTxnStatus($gatewayName === 'PayPal' ? 'Completed' : 'succeeded');
+                $clearing->setUpdatedAt(new \DateTimeImmutable());
+            }
+        );
+    }
+
+    private function finishGatewayPayment(Invoice $invoice, bool $executeTasks): void
+    {
+        $this->firePaymentReceivedEvent($invoice);
+        if ($executeTasks) {
             $this->executeInvoiceItemTasks(
                 $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
                 $this->di['mod_service']('Invoice', 'InvoiceItem')
@@ -2219,8 +2286,6 @@ class Service implements InjectionAwareInterface
             // gateway fee again.
             $this->di['mod_service']('Invoice', 'GatewayFees')->apply($invoice, $invoice->getGateway());
         }
-
-        return $paid;
     }
 
     /** Caller holds the client credit lock and an open transaction. */
@@ -2242,6 +2307,10 @@ class Service implements InjectionAwareInterface
         // Account credit never pays an Add funds invoice: the deposit
         // would be deducted without ever topping the wallet up.
         if ($this->isInvoiceTypeDeposit($invoice)) {
+            return false;
+        }
+
+        if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
             return false;
         }
 
@@ -2365,7 +2434,7 @@ class Service implements InjectionAwareInterface
      * Returns false only for a separate duplicate transaction. The canonical
      * receipt owner is retained and resumes post-commit completion on retry.
      */
-    public function recordGatewayPayment(Transaction $transaction, Client $client, string $providerObjectId, string $description, string $legacyType, ?string $legacyRelId = null): bool
+    public function recordGatewayPayment(Transaction $transaction, Client $client, string $providerObjectId, string $description, string $legacyType, ?string $legacyRelId = null, ?callable $prepareSettlement = null): bool
     {
         $gatewayId = $transaction->getGateway()?->getId();
         $amount = (float) $transaction->getAmount();
@@ -2381,6 +2450,17 @@ class Service implements InjectionAwareInterface
             || ($invoice instanceof Invoice && strcasecmp($currency, (string) $invoice->getCurrency()) !== 0)) {
             throw new InformationException('Gateway receipt currency does not match the client and invoice.');
         }
+        $db = $this->di['em']->getConnection();
+        $attempt = $invoice instanceof Invoice ? $db->fetchAssociative("SELECT id, owner_token, invoice_id FROM invoice_gateway_charge_attempt WHERE invoice_id = ? AND gateway_id = ? AND payment_id = ? AND state = 'pending'", [$invoice->getId(), $gatewayId, $providerObjectId]) : false;
+        foreach (ProcessingFence::claims() as $claim) {
+            if ($attempt && $claim['table'] === 'invoice_gateway_charge_attempt' && $claim['id'] === $attempt['id']) {
+                // The enclosing saved-charge/recovery scope resolves its own
+                // attempt after settlement; ending it here would revoke that scope.
+                $attempt = false;
+
+                break;
+            }
+        }
         // Legacy rel_id is limited to 20 characters. The complete provider
         // identifier remains in the description and receipt fingerprint.
         if ($legacyRelId !== null && strlen($legacyRelId) > 20) {
@@ -2392,8 +2472,8 @@ class Service implements InjectionAwareInterface
         $complete = true;
         // Settlement and acknowledgement share one mutex: an older completion
         // must not acknowledge work created by a concurrent receipt retry.
-        $created = $this->withPaymentCompletionLock((int) $transaction->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete): bool {
-            return $this->withCreditLock((int) $client->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete): bool {
+        $created = $this->withPaymentCompletionLock((int) $transaction->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete, $prepareSettlement, $db, $attempt): bool {
+            return $this->withCreditLock((int) $client->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete, $prepareSettlement, $db, $attempt): bool {
                 if ($this->gatewayReceiptExists((int) $transaction->getGateway()->getId(), $providerObjectId, $client, $amount, $description, $legacyType)) {
                     $receipt = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayReceiptKey' => $key]);
                     if (!$receipt instanceof ClientBalance || $receipt->getGatewayTransactionId() !== $transaction->getId()) {
@@ -2406,8 +2486,14 @@ class Service implements InjectionAwareInterface
                     $resume = true;
                 }
 
-                return $this->di['em']->wrapInTransaction(function () use ($transaction, $client, $invoice, $key, $amount, $description, $legacyType, $legacyRelId, &$paid, $resume, &$complete): bool {
+                return $this->di['em']->wrapInTransaction(function () use ($transaction, $client, $invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, $resume, &$complete, $prepareSettlement, $db, $attempt): bool {
+                    if (!$resume && $prepareSettlement !== null) {
+                        $prepareSettlement();
+                    }
                     if (!$resume) {
+                        PaymentCredit::assertNoLegacyCredit($this->di['em'], (int) $client->getId(), [
+                            'payment_reference' => $providerObjectId, 'type' => $legacyType, 'rel_id' => $legacyRelId,
+                        ]);
                         $receipt = (new ClientBalance())
                         ->setClient($client)
                         ->setType($legacyType)
@@ -2436,6 +2522,17 @@ class Service implements InjectionAwareInterface
                             $complete = true;
                             $transaction->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_RUNNING);
                             $this->di['em']->flush();
+                        }
+                    }
+
+                    if ($attempt && $invoice instanceof Invoice && $invoice->getId() === (int) $attempt['invoice_id']) {
+                        $owner = $attempt['owner_token'] === null ? 'owner_token IS NULL' : 'owner_token = ?';
+                        $parameters = [date('Y-m-d H:i:s'), $attempt['id']];
+                        if ($attempt['owner_token'] !== null) {
+                            $parameters[] = $attempt['owner_token'];
+                        }
+                        if ($db->executeStatement("UPDATE invoice_gateway_charge_attempt SET state = 'settled', resolved_at = ? WHERE id = ? AND state = 'pending' AND {$owner}", $parameters) !== 1) {
+                            throw new \FOSSBilling\Core\Payment\OwnershipLost('The charge attempt changed while settling its payment.');
                         }
                     }
 
@@ -2950,11 +3047,14 @@ class Service implements InjectionAwareInterface
 
     public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null, array $options = []): int
     {
-        $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+        $external = $this->externalReversal($options);
+        if ($external === null) {
+            $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+        }
 
         // The locked read inside the credit-note transaction below stays
         // authoritative, but don't move money for a clearly unpaid invoice.
-        if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
+        if ($external === null && $invoice->getStatus() !== Invoice::STATUS_PAID) {
             throw new InformationException('Only paid invoices can be refunded');
         }
 
@@ -2963,10 +3063,23 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Return the money through the payment gateway or add it as account credit, not both.');
         }
 
-        $new = $this->withInvoiceRefundLock($invoice, fn (): Invoice => $this->withCreditLock(
-            (int) $invoice->getClientId(),
-            fn (): Invoice => $this->createRefundDocument($invoice, $note, $items, $options)
-        ));
+        $replayed = false;
+        $new = $this->withInvoiceRefundLock($invoice, function () use ($invoice, $note, $items, $options, $external, &$replayed): Invoice {
+            if ($external !== null) {
+                $recorded = $this->recordedReversal($invoice, $external);
+                if ($recorded !== null) {
+                    $replayed = true;
+
+                    return $recorded;
+                }
+                $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+            }
+
+            return $this->withCreditLock((int) $invoice->getClientId(), fn (): Invoice => $this->createRefundDocument($invoice, $note, $items, $options));
+        });
+        if ($replayed) {
+            return (int) $new->getId();
+        }
 
         try {
             $this->sendRefundEmail($invoice, $new, !empty($options['to_credit']));
@@ -2983,6 +3096,95 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return (int) $new->getId();
+    }
+
+    /** Validate the internal receipt supplied for a provider-originated reversal. */
+    private function externalReversal(array $options): ?array
+    {
+        $receipt = $options['external_reversal'] ?? null;
+        if ($receipt === null) {
+            return null;
+        }
+        if (!is_array($receipt) || empty($options['gateway_returned']) || ($options['gateway_refund'] ?? true) !== false
+            || !is_int($receipt['gateway_id'] ?? null) || $receipt['gateway_id'] < 1
+            || !is_string($receipt['reversal_id'] ?? null) || trim($receipt['reversal_id']) === '' || strlen($receipt['reversal_id']) > 255
+            || !is_string($receipt['payment_id'] ?? null) || trim($receipt['payment_id']) === '' || strlen($receipt['payment_id']) > 255) {
+            throw new InformationException('Invalid external reversal receipt.');
+        }
+        $receipt['amount'] = PriceValidator::validateAmount($receipt['amount'] ?? null, 'Reversal amount');
+        if ($receipt['amount'] <= 0) {
+            throw new InformationException('Invalid external reversal amount.');
+        }
+
+        return $receipt;
+    }
+
+    /** Called under the invoice refund lock, before allocating another credit note. */
+    private function recordedReversal(Invoice $invoice, array $external): ?Invoice
+    {
+        $rows = $this->di['em']->getConnection()->fetchFirstColumn('SELECT snapshot FROM invoice_event WHERE invoice_id = ? AND type = ?', [(int) $invoice->getId(), InvoiceEvent::TYPE_REFUNDED]);
+        foreach ($rows as $json) {
+            $snapshot = json_decode((string) $json, true, 512, JSON_THROW_ON_ERROR);
+            $receipt = $snapshot['external_reversal'] ?? null;
+            if (!is_array($receipt) || ($receipt['gateway_id'] ?? null) !== $external['gateway_id'] || ($receipt['reversal_id'] ?? null) !== $external['reversal_id']) {
+                continue;
+            }
+            if (($receipt['payment_id'] ?? null) !== $external['payment_id'] || abs((float) ($receipt['amount'] ?? 0) - $external['amount']) > 0.005) {
+                throw new InformationException('This reversal was already recorded with different payment details.');
+            }
+            $note = $this->di['em']->find(Invoice::class, (int) ($snapshot['credit_note_id'] ?? 0));
+            if (!$note instanceof Invoice || $note->getCreditNoteForInvoiceId() !== $invoice->getId()) {
+                throw new InformationException('The recorded reversal credit note is missing. Review the refund before continuing.');
+            }
+
+            return $note;
+        }
+
+        return null;
+    }
+
+    public function pendingGatewayRefund(Invoice $invoice): ?array
+    {
+        $row = GatewayRefundAttempt::pending($this->di['em']->getConnection(), (int) $invoice->getId());
+
+        return $row === null ? null : ['id' => $row['id'], 'created_at' => $row['created_at']];
+    }
+
+    /** Staff confirmed in PayPal that no money was returned. */
+    public function dismissGatewayRefundAttempt(Invoice $invoice, string $attemptId, int $adminId): bool
+    {
+        $this->withInvoiceRefundLock($invoice, fn (): Invoice => $this->di['em']->wrapInTransaction(function () use ($invoice, $attemptId, $adminId): Invoice {
+            $this->lockAndRefreshInvoice($invoice);
+            GatewayRefundAttempt::dismiss($this->di['em']->getConnection(), (int) $invoice->getId(), $attemptId);
+            $this->addNote($invoice, 'Staff #' . $adminId . ' confirmed that PayPal did not issue refund attempt ' . $attemptId . '.');
+
+            return $invoice;
+        }));
+
+        return true;
+    }
+
+    /** Staff confirmed that PayPal returned the money; create its credit note without another gateway call. */
+    public function reconcileGatewayRefund(Invoice $invoice, string $attemptId, string $refundId, ?array $items, int $adminId): int
+    {
+        $refundId = trim($refundId);
+        if (!preg_match('/^[A-Za-z0-9_-]{1,255}$/', $refundId)) {
+            throw new InformationException('Enter the PayPal refund transaction ID.');
+        }
+
+        return $this->refundInvoice($invoice, 'Staff #' . $adminId . ' reconciled PayPal refund ' . $refundId . '.', $items, [
+            'gateway_refund' => false, 'gateway_returned' => true,
+            'reconcile_attempt' => $attemptId, 'reconcile_refund_id' => $refundId,
+        ]);
+    }
+
+    private function paypalRefundFingerprint(Invoice $invoice, PayGateway $gateway, Transaction $payment, float $amount, ?array $items, ?array $customLine): string
+    {
+        return hash('sha256', json_encode([
+            (int) $gateway->getId(), (string) $payment->getTxnId(), $amount,
+            (string) ($invoice->getCurrency() ?? $payment->getCurrency()),
+            $this->refundItemsFingerprint($items, $customLine),
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -3020,16 +3222,42 @@ class Service implements InjectionAwareInterface
      */
     private function createRefundDocument(Invoice $invoice, $note, ?array $items, array $options): Invoice
     {
+        // Arbitrary-amount custom lines are validated before anything moves.
+        $customLine = $this->resolveCustomRefundLine($options['custom_line'] ?? null);
+        $external = $this->externalReversal($options);
         $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
         $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
-        $expectedAmount = array_key_exists('expected_amount', $options)
+        $attemptId = $options['reconcile_attempt'] ?? null;
+        $refundId = $options['reconcile_refund_id'] ?? null;
+        $pending = GatewayRefundAttempt::pending($this->di['em']->getConnection(), (int) $invoice->getId());
+        if ($attemptId !== null) {
+            $gateway = $invoice->getGateway();
+            $payment = $this->findRefundablePaymentTransaction($invoice);
+            if (!is_string($attemptId) || !is_string($refundId) || !$gatewayReturned || !$gateway instanceof PayGateway
+                || !$payment instanceof Transaction || $pending === null || !hash_equals($pending['id'], $attemptId)) {
+                throw new InformationException('This refund attempt is no longer pending.');
+            }
+            $amount = $this->previewRefundAmount($invoice, $items, $customLine);
+            if (!hash_equals($pending['fingerprint'], $this->paypalRefundFingerprint($invoice, $gateway, $payment, $amount, $items, $customLine))) {
+                throw new InformationException('The selected refund lines do not match the pending PayPal attempt.');
+            }
+            $recorded = $this->di['em']->getRepository(Transaction::class)->findOneBy([
+                'gateway' => $gateway, 'txnId' => $refundId, 'type' => \Payment_Transaction::TXTYPE_REFUND,
+            ]);
+            if ($recorded instanceof Transaction) {
+                throw new InformationException('This gateway refund is already recorded.');
+            }
+        } elseif ($pending !== null && (!$gatewayRefundRequested || !$invoice->getGateway() instanceof PayGateway)) {
+            throw new InformationException('Reconcile the pending PayPal refund before recording another refund.');
+        }
+        $expectedAmount = $external['amount'] ?? (array_key_exists('expected_amount', $options)
             ? PriceValidator::validateAmount($options['expected_amount'], 'Expected refund amount')
-            : null;
+            : null);
 
         // A dashboard refund already returned the card payment, so a deposit
         // invoice's wallet credit must be reversed when recording it.
         if ($gatewayReturned && $this->isInvoiceTypeDeposit($invoice)) {
-            $this->assertDepositReversalAvailable($invoice, $this->previewRefundAmount($invoice, $items));
+            $this->assertDepositReversalAvailable($invoice, $this->previewRefundAmount($invoice, $items, $customLine));
         }
 
         $gatewayPlan = [];
@@ -3039,7 +3267,7 @@ class Service implements InjectionAwareInterface
             // refundPayment call itself runs inside the credit-note
             // transaction below, after the deposit credit is reversed under
             // lock, so a shortfall aborts before Stripe is touched.
-            $gatewayPlan = $this->planGatewayRefund($invoice, $items);
+            $gatewayPlan = $this->planGatewayRefund($invoice, $items, $customLine);
         }
 
         // Offline-only refunds of deposits keep the pre-existing paper trail:
@@ -3061,7 +3289,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $expectedAmount, $toCredit): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $customLine, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit, $attemptId, $refundId, $expectedAmount, $external): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -3082,7 +3310,7 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Cannot refund invoice with negative amount');
                 }
 
-                $creditLines = $this->resolveRefundLines($invoice, $items);
+                $creditLines = $this->resolveRefundLines($invoice, $items, $customLine);
 
                 $new = new Invoice();
                 $new->setClientId($invoice->getClientId());
@@ -3177,18 +3405,25 @@ class Service implements InjectionAwareInterface
                 // first (and this locked recheck already threw) or waits on
                 // the balance lock, so a shortfall can never orphan an
                 // already-issued Stripe refund.
-                $gatewayRefundId = $gatewayPlan['refund_id'] ?? null;
-                $gatewayName = $gatewayPlan['gateway'] ?? null;
+                $gatewayRefundId = $gatewayPlan['refund_id'] ?? $refundId;
+                $gatewayName = $gatewayPlan['gateway'] ?? ($attemptId !== null ? ($invoice->getGateway()?->getName() ?: $invoice->getGateway()?->getGateway()) : null);
                 if (isset($gatewayPlan['pending'])) {
                     $executed = $this->executeGatewayRefund($gatewayPlan['pending']);
                     $gatewayRefundId = $executed['refund_id'];
                     $gatewayName = $executed['gateway'];
+                    if ($gatewayPlan['pending']['attempt_id'] !== null) {
+                        GatewayRefundAttempt::complete($this->di['em']->getConnection(), $gatewayPlan['pending']['attempt_id']);
+                    }
                     // Stripe replays the cached refund when a request repeats
                     // an idempotency key. Refusing an already-recorded ID
                     // keeps one Stripe refund from backing two credit notes.
                     if (in_array($gatewayRefundId, $gatewayPlan['pending']['recorded'], true)) {
                         throw new InformationException('Stripe refund :refund is already recorded for this invoice; the duplicate was not recorded again.', [':refund' => $gatewayRefundId]);
                     }
+                }
+
+                if ($attemptId !== null) {
+                    GatewayRefundAttempt::complete($this->di['em']->getConnection(), $attemptId);
                 }
 
                 $invoice->setRefund(round((float) ($invoice->getRefund() ?? 0) + $creditAmount, 2));
@@ -3215,12 +3450,20 @@ class Service implements InjectionAwareInterface
                 }
 
                 // Commits atomically with the credit note above.
-                $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
+                $journal = array_filter([
                     'offline' => $offline && $gatewayRefundId === null && !$toCredit ? true : null,
                     'to_credit' => $toCredit ? true : null,
                     'gateway_refund_id' => $gatewayRefundId,
                     'credit_note_id' => (int) $new->getId(),
-                ]));
+                    'external_reversal' => $external,
+                ]);
+                if ($external !== null) {
+                    // The receipt is load-bearing: failure must roll back the
+                    // credit note, invoice total and any deposit credit debit.
+                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $journal, true);
+                } else {
+                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $journal);
+                }
 
                 return $new;
             }),
@@ -3239,9 +3482,9 @@ class Service implements InjectionAwareInterface
      * instead of silently recording an offline refund the admin did not ask
      * for.
      *
-     * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>}}|array{}
+     * @return array{refund_id: string, gateway: string}|array{pending: array{attempt_id: ?string, adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>}}|array{}
      */
-    private function planGatewayRefund(Invoice $invoice, ?array $items): array
+    private function planGatewayRefund(Invoice $invoice, ?array $items, ?array $customLine = null): array
     {
         $gateway = $invoice->getGateway();
         if (!$gateway instanceof PayGateway) {
@@ -3256,6 +3499,11 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Could not load the payment gateway for invoice #:id: :error. Return the payment in the gateway dashboard, or record an offline-only refund.', [':id' => $invoice->getId(), ':error' => $e->getMessage()]);
         }
 
+        if (GatewayRefundAttempt::pending($this->di['em']->getConnection(), (int) $invoice->getId()) !== null
+            && !$adapter instanceof \Payment_Adapter_PayPalEmail && !$adapter instanceof \Payment_Adapter_PayPalAutoPay) {
+            throw new InformationException('Reconcile the pending PayPal refund before recording another refund.');
+        }
+
         if (!method_exists($adapter, 'refundPayment') || (method_exists($adapter, 'supportsRefunds') && !$adapter::supportsRefunds())) {
             return [];
         }
@@ -3265,7 +3513,7 @@ class Service implements InjectionAwareInterface
             throw new InformationException('No refundable gateway payment found for invoice #:id. Return the payment in the gateway dashboard, or record an offline-only refund.', ['id' => $invoice->getId()]);
         }
 
-        $amount = $this->previewRefundAmount($invoice, $items);
+        $amount = $this->previewRefundAmount($invoice, $items, $customLine);
         if ($amount <= 0) {
             return [];
         }
@@ -3278,7 +3526,7 @@ class Service implements InjectionAwareInterface
 
         if (method_exists($adapter, 'listRefundsForTransaction')) {
             $recordedIds = $this->getRecordedGatewayRefundIds($invoice);
-            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway, $recordedIds, $this->refundItemsFingerprint($items));
+            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway, $recordedIds, $this->refundItemsFingerprint($items, $customLine));
             if ($reused !== null) {
                 return $reused;
             }
@@ -3286,7 +3534,17 @@ class Service implements InjectionAwareInterface
             $recordedIds = [];
         }
 
+        $paypalAttempt = null;
+        if ($adapter instanceof \Payment_Adapter_PayPalEmail || $adapter instanceof \Payment_Adapter_PayPalAutoPay) {
+            $fingerprint = $this->paypalRefundFingerprint($invoice, $gateway, $paymentTx, $amount, $items, $customLine);
+            $paypalAttempt = GatewayRefundAttempt::prepare(
+                $this->di['em']->getConnection(), (int) $invoice->getId(), $fingerprint,
+                $adapter instanceof \Payment_Adapter_PayPalEmail
+            );
+        }
+
         return ['pending' => [
+            'attempt_id' => $paypalAttempt,
             'adapter' => $adapter,
             'txn_id' => (string) $paymentTx->getTxnId(),
             'amount' => $amount,
@@ -3300,8 +3558,8 @@ class Service implements InjectionAwareInterface
             'metadata' => [
                 'invoice_id' => (string) $invoice->getId(),
                 'gateway_id' => (string) $gateway->getId(),
-                'lines' => $this->refundItemsFingerprint($items),
-                'attempt' => bin2hex(random_bytes(16)),
+                'lines' => $this->refundItemsFingerprint($items, $customLine),
+                'attempt' => $paypalAttempt ?? bin2hex(random_bytes(16)),
             ],
             'gateway' => $gateway->getName() ?: $gateway->getGateway(),
             // Recorded IDs seen during planning, carried for the duplicate
@@ -3368,10 +3626,15 @@ class Service implements InjectionAwareInterface
                 continue;
             }
             $code = $tx->getGateway()?->getGateway();
-            if ($code !== 'Stripe' && $tx->getGateway()?->getId() !== $invoice->getGateway()?->getId()) {
+            if ($tx->getGateway()?->getId() !== $invoice->getGateway()?->getId()) {
                 continue;
             }
-            if (!str_starts_with($txnId, 'pi_') && !str_starts_with($txnId, 'ch_') && !str_starts_with($txnId, 'in_')) {
+            if (in_array($code, ['PayPalEmail', 'PayPalAutoPay'], true)) {
+                if (!in_array($tx->getType(), ['paypal_rest', 'paypal_nvp', 'web_accept', 'subscr_payment', 'recurring_payment'], true)
+                    || strcasecmp((string) $tx->getTxnStatus(), 'completed') !== 0 || (float) $tx->getAmount() <= 0) {
+                    continue;
+                }
+            } elseif (!str_starts_with($txnId, 'pi_') && !str_starts_with($txnId, 'ch_') && !str_starts_with($txnId, 'in_')) {
                 continue;
             }
 
@@ -3560,9 +3823,9 @@ class Service implements InjectionAwareInterface
      * anything, mirroring how refundInvoice prices the note it is about to
      * create (negative line prices plus tax on taxed lines).
      */
-    private function previewRefundAmount(Invoice $invoice, ?array $items): float
+    private function previewRefundAmount(Invoice $invoice, ?array $items, ?array $customLine = null): float
     {
-        $creditLines = $this->resolveRefundLines($invoice, $items);
+        $creditLines = $this->resolveRefundLines($invoice, $items, $customLine);
         $subtotal = 0.0;
         $taxable = 0.0;
         foreach ($creditLines as [$item, $qty]) {
@@ -3584,21 +3847,27 @@ class Service implements InjectionAwareInterface
      * Canonical fingerprint of the refunded lines for the gateway refund's
      * idempotency key. Keys are strings here (form posts decode quantities
      * as strings) while the API also accepts ints, so both normalize to
-     * the same value.
+     * the same value. A custom line contributes its amount and title, so a
+     * repeated partial for a different amount never shares a key.
      */
-    private function refundItemsFingerprint(?array $items): string
+    private function refundItemsFingerprint(?array $items, ?array $customLine = null): string
     {
-        if (empty($items)) {
-            return 'full';
-        }
-        $pairs = [];
-        foreach ($items as $id => $qty) {
-            $pairs[(int) $id] = (int) $qty;
-        }
-        ksort($pairs);
         $parts = [];
-        foreach ($pairs as $id => $qty) {
-            $parts[] = $id . ':' . $qty;
+        if (!empty($items)) {
+            $pairs = [];
+            foreach ($items as $id => $qty) {
+                $pairs[(int) $id] = (int) $qty;
+            }
+            ksort($pairs);
+            foreach ($pairs as $id => $qty) {
+                $parts[] = $id . ':' . $qty;
+            }
+        }
+        if ($customLine !== null) {
+            $parts[] = 'custom:' . number_format($customLine['amount'], 2, '.', '') . ':' . $customLine['title'];
+        }
+        if ($parts === []) {
+            return 'full';
         }
 
         return implode(',', $parts);
@@ -3626,14 +3895,70 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * Validate the optional arbitrary-amount custom line for a refund. The
+     * amount is tax-exempt: gross reversal amounts carry no new tax.
+     *
+     * @return ?array{title: string, amount: float}
+     */
+    private function resolveCustomRefundLine(mixed $customLine): ?array
+    {
+        if ($customLine === null) {
+            return null;
+        }
+        if (!is_array($customLine)) {
+            throw new InformationException('Custom refund line is invalid.');
+        }
+        $title = trim((string) ($customLine['title'] ?? ''));
+        if ($title === '') {
+            throw new InformationException('Custom refund line needs a title.');
+        }
+        if (mb_strlen($title) > 255) {
+            throw new InformationException('Custom refund line title is too long.');
+        }
+        $amount = PriceValidator::validateAmount($customLine['amount'] ?? 0, 'Amount');
+        $amount = round($amount, 2);
+        if ($amount <= 0) {
+            throw new InformationException('Custom refund line needs an amount greater than zero.');
+        }
+
+        return ['title' => $title, 'amount' => $amount];
+    }
+
+    /**
      * Resolve which lines a refund credits: every line at its remaining
      * quantity when no selection is given, otherwise the selected
-     * line/quantity pairs validated against their remainders.
+     * line/quantity pairs validated against their remainders. A custom line
+     * stands alone: it references no source line, consumes no line quantity,
+     * and counts toward the remaining refundable amount through the
+     * invoice's refund total below.
      *
      * @return list<array{InvoiceItem, int}>
      */
-    private function resolveRefundLines(Invoice $invoice, ?array $items): array
+    private function resolveRefundLines(Invoice $invoice, ?array $items, ?array $customLine = null): array
     {
+        if ($customLine !== null) {
+            if (!empty($items)) {
+                throw new InformationException('Custom refund line cannot be combined with line selection.');
+            }
+            $remaining = round($this->getTotalWithTax($invoice) - (float) ($invoice->getRefund() ?? 0), 2);
+            if ($remaining <= 0.005) {
+                throw new InformationException('No remaining refundable amount on this invoice');
+            }
+            if ($customLine['amount'] - $remaining > 0.005) {
+                throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);
+            }
+            $synthetic = (new InvoiceItem())
+                ->setType(InvoiceItem::TYPE_CUSTOM)
+                ->setTask(InvoiceItem::TASK_VOID)
+                ->setStatus(InvoiceItem::STATUS_EXECUTED)
+                ->setTitle($customLine['title'])
+                ->setQuantity(1)
+                ->setPrice($customLine['amount'])
+                ->setTaxed(false);
+
+            return [[$synthetic, 1]];
+        }
+
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
         $credited = $this->getCreditedQuantities($invoice);
 
@@ -3750,7 +4075,9 @@ class Service implements InjectionAwareInterface
 
     /**
      * Quantities already credited per source line across all credit notes
-     * issued against the given invoice.
+     * issued against the given invoice. Custom lines reference no source
+     * line and are skipped here; their amounts count toward the invoice's
+     * refund total instead.
      *
      * @return array<int, int> source line id => credited quantity
      */
@@ -5044,6 +5371,10 @@ class Service implements InjectionAwareInterface
             }
 
             if ($requireNoPaidLinkedOrder) {
+                // A clearing payment can arrive while cleanup waits for the invoice lock.
+                if (PendingPayments::forInvoice($connection, (int) $model->getId()) !== null) {
+                    return false;
+                }
                 /** @var OrderRepository $orderRepository */
                 $orderRepository = $entityManager->getRepository(Order::class);
                 foreach ($linkedOrderIds as $orderId) {
@@ -6141,7 +6472,7 @@ class Service implements InjectionAwareInterface
         });
     }
 
-    private function invoiceHasDeletionHold(Invoice $invoice): bool
+    public function invoiceHasDeletionHold(Invoice $invoice): bool
     {
         $connection = $this->di['em']->getConnection();
         $orderLinks = $connection->fetchAllAssociative(
@@ -6186,6 +6517,19 @@ class Service implements InjectionAwareInterface
 
         if ($invoice->getStatus() === Invoice::STATUS_PAID) {
             throw new InformationException('This invoice is already paid', [], 403);
+        }
+
+        // A bank debit still clearing pays this invoice: starting another
+        // payment now would charge the client twice. Matches the invoice
+        // page, which hides the payment form while a payment is pending.
+        if (PendingPayments::forInvoice($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+            throw new InformationException('A payment for this invoice is still clearing', [], 403);
+        }
+
+        // A provider timeout can leave only the durable attempt, with no
+        // transaction yet. Require reconciliation before starting any checkout.
+        if (GatewayChargeAttempts::pending($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+            throw new InformationException('A previous payment attempt needs reconciliation before another payment can be started', [], 403);
         }
 
         if ($this->invoiceHasDeletionHold($invoice)) {

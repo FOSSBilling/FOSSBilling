@@ -214,7 +214,7 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           mkdir -p ../dist
-          zip -qr "../dist/FOSSBilling-${RELEASE_VERSION}.zip" .
+          zip -qr "../dist/FOSSBilling-${RELEASE_VERSION}.zip" . -x '.update-lock' '.update-extraction-pending' 'data/uploads/.update-runtime.lock' 'data/update-finalization.*' 'config.php' 'config.old.php'
 
           echo "FOSSBILLING_RELEASE_DIGEST=sha256:$(sha256sum "../dist/FOSSBilling-${RELEASE_VERSION}.zip" | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./release-tree

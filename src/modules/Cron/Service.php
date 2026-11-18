@@ -103,11 +103,13 @@ class Service
                 'invoice_batch_generate',
                 'invoice_batch_send_reminders',
                 'invoice_batch_invoke_due_event',
+                'invoice_batch_charge_saved_cards',
                 'order_batch_send_suspension_warnings',
                 'order_batch_process_cancel_requests',
                 'order_batch_suspend_expired',
                 'order_batch_cancel_suspended',
                 'order_batch_cancel_unpaid',
+                'order_batch_process_cancel_requests',
                 'support_batch_ticket_auto_close',
                 'client_batch_expire_password_reminders',
                 'cart_batch_expire',
@@ -141,6 +143,15 @@ class Service
             $this->di['logger']->withChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
             $this->di['event_dispatcher']->dispatch(new AfterAdminCronRunEvent());
+
+            // Delivery may close Doctrine's manager after a failed flush. Run it
+            // last so that failure cannot prevent unrelated cron tasks.
+            try {
+                $this->_exec($api, 'support_batch_ticket_retry_close_events');
+            } catch (\Throwable $exception) {
+                $failedTasks[] = 'support_batch_ticket_retry_close_events';
+                $this->di['logger']->withChannel('cron')->error('Failed to retry support close events: {exception}', ['exception' => $exception]);
+            }
 
             if ($failedTasks !== []) {
                 $this->di['logger']->withChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');

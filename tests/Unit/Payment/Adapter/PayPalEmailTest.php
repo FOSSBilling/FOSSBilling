@@ -1964,3 +1964,22 @@ test('a PayPal subscription retry retains the signed original and selected renew
     ], 2);
     expect($transaction->getOriginalInvoiceId())->toBe(16)->and($transaction->getInvoice())->toBe($renewal);
 });
+
+test('PayPal refunds send the durable request id and accept a replay response', function (): void {
+    $token = Mockery::mock();
+    $token->shouldReceive('getStatusCode')->andReturn(200);
+    $token->shouldReceive('toArray')->with(false)->andReturn(['access_token' => 'token']);
+    $refund = Mockery::mock();
+    $refund->shouldReceive('getStatusCode')->andReturn(200);
+    $refund->shouldReceive('toArray')->with(false)->andReturn(['id' => 'refund-1']);
+    $http = Mockery::mock();
+    $http->shouldReceive('request')->once()->with('POST', Mockery::pattern('/oauth2\/token$/'), Mockery::any())->andReturn($token);
+    $http->shouldReceive('request')->once()->with('POST', Mockery::pattern('/captures\/capture-1\/refund$/'), Mockery::on(fn (array $options): bool => ($options['headers']['PayPal-Request-Id'] ?? '') === str_repeat('a', 32)))->andReturn($refund);
+    $di = container();
+    $di['http_client'] = $http;
+    $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com', 'api_client_id' => 'client', 'api_secret' => 'secret']);
+    $adapter->setDi($di);
+
+    expect($adapter->refundPayment('capture-1', 10.0, 'USD', ['attempt' => str_repeat('a', 32)]))->toBe('refund-1');
+    expect(fn () => $adapter->refundPayment('capture-1', 10.0, 'USD'))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'durable refund attempt');
+});

@@ -24,7 +24,7 @@ use FOSSBilling\Core\Doctrine\TimestampTrait;
  */
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\PayGatewayCustomerRepository::class)]
 #[ORM\Table(name: 'pay_gateway_customer')]
-#[ORM\UniqueConstraint(name: 'pay_gateway_customer_gateway_client', columns: ['pay_gateway_id', 'client_id'])]
+#[ORM\UniqueConstraint(name: 'pay_gateway_customer_gateway_client_mode', columns: ['pay_gateway_id', 'client_id', 'test_mode'])]
 #[ORM\HasLifecycleCallbacks]
 class PayGatewayCustomer implements TimestampInterface
 {
@@ -47,8 +47,34 @@ class PayGatewayCustomer implements TimestampInterface
     #[ORM\Column(name: 'client_id', type: Types::BIGINT)]
     private ?int $clientId = null;
 
+    // Part of the row's identity, not just informational: a gateway's test
+    // and live API keys are two entirely separate customer namespaces (same
+    // PayGateway row, since test_mode is just a config toggle on it). Without
+    // this, flipping a gateway between test and live mode would look up - and
+    // then try to charge - a customer ID that only exists in the other one.
+    #[ORM\Column(name: 'test_mode', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $testMode = false;
+
     #[ORM\Column(name: 'external_customer_id', type: Types::STRING, length: 255)]
     private ?string $externalCustomerId = null;
+
+    // Whether this row holds the client's saved payment method for
+    // automatic charges (set up on the Payment methods page or while paying).
+    #[ORM\Column(name: 'saved_cards', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $savedCards = false;
+
+    // The saved method's ID at the gateway (Stripe payment method,
+    // PayPal billing agreement, PayTabs/eWAY token...).
+    #[ORM\Column(name: 'default_payment_method', type: Types::STRING, length: 255, nullable: true)]
+    private ?string $defaultPaymentMethod = null;
+
+    // Human label for the saved method ("Visa •••• 4242"), shown in the UI.
+    #[ORM\Column(name: 'default_card', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $defaultCard = null;
+
+    // The method saved or chosen last pays the client's invoices.
+    #[ORM\Column(name: 'auto_pay_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $autoPayAt = null;
 
     public function getId(): ?int
     {
@@ -79,6 +105,18 @@ class PayGatewayCustomer implements TimestampInterface
         return $this;
     }
 
+    public function isTestMode(): bool
+    {
+        return $this->testMode;
+    }
+
+    public function setTestMode(bool $testMode): self
+    {
+        $this->testMode = $testMode;
+
+        return $this;
+    }
+
     public function getExternalCustomerId(): ?string
     {
         return $this->externalCustomerId;
@@ -87,6 +125,54 @@ class PayGatewayCustomer implements TimestampInterface
     public function setExternalCustomerId(?string $externalCustomerId): self
     {
         $this->externalCustomerId = $externalCustomerId;
+
+        return $this;
+    }
+
+    public function hasSavedCards(): bool
+    {
+        return $this->savedCards;
+    }
+
+    public function setSavedCards(bool $savedCards): self
+    {
+        $this->savedCards = $savedCards;
+
+        return $this;
+    }
+
+    public function getDefaultPaymentMethod(): ?string
+    {
+        return $this->defaultPaymentMethod;
+    }
+
+    public function setDefaultPaymentMethod(?string $defaultPaymentMethod): self
+    {
+        $this->defaultPaymentMethod = $defaultPaymentMethod;
+
+        return $this;
+    }
+
+    public function getDefaultCard(): ?string
+    {
+        return $this->defaultCard;
+    }
+
+    public function setDefaultCard(?string $defaultCard): self
+    {
+        $this->defaultCard = $defaultCard;
+
+        return $this;
+    }
+
+    public function getAutoPayAt(): ?\DateTimeImmutable
+    {
+        return $this->autoPayAt;
+    }
+
+    public function setAutoPayAt(?\DateTimeImmutable $autoPayAt): self
+    {
+        $this->autoPayAt = $autoPayAt;
 
         return $this;
     }

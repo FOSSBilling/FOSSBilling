@@ -78,7 +78,12 @@
                                     </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Status'|trans }}:</td>
-                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}
+                                        {% if invoice.pending_payment|default(null) %}
+                                            <span class="badge bg-info-lt">{{ 'Payment pending'|trans }}</span>
+                                            <div class="text-secondary small">{{ 'A bank payment of :amount from :date is clearing.'|trans({':amount': invoice.pending_payment.amount|format_currency(invoice.pending_payment.currency|upper), ':date': invoice.pending_payment.created_at|format_date}) }}</div>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% if invoice.credit_note_for_invoice_id %}
                                 <tr>
@@ -311,6 +316,62 @@
                                 onMarkPaidGatewayChange(gatewaySelect);
                             }
                         </script>
+                        {% endif %}
+
+                        {% set saved_card = admin.invoice_card_get({ id: invoice.id }) %}
+                        {% if saved_card %}
+                        <a class="btn btn-primary" title="{{ saved_card }}" {{ fb_api_link({href: 'invoice/card_charge'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Charge :card?'|trans({':card': saved_card})}, message: 'The payment was taken.'|trans, reload: true}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use href="#credit-card" />
+                            </svg>
+                            <span>{{ 'Charge saved method'|trans }}</span>
+                        </a>
+                        {% endif %}
+
+                        {% if has_permission('invoice', 'manage_invoices') %}
+                            {% set refund_attempt = admin.invoice_refund_attempt_get({ id: invoice.id }) %}
+                            {% if refund_attempt %}
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#reconcileRefundModal">{{ 'Reconcile PayPal refund'|trans }}</button>
+                            <div class="modal fade" id="reconcileRefundModal" tabindex="-1" aria-labelledby="reconcileRefundLabel" aria-hidden="true">
+                                <div class="modal-dialog"><div class="modal-content">
+                                    <div class="modal-header"><h5 class="modal-title" id="reconcileRefundLabel">{{ 'Reconcile PayPal refund'|trans }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button></div>
+                                    <div class="modal-body">
+                                        <p>{{ 'Check the payment and refund in PayPal before choosing an outcome. A wrong choice can cause a duplicate refund or an incorrect credit note.'|trans }}</p>
+                                        <p>{{ 'Attempt started:'|trans }} {{ refund_attempt.created_at }}</p>
+                                        <form method="post" action="{{ 'invoice/refund_attempt_reconcile'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                                            <input type="hidden" name="id" value="{{ invoice.id }}"><input type="hidden" name="attempt_id" value="{{ refund_attempt.id }}"><input type="hidden" name="outcome" value="not_refunded">
+                                            <label class="form-check"><input class="form-check-input" type="checkbox" name="verified" value="1" required><span class="form-check-label">{{ 'I checked PayPal and confirmed no refund was issued.'|trans }}</span></label>
+                                            <button type="submit" class="btn btn-outline-warning mt-2">{{ 'Mark as not refunded'|trans }}</button>
+                                        </form>
+                                        {% if invoice.status == 'paid' %}
+                                        <hr>
+                                        <form method="post" action="{{ 'invoice/refund_attempt_reconcile'|api_url }}" {{ fb_api_form({reload: true}) }} data-reconcile-form>
+                                            <input type="hidden" name="id" value="{{ invoice.id }}"><input type="hidden" name="attempt_id" value="{{ refund_attempt.id }}"><input type="hidden" name="outcome" value="refunded">
+                                            <label class="form-label" for="reconcile-refund-id">{{ 'PayPal refund transaction ID'|trans }}</label>
+                                            <input class="form-control mb-3" id="reconcile-refund-id" name="refund_id" maxlength="255" required>
+                                            <label class="form-label" for="reconcile-selection">{{ 'Original refund selection'|trans }}</label>
+                                            <select class="form-select mb-2" id="reconcile-selection" name="selection"><option value="full">{{ 'Full refund'|trans }}</option><option value="partial">{{ 'Selected lines'|trans }}</option></select>
+                                            <p class="text-secondary">{{ 'For a partial refund, select exactly the lines and quantities sent in the original attempt, including any selected lines with a zero quantity.'|trans }}</p>
+                                            {% for item in invoice.lines %}
+                                            <div class="d-flex gap-2 align-items-center mb-2">
+                                                <input type="checkbox" class="form-check-input" data-reconcile-line aria-label="{{ 'Include line'|trans }} {{ item.title }}">
+                                                <span class="flex-grow-1">{{ item.title }}</span>
+                                                <input type="number" class="form-control w-auto" name="items[{{ item.id }}]" value="0" min="0" max="{{ item.remaining_quantity|default(item.quantity) }}" disabled>
+                                            </div>
+                                            {% endfor %}
+                                            <label class="form-check mt-3"><input class="form-check-input" type="checkbox" name="verified" value="1" required><span class="form-check-label">{{ 'I checked PayPal and confirmed this refund was issued.'|trans }}</span></label>
+                                            <button type="submit" class="btn btn-primary mt-2">{{ 'Record returned refund'|trans }}</button>
+                                        </form>
+                                        <script>
+                                            document.querySelectorAll('[data-reconcile-form] [data-reconcile-line]').forEach((box) => {
+                                                box.addEventListener('change', () => { box.parentElement.querySelector('input[type=number]').disabled = !box.checked; });
+                                            });
+                                        </script>
+                                        {% endif %}
+                                    </div>
+                                </div></div>
+                            </div>
+                            {% endif %}
                         {% endif %}
 
                         {% if invoice.status == 'paid' %}

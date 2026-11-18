@@ -895,6 +895,19 @@ test('accepts and stops a cancellation request', function (): void {
     expect($api->cancel_request_stop(['id' => 4]))->toBeTrue();
 });
 
+test('runs the cancellation request cron batch', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $cancelService = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancelService->shouldReceive('runAutoProcess')->once()->andReturn(true);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancelService]));
+    $api->setDi($di);
+
+    expect($api->batch_process_cancel_requests([]))->toBeTrue();
+});
+
 test('cancellation actions reject malformed request ids before invoking the service', function (mixed $id): void {
     $api = apiEndpoint(new Admin());
     $cancel = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);

@@ -168,6 +168,31 @@ function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleReposit
         ->with(SupportTicketMessageHistory::class)
         ->byDefault()
         ->andReturn($supportTicketMessageHistoryRepo);
+    $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('refresh')->byDefault();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $records = [];
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') || str_starts_with($sql, 'SELECT support_ticket_id') || str_starts_with($sql, 'SELECT id FROM support_ticket') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('delete')->byDefault()->andReturn(0);
+    $connection->shouldReceive('insert')->byDefault()->andReturnUsing(function (string $table, array $data) use (&$records): int {
+        $records[$data['id']] = $data;
+
+        return 1;
+    });
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturnUsing(function (string $sql, array $params) use (&$records): array|false { return $records[$params[0]] ?? false; });
+    $connection->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+    $connection->shouldReceive('update')->byDefault()->andReturn(1);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
+    $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
+}
+
+function supportWireSecretSchema(Mockery\MockInterface $connection): void
+{
+    $schema = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schema->shouldReceive('tablesExist')->byDefault()->andReturnTrue();
+    $connection->shouldReceive('createSchemaManager')->byDefault()->andReturn($schema);
 }
 
 /*
@@ -1830,10 +1855,7 @@ test('guest ticket reply', function (): void {
         $steps[] = 'flush';
     });
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $events = [];
     $dispatcher = new EventDispatcher();
@@ -1882,11 +1904,12 @@ test('ticket update', function (): void {
     $data = [
         'status' => SupportTicket::STATUS_OPEN,
         'subject' => 'Subject',
-        'priority' => 1,
+        'priority' => 'high',
     ];
 
     $result = $service->ticketUpdate($ticket, $data);
     expect($result)->toBeTrue();
+    expect($ticket->getPriority())->toBe(150);
 });
 
 test('ticket message update', function (): void {
@@ -2031,10 +2054,7 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
         $steps[] = 'replied';
     });
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $di = container();
     $di['em'] = $emMock;
@@ -2046,7 +2066,7 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);
 
-    $result = $service->ticketReply($ticket, $identity, 'Content');
+    $result = withoutPhpWarnings(fn () => $service->ticketReply($ticket, $identity, 'Content'));
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
     expect($events)->toHaveCount(1);
@@ -2086,10 +2106,7 @@ test('ticket create for admin', function (): void {
         $steps[] = 'opened';
     });
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $di = container();
     $di['em'] = $emMock;
@@ -2107,7 +2124,9 @@ test('ticket create for admin', function (): void {
         'content' => 'Content',
     ];
 
-    $result = $service->ticketCreateForAdmin(1, $helpdesk, $data, $admin);
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $fn) => $fn());
+
+    $result = withoutPhpWarnings(fn () => $service->ticketCreateForAdmin(1, $helpdesk, $data, $admin));
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
     expect($events)->toHaveCount(2);
@@ -2198,6 +2217,8 @@ test('ticket create for client', function (): void {
         'content' => 'content',
     ];
 
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $fn) => $fn());
+
     $result = $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
@@ -2216,7 +2237,8 @@ test('guest ticket creation uses values from the typed before event', function (
     $service = new Service();
     $helpdesk = helpdeskFixture();
     $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
-    $helpdeskRepo->shouldReceive('getDefault')->once()->andReturn($helpdesk);
+    $helpdeskRepo->shouldReceive('getPairs')->once()->andReturn([(int) $helpdesk->getId() => 'Support']);
+    $helpdeskRepo->shouldReceive('find')->once()->andReturn($helpdesk);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
@@ -2238,8 +2260,7 @@ test('guest ticket creation uses values from the typed before event', function (
         $steps[] = 'flush';
     });
 
-    $requestMock = Mockery::mock(Symfony\Component\HttpFoundation\Request::class);
-    $requestMock->shouldReceive('getClientIp')->twice()->andReturn('198.51.100.20');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('http://localhost/', server: ['REMOTE_ADDR' => '198.51.100.20']);
     $extensionService = Mockery::mock();
     $extensionService->shouldReceive('getConfig')->once()->with('mod_support')->andReturn([]);
 
@@ -2272,6 +2293,8 @@ test('guest ticket creation uses values from the typed before event', function (
         'subject' => 'Original subject',
         'content' => 'Original message',
     ];
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $fn) => $fn());
+
     $accessHash = $service->ticketCreateForGuest($data);
 
     expect($accessHash)->toBeString()->not->toBeEmpty();
@@ -2484,10 +2507,7 @@ test('message create for ticket', function (Box\Mod\Staff\Entity\Admin|Client $i
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']);
 
     $di = container();
     $di['em'] = $emMock;
@@ -2498,7 +2518,7 @@ test('message create for ticket', function (Box\Mod\Staff\Entity\Admin|Client $i
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);
 
-    $result = $service->messageCreateForTicket($ticket, $identity, 'Content');
+    $result = withoutPhpWarnings(fn () => $service->messageCreateForTicket($ticket, $identity, 'Content'));
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 })->with('messageCreateForTicketProvider');
@@ -2688,4 +2708,135 @@ test('batch ticket list falls back to a guest author when the client is missing'
         'email' => 'gone@example.com',
         'role' => 'guest',
     ]);
+});
+
+test('ticket reply rejects content over the length limit', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    $ticket = new SupportTicket();
+
+    expect(fn (): int => $service->ticketReply($ticket, new FOSSBilling\Core\Identity\Guest(), str_repeat('x', 100001)))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most');
+});
+
+test('close ticket is idempotent without resending events', function (): void {
+    $service = new Service();
+
+    $ticket = new SupportTicket();
+    $ticket->setStatus(SupportTicket::STATUS_CLOSED);
+    setEntityId($ticket, 1);
+
+    $dispatcher = new EventDispatcher();
+    $dispatched = [];
+    $dispatcher->addListener(AfterTicketClosedEvent::class, function () use (&$dispatched): void {
+        $dispatched[] = true;
+    });
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('fetchOne')->andReturn(SupportTicket::STATUS_CLOSED);
+    $connection->shouldReceive('delete')->andReturn(0);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($em);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $dispatcher;
+    $service->setDi($di);
+
+    expect($service->closeTicket($ticket, Tests\Helpers\admin()))->toBeTrue();
+    expect($dispatched)->toBeEmpty();
+});
+
+test('closing a ticket purges its secrets', function (): void {
+    $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $deleted = [];
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $connection->shouldReceive('insert')->byDefault()->andReturn(1);
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') || str_starts_with($sql, 'SELECT support_ticket_id') || str_starts_with($sql, 'SELECT id FROM support_ticket') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('delete')->andReturnUsing(function (string $table) use (&$deleted): int {
+        $deleted[] = $table;
+
+        return 0;
+    });
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['event_dispatcher'] = new EventDispatcher();
+    $service->setDi($di);
+
+    $ticket = new SupportTicket();
+    setEntityId($ticket, 1);
+
+    expect($service->closeTicket($ticket, Tests\Helpers\admin()))->toBeTrue();
+    expect($deleted)->toContain('support_ticket_secret');
+});
+
+test('removing a ticket cleans its pins, assignment, ratings, feedback and merge rows', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $model = new SupportTicket();
+    setEntityId($model, 60);
+
+    $deleted = [];
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    supportWireSecretSchema($connection);
+    $connection->shouldReceive('insert')->byDefault()->andReturn(1);
+    $connection->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturnFalse();
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturnUsing(fn (string $sql): mixed => str_contains($sql, 'support_ticket_close_event') ? false : (str_starts_with($sql, 'SELECT 1 FROM support_ticket st') || str_starts_with($sql, 'SELECT support_ticket_id') || str_starts_with($sql, 'SELECT id FROM support_ticket') ? 1 : SupportTicket::STATUS_OPEN));
+    $connection->shouldReceive('getDatabasePlatform')->byDefault()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('delete')->andReturnUsing(function (string $table, array $where) use (&$deleted): int {
+        $deleted[] = $table . ':' . json_encode($where);
+
+        return 0;
+    });
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+    $emMock->shouldReceive('remove')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect($service->rm($model))->toBeTrue();
+    foreach (['support_ticket_pin', 'support_ticket_assignment', 'support_ticket_message_rating', 'support_ticket_feedback', 'support_ticket_feedback_request'] as $table) {
+        expect($deleted)->toContain($table . ':{"ticket_id":60}');
+    }
+    expect($deleted)->toContain('support_ticket_merge:{"ticket_id":60}');
+    expect($deleted)->toContain('support_ticket_merge:{"merged_into":60}');
+});
+
+test('a retried close email uses its stored admin and propagates delivery failure', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $ticket = createEntity(SupportTicket::class, ['id' => 10]);
+    $admin = Tests\Helpers\admin(['id' => 7]);
+    $service->shouldReceive('getTicketById')->once()->with(10)->andReturn($ticket);
+    $service->shouldReceive('toApiArray')->once()->with($ticket, true, $admin)->andReturn([]);
+    $email = Mockery::mock(EmailService::class);
+    $email->shouldReceive('sendTemplate')->once()->andThrow(new RuntimeException('mail queue unavailable'));
+    $di = container();
+    $adminRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepo->shouldReceive('find')->once()->with(7)->andReturn($admin);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\Admin::class)->andReturn($adminRepo);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['support' => $service, 'email' => $email]));
+    $service->setDi($di);
+
+    expect(fn () => $service->notifyTicketClosed(new AfterTicketClosedEvent(10, TicketActorRole::ADMIN, 7)))
+        ->toThrow(RuntimeException::class, 'mail queue unavailable');
 });

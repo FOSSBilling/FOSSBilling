@@ -54,6 +54,7 @@ require_once __DIR__ . '/../src/vendor/autoload.php';
 
 // Load test helpers
 require_once __DIR__ . '/Helpers/Container.php';
+require_once __DIR__ . '/Helpers/Database.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
 require_once __DIR__ . '/Helpers/Zip.php';
@@ -131,6 +132,26 @@ function withAppEnv(?string $value, callable $callback): mixed
         return $callback();
     } finally {
         putenv($previous === false ? 'APP_ENV' : 'APP_ENV=' . $previous);
+    }
+}
+
+/** Run an operation without PHP warnings, including warnings swallowed by its error handling. */
+function withoutPhpWarnings(callable $callback): mixed
+{
+    $warnings = [];
+    set_error_handler(static function (int $severity, string $message, string $file, int $line) use (&$warnings): bool {
+        if ((error_reporting() & $severity) !== 0) {
+            $warnings[] = sprintf('%s in %s:%d', $message, $file, $line);
+        }
+
+        return true;
+    }, E_WARNING | E_NOTICE | E_USER_WARNING | E_USER_NOTICE);
+
+    try {
+        return $callback();
+    } finally {
+        restore_error_handler();
+        expect($warnings)->toBe([], implode("\n", $warnings));
     }
 }
 

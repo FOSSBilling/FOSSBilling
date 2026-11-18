@@ -354,8 +354,11 @@ class InvoiceRepository extends EntityRepository
             ->andWhere('i.status = :status')
             ->andWhere('i.dueAt IS NOT NULL')
             ->andWhere('DATE_DIFF(CURRENT_TIMESTAMP(), i.dueAt) > :days')
+            // Nor an invoice whose bank debit is clearing: its orders are kept with it.
+            ->andWhere("NOT EXISTS (SELECT 1 FROM Box\\Mod\\Invoice\\Entity\\Transaction pp WHERE pp.invoice = i AND pp.status = 'received' AND pp.txnStatus = 'processing' AND pp.createdAt > :pending_since)")
             ->setParameter('status', Invoice::STATUS_UNPAID)
             ->setParameter('days', $days)
+            ->setParameter('pending_since', new \DateTimeImmutable('-21 days'))
             ->getQuery()
             ->getResult();
     }

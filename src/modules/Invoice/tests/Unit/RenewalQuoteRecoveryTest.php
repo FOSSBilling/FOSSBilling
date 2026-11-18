@@ -21,6 +21,7 @@ test('domain quotes retain provenance and reuse an already-funded pending renewa
     $em->flush();
     $service = gatewayDepositTestService($em);
     $products = Mockery::mock(Box\Mod\Product\Service::class);
+    $products->shouldReceive('hasFreeDomainRenewal')->atLeast()->once()->andReturnFalse();
     $products->shouldReceive('findProductById')->with(5)->andReturn((new Product())->setType('domain'));
     $products->shouldReceive('getProductRenewalLineConfig')->andReturn(['price' => $quote, 'quantity' => 1]);
     $products->shouldReceive('hasFreeDomainRenewal')->with($order->getId())->andReturn(false);
@@ -746,7 +747,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $subscriptions = new Box\Mod\Invoice\ServiceSubscription();
     $subscriptions->setDi($di);
     $gateways = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
-    $gateways->shouldReceive('getPaymentAdapter')->with($gateway)->andReturn($adapter);
+    $gateways->shouldReceive('getPaymentAdapter')->with(Mockery::on(fn (Box\Mod\Invoice\Entity\PayGateway $candidate): bool => $candidate->getId() === $gateway->getId()))->andReturn($adapter);
     $orders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
     $orders->setDi($di);
     $orders->shouldReceive('renewInvoiceItem')->times($renewal && !$unallocated && !in_array($failure, ['invalid request', 'persistent'], true) ? 1 : 0)->andReturn(true);
@@ -772,6 +773,14 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $callback = ['gateway_id' => $gateway->getId(), 'skip_validation' => true, 'http_raw_post_data' => $payload, 'server' => ['HTTP_STRIPE_SIGNATURE' => $sign(time())]];
     $id = $worker->create($callback);
     $tx = $em->find(Box\Mod\Invoice\Entity\Transaction::class, $id);
+    $reload = static function () use ($di, $id, &$em, &$tx, &$order, &$client, &$gateway, &$subscription): void {
+        $em = $di['em'];
+        $tx = $em->find(Box\Mod\Invoice\Entity\Transaction::class, $id);
+        $order = $em->find(Order::class, $order->getId());
+        $client = $em->find(Box\Mod\Client\Entity\Client::class, $client->getId());
+        $gateway = $em->find(Box\Mod\Invoice\Entity\PayGateway::class, $gateway->getId());
+        $subscription = $em->find(Box\Mod\Invoice\Entity\Subscription::class, $subscription->getId());
+    };
     $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $name = 'fb:cancel-request-order:' . $order->getId();
     if ($failure === 'lock') {
@@ -780,6 +789,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
 
     try {
         $worker->processAndCatchErrors($id);
+        $reload();
     } finally {
         if ($failure === 'lock') {
             FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
@@ -787,6 +797,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     }
     if ($prebuilt) {
         $worker->processAndCatchErrors($id);
+        $reload();
         expect($di['em']->isOpen())->toBeTrue()
             ->and($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
             ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBe($unallocated ? null : $draft->getId())
@@ -821,18 +832,22 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     if ($failure === 'persistent') {
         $draftId = $order->getUnpaidInvoiceId();
         $worker->processReceivedATransactions();
+        $reload();
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('received')
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
         $worker->processReceivedATransactions();
+        $reload();
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('received')
             ->and($issuanceAttempts)->toBe(3)
             ->and($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$draftId]))->toBe(Invoice::STATUS_CANCELED)
             ->and($db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBeNull();
-        $em->refresh($tx);
+        $tx = $em->find(Box\Mod\Invoice\Entity\Transaction::class, $id);
         expect($tx->getIpn()['subscription_renewal_draft_id'] ?? null)->toBe($draftId);
         $replacement = $billing->generateForOrder($order, subscriptionPayment: true);
         $worker->processReceivedATransactions();
+        $reload();
         $worker->processReceivedATransactions();
+        $reload();
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
             ->and($issuanceAttempts)->toBe(3)
             ->and($db->fetchOne("SELECT note FROM $table WHERE id = ?", [$id]))->toContain('Review the retained payment')
@@ -853,6 +868,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
         $em->flush();
 
         $worker->processReceivedATransactions();
+        $reload();
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
             ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBeNull()
             ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0)
@@ -868,6 +884,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
         $billing->shouldReceive('shouldMergeRenewalsForOrder')->andReturn(false);
         $billing->generateInvoicesForExpiringOrders();
         $worker->processReceivedATransactions();
+        $reload();
         expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(3)
             ->and((int) $db->fetchOne("SELECT COUNT(*) FROM invoice WHERE id <> ? AND status = 'paid' AND subscription_payment_draft = 0", [$original->getId()]))->toBe(1)
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
@@ -877,6 +894,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     }
 
     $worker->processReceivedATransactions();
+    $reload();
     if ($renewal) {
         expect($db->fetchOne("SELECT error FROM $table WHERE id = ?", [$id]))->toBeNull();
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')

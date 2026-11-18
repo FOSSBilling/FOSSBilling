@@ -1379,7 +1379,7 @@ test('getSoonExpiringActiveOrders excludes scheduled cancellations and paid pend
         'unpaid_invoice_id' => null,
         'client_id' => 1,
     ];
-    foreach (range(1, 6) as $orderId) {
+    foreach (range(1, 7) as $orderId) {
         $connection->insert('client_order', ['id' => $orderId] + $eligibleOrder);
     }
     $connection->insert('invoice', ['id' => 55, 'status' => Invoice::STATUS_PAID]);
@@ -1402,7 +1402,6 @@ test('getSoonExpiringActiveOrders excludes scheduled cancellations and paid pend
         'name' => Service::META_CANCEL_AT_PERIOD_END,
         'value' => '1',
     ]);
-    $connection->insert('client_order', ['id' => 7] + $eligibleOrder);
     $connection->insert('client_order_cancel_request', [
         'client_order_id' => 7,
         'client_id' => 1,
@@ -3302,9 +3301,9 @@ test('rmByClient removes all client orders', function (): void {
     $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $dbalMock->shouldReceive('fetchOne')->withArgs(fn (string $sql): bool => str_starts_with($sql, 'SELECT id FROM client_order'))->andReturn(1);
     $dbalMock->shouldReceive('fetchOne')->withArgs(fn (string $sql): bool => str_starts_with($sql, 'SELECT COALESCE'))->andReturn(false);
-    $dbalMock->shouldReceive('delete')->once()->with('client_order', ['id' => 1, 'client_id' => 100])->andReturn(1);
-    $dbalMock->shouldReceive('delete')->once()->with('client_order_cancel_request', ['client_order_id' => 1])->andReturn(1);
-    $dbalMock->shouldReceive('delete')->once()->with('client_order_cancel_request', ['client_id' => 100])->andReturn(0);
+    $dbalMock->shouldReceive('delete')->once()->with('client_order_cancel_request', ['client_order_id' => 1])->ordered()->andReturn(1);
+    $dbalMock->shouldReceive('delete')->once()->with('client_order', ['id' => 1, 'client_id' => 100])->ordered()->andReturn(1);
+    $dbalMock->shouldReceive('delete')->once()->with('client_order_cancel_request', ['client_id' => 100])->ordered()->andReturn(0);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('findByClientId')->once()->with(100)->andReturn([$orderModel]);
@@ -5416,6 +5415,74 @@ test('createOrder applies a promo code and records the discount', function (): v
     expect($capturedOrder->getPromoId())->toBe(7);
     expect($capturedOrder->isPromoRecurring())->toBeTrue();
     expect($capturedOrder->getPromoUsed())->toBe(1);
+});
+
+test('batchSuspendExpired keeps an order whose bank debit is clearing', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $order = createEntity(Order::class, ['id' => 3, 'status' => Order::STATUS_ACTIVE]);
+    $order->setExpiresAt(new DateTimeImmutable('-10 days'));
+    $service->shouldReceive('getExpiredOrders')->once()->andReturn([$order]);
+    $service->shouldNotReceive('suspendFromOrder');
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([]);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchOne')->once()->andReturn('1');
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('refresh')->once()->with($order);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $service->setDi($di);
+
+    expect($service->batchSuspendExpired())->toBeTrue();
+});
+
+test('batchCancelSuspended keeps an order whose bank debit is clearing', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $order = createEntity(Order::class, ['id' => 4, 'status' => Order::STATUS_SUSPENDED]);
+    $service->shouldNotReceive('cancelFromOrder');
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([['id' => 4, 'suspended_at' => '2026-01-01 10:00:00']]);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('fetchOne')->once()->andReturn('1');
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo = Mockery::mock(OrderRepository::class));
+    $orderRepo->shouldReceive('find')->once()->with(4)->andReturn($order);
+    $em->shouldReceive('refresh')->once()->with($order);
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_suspended' => '1', 'batch_cancel_suspended_after_days' => 1];
+        }
+    });
+    $service->setDi($di);
+
+    expect($service->batchCancelSuspended())->toBeTrue();
 });
 
 test('order deletion coordinates backend and gateway failures before local cleanup', function (string $failure, bool $force): void {

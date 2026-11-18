@@ -21,6 +21,11 @@ class Patch124 implements PatchInterface
         // per invoice missing from the journal, typed by its current state. The portable
         // backfill covers non-MySQL drivers; both skip invoices that already
         // have journal rows, so reruns are no-ops.
-        $patcher->backfillInvoiceJournal();
+        // Releases before the approval rename still have invoice.approved.
+        // applyCorePatches repeats the backfill after portable migrations and
+        // schema synchronization, when all snapshot columns are available.
+        if ($patcher->tableHasColumn('invoice', 'issued')) {
+            $patcher->backfillInvoiceJournal();
+        }
     }
 }

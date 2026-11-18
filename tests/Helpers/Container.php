@@ -29,7 +29,7 @@ function container(): Container
     ];
     $di['url'] = function (): \FOSSBilling\Core\Url {
         $url = new \FOSSBilling\Core\Url();
-        $url->setBaseUri(defined('SYSTEM_URL') ? (string) SYSTEM_URL : '/');
+        $url->setBaseUri(defined('SYSTEM_URL') ? SYSTEM_URL : '/');
 
         return $url;
     };
@@ -119,6 +119,7 @@ function container(): Container
         $queryBuilder->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
         $queryBuilder->shouldReceive('fetchOne')->byDefault()->andReturn(false);
 
+        $dbal->shouldReceive('fetchAssociative')->with(\Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), \Mockery::any())->byDefault()->andReturn(false);
         $dbal->shouldReceive('fetchAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchOne')->byDefault()->andReturn(null);

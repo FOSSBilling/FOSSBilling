@@ -77,6 +77,9 @@
             </div>
         </div>
         <div class="d-flex flex-column gap-3">
+            {% if not is_guest_ticket %}
+                {{ include('mod_support_ticket_secrets.html.twig') }}
+            {% endif %}
             {% for i, message in ticket.messages %}
                 <div class="row">
                     <div class="col-md-12">
@@ -117,6 +120,20 @@
                                         <article class="markdown-body bg-transparent text-reset" id="message-{{ message.id }}">
                                             {{ (message.content ?? '')|markdown_to_html }}
                                         </article>
+                                        {% if message.author.role|default('') == 'admin' and ticket.ratings_on|default(false) %}
+                                        <div class="mt-2 small" data-message-rating="{{ message.id }}">
+                                            {% if ticket.message_ratings[message.id]|default(null) %}
+                                            <span class="text-warning">{{ '★★★★★'|slice(0, ticket.message_ratings[message.id]) }}{{ '☆☆☆☆☆'|slice(0, 5 - ticket.message_ratings[message.id]) }}</span>
+                                            <span class="text-muted">{{ 'You rated this reply.'|trans }}</span>
+                                            {% else %}
+                                            <span class="text-muted me-1">{{ 'Rate this reply:'|trans }}</span>
+                                            {% for stars in 1..5 %}
+                                            <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" data-rate-message="{{ message.id }}" data-rate-stars="{{ stars }}" title="{{ stars }}/5">☆</button>
+                                            {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                        {{ include('mod_support_ticket_files.html.twig', { message: message }) }}
                                     </div>
                                 </div>
                             </div>
@@ -128,6 +145,9 @@
         <div>
             <div class="row">
                 <div class="col-md-12">
+                    {% if ticket.status == 'closed' and ticket.feedback_url|default('') %}
+                        <div class="mt-3 alert alert-info text-center">{{ 'How did we do?'|trans }} <a href="{{ ticket.feedback_url }}" class="alert-link">{{ 'Give Feedback'|trans }}</a></div>
+                    {% endif %}
                     {% if not can_reply %}
                         <div class="mt-3 alert alert-secondary text-center">{{ 'Ticket was closed and cannot be reopened.'|trans }}</div>
                     {% else %}
@@ -144,6 +164,9 @@
                                     {% endif %}
                                     <textarea name="content" cols="5" rows="10" class="editor-textarea form-control" required="required"
                                               id="ticket-reply-text"></textarea>
+                                    {% if not is_guest_ticket %}
+                                        {{ include('mod_support_ticket_upload.html.twig', { ticket_id: ticket.id|default('') }) }}
+                                    {% endif %}
                                     <button class="mt-2 btn btn-primary" type="submit" id="post-reply-btn"
                                             value="{{ 'Post'|trans }}"
                                             onclick="">{{ 'Post'|trans }}</button>
@@ -198,6 +221,17 @@
                 if (document.getElementById('ticket-reply-text').value.length > 0) {
                     toggleLoader();
                 }
+            });
+
+            document.querySelectorAll('[data-rate-message]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const payload = {% if is_guest_ticket %}{ hash: {{ ticket.hash|json_encode|raw }} }{% else %}{ id: {{ ticket.id|json_encode|raw }} }{% endif %};
+                    payload.message_id = btn.getAttribute('data-rate-message');
+                    payload.rating = btn.getAttribute('data-rate-stars');
+                    supportApi.post('support/ticket_message_rate', payload,
+                        () => window.location.reload(),
+                        (res) => FOSSBilling.message(`${res.message} (${res.code})`, 'error'));
+                });
             });
 
             replyToMessageBtn.forEach((reply) => {

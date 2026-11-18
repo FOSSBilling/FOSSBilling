@@ -32,7 +32,10 @@ function deletionRecoveryContext(?string $databasePath = null): array
     $config->setProxyNamespace('DeletionRecoveryTestProxies');
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
     $em = new EntityManager($connection, $config);
-    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Order::class, ClientOrderCancelRequest::class, OrderMeta::class, OrderStatus::class, ServiceLicense::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [ClientOrderCancelRequest::class, Order::class, OrderMeta::class, OrderStatus::class, ServiceLicense::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
     $license = new ServiceLicense();
     $em->persist($license);
     $em->flush();
@@ -267,6 +270,9 @@ test('failed local cleanup cannot remove the hold before the order is removed', 
     expect(fn () => $c['service']->deleteFromOrder($c['order']))->toThrow(RuntimeException::class, 'Local cleanup failed');
     expect(DeletionRecovery::getState($c['connection'], $c['order']->getId()))->toBe(DeletionRecovery::SERVICE_DELETED);
     $em = new EntityManager($c['connection'], $c['config']);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $c['di']['em'] = $em;
     $service = new Service();
     $service->setDi($c['di']);
@@ -562,6 +568,9 @@ test('MySQL checkpoint aliases respect the metadata column collation and roll ba
         $config->setProxyDir(sys_get_temp_dir());
         $config->setProxyNamespace('DeletionRecoveryTestProxies');
         $em = new EntityManager($connection, $config);
+        if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+            $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+        }
         $di = container();
         $di['em'] = $em;
         $service = new Service();
@@ -762,9 +771,13 @@ test('MySQL renewal checkpoint aliases cannot be forged overwritten or removed t
         'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
     ]);
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('RenewalAliasTestProxies');
     $em = new EntityManager($connection, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $alias = match ($form) {
         'case' => strtoupper($prefix) . '11',
         'accent' => str_replace('renewal', 'rénewal', $prefix) . '11', // cspell:ignore rénewal
@@ -802,6 +815,42 @@ test('MySQL renewal checkpoint aliases cannot be forged overwritten or removed t
     ->with(['case', 'accent', 'space'])
     ->with(['new alias' => [false, false], 'existing checkpoint' => [true, false], 'clear stored alias' => [true, true]])
     ->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+
+test('order deletion removes every cancellation request with or without foreign keys', function (string $path, bool $foreignKeys): void {
+    $c = deletionRecoveryContext();
+    $client = (new Box\Mod\Client\Entity\Client())->setEmail('erase@example.com');
+    $c['em']->persist($client);
+    $c['em']->flush();
+    $c['order']->setClientId($client->getId());
+    $otherClient = (new Box\Mod\Client\Entity\Client())->setEmail('keep@example.com');
+    $c['em']->persist($otherClient);
+    $c['em']->flush();
+    foreach (['pending', 'accepted', 'stopped', 'withdrawn'] as $status) {
+        $request = (new ClientOrderCancelRequest())->setOrder($c['order'])->setClient($client)->setStatus($status);
+        $c['em']->persist($request);
+    }
+    $otherRequest = (new ClientOrderCancelRequest())->setClient($otherClient)->setStatus('withdrawn');
+    $c['em']->persist($otherRequest);
+    $c['em']->flush();
+    if ($foreignKeys) {
+        $c['connection']->executeStatement('PRAGMA foreign_keys = ON');
+    }
+    $c['subscription']->fail = false;
+    if ($path === 'order') {
+        expect($c['service']->deleteFromOrder($c['order']))->toBeTrue();
+    } else {
+        $orphan = (new ClientOrderCancelRequest())->setClient($client)->setStatus('withdrawn');
+        $c['em']->persist($orphan);
+        $c['em']->flush();
+        $c['service']->rmByClient($client);
+        $c['em']->remove($client);
+        $c['em']->flush();
+    }
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order'))->toBe(0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order_cancel_request'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT client_id FROM client_order_cancel_request'))->toBe($otherClient->getId());
+    $c['connection']->close();
+})->with(['order', 'client'])->with([false, true]);
 
 test('request history deletion rolls back with parent removal and recovers without repeating backend deletion', function (bool $foreignKeys): void {
     $c = deletionRecoveryContext();

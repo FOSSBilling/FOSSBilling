@@ -83,8 +83,21 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
      */
     public function update($data)
     {
+        // `notes` are staff notes about the client and are not client-editable.
+        unset($data['notes']);
+
         if (!is_null($data['email'] ?? null)) {
             $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
+            // A new sign-in email needs the current password: a stolen
+            // session alone must not take the account for good.
+            $client = $this->getClientEntity();
+            if (strcasecmp((string) $data['email'], (string) $client->getEmail()) !== 0) {
+                $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', $this->getIp());
+                $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->getId());
+                if (!$this->getDi()['password']->verify((string) ($data['current_password'] ?? ''), (string) $client->getPass())) {
+                    throw new InformationException('Enter your current password to change your email address.');
+                }
+            }
         }
 
         if (array_key_exists('billing_email', $data)) {

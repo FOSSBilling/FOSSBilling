@@ -402,3 +402,371 @@ test('applying credit to a missing invoice throws', function (): void {
     expect(fn () => $api->apply_credit(['hash' => 'nope', 'amount' => 5.00]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invoice was not found');
 });
+
+describe('saved cards', function (): void {
+    test('lists the saved cards with the automatic one marked', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('bankDebit')->once()->with(7)->andReturn(false);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn($adapter);
+        $savedCards->shouldReceive('autopay')->once()->andReturn(null);
+        $savedCards->shouldReceive('paypal')->once()->andReturn(null);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter]);
+        $adapter->shouldReceive('cards')->once()->with(7)->andReturn([
+            ['id' => 'pm_1', 'card' => 'Visa •••• 4242', 'default' => true],
+            ['id' => 'pm_2', 'card' => 'Mastercard •••• 5555', 'default' => false],
+        ]);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_list())->toBe([
+            'available' => true,
+            'bank' => false,
+            'cards' => [
+                ['id' => 'pm_1', 'card' => 'Visa •••• 4242', 'default' => true],
+                ['id' => 'pm_2', 'card' => 'Mastercard •••• 5555', 'default' => false],
+            ],
+            'paypal' => null,
+            'autopay' => null,
+        ]);
+    });
+
+    test('lists no cards without an enabled Stripe gateway', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn(null);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(null);
+        $savedCards->shouldReceive('autopay')->once()->andReturn(null);
+        $savedCards->shouldReceive('paypal')->once()->andReturn(null);
+        $savedCards->shouldReceive('adapters')->once()->andReturn([]);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_list())->toBe([
+            'available' => false,
+            'bank' => false,
+            'cards' => [],
+            'paypal' => null,
+            'autopay' => null,
+        ])->and($api->card_available())->toBeFalse();
+    });
+
+    test('starts a card setup', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('cardSetup')->once()->with(7)->andReturn(['client_secret' => 'secret_x', 'pub_key' => 'pk_x']);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_setup())->toBe(['client_secret' => 'secret_x', 'pub_key' => 'pk_x']);
+    });
+
+    test('refuses card actions without an enabled Stripe gateway', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->andReturn(null);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect(fn () => $api->card_setup())->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Saved cards are not available.');
+    });
+
+    test('keeps, defaults and removes cards', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('cardAdded')->once()->with(7, 'seti_x');
+        $adapter->shouldReceive('cardDefault')->once()->with(7, 'pm_x');
+        $adapter->shouldReceive('cardRemove')->once()->with(7, 'pm_x');
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_added(['setup_intent' => 'seti_x']))->toBeTrue()
+            ->and($api->card_default(['id' => 'pm_x']))->toBeTrue()
+            ->and($api->card_remove(['id' => 'pm_x']))->toBeTrue();
+    });
+
+    test('records the save choice for an unpaid invoice', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $invoice = createEntity(Invoice::class, ['id' => 60]);
+        $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('findOneBy')->once()->with(['hash' => 'abc', 'clientId' => 7, 'status' => Invoice::STATUS_UNPAID])->andReturn($invoice);
+
+        $gateway = createEntity(Box\Mod\Invoice\Entity\PayGateway::class, ['id' => 5, 'gateway' => 'Stripe']);
+        $gatewayRepo = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+        $gatewayRepo->shouldReceive('findOneBy')->once()->with(['id' => 5, 'gateway' => 'Stripe', 'enabled' => true])->andReturn($gateway);
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('cardSaveChoice')->once()->with(7, 60, 'pi_x', true, false);
+        $payGatewayService = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\PayGateway::class)->andReturn($gatewayRepo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $payGatewayService]));
+        $api->setDi($di);
+
+        expect($api->card_save_choice(['hash' => 'abc', 'gateway_id' => 5, 'intent' => 'pi_x', 'save' => 1]))->toBeTrue();
+    });
+
+    test('refuses the save choice for a paid invoice', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('findOneBy')->once()->andReturn(null);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $api->setDi($di);
+
+        expect(fn () => $api->card_save_choice(['hash' => 'abc', 'gateway_id' => 5, 'intent' => 'pi_x']))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'already paid or cancelled');
+    });
+});
+
+describe('paypal autopay', function (): void {
+    test('lists the billing agreement with the automatic one marked', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $stripe = Mockery::mock(Payment_Adapter_Stripe::class);
+        $stripe->shouldReceive('cards')->once()->with(7)->andReturn([]);
+        $stripe->shouldReceive('bankDebit')->once()->with(7)->andReturn(false);
+
+        $autopay = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $autopay->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'B-1', 'card' => 'PayPal buyer@example.com', 'auto_pay_at' => '2026-01-05 10:00:00']);
+        $autopay->shouldReceive('option')->once()->with('save_only')->andReturn(true);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn($stripe);
+        $savedCards->shouldReceive('autopay')->once()->andReturn($autopay);
+        $savedCards->shouldReceive('paypal')->once()->andReturn(null);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $autopay]);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_list())->toBe([
+            'available' => true,
+            'bank' => false,
+            'cards' => [],
+            'paypal' => null,
+            'autopay' => ['account' => 'PayPal buyer@example.com', 'default' => true, 'add' => true],
+        ]);
+    });
+
+    test('makes the billing agreement the automatic method', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'B-1', 'card' => 'PayPal x@y.zz', 'auto_pay_at' => 'x']);
+        $adapter->shouldReceive('gatewayId')->once()->andReturn(5);
+        $adapter->shouldReceive('testMode')->once()->andReturn(true);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
+        $savedCards->shouldReceive('choose')->once()->with(5, true, 7);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->autopay_default())->toBeTrue();
+    });
+
+    test('refuses to make a missing agreement the automatic method', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(null);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
+        $savedCards->shouldNotReceive('choose');
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect(fn () => $api->autopay_default())
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no PayPal billing agreement');
+    });
+
+    test('removes the billing agreement', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('agreementRemove')->once()->with(7);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->autopay_remove())->toBeTrue();
+    });
+
+    test('pays an invoice at once with the billing agreement', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('option')->once()->with('pay_saved')->andReturn(true);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'B-1', 'card' => 'PayPal x@y.zz', 'auto_pay_at' => 'x']);
+
+        $invoice = createEntity(Invoice::class, ['id' => 60]);
+        $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('findOneBy')->once()->with(['hash' => 'abc', 'clientId' => 7, 'status' => Invoice::STATUS_UNPAID])->andReturn($invoice);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
+        $savedCards->shouldReceive('charge')->once()->with($invoice, $adapter, true, true)->andReturn(['paid' => true, 'error' => null]);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->autopay_pay(['hash' => 'abc']))->toBe(['paid' => true, 'message' => '']);
+    });
+
+    test('refuses to pay without a saved agreement', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('option')->once()->with('pay_saved')->andReturn(true);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(null);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('autopay')->once()->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect(fn () => $api->autopay_pay(['hash' => 'abc']))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'cannot pay');
+    });
+});
+
+describe('saved paypal accounts', function (): void {
+    test('lists the saved PayPal account with the automatic one marked', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn(null);
+        $savedCards->shouldReceive('autopay')->once()->andReturn(null);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $paypal = Mockery::mock(Payment_Adapter_PayPalEmail::class)]);
+
+        $paypal->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'T-1', 'card' => 'PayPal buyer@example.com', 'auto_pay_at' => '2026-01-05 10:00:00']);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($paypal);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_list())->toBe([
+            'available' => false,
+            'bank' => false,
+            'cards' => [],
+            'paypal' => ['account' => 'PayPal buyer@example.com', 'default' => true],
+            'autopay' => null,
+        ]);
+    });
+
+    test('makes the saved PayPal account the automatic method', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'T-1', 'card' => 'x', 'auto_pay_at' => 'x']);
+        $adapter->shouldReceive('gatewayId')->once()->andReturn(6);
+        $adapter->shouldReceive('testMode')->once()->andReturn(true);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+        $savedCards->shouldReceive('choose')->once()->with(6, true, 7);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->paypal_default())->toBeTrue();
+    });
+
+    test('removes the saved PayPal account', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+        $adapter->shouldReceive('vaultRemove')->once()->with(7);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->paypal_remove())->toBeTrue();
+    });
+
+    test('pays an invoice at once with the saved PayPal account', function (): void {
+        $api = apiEndpoint(new Client());
+        $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]));
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalEmail::class);
+        $adapter->shouldReceive('savedCard')->once()->with(7)->andReturn(['payment_method' => 'T-1', 'card' => 'x', 'auto_pay_at' => 'x']);
+
+        $invoice = createEntity(Invoice::class, ['id' => 60]);
+        $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('findOneBy')->once()->with(['hash' => 'abc', 'clientId' => 7, 'status' => Invoice::STATUS_UNPAID])->andReturn($invoice);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('paypal')->once()->andReturn($adapter);
+        $savedCards->shouldReceive('charge')->once()->with($invoice, $adapter, true, true)->andReturn(['paid' => true, 'error' => null]);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->paypal_pay(['hash' => 'abc']))->toBe(['paid' => true, 'message' => '']);
+    });
+});

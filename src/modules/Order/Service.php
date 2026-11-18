@@ -15,6 +15,7 @@ use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\PendingPayments;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Service as InvoiceService;
 use Box\Mod\Order\Entity\Order;
@@ -2601,6 +2602,7 @@ class Service implements InjectionAwareInterface
             $this->rmClientOrderStatusByOrder($order);
             $this->di['em']->getConnection()->delete('client_order_cancel_request', ['client_order_id' => $orderId]);
             $this->getOrderMetaRepository()->deleteByOrderId($orderId);
+            $this->di['em']->getConnection()->delete('client_order_cancel_request', ['client_order_id' => $orderId]);
             $this->rmOrder($order);
         });
 
@@ -2907,7 +2909,7 @@ class Service implements InjectionAwareInterface
                     if (!$expiresAt instanceof \DateTimeInterface || $expiresAt->format('Y-m-d H:i:s') > date('Y-m-d H:i:s')) {
                         return;
                     }
-                    if (($this->getOrderMetaRepository()->getPairsForOrder((int) $order->getId())[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+                    if (PendingPayments::forOrder($this->di['em']->getConnection(), (int) $order->getId()) || ($this->getOrderMetaRepository()->getPairsForOrder((int) $order->getId())[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
                         return;
                     }
                     $this->suspendFromOrder($order, $reason);
@@ -2963,6 +2965,10 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->refresh($order);
                 $status = $order->getStatus();
                 if ($status !== Order::STATUS_SUSPENDED) {
+                    continue;
+                }
+                // A bank debit still clearing keeps the order, as in suspension.
+                if (PendingPayments::forOrder($this->di['em']->getConnection(), (int) $order->getId())) {
                     continue;
                 }
                 // Scheduled cancellations, including uncertain attempts, are

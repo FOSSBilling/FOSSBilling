@@ -51,6 +51,15 @@
                         <label class="form-label">{{ 'Description'|trans }}</label>
                         <textarea class="form-control" name="description" rows="1">{{ category.description }}</textarea>
                     </div>
+                    {% if category.hidden is defined %}
+                    <div class="col-12">
+                        <label class="form-check form-switch form-switch-2 mb-0">
+                            <input name="hidden" type="hidden" value="0">
+                            <input class="form-check-input" name="hidden" type="checkbox" value="1"{% if category.hidden %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Hidden from clients: clients and guests do not see this category or its articles; staff still do'|trans }}</span>
+                        </label>
+                    </div>
+                    {% endif %}
                 </div>
                 <input type="hidden" name="id" value="{{ category.id }}">
             {% endblock %}

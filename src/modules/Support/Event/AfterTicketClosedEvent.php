@@ -16,6 +16,8 @@ final class AfterTicketClosedEvent extends Event
     public function __construct(
         public readonly int $ticketId,
         public readonly TicketActorRole $actor,
+        public readonly ?int $actorId = null,
+        public readonly ?string $deliveryId = null,
     ) {
     }
 }

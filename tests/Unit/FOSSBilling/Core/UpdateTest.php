@@ -11,6 +11,39 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\Process\Process;
+
+test('update archives survive cache clearing and are always removed', function (string $scenario, ?string $error): void {
+    // Keep destructive cache clearing and extraction out of other tests' paths.
+    $root = Path::join(sys_get_temp_dir(), 'fossbilling-update-cache-' . bin2hex(random_bytes(8)));
+    $filesystem = new Filesystem();
+    $process = new Process([PHP_BINARY, PATH_TESTS . '/Fixtures/update-cache-clear.php', $root, $scenario]);
+
+    try {
+        $process->mustRun();
+        $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+        if ($error === null) {
+            expect($result['error'])->toBeNull();
+        } else {
+            expect($result['error'])->toBeString()->toContain($error);
+        }
+        expect($result['pending'])->toBe($error === null)
+            ->and($result['extracted'])->toBe($error === null)
+            ->and($result['locked'])->toBe($scenario === 'locked')
+            ->and($result['archives'])->toBe([]);
+    } finally {
+        $filesystem->remove($root);
+    }
+})->with([
+    'cache absent when opening the archive' => ['before_download', null],
+    'cache cleared while streaming the archive' => ['during_download', null],
+    'transport failure' => ['transport_failure', 'Failed to download'],
+    'extraction failure' => ['extraction_failure', 'Failed to extract'],
+    'integrity failure' => ['integrity_failure', 'failed integrity verification'],
+    'runtime state in release archive' => ['protected_runtime', 'unsafe file path'],
+    'another updater owns the lock' => ['locked', 'Another update'],
+    'another updater finished extraction during download' => ['pending_during_download', 'An update finalization is already pending'],
+]);
 
 function createUpdateTestArchive(string $content): string
 {
@@ -29,7 +62,6 @@ test('does not finalize an update in the request that extracts it', function ():
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
     $entryName = '.fossbilling-update-test-' . bin2hex(random_bytes(8)) . '.txt';
     $extractedFile = Path::join(PATH_ROOT, $entryName);
-    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
 
@@ -44,7 +76,9 @@ test('does not finalize an update in the request that extracts it', function ():
     ];
 
     $finalization = Mockery::mock(Finalization::class);
-    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('withUpdateLock')->once()->andReturnUsing(fn ($callback) => $callback());
+    $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->with(
         Version::VERSION,
         $latestVersion,
@@ -104,7 +138,6 @@ test('does not finalize an update in the request that extracts it', function ():
         expect($filesystem->exists($extractedFile))->toBeTrue();
     } finally {
         $filesystem->remove($extractedFile);
-        $filesystem->remove($archiveFile);
         if (!$lockExisted) {
             $filesystem->remove($lockFile);
         }
@@ -116,7 +149,6 @@ test('resets the opcode cache after extracting the update archive', function ():
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
     $entryName = '.fossbilling-update-test-' . bin2hex(random_bytes(8)) . '.txt';
     $extractedFile = Path::join(PATH_ROOT, $entryName);
-    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
 
@@ -131,7 +163,9 @@ test('resets the opcode cache after extracting the update archive', function ():
     ];
 
     $finalization = Mockery::mock(Finalization::class);
-    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('withUpdateLock')->once()->andReturnUsing(fn ($callback) => $callback());
+    $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->andReturn(['status' => 'pending']);
 
     $readiness = Mockery::mock();
@@ -191,7 +225,6 @@ test('resets the opcode cache after extracting the update archive', function ():
         expect($update->opcodeCacheResets)->toBe(1);
     } finally {
         $filesystem->remove($extractedFile);
-        $filesystem->remove($archiveFile);
         if (!$lockExisted) {
             $filesystem->remove($lockFile);
         }
@@ -208,13 +241,14 @@ test('opcode cache reset is best-effort and never throws', function (): void {
 test('does not create pending state when archive extraction fails', function (): void {
     $filesystem = new Filesystem();
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
-    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
     $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
     $archiveContent = 'not a zip archive';
 
     $finalization = Mockery::mock(Finalization::class);
-    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('withUpdateLock')->once()->andReturnUsing(fn ($callback) => $callback());
+    $finalization->shouldReceive('isRequired')->once()->withNoArgs()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->once()->with(false)->andReturnFalse();
     $finalization->shouldNotReceive('createPendingState');
 
     $readiness = Mockery::mock();
@@ -265,7 +299,6 @@ test('does not create pending state when archive extraction fails', function ():
     try {
         expect(fn (): mixed => $update->performUpdate())->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Failed to extract file');
     } finally {
-        $filesystem->remove($archiveFile);
         if (!$lockExisted) {
             $filesystem->remove($lockFile);
         }
@@ -424,6 +457,14 @@ test('isSafeArchiveEntry accepts a normal relative entry', function (): void {
     expect(Updater::isSafeArchiveEntry('src/core/Update/Updater.php'))->toBeTrue();
 });
 
+test('release archives cannot overwrite installation state or live locks', function (string $path): void {
+    expect(Updater::isSafeArchiveEntry($path))->toBeFalse();
+})->with([
+    'config.php', 'config.old.php', '.update-lock',
+    'data/uploads/.update-runtime.lock', 'data/update-finalization.lock', 'data/update-finalization.json',
+    'DATA\\uploads\\.update-runtime.lock.', 'data//uploads/.update-runtime.lock',
+]);
+
 test('isSafeArchiveEntry rejects a forward-slash traversal segment', function (): void {
     expect(Updater::isSafeArchiveEntry('../../etc/passwd'))->toBeFalse();
 });
@@ -454,4 +495,8 @@ test('isSafeArchiveEntry rejects an all-dots segment', function (): void {
 
 test('isSafeArchiveEntry accepts a filename that legitimately contains spaces and periods', function (): void {
     expect(Updater::isSafeArchiveEntry('src/data/my file v1.2.3.txt'))->toBeTrue();
+});
+
+test('release archives cannot replace the extraction recovery marker', function (): void {
+    expect(Updater::isSafeArchiveEntry('.update-extraction-pending'))->toBeFalse();
 });

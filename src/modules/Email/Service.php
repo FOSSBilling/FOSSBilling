@@ -237,6 +237,10 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $staffTicket = $ticket;
         $staffTicket['client'] = $client;
 
+        // Assignment notifications carry a department name rather than the API object.
+        $notificationTicket = $ticket;
+        $notificationTicket['helpdesk'] = $ticket['helpdesk']['name'];
+
         $base = [
             'c' => $client,
             'client' => $client,
@@ -274,6 +278,8 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             'mod_staff_ticket_open',
             'mod_staff_ticket_reply',
             'mod_staff_ticket_close' => ['staff' => $staff, 'ticket' => $staffTicket],
+            'mod_staff_ticket_assigned',
+            'mod_staff_ticket_escalated' => ['ticket' => $notificationTicket],
             'mod_staff_password_reset_approve' => ['c' => $staff],
             'mod_staff_client_signup' => ['c' => $client, 'staff' => $staff],
             default => [],
