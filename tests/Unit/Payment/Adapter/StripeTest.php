@@ -1705,7 +1705,7 @@ test('logs Stripe object lock timeouts with lock context', function (): void {
         'pi_timeout',
         2,
         fn (): null => null,
-    ]))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Timed out waiting to process this Stripe payment')
+    ]))->toThrow(Box\Mod\Invoice\Exception\RetryableCallbackException::class, 'Timed out waiting to process this Stripe payment')
         ->and($logger->calls)->toHaveCount(1)
         ->and($logger->calls[0]['method'])->toBe('warning')
         ->and($logger->calls[0]['params'][0])->toBe('Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}')

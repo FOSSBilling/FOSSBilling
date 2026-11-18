@@ -5869,6 +5869,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
     $originalOrder = createEntity(Order::class, [
         'status' => Order::STATUS_ACTIVE,
         'productId' => 1,
+        'clientId' => 1,
     ]);
 
     $renewalInvoice = createEntity(Invoice::class);
@@ -5919,6 +5920,7 @@ test('generateRenewalInvoiceForSubscriptionPayment still renews an order the bat
     $originalOrder = createEntity(Order::class, [
         'status' => $status,
         'productId' => 1,
+        'clientId' => 1,
     ]);
 
     $renewalInvoice = createEntity(Invoice::class);

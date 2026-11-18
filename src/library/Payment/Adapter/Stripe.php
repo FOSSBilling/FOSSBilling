@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\PayGatewayCustomer;
 use Box\Mod\Invoice\Entity\PayGatewayProduct;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Exception\RetryableCallbackException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
@@ -897,7 +898,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 'charge.refunded' => $this->handleRefundWebhook($tx, $event),
                 'refund.created' => $this->handleRefundCreatedWebhook($tx, $event, $gateway_id),
             };
-        } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
+        } catch (Stripe\Exception\ApiErrorException $e) {
+            // These handlers only read from Stripe. Keep their transaction
+            // queued after a temporary provider failure, including failures
+            // while looking up the invoice or deciding which gateway owns it.
+            if (in_array($event->type, ['customer.subscription.updated', 'invoice.payment_succeeded', 'invoice.paid', 'invoice_payment.paid'], true)
+                && ($e instanceof Stripe\Exception\ApiConnectionException
+                    || $e instanceof Stripe\Exception\RateLimitException
+                    || $e->getHttpStatus() === 429
+                    || ($e->getHttpStatus() ?? 0) >= 500)) {
+                throw new RetryableCallbackException('Stripe is temporarily unavailable. Please retry the callback.');
+            }
             $this->logError($e, $tx);
 
             throw new FOSSBilling\Core\Exception\BaseException('There was an error when processing the Stripe webhook');
@@ -1038,17 +1049,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 return false;
             }
 
-            try {
-                $status = $this->getSubscriptionStatus($sid);
-            } catch (Stripe\Exception\ApiConnectionException|Stripe\Exception\RateLimitException) {
-                throw new Box\Mod\Invoice\Exception\RetryableCallbackException('Stripe subscription status is temporarily unavailable.');
-            } catch (Stripe\Exception\ApiErrorException $e) {
-                if (($e->getHttpStatus() ?? 0) >= 500) {
-                    throw new Box\Mod\Invoice\Exception\RetryableCallbackException('Stripe subscription status is temporarily unavailable.');
-                }
-
-                throw $e;
-            }
+            $status = $this->getSubscriptionStatus($sid);
             $subscriptions->updateStatusForGatewayLink($id, $sid, $gatewayId, $status);
 
             return false;
@@ -1282,7 +1283,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 ['duration_ms' => $waitDurationMs, 'lock_name' => $lockName]
             );
 
-            throw new FOSSBilling\Core\Exception\BaseException('Timed out waiting to process this Stripe payment');
+            throw new RetryableCallbackException('Timed out waiting to process this Stripe payment');
         }
 
         try {

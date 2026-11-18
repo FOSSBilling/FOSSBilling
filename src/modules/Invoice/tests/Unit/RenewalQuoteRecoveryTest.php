@@ -610,6 +610,9 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $table = $db->quoteSingleIdentifier('transaction');
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\Subscription::class)]);
     $order = renewalReviewOrder($em, $client->getId());
+    if ($failure === 'cancellation') {
+        $order->setExpiresAt(new DateTimeImmutable('today'))->setPeriod('1M')->setInvoiceOption('issue-invoice');
+    }
     $original = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setGateway($gateway)->setIssued(true)->setStatus('paid');
     $em->persist($original);
     $em->flush();
@@ -621,7 +624,8 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $billing = renewalReviewService($em);
     $billing->shouldReceive('resolveRenewalLine')->andReturn(['price' => 15.0, 'line' => ['quantity' => 1]]);
     $di = $billing->getDi();
-    if ($failure === 'issuance') {
+    $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
+    if ($failure === 'issuance' || $failure === 'cancellation') {
         $dispatcher = (new ReflectionProperty(FOSSBilling\Core\Events\EventDispatcher::class, 'dispatcher'))->getValue($di['event_dispatcher']);
         $dispatcher->addListener(Box\Mod\Invoice\Event\BeforeAdminInvoiceIssueEvent::class, function () use ($db): void {
             static $failed = false;
@@ -636,12 +640,26 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $metadata = ['invoice_id' => (string) $original->getId(), 'gateway_id' => (string) $gateway->getId(), 'client_id' => (string) $client->getId()];
     $provider = Mockery::mock();
     $current = Stripe\Subscription::constructFrom(['id' => 'sub_background', 'status' => 'active', 'metadata' => $metadata]);
-    if ($failure === 'provider') {
-        $provider->shouldReceive('retrieve')->once()->andThrow(new Stripe\Exception\ApiConnectionException('Provider unavailable'));
+    $providerError = match ($failure) {
+        'provider', 'connection' => new Stripe\Exception\ApiConnectionException('Provider unavailable'),
+        'rate limit' => Stripe\Exception\RateLimitException::factory('Too many requests', 429),
+        'server error' => Stripe\Exception\UnknownApiErrorException::factory('Provider unavailable', 503),
+        'invalid request' => Stripe\Exception\InvalidRequestException::factory('Subscription missing', 404, null, ['error' => ['type' => 'invalid_request_error', 'message' => 'Subscription missing']]),
+        default => null,
+    };
+    if ($providerError !== null) {
+        $provider->shouldReceive('retrieve')->once()->andThrow($providerError);
     }
     $provider->shouldReceive('retrieve')->andReturn($current);
     $sdk = Mockery::mock(Stripe\StripeClient::class);
     $sdk->subscriptions = $provider;
+    $stripeInvoice = ['id' => 'in_background', 'object' => 'invoice', 'subscription' => 'sub_background', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 1500, 'currency' => 'usd', 'metadata' => $metadata];
+    if ($failure === 'invoice lookup') {
+        $invoiceLookup = Mockery::mock();
+        $invoiceLookup->shouldReceive('retrieve')->once()->with('in_background', [])->andThrow(new Stripe\Exception\ApiConnectionException('Provider unavailable'));
+        $invoiceLookup->shouldReceive('retrieve')->with('in_background', [])->andReturn(Stripe\Invoice::constructFrom($stripeInvoice));
+        $sdk->invoices = $invoiceLookup;
+    }
     $adapter = new Payment_Adapter_Stripe(['test_mode' => true, 'test_api_key' => 'sk_test_dummy', 'test_pub_key' => 'pk_test_dummy', 'test_webhook_secret' => 'whsec_background', 'gateway_id' => $gateway->getId()]);
     (new ReflectionProperty($adapter, 'stripe'))->setValue($adapter, $sdk);
     $adapter->setDi($di);
@@ -651,7 +669,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $gateways->shouldReceive('getPaymentAdapter')->with($gateway)->andReturn($adapter);
     $orders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
     $orders->setDi($di);
-    $orders->shouldReceive('renewInvoiceItem')->times($renewal ? 1 : 0)->andReturn(true);
+    $orders->shouldReceive('renewInvoiceItem')->times($renewal && $failure !== 'invalid request' ? 1 : 0)->andReturn(true);
     $services = $di['mod_service'];
     unset($di['mod_service']);
     $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => match ($sub) {
@@ -664,9 +682,12 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $worker = new Box\Mod\Invoice\ServiceTransaction();
     $worker->setDi($di);
 
-    $payload = json_encode(['id' => 'evt_background', 'object' => 'event', 'type' => $renewal ? 'invoice.paid' : 'customer.subscription.updated', 'data' => ['object' => $renewal
-        ? ['id' => 'in_background', 'object' => 'invoice', 'subscription' => 'sub_background', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 1500, 'currency' => 'usd', 'metadata' => $metadata]
-        : ['id' => 'sub_background', 'object' => 'subscription', 'metadata' => $metadata]]], JSON_THROW_ON_ERROR);
+    [$type, $object] = match ($failure) {
+        'provider' => ['customer.subscription.updated', ['id' => 'sub_background', 'object' => 'subscription', 'metadata' => $metadata]],
+        'invoice lookup' => ['invoice_payment.paid', ['id' => 'inpay_background', 'object' => 'invoice_payment', 'invoice' => 'in_background']],
+        default => ['invoice.paid', $stripeInvoice],
+    };
+    $payload = json_encode(['id' => 'evt_background', 'object' => 'event', 'type' => $type, 'data' => ['object' => $object]], JSON_THROW_ON_ERROR);
     $sign = fn (int $time): string => 't=' . $time . ',v1=' . hash_hmac('sha256', $time . '.' . $payload, 'whsec_background');
     $callback = ['gateway_id' => $gateway->getId(), 'skip_validation' => true, 'http_raw_post_data' => $payload, 'server' => ['HTTP_STRIPE_SIGNATURE' => $sign(time())]];
     $id = $worker->create($callback);
@@ -684,10 +705,17 @@ test('background Stripe recovery replays authenticated callbacks after the signa
             FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
         }
     }
+    if ($failure === 'invalid request') {
+        expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('error')
+            ->and(array_column($worker->getReceived(), 'id'))->not->toContain($id)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+
+        return;
+    }
     expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('received')
         ->and(array_column($worker->getReceived(), 'id'))->toContain($id)
         ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
-    if ($failure === 'issuance') {
+    if ($failure === 'issuance' || $failure === 'cancellation') {
         expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice WHERE subscription_payment_draft = 1 AND issued = 0'))->toBe(1);
     }
     // Simulate elapsed time by backdating the signature in the trusted fixture.
@@ -697,6 +725,37 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $saved['server']['HTTP_STRIPE_SIGNATURE'] = $callback['server']['HTTP_STRIPE_SIGNATURE'];
     $tx->setIpn($saved);
     $em->flush();
+
+    if ($failure === 'cancellation') {
+        $draftId = $order->getUnpaidInvoiceId();
+        expect($draftId)->not->toBeNull();
+        $request = (new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setStatus('pending')->setType('end_of_period');
+        $em->persist($request);
+        $em->flush();
+
+        $worker->processReceivedATransactions();
+        expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
+            ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBeNull()
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0)
+            ->and($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$draftId]))->toBe(Invoice::STATUS_CANCELED)
+            ->and($db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBeNull();
+        $billing->generateInvoicesForExpiringOrders();
+        expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(2);
+
+        $requests = new Box\Mod\Order\ServiceCancelRequest();
+        $requests->setDi($di);
+        $requests->withdraw($order, $client, $request->getId());
+        expect($db->fetchOne('SELECT status FROM client_order_cancel_request WHERE id = ?', [$request->getId()]))->toBe('withdrawn');
+        $billing->shouldReceive('shouldMergeRenewalsForOrder')->andReturn(false);
+        $billing->generateInvoicesForExpiringOrders();
+        $worker->processReceivedATransactions();
+        expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(3)
+            ->and((int) $db->fetchOne("SELECT COUNT(*) FROM invoice WHERE id <> ? AND status = 'paid' AND subscription_payment_draft = 0", [$original->getId()]))->toBe(1)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0);
+
+        return;
+    }
 
     $worker->processReceivedATransactions();
     if ($renewal) {
@@ -710,7 +769,17 @@ test('background Stripe recovery replays authenticated callbacks after the signa
         expect($db->fetchOne("SELECT id FROM $table WHERE id = ?", [$id]))->toBeFalse()
             ->and($db->fetchOne('SELECT status FROM subscription WHERE id = ?', [$subscription->getId()]))->toBe('active');
     }
-})->with(['provider outage' => 'provider', 'renewal mutex contention' => 'lock', 'failed draft issuance' => 'issuance']);
+})->with([
+    'subscription update outage' => 'provider',
+    'renewal connection outage' => 'connection',
+    'renewal rate limit' => 'rate limit',
+    'renewal provider server error' => 'server error',
+    'invoice lookup outage during routing' => 'invoice lookup',
+    'permanent Stripe request failure' => 'invalid request',
+    'renewal mutex contention' => 'lock',
+    'failed draft issuance' => 'issuance',
+    'failed draft issuance followed by cancellation and withdrawal' => 'cancellation',
+]);
 
 test('cron leaves a draft created for a subscription payment to its callback', function (): void {
     [, $em, $client] = receiptTestContext();
@@ -727,6 +796,29 @@ test('cron leaves a draft created for a subscription payment to its callback', f
     $em->refresh($draft);
     expect($draft->isSubscriptionPaymentDraft())->toBeTrue()->and($draft->isIssued())->toBeFalse();
 });
+
+test('a held subscription callback leaves issued, ordinary and payment-linked invoices alone', function (string $invoiceType): void {
+    [, $em, $client, , $transaction] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $billing = renewalReviewService($em);
+    $draft = $billing->generateForOrder($order, subscriptionPayment: $invoiceType !== 'ordinary');
+    if ($invoiceType === 'issued') {
+        expect($billing->issueInvoice($draft, ['use_credits' => false]))->toBeTrue();
+    }
+    if ($invoiceType === 'linked to payment') {
+        $transaction->setInvoice($draft);
+    }
+    $request = (new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setStatus('pending')->setType('end_of_period');
+    $em->persist($request);
+    $em->flush();
+
+    expect(fn () => $billing->generateForOrder($order, subscriptionPayment: true))
+        ->toThrow(Box\Mod\Invoice\Exception\RenewalHoldException::class);
+    $db = $em->getConnection();
+    expect($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$draft->getId()]))->toBe(Invoice::STATUS_UNPAID)
+        ->and((int) $db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBe($draft->getId())
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE invoice_id = ?', [$draft->getId()]))->toBe(1);
+})->with(['issued', 'ordinary', 'linked to payment']);
 
 test('a cron merge bucket drops an order whose expiry changed after grouping', function (): void {
     [, $em, $client] = receiptTestContext();

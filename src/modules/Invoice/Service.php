@@ -5142,7 +5142,16 @@ class Service implements InjectionAwareInterface
     {
         return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo, $subscriptionPayment, $expectedMergeKey): Invoice {
             $order = $this->reloadRenewalOrder($order);
-            $this->assertNoRenewalHold((int) $order->getId());
+
+            try {
+                $this->assertNoRenewalHold((int) $order->getId());
+            } catch (Exception\RenewalHoldException $e) {
+                if ($subscriptionPayment) {
+                    $this->retireHeldSubscriptionDraft($order);
+                }
+
+                throw $e;
+            }
             if ($subscriptionPayment && !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
                 throw new Exception\RenewalHoldException('This order is no longer eligible for a subscription renewal.');
             }
@@ -5472,6 +5481,36 @@ class Service implements InjectionAwareInterface
         if ($this->hasRenewalHold($orderId)) {
             throw new Exception\RenewalHoldException('Withdraw the cancellation request or have staff resolve the order hold before renewing this service.');
         }
+    }
+
+    /** Caller holds the renewal order's request mutex. */
+    private function retireHeldSubscriptionDraft(Order $order): void
+    {
+        $invoice = $this->findUnpaidInvoiceForOrder($order);
+        if ($invoice === null) {
+            return;
+        }
+
+        $em = $this->di['em'];
+        $orderId = (int) $order->getId();
+        $clientId = $order->getClientId();
+        $em->wrapInTransaction(function () use ($em, $invoice, $orderId, $clientId): void {
+            $state = $this->lockAndRefreshInvoice($invoice);
+            if ($state['issued'] || $state['status'] !== Invoice::STATUS_UNPAID
+                || !$invoice->isSubscriptionPaymentDraft() || $invoice->getClientId() !== $clientId) {
+                return;
+            }
+            $linkedInvoiceId = $em->getRepository(Order::class)->lockAndGetUnpaidInvoiceId($orderId);
+            if ($linkedInvoiceId !== $invoice->getId() || $this->renewalOrderIds($invoice) !== [$orderId]
+                || \Box\Mod\Order\DeletionRecovery::isHeld($em->getConnection(), $orderId, true)
+                || !$this->hasRenewalHold($orderId)) {
+                return;
+            }
+
+            // A held callback keeps the receipt without this draft. Remove the
+            // unfunded renewal and its link so cron can renew after withdrawal.
+            $this->removeHeldRenewalsFromDraft($invoice, [$orderId]);
+        });
     }
 
     private function retryUnissuedRenewalInvoices(): void
@@ -7049,7 +7088,7 @@ class Service implements InjectionAwareInterface
             }
 
             $originalOrder = $this->di['em']->getRepository(Order::class)->find($originalOrderId);
-            if (!$originalOrder instanceof Order) {
+            if (!$originalOrder instanceof Order || $originalOrder->getClientId() !== $clientId) {
                 return null;
             }
 
