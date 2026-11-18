@@ -4612,3 +4612,10 @@ test('installations at the Unicode migration still receive every Phase B and C m
     $patcher->shouldReceive('executeSql')->once()->withArgs(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `client_order_cancel_request`') && str_contains($sql, 'CHARSET=utf8mb4'));
     $patches[147][0]->apply($patcher);
 });
+
+test('Unicode repair covers table defaults even when all columns are identifiers', function (): void {
+    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    $tables = array_map(fn ($metadata): string => trim($metadata->getTableName(), '`'), $em->getMetadataFactory()->getAllMetadata());
+    expect(array_values(array_diff($tables, array_keys((new Patcher())->legacyUnicodeColumns()))))->toBe([]);
+});
