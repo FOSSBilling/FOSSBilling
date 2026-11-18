@@ -492,11 +492,11 @@ test('Unicode repair normalizes the database default to utf8mb4_unicode_ci', fun
 });
 
 test('Unicode repair maps utf8mb3 database defaults to utf8mb4_unicode_ci', function (): void {
-    try {
-        $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci');
-    } catch (PDOException) {
+    $available = $this->connection->fetchFirstColumn("SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = 'utf8mb3'");
+    if (!in_array('utf8mb3_general_ci', $available, true)) {
         $this->markTestSkipped('This server does not support utf8mb3 database defaults.');
     }
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci');
 
     (new Patch146())->apply($this->patcher);
 
@@ -516,11 +516,11 @@ test('Unicode repair leaves utf8mb4 database defaults untouched', function (): v
 });
 
 test('Unicode repair normalizes database collations without a utf8mb4 equivalent', function (): void {
-    try {
-        $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8 COLLATE utf8_general_mysql500_ci');
-    } catch (PDOException) {
+    $supported = $this->connection->fetchOne("SELECT COUNT(*) FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE COLLATION_NAME = 'utf8_general_mysql500_ci'");
+    if ((int) $supported === 0) {
         $this->markTestSkipped('This server does not support the utf8_general_mysql500_ci collation.');
     }
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8 COLLATE utf8_general_mysql500_ci');
 
     (new Patch146())->apply($this->patcher);
 

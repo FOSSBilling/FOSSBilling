@@ -2522,7 +2522,7 @@ class Patcher implements InjectionAwareInterface
     private function canConvertIndexedColumn(array $columnIndexes, array $indexes, array $liveColumns, array $columns, int $byteLimit): bool
     {
         foreach ($columnIndexes as $index) {
-            $members = array_values(array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']));
+            $members = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
             if ($index['Index_type'] === 'FULLTEXT') {
                 if (count($members) !== 1) {
                     return false;
