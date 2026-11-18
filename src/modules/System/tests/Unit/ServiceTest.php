@@ -582,14 +582,22 @@ test('reserveNextNumericParamValue reserves from the winning row when seeding co
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
 });
 
-test('updateParams rejects an invalid reminder send time', function (mixed $value): void {
+test('updateParams rejects an invalid reminder send time without warnings or writing settings', function (mixed $value): void {
     $di = container();
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldNotReceive('setParamValue');
     $service->setDi($di);
 
-    expect(fn () => $service->updateParams(['invoice_reminder_send_time' => $value]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Reminder send time must be empty or a valid 24-hour time');
+    set_error_handler(static function (int $severity, string $message, string $file, int $line): never {
+        throw new ErrorException($message, 0, $severity, $file, $line);
+    }, E_WARNING | E_NOTICE);
+
+    try {
+        expect(fn () => $service->updateParams(['invoice_series' => 'NEW-', 'INVOICE_REMINDER_SEND_TIME' => $value]))
+            ->toThrow(FOSSBilling\InformationException::class, 'Reminder send time must be empty or a valid 24-hour time');
+    } finally {
+        restore_error_handler();
+    }
 })->with([
     'text' => ['morning'],
     'hour too high' => ['24:00'],
@@ -598,7 +606,18 @@ test('updateParams rejects an invalid reminder send time', function (mixed $valu
     'seconds included' => ['09:00:00'],
     'single digit hour' => ['9:05'],
     'array' => [[]],
+    'nested array' => [['time' => ['09:00']]],
     'boolean' => [true],
+    'false' => [false],
+    'integer' => [900],
+    'float' => [9.0],
+    'object' => [new stdClass()],
+    'stringable object' => [new class implements Stringable {
+        public function __toString(): string
+        {
+            throw new RuntimeException('Reminder times must not coerce objects to strings.');
+        }
+    }],
 ]);
 
 test('updateParams accepts an empty or valid reminder send time', function (mixed $value): void {

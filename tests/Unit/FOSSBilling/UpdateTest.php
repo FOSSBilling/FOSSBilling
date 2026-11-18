@@ -169,14 +169,15 @@ test('resets the opcode cache after extracting the update archive', function ():
     ];
 
     $finalization = Mockery::mock(UpdateFinalization::class);
-    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('isRequired')->twice()->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->andReturn(['status' => 'pending']);
-    $finalization->shouldReceive('finalizeUpdate')->once();
+    $finalization->shouldNotReceive('finalizeUpdate');
 
     $readiness = Mockery::mock();
     $readiness->shouldReceive('check')->once()->andReturn(['can_update' => true]);
 
     $session = Mockery::mock();
+    $session->shouldReceive('save')->once();
     $session->shouldReceive('destroy')->once()->with('admin');
 
     $logger = Mockery::mock();
@@ -246,4 +247,8 @@ test('opcode cache reset is best-effort and never throws', function (): void {
     $method->invoke(new Update());
 
     expect(true)->toBeTrue();
+});
+
+test('release archives cannot replace the extraction recovery marker', function (): void {
+    expect(Update::isSafeArchiveEntry('.update-extraction-pending'))->toBeFalse();
 });
