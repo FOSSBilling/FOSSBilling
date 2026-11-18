@@ -379,7 +379,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
                 $this->recordPayment($api_admin, (int) $pending[0], $txnId);
             }
             $note = 'Payment ' . $txnId . ' ' . strtolower($status) . ': transaction #' . $pending[0] . '.';
-        } elseif (in_array($status, ['Failed', 'Denied', 'Voided', 'Expired'], true) && $txnId !== '' && $this->pendingRows($txnId) !== []) {
+        } elseif (in_array($status, ['Failed', 'Denied', 'Voided', 'Expired'], true) && $txnId !== '') {
             $this->failPending($txnId, 'PayPal payment ' . $status . '.');
             $note = 'Pending payment ' . $txnId . ': ' . $status . '.';
         }
@@ -547,6 +547,7 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
                 $service->refundInvoice($invoice, $text, null, [
                     'gateway_refund' => false,
                     'gateway_returned' => true,
+                    'external_reversal' => ['gateway_id' => $this->gatewayId(), 'payment_id' => $paymentId, 'reversal_id' => $reversalId, 'amount' => $amount],
                     'custom_line' => [
                         'title' => sprintf('Partial chargeback %s of payment %s.', $reversalId, $paymentId),
                         'amount' => $amount,
@@ -602,13 +603,72 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
         );
     }
 
-    /** Ends the wait of $txnId's pending rows when PayPal did not complete the payment. */
+    /** Ends a known failed payment and its durable saved-charge barrier together. */
     private function failPending(string $txnId, string $note): void
     {
-        $connection = $this->di['em']->getConnection();
-        $table = $connection->quoteSingleIdentifier('transaction');
-        foreach ($this->pendingRows($txnId) as $rowId) {
-            $connection->update($table, ['status' => Transaction::STATUS_ERROR, 'txn_status' => 'Failed', 'error' => $note, 'note' => $note, 'updated_at' => date('Y-m-d H:i:s')], ['id' => (int) $rowId]);
+        $db = $this->di['em']->getConnection();
+        if ($db->isTransactionActive()) {
+            throw new LogicException('Payment failure processing must begin outside a database transaction.');
+        }
+        $table = $db->quoteSingleIdentifier('transaction');
+        $attempt = $db->fetchAssociative("SELECT id, invoice_id FROM invoice_gateway_charge_attempt WHERE gateway_id = ? AND payment_id = ? AND state = 'pending' ORDER BY created_at, id LIMIT 1", [$this->gatewayId(), $txnId]);
+        $invoiceId = $attempt['invoice_id'] ?? $db->fetchOne("SELECT invoice_id FROM {$table} WHERE txn_id = ? AND gateway_id = ? AND status = ? AND txn_status = 'processing' ORDER BY id LIMIT 1", [$txnId, $this->gatewayId(), Transaction::STATUS_RECEIVED]);
+        if (!$invoiceId) {
+            return;
+        }
+        $invoiceLock = 'fb:card-charge:' . (int) $invoiceId;
+        if (!NamedLock::acquire($db, $invoiceLock, 0)) {
+            throw new Payment_Exception('The payment worker is still active. Retry this notice later.');
+        }
+        $paymentLock = 'fb:paypal-payment:' . $txnId;
+
+        try {
+            if (!NamedLock::acquire($db, $paymentLock, 10)) {
+                throw new Payment_Exception('Another request is being processed. Please try again.');
+            }
+
+            try {
+                $attempt = $db->fetchAssociative("SELECT id, owner_token FROM invoice_gateway_charge_attempt WHERE invoice_id = ? AND gateway_id = ? AND payment_id = ? AND state = 'pending' ORDER BY created_at, id LIMIT 1", [(int) $invoiceId, $this->gatewayId(), $txnId]);
+                foreach (FOSSBilling\Core\Payment\ProcessingFence::claims() as $claim) {
+                    if ($attempt && $claim['table'] === 'invoice_gateway_charge_attempt' && $claim['id'] === $attempt['id']) {
+                        throw new Payment_Exception('The payment worker is still active. Retry this notice later.');
+                    }
+                }
+                // Verify the current provider answer and invoice binding. A late
+                // failure notice must not end a payment that is processing again.
+                if ($this->inspectPayment($txnId, (int) $invoiceId)['state'] !== 'failed') {
+                    return;
+                }
+                if ($db->fetchOne("SELECT id FROM {$table} WHERE txn_id = ? AND gateway_id = ? AND status = ? AND txn_status = 'Completed' LIMIT 1", [$txnId, $this->gatewayId(), Transaction::STATUS_PROCESSED]) !== false) {
+                    return;
+                }
+
+                try {
+                    $db->transactional(function () use ($db, $table, $txnId, $note, $invoiceId, $attempt): void {
+                        foreach ($this->pendingRows($txnId) as $rowId) {
+                            $db->update($table, ['status' => Transaction::STATUS_ERROR, 'txn_status' => 'Failed', 'error' => $note, 'note' => $note, 'updated_at' => date('Y-m-d H:i:s')], ['id' => (int) $rowId, 'invoice_id' => (int) $invoiceId]);
+                        }
+                        if ($attempt) {
+                            $owner = $attempt['owner_token'] === null ? 'owner_token IS NULL' : 'owner_token = ?';
+                            $parameters = [date('Y-m-d H:i:s'), $attempt['id']];
+                            if ($attempt['owner_token'] !== null) {
+                                $parameters[] = $attempt['owner_token'];
+                            }
+                            if ($db->executeStatement("UPDATE invoice_gateway_charge_attempt SET state = 'failed', resolved_at = ? WHERE id = ? AND state = 'pending' AND {$owner}", $parameters) !== 1) {
+                                throw new FOSSBilling\Core\Payment\OwnershipLost('The charge attempt changed while processing its failure.');
+                            }
+                        }
+                    });
+                } catch (Throwable $e) {
+                    $this->di['em']->close();
+
+                    throw $e;
+                }
+            } finally {
+                NamedLock::release($db, $paymentLock);
+            }
+        } finally {
+            NamedLock::release($db, $invoiceLock);
         }
     }
 

@@ -820,8 +820,9 @@ class Service implements InjectionAwareInterface
      * Append an entry to the invoice journal: a trimmed snapshot of the
      * invoice taken after the transition, so the full history (including
      * past buyer/seller details) stays queryable after the fact. Journal
-     * writes never break the business operation: failures are logged and
-     * swallowed, mirroring the mail sends.
+     * writes normally log and swallow failures, mirroring the mail sends.
+     * Required financial receipts instead propagate failures so their
+     * surrounding bookkeeping transaction cannot commit without the receipt.
      *
      * The row is written with a raw DBAL insert rather than through the
      * EntityManager, nested in the caller's transaction via a savepoint when
@@ -833,7 +834,7 @@ class Service implements InjectionAwareInterface
      * would retry — which would fail the surrounding mutation and close the
      * EntityManager.
      */
-    public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null): void
+    public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null, bool $required = false): void
     {
         try {
             $data = $this->toApiArray($invoice);
@@ -885,6 +886,9 @@ class Service implements InjectionAwareInterface
                 );
             });
         } catch (\Throwable $exception) {
+            if ($required) {
+                throw $exception;
+            }
             $this->di['logger']->error('Failed to record invoice journal event', [
                 'invoice_id' => $invoice->getId(),
                 'exception' => $exception,
@@ -2855,11 +2859,14 @@ class Service implements InjectionAwareInterface
 
     public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null, array $options = []): int
     {
-        $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+        $external = $this->externalReversal($options);
+        if ($external === null) {
+            $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+        }
 
         // The locked read inside the credit-note transaction below stays
         // authoritative, but don't move money for a clearly unpaid invoice.
-        if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
+        if ($external === null && $invoice->getStatus() !== Invoice::STATUS_PAID) {
             throw new InformationException('Only paid invoices can be refunded');
         }
 
@@ -2868,10 +2875,23 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Return the money through the payment gateway or add it as account credit, not both.');
         }
 
-        $new = $this->withInvoiceRefundLock($invoice, fn (): Invoice => $this->withCreditLock(
-            (int) $invoice->getClientId(),
-            fn (): Invoice => $this->createRefundDocument($invoice, $note, $items, $options)
-        ));
+        $replayed = false;
+        $new = $this->withInvoiceRefundLock($invoice, function () use ($invoice, $note, $items, $options, $external, &$replayed): Invoice {
+            if ($external !== null) {
+                $recorded = $this->recordedReversal($invoice, $external);
+                if ($recorded !== null) {
+                    $replayed = true;
+
+                    return $recorded;
+                }
+                $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+            }
+
+            return $this->withCreditLock((int) $invoice->getClientId(), fn (): Invoice => $this->createRefundDocument($invoice, $note, $items, $options));
+        });
+        if ($replayed) {
+            return (int) $new->getId();
+        }
 
         try {
             $this->sendRefundEmail($invoice, $new, !empty($options['to_credit']));
@@ -2888,6 +2908,51 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return (int) $new->getId();
+    }
+
+    /** Validate the internal receipt supplied for a provider-originated reversal. */
+    private function externalReversal(array $options): ?array
+    {
+        $receipt = $options['external_reversal'] ?? null;
+        if ($receipt === null) {
+            return null;
+        }
+        if (!is_array($receipt) || empty($options['gateway_returned']) || ($options['gateway_refund'] ?? true) !== false
+            || !is_int($receipt['gateway_id'] ?? null) || $receipt['gateway_id'] < 1
+            || !is_string($receipt['reversal_id'] ?? null) || trim($receipt['reversal_id']) === '' || strlen($receipt['reversal_id']) > 255
+            || !is_string($receipt['payment_id'] ?? null) || trim($receipt['payment_id']) === '' || strlen($receipt['payment_id']) > 255) {
+            throw new InformationException('Invalid external reversal receipt.');
+        }
+        $receipt['amount'] = PriceValidator::validateAmount($receipt['amount'] ?? null, 'Reversal amount');
+        if ($receipt['amount'] <= 0) {
+            throw new InformationException('Invalid external reversal amount.');
+        }
+
+        return $receipt;
+    }
+
+    /** Called under the invoice refund lock, before allocating another credit note. */
+    private function recordedReversal(Invoice $invoice, array $external): ?Invoice
+    {
+        $rows = $this->di['em']->getConnection()->fetchFirstColumn('SELECT snapshot FROM invoice_event WHERE invoice_id = ? AND type = ?', [(int) $invoice->getId(), InvoiceEvent::TYPE_REFUNDED]);
+        foreach ($rows as $json) {
+            $snapshot = json_decode((string) $json, true, 512, JSON_THROW_ON_ERROR);
+            $receipt = $snapshot['external_reversal'] ?? null;
+            if (!is_array($receipt) || ($receipt['gateway_id'] ?? null) !== $external['gateway_id'] || ($receipt['reversal_id'] ?? null) !== $external['reversal_id']) {
+                continue;
+            }
+            if (($receipt['payment_id'] ?? null) !== $external['payment_id'] || abs((float) ($receipt['amount'] ?? 0) - $external['amount']) > 0.005) {
+                throw new InformationException('This reversal was already recorded with different payment details.');
+            }
+            $note = $this->di['em']->find(Invoice::class, (int) ($snapshot['credit_note_id'] ?? 0));
+            if (!$note instanceof Invoice || $note->getCreditNoteForInvoiceId() !== $invoice->getId()) {
+                throw new InformationException('The recorded reversal credit note is missing. Review the refund before continuing.');
+            }
+
+            return $note;
+        }
+
+        return null;
     }
 
     public function pendingGatewayRefund(Invoice $invoice): ?array
@@ -2971,6 +3036,7 @@ class Service implements InjectionAwareInterface
     {
         // Arbitrary-amount custom lines are validated before anything moves.
         $customLine = $this->resolveCustomRefundLine($options['custom_line'] ?? null);
+        $external = $this->externalReversal($options);
         $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
         $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
         $attemptId = $options['reconcile_attempt'] ?? null;
@@ -2996,9 +3062,9 @@ class Service implements InjectionAwareInterface
         } elseif ($pending !== null && (!$gatewayRefundRequested || !$invoice->getGateway() instanceof PayGateway)) {
             throw new InformationException('Reconcile the pending PayPal refund before recording another refund.');
         }
-        $expectedAmount = array_key_exists('expected_amount', $options)
+        $expectedAmount = $external['amount'] ?? (array_key_exists('expected_amount', $options)
             ? PriceValidator::validateAmount($options['expected_amount'], 'Expected refund amount')
-            : null;
+            : null);
 
         // A dashboard refund already returned the card payment, so a deposit
         // invoice's wallet credit must be reversed when recording it.
@@ -3035,7 +3101,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $customLine, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit, $attemptId, $refundId, $expectedAmount): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $customLine, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit, $toCredit, $attemptId, $refundId, $expectedAmount, $external): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -3192,12 +3258,20 @@ class Service implements InjectionAwareInterface
                 }
 
                 // Commits atomically with the credit note above.
-                $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
+                $journal = array_filter([
                     'offline' => $offline && $gatewayRefundId === null && !$toCredit ? true : null,
                     'to_credit' => $toCredit ? true : null,
                     'gateway_refund_id' => $gatewayRefundId,
                     'credit_note_id' => (int) $new->getId(),
-                ]));
+                    'external_reversal' => $external,
+                ]);
+                if ($external !== null) {
+                    // The receipt is load-bearing: failure must roll back the
+                    // credit note, invoice total and any deposit credit debit.
+                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $journal, true);
+                } else {
+                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $journal);
+                }
 
                 return $new;
             }),

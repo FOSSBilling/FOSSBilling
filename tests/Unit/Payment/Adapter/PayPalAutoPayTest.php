@@ -357,7 +357,7 @@ describe('payment notices', function (): void {
             $invoice,
             'PayPal chargeback R-1 of payment P-9.',
             null,
-            ['gateway_refund' => false, 'gateway_returned' => true, 'custom_line' => ['title' => 'Partial chargeback R-1 of payment P-9.', 'amount' => 25.0]]
+            ['gateway_refund' => false, 'gateway_returned' => true, 'external_reversal' => ['gateway_id' => 5, 'payment_id' => 'P-9', 'reversal_id' => 'R-1', 'amount' => 25.0], 'custom_line' => ['title' => 'Partial chargeback R-1 of payment P-9.', 'amount' => 25.0]]
         )->andReturn(101);
         $invoiceService->shouldReceive('addNote')->once()->with($invoice, Mockery::pattern('/custom-line/'));
 
@@ -527,3 +527,184 @@ test('legacy PayPal recovery reads transaction details and rejects another invoi
         expect($adapter->inspectPayment('P-1', 21)['state'])->toBe($expected);
     }
 })->with([['fb-invoice-21', 'Completed', 'settled'], ['fb-invoice-21', 'Pending', 'pending'], ['fb-invoice-21', 'Denied', 'failed'], ['fb-invoice-22', 'Completed', 'reject']]);
+
+function autopayFailureContext(string $providerStatus = 'Failed'): array
+{
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $schema = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($schema))->createSchema([$schema->getClassMetadata(Box\Mod\Invoice\Entity\GatewayChargeAttempt::class)]);
+    $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, gateway_id INTEGER)');
+    $db->insert('invoice', ['id' => 60, 'status' => 'unpaid', 'gateway_id' => 5]);
+    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
+    $db->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, invoice_id INTEGER, gateway_id INTEGER, txn_id TEXT, status TEXT, txn_status TEXT, amount TEXT, currency TEXT, created_at TEXT, updated_at TEXT, note TEXT, error TEXT, processing_token TEXT)');
+    $db->insert('"transaction"', ['id' => 69, 'invoice_id' => 60, 'gateway_id' => 5, 'txn_id' => 'P-pending', 'status' => 'received', 'txn_status' => 'processing']);
+    $db->insert('"transaction"', ['id' => 70, 'gateway_id' => 5, 'status' => 'processing', 'processing_token' => str_repeat('b', 32)]);
+    $attempt = Box\Mod\Invoice\GatewayChargeAttempts::begin($db, 60, 5);
+    Box\Mod\Invoice\GatewayChargeAttempts::recordPayment($db, $attempt, 'P-pending');
+    $invoice = createEntity(Invoice::class, ['id' => 60, 'status' => Invoice::STATUS_UNPAID, 'client_id' => 9, 'currency' => 'USD']);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($db);
+    $em->shouldReceive('find')->with(Invoice::class, 60)->andReturn($invoice);
+    $em->shouldReceive('close')->byDefault();
+    $di = autopayDi([], $em);
+    $di['http_client'] = autopayNvpResponder(['ACK=Success&TRANSACTIONID=P-pending&CUSTOM=fb-invoice-60&AMT=100.00&CURRENCYCODE=USD&PAYMENTSTATUS=' . $providerStatus]);
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_transaction_update')->zeroOrMoreTimes();
+    $adapter = autopayAdapter();
+    $adapter->setDi($di);
+
+    return compact('db', 'attempt', 'invoice', 'em', 'di', 'api', 'adapter');
+}
+
+function autopayFailureNotice(array $c, string $status = 'Failed'): void
+{
+    FOSSBilling\Core\Payment\ProcessingFence::transaction($c['db'], 70, str_repeat('b', 32),
+        fn () => $c['adapter']->processTransaction($c['api'], 70, ['source' => 'ipn', 'post' => ['payment_status' => $status, 'txn_id' => 'P-pending']], 5));
+}
+
+test('terminal PayPal failures release the matching saved payment barrier once', function (string $status): void {
+    $c = autopayFailureContext($status);
+
+    try {
+        autopayFailureNotice($c, $status);
+        autopayFailureNotice($c, $status);
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], 60))->toBeNull()
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], 60))->toBeNull()
+            ->and($c['db']->fetchOne('SELECT state FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe('failed')
+            ->and($c['db']->fetchOne('SELECT status FROM invoice WHERE id = 60'))->toBe('unpaid');
+        $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('findByHash')->with('hash')->andReturn($c['invoice']);
+        $gatewayRepo = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+        $gatewayRepo->shouldReceive('find')->once()->with(999)->andReturn(null);
+        $c['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $c['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\PayGateway::class)->andReturn($gatewayRepo);
+        $service = new Box\Mod\Invoice\Service();
+        $service->setDi($c['di']);
+        expect(fn () => $service->processInvoice(['hash' => 'hash', 'gateway_id' => 999]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Payment method not found');
+    } finally {
+        $c['db']->close();
+    }
+})->with(['Failed', 'Denied', 'Voided', 'Expired']);
+
+test('PayPal failures preserve unrelated references and uncertain or completed outcomes', function (string $scenario): void {
+    $c = autopayFailureContext($scenario === 'pending provider' ? 'Pending' : ($scenario === 'completed provider' ? 'Completed' : 'Failed'));
+    if ($scenario === 'other gateway') {
+        $c['db']->update('invoice_gateway_charge_attempt', ['gateway_id' => 6], ['id' => $c['attempt']]);
+    } elseif ($scenario === 'other reference') {
+        $c['db']->update('invoice_gateway_charge_attempt', ['payment_id' => 'P-other'], ['id' => $c['attempt']]);
+    } elseif ($scenario === 'unknown reference') {
+        $c['db']->update('invoice_gateway_charge_attempt', ['payment_id' => null], ['id' => $c['attempt']]);
+    } elseif ($scenario === 'completed receipt') {
+        $c['db']->update('"transaction"', ['status' => 'processed', 'txn_status' => 'Completed'], ['id' => 69]);
+    }
+    $before = $c['db']->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]);
+
+    try {
+        autopayFailureNotice($c);
+        expect($c['db']->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe($before);
+        if (str_contains($scenario, 'provider')) {
+            expect(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], 60))->not->toBeNull();
+        }
+    } finally {
+        $c['db']->close();
+    }
+})->with(['other gateway', 'other reference', 'unknown reference', 'pending provider', 'completed provider', 'completed receipt']);
+
+test('PayPal terminal failure cannot displace a live charge worker', function (): void {
+    $c = autopayFailureContext();
+    FOSSBilling\Core\Doctrine\NamedLock::acquire($c['db'], 'fb:card-charge:60', 0);
+
+    try {
+        expect(fn () => autopayFailureNotice($c))->toThrow(Payment_Exception::class, 'still active');
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], 60))->not->toBeNull()
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], 60))->not->toBeNull();
+    } finally {
+        FOSSBilling\Core\Doctrine\NamedLock::release($c['db'], 'fb:card-charge:60');
+        $c['db']->close();
+    }
+});
+
+test('PayPal terminal failure rolls back clearing changes when the journal cannot resolve', function (bool $changeOwner): void {
+    $c = autopayFailureContext();
+    if ($changeOwner) {
+        $c['db']->executeStatement("CREATE TRIGGER change_owner AFTER UPDATE OF status ON \"transaction\" WHEN NEW.id = 69 BEGIN UPDATE invoice_gateway_charge_attempt SET owner_token = 'changed' WHERE id = '" . $c['attempt'] . "'; END");
+    } else {
+        $c['db']->executeStatement("CREATE TRIGGER fail_resolution BEFORE UPDATE OF state ON invoice_gateway_charge_attempt BEGIN SELECT RAISE(ABORT, 'resolution failed'); END");
+    }
+
+    try {
+        expect(fn () => autopayFailureNotice($c))->toThrow($changeOwner ? FOSSBilling\Core\Payment\OwnershipLost::class : Doctrine\DBAL\Exception\DriverException::class);
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], 60))->not->toBeNull()
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], 60))->not->toBeNull();
+    } finally {
+        $c['db']->close();
+    }
+})->with([false, true]);
+
+test('a repeated PayPal failure repairs a legacy journal after its clearing marker already ended', function (): void {
+    $c = autopayFailureContext('Denied');
+    $c['db']->update('"transaction"', ['status' => 'error', 'txn_status' => 'Failed'], ['id' => 69]);
+    $c['db']->update('invoice_gateway_charge_attempt', ['owner_token' => null], ['id' => $c['attempt']]);
+
+    try {
+        autopayFailureNotice($c, 'Denied');
+        expect($c['db']->fetchOne('SELECT state FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe('failed');
+    } finally {
+        $c['db']->close();
+    }
+});
+
+test('PayPal failure cannot resolve the current charge scope on a reentrant connection', function (): void {
+    $c = autopayFailureContext();
+    $owner = $c['db']->fetchOne('SELECT owner_token FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]);
+
+    try {
+        expect(fn () => FOSSBilling\Core\Payment\ProcessingFence::charge($c['db'], $c['attempt'], $owner,
+            fn () => $c['adapter']->processTransaction($c['api'], 70, ['source' => 'ipn', 'post' => ['payment_status' => 'Failed', 'txn_id' => 'P-pending']], 5)))
+            ->toThrow(Payment_Exception::class, 'still active');
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], 60))->not->toBeNull();
+    } finally {
+        $c['db']->close();
+    }
+});
+
+test('PayPal failure rejects an outer transaction before ending any pending payment', function (): void {
+    $c = autopayFailureContext();
+    $c['db']->beginTransaction();
+
+    try {
+        expect(fn () => $c['adapter']->processTransaction($c['api'], 70, ['source' => 'ipn', 'post' => ['payment_status' => 'Failed', 'txn_id' => 'P-pending']], 5))
+            ->toThrow(LogicException::class, 'outside a database transaction');
+    } finally {
+        $c['db']->rollBack();
+    }
+    expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], 60))->not->toBeNull()
+        ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], 60))->not->toBeNull();
+    $c['db']->close();
+});
+
+test('PayPal failure verifies the invoice binding before changing the charge journal', function (): void {
+    $c = autopayFailureContext();
+    $c['di']['http_client'] = autopayNvpResponder(['ACK=Success&TRANSACTIONID=P-pending&CUSTOM=fb-invoice-61&AMT=100.00&CURRENCYCODE=USD&PAYMENTSTATUS=Failed']);
+
+    try {
+        expect(fn () => autopayFailureNotice($c))->toThrow(Payment_Exception::class, 'does not belong');
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], 60))->not->toBeNull()
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], 60))->not->toBeNull();
+    } finally {
+        $c['db']->close();
+    }
+});
+
+test('PayPal failure only clears transaction rows on its verified invoice', function (): void {
+    $c = autopayFailureContext();
+    $c['db']->insert('"transaction"', ['id' => 71, 'invoice_id' => 99, 'gateway_id' => 5, 'txn_id' => 'P-pending', 'status' => 'received', 'txn_status' => 'processing']);
+
+    try {
+        autopayFailureNotice($c);
+        expect($c['db']->fetchOne('SELECT txn_status FROM "transaction" WHERE id = 69'))->toBe('Failed')
+            ->and($c['db']->fetchOne('SELECT txn_status FROM "transaction" WHERE id = 71'))->toBe('processing');
+    } finally {
+        $c['db']->close();
+    }
+});
