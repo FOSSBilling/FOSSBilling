@@ -26,6 +26,7 @@ test('Stripe keeps the canonical receipt through post-commit failure and competi
         $em->persist($source);
         $em->flush();
         $sourceId = $source->getId();
+        $transaction->setOriginalInvoiceId($sourceId);
     }
     $em->flush();
     $gatewayId = $gateway->getId();
@@ -168,3 +169,53 @@ test('Stripe keeps the canonical receipt through post-commit failure and competi
         ->and((int) $connection->fetchOne("SELECT COUNT(*) FROM client_balance WHERE type = 'invoice'"))->toBe(1)
         ->and($notified)->toBe(2);
 })->with(['payment', 'subscription', 'setup'])->with(['listener failure' => false, 'crash' => true])->with(['background', 'synchronous']);
+
+test('Stripe replay keeps a legacy invoice link when provenance was not yet recorded', function (string $state): void {
+    [, $em, $client, $gateway, $transaction] = receiptTestContext();
+    $source = (new Invoice())->setClientId($client->getId())->setGateway($gateway)->setCurrency('USD')->setStatus(Invoice::STATUS_PAID)->setIssued(true);
+    $target = (new Invoice())->setClientId($client->getId())->setGateway($gateway)->setCurrency('USD')->setStatus(Invoice::STATUS_PAID)->setIssued(true);
+    $em->persist($source);
+    $em->persist($target);
+    $transaction->setInvoice($target)->setTxnId('in_legacy');
+    $em->flush();
+
+    $billing = gatewayDepositTestService($em);
+    $di = $billing->getDi();
+    $dispatcher = new EventDispatcher();
+    $notified = [];
+    $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent::class, function ($event) use (&$notified): void {
+        $notified[] = $event->invoiceId;
+    });
+    $di['event_dispatcher'] = $dispatcher;
+    $billing->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment');
+    if ($state !== 'no receipt') {
+        $amount = (new Box\Mod\Client\Entity\ClientBalance())->setAmount('15')->setClient($client)->setType('transaction')
+            ->setGatewayReceiptKey(hash('sha256', $gateway->getId() . ':in_legacy'))->setGatewayTransactionId($transaction->getId());
+        $em->persist($amount);
+        $transaction->setStatus(Transaction::STATUS_PROCESSED)
+            ->setGatewayCompletionState($state === 'interrupted' ? Transaction::GATEWAY_COMPLETION_PENDING : Transaction::GATEWAY_COMPLETION_DONE);
+        $em->flush();
+    }
+
+    $subscriptions = Mockery::mock();
+    $subscriptions->shouldReceive('retrieve')->once()->with('sub_legacy', [])->andReturn((object) [
+        'id' => 'sub_legacy', 'metadata' => (object) ['invoice_id' => $source->getId(), 'client_id' => $client->getId()],
+    ]);
+    $sdk = Mockery::mock(Stripe\StripeClient::class);
+    $sdk->subscriptions = $subscriptions;
+    $adapter = new Payment_Adapter_Stripe(['test_mode' => true, 'test_api_key' => 'sk_test_dummy', 'test_pub_key' => 'pk_test_dummy', 'gateway_id' => $gateway->getId()]);
+    (new ReflectionProperty($adapter, 'stripe'))->setValue($adapter, $sdk);
+    $adapter->setDi($di);
+    $invoice = (object) ['id' => 'in_legacy', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 1500, 'currency' => 'usd'];
+    $replay = fn () => (new ReflectionMethod($adapter, 'handleInvoicePaymentSucceededUnderLock'))->invoke($adapter, new stdClass(), $transaction, $invoice, 'sub_legacy');
+    if ($state === 'no receipt') {
+        expect($replay)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'stored invoice could not be verified');
+    } else {
+        expect($replay())->toBeTrue();
+    }
+
+    $em->refresh($transaction);
+    expect($transaction->getInvoice()?->getId())->toBe($target->getId())
+        ->and($transaction->getOriginalInvoiceId())->toBeNull()
+        ->and($notified)->toBe($state === 'interrupted' ? [$target->getId()] : []);
+})->with(['interrupted', 'completed', 'no receipt']);

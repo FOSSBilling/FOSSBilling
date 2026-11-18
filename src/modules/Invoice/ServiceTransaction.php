@@ -228,7 +228,7 @@ class ServiceTransaction implements InjectionAwareInterface
     /** Webhook signature headers (Stripe-Signature, PayPal-Transmission-Sig...) stay with the stored callback. */
     private const string SIGNATURE_HEADER_PATTERN = '/^HTTP_[A-Z0-9_]*(?:SIGNATURE|_SIG|HMAC|DIGEST)(?:_[0-9]+)?$/';
 
-    private function authenticateJsonCallback(array $data): void
+    private function authenticateJsonCallback(array $data): ?int
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         if (!is_string($rawBody) || strlen($rawBody) > self::MAX_CALLBACK_BODY_SIZE) {
@@ -243,7 +243,7 @@ class ServiceTransaction implements InjectionAwareInterface
             || isset($server['HTTP_STRIPE_SIGNATURE'])
             || ($body !== '' && json_validate($rawBody));
         if (!$isJson) {
-            return;
+            return null;
         }
 
         // Authenticate before lifecycle listeners, deduplication, logging or storage.
@@ -258,11 +258,13 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new InformationException('Payment gateway does not support authenticated JSON callbacks');
         }
         $adapter->authenticateJsonWebhook($data);
+
+        return $gateway->getId();
     }
 
     public function create(array $data): ?int
     {
-        $this->authenticateJsonCallback($data);
+        $authenticatedGatewayId = $this->authenticateJsonCallback($data);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionCreateEvent($this->getSafeCreateEventInput($data)));
 
         $skip_validation = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['skip_validation'] ?? false);
@@ -328,6 +330,9 @@ class ServiceTransaction implements InjectionAwareInterface
         // Fallback dedupe: compute a canonical hash of the IPN payload and
         // look up an existing transaction by (gateway_id, ipn_hash).
         $ipn_hash = $this->ipnHash($ipn);
+        if ($authenticatedGatewayId !== null) {
+            $ipn['authenticated_gateway_id'] = $authenticatedGatewayId;
+        }
         $supportsIpnHash = $this->supportsTransactionIpnHash();
         if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
             $existingByHash = $this->getTransactionRepository()->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], $ipn_hash);
@@ -784,10 +789,14 @@ class ServiceTransaction implements InjectionAwareInterface
         $connection = $this->di['em']->getConnection();
         // Decide against the live row: a completion owner may acknowledge DONE
         // or commit its receipt after this worker observed an earlier state.
+        $retryable = $e instanceof Exception\RetryableCallbackException;
         $affected = $connection->executeStatement(
             'UPDATE ' . $connection->quoteSingleIdentifier('transaction')
             . " SET gateway_completion_state = CASE WHEN status = 'processed' THEN 1 ELSE gateway_completion_state END,"
-            . " status = CASE WHEN status = 'processed' THEN status ELSE 'error' END, error = ?, error_code = ?, updated_at = ?"
+            . ($retryable
+                ? " status = CASE WHEN status = 'processing' THEN 'received' ELSE status END,"
+                : " status = CASE WHEN status = 'processed' THEN status ELSE 'error' END,")
+            . ' error = ?, error_code = ?, updated_at = ?'
             . " WHERE id = ? AND (status <> 'processed' OR gateway_completion_state <> 0)",
             [$e->getMessage(), (int) $e->getCode(), date('Y-m-d H:i:s'), $id],
         );

@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+// cspell:words cancelrequest
+
 use Box\Mod\Order\Api\Client;
 use Box\Mod\Order\Service;
 
@@ -223,4 +225,65 @@ test('throws exception when order not found', function (): void {
     $data = ['id' => 1];
 
     expect(fn () => $api->get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+});
+
+test('requests cancellation of a service', function (): void {
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
+
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->once()->andReturn($order);
+
+    $cancelService = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancelService->shouldReceive('create')->once()->with($order, 'immediate', 'Leaving')->andReturn(createEntity(Box\Mod\Order\Entity\ClientOrderCancelRequest::class));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancelService]));
+    $apiMock->setDi($di);
+
+    expect($apiMock->cancel_request(['id' => 1, 'type' => 'immediate', 'reason' => 'Leaving']))->toBeTrue();
+});
+
+test('gets and withdraws a waiting cancellation request', function (int|string $requestId): void {
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+    $request = createEntity(Box\Mod\Order\Entity\ClientOrderCancelRequest::class, ['id' => 3, 'type' => 'immediate', 'reason' => 'Leaving']);
+
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->times(3)->andReturn($order);
+    $apiMock->setIdentity($client);
+
+    $cancelService = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancelService->shouldReceive('pending')->twice()->with($order)->andReturn($request, null);
+    $cancelService->shouldReceive('toApiArray')->once()->with($request)->andReturn(['id' => 3, 'type' => 'immediate']);
+    $cancelService->shouldReceive('withdraw')->once()->with($order, $client, 3)->andReturnNull();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancelService]));
+    $apiMock->setDi($di);
+
+    expect($apiMock->cancel_request_get(['id' => 1]))->toBe(['id' => 3, 'type' => 'immediate']);
+    expect($apiMock->cancel_request_get(['id' => 1]))->toBeNull();
+    expect($apiMock->cancel_request_withdraw(['id' => 1, 'request_id' => $requestId]))->toBeTrue();
+})->with([3, '3']);
+
+test('cancellation API rejects non-string type and reason', function (mixed $type, mixed $reason): void {
+    $api = apiEndpoint(new Client());
+    $cancel = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancel->shouldNotReceive('create');
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancel]));
+    $api->setDi($di);
+    expect(fn () => $api->cancel_request(['id' => 1, 'type' => $type, 'reason' => $reason]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'must be strings');
+})->with([[['immediate'], 'reason'], ['immediate', ['reason']], [true, 'reason'], ['immediate', 123]]);
+
+test('withdrawal rejects a fractional query-string request id before invoking the service', function (): void {
+    $api = apiEndpoint(new Client());
+    $cancel = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancel->shouldNotReceive('withdraw');
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancel]));
+    $api->setDi($di);
+    expect(fn () => $api->cancel_request_withdraw(['id' => 1, 'request_id' => '3.5']))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'positive cancellation request ID');
 });

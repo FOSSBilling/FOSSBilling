@@ -88,6 +88,20 @@
 {% endblock %}
 
 {% block content %}
+    {% set cancel_requests = has_permission('order', 'view') ? admin.order_cancel_request_list : [] %}
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-orders" data-bs-toggle="tab" role="tab">{{ 'Orders'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-cancel-requests" data-bs-toggle="tab" role="tab">
+                {{ 'Cancellation Requests'|trans }}
+                {% if cancel_requests|length > 0 %}<span class="badge bg-red text-white ms-2">{{ cancel_requests|length }}</span>{% endif %}
+            </a>
+        </li>
+    </ul>
+    <div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-orders" role="tabpanel">
     <div class="card">
         <div class="card-header">
             <div>
@@ -312,6 +326,50 @@
             </div>
         </div>
         </div>
+    </div>
+    <div class="tab-pane fade" id="tab-cancel-requests" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">{{ 'Cancellation Requests'|trans }}</h3>
+                    <p class="card-subtitle">{{ 'Services clients asked to cancel. Accept a request to cancel the service now or at the end of its billing period, as the client chose, or stop it.'|trans }}</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table card-table table-vcenter">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Date'|trans }}</th>
+                            <th>{{ 'Client'|trans }}</th>
+                            <th>{{ 'Service'|trans }}</th>
+                            <th>{{ 'Cancellation Type'|trans }}</th>
+                            <th>{{ 'Reason'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in cancel_requests %}
+                        <tr>
+                            <td class="text-nowrap">{{ request.created_at|format_datetime }}</td>
+                            <td><a href="{{ ('client/manage/' ~ request.client_id)|url }}">{{ request.client_first_name }} {{ request.client_last_name }}</a></td>
+                            <td><a href="{{ ('order/manage/' ~ request.client_order_id)|url }}">#{{ request.client_order_id }} {{ request.order_title }}</a></td>
+                            <td class="text-nowrap">{{ request.type == 'end_of_period' ? 'End of billing period'|trans ~ (request.expires_at ? ' (' ~ request.expires_at|format_date ~ ')' : '') : 'Immediate'|trans }}</td>
+                            <td class="text-wrap">{{ request.reason }}</td>
+                            <td class="text-nowrap">
+                                {% if has_permission('order', 'manage') %}
+                                <a class="btn btn-primary btn-sm" {{ fb_api_link({href: 'order/cancel_request_accept'|api_url(query: {id: request.id}), modal: {type: 'confirm', title: 'Accept the cancellation request?'|trans, content: (request.type == 'end_of_period' ? 'The service is cancelled at the end of its paid period.'|trans : 'The service is cancelled now.'|trans)}, reload: true}) }}>{{ 'Accept'|trans }}</a>
+                                <a class="btn btn-secondary btn-sm" {{ fb_api_link({href: 'order/cancel_request_stop'|api_url(query: {id: request.id}), modal: {type: 'confirm', title: 'Stop the cancellation request?'|trans, content: 'The service is not cancelled. Tell the client if needed.'|trans}, reload: true}) }}>{{ 'Stop'|trans }}</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-muted text-center">{{ 'No cancellation requests are waiting.'|trans }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
     </div>
 {% endblock %}
 
