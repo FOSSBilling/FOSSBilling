@@ -389,11 +389,10 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         $connection = $this->di['em']->getConnection();
-        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'ii.rel_id');
-        $orderReference = InvoiceItemRepository::orderIdAsReference($connection, 'o.id');
+        $legacyMatch = $this->sourceLegacyOrderLink($connection, 'o.id');
 
         return (int) $connection->fetchOne(
-            "SELECT COUNT(*) FROM invoice_item ii INNER JOIN client_order o ON (ii.order_id = o.id OR (ii.order_id IS NULL AND $legacyReference = $orderReference)) WHERE ii.invoice_id = ? AND ii.type = ? AND o.id <> ? AND (o.status IS NULL OR o.status <> ?)",
+            "SELECT COUNT(*) FROM invoice_item ii LEFT JOIN invoice i ON i.id = ii.invoice_id INNER JOIN client_order o ON (ii.order_id = o.id OR (ii.order_id IS NULL AND $legacyMatch)) WHERE ii.invoice_id = ? AND ii.type = ? AND o.id <> ? AND (o.status IS NULL OR o.status <> ?)",
             [$subscription->getRelId(), Entity\InvoiceItem::TYPE_ORDER, $order->getId(), Order::STATUS_CANCELED]
         ) > 0;
     }
@@ -541,9 +540,9 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         $connection = $this->di['em']->getConnection();
-        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'ii.rel_id');
-        $orderReference = InvoiceItemRepository::orderIdAsReference($connection, ':order_id');
+        $legacyMatch = $this->sourceLegacyOrderLink($connection, ':order_id');
         $query = 'SELECT s.id FROM subscription s INNER JOIN invoice_item ii ON ii.invoice_id = s.rel_id
+                    LEFT JOIN invoice i ON i.id = ii.invoice_id
                   WHERE s.rel_type = :rel_type AND ii.type = :item_type';
         $params = ['rel_type' => 'invoice', 'item_type' => Entity\InvoiceItem::TYPE_ORDER, 'order_id' => $orderId];
         if ($status !== null) {
@@ -555,7 +554,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $subscriptionIds = $connection->fetchFirstColumn(
             "$query AND ii.order_id = :order_id
              UNION
-             $query AND ii.order_id IS NULL AND $legacyReference = $orderReference",
+             $query AND ii.order_id IS NULL AND $legacyMatch",
             $params,
         );
 
@@ -568,6 +567,15 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         return $subscriptions;
+    }
+
+    private function sourceLegacyOrderLink(\Doctrine\DBAL\Connection $connection, string $orderId): string
+    {
+        $reference = InvoiceItemRepository::orderIdAsReference($connection, $orderId);
+        $legacy = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'ii.rel_id');
+        $paidLegacy = InvoiceItemRepository::normalizedLegacyPaidOrderReference($connection, 'ii.rel_id');
+
+        return "($legacy = $reference OR (i.status = 'paid' AND $paidLegacy = $reference))";
     }
 
     private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string

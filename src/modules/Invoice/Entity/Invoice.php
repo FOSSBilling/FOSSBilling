@@ -172,6 +172,22 @@ class Invoice implements TimestampInterface
         $this->subscriptionPaymentDraft = true;
     }
 
+    /** @var array<int, string|null>|null Expiry quoted for each order in a cron draft. */
+    #[ORM\Column(name: 'cron_renewal_expiries', type: Types::JSON, nullable: true)]
+    private ?array $cronRenewalExpiries = null;
+
+    /** @return array<int, string|null>|null */
+    public function getCronRenewalExpiries(): ?array
+    {
+        return $this->cronRenewalExpiries;
+    }
+
+    /** @param array<int, string|null> $expiries */
+    public function setCronRenewalExpiries(array $expiries): void
+    {
+        $this->cronRenewalExpiries = $expiries;
+    }
+
     // 0: no pending event; 1: retry credit first; 2: event only; bit 4: email queued.
     #[ORM\Column(name: 'issue_notification_state', type: Types::SMALLINT, options: ['default' => 0])]
     private int $issueNotificationState = 0;

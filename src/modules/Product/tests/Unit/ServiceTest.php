@@ -4125,7 +4125,7 @@ test('renewal draft pruning releases promo reservations only for that order and 
         ->and($redemption->getReleaseReason())->toBe('renewal_cancellation_hold');
 });
 
-test('domain waits for eligible paid hosting setup across invoices without granting the term', function (string $invoiceStatus, string $taskStatus, bool $matchingDomain, int $invoiceOwner, bool $pending): void {
+test('domain waits for eligible paid hosting setup across invoices without granting the term', function (string $invoiceStatus, string $taskStatus, bool $matchingDomain, int $invoiceOwner, bool $pending, string $paidPeriod = '1Y'): void {
     $hosting = freeRenewalHostingOrder([
         'status' => Order::STATUS_FAILED_RENEW,
         'config' => ['domain' => ['action' => 'register', 'register_sld' => $matchingDomain ? 'example' : 'other', 'register_tld' => '.com']],
@@ -4138,12 +4138,15 @@ test('domain waits for eligible paid hosting setup across invoices without grant
     $db->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
     $db->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, client_id INTEGER, group_id TEXT, expires_at TEXT, status TEXT, period TEXT, product_id INTEGER, config TEXT)');
     $db->insert('client_order', ['id' => 21, 'client_id' => 7, 'group_id' => 'group-1', 'expires_at' => '2030-01-01', 'status' => 'failed_renew', 'period' => '1Y', 'product_id' => 5, 'config' => json_encode($hosting->getConfig(), JSON_THROW_ON_ERROR)]);
+    $db->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, type TEXT, config TEXT)');
+    $offer = ['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']];
+    $db->insert('product', ['id' => 5, 'type' => 'hosting', 'config' => json_encode($offer, JSON_THROW_ON_ERROR)]);
     $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, status TEXT)');
-    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, task TEXT, rel_id TEXT, order_id INTEGER, status TEXT)');
+    $db->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, task TEXT, rel_id TEXT, order_id INTEGER, status TEXT, period TEXT)');
     $db->insert('invoice', ['id' => 10, 'client_id' => 7, 'status' => 'paid']);
     $db->insert('invoice_item', ['invoice_id' => 10, 'type' => 'order', 'task' => 'renew', 'rel_id' => '20', 'status' => 'pending_setup']);
     $db->insert('invoice', ['id' => 99, 'client_id' => $invoiceOwner, 'status' => $invoiceStatus]);
-    $db->insert('invoice_item', ['invoice_id' => 99, 'type' => 'order', 'task' => 'renew', 'rel_id' => $pending ? '20' : '21', 'order_id' => $pending ? 21 : null, 'status' => $taskStatus]);
+    $db->insert('invoice_item', ['id' => 99, 'invoice_id' => 99, 'type' => 'order', 'task' => 'renew', 'rel_id' => $pending ? '20' : '21', 'order_id' => $pending ? 21 : null, 'status' => $taskStatus, 'period' => $paidPeriod]);
     $service->getDi()['em']->shouldReceive('getConnection')->byDefault()->andReturn($db);
     expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => $pending]);
     if ($invoiceStatus === 'unpaid' && $matchingDomain && $invoiceOwner === 7) {
@@ -4151,9 +4154,14 @@ test('domain waits for eligible paid hosting setup across invoices without grant
         expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => true]);
     }
     if ($pending) {
+        $db->insert('client_order_meta', ['client_order_id' => 21, 'name' => 'paid_renewal_outcome_99', 'value' => 'completed']);
+        expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => false]);
         $db->update('invoice_item', ['status' => 'executed'], ['invoice_id' => 99]);
         $db->update('client_order', ['status' => 'active', 'expires_at' => '2031-01-01'], ['id' => 21]);
         expect($service->freeDomainRenewalState(20))->toBe(['until' => (new DateTimeImmutable('2031-01-01'))->getTimestamp(), 'pending' => false]);
+        $db->update('product', ['config' => json_encode(['free_domain_renewals' => false] + $offer, JSON_THROW_ON_ERROR)], ['id' => 5]);
+        expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => false]);
+        $db->update('product', ['config' => json_encode($offer, JSON_THROW_ON_ERROR)], ['id' => 5]);
         // The managed hosting order still has its original billing period and domain.
         $db->update('client_order', ['period' => '1M'], ['id' => 21]);
         expect($hosting->getPeriod())->toBe('1Y')
@@ -4164,6 +4172,7 @@ test('domain waits for eligible paid hosting setup across invoices without grant
 })->with([
     'linked hosting on another paid invoice' => ['paid', 'pending_setup', true, 7, true],
     'newly paid hosting awaiting activation' => ['paid', 'pending_payment', true, 7, true],
+    'paid hosting item that is too short' => ['paid', 'pending_setup', true, 7, false, '1M'],
     'unpaid hosting invoice' => ['unpaid', 'pending_setup', true, 7, false],
     'executed hosting item' => ['paid', 'executed', true, 7, false],
     'failed hosting item' => ['paid', 'failed', true, 7, false],

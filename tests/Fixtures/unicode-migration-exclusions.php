@@ -13,6 +13,7 @@ return [
         'cart_product.config',
         'client_order.config',
         'form.style',
+        'invoice.cron_renewal_expiries',
         'invoice_event.snapshot',
         'mod_massmailer.filter',
         'pay_gateway.accepted_currencies',

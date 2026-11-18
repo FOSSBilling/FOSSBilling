@@ -4465,7 +4465,7 @@ test('renewal batch merges mergeable orders sharing a bucket into one invoice', 
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4501,7 +4501,7 @@ test('renewal batch keeps subscription-backed orders on the single-invoice path'
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->once()->with($order)->andReturn(true);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->once()->with($order)->andReturn(true);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1]]);
@@ -4538,7 +4538,7 @@ test('renewal batch invoices different billing periods separately', function ():
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4575,7 +4575,7 @@ test('renewal batch retries each order singly when merged generation fails', fun
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4612,7 +4612,7 @@ test('renewal batch resets the manager and stops when merged generation closes i
     $second = createEntity(Order::class, ['id' => 2, 'client_id' => 7]);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4647,7 +4647,7 @@ test('renewal batch does not regenerate when issuance fails', function (): void 
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);

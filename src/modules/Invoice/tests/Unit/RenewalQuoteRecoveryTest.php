@@ -78,7 +78,7 @@ test('renewal batches reload single and bucketed orders after credit closes the 
         }
         if ($sub === 'Subscription') {
             $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-            $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(false);
+            $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(false);
 
             return $subscriptions;
         }
@@ -664,6 +664,20 @@ test('background Stripe recovery replays authenticated callbacks after the signa
         $billing->shouldReceive('recordGatewayPayment')->once()->andThrow(new Box\Mod\Invoice\Exception\RetryableCallbackException('Interrupted before retaining the receipt'));
         $billing->shouldReceive('recordGatewayPayment')->once()->passthru();
     }
+    if ($failure === 'changed target' || $failure === 'malformed draft') {
+        $peer = renewalReviewOrder($em, $client->getId());
+        $draft = $billing->generateForOrder($order, subscriptionPayment: true);
+        if ($failure === 'changed target') {
+            $dispatcher = (new ReflectionProperty(FOSSBilling\Core\Events\EventDispatcher::class, 'dispatcher'))->getValue($di['event_dispatcher']);
+            $dispatcher->addListener(Box\Mod\Invoice\Event\BeforeAdminInvoiceIssueEvent::class, static function () use ($em, $draft, $peer): void {
+                $em->persist((new InvoiceItem())->setInvoice($draft)->setType(InvoiceItem::TYPE_ORDER)
+                    ->setTask(InvoiceItem::TASK_ACTIVATE)->setOrderId($peer->getId()));
+                $em->flush();
+            });
+        } else {
+            $db->update('invoice_item', ['order_id' => null, 'rel_id' => $order->getId() . ' '], ['invoice_id' => $draft->getId()]);
+        }
+    }
     $issuanceAttempts = 0;
     if (in_array($failure, ['issuance', 'cancellation', 'persistent'], true)) {
         $dispatcher = (new ReflectionProperty(FOSSBilling\Core\Events\EventDispatcher::class, 'dispatcher'))->getValue($di['event_dispatcher']);
@@ -710,7 +724,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $gateways->shouldReceive('getPaymentAdapter')->with($gateway)->andReturn($adapter);
     $orders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
     $orders->setDi($di);
-    $orders->shouldReceive('renewInvoiceItem')->times($renewal && !in_array($failure, ['invalid request', 'persistent'], true) ? 1 : 0)->andReturn(true);
+    $orders->shouldReceive('renewInvoiceItem')->times($renewal && !in_array($failure, ['invalid request', 'persistent', 'changed target', 'malformed draft'], true) ? 1 : 0)->andReturn(true);
     $services = $di['mod_service'];
     unset($di['mod_service']);
     $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => match ($sub) {
@@ -746,6 +760,17 @@ test('background Stripe recovery replays authenticated callbacks after the signa
             FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
         }
     }
+    if (in_array($failure, ['changed target', 'malformed draft'], true)) {
+        $worker->processAndCatchErrors($id);
+        expect($di['em']->isOpen())->toBeTrue()
+            ->and($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
+            ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBeNull()
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0)
+            ->and((bool) $db->fetchOne('SELECT issued FROM invoice WHERE id = ?', [$draft->getId()]))->toBeFalse();
+
+        return;
+    }
     if ($failure === 'invalid request') {
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('error')
             ->and(array_column($worker->getReceived(), 'id'))->not->toContain($id)
@@ -777,6 +802,9 @@ test('background Stripe recovery replays authenticated callbacks after the signa
             ->and($issuanceAttempts)->toBe(3)
             ->and($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$draftId]))->toBe(Invoice::STATUS_CANCELED)
             ->and($db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBeNull();
+        $em->refresh($tx);
+        expect($tx->getIpn()['subscription_renewal_draft_id'] ?? null)->toBe($draftId);
+        $replacement = $billing->generateForOrder($order, subscriptionPayment: true);
         $worker->processReceivedATransactions();
         $worker->processReceivedATransactions();
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
@@ -784,7 +812,9 @@ test('background Stripe recovery replays authenticated callbacks after the signa
             ->and($db->fetchOne("SELECT note FROM $table WHERE id = ?", [$id]))->toContain('Review the retained payment')
             ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBeNull()
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
-            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0);
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0)
+            ->and($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$replacement->getId()]))->toBe(Invoice::STATUS_UNPAID)
+            ->and($db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBe($replacement->getId());
 
         return;
     }
@@ -841,7 +871,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     'permanent Stripe request failure' => 'invalid request',
     'renewal mutex contention' => 'lock',
     'failed draft issuance' => 'issuance',
-    'persistent issuance failure retains one payment' => 'persistent',
+    'persistent issuance failure retains one payment' => 'persistent', 'changed target', 'malformed draft',
     'failed draft issuance followed by cancellation and withdrawal' => 'cancellation',
 ]);
 
@@ -896,8 +926,8 @@ test('a cron merge bucket drops an order whose expiry changed after grouping', f
     $di = $billing->getDi();
     $services = $di['mod_service'];
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->with($first)->andReturn(false);
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->with($second)->andReturn($change === 'subscription');
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->with($first)->andReturn(false);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->with($second)->andReturn($change === 'subscription');
     $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => $sub === 'Subscription' ? $subscriptions : $services($module, $sub));
     $changed = match ($change) {
         'expiry' => ['expires_at' => '2030-07-01 00:00:00'],
@@ -947,7 +977,7 @@ test('renewal cron skips a moved order on single and fallback paths', function (
     $billing = renewalReviewService($em);
     $di = $billing->getDi();
     $subs = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $subs->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(false);
+    $subs->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(false);
     $services = $di['mod_service'];
     $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => $sub === 'Subscription' ? $subs : $services($name, $sub));
     $fields = $noInvoice ? ['invoice_option' => 'no-invoice'] : ['expires_at' => (new DateTimeImmutable('+6 months'))->format('Y-m-d H:i:s')];
@@ -1048,7 +1078,7 @@ test('cron uses the original expiry cutoff when an order moves before ORM loadin
         return $selected;
     });
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(false);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(false);
     $services = $di['mod_service'];
     $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => match ([$module, $sub]) {
         ['Order', ''] => $orders,
@@ -1097,7 +1127,9 @@ test('cron retires a stale quote only when its order is known and it has no paym
     $billing = renewalReviewService($em);
     $di = $billing->getDi();
     $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
-    $draft = $billing->generateForOrder($order);
+    $key = $client->getId() . '|USD|' . $order->getExpiresAt()->format('Y-m-d') . '|1M';
+    $draft = $billing->generateForOrder($order, expectedMergeKey: $key);
+    expect($draft->getCronRenewalExpiries())->toBe([$order->getId() => $order->getExpiresAt()->format('Y-m-d H:i:s')]);
     $billing->shouldNotReceive('tryPayWithCredits', 'getNextInvoiceNumber');
     if ($evidence === 'linked payment') {
         $transaction->setInvoice($draft);
@@ -1164,7 +1196,7 @@ test('exhausted subscription recovery preserves a draft once payment is linked',
     $em->flush();
     $billing = renewalReviewService($em);
     $draft = $billing->generateForOrder($order, subscriptionPayment: true);
-    $callback->setIpn(['subscription_renewal_failures' => 3]);
+    $callback->setIpn(['subscription_renewal_failures' => 3, 'subscription_renewal_draft_id' => $draft->getId()]);
     $em->persist((new Box\Mod\Invoice\Entity\Transaction())->setInvoice($draft));
     $em->flush();
     $billing->shouldNotReceive('issueInvoice');
@@ -1174,3 +1206,64 @@ test('exhausted subscription recovery preserves a draft once payment is linked',
         ->and($order->getUnpaidInvoiceId())->toBe($draft->getId())
         ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE invoice_id = ?', [$draft->getId()]))->toBe(1);
 });
+
+test('cron recovers a manual renewal draft without overriding its custom due date', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $order->setExpiresAt(new DateTimeImmutable('today'))->setPeriod('1M')->setInvoiceOption('issue-invoice');
+    $em->flush();
+    $billing = renewalReviewService($em);
+    $di = $billing->getDi();
+    $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
+    $draft = $billing->generateForOrder($order, 7);
+    $due = $draft->getDueAt()?->getTimestamp();
+    expect($draft->getCronRenewalExpiries())->toBeNull();
+    $billing->shouldReceive('tryPayWithCredits')->once()->with($draft)->andReturn(false);
+
+    expect($billing->generateInvoicesForExpiringOrders())->toBeTrue();
+    $em->refresh($draft);
+    expect($draft->isIssued())->toBeTrue()
+        ->and($draft->getDueAt()?->getTimestamp())->toBe($due)
+        ->and($order->getUnpaidInvoiceId())->toBe($draft->getId());
+});
+
+test('cron keeps live subscriptions separate even when the subscription is pending cancellation', function (string $status, bool $merged): void {
+    [, $em, $client, $gateway] = receiptTestContext();
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\Subscription::class)]);
+    $first = renewalReviewOrder($em, $client->getId());
+    $second = renewalReviewOrder($em, $client->getId());
+    $date = new DateTimeImmutable('today');
+    foreach ([$first, $second] as $order) {
+        $order->setExpiresAt($date)->setPeriod('1M')->setInvoiceOption('issue-invoice');
+    }
+    $source = (new Invoice())->setClientId($client->getId())->setStatus(Invoice::STATUS_PAID)->setIssued(true);
+    $em->persist($source);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($source)->setType(InvoiceItem::TYPE_ORDER)->setOrderId($first->getId()));
+    $em->persist((new Box\Mod\Invoice\Entity\Subscription())->setPayGateway($gateway)->setSid('sub_cron')->setRelType('invoice')
+        ->setRelId($source->getId())->setStatus($status));
+    $em->flush();
+
+    $billing = renewalReviewService($em);
+    $subscriptions = new Box\Mod\Invoice\ServiceSubscription();
+    $di = $billing->getDi();
+    $subscriptions->setDi($di);
+    $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $adapter->shouldReceive('getSubscriptionStatus')->times($merged ? 2 : 0)->with('sub_cron')->andReturn('canceled');
+    $gateways = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+    $gateways->shouldReceive('getPaymentAdapter')->andReturn($adapter);
+    $services = $di['mod_service'];
+    $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => match ($sub) {
+        'Subscription' => $subscriptions,
+        'PayGateway' => $gateways,
+        default => $services($module, $sub),
+    });
+    $billing->shouldReceive('shouldMergeRenewalsForOrder')->andReturn(true);
+    $billing->shouldReceive('tryPayWithCredits')->andReturn(false);
+
+    expect($billing->generateInvoicesForExpiringOrders())->toBeTrue()
+        ->and($first->getUnpaidInvoiceId())->not->toBeNull()
+        ->and($second->getUnpaidInvoiceId())->not->toBeNull()
+        ->and($first->getUnpaidInvoiceId() === $second->getUnpaidInvoiceId())->toBe($merged);
+})->with(['pending cancellation' => ['pending_cancellation', false], 'confirmed canceled' => ['canceled', true]]);

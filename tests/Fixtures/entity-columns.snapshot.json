@@ -310,6 +310,7 @@
     "invoice.created_at",
     "invoice.credit",
     "invoice.credit_note_for_invoice_id",
+    "invoice.cron_renewal_expiries",
     "invoice.currency",
     "invoice.currency_rate",
     "invoice.debit_note_for_invoice_id",

@@ -35,6 +35,7 @@ function createSubscriptionDbal(): Connection
 {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE subscription (id INTEGER PRIMARY KEY, rel_type TEXT, rel_id INTEGER, status TEXT, sid TEXT, pay_gateway_id INTEGER, updated_at TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
     $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id TEXT COLLATE RTRIM, order_id INTEGER)');
     $connection->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
     $connection->executeStatement("INSERT INTO subscription (id, rel_type, rel_id, status, sid, pay_gateway_id) VALUES (7, 'invoice', 25, 'active', 'sub_123', 2)");
@@ -798,11 +799,17 @@ test('unconfirmed gateway subscription states prevent free renewals', function (
     expect($service->hasUncanceledSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBe($held);
 })->with([['past_due', true], ['unpaid', true], ['paused', true], ['pending_cancellation', true], ['canceled', false]]);
 
-test('shared subscriptions require staff reconciliation before canceling either live order', function (?string $status, bool $otherLive): void {
+test('shared subscriptions require staff reconciliation before canceling either live order', function (?string $status, bool $otherLive, bool $legacy): void {
     $connection = createSubscriptionDbal();
     $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, status TEXT)');
     $connection->insert('client_order', ['id' => 10, 'status' => 'active']);
     $connection->insert('client_order', ['id' => 11, 'status' => $status]);
+    if ($legacy) {
+        $connection->insert('invoice', ['id' => 25, 'status' => 'paid']);
+        $connection->update('invoice_item', ['order_id' => null, 'rel_id' => '11 '], ['invoice_id' => 25, 'order_id' => 11]);
+        // The typed order link still wins even when its legacy value points elsewhere.
+        $connection->update('invoice_item', ['rel_id' => '99 '], ['invoice_id' => 25, 'order_id' => 10]);
+    }
     $gateway = createEntity(PayGateway::class, ['id' => 2]);
     $subscription = createEntity(Subscription::class, ['id' => 7, 'payGateway' => $gateway, 'relType' => 'invoice', 'relId' => 25, 'sid' => 'sub_123', 'status' => 'active']);
     $repo = Mockery::mock(SubscriptionRepository::class);
@@ -833,7 +840,7 @@ test('shared subscriptions require staff reconciliation before canceling either 
     expect($service->canCancelImmediatelyForOrder($order))->toBe(!$otherLive)
         ->and($service->canCancelAtPeriodEndForOrder($order))->toBe(!$otherLive)
         ->and($adapter->calls)->toBe(0);
-})->with([['suspended', true], ['canceled', false], [null, true]]);
+})->with([['suspended', true], ['canceled', false], [null, true]])->with(['typed' => false, 'paid legacy sibling' => true]);
 
 test('locally canceled Stripe subscriptions require current gateway confirmation before free pricing', function (?string $providerState, bool $held, bool $cancelRequest): void {
     $gateway = createEntity(PayGateway::class, ['id' => 2, 'gateway' => 'Stripe']);
