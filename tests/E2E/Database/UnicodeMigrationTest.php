@@ -639,6 +639,7 @@ test('Unicode repair skips indexed columns on small-block compressed tables', fu
             if ($mentionsCompression) {
                 $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
             }
+
             throw $e;
         }
         $message = strtolower($e->getMessage());
