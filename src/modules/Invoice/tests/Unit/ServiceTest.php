@@ -3658,6 +3658,74 @@ test('removes an invoice', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('rmInvoice keeps a draft a paid linked order still points at when the cleanup asks', function (): void {
+    $service = new Service();
+    $invoiceModel = createEntity(Invoice::class);
+    setEntityId($invoiceModel, 55);
+
+    [$em] = invoiceItemEmAndRepo();
+
+    $connection = Mockery::mock(Connection::class)->shouldIgnoreMissing();
+    $connection->shouldReceive('fetchFirstColumn')
+        ->once()
+        ->withArgs(fn (string $sql, array $params): bool => str_contains($sql, 'unpaid_invoice_id') && $params === ['invoice_id' => 55])
+        ->andReturn([7, 8]);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    // The second linked order is the one with money against it; the check must
+    // look past the first, and the refusal must stop the removal outright.
+    $orderRepository = Mockery::mock(OrderRepository::class);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(7)->andReturn(false);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(8)->andReturn(true);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+
+    $em->shouldNotReceive('remove');
+    $em->shouldNotReceive('flush');
+
+    $di = container();
+    $di['em'] = $em;
+
+    $service->setDi($di);
+
+    expect($service->rmInvoice($invoiceModel, true, false, true))->toBeFalse();
+});
+
+test('rmInvoice deletes a draft when no linked order has a paid item', function (): void {
+    $service = new Service();
+    $invoiceModel = createEntity(Invoice::class);
+    setEntityId($invoiceModel, 55);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+
+    $connection = Mockery::mock(Connection::class)->shouldIgnoreMissing();
+    $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([7]);
+    $connection->shouldReceive('executeStatement')->atLeast()->once();
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $orderRepository = Mockery::mock(OrderRepository::class);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->once()->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->atLeast()->once()->andReturn([]);
+    $em->shouldReceive('remove')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('detachFromInvoice')->once()->with(55, false);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    $journalRepo = Mockery::mock(InvoiceEventRepository::class);
+    $journalRepo->shouldReceive('deleteByInvoiceId')->once()->with(55);
+    $em->shouldReceive('getRepository')->with(InvoiceEvent::class)->andReturn($journalRepo);
+
+    $di = container();
+    $di['em'] = $em;
+
+    $service->setDi($di);
+
+    expect($service->rmInvoice($invoiceModel, true, false, true))->toBeTrue();
+});
+
 test('removing an issued invoice keeps its journal as the audit trail', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
@@ -3736,7 +3804,8 @@ test('rmByClient erases invoices in any state, bypassing deletion guards', funct
 test('deletes invoice by admin', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('rmInvoice')
-        ->once();
+        ->once()
+        ->andReturn(true);
 
     $invoiceModel = createEntity(Invoice::class);
 
@@ -7148,12 +7217,46 @@ test('deleteInvoiceByAdmin only deletes unissued unpaid invoices', function (): 
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
-    $serviceMock->shouldReceive('rmInvoice')->once()->with($invoice, true)->andReturn(true);
+    $serviceMock->shouldReceive('rmInvoice')->once()->with($invoice, true, false, false)->andReturn(true);
 
     expect($serviceMock->deleteInvoiceByAdmin($invoice))->toBeTrue()
         ->and($eventDispatcher->events)->toHaveCount(2)
         ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceDeleteEvent::class)
         ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceDeleteEvent::class);
+});
+
+test('deleteInvoiceByAdmin reports a cleanup refusal instead of a delete', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $invoice->setIssued(false);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($invoice, true, false, true)
+        ->andReturn(false);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->deleteInvoiceByAdmin($invoice, true))->toBeFalse()
+        // The intent event still fires, but a policy skip is not a removal, so
+        // no completion event and no journal entry claim one happened.
+        ->and($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceDeleteEvent::class);
 });
 
 test('debitInvoice writes nothing when lines are invalid', function (): void {
@@ -8168,7 +8271,7 @@ test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
     $issuedOn->setIssued(true);
     $issuedOn->setStatus(Invoice::STATUS_UNPAID);
     setEntityId($issuedOn, 10);
-    $onService->shouldReceive('rmInvoice')->once()->with($issuedOn, true)->andReturn(true);
+    $onService->shouldReceive('rmInvoice')->once()->with($issuedOn, true, false, false)->andReturn(true);
     expect($onService->deleteInvoiceByAdmin($issuedOn))->toBeTrue()
         ->and($onEvents->events)->toHaveCount(2)
         ->and($onEvents->events[0])->toBeInstanceOf(BeforeAdminInvoiceDeleteEvent::class)
@@ -8180,7 +8283,7 @@ test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
     $canceled->setIssued(true);
     $canceled->setStatus(Invoice::STATUS_CANCELED);
     setEntityId($canceled, 11);
-    $canceledService->shouldReceive('rmInvoice')->once()->with($canceled, true)->andReturn(true);
+    $canceledService->shouldReceive('rmInvoice')->once()->with($canceled, true, false, false)->andReturn(true);
     expect($canceledService->deleteInvoiceByAdmin($canceled))->toBeTrue()
         ->and($canceledEvents->events)->toHaveCount(2);
 

@@ -2888,17 +2888,13 @@ class Service implements InjectionAwareInterface
                             // Paid since getStaleUnpaid() ran - leave every order tied
                             // to it alone instead of deleting one out from under that.
                             $invoiceHandled[$invoiceId] = false;
-                        } elseif ($status === Invoice::STATUS_UNPAID && $this->invoiceHasPaidLinkedOrder($invoiceId)) {
-                            // A linked order paid through another invoice still relies on
-                            // this draft - it may not even be in this batch, since
-                            // getStaleUnpaid() excludes orders with a paid item. Checked
-                            // here, right before the delete, so a payment that landed
-                            // while earlier orders were being processed is seen too.
-                            $invoiceHandled[$invoiceId] = false;
+                        } elseif ($status === Invoice::STATUS_UNPAID) {
+                            // The removal itself refuses a draft that any linked order
+                            // still depends on, re-checked under the invoice's row lock
+                            // so a payment or a concurrently attached paid order is seen
+                            // rather than raced. A refused removal keeps the whole group.
+                            $invoiceHandled[$invoiceId] = $invoiceService->deleteInvoiceByAdmin($invoice, true);
                         } else {
-                            if ($status === Invoice::STATUS_UNPAID) {
-                                $invoiceService->deleteInvoiceByAdmin($invoice);
-                            }
                             // Already gone, or canceled/refunded/some other non-live
                             // status - either way it's no longer a live unpaid invoice,
                             // so the orders that reference it may proceed.
@@ -2922,24 +2918,6 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Executed action to remove stale unpaid orders');
 
         return true;
-    }
-
-    /**
-     * Whether an order still linked to the draft has a paid invoice item, so
-     * the draft must not be deleted out from under it. Every linked order is
-     * checked, not just the ones this batch selected: getStaleUnpaid() excludes
-     * orders with a paid item, so a sibling paid through another invoice is
-     * invisible to the scan while still depending on the shared draft.
-     */
-    private function invoiceHasPaidLinkedOrder(int $invoiceId): bool
-    {
-        foreach ($this->getOrderRepository()->findByUnpaidInvoiceId($invoiceId) as $linkedOrder) {
-            if ($this->getOrderRepository()->hasPaidInvoiceItem($this->orderId($linkedOrder))) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

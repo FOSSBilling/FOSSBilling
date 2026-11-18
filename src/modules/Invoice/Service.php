@@ -51,6 +51,7 @@ use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
@@ -4795,14 +4796,24 @@ class Service implements InjectionAwareInterface
         return (float) $order->getPrice() * (float) $order->getQuantity();
     }
 
-    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false): bool
+    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false, bool $requireNoPaidLinkedOrder = false): bool
     {
         $entityManager = $this->di['em'];
-        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions): void {
+        $removalSkipped = false;
+        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions, $requireNoPaidLinkedOrder, &$removalSkipped): void {
             $this->lockAndRefreshInvoice($model);
 
             if ($requireUnissuedUnpaid && !$this->isDeletableByAdmin($model)) {
                 throw new InformationException('Only unissued, unpaid invoices (drafts) can be deleted. Cancel (void) an issued unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.');
+            }
+
+            // Cleanup callers refuse to remove a draft an order still depends on,
+            // while an explicit admin deletion is meant to win. Runs after the row
+            // locks so an order attached a moment ago is already visible.
+            if ($requireNoPaidLinkedOrder && $this->hasPaidLinkedOrder((int) $model->getId())) {
+                $removalSkipped = true;
+
+                return;
             }
 
             $productService = $this->di['mod_service']('Product');
@@ -4843,10 +4854,47 @@ class Service implements InjectionAwareInterface
             $entityManager->flush();
         });
 
-        return true;
+        return !$removalSkipped;
     }
 
-    public function deleteInvoiceByAdmin(Invoice $model): bool
+    /**
+     * Whether an order still linked to the invoice has a paid invoice item, so
+     * removing the invoice would clear the link and take the only live invoice
+     * of an order that already has money against it.
+     *
+     * The linked order rows are locked first: an order being attached to this
+     * invoice concurrently either commits before this runs or waits behind it,
+     * so the check cannot read a link list that is about to grow. On engines
+     * without range locks (PostgreSQL) a concurrently attached order can still
+     * slip in after the scan; the removal it races is of an unissued draft,
+     * and the invoice's own state is re-validated under its row lock above.
+     */
+    private function hasPaidLinkedOrder(int $invoiceId): bool
+    {
+        $connection = $this->di['em']->getConnection();
+        $orderIds = $connection->fetchFirstColumn(
+            'SELECT id FROM client_order WHERE unpaid_invoice_id = :invoice_id' . RowLock::suffix($connection),
+            ['invoice_id' => $invoiceId],
+        );
+
+        /** @var OrderRepository $orderRepository */
+        $orderRepository = $this->di['em']->getRepository(Order::class);
+        foreach ($orderIds as $orderId) {
+            if ($orderRepository->hasPaidInvoiceItem((int) $orderId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Deletes an invoice on an admin's instruction. A cleanup caller passes
+     * $requireNoPaidLinkedOrder so the draft is left in place when an order
+     * still linked to it has a paid invoice item; that returns false to signal
+     * a policy skip, distinct from the exceptions raised for invalid states.
+     */
+    public function deleteInvoiceByAdmin(Invoice $model, bool $requireNoPaidLinkedOrder = false): bool
     {
         // Fast rejection for the common case; rmInvoice rechecks the fresh state under its row
         // lock before detaching or deleting anything.
@@ -4857,7 +4905,11 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDeleteEvent((int) $model->getId()));
 
         $id = $model->getId();
-        $this->rmInvoice($model, true);
+        if (!$this->rmInvoice($model, true, false, $requireNoPaidLinkedOrder)) {
+            // Cleanup policy skip: nothing was removed, so the owning batch
+            // keeps the invoice and the orders linked to it for a later run.
+            return false;
+        }
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceDeleteEvent((int) $id));
 
