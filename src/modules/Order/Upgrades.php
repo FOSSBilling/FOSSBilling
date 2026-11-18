@@ -12,9 +12,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
+use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
 use FOSSBilling\Core\Exception\InformationException;
 use Pimple\Container;
 
@@ -39,19 +42,19 @@ class Upgrades
         $schemaManager = method_exists($db, 'createSchemaManager') ? $db->createSchemaManager() : $db->getSchemaManager();
 
         if (!$schemaManager->tablesExist([self::TABLE])) {
-            $db->executeStatement("
-                CREATE TABLE IF NOT EXISTS `" . self::TABLE . "` (
+            $db->executeStatement('
+                CREATE TABLE IF NOT EXISTS `' . self::TABLE . '` (
                     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                     `order_id` bigint(20) NOT NULL,
                     `client_id` bigint(20) NOT NULL,
                     `kind` varchar(20) NOT NULL,
                     `from_product_id` bigint(20) NOT NULL,
-                    `from_title` varchar(255) NOT NULL DEFAULT '',
+                    `from_title` varchar(255) NOT NULL DEFAULT \'\',
                     `from_period` varchar(10) NOT NULL,
                     `from_price` decimal(18,2) NOT NULL,
                     `from_expires_at` datetime NOT NULL,
                     `to_product_id` bigint(20) NOT NULL,
-                    `to_title` varchar(255) NOT NULL DEFAULT '',
+                    `to_title` varchar(255) NOT NULL DEFAULT \'\',
                     `to_period` varchar(10) NOT NULL,
                     `to_price` decimal(18,2) NOT NULL,
                     `to_expires_at` datetime NOT NULL,
@@ -60,9 +63,9 @@ class Upgrades
                     `credit` decimal(18,2) NOT NULL,
                     `charge` decimal(18,2) NOT NULL,
                     `amount` decimal(18,2) NOT NULL,
-                    `currency` varchar(10) NOT NULL DEFAULT '',
+                    `currency` varchar(10) NOT NULL DEFAULT \'\',
                     `invoice_id` bigint(20) DEFAULT NULL,
-                    `status` varchar(20) NOT NULL DEFAULT 'pending',
+                    `status` varchar(20) NOT NULL DEFAULT \'pending\',
                     `error` text,
                     `created_at` datetime NOT NULL,
                     `claimed_at` datetime DEFAULT NULL,
@@ -72,12 +75,12 @@ class Upgrades
                     KEY `status` (`status`),
                     KEY `invoice` (`invoice_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-            ");
+            ');
         }
 
         if (!$schemaManager->tablesExist([self::RULES])) {
-            $db->executeStatement("
-                CREATE TABLE IF NOT EXISTS `" . self::RULES . "` (
+            $db->executeStatement('
+                CREATE TABLE IF NOT EXISTS `' . self::RULES . '` (
                     `scope` varchar(10) NOT NULL,
                     `ref_id` bigint(20) NOT NULL,
                     `upgrade` tinyint(1) DEFAULT NULL,
@@ -85,7 +88,7 @@ class Upgrades
                     `updated_at` datetime NOT NULL,
                     PRIMARY KEY (`scope`, `ref_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-            ");
+            ');
         }
     }
 
@@ -289,6 +292,7 @@ class Upgrades
         foreach ($options['options'] as $opt) {
             if ($opt['product_id'] === $productId && strtoupper(trim($opt['period'])) === $period) {
                 $chosen = $opt;
+
                 break;
             }
         }
@@ -324,7 +328,7 @@ class Upgrades
 
         // Positive amount: create invoice for difference
         if ($chosen['amount'] > 0) {
-            $client = $di['db']->getExistingModelById('Client', $clientId, 'Client not found');
+            $client = $di['em']->getRepository(Client::class)->find($clientId) ?? throw new InformationException('Client not found');
             $invoiceService = $di['mod_service']('invoice');
             $clientService = $di['mod_service']('client');
 
@@ -341,20 +345,20 @@ class Upgrades
                 'approve' => true,
             ]);
 
-            $db->update(self::TABLE, ['invoice_id' => (int) $invoice->id], ['id' => $upgradeId]);
+            $db->update(self::TABLE, ['invoice_id' => (int) $invoice->getId()], ['id' => $upgradeId]);
 
             return [
                 'id' => $upgradeId,
                 'status' => self::STATUS_PENDING,
                 'amount' => $chosen['amount'],
-                'invoice_hash' => (string) $invoice->hash,
+                'invoice_hash' => (string) $invoice->getHash(),
             ];
         }
 
         // Amount <= 0 (Downgrade or zero-difference change):
         if ($chosen['amount'] < 0) {
             $credit = abs($chosen['amount']);
-            $client = $di['db']->getExistingModelById('Client', $clientId, 'Client not found');
+            $client = $di['em']->getRepository(Client::class)->find($clientId) ?? throw new InformationException('Client not found');
             $clientService = $di['mod_service']('client');
             $clientService->addFunds($client, $credit, sprintf('Downgrade credit for order #%d', $orderId));
         }
@@ -419,8 +423,8 @@ class Upgrades
         $orderId = (int) $up['order_id'];
 
         try {
-            $order = $di['db']->load('ClientOrder', $orderId);
-            if (!$order) {
+            $order = $di['em']->getRepository(Order::class)->find($orderId);
+            if (!$order instanceof Order) {
                 throw new InformationException('The service order was not found.');
             }
 
@@ -433,32 +437,31 @@ class Upgrades
             $targetConfig = json_decode($targetProduct->getConfig() ?? '', true) ?? [];
 
             // 1. Move hosting account plan if hosting service
-            if ($order->service_type === 'hosting') {
+            if ($order->getServiceType() === 'hosting') {
                 $hpId = (int) ($targetConfig['hosting_plan_id'] ?? 0);
                 if ($hpId > 0) {
-                    $hp = $di['db']->getExistingModelById('ServiceHostingHp', $hpId, 'Hosting plan not found');
+                    $hp = $di['em']->getRepository(ServiceHostingHp::class)->find($hpId);
                     $service = $di['mod_service']('order')->getOrderService($order);
-                    if ($service instanceof \Model_ServiceHosting) {
+                    if ($hp instanceof ServiceHostingHp && $service instanceof ServiceHosting) {
                         $di['mod_service']('servicehosting')->changeAccountPlan($order, $service, $hp);
                     }
                 }
             }
 
             // 2. Cancel any pending unpaid renewal invoice issued for old cycle/price
-            if ($order->unpaid_invoice_id) {
-                $unpaidInvoiceId = (int) $order->unpaid_invoice_id;
-                $unpaidInvoice = $di['db']->load('Invoice', $unpaidInvoiceId);
-                if ($unpaidInvoice && $unpaidInvoice->status === Invoice::STATUS_UNPAID) {
-                    $unpaidInvoice->status = Invoice::STATUS_CANCELED;
-                    $unpaidInvoice->updated_at = $now;
-                    $di['db']->store($unpaidInvoice);
+            if ($order->getUnpaidInvoiceId()) {
+                $unpaidInvoiceId = (int) $order->getUnpaidInvoiceId();
+                $unpaidInvoice = $di['em']->getRepository(Invoice::class)->find($unpaidInvoiceId);
+                if ($unpaidInvoice && $unpaidInvoice->getStatus() === Invoice::STATUS_UNPAID) {
+                    $unpaidInvoice->setStatus(Invoice::STATUS_CANCELED);
+                    $di['em']->persist($unpaidInvoice);
                 }
-                $order->unpaid_invoice_id = null;
+                $order->setUnpaidInvoiceId(null);
             }
 
             // 3. Update order config
-            $orderConfig = json_decode((string) $order->config, true) ?: [];
-            if ($order->service_type === 'hosting' && isset($targetConfig['hosting_plan_id'])) {
+            $orderConfig = $order->getConfig() ?? [];
+            if ($order->getServiceType() === 'hosting' && isset($targetConfig['hosting_plan_id'])) {
                 $orderConfig['hosting_plan_id'] = $targetConfig['hosting_plan_id'];
                 if (isset($targetConfig['server_id'])) {
                     $orderConfig['server_id'] = $targetConfig['server_id'];
@@ -466,15 +469,17 @@ class Upgrades
             }
 
             // 4. Update order details
-            $order->product_id = (int) $up['to_product_id'];
-            $order->title = (string) $up['to_title'];
-            $order->price = (float) $up['to_price'];
-            $order->period = (string) $up['to_period'];
-            $order->expires_at = (string) $up['to_expires_at'];
-            $order->config = json_encode($orderConfig);
-            $order->updated_at = $now;
+            $order->setProductId((int) $up['to_product_id']);
+            $order->setTitle((string) $up['to_title']);
+            $order->setPrice((float) $up['to_price']);
+            $order->setPeriod((string) $up['to_period']);
+            if (!empty($up['to_expires_at'])) {
+                $order->setExpiresAt(new \DateTime((string) $up['to_expires_at']));
+            }
+            $order->setConfig($orderConfig);
 
-            $di['db']->store($order);
+            $di['em']->persist($order);
+            $di['em']->flush();
 
             // 5. Mark upgrade as applied
             $db->update(

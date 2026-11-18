@@ -99,7 +99,7 @@ final class Proration
      */
     public static function parsePeriod(string $period): array
     {
-        if (preg_match('/^([1-9][0-9]{0,2})([DWMY])$/', strtoupper(trim($period)), $m) !== 1) {
+        if (preg_match('/^([1-9][0-9]{0,2})(D|W|M|Y)$/', strtoupper(trim($period)), $m) !== 1) {
             throw new InformationException('The billing period :period is not valid.', [':period' => $period]);
         }
 

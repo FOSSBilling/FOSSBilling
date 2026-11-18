@@ -111,8 +111,6 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Get upgrade and downgrade options for an active order with prorated calculations.
-     *
-     * @return array
      */
     public function upgrade_options($data): array
     {
@@ -123,8 +121,6 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Requests an upgrade or downgrade for an order.
-     *
-     * @return array
      */
     public function upgrade($data): array
     {
