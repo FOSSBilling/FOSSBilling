@@ -302,7 +302,7 @@ test('held paid invoice tasks and subscription callbacks cannot renew a deleted 
     $c = deletionRecoveryContext();
     $order = failDeletionAtGateway($c);
     $invoice = (new Invoice())->setStatus(Invoice::STATUS_PAID)->setIssued(true)->setClientId(1);
-    if ($operation === 'callback') {
+    if ($operation === 'subscription') {
         $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Stripe');
         $c['em']->persist($gateway);
         $invoice->setGateway($gateway);
@@ -324,7 +324,11 @@ test('held paid invoice tasks and subscription callbacks cannot renew a deleted 
         $c['em']->flush();
         $billing = new Box\Mod\Invoice\Service();
         $billing->setDi($c['di']);
+        $logger = new Tests\Helpers\TestLogger();
+        $c['di']['logger'] = $logger;
         expect($billing->generateRenewalInvoiceForSubscriptionPayment('held-subscription', 1, (int) $invoice->getGateway()?->getId(), (int) $invoice->getId()))->toBeNull();
+        $holds = array_filter($logger->calls, fn (array $call): bool => ($call['params'][1]['message'] ?? '') === 'Order deletion is awaiting recovery. Retry deletion before billing or changing the service.');
+        expect($holds)->toHaveCount(1);
     }
     expect($order->getExpiresAt()->format(DATE_ATOM))->toBe($expiry)
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(0)

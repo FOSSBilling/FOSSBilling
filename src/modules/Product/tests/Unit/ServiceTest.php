@@ -4136,8 +4136,8 @@ test('domain waits for eligible paid hosting setup across invoices without grant
     );
     $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $db->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
-    $db->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, client_id INTEGER, group_id TEXT, expires_at TEXT, status TEXT)');
-    $db->insert('client_order', ['id' => 21, 'client_id' => 7, 'group_id' => 'group-1', 'expires_at' => '2030-01-01', 'status' => 'failed_renew']);
+    $db->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, client_id INTEGER, group_id TEXT, expires_at TEXT, status TEXT, period TEXT, product_id INTEGER, config TEXT)');
+    $db->insert('client_order', ['id' => 21, 'client_id' => 7, 'group_id' => 'group-1', 'expires_at' => '2030-01-01', 'status' => 'failed_renew', 'period' => '1Y', 'product_id' => 5, 'config' => json_encode($hosting->getConfig(), JSON_THROW_ON_ERROR)]);
     $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, status TEXT)');
     $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, task TEXT, rel_id TEXT, order_id INTEGER, status TEXT)');
     $db->insert('invoice', ['id' => 10, 'client_id' => 7, 'status' => 'paid']);
@@ -4154,6 +4154,12 @@ test('domain waits for eligible paid hosting setup across invoices without grant
         $db->update('invoice_item', ['status' => 'executed'], ['invoice_id' => 99]);
         $db->update('client_order', ['status' => 'active', 'expires_at' => '2031-01-01'], ['id' => 21]);
         expect($service->freeDomainRenewalState(20))->toBe(['until' => (new DateTimeImmutable('2031-01-01'))->getTimestamp(), 'pending' => false]);
+        // The managed hosting order still has its original billing period and domain.
+        $db->update('client_order', ['period' => '1M'], ['id' => 21]);
+        expect($hosting->getPeriod())->toBe('1Y')
+            ->and($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => false]);
+        $db->update('client_order', ['period' => '1Y', 'config' => '{}'], ['id' => 21]);
+        expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => false]);
     }
 })->with([
     'linked hosting on another paid invoice' => ['paid', 'pending_setup', true, 7, true],

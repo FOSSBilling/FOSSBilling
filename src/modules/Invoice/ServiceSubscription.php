@@ -294,13 +294,17 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function scheduleCancellationForOrder(Order $order): int
     {
-        $scheduledSubscriptions = 0;
-        foreach ($this->getSubscriptionsForOrder($order, 'active') as $subscription) {
+        $subscriptions = $this->periodEndSubscriptions($order);
+        if ($subscriptions === null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Reconcile every gateway subscription before scheduling this cancellation.');
+        }
+        foreach ($subscriptions as $subscription) {
+            // Stripe checks the provider first and only submits an update if
+            // needed, so a recovered schedule can acknowledge the same link.
             $this->scheduleCancellation($subscription);
-            ++$scheduledSubscriptions;
         }
 
-        return $scheduledSubscriptions;
+        return count($subscriptions);
     }
 
     public function finalizeCancellationFromGateway(int $id, string $sid, int $gatewayId): bool
@@ -430,28 +434,37 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function canCancelAtPeriodEndForOrder(Order $order): bool
     {
-        $subscriptions = $this->getSubscriptionsForOrder($order, 'active');
-        if ($subscriptions === []) {
-            return false;
-        }
+        return !empty($this->periodEndSubscriptions($order));
+    }
 
-        foreach ($subscriptions as $subscription) {
-            if ($this->hasOtherLiveOrder($subscription, $order) || trim((string) $subscription->getSid()) === '') {
-                return false;
+    /** @return list<Subscription>|null Null when an unresolved link needs reconciliation. */
+    private function periodEndSubscriptions(Order $order): ?array
+    {
+        $supported = [];
+        foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
+            if ($subscription->getStatus() === 'canceled') {
+                if (!$this->isCanceledSubscriptionConfirmed($subscription)) {
+                    return null;
+                }
+
+                continue;
+            }
+            if (!in_array($subscription->getStatus(), ['active', self::STATUS_PENDING_CANCELLATION], true)
+                || $this->hasOtherLiveOrder($subscription, $order) || trim((string) $subscription->getSid()) === '') {
+                return null;
             }
 
             try {
-                $adapter = $this->getGatewayAdapter($subscription);
+                if (!method_exists($this->getGatewayAdapter($subscription), 'cancelSubscriptionAtPeriodEnd')) {
+                    return null;
+                }
             } catch (\Exception) {
-                return false;
+                return null;
             }
-
-            if (!method_exists($adapter, 'cancelSubscriptionAtPeriodEnd')) {
-                return false;
-            }
+            $supported[] = $subscription;
         }
 
-        return true;
+        return $supported;
     }
 
     public function findIdBySid(string $sid, ?int $gatewayId = null): ?int

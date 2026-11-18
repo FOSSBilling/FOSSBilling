@@ -1111,34 +1111,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return false;
         }
 
-        // A callback's requested invoice is not proof of prior selection.
-        $previousTarget = $tx->getOriginalInvoiceId() === (int) $invoiceId ? $tx->getInvoice() : null;
-        if ($invoiceId && (!$previousTarget instanceof Invoice || (int) $previousTarget->getId() === (int) $invoiceId)) {
-            $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
-            $this->di['em']->flush();
-        }
-
+        $storedTarget = $tx->getInvoice();
+        $sourceInvoice = $invoiceId ? $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId) : null;
         $billingReason = (string) ($stripeInvoice->billing_reason ?? '');
-        $isInitialPayment = $billingReason === 'subscription_create';
-        $ambiguousPaidInvoice = false;
-
-        // The early link above already fetched the invoice, so this second find
-        // hits the identity map. It covers: (a) skip if already paid,
-        // (b) billing_reason fallback.
-        if ($invoiceId) {
-            $existingInvoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
-            if ($existingInvoice instanceof Invoice) {
-                // An inconclusive billing reason with a paid original is
-                // ambiguous, so do not guess whether this is a renewal.
-                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID && $billingReason === '') {
-                    $ambiguousPaidInvoice = true;
-                }
-                // Fallback: billing_reason inconclusive but original invoice still unpaid.
-                if (!$isInitialPayment && $existingInvoice->getStatus() === Invoice::STATUS_UNPAID) {
-                    $isInitialPayment = true;
-                }
-            }
-        }
+        $sourceStatus = $sourceInvoice?->getStatus();
+        $isInitialPayment = $billingReason === 'subscription_create' || $sourceStatus === Invoice::STATUS_UNPAID;
+        $ambiguousPaidInvoice = $billingReason === '' && $sourceStatus === Invoice::STATUS_PAID;
 
         $amount = $this->getAmountFromMinorUnits((int) ($stripeInvoice->amount_paid ?? 0), (string) ($stripeInvoice->currency ?? ''));
         if ($amount <= 0.0) {
@@ -1159,10 +1137,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         if ($ambiguousPaidInvoice) {
             throw new FOSSBilling\Core\Exception\InformationException('Stripe subscription payment needs staff review because its billing reason is missing.');
         }
+        $differentTarget = $storedTarget instanceof Invoice && (int) $storedTarget->getId() !== (int) $invoiceId;
+        if ($differentTarget && ($tx->getOriginalInvoiceId() !== (int) $invoiceId || $isInitialPayment)) {
+            throw new FOSSBilling\Core\Exception\InformationException('Stripe subscription payment needs staff review because its stored invoice could not be verified.');
+        }
         if ($isInitialPayment) {
-            $target = $invoiceId ? $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId) : null;
-        } elseif ($previousTarget instanceof Invoice && (int) $previousTarget->getId() !== (int) $invoiceId) {
-            $target = $previousTarget;
+            $target = $sourceInvoice;
+        } elseif ($differentTarget) {
+            $target = $storedTarget;
         } else {
             $manager = $this->di['em'];
             $target = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($stripeSubscription->id, (int) $clientId, (int) $tx->getGateway()?->getId(), (int) $invoiceId, (int) $tx->getId());

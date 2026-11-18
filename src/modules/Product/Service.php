@@ -3141,12 +3141,12 @@ class Service implements InjectionAwareInterface
             'status' => $observePending ? [...$hostingStatuses, Order::STATUS_FAILED_RENEW] : $hostingStatuses,
         ]);
         $observed = [];
+        $connection = $this->di['em']->getConnection();
         if ($observePending && $candidates !== []) {
-            $connection = $this->di['em']->getConnection();
             $legacyReference = \Box\Mod\Invoice\Repository\InvoiceItemRepository::normalizedLegacyPaidOrderReference($connection, 'ii.rel_id');
             $orderReference = \Box\Mod\Invoice\Repository\InvoiceItemRepository::orderIdAsReference($connection, 'o.id');
             $observed = $connection->fetchAllAssociativeIndexed(
-                "SELECT o.id, o.expires_at, o.status, CASE WHEN EXISTS (
+                "SELECT o.id, o.expires_at, o.status, o.period, o.product_id, o.config, CASE WHEN EXISTS (
                 SELECT 1 FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id
                 WHERE i.client_id = o.client_id AND i.status = :paid AND ii.type = :item_type
                 AND ii.task = :renew AND (ii.order_id = o.id OR (ii.order_id IS NULL AND $legacyReference = $orderReference))
@@ -3177,6 +3177,9 @@ class Service implements InjectionAwareInterface
                 }
                 $hostingExpiry = $current['expires_at'] === null ? null : new \DateTimeImmutable($current['expires_at']);
                 $hostingStatus = $current['status'];
+                $hostingPeriod = $current['period'];
+                $hostingProductId = (int) $current['product_id'];
+                $hostingConfig = $connection->convertToPHPValue($current['config'], \Doctrine\DBAL\Types\Types::JSON);
                 $hostingPending = (int) $current['pending'] === 1
                     && in_array($hostingStatus, [...$hostingStatuses, Order::STATUS_FAILED_RENEW], true);
             } else {
@@ -3185,6 +3188,9 @@ class Service implements InjectionAwareInterface
                 }
                 $hostingExpiry = $hosting->getExpiresAt();
                 $hostingStatus = $hosting->getStatus();
+                $hostingPeriod = $hosting->getPeriod();
+                $hostingProductId = (int) $hosting->getProductId();
+                $hostingConfig = $hosting->getConfig() ?? [];
                 $hostingPending = false;
             }
             // Compare billing dates rather than the wall-clock seconds.
@@ -3193,7 +3199,7 @@ class Service implements InjectionAwareInterface
             if (!$coversTerm && !$hostingPending) {
                 continue;
             }
-            $product = $this->getProductRepository()->find((int) $hosting->getProductId());
+            $product = $this->getProductRepository()->find($hostingProductId);
             if (!$product instanceof Product || $product->getType() !== self::HOSTING) {
                 continue;
             }
@@ -3201,7 +3207,7 @@ class Service implements InjectionAwareInterface
             if (empty($settings['free_domain_renewals'])) {
                 continue;
             }
-            $domain = $hosting->getConfig()['domain'] ?? null;
+            $domain = $hostingConfig['domain'] ?? null;
             if (!is_array($domain) || ($domain['action'] ?? null) !== $action) {
                 continue;
             }
@@ -3212,7 +3218,7 @@ class Service implements InjectionAwareInterface
                 ? !empty($settings['free_transfer'])
                 : !empty($settings['free_domain'])
                     && (($settings['free_tlds'] ?? []) === [] || in_array($tld, (array) $settings['free_tlds'], true))
-                    && in_array($hosting->getPeriod(), (array) ($settings['free_domain_periods'] ?? []), true);
+                    && in_array($hostingPeriod, (array) ($settings['free_domain_periods'] ?? []), true);
             if (!$offered) {
                 continue;
             }

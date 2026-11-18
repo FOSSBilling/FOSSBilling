@@ -746,16 +746,6 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $stripeMock->subscriptions = $subscriptionsMock;
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
-        $originalInvoice = createEntity(Invoice::class);
-
-        $originalInvoice->id = 77;
-        $originalInvoice->status = Invoice::STATUS_UNPAID;
-        $originalInvoice->currency = 'USD';
-
-        // Distinguished from $originalInvoice by its currency, so the
-        // identity-based matchers below prove the adapter uses this second
-        // fixture (from the $isInitialPayment lookup) rather than a stale
-        // reference to the first lookup result.
         $invoiceModel = createEntity(Invoice::class);
 
         $invoiceModel->id = 77;
@@ -769,7 +759,8 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
-        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx): bool {
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturnUsing(function (Transaction $tx) use ($invoiceModel): bool {
+            expect($tx->getInvoice())->toBe($invoiceModel);
             $tx->setStatus(Transaction::STATUS_PROCESSED);
 
             return true;
@@ -790,7 +781,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')
             ->with(77)
-            ->andReturn($originalInvoice, $invoiceModel);
+            ->once()->andReturn($invoiceModel);
         // Duplicate-event check — no prior transaction processed this Stripe invoice.
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()

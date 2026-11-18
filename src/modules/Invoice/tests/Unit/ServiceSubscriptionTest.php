@@ -378,7 +378,7 @@ test('reports end-of-period cancellation support for active gateway subscription
     $gateway = createEntity(PayGateway::class, ['id' => 2]);
 
     $subscription = createEntity(Subscription::class, ['id' => 7, 'payGateway' => $gateway]);
-    $subscription->setSid('sub_123');
+    $subscription->setSid('sub_123')->setStatus('active');
 
     $adapter = new class {
         public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
@@ -959,3 +959,58 @@ test('a local PayPal cancellation still blocks free renewals until the gateway c
     expect($service->canCancelImmediatelyForOrder($order))->toBeFalse()
         ->and($service->hasUncanceledSubscriptionForOrder($order))->toBeTrue();
 });
+
+test('period-end cancellation checks every link and recovers a confirmed Stripe schedule', function (bool $unconfirmedPayPal): void {
+    require_once dirname(__DIR__) . '/Fixtures/GatewayReceiptContext.php';
+    [, $em, $client, $stripeGateway] = receiptTestContext();
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Subscription::class)]);
+    $order = (new Order())->setClientId($client->getId())->setStatus(Order::STATUS_ACTIVE);
+    $invoice = (new Invoice())->setClientId($client->getId());
+    $paypalGateway = (new PayGateway())->setGateway('PayPalEmail');
+    foreach ([$order, $invoice, $paypalGateway] as $entity) {
+        $em->persist($entity);
+    }
+    $em->flush();
+    $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($invoice)->setType('order')->setOrderId($order->getId()));
+    $em->persist((new Subscription())->setPayGateway($stripeGateway)->setRelType('invoice')->setRelId($invoice->getId())
+        ->setSid('sub_scheduled')->setStatus($unconfirmedPayPal ? 'active' : ServiceSubscription::STATUS_PENDING_CANCELLATION));
+    if ($unconfirmedPayPal) {
+        $em->persist((new Subscription())->setPayGateway($paypalGateway)->setRelType('invoice')->setRelId($invoice->getId())
+            ->setSid('paypal_unconfirmed')->setStatus('canceled'));
+    } else {
+        foreach ([Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END => '1', Box\Mod\Order\Service::META_SCHEDULED_CANCEL_CLAIM => '1', Box\Mod\Order\Service::META_SCHEDULED_CANCEL_PHASE => 'scheduling'] as $name => $value) {
+            $em->persist((new Box\Mod\Order\Entity\OrderMeta())->setOrder($order)->setName($name)->setValue($value));
+        }
+    }
+    $em->flush();
+
+    $provider = Mockery::mock();
+    $provider->shouldReceive('retrieve')->times($unconfirmedPayPal ? 0 : 1)->with('sub_scheduled', [])
+        ->andReturn((object) ['status' => 'active', 'cancel_at_period_end' => true]);
+    $provider->shouldNotReceive('update');
+    $sdk = Mockery::mock(Stripe\StripeClient::class);
+    $sdk->subscriptions = $provider;
+    $adapter = new Payment_Adapter_Stripe(['test_mode' => true, 'test_api_key' => 'sk_test_dummy', 'test_pub_key' => 'pk_test_dummy']);
+    (new ReflectionProperty($adapter, 'stripe'))->setValue($adapter, $sdk);
+    $gateways = Mockery::mock(ServicePayGateway::class);
+    $gateways->shouldReceive('getPaymentAdapter')->with($stripeGateway)->andReturn($adapter);
+    $di = container();
+    $di['em'] = $em;
+    $subscriptions = new ServiceSubscription();
+    $subscriptions->setDi($di);
+    $orders = new Box\Mod\Order\Service();
+    $orders->setDi($di);
+    $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => $sub === 'PayGateway' ? $gateways : $subscriptions);
+
+    if ($unconfirmedPayPal) {
+        expect($subscriptions->canCancelAtPeriodEndForOrder($order))->toBeFalse()
+            ->and(fn () => $subscriptions->scheduleCancellationForOrder($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Reconcile every gateway subscription');
+    } else {
+        expect($subscriptions->canCancelAtPeriodEndForOrder($order))->toBeTrue()
+            ->and($orders->reviewScheduledCancellation($order, 'retry'))->toBeTrue()
+            ->and($orders->getOrderMetaRepository()->getPairsForOrder($order->getId()))->toMatchArray([
+                Box\Mod\Order\Service::META_SCHEDULED_CANCEL_CLAIM => '0',
+                Box\Mod\Order\Service::META_SCHEDULED_CANCEL_PHASE => 'scheduled',
+            ]);
+    }
+})->with(['unconfirmed PayPal link' => true, 'confirmed schedule after interruption' => false]);
