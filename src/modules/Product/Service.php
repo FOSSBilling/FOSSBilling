@@ -3161,7 +3161,7 @@ class Service implements InjectionAwareInterface
                     AND (pending.order_id = o.id OR (pending.order_id IS NULL AND $legacyReference = $orderReference))
                     AND NOT EXISTS (
                         SELECT 1 FROM client_order_meta m
-                        WHERE m.client_order_id = o.id AND m.name = $outcomeName AND m.value = :completed
+                        WHERE m.client_order_id = o.id AND m.name = $outcomeName AND m.value IN (:completed, :outcome_pending)
                     )
                 WHERE o.id IN (:hosting_ids) AND o.client_id = :client AND o.group_id = :order_group",
                 [
@@ -3172,6 +3172,7 @@ class Service implements InjectionAwareInterface
                     'awaiting_charge' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
                     'outcome_prefix' => \Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX,
                     'completed' => \Box\Mod\Order\Service::RENEWAL_OUTCOME_COMPLETED,
+                    'outcome_pending' => \Box\Mod\Order\Service::RENEWAL_OUTCOME_PENDING,
                     'hosting_ids' => array_map(static fn (Order $hosting): int => (int) $hosting->getId(), $candidates),
                     'client' => $order->getClientId(), 'order_group' => $groupId,
                 ],

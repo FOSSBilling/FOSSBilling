@@ -321,18 +321,17 @@ class ServiceSubscription implements InjectionAwareInterface
             // two reads must not hide it from both. Reads are one-directional
             // (order_id only ever fills in), so matching the legacy shape
             // before the typed one covers every interleave.
-            $legacyRelIds = $this->di['em']->getConnection()->fetchFirstColumn(
-                'SELECT ii.rel_id FROM invoice_item ii WHERE ii.invoice_id = :invoice_id AND ii.type = :item_type AND ii.order_id IS NULL',
+            $legacyLinks = $this->di['em']->getConnection()->fetchAllAssociative(
+                'SELECT ii.rel_id, i.status FROM invoice_item ii LEFT JOIN invoice i ON i.id = ii.invoice_id
+                 WHERE ii.invoice_id = :invoice_id AND ii.type = :item_type AND ii.order_id IS NULL',
                 ['invoice_id' => $link['rel_id'], 'item_type' => Entity\InvoiceItem::TYPE_ORDER]
             );
             $legacyOrderIds = [];
-            foreach ($legacyRelIds as $relId) {
-                // Text-side counterpart of the join below: a text-to-integer
-                // comparison is coercion on MySQL, an error on PostgreSQL for
-                // junk like '7.5', and loose matching on SQLite. Only a
-                // digit-only order id written as text resolves, mirroring the
-                // backfill's own rule.
-                $legacyOrderId = ServiceInvoiceItem::resolveOrderReference(Entity\InvoiceItem::TYPE_ORDER, null, is_scalar($relId) ? (string) $relId : null);
+            foreach ($legacyLinks as $legacyLink) {
+                $relId = $legacyLink['rel_id'];
+                $legacyOrderId = $legacyLink['status'] === Invoice::STATUS_PAID
+                    ? ServiceInvoiceItem::resolveLegacyPaidOrderReference($relId)
+                    : ServiceInvoiceItem::resolveOrderReference(Entity\InvoiceItem::TYPE_ORDER, null, $relId);
                 if ($legacyOrderId !== null) {
                     $legacyOrderIds[] = $legacyOrderId;
                 }

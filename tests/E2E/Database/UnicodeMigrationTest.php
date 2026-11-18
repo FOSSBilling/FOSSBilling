@@ -705,3 +705,17 @@ test('schema synchronization stores four-byte cancellation reasons on a legacy d
     $this->connection->insert('client_order_cancel_request', ['id' => 1, 'reason' => 'Moving 🚀', 'status' => 'pending', 'type' => 'immediate']);
     expect($this->connection->fetchOne('SELECT reason FROM client_order_cancel_request WHERE id = 1'))->toBe('Moving 🚀');
 })->with(['existing table' => true, 'new table' => false]);
+
+test('the MySQL renewal quote patch adds a nullable JSON column and can be retried', function (): void {
+    $this->pdo->exec('CREATE TABLE invoice (id BIGINT NOT NULL PRIMARY KEY)');
+    $this->connection->insert('invoice', ['id' => 1]);
+
+    $patch = new FOSSBilling\Core\Update\Patch\Patch149();
+    $patch->apply($this->patcher);
+    $patch->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT cron_renewal_expiries FROM invoice WHERE id = 1'))->toBeNull();
+    $quote = [42 => '2030-01-01 00:00:00'];
+    $this->connection->update('invoice', ['cron_renewal_expiries' => json_encode($quote, JSON_THROW_ON_ERROR)], ['id' => 1]);
+    expect(json_decode((string) $this->connection->fetchOne('SELECT cron_renewal_expiries FROM invoice WHERE id = 1'), true, 512, JSON_THROW_ON_ERROR))->toBe($quote);
+});

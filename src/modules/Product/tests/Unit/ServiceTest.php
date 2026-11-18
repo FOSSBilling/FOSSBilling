@@ -4154,7 +4154,12 @@ test('domain waits for eligible paid hosting setup across invoices without grant
         expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => true]);
     }
     if ($pending) {
-        $db->insert('client_order_meta', ['client_order_id' => 21, 'name' => 'paid_renewal_outcome_99', 'value' => 'completed']);
+        $outcome = ['client_order_id' => 21, 'name' => 'paid_renewal_outcome_99'];
+        $db->insert('client_order_meta', $outcome + ['value' => 'pending']);
+        expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => false]);
+        $db->update('client_order_meta', ['value' => 'retry'], $outcome);
+        expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => true]);
+        $db->update('client_order_meta', ['value' => 'completed'], $outcome);
         expect($service->freeDomainRenewalState(20))->toBe(['until' => null, 'pending' => false]);
         $db->update('invoice_item', ['status' => 'executed'], ['invoice_id' => 99]);
         $db->update('client_order', ['status' => 'active', 'expires_at' => '2031-01-01'], ['id' => 21]);

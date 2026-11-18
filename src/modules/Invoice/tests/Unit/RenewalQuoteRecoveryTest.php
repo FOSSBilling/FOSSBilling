@@ -195,9 +195,10 @@ test('merged generation omits the held order while keeping its eligible bucket m
         ->and($held->getUnpaidInvoiceId())->toBeNull()->and($eligible->getUnpaidInvoiceId())->toBe($invoice->getId());
 });
 
-class RenewalQuoteCommitConnection extends Doctrine\DBAL\Connection
+class RenewalTestConnection extends Doctrine\DBAL\Connection
 {
     public ?Closure $beforeOuterCommit = null;
+    public ?Closure $afterOrderUnlock = null;
 
     public function commit(): void
     {
@@ -206,10 +207,20 @@ class RenewalQuoteCommitConnection extends Doctrine\DBAL\Connection
         }
         parent::commit();
     }
+
+    public function executeStatement(string $sql, array $params = [], array $types = []): int|string
+    {
+        $result = parent::executeStatement($sql, $params, $types);
+        if ($sql === 'SELECT RELEASE_LOCK(:name)' && str_starts_with((string) ($params['name'] ?? ''), 'fb:cancel-request-order:')) {
+            $this->afterOrderUnlock?->__invoke();
+        }
+
+        return $result;
+    }
 }
 
 test('renewal creation owns the request mutex until the quote and entitlement are committed', function (): void {
-    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true, 'wrapperClass' => RenewalQuoteCommitConnection::class]);
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true, 'wrapperClass' => RenewalTestConnection::class]);
     [, $em, $client] = receiptTestContext($connection);
     $order = renewalReviewOrder($em, $client->getId());
     $service = renewalReviewService($em);
@@ -640,12 +651,15 @@ test('reissue refuses renewal members added after its order mutexes were selecte
 
 test('background Stripe recovery replays authenticated callbacks after the signature window', function (string $failure): void {
     $renewal = $failure !== 'provider';
+    $cronDraft = in_array($failure, ['stale cron quote', 'unchanged cron quote'], true);
+    $unallocated = in_array($failure, ['changed target', 'malformed draft', 'stale cron quote'], true);
+    $prebuilt = $unallocated || $cronDraft || $failure === 'issued legacy renewal';
     [, $em, $client, $gateway] = receiptTestContext();
     $db = $em->getConnection();
     $table = $db->quoteSingleIdentifier('transaction');
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\Subscription::class)]);
     $order = renewalReviewOrder($em, $client->getId());
-    if ($failure === 'cancellation') {
+    if ($failure === 'cancellation' || $cronDraft) {
         $order->setExpiresAt(new DateTimeImmutable('today'))->setPeriod('1M')->setInvoiceOption('issue-invoice');
     }
     $original = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setGateway($gateway)->setIssued(true)->setStatus('paid');
@@ -664,9 +678,20 @@ test('background Stripe recovery replays authenticated callbacks after the signa
         $billing->shouldReceive('recordGatewayPayment')->once()->andThrow(new Box\Mod\Invoice\Exception\RetryableCallbackException('Interrupted before retaining the receipt'));
         $billing->shouldReceive('recordGatewayPayment')->once()->passthru();
     }
-    if ($failure === 'changed target' || $failure === 'malformed draft') {
+    if ($prebuilt) {
         $peer = renewalReviewOrder($em, $client->getId());
-        $draft = $billing->generateForOrder($order, subscriptionPayment: true);
+        $key = $cronDraft ? $client->getId() . '|USD|' . $order->getExpiresAt()->format('Y-m-d') . '|1M' : null;
+        $draft = $billing->generateForOrder($order, subscriptionPayment: !$cronDraft && $failure !== 'issued legacy renewal', expectedMergeKey: $key);
+        if ($failure === 'issued legacy renewal') {
+            $billing->issueInvoice($draft, ['defer_issue_event' => true]);
+        }
+        if ($cronDraft) {
+            if ($failure === 'stale cron quote') {
+                $db->update('client_order', ['expires_at' => (new DateTimeImmutable('+6 months'))->format('Y-m-d H:i:s')], ['id' => $order->getId()]);
+            } else {
+                $db->update('client_order', ['status' => Order::STATUS_SUSPENDED], ['id' => $order->getId()]);
+            }
+        }
         if ($failure === 'changed target') {
             $dispatcher = (new ReflectionProperty(FOSSBilling\Core\Events\EventDispatcher::class, 'dispatcher'))->getValue($di['event_dispatcher']);
             $dispatcher->addListener(Box\Mod\Invoice\Event\BeforeAdminInvoiceIssueEvent::class, static function () use ($em, $draft, $peer): void {
@@ -674,7 +699,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
                     ->setTask(InvoiceItem::TASK_ACTIVATE)->setOrderId($peer->getId()));
                 $em->flush();
             });
-        } else {
+        } elseif (in_array($failure, ['malformed draft', 'issued legacy renewal'], true)) {
             $db->update('invoice_item', ['order_id' => null, 'rel_id' => $order->getId() . ' '], ['invoice_id' => $draft->getId()]);
         }
     }
@@ -724,7 +749,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $gateways->shouldReceive('getPaymentAdapter')->with($gateway)->andReturn($adapter);
     $orders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
     $orders->setDi($di);
-    $orders->shouldReceive('renewInvoiceItem')->times($renewal && !in_array($failure, ['invalid request', 'persistent', 'changed target', 'malformed draft'], true) ? 1 : 0)->andReturn(true);
+    $orders->shouldReceive('renewInvoiceItem')->times($renewal && !$unallocated && !in_array($failure, ['invalid request', 'persistent'], true) ? 1 : 0)->andReturn(true);
     $services = $di['mod_service'];
     unset($di['mod_service']);
     $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => match ($sub) {
@@ -760,14 +785,15 @@ test('background Stripe recovery replays authenticated callbacks after the signa
             FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
         }
     }
-    if (in_array($failure, ['changed target', 'malformed draft'], true)) {
+    if ($prebuilt) {
         $worker->processAndCatchErrors($id);
         expect($di['em']->isOpen())->toBeTrue()
             ->and($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
-            ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBeNull()
+            ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBe($unallocated ? null : $draft->getId())
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
-            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0)
-            ->and((bool) $db->fetchOne('SELECT issued FROM invoice WHERE id = ?', [$draft->getId()]))->toBeFalse();
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe($unallocated ? 15.0 : 0.0)
+            ->and((bool) $db->fetchOne('SELECT issued FROM invoice WHERE id = ?', [$draft->getId()]))->toBe(!$unallocated)
+            ->and($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$draft->getId()]))->toBe($unallocated ? Invoice::STATUS_UNPAID : Invoice::STATUS_PAID);
 
         return;
     }
@@ -871,7 +897,12 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     'permanent Stripe request failure' => 'invalid request',
     'renewal mutex contention' => 'lock',
     'failed draft issuance' => 'issuance',
-    'persistent issuance failure retains one payment' => 'persistent', 'changed target', 'malformed draft',
+    'persistent issuance failure retains one payment' => 'persistent',
+    'draft changed before issuance' => 'changed target',
+    'malformed draft reference' => 'malformed draft',
+    'stale cron quote retains one payment' => 'stale cron quote',
+    'unchanged cron quote can settle a suspended order' => 'unchanged cron quote',
+    'issued legacy renewal can settle despite a padded reference' => 'issued legacy renewal',
     'failed draft issuance followed by cancellation and withdrawal' => 'cancellation',
 ]);
 
@@ -1092,7 +1123,7 @@ test('cron uses the original expiry cutoff when an order moves before ORM loadin
         ->and(count($billedOrders))->toBe((int) $withinCutoff + (int) $mayMerge);
 })->with([false, true])->with([false, true]);
 
-test('recurring invoice selection requires the verified gateway and original invoice for a reused SID', function (): void {
+test('recurring invoice selection requires the verified gateway and original invoice for a reused SID', function (string $status): void {
     [, $em, $client, $gateway] = receiptTestContext();
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\Subscription::class)]);
     $otherGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Stripe');
@@ -1100,10 +1131,17 @@ test('recurring invoice selection requires the verified gateway and original inv
     $links = [];
     foreach ([$otherGateway, $gateway] as $linkedGateway) {
         $order = renewalReviewOrder($em, $client->getId());
+        if ($linkedGateway === $gateway) {
+            $order->setStatus($status);
+        }
         $source = (new Invoice())->setClientId($client->getId())->setIssued(true)->setStatus('paid')->setGateway($linkedGateway);
         $em->persist($source);
         $em->flush();
-        $em->persist((new InvoiceItem())->setInvoice($source)->setType('order')->setTask('activate')->setRelId($order->getId() . ' '));
+        $item = (new InvoiceItem())->setInvoice($source)->setType('order')->setTask('activate')->setRelId($order->getId() . ' ');
+        if ($linkedGateway === $gateway && $status === Order::STATUS_ACTIVE) {
+            $item->setOrderId($order->getId())->setRelId((string) ($order->getId() - 1));
+        }
+        $em->persist($item);
         $em->persist((new Box\Mod\Invoice\Entity\Subscription())->setPayGateway($linkedGateway)->setSid('sub_shared_id')->setRelType('invoice')->setRelId($source->getId())->setClientId($client->getId()));
         $em->flush();
         $links[] = [$order, $source];
@@ -1116,7 +1154,7 @@ test('recurring invoice selection requires the verified gateway and original inv
     expect($renewal)->toBeInstanceOf(Invoice::class)
         ->and($verifiedOrder->getUnpaidInvoiceId())->toBe($renewal->getId())
         ->and($otherOrder->getUnpaidInvoiceId())->toBeNull();
-});
+})->with([Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW]);
 
 test('cron retires a stale quote only when its order is known and it has no payment activity', function (string $evidence): void {
     [, $em, $client, , $transaction] = receiptTestContext();
@@ -1267,3 +1305,54 @@ test('cron keeps live subscriptions separate even when the subscription is pendi
         ->and($second->getUnpaidInvoiceId())->not->toBeNull()
         ->and($first->getUnpaidInvoiceId() === $second->getUnpaidInvoiceId())->toBe($merged);
 })->with(['pending cancellation' => ['pending_cancellation', false], 'confirmed canceled' => ['canceled', true]]);
+
+test('a competing exhausted callback cannot retire a selected draft before issuance releases the order lock', function (): void {
+    $port = getenv('PAYMENT_TEST_MYSQL_PORT');
+    if ($port === false) {
+        $this->markTestSkipped('Set PAYMENT_TEST_MYSQL_PORT for the renewal contention test.');
+    }
+    $params = ['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) $port, 'user' => 'root', 'password' => getenv('PAYMENT_TEST_MYSQL_PASSWORD') ?: ''];
+    $server = Doctrine\DBAL\DriverManager::getConnection($params);
+    $schema = 'renewal_issue_' . bin2hex(random_bytes(6));
+    $server->executeStatement('CREATE DATABASE ' . $schema);
+    $params['dbname'] = $schema;
+    $issuing = Doctrine\DBAL\DriverManager::getConnection($params + ['wrapperClass' => RenewalTestConnection::class]);
+    $competing = Doctrine\DBAL\DriverManager::getConnection($params);
+
+    try {
+        [, $em, $client, $gateway, $exhausted] = receiptTestContext($issuing);
+        (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\Subscription::class)]);
+        $order = renewalReviewOrder($em, $client->getId());
+        $original = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_PAID)->setIssued(true);
+        $em->persist($original);
+        $em->flush();
+        $em->persist((new InvoiceItem())->setInvoice($original)->setType('order')->setOrderId($order->getId()));
+        $em->persist((new Box\Mod\Invoice\Entity\Subscription())->setPayGateway($gateway)->setSid('sub_contending')->setRelType('invoice')->setRelId($original->getId()));
+        $em->flush();
+
+        $billing = renewalReviewService($em);
+        $draft = $billing->generateForOrder($order, subscriptionPayment: true);
+        $exhausted->setIpn(['subscription_renewal_failures' => 3, 'subscription_renewal_draft_id' => $draft->getId()]);
+        $em->flush();
+        $retry = renewalReviewService(new Doctrine\ORM\EntityManager($competing, $em->getConfiguration()));
+        $unlocks = 0;
+        $issuedAtUnlock = false;
+        $issuing->afterOrderUnlock = function () use (&$unlocks, &$issuedAtUnlock, $retry, $competing, $draft, $client, $gateway, $original, $exhausted): void {
+            if (++$unlocks === 1) {
+                $issuedAtUnlock = (bool) $competing->fetchOne('SELECT issued FROM invoice WHERE id = ?', [$draft->getId()]);
+                expect($retry->generateRenewalInvoiceForSubscriptionPayment('sub_contending', $client->getId(), $gateway->getId(), $original->getId(), $exhausted->getId()))->toBeNull();
+            }
+        };
+
+        $selected = $billing->generateRenewalInvoiceForSubscriptionPayment('sub_contending', $client->getId(), $gateway->getId(), $original->getId());
+        expect($unlocks)->toBe(1)
+            ->and($issuedAtUnlock)->toBeTrue()
+            ->and($selected?->getId())->toBe($draft->getId())
+            ->and($competing->fetchOne('SELECT status FROM invoice WHERE id = ?', [$draft->getId()]))->toBe(Invoice::STATUS_UNPAID);
+    } finally {
+        $issuing->close();
+        $competing->close();
+        $server->executeStatement('DROP DATABASE ' . $schema);
+        $server->close();
+    }
+});

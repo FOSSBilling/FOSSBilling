@@ -306,13 +306,14 @@ test('finalizes a scheduled cancellation after subscription deletion regardless 
         ->and($dbal->fetchOne('SELECT status FROM subscription WHERE id = 7'))->toBe('canceled');
 })->with([ServiceSubscription::STATUS_PENDING_CANCELLATION, 'canceled', 'active']);
 
-test('finalizes a scheduled cancellation through a legacy rel_id link the backfill has not reached', function (): void {
+test('finalizes a scheduled cancellation through a legacy rel_id link the backfill has not reached', function (string $invoiceStatus, bool $canonical, bool $finalizes): void {
     $subscription = createEntity(Subscription::class, ['id' => 7]);
     $subscription->setStatus(ServiceSubscription::STATUS_PENDING_CANCELLATION);
     $subscription->setRelType('invoice');
     $subscription->setRelId(25);
 
     $dbal = createSubscriptionDbal();
+    $dbal->insert('invoice', ['id' => 25, 'status' => $invoiceStatus]);
     $dbal->insert('client_order_meta', [
         'client_order_id' => 10,
         'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
@@ -325,18 +326,21 @@ test('finalizes a scheduled cancellation through a legacy rel_id link the backfi
     ]);
     // RTRIM makes '10 ' and '10' equal for SQL DISTINCT. Validate both spellings first.
     $dbal->executeStatement("UPDATE invoice_item SET rel_id = '10 ', order_id = NULL WHERE invoice_id = 25 AND rel_id = '10'");
-    $dbal->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '10', NULL), (25, 'order', '12', 12), (25, 'order', '12', NULL), (25, 'order', '7.5', NULL)");
+    if ($canonical) {
+        $dbal->insert('invoice_item', ['invoice_id' => 25, 'type' => 'order', 'rel_id' => '10']);
+    }
+    $dbal->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '12', 12), (25, 'order', '12', NULL), (25, 'order', '7.5', NULL)");
 
     $order10 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
     $order12 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
-    $orderRepoMock->shouldReceive('find')->once()->with(10)->andReturn($order10);
+    $orderRepoMock->shouldReceive('find')->times((int) $finalizes)->with(10)->andReturn($order10);
     $orderRepoMock->shouldReceive('find')->once()->with(12)->andReturn($order12);
 
     $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
     $orderMetaRepoMock->shouldReceive('getPairsForOrder')
-        ->once()
+        ->times((int) $finalizes)
         ->with(10)
         ->andReturn([Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END => '1']);
 
@@ -349,7 +353,7 @@ test('finalizes a scheduled cancellation through a legacy rel_id link the backfi
     $orderService = Mockery::mock(Box\Mod\Order\Service::class);
     $orderService->shouldReceive('getOrderMetaRepository')->andReturn($orderMetaRepoMock);
     $orderService->shouldReceive('finalizeCancellationFromGateway')
-        ->once()
+        ->times((int) $finalizes)
         ->with($order10, 'Subscription ended at the payment gateway')
         ->andReturn(true);
     $orderService->shouldReceive('finalizeCancellationFromGateway')
@@ -371,7 +375,11 @@ test('finalizes a scheduled cancellation through a legacy rel_id link the backfi
 
     expect($service->finalizeCancellationFromGateway(7, 'sub_123', 2))->toBeTrue()
         ->and($dbal->fetchOne('SELECT status FROM subscription WHERE id = 7'))->toBe('canceled');
-});
+})->with([
+    'paid padded link' => ['paid', false, true],
+    'unpaid padded link' => ['unpaid', false, false],
+    'unpaid canonical link alongside padding' => ['unpaid', true, true],
+]);
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
     $order = createEntity(Order::class, ['id' => 10]);
