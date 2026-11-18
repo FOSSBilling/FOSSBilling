@@ -688,3 +688,49 @@ test('one-time PayPal checkout applies invoice access policy before contacting P
     $controller->setDi($di);
     expect($controller->get_invoice_autopay($app, $hash)->getTargetUrl())->toBe('/' . $destination);
 })->with([false, true]);
+
+test('PayPal returns leave approved payments uncaptured while a saved charge is ambiguous', function (bool $vault): void {
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => 'unpaid']);
+    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
+    $db->insert('invoice', ['id' => 60, 'status' => 'unpaid']);
+    $db->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, invoice_id INTEGER, status TEXT, txn_status TEXT, amount TEXT, currency TEXT, created_at TEXT)');
+    $db->executeStatement('CREATE TABLE invoice_gateway_charge_attempt (id TEXT, invoice_id INTEGER, state TEXT, created_at TEXT)');
+    // The provider timeout left no transaction or bank-debit row to detect.
+    $db->insert('invoice_gateway_charge_attempt', ['id' => 'ambiguous', 'invoice_id' => 60, 'state' => 'pending', 'created_at' => '2026-01-01']);
+    $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $repo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
+    $adapter = Mockery::mock($vault ? Payment_Adapter_PayPalEmail::class : Payment_Adapter_PayPalAutoPay::class);
+    $adapter->shouldNotReceive($vault ? 'vaultCapture' : 'checkoutPaid');
+    $saved = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $saved->shouldReceive($vault ? 'paypal' : 'autopay')->once()->andReturn($adapter);
+    $saved->shouldNotReceive('hold');
+    $transactions = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
+    $transactions->shouldNotReceive('createAndProcess');
+    $request = Symfony\Component\HttpFoundation\Request::create('/return?token=approved', cookies: ['paypal_return' => 'bind', session_name() => 'x']);
+    $item = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+    $item->shouldReceive('isHit')->andReturn(true);
+    $item->shouldReceive('get')->andReturn(['invoice' => 60, 'bind' => hash('sha256', 'bind')]);
+    $cache = Mockery::mock(Psr\SimpleCache\CacheInterface::class);
+    $cache->shouldReceive('getItem')->andReturn($item);
+    $cache->shouldReceive('deleteItem')->once();
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/');
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($repo);
+    $di['em']->shouldReceive('getConnection')->andReturn($db);
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $saved, 'invoice:transaction' => $transactions]));
+    $di['cache'] = $cache;
+    $di['request'] = $request;
+    $di['url'] = $url;
+    $controller = new Client();
+    $controller->setDi($di);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+    $method = $vault ? 'get_invoice_paypal_paid' : 'get_invoice_autopay_paid';
+    $response = $controller->$method($app);
+    expect($response->getContent())->toContain('https://billing.example/invoice/' . str_repeat('a', 32))
+        ->and($db->fetchOne('SELECT state FROM invoice_gateway_charge_attempt'))->toBe('pending')
+        ->and($db->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0);
+    $db->close();
+})->with([false, true]);

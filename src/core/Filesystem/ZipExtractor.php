@@ -49,6 +49,11 @@ final class ZipExtractor
                 if ($entry === false || !$zip->getExternalAttributesIndex($index, $platform, $attributes)) {
                     throw new \RuntimeException('Unable to read ZIP entry metadata.');
                 }
+                // Builds without encryption support omit this metadata field.
+                $entry += ['encryption_method' => 0];
+                if ($entry['encryption_method'] === 0 && $entry['comp_method'] === \ZipArchive::CM_STORE && $entry['comp_size'] !== $entry['size']) {
+                    throw new \RuntimeException('Stored ZIP entry sizes do not match.');
+                }
 
                 $name = $entry['name'];
                 $directory = str_ends_with(str_replace('\\', '/', $name), '/') || ($attributes & 0x10) !== 0;

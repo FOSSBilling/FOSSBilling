@@ -347,6 +347,9 @@ class ServiceSavedCards implements InjectionAwareInterface
             return ['paid' => false, 'error' => 'A previous payment attempt needs reconciliation before another charge.'];
         }
         $charge = $this->di['em']->find(InvoiceCardCharge::class, (int) $invoice->getId());
+        if ($charge instanceof InvoiceCardCharge) {
+            $this->di['em']->refresh($charge);
+        }
         $attempt = $charge?->getAttempts() ?? 0;
         // Held after runDue read it (a staff charge holds it): a cron try would charge twice.
         if (!$byStaff && $attempt >= InvoiceCardCharge::HELD) {
@@ -355,6 +358,14 @@ class ServiceSavedCards implements InjectionAwareInterface
         // The client's own "Pay now" never charges again while a payment may be taken (staff may, on purpose).
         if ($byClient && $attempt >= InvoiceCardCharge::HELD) {
             return ['paid' => false, 'error' => 'A payment for this invoice is still clearing.'];
+        }
+        if (!$byStaff) {
+            // Another cron may have declined a charge after runDue selected it.
+            $settings = $this->settings();
+            $retryBefore = new \DateTimeImmutable('today -' . ($settings['every'] - 1) . ' days');
+            if ($attempt > $settings['retries'] || ($charge?->getLastAttemptAt() !== null && $charge->getLastAttemptAt() >= $retryBefore)) {
+                return ['paid' => false, 'error' => null];
+            }
         }
         $this->recordAttempt((int) $invoice->getId(), !$byStaff);
         // The saved method's gateway takes the payment, with its fee.

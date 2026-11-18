@@ -634,3 +634,50 @@ test('automatic charge query runs against the invoice schema', function (): void
     savedCardsService($em, ['extension' => $extension, 'invoice:paygateway' => $payGateway])->runDue();
     expect(true)->toBeTrue();
 });
+
+test('queued automatic charges refresh retry limits and timing under the charge lock', function (string $scenario): void {
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
+        Invoice::class, PayGateway::class, InvoiceCardCharge::class, Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\Transaction::class,
+    ]));
+    $invoice = (new Invoice())->setStatus('unpaid')->setClientId(7)->setCurrency('USD')->setDueAt(new DateTimeImmutable('-1 month'));
+    $gateway = (new PayGateway())->setGateway('Stripe');
+    $em->persist($invoice);
+    $em->persist($gateway);
+    $em->flush();
+    $record = (new InvoiceCardCharge())->setInvoiceId($invoice->getId());
+    $em->persist($record);
+    $em->flush();
+    // Both workers selected the invoice while no charge had been tried.
+    $otherEm = new Doctrine\ORM\EntityManager($db, $em->getConfiguration());
+    $staleRecord = $otherEm->find(InvoiceCardCharge::class, $invoice->getId());
+    $otherInvoice = $otherEm->find(Invoice::class, $invoice->getId());
+    $expected = $scenario === 'eligible retry' ? 2 : 1;
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $adapter->shouldReceive('gatewayId')->andReturn($gateway->getId());
+    $adapter->shouldReceive('savedCard')->times($expected)->andReturn(['card' => 'Saved card']);
+    $adapter->shouldReceive('chargeSavedCard')->times($expected)->andThrow(new FOSSBilling\Core\Exception\InformationException('Declined'));
+    $fees = Mockery::mock(Box\Mod\Invoice\ServiceGatewayFees::class);
+    $fees->shouldReceive('apply')->times($expected);
+    $extension = Mockery::mock();
+    $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn(['card_retry_count' => $scenario === 'no retries' ? '0' : '2', 'card_retry_every' => '7']);
+    $invoices = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoices->shouldReceive('toApiArray')->times($expected)->andReturn([]);
+    $invoices->shouldReceive('withBillingRecipient')->times($expected)->andReturnUsing(fn (array $data): array => $data);
+    $emails = Mockery::mock();
+    $emails->shouldReceive('sendTemplate')->times($expected);
+    $services = ['extension' => $extension, 'invoice:gatewayfees' => $fees, 'invoice' => $invoices, 'email' => $emails];
+    $first = savedCardsService($em, $services);
+    $second = savedCardsService($otherEm, $services);
+    expect($first->charge($invoice, $adapter, false))->toBe(['paid' => false, 'error' => 'Declined']);
+    expect($staleRecord->getAttempts())->toBe(0);
+    if ($scenario !== 'retry interval') {
+        $db->update('invoice_card_charge', ['last_attempt_at' => (new DateTimeImmutable('-8 days'))->format('Y-m-d H:i:s')], ['invoice_id' => $invoice->getId()]);
+    }
+    $result = $second->charge($otherInvoice, $adapter, false);
+    expect($result)->toBe(['paid' => false, 'error' => $expected === 2 ? 'Declined' : null])
+        ->and((int) $db->fetchOne('SELECT attempts FROM invoice_card_charge'))->toBe($expected)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_gateway_charge_attempt'))->toBe($expected);
+    $db->close();
+})->with(['no retries', 'retry interval', 'eligible retry']);

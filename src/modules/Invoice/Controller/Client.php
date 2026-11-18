@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice\Controller;
 
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\GatewayChargeAttempts;
 use Box\Mod\Invoice\InvoiceOperation;
 use Box\Mod\Invoice\PendingPayments;
 use FOSSBilling\Core\Doctrine\NamedLock;
@@ -174,7 +175,8 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         try {
             $state = $connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [(int) $invoice->getId()]);
-            $pending = PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null;
+            $pending = PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null
+                || GatewayChargeAttempts::pending($connection, (int) $invoice->getId()) !== null;
             if ($state !== Invoice::STATUS_UNPAID || $pending) {
                 $txnId = null;
             } else {
@@ -281,7 +283,8 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         try {
             $state = $connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [(int) $invoice->getId()]);
-            $pending = PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null;
+            $pending = PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null
+                || GatewayChargeAttempts::pending($connection, (int) $invoice->getId()) !== null;
             if ($state !== Invoice::STATUS_UNPAID || $pending) {
                 $captureId = null;
             } else {
