@@ -3510,13 +3510,13 @@ test('invoice item order_id backfill pages bounded runs', function (): void {
 
             // First page done, resume marker stored, completion not yet recorded.
             expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(500)
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe('500')
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe('500')
                 ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(false);
 
             $patcher->backfillInvoiceItemOrderIds();
             expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(550)
                 ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2')
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe(false);
         } finally {
             (new Filesystem())->remove($dbFile);
         }
@@ -3596,15 +3596,15 @@ test('invoice item order_id backfill short-circuits bounded runs once completion
 
             // Untouched: the flag short-circuits bounded runs before any scan or marker write.
             expect($connection->fetchOne('SELECT order_id FROM invoice_item'))->toBeNull()
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe(false);
         } finally {
             (new Filesystem())->remove($dbFile);
         }
     });
 });
 
-test('invoice item order_id backfill picks up rows an older rule version skipped', function (): void {
-    withNonMysqlDbDriver(function (): void {
+test('invoice item order_id backfill resumes under the current rule after a full skipped page', function (bool $previousRuleCompleted): void {
+    withNonMysqlDbDriver(function () use ($previousRuleCompleted): void {
         $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-skipped-' . bin2hex(random_bytes(8)) . '.sqlite');
 
         try {
@@ -3612,17 +3612,26 @@ test('invoice item order_id backfill picks up rows an older rule version skipped
             $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
             FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
 
-            // Completed under the rule that rejected zero-padded references,
-            // with a resume marker past the skipped row: without a repeat scan from
-            // the start, the row would never link.
-            $connection->executeStatement(
-                "INSERT INTO invoice_item (invoice_id, type, task, status, unit, rel_id, order_id) VALUES (1, 'order', 'renew', 'pending_payment', NULL, '07', NULL)"
-            );
+            $connection->transactional(function () use ($connection): void {
+                for ($i = 0; $i < 500; ++$i) {
+                    $connection->executeStatement(
+                        "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', 'hook_call')"
+                    );
+                }
+                $connection->executeStatement(
+                    "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '07')"
+                );
+            });
             $connection->executeStatement(
                 "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES
-                    ('invoice_item_order_id_backfill_done', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00'),
-                    ('invoice_item_order_backfill_last_id', '99', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+                    ('invoice_item_order_backfill_last_id', '501', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
             );
+            if ($previousRuleCompleted) {
+                $connection->executeStatement(
+                    "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES
+                        ('invoice_item_order_id_backfill_done', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+                );
+            }
 
             $di = new Pimple\Container();
             $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -3634,24 +3643,23 @@ test('invoice item order_id backfill picks up rows an older rule version skipped
             $patcher->setDi($di);
             $patcher->backfillInvoiceItemOrderIds(1);
 
-            // Converted through a repeat scan from the start, but completion is not
-            // recorded until a page comes back empty.
-            expect((int) $connection->fetchOne('SELECT order_id FROM invoice_item'))->toBe(7);
+            expect($connection->fetchOne("SELECT order_id FROM invoice_item WHERE rel_id = '07'"))->toBeNull()
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe('500')
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))
+                ->toBe($previousRuleCompleted ? '1' : false);
 
-            // A further bounded run finds no more pages, upgrades the stale
-            // completion to the current rule, and clears the resume marker.
+            $patcher->backfillInvoiceItemOrderIds(1);
+            expect((int) $connection->fetchOne("SELECT order_id FROM invoice_item WHERE rel_id = '07'"))->toBe(7)
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe('501');
+
             $patcher->backfillInvoiceItemOrderIds(1);
             expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2')
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
-
-            // Converged: a further bounded run short-circuits.
-            $patcher->backfillInvoiceItemOrderIds(1);
-            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2');
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe(false);
         } finally {
             (new Filesystem())->remove($dbFile);
         }
     });
-});
+})->with(['previous rule unfinished' => false, 'previous rule completed' => true]);
 
 test('invoice item order_id backfill repeats unbounded runs after completion', function (): void {
     withNonMysqlDbDriver(function (): void {

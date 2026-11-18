@@ -13,11 +13,26 @@ namespace Box\Mod\Invoice\Repository;
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
 class InvoiceItemRepository extends EntityRepository
 {
+    /** Compare a legacy reference to a positive order ID without coercing the reference to a number. */
+    public static function legacyOrderReferenceMatches(Connection $connection, string $reference, string $orderId): string
+    {
+        $platform = $connection->getDatabasePlatform();
+
+        return match (true) {
+            $platform instanceof AbstractMySQLPlatform => "TRIM(LEADING CAST('0' AS BINARY) FROM CAST($reference AS BINARY)) = CAST($orderId AS BINARY)",
+            $platform instanceof PostgreSQLPlatform => "LTRIM($reference, '0') COLLATE \"C\" = CAST($orderId AS TEXT)",
+            default => "LTRIM($reference, '0') COLLATE BINARY = CAST($orderId AS TEXT)",
+        };
+    }
+
     /**
      * @return InvoiceItem[]
      */

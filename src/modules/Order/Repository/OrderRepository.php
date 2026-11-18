@@ -6,6 +6,7 @@ namespace Box\Mod\Order\Repository;
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
 use FOSSBilling\Core\Doctrine\RowLock;
@@ -33,7 +34,7 @@ class OrderRepository extends EntityRepository
      * Must be called within a transaction, held for as long as the invoice
      * link is acted on.
      */
-    public function lockAndGetUnpaidInvoiceId(int $orderId): ?int
+    public function lockAndGetUnpaidInvoiceId(int $orderId, bool $requireOrder = false): ?int
     {
         $connection = $this->getEntityManager()->getConnection();
 
@@ -46,6 +47,9 @@ class OrderRepository extends EntityRepository
             ['id' => $orderId],
         );
 
+        if ($row === false && $requireOrder) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Order not found');
+        }
         if ($row === false || $row['unpaid_invoice_id'] === null) {
             return null;
         }
@@ -279,8 +283,8 @@ class OrderRepository extends EntityRepository
     /**
      * Whether any paid invoice item references the order, through the typed
      * linkage or - for rows the backfill has not reached yet - the legacy
-     * rel_id reference. Single-order scope, so both branches can still use
-     * an index (unlike the same OR inside a correlated table-wide subquery).
+     * rel_id reference. Check the indexed typed link first, and only normalize
+     * legacy references in rows that are still missing the typed link.
      *
      * Used as a last-moment re-check before a destructive batch acts: the
      * stale-order scan matches on the typed linkage alone, so an order whose
@@ -289,22 +293,18 @@ class OrderRepository extends EntityRepository
      */
     public function hasPaidInvoiceItem(int $orderId): bool
     {
-        return (bool) $this->getEntityManager()->getConnection()->fetchOne(
-            <<<'SQL'
-                SELECT 1
-                FROM invoice_item ii
-                INNER JOIN invoice pi ON pi.id = ii.invoice_id
-                WHERE (ii.order_id = :order_id OR (ii.order_id IS NULL AND ii.rel_id = :rel_id))
-                  AND ii.type = :item_type
-                  AND pi.status = :paid_status
-                LIMIT 1
-                SQL,
-            [
-                'order_id' => $orderId,
-                'rel_id' => (string) $orderId,
-                'item_type' => InvoiceItem::TYPE_ORDER,
-                'paid_status' => Invoice::STATUS_PAID,
-            ]
-        );
+        $connection = $this->getEntityManager()->getConnection();
+        $query = 'SELECT 1 FROM invoice_item ii INNER JOIN invoice pi ON pi.id = ii.invoice_id
+                  WHERE ii.type = :item_type AND pi.status = :paid_status';
+        $params = ['order_id' => $orderId, 'item_type' => InvoiceItem::TYPE_ORDER, 'paid_status' => Invoice::STATUS_PAID];
+        $legacyMatch = InvoiceItemRepository::legacyOrderReferenceMatches($connection, 'ii.rel_id', ':order_id');
+
+        return $connection->fetchOne(
+            "$query AND ii.order_id = :order_id
+             UNION ALL
+             $query AND ii.order_id IS NULL AND $legacyMatch
+             LIMIT 1",
+            $params,
+        ) !== false;
     }
 }

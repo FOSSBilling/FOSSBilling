@@ -107,6 +107,63 @@ function failDeletionAtGateway(array $context): Order
     return $context['em']->find(Order::class, $context['order']->getId());
 }
 
+test('stale order deletion revalidates billing and order state when it claims the order', function (string $change): void {
+    $context = deletionRecoveryContext();
+    $order = $context['order'];
+    $orderId = $order->getId();
+    $connection = $context['connection'];
+    $context['subscription']->fail = false;
+    $order->setStatus(Order::STATUS_PENDING_SETUP);
+    $context['em']->flush();
+
+    // The batch saw a pending order with no draft. Model changes committed
+    // between that check and the start of the deletion claim.
+    if ($change === 'paid') {
+        $invoice = (new Invoice())->setStatus(Invoice::STATUS_PAID);
+        $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)
+            ->setRelId('0' . $orderId)->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+        $context['em']->persist($invoice);
+        $context['em']->persist($item);
+        $context['em']->flush();
+    } elseif ($change === 'attached') {
+        $connection->update('client_order', ['unpaid_invoice_id' => 78], ['id' => $orderId]);
+    } elseif ($change === 'activated') {
+        $connection->update('client_order', ['status' => Order::STATUS_ACTIVE], ['id' => $orderId]);
+    }
+
+    $service = new class extends Service {
+        public function removeStaleOrder(Order $order): bool
+        {
+            return $this->deleteStaleUnpaidOrder($order, null);
+        }
+    };
+    $service->setDi($context['di']);
+
+    $shouldDelete = $change === 'unchanged';
+    expect($service->removeStaleOrder($order))->toBe($shouldDelete)
+        ->and($context['backend']->calls)->toBe($shouldDelete ? 1 : 0)
+        ->and($connection->fetchOne('SELECT id FROM client_order WHERE id = ?', [$orderId]))->toBe($shouldDelete ? false : $orderId)
+        ->and(DeletionRecovery::getState($connection, $orderId))->toBeNull();
+})->with(['paid', 'attached', 'activated', 'unchanged']);
+
+test('staff cannot attach a pending order once a deletion hold is committed', function (): void {
+    $context = deletionRecoveryContext();
+    $order = $context['order'];
+    $order->setStatus(Order::STATUS_PENDING_SETUP);
+    $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setIssued(false);
+    $context['em']->persist($invoice);
+    $context['em']->flush();
+    DeletionRecovery::setState($context['connection'], $order->getId(), DeletionRecovery::STARTED);
+
+    $billing = new Box\Mod\Invoice\Service();
+    $billing->setDi($context['di']);
+
+    expect(fn () => $billing->attachOrderToInvoice($invoice, ['order_id' => $order->getId()]))
+        ->toThrow(InformationException::class, 'awaiting recovery');
+    expect($context['connection']->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(0)
+        ->and($context['connection']->fetchOne('SELECT unpaid_invoice_id FROM client_order'))->toBeNull();
+});
+
 test('gateway failure leaves a durable billing hold and retry skips completed backend deletion', function (): void {
     $c = deletionRecoveryContext();
     $order = failDeletionAtGateway($c);
@@ -263,7 +320,7 @@ test('a concurrent callback reads the durable hold after acquiring the shared li
     }
 });
 
-test('received gateway funds remain credit without settling or fulfilling a held invoice', function (bool $directItem): void {
+test('received gateway funds remain credit without settling or fulfilling a held invoice', function (bool $directItem, bool $typed): void {
     $c = deletionRecoveryContext();
     $order = failDeletionAtGateway($c);
     $client = new Box\Mod\Client\Entity\Client();
@@ -271,7 +328,12 @@ test('received gateway funds remain credit without settling or fulfilling a held
     $c['em']->flush();
     $incoming = (new Box\Mod\Client\Entity\ClientBalance())->setClient($client)->setType('transaction')->setRelId('incoming-payment')->setAmount('10');
     $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setClientId($client->getId());
-    $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setRelId((string) $order->getId())->setTask(InvoiceItem::TASK_RENEW)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(10)->setQuantity(1);
+    $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setTask(InvoiceItem::TASK_RENEW)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(10)->setQuantity(1);
+    if ($typed) {
+        $item->setOrderId($order->getId());
+    } else {
+        $item->setRelId('00' . $order->getId());
+    }
     foreach ([$incoming, $invoice, $item] as $entity) {
         $c['em']->persist($entity);
     }
@@ -292,7 +354,7 @@ test('received gateway funds remain credit without settling or fulfilling a held
         ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_UNPAID)
         ->and($item->getCharged())->toBeFalse()
         ->and($c['backend']->calls)->toBe(1);
-})->with([false, true]);
+})->with([false, true])->with(['padded legacy link' => false, 'typed link' => true]);
 
 test('MySQL and MariaDB snapshot conflicts roll back billing and preserve deletion holds on transaction retry', function (): void {
     $params = [

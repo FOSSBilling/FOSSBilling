@@ -14,6 +14,8 @@ namespace Box\Mod\Order;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Service as InvoiceService;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Entity\OrderMeta;
 use Box\Mod\Order\Entity\OrderStatus;
@@ -165,6 +167,11 @@ class Service implements InjectionAwareInterface
         return EntityManagerFactory::create($connection);
     }
 
+    private function getInvoiceService(): InvoiceService
+    {
+        return $this->di['mod_service']('Invoice');
+    }
+
     /**
      * Batch-loads the invoices a set of stale orders links to. A single
      * invoice can cover several orders from one cart checkout (Cart\Service
@@ -173,7 +180,7 @@ class Service implements InjectionAwareInterface
      *
      * @param list<Order> $orders
      */
-    private function findInvoicesByIds(mixed $invoiceService, array $orders): array
+    private function findInvoicesByIds(InvoiceService $invoiceService, array $orders): array
     {
         $invoiceIds = array_values(array_unique(array_filter(
             array_map(static fn (Order $order): ?int => $order->getUnpaidInvoiceId(), $orders),
@@ -538,6 +545,7 @@ class Service implements InjectionAwareInterface
         $days_until_expiration = $systemService->getParamValue('invoice_issue_days_before_expire', 14);
 
         $client_id = $data['client_id'] ?? null;
+        $legacyMatch = InvoiceItemRepository::legacyOrderReferenceMatches($this->di['em']->getConnection(), 'pending_item.rel_id', 'co.id');
 
         $query = 'SELECT co.*
                 FROM client_order co
@@ -569,6 +577,17 @@ class Service implements InjectionAwareInterface
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
                     AND pending_invoice.status = :pending_invoice_status
+                )
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM invoice_item pending_item
+                    INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
+                    WHERE pending_item.order_id IS NULL
+                    AND pending_item.type = :pending_item_type
+                    AND pending_item.task = :pending_item_task
+                    AND pending_item.status != :pending_item_status
+                    AND pending_invoice.status = :pending_invoice_status
+                    AND ' . $legacyMatch . '
                 )';
 
         $where = [];
@@ -2446,25 +2465,60 @@ class Service implements InjectionAwareInterface
 
     public function deleteFromOrder(Order $order, bool $forceDelete = false): bool
     {
+        return $this->deleteOrderWithLifecycleLock($order, $forceDelete);
+    }
+
+    protected function deleteStaleUnpaidOrder(Order $order, ?int $expectedInvoiceId): bool
+    {
+        return $this->deleteOrderWithLifecycleLock($order, false, true, $expectedInvoiceId);
+    }
+
+    private function deleteOrderWithLifecycleLock(Order $order, bool $forceDelete, bool $staleUnpaidOnly = false, ?int $expectedInvoiceId = null): bool
+    {
         if ($this->di['em']->getConnection()->isTransactionActive()) {
             throw new InformationException('Order deletion cannot run inside a database transaction.');
         }
 
-        return $this->withLifecycleLock($order, fn (): bool => $this->deleteHeldOrder($order, $forceDelete));
+        return $this->withLifecycleLock($order, fn (): bool => $this->deleteHeldOrder($order, $forceDelete, $staleUnpaidOnly, $expectedInvoiceId));
     }
 
-    private function deleteHeldOrder(Order $order, bool $forceDelete): bool
+    private function deleteHeldOrder(Order $order, bool $forceDelete, bool $staleUnpaidOnly = false, ?int $expectedInvoiceId = null): bool
     {
-        $this->di['em']->refresh($order);
         $orderId = $this->orderId($order);
-        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
+        $connection = $this->di['em']->getConnection();
+        $claim = function () use ($order, $orderId, $connection, $forceDelete, $staleUnpaidOnly, $expectedInvoiceId): ?string {
+            if ($staleUnpaidOnly) {
+                // Settlement and attachment lock the same order row. Check before
+                // recording the durable hold, then commit before remote deletion.
+                $this->refreshLockedOrder($order);
+                if ($order->getStatus() !== Order::STATUS_PENDING_SETUP
+                    || $order->getUnpaidInvoiceId() !== $expectedInvoiceId
+                    || $this->getOrderRepository()->hasPaidInvoiceItem($orderId)) {
+                    return null;
+                }
+            } else {
+                $this->di['em']->refresh($order);
+            }
 
-        $state = DeletionRecovery::getState($this->di['em']->getConnection(), $orderId);
-        if ($state !== null && $state !== DeletionRecovery::SERVICE_DELETED && !$forceDelete) {
-            throw new InformationException('A previous deletion was interrupted. Staff must review the service before retrying with force_delete.');
+            $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
+
+            $state = DeletionRecovery::getState($connection, $orderId, $staleUnpaidOnly);
+            if ($state === DeletionRecovery::SERVICE_DELETED) {
+                return $state;
+            }
+            if ($state !== null && !$forceDelete) {
+                throw new InformationException('A previous deletion was interrupted. Staff must review the service before retrying with force_delete.');
+            }
+            DeletionRecovery::setState($connection, $orderId, DeletionRecovery::STARTED);
+
+            return DeletionRecovery::STARTED;
+        };
+
+        $state = $staleUnpaidOnly ? $connection->transactional($claim) : $claim();
+        if ($state === null) {
+            return false;
         }
         if ($state !== DeletionRecovery::SERVICE_DELETED) {
-            DeletionRecovery::setState($this->di['em']->getConnection(), $orderId, DeletionRecovery::STARTED);
             $this->di['em']->refresh($order);
 
             try {
@@ -2477,7 +2531,7 @@ class Service implements InjectionAwareInterface
                 }
                 $this->di['logger']->info('Backend deletion failed during forced removal: {message}', ['message' => $e->getMessage()]);
             }
-            DeletionRecovery::setState($this->di['em']->getConnection(), $orderId, DeletionRecovery::SERVICE_DELETED);
+            DeletionRecovery::setState($connection, $orderId, DeletionRecovery::SERVICE_DELETED);
         }
 
         // Keep subscription links until cancellation succeeds. A failure must
@@ -2899,16 +2953,12 @@ class Service implements InjectionAwareInterface
 
         $staleOrders = $this->getOrderRepository()->getStaleUnpaid($days);
 
-        $invoiceService = $this->di['mod_service']('Invoice');
+        $invoiceService = $this->getInvoiceService();
 
         $invoicesById = $this->findInvoicesByIds($invoiceService, $staleOrders);
 
-        // Invoices this run actually removed: a sibling whose link was cleared
-        // by that removal (refresh reads null) may proceed, while a sibling
-        // pointing at any other invoice still defers. Tracked separately from
-        // $invoiceHandled, which also covers already-gone invoices the batch
-        // never removed itself.
-        $invoiceRemoved = [];
+        // Order ID to the draft ID this run detached it from.
+        $detachedOrders = [];
 
         // Whether the invoice map above is trustworthy: a failed rebuild must
         // not read as "no invoices", which would treat every linked invoice
@@ -2922,12 +2972,8 @@ class Service implements InjectionAwareInterface
         // wrongly treating the group as already handled.
         $invoiceHandled = [];
 
-        // Pending-setup orders were never provisioned, so cancelFromOrder() (which
-        // tears down an active service) explicitly rejects them. deleteFromOrder()
-        // is the same path an admin uses to manually remove one. The linked unpaid
-        // invoice is removed first via deleteInvoiceByAdmin() so it doesn't linger
-        // empty and still eligible for reminder emails after the order it belongs
-        // to is gone.
+        // Pending-setup orders use the deletion workflow. Remove the linked
+        // unpaid invoice first so an empty draft cannot send reminders.
         // The selected links snapshot: refresh() below re-reads each order,
         // and a link attached mid-run is not in the prefetched map. Compared
         // after every refresh so a changed link defers the order instead of
@@ -2946,38 +2992,22 @@ class Service implements InjectionAwareInterface
             $order = array_pop($pendingOrders);
 
             try {
-                // Re-check the order's current status before touching anything for
-                // it: deleteFromOrder() has no status guard of its own, and this
-                // order may have been activated or otherwise moved on while earlier
-                // orders in this same run were being processed.
+                // Check for changes before handling the selected invoice. The
+                // deletion claim repeats these checks under the order row lock.
                 $this->di['em']->refresh($order);
-                $refreshedInvoiceId = $order->getUnpaidInvoiceId();
-                $selectedInvoiceId = $selectedInvoiceIds[$this->orderId($order)] ?? null;
-                if ($refreshedInvoiceId !== $selectedInvoiceId
-                    && !($refreshedInvoiceId === null && ($invoiceRemoved[$selectedInvoiceId] ?? false))) {
-                    // Attached, detached, or re-attached while earlier orders
-                    // were processed: the prefetched map describes the previous
-                    // link, so the next run evaluates the current one instead
-                    // of deleting under it. A null link after this run removed
-                    // the selected invoice is the exception: the removal is
-                    // already confirmed, so the sibling may proceed.
+                $orderId = $this->orderId($order);
+                $invoiceId = $order->getUnpaidInvoiceId();
+                $selectedInvoiceId = $selectedInvoiceIds[$orderId] ?? null;
+                if ($invoiceId !== $selectedInvoiceId
+                    && !($invoiceId === null && ($detachedOrders[$orderId] ?? null) === $selectedInvoiceId)) {
                     continue;
                 }
                 if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
                     continue;
                 }
 
-                $invoiceId = $order->getUnpaidInvoiceId();
-
-                // Paid-item re-check through both linkages before touching anything:
-                // the stale-order scan above matches on the typed linkage only, so a
-                // paid item that missed the backfill (concurrent write during its
-                // final page, manual row, or downgraded writer) would otherwise
-                // read as never paid here. Single-order scope, so both branches of
-                // the lookup can still use an index - unlike that OR inside a
-                // correlated table-wide subquery. Placed before the invoice
-                // handling below so a skipped order keeps its linked invoice.
-                if ($this->getOrderRepository()->hasPaidInvoiceItem($this->orderId($order))) {
+                // Preserve the draft if the paid item is already visible here.
+                if ($this->getOrderRepository()->hasPaidInvoiceItem($orderId)) {
                     continue;
                 }
 
@@ -3001,9 +3031,15 @@ class Service implements InjectionAwareInterface
                             // still depends on, re-checked under the invoice's row lock
                             // so a payment or a concurrently attached paid order is seen
                             // rather than raced. A refused removal keeps the whole group.
-                            $invoiceHandled[$invoiceId] = $invoiceService->deleteInvoiceByAdmin($invoice, true);
-                            if ($invoiceHandled[$invoiceId]) {
-                                $invoiceRemoved[$invoiceId] = true;
+                            $detachedOrderIds = null;
+
+                            try {
+                                $invoiceHandled[$invoiceId] = $invoiceService->deleteInvoiceByAdmin($invoice, true, $detachedOrderIds);
+                            } finally {
+                                // The draft can be committed even if its completion event throws.
+                                foreach ($detachedOrderIds ?? [] as $detachedOrderId) {
+                                    $detachedOrders[$detachedOrderId] = $invoiceId;
+                                }
                             }
                         } else {
                             // Already gone, or canceled/refunded/some other non-live
@@ -3018,7 +3054,8 @@ class Service implements InjectionAwareInterface
                     }
                 }
 
-                $this->deleteFromOrder($order);
+                $expectedInvoiceId = ($detachedOrders[$orderId] ?? null) === $invoiceId ? null : $invoiceId;
+                $this->deleteStaleUnpaidOrder($order, $expectedInvoiceId);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
 
@@ -3030,12 +3067,13 @@ class Service implements InjectionAwareInterface
                     // run still needs; the failed order keeps its draft and is
                     // left for the next run.
                     $this->resetEntityManager();
-                    $invoiceService = $this->di['mod_service']('Invoice');
+                    $invoiceService = $this->getInvoiceService();
                     // Restores the reversed orientation the loop consumes.
                     $pendingOrders = array_reverse($this->reloadOrders(array_reverse($pendingOrders)));
 
                     try {
                         $invoicesById = $this->findInvoicesByIds($invoiceService, $pendingOrders);
+                        $invoicesUnknown = false;
                     } catch (\Exception $e) {
                         $this->di['logger']->info($e->getMessage());
                         $invoicesUnknown = true;

@@ -514,8 +514,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
     {
-        if ($item->getType() === InvoiceItem::TYPE_ORDER && $item->getRelId() !== null) {
-            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), (int) $item->getRelId(), true);
+        if ($item->getType() === InvoiceItem::TYPE_ORDER && ($orderId = $this->getOrderId($item)) > 0) {
+            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId, true);
         }
         $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
             ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');

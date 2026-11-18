@@ -1339,38 +1339,6 @@ test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellati
     $data = ['client_id' => $randId];
     $result = $svc->getSoonExpiringActiveOrdersQuery($data);
 
-    $expectedQuery = 'SELECT co.*
-                FROM client_order co
-                LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
-                WHERE co.status = :status
-                AND co.invoice_option = :invoice_option
-                AND NOT EXISTS (
-                    SELECT 1 FROM client_order_meta deletion_meta
-                    WHERE deletion_meta.client_order_id = co.id
-                    AND deletion_meta.name = :deletion_meta_name
-                )
-                AND co.period IS NOT NULL
-                AND co.expires_at IS NOT NULL
-                AND i.id IS NULL
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM client_order_meta cancellation_meta
-                    WHERE cancellation_meta.client_order_id = co.id
-                    AND cancellation_meta.name = :cancellation_meta_name
-                    AND cancellation_meta.value = :cancellation_meta_value
-                )
-                /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM invoice_item pending_item
-                    INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
-                    WHERE pending_item.order_id = co.id
-                    AND pending_item.type = :pending_item_type
-                    AND pending_item.task = :pending_item_task
-                    AND pending_item.status != :pending_item_status
-                    AND pending_invoice.status = :pending_invoice_status
-                ) AND co.client_id = :client_id AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
-
     $expectedBindings = [
         'client_id' => $randId,
         'unpaid_invoice_status' => Invoice::STATUS_UNPAID,
@@ -1386,13 +1354,11 @@ test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellati
         'expires_before' => (new DateTimeImmutable('today'))->modify('+' . ($randId + 1) . ' days')->format('Y-m-d H:i:s'),
     ];
 
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-    expect($result[0])->toEqual($expectedQuery);
-    expect($result[1])->toEqual($expectedBindings);
+    expect($result[0])->toContain('co.client_id = :client_id')
+        ->and($result[1])->toEqual($expectedBindings);
 });
 
-test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation meta', function (): void {
+test('getSoonExpiringActiveOrders excludes scheduled cancellations and paid pending renewals', function (): void {
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, status TEXT, invoice_option TEXT, period TEXT, expires_at TEXT, unpaid_invoice_id INTEGER, client_id INTEGER)');
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
@@ -1408,8 +1374,24 @@ test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation me
         'unpaid_invoice_id' => null,
         'client_id' => 1,
     ];
-    $connection->insert('client_order', ['id' => 1] + $eligibleOrder);
-    $connection->insert('client_order', ['id' => 2] + $eligibleOrder);
+    foreach (range(1, 6) as $orderId) {
+        $connection->insert('client_order', ['id' => $orderId] + $eligibleOrder);
+    }
+    $connection->insert('invoice', ['id' => 55, 'status' => Invoice::STATUS_PAID]);
+    $pendingRenewal = [
+        'invoice_id' => 55,
+        'type' => Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
+        'task' => Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
+        'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP,
+    ];
+    $connection->insert('invoice_item', ['order_id' => 3, 'rel_id' => '3'] + $pendingRenewal);
+    $connection->insert('invoice_item', ['order_id' => null, 'rel_id' => '004'] + $pendingRenewal);
+    $connection->insert('invoice_item', ['order_id' => null, 'rel_id' => '5 '] + $pendingRenewal);
+    $connection->insert('invoice_item', [
+        'order_id' => null,
+        'rel_id' => '006',
+        'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
+    ] + $pendingRenewal);
     $connection->insert('client_order_meta', [
         'client_order_id' => 2,
         'name' => Service::META_CANCEL_AT_PERIOD_END,
@@ -1436,8 +1418,8 @@ test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation me
     $result = $svc->getSoonExpiringActiveOrders();
     $ids = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $result);
 
-    expect($ids)->toContain(1)
-        ->and($ids)->not->toContain(2);
+    sort($ids);
+    expect($ids)->toBe([1, 5, 6]);
 });
 
 test('rmInvoiceItemByOrder removes pending items through either order linkage', function (): void {
@@ -4183,6 +4165,8 @@ test('batchCancelUnpaid removes each stale unpaid order and dispatches typed eve
     $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceService);
     $di['em'] = $emMock;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -4193,8 +4177,8 @@ test('batchCancelUnpaid removes each stale unpaid order and dispatches typed eve
         }
     });
 
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderA);
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($orderA, Mockery::any());
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($orderB, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4240,7 +4224,7 @@ test('batchCancelUnpaid protects a shared invoice when a sibling order paid else
     // that sibling is itself past the paid-item re-check.
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($unpaidInvoice, true)
+        ->with($unpaidInvoice, true, null)
         ->andReturn(false);
 
     $eventDispatcher = new OrderServiceTestEventRecorder();
@@ -4257,7 +4241,7 @@ test('batchCancelUnpaid protects a shared invoice when a sibling order paid else
     });
     $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
-    $serviceMock->shouldNotReceive('deleteFromOrder');
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder');
 
     $serviceMock->setDi($di);
 
@@ -4299,7 +4283,7 @@ test('batchCancelUnpaid keeps a draft the removal refuses because a linked order
     $invoiceServiceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepositoryMock);
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($unpaidInvoice, true)
+        ->with($unpaidInvoice, true, null)
         ->andReturn(false);
 
     $eventDispatcher = new OrderServiceTestEventRecorder();
@@ -4316,7 +4300,7 @@ test('batchCancelUnpaid keeps a draft the removal refuses because a linked order
     });
     $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
-    $serviceMock->shouldNotReceive('deleteFromOrder');
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder');
 
     $serviceMock->setDi($di);
 
@@ -4356,7 +4340,7 @@ test('batchCancelUnpaid keeps a draft and continues when its removal fails', fun
     $invoiceServiceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepositoryMock);
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($unpaidInvoice, true)
+        ->with($unpaidInvoice, true, null)
         ->andThrow(new FOSSBilling\Core\Exception\BaseException('link lookup failed'));
 
     $eventDispatcher = new OrderServiceTestEventRecorder();
@@ -4374,8 +4358,8 @@ test('batchCancelUnpaid keeps a draft and continues when its removal fails', fun
     });
     $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
-    $serviceMock->shouldNotReceive('deleteFromOrder')->with($orderWithDraft);
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($otherOrder);
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder')->with($orderWithDraft, Mockery::any());
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($otherOrder, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4448,11 +4432,11 @@ test('batchCancelUnpaid rebuilds a closed manager, isolates unreadable orders, a
         ->andReturn($invoiceRepositoryMock, $replacementInvoiceRepositoryMock);
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($unpaidInvoice, true)
+        ->with($unpaidInvoice, true, null)
         ->andThrow(new FOSSBilling\Core\Exception\BaseException('db went away'));
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($rebuiltInvoice, true)
+        ->with($rebuiltInvoice, true, null)
         ->andReturn(true);
 
     $eventDispatcher = new OrderServiceTestEventRecorder();
@@ -4471,8 +4455,8 @@ test('batchCancelUnpaid rebuilds a closed manager, isolates unreadable orders, a
     $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
     $serviceMock->shouldReceive('createEntityManager')->once()->with($connection)->andReturn($freshEmMock);
-    $serviceMock->shouldNotReceive('deleteFromOrder')->with($orderWithDraft);
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($reloadedOrder);
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder')->with($orderWithDraft, Mockery::any());
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($reloadedOrder, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4533,7 +4517,7 @@ test('batchCancelUnpaid defers an order attached to a new draft mid-run', functi
     });
     $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
-    $serviceMock->shouldNotReceive('deleteFromOrder');
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder');
 
     $serviceMock->setDi($di);
 
@@ -4541,7 +4525,7 @@ test('batchCancelUnpaid defers an order attached to a new draft mid-run', functi
         ->and($eventDispatcher->events)->toHaveCount(2);
 });
 
-test('batchCancelUnpaid lets a sibling proceed after its invoice was removed in this run', function (): void {
+test('batchCancelUnpaid only lets siblings detached by the batch proceed', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     // Order A is removed first; its deletion then fails at the gateway, but
@@ -4551,15 +4535,17 @@ test('batchCancelUnpaid lets a sibling proceed after its invoice was removed in 
     // would still defer (see the mid-run attach test).
     $orderA = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
     $orderB = createEntity(Order::class, ['id' => 2, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $orderC = createEntity(Order::class, ['id' => 3, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
     $unpaidInvoice = orderServiceCreateInvoiceModel(55);
     $unpaidInvoice->setStatus(Invoice::STATUS_UNPAID);
 
     $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepository->shouldReceive('getStaleUnpaid')
         ->once()
-        ->andReturn([$orderA, $orderB]);
+        ->andReturn([$orderA, $orderB, $orderC]);
     $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(1)->andReturn(false);
     $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(2)->andReturn(false);
+    $orderRepository->shouldNotReceive('hasPaidInvoiceItem')->with(3);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
@@ -4570,7 +4556,12 @@ test('batchCancelUnpaid lets a sibling proceed after its invoice was removed in 
         ->andReturnUsing(static function () use ($orderB): void {
             $orderB->setUnpaidInvoiceId(null);
         });
-    $emMock->shouldReceive('isOpen')->andReturn(true);
+    // This sibling was moved to another draft before #55 was removed, then
+    // lost its new link independently. Its null link has a different cause.
+    $emMock->shouldReceive('refresh')->once()->with($orderC)->andReturnUsing(static function () use ($orderC): void {
+        $orderC->setUnpaidInvoiceId(null);
+    });
+    $emMock->shouldReceive('isOpen')->andReturnTrue();
 
     $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepositoryMock->shouldReceive('findBy')
@@ -4582,8 +4573,12 @@ test('batchCancelUnpaid lets a sibling proceed after its invoice was removed in 
     $invoiceServiceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepositoryMock);
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($unpaidInvoice, true)
-        ->andReturn(true);
+        ->with($unpaidInvoice, true, null)
+        ->andReturnUsing(static function (Invoice $invoice, bool $guard, ?array &$detachedOrderIds): bool {
+            $detachedOrderIds = [1, 2];
+
+            return true;
+        });
 
     $eventDispatcher = new OrderServiceTestEventRecorder();
     $logger = new Tests\Helpers\TestLogger();
@@ -4600,11 +4595,12 @@ test('batchCancelUnpaid lets a sibling proceed after its invoice was removed in 
     });
     $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
-    $serviceMock->shouldReceive('deleteFromOrder')
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')
         ->once()
-        ->with($orderA)
+        ->with($orderA, null)
         ->andThrow(new FOSSBilling\Core\Exception\BaseException('gateway blew up'));
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($orderB, null);
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder')->with($orderC, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4613,7 +4609,7 @@ test('batchCancelUnpaid lets a sibling proceed after its invoice was removed in 
         ->and(array_column($logger->calls, 'params'))->toContain(['gateway blew up']);
 });
 
-test('batchCancelUnpaid defers linked groups when the invoice map cannot be rebuilt', function (): void {
+test('batchCancelUnpaid defers linked groups until the invoice map is rebuilt', function (bool $recovers): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     // The removal throws and closes the manager; the reload succeeds but the
@@ -4653,23 +4649,26 @@ test('batchCancelUnpaid defers linked groups when the invoice map cannot be rebu
     $freshEmMock->shouldReceive('find')->once()->with(Order::class, 2)->andReturn($reloadedPlainOrder);
     $freshEmMock->shouldReceive('find')->once()->with(Order::class, 3)->andReturn($reloadedDraftOrder);
     $freshEmMock->shouldReceive('getRepository')->with(Order::class)->andReturn($freshOrderRepository);
-    $freshEmMock->shouldReceive('refresh')->twice();
+    $freshEmMock->shouldReceive('refresh')->times($recovers ? 1 : 2);
 
     $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepositoryMock->shouldReceive('findBy')
         ->once()
         ->with(['id' => [55, 78]])
         ->andReturn([$unpaidInvoice, $otherInvoice]);
-    $invoiceRepositoryMock->shouldReceive('findBy')
+    $freshInvoiceRepository = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $freshInvoiceRepository->shouldReceive('findBy')
         ->once()
         ->with(['id' => [78]])
         ->andThrow(new FOSSBilling\Core\Exception\BaseException('map failed'));
 
     $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
-    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->twice()->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->once()->andReturn($invoiceRepositoryMock);
+    $freshInvoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $freshInvoiceService->shouldReceive('getInvoiceRepository')->once()->andReturn($freshInvoiceRepository);
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($unpaidInvoice, true)
+        ->with($unpaidInvoice, true, null)
         ->andThrow(new FOSSBilling\Core\Exception\BaseException('db went away'));
 
     $eventDispatcher = new OrderServiceTestEventRecorder();
@@ -4685,12 +4684,37 @@ test('batchCancelUnpaid defers linked groups when the invoice map cannot be rebu
             return ['batch_cancel_unpaid' => '1', 'batch_cancel_unpaid_after_days' => 10];
         }
     });
-    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
+    $invoiceServices = [spl_object_id($emMock) => $invoiceServiceMock, spl_object_id($freshEmMock) => $freshInvoiceService];
+    $di['mod_service'] = $di->protect(function (string $name) use ($di, &$invoiceServices): object {
+        return $invoiceServices[spl_object_id($di['em'])];
+    });
 
-    $serviceMock->shouldReceive('createEntityManager')->once()->with($connection)->andReturn($freshEmMock);
-    $serviceMock->shouldNotReceive('deleteFromOrder')->with($orderWithDraft);
-    $serviceMock->shouldNotReceive('deleteFromOrder')->with($reloadedDraftOrder);
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($reloadedPlainOrder);
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder')->with($orderWithDraft, Mockery::any());
+    $plainRemoval = $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($reloadedPlainOrder, null);
+    if ($recovers) {
+        $plainRemoval->andThrow(new FOSSBilling\Core\Exception\BaseException('second manager closed'));
+        $freshEmMock->shouldReceive('isOpen')->once()->andReturnFalse();
+        $freshEmMock->shouldReceive('getConnection')->once()->andReturn($connection);
+
+        $recoveredOrder = createEntity(Order::class, ['id' => 3, 'unpaid_invoice_id' => 78, 'status' => Order::STATUS_PENDING_SETUP]);
+        $recoveredEm = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+        $recoveredEm->shouldReceive('find')->once()->with(Order::class, 3)->andReturn($recoveredOrder);
+        $recoveredEm->shouldReceive('refresh')->once()->with($recoveredOrder);
+        $recoveredEm->shouldReceive('getRepository')->with(Order::class)->andReturn($freshOrderRepository);
+
+        $recoveredRepository = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $recoveredRepository->shouldReceive('findBy')->once()->with(['id' => [78]])->andReturn([$otherInvoice]);
+        $recoveredService = Mockery::mock(Box\Mod\Invoice\Service::class);
+        $recoveredService->shouldReceive('getInvoiceRepository')->once()->andReturn($recoveredRepository);
+        $recoveredService->shouldReceive('deleteInvoiceByAdmin')->once()->with($otherInvoice, true, null)->andReturnTrue();
+        $invoiceServices[spl_object_id($recoveredEm)] = $recoveredService;
+
+        $serviceMock->shouldReceive('createEntityManager')->twice()->with($connection)->andReturn($freshEmMock, $recoveredEm);
+        $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($recoveredOrder, 78);
+    } else {
+        $serviceMock->shouldReceive('createEntityManager')->once()->with($connection)->andReturn($freshEmMock);
+        $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder')->with($reloadedDraftOrder, Mockery::any());
+    }
 
     $serviceMock->setDi($di);
 
@@ -4698,7 +4722,7 @@ test('batchCancelUnpaid defers linked groups when the invoice map cannot be rebu
         ->and($eventDispatcher->events)->toHaveCount(2)
         ->and(array_column($logger->calls, 'params'))->toContain(['db went away'])
         ->and(array_column($logger->calls, 'params'))->toContain(['map failed']);
-});
+})->with(['map remains unavailable' => false, 'a later reset rebuilds the map' => true]);
 
 test('batchCancelUnpaid falls back to the 7 day default when the configured value is blank', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -4713,6 +4737,8 @@ test('batchCancelUnpaid falls back to the 7 day default when the configured valu
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
 
     $di = container();
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceService);
     $di['em'] = $emMock;
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4777,7 +4803,7 @@ test('batchCancelUnpaid skips a stale order with a paid item the re-check finds'
     });
     $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
 
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($neverPaid);
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($neverPaid, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4814,7 +4840,7 @@ test('batchCancelUnpaid removes the linked unpaid invoice before deleting the or
         ->andReturn($invoiceRepositoryMock);
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($invoiceModel, true)
+        ->with($invoiceModel, true, null)
         ->andReturn(true);
 
     $di = container();
@@ -4828,7 +4854,7 @@ test('batchCancelUnpaid removes the linked unpaid invoice before deleting the or
     });
     $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
 
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($order);
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($order, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4860,7 +4886,7 @@ test('batchCancelUnpaid resolves a shared invoice once and still removes every s
 
     $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceServiceMock->shouldReceive('getInvoiceRepository')->once()->andReturn($invoiceRepositoryMock);
-    $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')->once()->with($invoiceModel, true)->andReturn(true);
+    $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')->once()->with($invoiceModel, true, null)->andReturn(true);
 
     $di = container();
     $di['em'] = $emMock;
@@ -4873,8 +4899,8 @@ test('batchCancelUnpaid resolves a shared invoice once and still removes every s
     });
     $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
 
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderA);
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($orderA, Mockery::any());
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($orderB, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4911,11 +4937,11 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
     // processing orderB is the second, successful attempt.
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($invoiceModel, true)
+        ->with($invoiceModel, true, null)
         ->andThrow(new FOSSBilling\Core\Exception\BaseException('db went away'));
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
-        ->with($invoiceModel, true)
+        ->with($invoiceModel, true, null)
         ->andReturn(true);
 
     $di = container();
@@ -4932,8 +4958,8 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
     // orderA is left alone this round since the invoice removal that would have
     // covered it failed; orderB retries the same invoice and, once it succeeds,
     // is removed.
-    $serviceMock->shouldNotReceive('deleteFromOrder')->with($orderA);
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder')->with($orderA, Mockery::any());
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($orderB, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -4974,7 +5000,7 @@ test('batchCancelUnpaid leaves the order alone when its invoice was paid since s
     });
     $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
 
-    $serviceMock->shouldNotReceive('deleteFromOrder');
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder');
 
     $serviceMock->setDi($di);
 
@@ -5018,7 +5044,7 @@ test('batchCancelUnpaid removes the order without touching the invoice when it w
     });
     $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
 
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($order);
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($order, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -5042,6 +5068,8 @@ test('batchCancelUnpaid logs and continues when removing one stale order fails',
     $emMock->shouldReceive('isOpen')->andReturn(true);
 
     $di = container();
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceService);
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
@@ -5051,11 +5079,11 @@ test('batchCancelUnpaid logs and continues when removing one stale order fails',
         }
     });
 
-    $serviceMock->shouldReceive('deleteFromOrder')
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')
         ->once()
-        ->with($orderA)
+        ->with($orderA, Mockery::any())
         ->andThrow(new FOSSBilling\Core\Exception\BaseException('boom'));
-    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+    $serviceMock->shouldReceive('deleteStaleUnpaidOrder')->once()->with($orderB, Mockery::any());
 
     $serviceMock->setDi($di);
 
@@ -5084,6 +5112,8 @@ test('batchCancelUnpaid skips an order that changed status while the batch was r
         });
 
     $di = container();
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceService);
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
@@ -5093,7 +5123,7 @@ test('batchCancelUnpaid skips an order that changed status while the batch was r
         }
     });
 
-    $serviceMock->shouldNotReceive('deleteFromOrder');
+    $serviceMock->shouldNotReceive('deleteStaleUnpaidOrder');
 
     $serviceMock->setDi($di);
 

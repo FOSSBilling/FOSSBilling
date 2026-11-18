@@ -2638,18 +2638,13 @@ class Patcher implements InjectionAwareInterface
 
             // A recorded completion short-circuits bounded runs only: without it the
             // rescan below would revisit unresolvable rows on every invocation.
-            // Unbounded runs rescan regardless (see above). Completion records the
-            // rule version, so a stale completion from an older rule is rescanned
-            // from the start instead of short-circuiting: the old resume marker
-            // would otherwise skip rows the previous rule already passed over.
-            $marker = 'invoice_item_order_backfill_last_id';
+            // Scope the cursor to the rule as well as the completion flag. An
+            // older rule may have skipped rows even if it never reached the end.
+            $marker = 'invoice_item_order_backfill_last_id_v' . self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION;
             if ($maxPages !== 0) {
                 $completedRule = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE]);
                 if ($completedRule === self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION) {
                     return;
-                }
-                if ($completedRule !== false) {
-                    $this->clearBackfillPosition($dbal, $marker);
                 }
             }
 
@@ -2686,9 +2681,8 @@ class Patcher implements InjectionAwareInterface
 
                 foreach ($rows as $row) {
                     $lastId = (int) $row['id'];
-                    // Single source for the derivation rule (canonical positive
-                    // integer strings only): a loose cast here would link lines
-                    // such as rel_id '7.5' to order 7.
+                    // Use the same derivation rule as live writes. A loose cast
+                    // would incorrectly link a reference like '7.5' to order 7.
                     $orderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveOrderReference($row['type'] ?? null, $row['unit'] ?? null, $row['rel_id'] ?? null);
                     if ($orderId === null) {
                         continue;
