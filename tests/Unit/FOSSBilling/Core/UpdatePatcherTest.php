@@ -3634,8 +3634,14 @@ test('invoice item order_id backfill rescans rows an older rule version skipped'
             $patcher->setDi($di);
             $patcher->backfillInvoiceItemOrderIds(1);
 
-            expect((int) $connection->fetchOne('SELECT order_id FROM invoice_item'))->toBe(7)
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2')
+            // Converted through a rescan from the start, but completion is not
+            // recorded until a page comes back empty.
+            expect((int) $connection->fetchOne('SELECT order_id FROM invoice_item'))->toBe(7);
+
+            // A further bounded run finds no more pages, upgrades the stale
+            // completion to the current rule, and clears the resume marker.
+            $patcher->backfillInvoiceItemOrderIds(1);
+            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2')
                 ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
 
             // Converged: a further bounded run short-circuits.
