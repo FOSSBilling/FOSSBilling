@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm';
 for (const template of ['client/mod_support_ticket_upload.html.twig', 'admin/mod_support_ticket_reply_files.html.twig']) {
   test(`${template} rejects excess selections including uploads still in flight`, () => {
     const html = readFileSync(new URL(`../../../src/modules/Support/templates/${template}`, import.meta.url), 'utf8');
-    const script = html.match(/<script>([\s\S]*?)<\/script>/)![1].replace(/{{[\s\S]*?}}/g, 'translated __FILES__');
+    const script = html.match(/<script>([\s\S]*?)<\/script>/i)![1].replace(/{{[\s\S]*?}}/g, 'translated __FILES__');
     const rows: any[] = [];
     const pending: any[] = [];
     const errors: string[] = [];
