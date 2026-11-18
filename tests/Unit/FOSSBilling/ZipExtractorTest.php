@@ -143,7 +143,8 @@ test('Darwin entry modes preserve executable bits and symbolic link types', func
         (new ZipExtractor())->extract($root . '/update.zip', $root . '/destination', function (string $name, int $entryMode) use (&$seen): void { $seen = $entryMode; });
         expect($seen)->toBe($mode);
         if (($mode & 0o170000) === 0o120000) {
-            expect($fs->exists($root . '/destination/entry-0.txt'))->toBeFalse();
+            expect($fs->exists($root . '/destination/entry-0.txt'))->toBeFalse()
+                ->and(is_link($root . '/destination/entry-0.txt'))->toBeFalse();
         } else {
             expect(fileperms($root . '/destination/entry-0.txt') & 0o777)->toBe(0o755)
                 ->and($fs->readFile($root . '/destination/entry-0.txt'))->toBe('contents');
@@ -191,7 +192,9 @@ test('fallback extraction stays within a small worker memory limit', function ()
     unset($zip);
 
     try {
-        $process = new Symfony\Component\Process\Process([PHP_BINARY, '-d', 'memory_limit=48M', PATH_TESTS . '/Fixtures/zip-memory.php', $root]);
+        $ini = php_ini_loaded_file();
+        $configuration = $ini === false ? ['-n'] : ['-c', $ini];
+        $process = new Symfony\Component\Process\Process([PHP_BINARY, ...$configuration, '-d', 'memory_limit=48M', PATH_TESTS . '/Fixtures/zip-memory.php', $root]);
         $process->mustRun();
         expect($fs->readFile($root . '/destination/entry-79.txt'))->toHaveLength(1024 * 1024);
     } finally {
