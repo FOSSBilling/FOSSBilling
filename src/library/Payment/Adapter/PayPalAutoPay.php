@@ -494,18 +494,12 @@ class Payment_Adapter_PayPalAutoPay implements FOSSBilling\Core\Container\Inject
             $row = ['amount' => $amount, 'currency' => (string) $invoice->getCurrency(), 'note' => 'PayPal: ' . $paid . ' ' . $currency . '.'] + $row;
         }
         $service->validatePaymentAmount($amount, $due);
-        $api_admin->invoice_transaction_update($row + ['id' => $id, 'txn_status' => 'Completed']);
-        // As PayPal Email: the payment goes to the client's credit, which then pays the invoice.
-        $api_admin->client_balance_add_funds(['id' => $invoice->getClientId(), 'amount' => $amount, 'description' => 'PayPal transaction ' . $txnId, 'type' => 'PayPal', 'rel_id' => $txnId]);
-        if ($service->isInvoiceTypeDeposit($invoice)) {
-            $service->markAsPaid($invoice);
-        } else {
-            if (!$invoice->isIssued()) {
-                $service->issueInvoice($invoice, ['use_credits' => false]);
-            }
-            $api_admin->invoice_pay_with_credits(['id' => $invoice->getId()]);
+        $api_admin->invoice_transaction_update($row + ['id' => $id, 'txn_status' => 'processing']);
+        $payment = $this->di['em']->getRepository(Transaction::class)->find($id);
+        if (!$payment instanceof Transaction) {
+            throw new Payment_Exception('Transaction not found');
         }
-        $api_admin->invoice_transaction_update(['id' => $id, 'status' => Transaction::STATUS_PROCESSED, 'error' => null, 'error_code' => null, 'updated_at' => date('Y-m-d H:i:s')]);
+        $service->settleClearingPayment($invoice, $payment, $payment, 'PayPal');
     }
 
     /**

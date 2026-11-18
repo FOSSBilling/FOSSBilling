@@ -1261,6 +1261,10 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
+        $dbalMock->shouldReceive('isTransactionActive')->andReturn(false);
+        $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
+        $dbalMock->shouldReceive('fetchOne')->with('SELECT GET_LOCK(:name, :timeout)', ['name' => 'fb:card-charge:10', 'timeout' => 0])->once()->andReturn(1);
+        $dbalMock->shouldReceive('executeStatement')->with('SELECT RELEASE_LOCK(:name)', ['name' => 'fb:card-charge:10'])->once()->andReturn(1);
         expectStripeObjectLock($dbalMock, 'pi_existing', 1);
 
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
@@ -1308,6 +1312,10 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         $dbalMock->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), Mockery::any())->byDefault()->andReturn(false);
+        $dbalMock->shouldReceive('isTransactionActive')->andReturn(false);
+        $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
+        $dbalMock->shouldReceive('fetchOne')->with('SELECT GET_LOCK(:name, :timeout)', ['name' => 'fb:card-charge:15', 'timeout' => 0])->once()->andReturn(1);
+        $dbalMock->shouldReceive('executeStatement')->with('SELECT RELEASE_LOCK(:name)', ['name' => 'fb:card-charge:15'])->once()->andReturn(1);
         expectStripeObjectLock($dbalMock, 'pi_new', 1);
         $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
 
@@ -4376,6 +4384,24 @@ test('Stripe failure cannot resolve a charge scope on its own connection', funct
             ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'still active');
         expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], (int) $c['invoice']->getId()))->not->toBeNull();
     } finally {
+        $c['db']->close();
+    }
+});
+
+test('Stripe success cannot settle while a saved-charge worker holds the invoice lock', function (): void {
+    $c = stripeFailureContext();
+    $c['intent']->status = 'succeeded';
+    $this->adapter->setDi($c['di']);
+    $lock = 'fb:card-charge:' . $c['invoice']->getId();
+    FOSSBilling\Core\Doctrine\NamedLock::acquire($c['db'], $lock, 0);
+
+    try {
+        expect(fn () => invokePrivateMethod($this->adapter, 'handlePaymentIntentSucceededWebhook', [null, $c['tx'], (object) ['data' => (object) ['object' => $c['intent']]], (int) $c['gateway']->getId()]))
+            ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'still active');
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], (int) $c['invoice']->getId()))->not->toBeNull()
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], (int) $c['invoice']->getId()))->not->toBeNull();
+    } finally {
+        FOSSBilling\Core\Doctrine\NamedLock::release($c['db'], $lock);
         $c['db']->close();
     }
 });

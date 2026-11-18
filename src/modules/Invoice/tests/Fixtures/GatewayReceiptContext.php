@@ -26,7 +26,7 @@ function receiptTestContext(?Doctrine\DBAL\Connection $connection = null): array
     if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
         $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
     }
-    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Invoice\Entity\GatewayRefundAttempt::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Transaction::class]));
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\GatewayRefundAttempt::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Transaction::class]));
     $client = (new Client())->setCurrency('USD');
     $gateway = (new PayGateway())->setGateway('Stripe');
     $em->persist($client);

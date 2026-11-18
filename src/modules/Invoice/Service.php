@@ -63,6 +63,7 @@ use FOSSBilling\Core\Doctrine\SqlExpr;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Http\ResponseFactory;
 use FOSSBilling\Core\I18n\I18n;
+use FOSSBilling\Core\Payment\ProcessingFence;
 use FOSSBilling\Core\System\Environment;
 use FOSSBilling\Core\Validation\PriceValidator;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -2091,7 +2092,7 @@ class Service implements InjectionAwareInterface
                     $this->di['em']->refresh($clearing, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
                 }
                 if ($clearing->getInvoice()?->getId() !== $invoice->getId()
-                    || !in_array($clearing->getStatus(), $clearing === $payment ? [Transaction::STATUS_PROCESSING, Transaction::STATUS_RECEIVED] : [Transaction::STATUS_RECEIVED], true)
+                    || !in_array($clearing->getStatus(), $clearing === $payment ? [Transaction::STATUS_PROCESSING, Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR] : [Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR], true)
                     || $clearing->getTxnStatus() !== 'processing') {
                     throw new InformationException('The pending payment no longer matches this invoice.');
                 }
@@ -2287,6 +2288,17 @@ class Service implements InjectionAwareInterface
             || ($invoice instanceof Invoice && strcasecmp($currency, (string) $invoice->getCurrency()) !== 0)) {
             throw new InformationException('Gateway receipt currency does not match the client and invoice.');
         }
+        $db = $this->di['em']->getConnection();
+        $attempt = $invoice instanceof Invoice ? $db->fetchAssociative("SELECT id, owner_token, invoice_id FROM invoice_gateway_charge_attempt WHERE invoice_id = ? AND gateway_id = ? AND payment_id = ? AND state = 'pending'", [$invoice->getId(), $gatewayId, $providerObjectId]) : false;
+        foreach (ProcessingFence::claims() as $claim) {
+            if ($attempt && $claim['table'] === 'invoice_gateway_charge_attempt' && $claim['id'] === $attempt['id']) {
+                // The enclosing saved-charge/recovery scope resolves its own
+                // attempt after settlement; ending it here would revoke that scope.
+                $attempt = false;
+
+                break;
+            }
+        }
         // Legacy rel_id is limited to 20 characters. The complete provider
         // identifier remains in the description and receipt fingerprint.
         if ($legacyRelId !== null && strlen($legacyRelId) > 20) {
@@ -2298,8 +2310,8 @@ class Service implements InjectionAwareInterface
         $complete = true;
         // Settlement and acknowledgement share one mutex: an older completion
         // must not acknowledge work created by a concurrent receipt retry.
-        $created = $this->withPaymentCompletionLock((int) $transaction->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete, $prepareSettlement): bool {
-            return $this->withCreditLock((int) $client->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete, $prepareSettlement): bool {
+        $created = $this->withPaymentCompletionLock((int) $transaction->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete, $prepareSettlement, $db, $attempt): bool {
+            return $this->withCreditLock((int) $client->getId(), function () use ($transaction, $client, &$invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, &$resume, &$complete, $prepareSettlement, $db, $attempt): bool {
                 if ($this->gatewayReceiptExists((int) $transaction->getGateway()->getId(), $providerObjectId, $client, $amount, $description, $legacyType)) {
                     $receipt = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayReceiptKey' => $key]);
                     if (!$receipt instanceof ClientBalance || $receipt->getGatewayTransactionId() !== $transaction->getId()) {
@@ -2312,7 +2324,7 @@ class Service implements InjectionAwareInterface
                     $resume = true;
                 }
 
-                return $this->di['em']->wrapInTransaction(function () use ($transaction, $client, $invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, $resume, &$complete, $prepareSettlement): bool {
+                return $this->di['em']->wrapInTransaction(function () use ($transaction, $client, $invoice, $key, $amount, $description, $legacyType, $legacyRelId, $providerObjectId, &$paid, $resume, &$complete, $prepareSettlement, $db, $attempt): bool {
                     if (!$resume && $prepareSettlement !== null) {
                         $prepareSettlement();
                     }
@@ -2348,6 +2360,17 @@ class Service implements InjectionAwareInterface
                             $complete = true;
                             $transaction->setGatewayCompletionState(Transaction::GATEWAY_COMPLETION_RUNNING);
                             $this->di['em']->flush();
+                        }
+                    }
+
+                    if ($attempt && $invoice instanceof Invoice && $invoice->getId() === (int) $attempt['invoice_id']) {
+                        $owner = $attempt['owner_token'] === null ? 'owner_token IS NULL' : 'owner_token = ?';
+                        $parameters = [date('Y-m-d H:i:s'), $attempt['id']];
+                        if ($attempt['owner_token'] !== null) {
+                            $parameters[] = $attempt['owner_token'];
+                        }
+                        if ($db->executeStatement("UPDATE invoice_gateway_charge_attempt SET state = 'settled', resolved_at = ? WHERE id = ? AND state = 'pending' AND {$owner}", $parameters) !== 1) {
+                            throw new \FOSSBilling\Core\Payment\OwnershipLost('The charge attempt changed while settling its payment.');
                         }
                     }
 

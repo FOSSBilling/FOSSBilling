@@ -1298,11 +1298,27 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     {
         $paymentIntent = $event->data->object;
 
-        return $this->withStripeObjectLock(
-            $paymentIntent->id,
-            $gateway_id,
-            fn (): bool => $this->handlePaymentIntentSucceededWebhookUnderLock($tx, $paymentIntent, $gateway_id)
-        );
+        $db = $this->di['em']->getConnection();
+        if ($db->isTransactionActive()) {
+            throw new LogicException('Payment success processing must begin outside a database transaction.');
+        }
+        $invoiceId = (int) ($paymentIntent->metadata->invoice_id ?? 0);
+        $lock = $invoiceId > 0 ? 'fb:card-charge:' . $invoiceId : null;
+        if ($lock !== null && !NamedLock::acquire($db, $lock, 0)) {
+            throw new FOSSBilling\Core\Exception\BaseException('The payment worker is still active. Retry this webhook later.');
+        }
+
+        try {
+            return $this->withStripeObjectLock(
+                $paymentIntent->id,
+                $gateway_id,
+                fn (): bool => $this->handlePaymentIntentSucceededWebhookUnderLock($tx, $paymentIntent, $gateway_id)
+            );
+        } finally {
+            if ($lock !== null) {
+                NamedLock::release($db, $lock);
+            }
+        }
     }
 
     private function handlePaymentIntentSucceededWebhookUnderLock(Transaction $tx, object $paymentIntent, int $gateway_id): bool

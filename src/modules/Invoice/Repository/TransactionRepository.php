@@ -225,7 +225,7 @@ class TransactionRepository extends EntityRepository
     }
 
     /**
-     * Find a bank debit still clearing: a received transaction whose gateway
+     * Find a bank debit still clearing: a received or locally failed transaction whose gateway
      * status is still processing, excluding a given id. Used by the Stripe
      * adapter to settle a clearing payment once the gateway answers it.
      */
@@ -235,12 +235,12 @@ class TransactionRepository extends EntityRepository
             ->andWhere('t.txnId = :txn_id')
             ->andWhere('IDENTITY(t.gateway) = :gateway_id')
             ->andWhere('t.id != :exclude_id')
-            ->andWhere('t.status = :status')
+            ->andWhere('t.status IN (:statuses)')
             ->andWhere('t.txnStatus = :txn_status')
             ->setParameter('txn_id', $txnId)
             ->setParameter('gateway_id', $gatewayId)
             ->setParameter('exclude_id', $excludeId)
-            ->setParameter('status', Transaction::STATUS_RECEIVED)
+            ->setParameter('statuses', [Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR])
             ->setParameter('txn_status', 'processing')
             ->setMaxResults(1)
             ->getQuery()

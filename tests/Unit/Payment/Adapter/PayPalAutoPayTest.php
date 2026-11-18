@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -272,19 +273,16 @@ describe('payment notices', function (): void {
         $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
         $invoiceService->shouldReceive('getBalanceDue')->once()->with($invoice)->andReturn(25.00);
         $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(25.00, 25.00);
-        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+        $payment = createEntity(Transaction::class, ['id' => 70]);
+        $invoiceService->shouldReceive('settleClearingPayment')->once()->with($invoice, $payment, $payment, 'PayPal');
         $invoiceService->shouldReceive('issueInvoice')->never();
         $invoiceService->shouldReceive('markAsPaid')->never();
 
         $api = Mockery::mock();
         $api->shouldReceive('invoice_transaction_update')->andReturnNull();
-        $api->shouldReceive('client_balance_add_funds')->once()->with([
-            'id' => 9, 'amount' => 25.0, 'description' => 'PayPal transaction P-9', 'type' => 'PayPal', 'rel_id' => 'P-9',
-        ]);
-        $api->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 60]);
 
         $txRepo = Mockery::mock(TransactionRepository::class);
-        $txRepo->shouldReceive('findBy')->andReturn([]);
+        $txRepo->shouldReceive('find')->once()->with(70)->andReturn($payment);
 
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
         $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
@@ -294,6 +292,7 @@ describe('payment notices', function (): void {
 
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getConnection')->andReturn($connection);
+        $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
         $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class));
         $invoiceRepo->shouldReceive('find')->once()->with(60)->andReturn($invoice);
 
