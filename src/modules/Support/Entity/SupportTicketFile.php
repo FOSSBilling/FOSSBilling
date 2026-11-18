@@ -19,8 +19,14 @@ use Doctrine\ORM\Mapping as ORM;
  * The file itself lives outside the web root; this row is its metadata.
  * message_id NULL means "waiting to be sent": bound to the message on save.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketFileRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_file')]
+#[ORM\Index(name: 'support_ticket_file_message_idx', columns: ['message_id'])]
+#[ORM\Index(name: 'support_ticket_file_ticket_idx', columns: ['ticket_id'])]
+#[ORM\Index(name: 'support_ticket_file_client_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'support_ticket_file_waiting_idx', columns: ['session_hash', 'message_id'])]
+#[ORM\Index(name: 'support_ticket_file_uploader_idx', columns: ['uploader_kind', 'uploader_id', 'created_at'])]
+#[ORM\UniqueConstraint(name: 'support_ticket_file_token_uniq', columns: ['token'])]
 class SupportTicketFile
 {
     #[ORM\Id]

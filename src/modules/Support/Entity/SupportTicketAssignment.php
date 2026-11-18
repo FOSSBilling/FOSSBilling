@@ -19,8 +19,9 @@ use Doctrine\ORM\Mapping as ORM;
  * One row per assigned ticket; a ticket without a row, or whose staff
  * member was deleted or deactivated, is unassigned.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketAssignmentRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_assignment')]
+#[ORM\Index(name: 'support_ticket_assignment_admin_idx', columns: ['admin_id'])]
 class SupportTicketAssignment
 {
     #[ORM\Id]

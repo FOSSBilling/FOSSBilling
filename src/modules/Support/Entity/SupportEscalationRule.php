@@ -16,10 +16,10 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * A ticket escalation rule (see Box\Mod\Support\TicketEscalation): matches
- * tickets without a reply for the set time and replies, moves, reprioritizes
- * and assigns them.
+ * tickets without a reply for the set time, then replies, moves them, changes
+ * their priority or assigns them.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportEscalationRuleRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_escalation_rule')]
 class SupportEscalationRule
 {

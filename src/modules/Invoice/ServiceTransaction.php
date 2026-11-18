@@ -110,10 +110,9 @@ class ServiceTransaction implements InjectionAwareInterface
             if ($status === false) {
                 throw new InformationException('Transaction not found.');
             }
-            if ($status === Transaction::STATUS_PROCESSING && ProcessingFence::claims() === []) {
-                foreach (array_diff(array_keys($data), ['id', 'note', 'error', 'error_code']) as $field) {
-                    throw new InformationException('Release the interrupted transaction before editing payment fields.');
-                }
+            if ($status === Transaction::STATUS_PROCESSING && ProcessingFence::claims() === []
+                && array_diff(array_keys($data), ['id', 'note', 'error', 'error_code']) !== []) {
+                throw new InformationException('Release the interrupted transaction before editing payment fields.');
             }
             if ($status === Transaction::STATUS_PROCESSED || $status !== $model->getStatus()) {
                 $em->refresh($model);

@@ -43,7 +43,7 @@ fflush(STDOUT);
 try {
     $action = getenv('ATTACHMENT_RACE_ACTION');
     if ($action === 'legacy_cleanup') {
-        $result = TicketFiles::cleanupLegacyOrphans($di, true);
+        $result = TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true);
     } elseif ($action === 'prune') {
         $result = TicketFiles::prune($di);
     } elseif ($action === 'delete') {

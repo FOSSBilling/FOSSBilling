@@ -18,7 +18,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Tickets pinned to the top of the staff ticket list (see Box\Mod\Support\TicketBulk).
  * One row per pinned ticket.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketPinRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_pin')]
 class SupportTicketPin
 {

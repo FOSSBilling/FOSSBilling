@@ -21,7 +21,7 @@ use Doctrine\ORM\Mapping as ORM;
  * payment may already have been taken but is not confirmed yet - staff can
  * still charge it on purpose.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceCardChargeRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'invoice_card_charge')]
 class InvoiceCardCharge
 {

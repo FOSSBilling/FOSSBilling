@@ -28,7 +28,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * message attaches them to it. Serving needs the message to exist and not be
  * removed; staff can remove a file (the message keeps a "removed" marker).
  * Old attached files expire through the support settings keep period; files
- * uploaded but never sent are deleted a day later. Clients never see pins.
+ * uploaded but never sent are deleted a day later.
  */
 final class TicketFiles
 {
@@ -737,55 +737,11 @@ final class TicketFiles
             throw new \LogicException('Legacy attachment cleanup cannot run inside a transaction.');
         }
 
-        return self::removeLegacyOrphanBatch($db, new Filesystem(), $batch, 500, $di);
+        return self::removeLegacyOrphanBatch($db, new Filesystem(), $batch, $di);
     }
 
-    /** Remove unmarked files only after every legacy writer and request has stopped. */
-    public static function cleanupLegacyOrphans(\Pimple\Container $di, bool $legacyUploadsDrained): int
-    {
-        if (!$legacyUploadsDrained) {
-            throw new \InvalidArgumentException('Legacy attachment writers must be stopped and their requests drained.');
-        }
-        $db = self::db($di);
-        if ($db->isTransactionActive()) {
-            throw new \LogicException('Legacy attachment cleanup cannot run inside a transaction.');
-        }
-        $filesystem = new Filesystem();
-        if (!$filesystem->exists(self::dir())) {
-            return 0;
-        }
-        $cutoff = time() - self::LEGACY_ORPHAN_HOURS * 3600;
-        $finder = (new Finder())->files()->in(self::dir())->depth('== 1')->name('/^[a-f0-9]{32}$/');
-        $batch = [];
-        $removed = 0;
-        foreach ($finder as $file) {
-            $clientName = $file->getRelativePath();
-            if ($file->isLink() || !ctype_digit($clientName) || (string) (int) $clientName !== $clientName || $file->getMTime() >= $cutoff) {
-                continue;
-            }
-            $clientId = (int) $clientName;
-            $token = $file->getFilename();
-            if ($filesystem->exists(self::markerPath($clientId, $token))) {
-                continue;
-            }
-            $batch[] = [$clientId, $token];
-            if (count($batch) === 250) {
-                $removed += self::removeLegacyOrphanBatch($db, $filesystem, $batch, 500 - $removed);
-                $batch = [];
-                if ($removed >= 500) {
-                    return $removed;
-                }
-            }
-        }
-        if ($batch !== []) {
-            $removed += self::removeLegacyOrphanBatch($db, $filesystem, $batch, 500 - $removed);
-        }
-
-        return $removed;
-    }
-
-    /** @param list<array{0: int, 1: string, 2?: array}> $batch */
-    private static function removeLegacyOrphanBatch(Connection $db, Filesystem $filesystem, array $batch, int $limit, ?\Pimple\Container $di = null): int
+    /** @param list<array{0: int, 1: string, 2: array}> $batch */
+    private static function removeLegacyOrphanBatch(Connection $db, Filesystem $filesystem, array $batch, \Pimple\Container $di): int
     {
         $tokens = array_column($batch, 1);
         $existing = array_fill_keys($db->executeQuery(
@@ -793,8 +749,7 @@ final class TicketFiles
         )->fetchFirstColumn(), true);
         $removed = 0;
         foreach ($batch as $entry) {
-            [$clientId, $token] = $entry;
-            $reviewed = $entry[2] ?? null;
+            [$clientId, $token, $reviewed] = $entry;
             if (isset($existing[$token])) {
                 continue;
             }
@@ -816,22 +771,19 @@ final class TicketFiles
                 if (is_link($path) || is_link(dirname($path)) || !$filesystem->exists($path)) {
                     return false;
                 }
-                if ($reviewed !== null && (filesize($path) !== $reviewed['size'] || filemtime($path) !== $reviewed['mtime']
+                if (filesize($path) !== $reviewed['size'] || filemtime($path) !== $reviewed['mtime']
                     || filemtime($path) >= time() - self::LEGACY_ORPHAN_HOURS * 3600
-                    || hash_file('sha256', $path) !== $reviewed['sha256'])) {
+                    || hash_file('sha256', $path) !== $reviewed['sha256']) {
                     return false;
                 }
                 $filesystem->remove($path);
 
                 return true;
             });
-            if ($didRemove && $di !== null) {
+            if ($didRemove) {
                 $di['logger']->info('Removed reviewed legacy attachment {client}/{token}', ['client' => $clientId, 'token' => $token]);
             }
             $removed += (int) $didRemove;
-            if ($removed >= $limit) {
-                break;
-            }
         }
 
         return $removed;

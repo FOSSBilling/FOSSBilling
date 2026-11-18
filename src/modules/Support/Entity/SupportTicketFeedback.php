@@ -19,8 +19,10 @@ use Doctrine\ORM\Mapping as ORM;
  * optional generic row (admin_id NULL) for how to improve (see
  * Box\Mod\Support\TicketFeedback).
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketFeedbackRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_feedback')]
+#[ORM\Index(name: 'support_ticket_feedback_ticket_idx', columns: ['ticket_id'])]
+#[ORM\Index(name: 'support_ticket_feedback_admin_created_idx', columns: ['admin_id', 'created_at'])]
 class SupportTicketFeedback
 {
     #[ORM\Id]

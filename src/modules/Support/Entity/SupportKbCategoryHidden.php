@@ -18,7 +18,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Knowledge base categories hidden from clients (see
  * Box\Mod\Support\HiddenKbCategories). One row per hidden category.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportKbCategoryHiddenRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_kb_category_hidden')]
 class SupportKbCategoryHidden
 {

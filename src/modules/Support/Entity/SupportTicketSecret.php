@@ -20,8 +20,10 @@ use Doctrine\ORM\Mapping as ORM;
  * never embedded in ticket payloads or emails, and vanish when the ticket
  * closes; the audit events survive closing but not deletion.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketSecretRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_secret')]
+#[ORM\Index(name: 'support_ticket_secret_ticket_idx', columns: ['ticket_id'])]
+#[ORM\Index(name: 'support_ticket_secret_created_idx', columns: ['created_at'])]
 class SupportTicketSecret
 {
     #[ORM\Id]

@@ -18,8 +18,10 @@ use Doctrine\ORM\Mapping as ORM;
  * A client's 1-5 star rating of a staff reply (see Box\Mod\Support\TicketFeedback).
  * One rating per message.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketMessageRatingRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_message_rating')]
+#[ORM\Index(name: 'support_ticket_message_rating_ticket_idx', columns: ['ticket_id'])]
+#[ORM\Index(name: 'support_ticket_message_rating_admin_rated_idx', columns: ['admin_id', 'rated_at'])]
 class SupportTicketMessageRating
 {
     #[ORM\Id]

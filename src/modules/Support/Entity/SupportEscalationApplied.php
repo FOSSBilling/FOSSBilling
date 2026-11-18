@@ -18,8 +18,9 @@ use Doctrine\ORM\Mapping as ORM;
  * Marks an escalation rule as having acted on a ticket for the reply it
  * found (see Box\Mod\Support\TicketEscalation). A rule acts once per reply.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportEscalationAppliedRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_escalation_applied')]
+#[ORM\Index(name: 'support_escalation_applied_ticket_idx', columns: ['ticket_id'])]
 #[ORM\UniqueConstraint(name: 'rule_ticket', columns: ['rule_id', 'ticket_id'])]
 class SupportEscalationApplied
 {

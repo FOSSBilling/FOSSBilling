@@ -20,8 +20,10 @@ use Doctrine\ORM\Mapping as ORM;
  * guest link and subject stay here so old pages and emailed replies resolve
  * to the survivor (see Box\Mod\Support\TicketMerge). Cannot be undone.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketMergeRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_merge')]
+#[ORM\Index(name: 'support_ticket_merge_merged_into_idx', columns: ['merged_into'])]
+#[ORM\Index(name: 'support_ticket_merge_access_hash_idx', columns: ['access_hash'], options: ['lengths' => [191]])]
 class SupportTicketMerge
 {
     #[ORM\Id]

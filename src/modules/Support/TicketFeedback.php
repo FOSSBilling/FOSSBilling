@@ -21,7 +21,7 @@ use FOSSBilling\Core\Utils\Normalizer;
  *
  * Clients rate staff replies 1-5 stars; when a ticket closes, the client gets
  * an email link to rate each staff member who replied 1-10 and to comment on
- * how to improve. A rule acts once per reply; reopening and closing resends
+ * how to improve. Reopening and closing resends
  * the same link until feedback is given.
  */
 final class TicketFeedback

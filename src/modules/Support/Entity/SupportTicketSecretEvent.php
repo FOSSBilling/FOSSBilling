@@ -18,8 +18,9 @@ use Doctrine\ORM\Mapping as ORM;
  * Audit trail of ticket secret openings, deletions and expiries (see
  * Box\Mod\Support\TicketSecrets). No values, only labels and who did it.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketSecretEventRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_secret_event')]
+#[ORM\Index(name: 'support_ticket_secret_event_ticket_idx', columns: ['ticket_id'])]
 class SupportTicketSecretEvent
 {
     #[ORM\Id]

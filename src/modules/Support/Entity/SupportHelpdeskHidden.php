@@ -18,7 +18,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Help desks hidden from clients (see Box\Mod\Support\HiddenHelpdesks).
  * One row per hidden help desk.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportHelpdeskHiddenRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_helpdesk_hidden')]
 class SupportHelpdeskHidden
 {

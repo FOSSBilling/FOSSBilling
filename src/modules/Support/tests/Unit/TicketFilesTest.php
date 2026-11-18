@@ -364,7 +364,7 @@ test('legacy cleanup removes only old unmarked files without metadata', function
         'session_hash' => 'session', 'name' => 'saved.txt', 'mime' => 'text/plain', 'size' => 7,
         'created_at' => date('Y-m-d H:i:s'),
     ]);
-    TicketFiles::cleanupLegacyOrphans($di, true);
+    TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true);
     expect(is_file($dir . '/7/' . $orphan))->toBeFalse()
         ->and(is_file($dir . '/0/' . $guest))->toBeFalse()
         ->and(is_file($dir . '/7/' . $kept))->toBeTrue()
@@ -381,10 +381,10 @@ test('legacy cleanup skips files while an outer transaction is active', function
     file_put_contents($path, 'private');
     touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
     $db->beginTransaction();
-    expect(fn () => TicketFiles::cleanupLegacyOrphans($di, true))->toThrow(LogicException::class);
+    expect(fn () => TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true))->toThrow(LogicException::class);
     expect(is_file($path))->toBeTrue();
     $db->rollBack();
-    TicketFiles::cleanupLegacyOrphans($di, true);
+    TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true);
     expect(is_file($path))->toBeFalse();
 });
 
@@ -396,10 +396,10 @@ test('legacy cleanup processes orphaned files in bounded batches', function (): 
         file_put_contents($path, 'x');
         touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
     }
-    TicketFiles::cleanupLegacyOrphans($di, true);
+    TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true);
     $files = (new Symfony\Component\Finder\Finder())->files()->in($dir . '/7');
     expect(iterator_count($files))->toBe(1);
-    TicketFiles::cleanupLegacyOrphans($di, true);
+    TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true);
     $files = (new Symfony\Component\Finder\Finder())->files()->in($dir . '/7');
     expect(iterator_count($files))->toBe(0);
 });
@@ -412,7 +412,7 @@ test('legacy cleanup does not follow attachment symlinks', function (): void {
     file_put_contents($target, 'keep');
     touch($target, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 1) * 3600);
     symlink($target, $link);
-    TicketFiles::cleanupLegacyOrphans($di, true);
+    TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true);
     expect(is_link($link))->toBeTrue()->and(file_get_contents($target))->toBe('keep');
 });
 
@@ -425,14 +425,14 @@ test('automatic cleanup never deletes old unmarked in-flight uploads', function 
     touch($path, time() - (TicketFiles::LEGACY_ORPHAN_HOURS + 48) * 3600);
     TicketFiles::prune($di);
     expect(is_file($path))->toBeTrue();
-    expect(fn () => TicketFiles::cleanupLegacyOrphans($di, false))->toThrow(InvalidArgumentException::class);
+    expect(fn () => TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), false))->toThrow(InvalidArgumentException::class);
     expect(is_file($path))->toBeTrue();
     $db->insert('support_ticket_file', [
         'token' => $token, 'client_id' => $clientId, 'uploader_kind' => 'client', 'uploader_id' => $clientId,
         'session_hash' => 'session', 'name' => 'legacy.txt', 'mime' => 'text/plain', 'size' => 7,
         'created_at' => date('Y-m-d H:i:s'),
     ]);
-    expect(TicketFiles::cleanupLegacyOrphans($di, true))->toBe(0)->and(is_file($path))->toBeTrue();
+    expect(TicketFiles::cleanupLegacyInventory($di, TicketFiles::legacyOrphanInventory($di), true))->toBe(0)->and(is_file($path))->toBeTrue();
 })->with([0, 7]);
 
 test('legacy cleanup command requires an explicit drained-writers confirmation', function (): void {

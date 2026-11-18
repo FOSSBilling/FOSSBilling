@@ -18,7 +18,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Whether a help desk asks for closing feedback (missing row means on).
  * Saved on the help desk's page (see Box\Mod\Support\TicketFeedback).
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportHelpdeskFeedbackRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_helpdesk_feedback')]
 class SupportHelpdeskFeedback
 {

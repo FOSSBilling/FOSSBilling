@@ -19,8 +19,9 @@ use Doctrine\ORM\Mapping as ORM;
  * closes resend with the same token until feedback is given (see
  * Box\Mod\Support\TicketFeedback).
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\SupportTicketFeedbackRequestRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'support_ticket_feedback_request')]
+#[ORM\UniqueConstraint(name: 'support_ticket_feedback_request_token_uniq', columns: ['token'])]
 class SupportTicketFeedbackRequest
 {
     #[ORM\Id]
