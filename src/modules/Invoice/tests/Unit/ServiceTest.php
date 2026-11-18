@@ -111,6 +111,7 @@ function invoiceItemEmAndRepo(): array
     $em->shouldReceive('getRepository')->with(ClientBalance::class)->byDefault()->andReturn($gatewayBalanceRepo);
     $em->shouldReceive('refresh')->byDefault();
     $conn = Mockery::mock(Connection::class)->shouldIgnoreMissing();
+    $conn->shouldReceive('transactional')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getConnection')->byDefault()->andReturn($conn);
 
     return [$em, $repo];
@@ -4157,6 +4158,7 @@ test('generates invoice for zero amount order', function (): void {
 test('throws exception when generating invoice for negative amount order', function (): void {
     $service = new Service();
     $clientOrder = createEntity(Order::class, ['price' => -1, 'quantity' => 1]);
+    $service->setDi(container());
 
     expect(fn (): Invoice => $service->generateForOrder($clientOrder))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invoices are not generated for negative amount orders.');
@@ -8381,6 +8383,8 @@ test('issueInvoice refuses drafts that are not unpaid', function (): void {
     $em->shouldReceive('refresh')->byDefault();
 
     $di = container();
+    $em->shouldReceive('getConnection')->andReturn($di['em']->getConnection());
+    unset($di['em']);
     $di['em'] = $em;
     $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
 
@@ -10846,7 +10850,7 @@ test('refundInvoice refuses account credit for a deposit invoice', function (): 
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'account credit');
 });
 
-test('resolveRenewalLine bills a free domain renewal at zero while its hosting lasts', function (bool $free, float $price): void {
+test('resolveRenewalLine bills a free domain renewal at zero while its hosting lasts', function (bool $free, float $price, bool $liveSubscription = false): void {
     $service = new Service();
 
     $order = createEntity(Order::class, ['id' => 20, 'clientId' => 7, 'productId' => 2, 'currency' => 'EUR', 'price' => '8.00', 'quantity' => 1, 'status' => Order::STATUS_ACTIVE]);
@@ -10866,7 +10870,10 @@ test('resolveRenewalLine bills a free domain renewal at zero while its hosting l
     $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
 
     $di = container();
+    $subscription = Mockery::mock(ServiceSubscription::class);
+    $subscription->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn($liveSubscription);
     $di['mod_service'] = $di->protect(moduleService([
+        'invoice:subscription' => $subscription,
         'product' => $productService,
         'currency' => $currencyService,
     ]));
@@ -10876,10 +10883,13 @@ test('resolveRenewalLine bills a free domain renewal at zero while its hosting l
 
     expect($resolved['price'])->toBe($price)
         ->and($resolved['line']['price'])->toBe($price)
+        ->and($resolved['line']['free_domain_renewal'])->toBe($free && !$liveSubscription)
+        ->and($resolved['line']['free_domain_waiting_hosting'])->toBeFalse()
         ->and($resolved['line']['quantity'])->toBe(1);
 })->with([
     'billed' => [false, 24.0],
     'free' => [true, 0.0],
+    'live subscription retains TLD pricing' => [true, 24.0, true],
 ]);
 
 test('tryPayWithCredits refuses deposit invoices', function (): void {
@@ -11165,7 +11175,10 @@ test('a linked domain is quoted free while its hosting payment is pending', func
     $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
 
     $di = container();
+    $subscription = Mockery::mock(ServiceSubscription::class);
+    $subscription->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(false);
     $di['mod_service'] = $di->protect(moduleService([
+        'invoice:subscription' => $subscription,
         'product' => $productService,
         'currency' => $currencyService,
     ]));
@@ -11175,6 +11188,7 @@ test('a linked domain is quoted free while its hosting payment is pending', func
 
     expect($resolved['price'])->toBe(0.0)
         ->and($resolved['line']['price'])->toBe(0.0)
+        ->and($resolved['line']['free_domain_renewal'])->toBeTrue()
         ->and($resolved['line']['free_domain_waiting_hosting'])->toBeTrue()
         ->and($resolved['line']['quantity'])->toBe(1);
 });

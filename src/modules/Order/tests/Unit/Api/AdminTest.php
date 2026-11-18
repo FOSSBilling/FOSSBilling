@@ -895,15 +895,13 @@ test('accepts and stops a cancellation request', function (): void {
     expect($api->cancel_request_stop(['id' => 4]))->toBeTrue();
 });
 
-test('runs the cancellation request cron batch', function (): void {
+test('cancellation actions reject malformed request ids before invoking the service', function (mixed $id): void {
     $api = apiEndpoint(new Admin());
-
-    $cancelService = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
-    $cancelService->shouldReceive('runAutoProcess')->once()->andReturn(true);
-
+    $cancel = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancel->shouldNotReceive('accept', 'stop');
     $di = container();
-    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancelService]));
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancel]));
     $api->setDi($di);
-
-    expect($api->batch_process_cancel_requests([]))->toBeTrue();
-});
+    expect(fn () => $api->cancel_request_accept(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class)
+        ->and(fn () => $api->cancel_request_stop(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+})->with([[true], [false], [0], [-1], [1.5], ['bad'], [[]], [null], ['99999999999999999999999999']]);

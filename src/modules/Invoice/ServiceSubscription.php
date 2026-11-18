@@ -295,6 +295,26 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->persistUpdate($subscription, ['status' => 'canceled']);
     }
 
+    public function canCancelImmediatelyForOrder(Order $order): bool
+    {
+        foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
+            if ($subscription->getStatus() === 'canceled') {
+                continue;
+            }
+
+            try {
+                if (trim((string) $subscription->getSid()) === ''
+                    || !method_exists($this->getGatewayAdapter($subscription), 'cancelSubscription')) {
+                    return false;
+                }
+            } catch (\Exception) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function canCancelAtPeriodEndForOrder(Order $order): bool
     {
         $subscriptions = $this->getSubscriptionsForOrder($order, 'active');
@@ -449,10 +469,9 @@ class ServiceSubscription implements InjectionAwareInterface
             if (!$this->isDiscountRecurring($invoiceId, $discountTotal)) {
                 return null;
             }
-
-            if (!$this->matchesRenewalTotal($positiveTotal - $discountTotal, array_keys($orderIds))) {
-                return null;
-            }
+        }
+        if ($subscriptionPeriod !== null && ($orderIds !== [] || $discountTotal > 0) && !$this->matchesRenewalTotal($positiveTotal - $discountTotal, array_keys($orderIds))) {
+            return null;
         }
 
         return $subscriptionPeriod;

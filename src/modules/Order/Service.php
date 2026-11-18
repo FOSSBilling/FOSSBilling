@@ -2025,9 +2025,9 @@ class Service implements InjectionAwareInterface
     }
 
     /** Request retries must never repeat an uncertain external cancellation. */
-    public function cancelFromRequest(Order $order, string $reason): bool
+    public function cancelFromRequest(Order $order, string $reason, int $requestId): bool
     {
-        return $this->withCancellationScheduleLock($order, function () use ($order, $reason): bool {
+        return $this->withCancellationScheduleLock($order, function () use ($order, $reason, $requestId): bool {
             $this->di['em']->refresh($order);
             $this->assertOrderNotDeleting($order);
             $meta = $this->getOrderMetaRepository()->getPairsForOrder($this->orderId($order));
@@ -2035,20 +2035,23 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('The service cancellation requires staff review.');
             }
 
-            return $this->cancelWithRecovery($order, $reason, false);
+            return $this->cancelWithRecovery($order, $reason, false, $requestId);
         }, 0);
     }
 
-    private function cancelWithRecovery(Order $order, $reason, bool $skipEvent): bool
+    private function cancelWithRecovery(Order $order, $reason, bool $skipEvent, ?int $requestId = null): bool
     {
         $this->assertOrderCanBeCanceled($order);
+        if ($requestId !== null && !$this->di['mod_service']('Invoice', 'Subscription')->canCancelImmediatelyForOrder($order)) {
+            throw new InformationException('Cancel the subscription at the payment provider and mark it canceled here before accepting this request.');
+        }
         // A shared durable claim also supports staff-reviewed retries and local
         // cleanup recovery through the existing scheduled cancellation protocol.
         $this->updateOrderMeta($order, [
             self::META_CANCEL_AT_PERIOD_END => '1',
             self::META_SCHEDULED_CANCEL_CLAIM => '1',
             self::META_SCHEDULED_CANCEL_PHASE => 'scheduled',
-            self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'immediate', 'reason' => $reason, 'skip_event' => $skipEvent], JSON_THROW_ON_ERROR),
+            self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'immediate', 'reason' => $reason, 'skip_event' => $skipEvent, 'request_id' => $requestId], JSON_THROW_ON_ERROR),
         ]);
         $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
 
@@ -2094,6 +2097,7 @@ class Service implements InjectionAwareInterface
     private function scheduleCancellationUnderLock(Order $order, $reason, bool $allowWithoutSubscription): bool
     {
         $orderId = $this->orderId($order);
+        $this->assertOrderNotDeleting($order);
         $this->assertOrderCanBeCanceled($order);
         $meta = $this->getOrderMetaRepository()->getPairsForOrder($orderId);
         if (in_array($meta[self::META_SCHEDULED_CANCEL_CLAIM] ?? null, ['1', '2'], true)) {
@@ -2103,11 +2107,11 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
+        if ($allowWithoutSubscription && $order->getExpiresAt() === null) {
+            throw new InformationException('This service cannot be cancelled at the end of its period.');
+        }
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         if ($allowWithoutSubscription && !$subscriptionService->hasActiveSubscriptionForOrder($order)) {
-            if ($order->getExpiresAt() === null) {
-                throw new InformationException('This service cannot be cancelled at the end of its period.');
-            }
             $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
         } else {
             if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
@@ -2255,6 +2259,12 @@ class Service implements InjectionAwareInterface
             $this->saveStatusChange($order, $reason === null ? 'Order canceled' : 'Canceled order for ' . $reason);
             if (!$skipEvent) {
                 $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($this->orderId($order), true));
+            }
+            if (isset($options['request_id'])) {
+                $connection->executeStatement(
+                    'UPDATE client_order_cancel_request SET status = ?, updated_at = ? WHERE client_order_id = ? AND status = ?',
+                    [Entity\ClientOrderCancelRequest::STATUS_ACCEPTED, date('Y-m-d H:i:s'), $order->getId(), Entity\ClientOrderCancelRequest::STATUS_PENDING]
+                );
             }
             $connection->commit();
         } catch (\Throwable $e) {

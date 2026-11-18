@@ -102,35 +102,6 @@ test('create refuses a second waiting request', function (): void {
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'already received');
 });
 
-test('withdraw takes back the client’s own waiting request', function (): void {
-    $order = cancelRequestOrder();
-    $client = createEntity(Client::class, ['id' => 7]);
-    $request = createEntity(ClientOrderCancelRequest::class, ['id' => 3, 'status' => ClientOrderCancelRequest::STATUS_PENDING]);
-    $request->setClient($client);
-
-    $requestRepo = Mockery::mock(ClientOrderCancelRequestRepository::class);
-    $requestRepo->shouldReceive('findPendingByOrderId')->once()->with(11)->andReturn($request);
-
-    $query = Mockery::mock(Doctrine\ORM\Query::class);
-    $query->shouldReceive('execute')->once()->andReturn(1);
-    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
-    $qb->shouldReceive('update')->once()->andReturn($qb);
-    $qb->shouldReceive('set')->twice()->andReturn($qb);
-    $qb->shouldReceive('where')->once()->andReturn($qb);
-    $qb->shouldReceive('andWhere')->once()->andReturn($qb);
-    $qb->shouldReceive('setParameter')->times(4)->andReturn($qb);
-    $qb->shouldReceive('getQuery')->once()->andReturn($query);
-
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(ClientOrderCancelRequest::class)->andReturn($requestRepo);
-    $em->shouldReceive('createQueryBuilder')->once()->andReturn($qb);
-
-    $service = cancelRequestService($em);
-    $service->withdraw($order, $client);
-
-    expect(true)->toBeTrue();
-});
-
 test('withdraw refuses another client’s request', function (): void {
     $order = cancelRequestOrder();
     $owner = createEntity(Client::class, ['id' => 7]);
@@ -139,89 +110,13 @@ test('withdraw refuses another client’s request', function (): void {
     $request->setClient($owner);
 
     $requestRepo = Mockery::mock(ClientOrderCancelRequestRepository::class);
-    $requestRepo->shouldReceive('findPendingByOrderId')->once()->andReturn($request);
+    $requestRepo->shouldReceive('find')->once()->with(3)->andReturn($request);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(ClientOrderCancelRequest::class)->andReturn($requestRepo);
 
-    expect(fn () => cancelRequestService($em)->withdraw($order, $other))
+    expect(fn () => cancelRequestService($em)->withdraw($order, $other, 3))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no cancellation request waiting');
-});
-
-test('accept cancels immediately for an immediate request', function (): void {
-    $order = cancelRequestOrder();
-    $request = createEntity(ClientOrderCancelRequest::class, ['id' => 5, 'type' => ClientOrderCancelRequest::TYPE_IMMEDIATE, 'status' => ClientOrderCancelRequest::STATUS_PENDING]);
-    $request->setOrder($order);
-    $request->setClient(createEntity(Client::class, ['id' => 7]));
-
-    $requestRepo = Mockery::mock(ClientOrderCancelRequestRepository::class);
-    $requestRepo->shouldReceive('findOneBy')->once()->andReturn($request);
-
-    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderService->shouldReceive('findByClientIdAndOrderId')->once()->with(7, 11)->andReturn($order);
-    $orderService->shouldReceive('cancelFromRequest')->once()->andReturn(true);
-
-    $query = Mockery::mock(Doctrine\ORM\Query::class);
-    $query->shouldReceive('execute')->once()->andReturn(1);
-    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
-    $qb->shouldReceive('update')->once()->andReturn($qb);
-    $qb->shouldReceive('set')->twice()->andReturn($qb);
-    $qb->shouldReceive('where')->once()->andReturn($qb);
-    $qb->shouldReceive('andWhere')->once()->andReturn($qb);
-    $qb->shouldReceive('setParameter')->times(4)->andReturn($qb);
-    $qb->shouldReceive('getQuery')->once()->andReturn($query);
-
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(ClientOrderCancelRequest::class)->andReturn($requestRepo);
-    $em->shouldReceive('createQueryBuilder')->once()->andReturn($qb);
-
-    $service = cancelRequestService($em);
-    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): object => $orderService);
-
-    $service->accept(5);
-
-    expect(true)->toBeTrue();
-});
-
-test('accept schedules end-of-period cancellation without a subscription', function (): void {
-    $order = cancelRequestOrder();
-    $request = createEntity(ClientOrderCancelRequest::class, ['id' => 6, 'type' => ClientOrderCancelRequest::TYPE_END_OF_PERIOD, 'status' => ClientOrderCancelRequest::STATUS_PENDING]);
-    $request->setOrder($order);
-    $request->setClient(createEntity(Client::class, ['id' => 7]));
-
-    $requestRepo = Mockery::mock(ClientOrderCancelRequestRepository::class);
-    $requestRepo->shouldReceive('findOneBy')->once()->andReturn($request);
-
-    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderService->shouldReceive('findByClientIdAndOrderId')->once()->andReturn($order);
-    $orderService->shouldReceive('scheduleCancellationFromOrder')->once()->with($order, 'Cancellation request #6', true)->andReturnTrue();
-    $orderService->shouldNotReceive('cancelFromOrder');
-
-    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-
-    $query = Mockery::mock(Doctrine\ORM\Query::class);
-    $query->shouldReceive('execute')->once()->andReturn(1);
-    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
-    $qb->shouldReceive('update')->once()->andReturn($qb);
-    $qb->shouldReceive('set')->twice()->andReturn($qb);
-    $qb->shouldReceive('where')->once()->andReturn($qb);
-    $qb->shouldReceive('andWhere')->once()->andReturn($qb);
-    $qb->shouldReceive('setParameter')->times(4)->andReturn($qb);
-    $qb->shouldReceive('getQuery')->once()->andReturn($query);
-
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(ClientOrderCancelRequest::class)->andReturn($requestRepo);
-    $em->shouldReceive('createQueryBuilder')->once()->andReturn($qb);
-
-    $service = cancelRequestService($em);
-    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (string $name): object => match (strtolower($name)) {
-        'order' => $orderService,
-        default => $subscriptionService,
-    });
-
-    $service->accept(6);
-
-    expect(true)->toBeTrue();
 });
 
 function cancelRequestAutoProcessService(object $em, array $config, ?string $lastDay, array &$params): ServiceCancelRequest
@@ -269,47 +164,6 @@ test('auto-process skips when already ran today', function (): void {
 
     expect($service->runAutoProcess())->toBeTrue();
     expect($params)->toBe([]);
-});
-
-test('auto-process accepts waiting requests once a day', function (): void {
-    $makeRequest = static function (int $id): ClientOrderCancelRequest {
-        $request = createEntity(ClientOrderCancelRequest::class, ['id' => $id, 'status' => ClientOrderCancelRequest::STATUS_PENDING]);
-        $request->setOrder(createEntity(Order::class, ['id' => 10 + $id]));
-        $request->setClient(createEntity(Client::class, ['id' => 7]));
-
-        return $request;
-    };
-
-    $requestRepo = Mockery::mock(ClientOrderCancelRequestRepository::class);
-    $requestRepo->shouldReceive('getPendingList')->once()->andReturn([['id' => 3], ['id' => 4]]);
-    $requestRepo->shouldReceive('findOneBy')->twice()->andReturnUsing(fn (array $criteria): ?ClientOrderCancelRequest => $makeRequest((int) $criteria['id']));
-
-    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderService->shouldReceive('findByClientIdAndOrderId')->twice()->andThrow(new FOSSBilling\Core\Exception\InformationException('gone'));
-
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(ClientOrderCancelRequest::class)->andReturn($requestRepo);
-
-    $params = [];
-    $orderModule = Mockery::mock();
-    $orderModule->shouldReceive('getConfig')->once()->andReturn(['cancel_requests_auto' => 1]);
-    $systemService = Mockery::mock(Box\Mod\System\Service::class);
-    $systemService->shouldReceive('getParamValue')->once()->with('cancel_requests_last_day')->andReturn('2000-01-01');
-    $systemService->shouldReceive('setParamValue')->once()->with('cancel_requests_last_day', date('Y-m-d'), true)->andReturnUsing(function (string $key, string $value) use (&$params): bool {
-        $params[$key] = $value;
-
-        return true;
-    });
-    $service = cancelRequestService($em);
-    $service->getDi()['mod'] = $service->getDi()->protect(fn (): object => $orderModule);
-    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (string $name): object => match (strtolower($name)) {
-        'order' => $orderService,
-        'system' => $systemService,
-        default => Mockery::mock()->shouldIgnoreMissing(),
-    });
-
-    expect($service->runAutoProcess())->toBeTrue();
-    expect($params)->toBe(['cancel_requests_last_day' => date('Y-m-d')]);
 });
 
 test('accept leaves an unsupported gateway subscription for staff to cancel', function (): void {

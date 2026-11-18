@@ -55,7 +55,7 @@ test('renewal batches reload single and bucketed orders after credit closes the 
     $em->flush();
     $ids = array_map(fn (Order $order): int => (int) $order->getId(), $orders);
     $service = gatewayDepositTestService($em);
-    $service->shouldReceive('setInvoiceDefaults')->zeroOrMoreTimes();
+    $service->shouldReceive('setInvoiceDefaults')->byDefault()->zeroOrMoreTimes();
     $number = 1;
     $service->shouldReceive('getNextInvoiceNumber')->andReturnUsing(function () use (&$number): int { return $number++; });
     $service->shouldReceive('resolveRenewalLine')->andReturn(['price' => 20, 'line' => ['price' => 20, 'quantity' => 1]]);
@@ -118,3 +118,139 @@ test('renewal batches reload single and bucketed orders after credit closes the 
         }
     }
 })->with([false, true]);
+
+function renewalReviewService(Doctrine\ORM\EntityManager $em): Box\Mod\Invoice\Service
+{
+    $service = gatewayDepositTestService($em);
+    $service->shouldReceive('setInvoiceDefaults')->byDefault()->zeroOrMoreTimes();
+    $service->shouldReceive('resolveRenewalLine')->andReturn(['price' => 0.0, 'line' => ['price' => 0.0, 'quantity' => 1, 'free_domain_renewal' => true]]);
+    $di = $service->getDi();
+    $services = $di['mod_service'];
+    $di['mod_service'] = $di->protect(function (string $module, string $sub = '') use ($di, $services): object {
+        if ($module === 'Order') {
+            $orders = new Box\Mod\Order\Service();
+            $orders->setDi($di);
+
+            return $orders;
+        }
+        if ($module === 'client') {
+            $clients = Mockery::mock(Box\Mod\Client\Service::class);
+            $clients->shouldReceive('isClientTaxable')->andReturn(false);
+
+            return $clients;
+        }
+
+        return $services($module, $sub);
+    });
+
+    return $service;
+}
+
+function renewalReviewOrder(Doctrine\ORM\EntityManager $em, int $clientId): Order
+{
+    $order = (new Order())->setClientId($clientId)->setCurrency('USD')->setStatus(Order::STATUS_ACTIVE)->setPrice(12)->setQuantity(1)->setTitle('example.test');
+    $em->persist($order);
+    $em->flush();
+
+    return $order;
+}
+
+test('renewal generation and draft issuance respect a newly pending cancellation', function (): void {
+    [, $em, $client] = receiptTestContext();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(OrderMeta::class)]);
+    $order = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $invoice = $service->generateForOrder($order, null, false);
+    $request = (new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setStatus('pending')->setType('end_of_period');
+    $em->persist($request);
+    $em->flush();
+    expect(fn () => $service->generateForOrder($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Withdraw the pending cancellation')
+        ->and(fn () => $service->issueInvoice($invoice, []))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Withdraw the pending cancellation');
+    expect($invoice->isIssued())->toBeFalse()->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1);
+});
+
+test('merged generation omits the held order while keeping its eligible bucket mate', function (): void {
+    [, $em, $client] = receiptTestContext();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(OrderMeta::class)]);
+    $held = renewalReviewOrder($em, $client->getId());
+    $eligible = renewalReviewOrder($em, $client->getId());
+    $em->persist((new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setOrder($held)->setClient($client)->setStatus('pending'));
+    $em->flush();
+    $invoice = renewalReviewService($em)->generateMergedInvoiceForOrders([$held, $eligible], false);
+    expect($em->getConnection()->fetchFirstColumn('SELECT rel_id FROM invoice_item WHERE invoice_id = ?', [$invoice->getId()]))->toBe([(string) $eligible->getId()])
+        ->and($held->getUnpaidInvoiceId())->toBeNull()->and($eligible->getUnpaidInvoiceId())->toBe($invoice->getId());
+});
+
+test('renewal creation owns the request mutex until the quote and entitlement are committed', function (): void {
+    [, $em, $client] = receiptTestContext();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(OrderMeta::class)]);
+    $order = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $service->shouldReceive('setInvoiceDefaults')->once()->andReturnUsing(function () use ($order): void {
+        $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $name = 'fb:cancel-request-order:' . $order->getId();
+        $acquired = FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0);
+        if ($acquired) {
+            FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
+        }
+        expect($acquired)->toBeFalse();
+    });
+    $invoice = $service->generateForOrder($order, null, false);
+    expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE client_order_id = ? AND name = ?', [$order->getId(), 'free_domain_renewal_invoice_' . $invoice->getId()]))->toBe('1');
+});
+
+test('an interrupted single renewal quote rolls back its line and order link before retry', function (): void {
+    [, $em, $client] = receiptTestContext();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(OrderMeta::class)]);
+    $order = renewalReviewOrder($em, $client->getId());
+    $connection = $em->getConnection();
+    $connection->executeStatement("CREATE TRIGGER quote_crash BEFORE INSERT ON client_order_meta WHEN NEW.name LIKE 'free_domain_renewal_invoice_%' BEGIN SELECT RAISE(ABORT, 'quote interrupted'); END");
+    expect(fn () => renewalReviewService($em)->generateForOrder($order, null, false))->toThrow(Exception::class, 'quote interrupted');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(0)
+        ->and($connection->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBeNull();
+    $connection->executeStatement('DROP TRIGGER quote_crash');
+    $fresh = new Doctrine\ORM\EntityManager($connection, $em->getConfiguration());
+    $current = $fresh->find(Order::class, $order->getId());
+    $invoice = renewalReviewService($fresh)->generateForOrder($current, null, false);
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(1)
+        ->and($connection->fetchOne('SELECT value FROM client_order_meta WHERE client_order_id = ? AND name = ?', [$order->getId(), 'free_domain_renewal_invoice_' . $invoice->getId()]))->toBe('1');
+});
+
+test('reissue copies quote entitlement to the replacement without copying execution or retry claims', function (): void {
+    [, $em, $client] = receiptTestContext();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(OrderMeta::class)]);
+    $order = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $original = $service->generateForOrder($order, null, false);
+    $original->setIssued(true);
+    $em->flush();
+    $orders = $service->getDi()['mod_service']('Order');
+    $orders->updateOrderMeta($order, ['free_domain_renewal_claim_99' => '1', 'free_domain_renewal_retry_99' => '1']);
+    $service->shouldReceive('getNextInvoiceNumber')->once()->andReturn(1);
+    $service->shouldReceive('addNote')->zeroOrMoreTimes();
+    $service->shouldAllowMockingProtectedMethods()->shouldReceive('resendUpdatedInvoice')->once();
+    $di = $service->getDi();
+    $base = $di['mod_service'];
+    $di['mod_service'] = $di->protect(function (string $module, string $sub = '') use ($base): object {
+        if ($module === 'system') {
+            $system = Mockery::mock(Box\Mod\System\Service::class);
+            $system->shouldReceive('getParamValue')->andReturn('90');
+
+            return $system;
+        }
+        if ($module === 'Product') {
+            $products = Mockery::mock(Box\Mod\Product\Service::class);
+            $products->shouldReceive('transferReservedPromoRedemptionsForOrders')->once();
+
+            return $products;
+        }
+
+        return $base($module, $sub);
+    });
+    $replacementId = $service->reissueInvoice($original);
+    $meta = $orders->getOrderMetaRepository()->getPairsForOrder($order->getId());
+    expect($meta['free_domain_renewal_invoice_' . $replacementId])->toBe('1')
+        ->and($order->getUnpaidInvoiceId())->toBe($replacementId)
+        ->and(array_keys($meta))->toHaveCount(4);
+});

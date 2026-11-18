@@ -124,6 +124,7 @@ function container(): Container
         $dbal->shouldReceive('fetchOne')->byDefault()->andReturn(null);
         $dbal->shouldReceive('executeQuery')->byDefault()->andReturn($result);
         $dbal->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+        $dbal->shouldReceive('transactional')->byDefault()->andReturnUsing(static fn (callable $operation): mixed => $operation());
         $dbal->shouldReceive('insert')->byDefault()->andReturn(1);
         $dbal->shouldReceive('update')->byDefault()->andReturn(1);
         $dbal->shouldReceive('lastInsertId')->byDefault()->andReturn(1);

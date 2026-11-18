@@ -356,8 +356,10 @@
                             <td class="text-nowrap">{{ request.type == 'end_of_period' ? 'End of billing period'|trans ~ (request.expires_at ? ' (' ~ request.expires_at|format_date ~ ')' : '') : 'Immediate'|trans }}</td>
                             <td class="text-wrap">{{ request.reason }}</td>
                             <td class="text-nowrap">
+                                {% if has_permission('order', 'manage') %}
                                 <a class="btn btn-primary btn-sm" {{ fb_api_link({href: 'order/cancel_request_accept'|api_url(query: {id: request.id}), modal: {type: 'confirm', title: 'Accept the cancellation request?'|trans, content: (request.type == 'end_of_period' ? 'The service is cancelled at the end of its paid period.'|trans : 'The service is cancelled now.'|trans)}, reload: true}) }}>{{ 'Accept'|trans }}</a>
                                 <a class="btn btn-secondary btn-sm" {{ fb_api_link({href: 'order/cancel_request_stop'|api_url(query: {id: request.id}), modal: {type: 'confirm', title: 'Stop the cancellation request?'|trans, content: 'The service is not cancelled. Tell the client if needed.'|trans}, reload: true}) }}>{{ 'Stop'|trans }}</a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}

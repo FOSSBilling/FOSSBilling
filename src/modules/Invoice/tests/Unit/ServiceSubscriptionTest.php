@@ -696,3 +696,29 @@ test('cancelForOrder does not contact gateways for canceled historical subscript
     $service->setDi($di);
     expect($service->cancelForOrder($order))->toBe(0);
 });
+
+test('subscriptions without discounts must match the current renewal quote', function (float $renewalPrice, bool $expected): void {
+    $order = discountedOrder(10, 12.0);
+    $service = discountedInvoiceService([orderLine(10, 12.0)], 0.0, [$order], [], [10 => ['price' => $renewalPrice, 'line' => ['quantity' => 1]]]);
+    expect($service->isSubscribable(30))->toBe($expected);
+})->with([[0.0, false], [8.0, false], [12.0, true]]);
+
+test('immediate cancellation requires gateway support for each live subscription', function (bool $supported, string $status, bool $expected): void {
+    $order = createEntity(Order::class, ['id' => 10]);
+    $gateway = createEntity(PayGateway::class, ['id' => 2]);
+    $subscription = createEntity(Subscription::class, ['id' => 7, 'payGateway' => $gateway, 'status' => $status, 'sid' => 'sub_123']);
+    $adapter = $supported ? new class {
+        public function cancelSubscription(string $id): never
+        {
+            throw new LogicException('Capability checks must not call the provider');
+        }
+    } : new stdClass();
+    $repo = Mockery::mock(SubscriptionRepository::class);
+    $repo->shouldReceive('find')->with(7)->andReturn($subscription);
+    $service = subscriptionService(subRepo: $repo);
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn(createSubscriptionDbal());
+    $gatewayService = Mockery::mock(ServicePayGateway::class);
+    $gatewayService->shouldReceive('getPaymentAdapter')->zeroOrMoreTimes()->with($gateway)->andReturn($adapter);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): object => $gatewayService);
+    expect($service->canCancelImmediatelyForOrder($order))->toBe($expected);
+})->with([[false, 'active', false], [true, 'active', true], [false, 'pending_cancellation', false], [false, 'canceled', true]]);

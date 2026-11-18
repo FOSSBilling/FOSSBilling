@@ -1881,10 +1881,25 @@ class Service implements InjectionAwareInterface
 
     public function issueInvoice(Invoice $invoice, array $data): bool
     {
+        $orderIds = array_map(intval(...), array_column($this->di['em']->getConnection()->fetchAllAssociative(
+            "SELECT DISTINCT rel_id FROM invoice_item WHERE invoice_id = ? AND type = 'order' AND task = 'renew'",
+            [$invoice->getId()]
+        ), 'rel_id'));
+
+        return $this->withRenewalQuoteLocks($orderIds, fn (): bool => $this->issueInvoiceWithRenewalLock($invoice, $data, $orderIds));
+    }
+
+    private function issueInvoiceWithRenewalLock(Invoice $invoice, array $data, array $renewalOrderIds): bool
+    {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceIssueEvent((int) $invoice->getId()));
 
-        $issued = $this->di['em']->wrapInTransaction(function () use ($invoice, $data): bool {
+        $issued = $this->di['em']->wrapInTransaction(function () use ($invoice, $data, $renewalOrderIds): bool {
             $this->lockAndRefreshInvoice($invoice);
+            if (!$invoice->isIssued()) {
+                foreach ($renewalOrderIds as $id) {
+                    $this->assertNoCancellationRequest($id);
+                }
+            }
 
             // First issuance is only valid from the unpaid state. Re-issuing
             // an already-issued invoice stays idempotent (paid, refunded, or
@@ -4054,6 +4069,14 @@ class Service implements InjectionAwareInterface
 
                 if ($orderToLink instanceof Order) {
                     $orderService->setUnpaidInvoice($orderToLink, $new);
+                    if ($item->getTask() === InvoiceItem::TASK_RENEW) {
+                        $meta = $orderService->getOrderMetaRepository()->getPairsForOrder((int) $orderToLink->getId());
+                        foreach (['free_domain_renewal_invoice_', 'domain_renewal_zero_price_invoice_'] as $prefix) {
+                            if (($meta[$prefix . $original->getId()] ?? null) === '1') {
+                                $orderService->updateOrderMeta($orderToLink, [$prefix . $new->getId() => '1']);
+                            }
+                        }
+                    }
                     $movedOrderIds[] = (int) $orderToLink->getId();
                 }
             }
@@ -4977,6 +5000,11 @@ class Service implements InjectionAwareInterface
                 $price = $renewalLine['price'] * $rate;
                 $paidHosting = $productService->hasFreeDomainRenewal((int) $order->getId());
                 $freeDomainRenewal = $paidHosting || $productService->isFreeDomainRenewalOffered((int) $order->getId());
+                // Existing subscriptions retain their priced renewal until
+                // cancellation at the provider is confirmed locally.
+                if ($freeDomainRenewal && $this->di['mod_service']('Invoice', 'Subscription')->hasUncanceledSubscriptionForOrder($order)) {
+                    $freeDomainRenewal = false;
+                }
                 if ($freeDomainRenewal) {
                     $price = 0.0;
                 }
@@ -5008,6 +5036,15 @@ class Service implements InjectionAwareInterface
      * @param int $due_days
      */
     public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
+    {
+        return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo): Invoice {
+            $this->assertNoCancellationRequest((int) $order->getId());
+
+            return $this->di['em']->getConnection()->transactional(fn (): Invoice => $this->generateForOrderLocked($order, $due_days, $applyPromo));
+        });
+    }
+
+    private function generateForOrderLocked(Order $order, $due_days, bool $applyPromo): Invoice
     {
         if ($order->getId() !== null) {
             \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
@@ -5135,6 +5172,15 @@ class Service implements InjectionAwareInterface
      */
     public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true): Invoice
     {
+        return $this->withRenewalQuoteLocks($orders, function () use ($orders, $applyPromo): Invoice {
+            $eligible = array_values(array_filter($orders, fn (Order $order): bool => !$this->hasCancellationRequest((int) $order->getId())));
+
+            return $this->generateMergedInvoiceForOrdersLocked($eligible, $applyPromo);
+        });
+    }
+
+    private function generateMergedInvoiceForOrdersLocked(array $orders, bool $applyPromo): Invoice
+    {
         $first = reset($orders);
         if (!$first instanceof Order) {
             throw new InformationException('No orders were provided for the merged renewal invoice.');
@@ -5176,12 +5222,12 @@ class Service implements InjectionAwareInterface
                 $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
 
                 $expiresAt = $order->getExpiresAt();
-                if ($expiresAt instanceof \DateTimeInterface && ($dueAt === null || $expiresAt > $dueAt)) {
+                if ($expiresAt instanceof \DateTimeImmutable && ($dueAt === null || $expiresAt > $dueAt)) {
                     $dueAt = $expiresAt;
                 }
             }
 
-            if ($dueAt instanceof \DateTimeInterface) {
+            if ($dueAt instanceof \DateTimeImmutable) {
                 $proforma->setDueAt($dueAt);
                 $this->di['em']->persist($proforma);
                 $this->di['em']->flush();
@@ -5191,6 +5237,49 @@ class Service implements InjectionAwareInterface
 
             return $proforma;
         });
+    }
+
+    /** Cancellation request creation takes the same order mutex before persisting. */
+    private function withRenewalQuoteLocks(array $orders, \Closure $operation): mixed
+    {
+        $connection = $this->di['em']->getConnection();
+        $ids = array_unique(array_map(static fn (Order|int $order): int => $order instanceof Order ? (int) $order->getId() : $order, $orders));
+        sort($ids);
+        if ($ids !== [] && $connection->isTransactionActive()) {
+            throw new InformationException('Renewal invoices require a committed transaction before generation or issuance.');
+        }
+        $held = [];
+
+        try {
+            foreach ($ids as $id) {
+                $name = 'fb:cancel-request-order:' . $id;
+                if (!NamedLock::acquire($connection, $name, 0)) {
+                    throw new InformationException('A cancellation request is being processed. Please retry renewal later.');
+                }
+                $held[] = $name;
+            }
+
+            return $operation();
+        } finally {
+            foreach (array_reverse($held) as $name) {
+                NamedLock::release($connection, $name);
+            }
+        }
+    }
+
+    private function hasCancellationRequest(int $orderId): bool
+    {
+        return (int) $this->di['em']->getConnection()->fetchOne(
+            'SELECT id FROM client_order_cancel_request WHERE client_order_id = ? AND status = ?',
+            [$orderId, \Box\Mod\Order\Entity\ClientOrderCancelRequest::STATUS_PENDING]
+        ) > 0;
+    }
+
+    private function assertNoCancellationRequest(int $orderId): void
+    {
+        if ($this->hasCancellationRequest($orderId)) {
+            throw new InformationException('Withdraw the pending cancellation request before renewing this service.');
+        }
     }
 
     public function generateInvoicesForExpiringOrders(): bool

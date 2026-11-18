@@ -20,7 +20,7 @@ class ClientOrderCancelRequestRepository extends EntityRepository
     {
         $request = $this->findOneBy(
             ['order' => $this->getEntityManager()->getReference(\Box\Mod\Order\Entity\Order::class, $orderId), 'status' => ClientOrderCancelRequest::STATUS_PENDING],
-            ['id' => 'DESC']
+            ['id' => 'ASC']
         );
 
         return $request instanceof ClientOrderCancelRequest ? $request : null;
@@ -42,5 +42,17 @@ class ClientOrderCancelRequestRepository extends EntityRepository
             ->orderBy('r.id', 'ASC')
             ->getQuery()
             ->getArrayResult();
+    }
+
+    /** @return list<int> */
+    public function getAutomaticRequestIds(): array
+    {
+        return array_map(intval(...), array_column($this->createQueryBuilder('r')
+            ->select('MIN(r.id) AS id')
+            ->where('r.status = :status')
+            ->setParameter('status', ClientOrderCancelRequest::STATUS_PENDING)
+            ->groupBy('r.order')
+            ->orderBy('id', 'ASC')
+            ->getQuery()->getArrayResult(), 'id'));
     }
 }
