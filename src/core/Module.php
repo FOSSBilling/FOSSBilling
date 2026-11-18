@@ -297,12 +297,12 @@ class Module implements InjectionAwareInterface
     {
         $modName = "mod_{$this->module}";
 
-        $meta = $this->di['em']->getRepository(ExtensionMeta::class)->findOneByExtensionAndScope($modName, 'config');
-        if (!$meta instanceof ExtensionMeta || empty($meta->getMetaValue())) {
+        $stored = $this->di['em']->getRepository(ExtensionMeta::class)->findOneByExtensionAndScope($modName, 'config')?->getMetaValue();
+        if ($stored === null || $stored === '') {
             return [];
         }
 
-        $decrypted = $this->di['crypt']->decrypt($meta->getMetaValue(), Config::getProperty('info.salt'));
+        $decrypted = $this->di['crypt']->decrypt($stored, Config::getProperty('info.salt'));
         if (!is_string($decrypted) || !is_array($config = json_decode($decrypted, true))) {
             throw new InformationException('Encrypted extension configuration could not be read.');
         }

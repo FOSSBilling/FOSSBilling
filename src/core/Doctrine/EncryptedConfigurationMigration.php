@@ -17,12 +17,14 @@ use FOSSBilling\Core\Security\Crypt;
 /** Upgrade existing global extension configuration to authenticated encryption. */
 final class EncryptedConfigurationMigration
 {
-    public function run(Connection $connection, Crypt $crypt, ?\Psr\Cache\CacheItemPoolInterface $cache = null): void
+    /** @return list<string> Warnings for configurations that could not be migrated. */
+    public function run(Connection $connection, Crypt $crypt, ?\Psr\Cache\CacheItemPoolInterface $cache = null): array
     {
         $schema = $connection->createSchemaManager();
         if (!$schema->tablesExist(['extension_meta'])) {
-            return;
+            return [];
         }
+        $warnings = [];
         $cursor = null;
         do {
             $rows = $connection->fetchAllAssociative('SELECT id, meta_value, extension' . " FROM extension_meta WHERE meta_key = 'config' AND rel_type IS NULL AND rel_id IS NULL AND client_id IS NULL" . ($cursor === null ? '' : ' AND id > :cursor') . ' ORDER BY id LIMIT 100', $cursor === null ? [] : ['cursor' => $cursor]);
@@ -36,11 +38,18 @@ final class EncryptedConfigurationMigration
                     continue;
                 }
                 $plain = $crypt->decrypt($stored);
-                if ($plain === false) {
-                    throw new JsonMigrationException('Encrypted extension configuration id=' . $cursor . ' cannot be decrypted; existing data was retained.');
-                }
-                if (!is_array(json_decode($plain, true))) {
-                    throw new JsonMigrationException('Encrypted extension configuration id=' . $cursor . ' is not a configuration document; existing data was retained.');
+                if ($plain === false || !is_array(json_decode($plain, true))) {
+                    if (isset($row['extension'])) {
+                        $cache?->deleteItem('encrypted_config_' . $row['extension']);
+                    }
+                    $warnings[] = sprintf(
+                        'Extension configuration id=%s (extension=%s) %s. The original value was retained.',
+                        $cursor,
+                        json_encode($row['extension'], JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR),
+                        $plain === false ? 'cannot be decrypted' : 'is not a configuration document',
+                    );
+
+                    continue;
                 }
                 if (str_starts_with($stored, Crypt::CURRENT_FORMAT_PREFIX)) {
                     continue;
@@ -54,5 +63,7 @@ final class EncryptedConfigurationMigration
                 }
             }
         } while (count($rows) === 100);
+
+        return $warnings;
     }
 }
