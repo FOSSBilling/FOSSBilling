@@ -170,6 +170,8 @@ class Service implements InjectionAwareInterface
                 // still has its original false value after a concurrent confirmation.
                 $this->di['em']->getConnection()->executeStatement('UPDATE client SET email_approved = false WHERE id = :id', ['id' => $clientId]);
                 $clientService->revokeEmailConfirmations($clientId);
+                // An email change must also invalidate outstanding password-reset links.
+                $this->di['em']->getConnection()->delete('client_password_reset', ['client_id' => $clientId]);
                 $client->setEmail($email);
                 $client->setEmailApproved(false);
 
@@ -196,7 +198,7 @@ class Service implements InjectionAwareInterface
         $client->setLastName($data['last_name'] ?? $client->getLastName());
         $client->setGender(ClientValidator::validateGender($data['gender'] ?? $client->getGender()));
         $birthday = ClientValidator::validateBirthday($data['birthday'] ?? $client->getBirthday()?->format('Y-m-d'));
-        $client->setBirthday($birthday !== null ? new \DateTime($birthday) : null);
+        $client->setBirthday($birthday !== null ? new \DateTimeImmutable($birthday) : null);
         $client->setCompany($data['company'] ?? $client->getCompany());
         $client->setCompanyVat($data['company_vat'] ?? $client->getCompanyVat());
         $client->setCompanyNumber($data['company_number'] ?? $client->getCompanyNumber());

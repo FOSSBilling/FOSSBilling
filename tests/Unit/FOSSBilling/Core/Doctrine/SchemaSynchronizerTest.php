@@ -40,25 +40,22 @@ function schemaSynchronizerFixture(): array
     return [$connection, $entityManager];
 }
 
-/**
+/*
  * invoice_item_pending_renewal_idx carries a MySQL-only column-length index prefix (see
  * InvoiceItem::class's #[ORM\Index] options) - required there because InnoDB can't index a full
- * TEXT column at all. SQLite ignores that option and applies the full, unprefixed 5-column index
- * (confirmed directly: it's strictly more capable than MySQL's, not narrower), but introspecting
- * it back never recovers the `lengths` option, so the comparator always sees it as "different
- * from metadata" even on a database with nothing actually out of sync. This is the one expected,
- * permanent, harmless skip (skipped items are never applied - see SchemaSynchronizer's docblock)
- * a truly-current SQLite database will always report.
+ * TEXT column at all. Before the schema editor API (ORM 3.8+), SQLite ignored that option when
+ * creating the index but the metadata side kept it, so the comparator always saw the index as
+ * "different from metadata" even on a fully-current database - a permanent, harmless skip.
+ * With the editor API the lengths live on the indexed columns themselves and compare
+ * consistently on every platform, so a truly-current database now reports no skips at all.
  */
-const EXPECTED_PERMANENT_SKIP = 'index `invoice_item_pending_renewal_idx` on `invoice_item` exists in the database but not in entity metadata';
-
 test('sync is a no-op against a database already current with entity metadata', function (): void {
     [, $entityManager] = schemaSynchronizerFixture();
 
     $result = SchemaSynchronizer::sync($entityManager);
 
     expect($result['applied'])->toBe([])
-        ->and($result['skipped'])->toBe([EXPECTED_PERMANENT_SKIP]);
+        ->and($result['skipped'])->toBe([]);
 });
 
 test('sync recreates a table that entity metadata knows about but the database is missing', function (): void {
@@ -71,7 +68,7 @@ test('sync recreates a table that entity metadata knows about but the database i
 
     expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue()
         ->and($result['applied'])->not->toBe([])
-        ->and($result['skipped'])->toBe([EXPECTED_PERMANENT_SKIP]);
+        ->and($result['skipped'])->toBe([]);
 });
 
 test('sync adds a column that entity metadata knows about but the database is missing, without touching existing rows', function (): void {
@@ -96,6 +93,25 @@ test('sync adds a column that entity metadata knows about but the database is mi
     expect($columnNames)->toContain('format_pattern')
         ->and($result['applied'])->not->toBe([])
         ->and($connection->fetchOne("SELECT code FROM currency WHERE code = 'USD'"))->toBe('USD');
+});
+
+test('sync restores the invoice item order linkage and index on an existing table', function (): void {
+    [$connection, $entityManager] = schemaSynchronizerFixture();
+    $connection->executeStatement('DROP INDEX invoice_item_order_lookup_idx');
+    $connection->executeStatement('ALTER TABLE invoice_item DROP COLUMN order_id');
+    $connection->insert('invoice_item', ['type' => 'order', 'rel_id' => '007']);
+
+    SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Invoice\Entity\InvoiceItem::class]);
+
+    $table = $connection->createSchemaManager()->introspectTableByUnquotedName('invoice_item');
+    $indexColumns = array_map(
+        static fn ($column): string => $column->getColumnName()->getIdentifier()->getValue(),
+        $table->getIndex('invoice_item_order_lookup_idx')->getIndexedColumns(),
+    );
+    expect($table->hasColumn('order_id'))->toBeTrue()
+        ->and($indexColumns)->toBe(['order_id', 'type', 'task', 'status', 'invoice_id'])
+        ->and($connection->fetchAssociative('SELECT rel_id, order_id FROM invoice_item'))->toBe(['rel_id' => '007', 'order_id' => null]);
+    expect(SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Invoice\Entity\InvoiceItem::class])['applied'])->toBe([]);
 });
 
 test('sync never drops a table that exists in the database but has no entity metadata', function (): void {
@@ -179,7 +195,7 @@ test('sync applies a pure index rename', function (): void {
     $indexNames = array_keys($connection->createSchemaManager()->introspectTable('invoice_item')->getIndexes());
     expect($indexNames)->toContain('invoice_item_invoice_id_idx')
         ->and($indexNames)->not->toContain('invoice_id_idx')
-        ->and($result['skipped'])->toBe([EXPECTED_PERMANENT_SKIP]);
+        ->and($result['skipped'])->toBe([]);
 });
 
 test('sync never adds a foreign key constraint to an existing table', function (): void {

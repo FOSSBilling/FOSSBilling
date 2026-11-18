@@ -110,14 +110,14 @@ class ServiceDomain implements TimestampInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $details = null;
 
-    #[ORM\Column(name: 'synced_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $syncedAt = null;
+    #[ORM\Column(name: 'synced_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $syncedAt = null;
 
-    #[ORM\Column(name: 'registered_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $registeredAt = null;
+    #[ORM\Column(name: 'registered_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $registeredAt = null;
 
-    #[ORM\Column(name: 'expires_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $expiresAt = null;
+    #[ORM\Column(name: 'expires_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $expiresAt = null;
 
     public function getId(): ?int
     {
@@ -436,36 +436,36 @@ class ServiceDomain implements TimestampInterface
         return $this;
     }
 
-    public function getSyncedAt(): ?\DateTime
+    public function getSyncedAt(): ?\DateTimeImmutable
     {
         return $this->syncedAt;
     }
 
-    public function setSyncedAt(?\DateTime $syncedAt): self
+    public function setSyncedAt(?\DateTimeImmutable $syncedAt): self
     {
         $this->syncedAt = $syncedAt;
 
         return $this;
     }
 
-    public function getRegisteredAt(): ?\DateTime
+    public function getRegisteredAt(): ?\DateTimeImmutable
     {
         return $this->registeredAt;
     }
 
-    public function setRegisteredAt(?\DateTime $registeredAt): self
+    public function setRegisteredAt(?\DateTimeImmutable $registeredAt): self
     {
         $this->registeredAt = $registeredAt;
 
         return $this;
     }
 
-    public function getExpiresAt(): ?\DateTime
+    public function getExpiresAt(): ?\DateTimeImmutable
     {
         return $this->expiresAt;
     }
 
-    public function setExpiresAt(?\DateTime $expiresAt): self
+    public function setExpiresAt(?\DateTimeImmutable $expiresAt): self
     {
         $this->expiresAt = $expiresAt;
 

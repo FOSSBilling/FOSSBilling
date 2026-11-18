@@ -252,6 +252,15 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return $this->getService()->cancelFromOrder($order, $reason, $skip_event);
     }
 
+    /** Resolve an interrupted scheduled cancellation after checking the service provider. */
+    #[RequiredParams(['id' => 'Order ID is missing', 'decision' => 'Review decision is missing'])]
+    public function review_scheduled_cancellation($data): bool
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->getService()->reviewScheduledCancellation($this->_getOrder($data), (string) $data['decision']);
+    }
+
     /**
      * Check whether an order's active gateway subscription supports cancellation at period end.
      */

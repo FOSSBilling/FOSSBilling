@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Controller;
 
+use Box\Mod\Invoice\Entity\Invoice;
 use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -59,7 +60,21 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
             return $invoice;
         }
 
-        return $app->render('mod_invoice_invoice', ['invoice' => $invoice]);
+        $gatewayFees = null;
+        if ($invoice['status'] === Invoice::STATUS_UNPAID) {
+            try {
+                $model = $this->di['em']->find(Invoice::class, (int) $invoice['id']);
+                if ($model instanceof Invoice) {
+                    // invoice_get has already authorized this read. Display
+                    // calculation must not consume the public quote budget.
+                    $gatewayFees = $this->di['mod_service']('Invoice', 'GatewayFees')->quote($model)['fees'];
+                }
+            } catch (\Throwable $e) {
+                $this->di['logger']->warning('Could not prepare invoice payment fees', ['exception' => $e]);
+            }
+        }
+
+        return $app->render('mod_invoice_invoice', ['invoice' => $invoice, 'gateway_fees' => $gatewayFees]);
     }
 
     public function get_invoice_print(\FOSSBilling\Core\Http\App $app, $hash): string|Response

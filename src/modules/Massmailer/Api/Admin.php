@@ -187,7 +187,7 @@ Order our services at {{ "order"|url }}
         }
 
         $model->setStatus(MassmailerMessage::STATUS_SENT);
-        $model->setSentAt(new \DateTime());
+        $model->setSentAt(new \DateTimeImmutable());
         $this->getDi()['em']->flush();
 
         $this->getDi()['logger']->info('Added mass mail messages #{model_id} to queue', ['model_id' => $model->getId()]);

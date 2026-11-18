@@ -99,6 +99,7 @@ class Service
             $this->_exec($api, 'invoice_batch_pay_with_credits');
             $this->_exec($api, 'invoice_batch_activate_paid');
             $isolatedTasks = [
+                'invoice_batch_deliver_issued_notifications',
                 'invoice_batch_generate',
                 'invoice_batch_send_reminders',
                 'invoice_batch_invoke_due_event',
@@ -183,8 +184,8 @@ class Service
 
     public function isLate(): bool
     {
-        $t1 = new \DateTime($this->getLastExecutionTime());
-        $t2 = new \DateTime('-6min');
+        $t1 = new \DateTimeImmutable($this->getLastExecutionTime());
+        $t2 = new \DateTimeImmutable('-6min');
 
         return $t1 < $t2;
     }

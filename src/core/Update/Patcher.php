@@ -14,6 +14,7 @@ namespace FOSSBilling\Core\Update;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Doctrine\Driver;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\ModuleEntityScope;
 use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
@@ -34,6 +35,12 @@ class Patcher implements InjectionAwareInterface
     private const string SCHEMA_METADATA_HASH_PARAM = 'schema_metadata_hash';
     private const string SCHEMA_METADATA_HASH_FAILED_PARAM = 'schema_metadata_hash_failed';
     private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
+    private const string INVOICE_ITEM_ORDER_BACKFILL_DONE = 'invoice_item_order_id_backfill_done';
+    /**
+     * Rescan when the derivation rule changes. Rule 3 also recognizes paid
+     * order references ending in ASCII spaces, which older rules skipped.
+     */
+    public const string INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION = '3';
     public ?\Pimple\Container $di = null;
     public Filesystem $filesystem;
 
@@ -270,6 +277,11 @@ class Patcher implements InjectionAwareInterface
         try {
             $this->backfillInvoiceJournal();
             $this->backfillRefundIncomeBasis();
+            // Typed order linkage backfill (see invoice_item.order_id): runs here for
+            // every driver while the column the sync above added is guaranteed present.
+            // Same-version deploys converge through the bounded per-request heal
+            // Finalization::healSchemaDrift() schedules.
+            $this->backfillInvoiceItemOrderIds();
             $this->checkInvoiceNumberCounter();
         } catch (\Doctrine\DBAL\Exception\ConnectionException) {
             return;
@@ -280,9 +292,21 @@ class Patcher implements InjectionAwareInterface
     {
         $em = $this->di['em'];
         $crypt = $this->di['crypt'];
-        (new \FOSSBilling\Core\Doctrine\JsonMigration())->automatic($em, $crypt);
+        $result = (new \FOSSBilling\Core\Doctrine\JsonMigration())->automatic($em, $crypt);
+        foreach (array_slice($result['quarantined'] ?? [], 0, 20) as $entry) {
+            $this->logUpdate('warning', sprintf('Quarantined %s.%s id=%s (%s); value was set to NULL. Review the row and re-enter any needed data.', $entry['table'], $entry['column'], $entry['id'], $entry['issue']));
+        }
+        if (($result['quarantined_values'] ?? 0) > 20) {
+            $this->logUpdate('warning', sprintf('Quarantined %d JSON value(s) in total; see database:json:audit --quarantined for the full list.', $result['quarantined_values']));
+        }
+        if (($result['decoded_values'] ?? 0) > 0) {
+            $this->logUpdate('info', sprintf('Decoded %d double-encoded JSON value(s) in place during migration.', $result['decoded_values']));
+        }
         $connection = $em->getConnection();
-        (new \FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration())->run($connection, $crypt, $this->di['cache']);
+        $warnings = (new EncryptedConfigurationMigration())->run($connection, $crypt, $this->di['cache']);
+        foreach ($warnings as $warning) {
+            $this->logUpdate('warning', $warning);
+        }
         if ($connection->createSchemaManager()->tablesExist(['email_template']) && $connection->createSchemaManager()->introspectTableByUnquotedName('email_template')->hasColumn('vars')) {
             $connection->executeStatement('UPDATE email_template SET vars = NULL WHERE vars IS NOT NULL');
         }
@@ -1205,6 +1229,9 @@ class Patcher implements InjectionAwareInterface
             // Same bounded healing for legacy tax-inclusive refunds: a finalization that
             // ran before base_refund_tax existed leaves those rows for the drift sync
             // above to add the column for - converge them a page at a time here.
+            // (The invoice item order_id backfill needs no such call: it is scheduled
+            // on every request from healSchemaDrift(), and short-circuits on its
+            // recorded completion once converged.)
             try {
                 $this->backfillRefundIncomeBasis(1);
             } catch (\Throwable $e) {
@@ -1876,7 +1903,7 @@ class Patcher implements InjectionAwareInterface
         $marker = 'refund_basis_backfill_last_id';
         $lastId = 0;
         if ($maxPages !== 0) {
-            $stored = $this->refundBackfillPosition($dbal, $marker);
+            $stored = $this->backfillPosition($dbal, $marker);
             if ($stored !== null) {
                 $lastId = $stored;
             }
@@ -1962,14 +1989,14 @@ class Patcher implements InjectionAwareInterface
             }
 
             if ($maxPages !== 0) {
-                $this->storeRefundBackfillPosition($dbal, $marker, $lastId);
+                $this->storeBackfillPosition($dbal, $marker, $lastId);
             }
         } while ($maxPages === 0 || $pages < $maxPages);
 
         if ($maxPages === 0 || $rows === []) {
             // Unbounded runs always scan to exhaustion; bounded runs clear the marker
             // once they reach the end so later refunds start fresh from zero.
-            $this->clearRefundBackfillPosition($dbal, $marker);
+            $this->clearBackfillPosition($dbal, $marker);
         }
 
         if ($updated > 0) {
@@ -2028,7 +2055,7 @@ class Patcher implements InjectionAwareInterface
      * Best-effort only - correctness never depends on it thanks to the IS NULL guard -
      * so storage failures are swallowed after logging.
      */
-    private function refundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): ?int
+    private function backfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): ?int
     {
         try {
             $stored = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
@@ -2041,7 +2068,7 @@ class Patcher implements InjectionAwareInterface
         return is_numeric($stored) ? (int) $stored : null;
     }
 
-    private function storeRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker, int $lastId): void
+    private function storeBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker, int $lastId): void
     {
         try {
             $exists = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]);
@@ -2065,7 +2092,7 @@ class Patcher implements InjectionAwareInterface
         }
     }
 
-    private function clearRefundBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): void
+    private function clearBackfillPosition(\Doctrine\DBAL\Connection $dbal, string $marker): void
     {
         try {
             $dbal->executeStatement('DELETE FROM setting WHERE param = :param', ['param' => $marker]);
@@ -2388,38 +2415,85 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        // Widen user-authored text without changing indexed slug equality or
-        // the size of TEXT columns (CONVERT TO CHARACTER SET can promote them to MEDIUMTEXT).
+        // Normalize every listed legacy text column to utf8mb4 (unicode_ci,
+        // or utf8mb4_bin where byte-order comparison must be preserved).
+        // TEXT columns keep their size (CONVERT TO CHARACTER SET can promote
+        // them to MEDIUMTEXT, so MODIFY is used instead). Indexed columns
+        // convert too, unless the wider 4-byte characters would overflow the
+        // server's index key length - those keep their definition for manual
+        // review.
         $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
         // MariaDB's UCA-1400 collations appear without a charset prefix here
         // (and with NULL charset in COLLATIONS); applicability includes their aliases.
-        $collations = array_map(
-            static fn (string $name): string => str_starts_with($name, 'utf8mb4_') ? $name : 'utf8mb4_' . $name,
-            $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']),
-        );
-        $changes = [];
+        $applicable = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
+        $unicodeTarget = self::findCollation($applicable, 'utf8mb4_unicode_ci');
+        if ($unicodeTarget === null) {
+            $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . ': utf8mb4_unicode_ci is not available on this server.');
+
+            return;
+        }
+        $binTarget = self::findCollation($applicable, 'utf8mb4_bin');
+
+        $liveColumns = [];
         foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
+            $liveColumns[$column['Field']] = $column;
+        }
+        $byteLimit = null;
+        $byteLimitKnown = false;
+        $changes = [];
+        foreach ($liveColumns as $column) {
             $name = $column['Field'];
             if (!in_array($name, $columns, true)) {
                 continue;
             }
 
             $collation = $column['Collation'] ?? '';
-            if (!preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
-                if ($repairTableDefault && $collation !== '' && !str_starts_with($collation, 'utf8mb4_')) {
+            if (str_starts_with($collation, 'utf8mb4_')) {
+                // Already modern (including NO PAD server defaults such as
+                // utf8mb4_0900_ai_ci); only legacy charsets convert.
+                continue;
+            }
+            if (!preg_match('/^utf8(?:mb3)?_/', $collation)) {
+                if ($repairTableDefault) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized character set requires manual review.');
                 }
 
                 continue;
             }
-            $targetCollation = 'utf8mb4_' . $matches[1];
+            $columnTarget = self::resolveConversionTarget($collation, $unicodeTarget, $binTarget, $applicable);
+            if ($columnTarget === null) {
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': no equivalent utf8mb4 collation is available on this server.');
+
+                continue;
+            }
             $columnIndexes = array_filter($indexes, static fn (array $index): bool => $index['Column_name'] === $name);
-            $canRebuildFulltext = $table === 'support_ticket_message' && $name === 'content';
-            foreach ($columnIndexes as $index) {
-                $indexColumns = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
-                if ($index['Index_type'] !== 'FULLTEXT' || count($indexColumns) !== 1) {
-                    $canRebuildFulltext = false;
+            if ($columnIndexes !== []) {
+                // Look the limit up only when an indexed column actually needs
+                // it; most tables never reach this branch.
+                if (!$byteLimitKnown) {
+                    $byteLimit = $this->utf8mb4IndexByteLimit($table);
+                    $byteLimitKnown = true;
                 }
+                if (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
+                    if ($this->hasUnsupportedFulltextIndex($columnIndexes, $indexes)) {
+                        $reason = 'multi-column FULLTEXT index requires manual review.';
+                    } elseif ($byteLimit === null) {
+                        $reason = 'compressed block size requires manual review.';
+                    } else {
+                        $reason = 'index would exceed the size limit after conversion and requires manual review.';
+                    }
+                    $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': ' . $reason);
+
+                    continue;
+                }
+            }
+            if ($this->isReferencedByExpressionIndex($name, $indexes)) {
+                // SHOW INDEX reports functional key parts with a NULL column
+                // name, so the byte check above cannot see them; the widened
+                // value could overflow the key and fail the whole upgrade.
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': functional index requires manual review.');
+
+                continue;
             }
             $literalUnitDefault = null;
             if ($name === 'unit' && in_array($table, ['product', 'client_order', 'invoice_item'], true)
@@ -2441,11 +2515,9 @@ class Patcher implements InjectionAwareInterface
                     }
                 }
             }
-            if (($columnIndexes !== [] && !$canRebuildFulltext)
-                || $column['Extra'] !== ''
+            if ($column['Extra'] !== ''
                 || ($column['Default'] !== null && $literalUnitDefault === null)
-                || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])
-                || !in_array($targetCollation, $collations, true)) {
+                || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])) {
                 $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized column or index requires manual review.');
 
                 continue;
@@ -2454,7 +2526,7 @@ class Patcher implements InjectionAwareInterface
             $definition = sprintf('MODIFY COLUMN `%s` %s CHARACTER SET utf8mb4 COLLATE %s %s',
                 $this->quoteIdentifier($name),
                 $column['Type'],
-                $this->quoteIdentifier($targetCollation),
+                $this->quoteIdentifier($columnTarget),
                 $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
             );
             if ($literalUnitDefault !== null) {
@@ -2471,14 +2543,15 @@ class Patcher implements InjectionAwareInterface
                 'SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
                 ['table' => $table],
             );
-            if (is_string($tableCollation) && preg_match('/^utf8(?:mb3)?_(.+)$/', $tableCollation, $matches)) {
-                $targetCollation = 'utf8mb4_' . $matches[1];
-                if (in_array($targetCollation, $collations, true)) {
-                    // DEFAULT changes only future columns; CONVERT would also widen indexed
-                    // slugs/identifiers and can promote TEXT to MEDIUMTEXT.
-                    $changes[] = 'DEFAULT CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($targetCollation);
+            if (is_string($tableCollation) && $tableCollation !== $unicodeTarget && $tableCollation !== $binTarget
+                && preg_match('/^utf8(?:mb3)?_/', $tableCollation)) {
+                // DEFAULT changes only future columns; existing text moves via MODIFY COLUMN above.
+                // Binary table defaults keep byte-order comparison via utf8mb4_bin.
+                $defaultTarget = self::resolveConversionTarget($tableCollation, $unicodeTarget, $binTarget, $applicable);
+                if ($defaultTarget === null) {
+                    $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': no equivalent utf8mb4 collation is available on this server.');
                 } else {
-                    $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': collation requires manual review.');
+                    $changes[] = 'DEFAULT CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($defaultTarget);
                 }
             } elseif (is_string($tableCollation) && !str_starts_with($tableCollation, 'utf8mb4_')) {
                 $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': customized character set requires manual review.');
@@ -2490,6 +2563,269 @@ class Patcher implements InjectionAwareInterface
             // patch sequence, leaving the patch pending; successful reruns skip widened columns.
             $this->executeSql(sprintf('ALTER TABLE `%s` ', $this->quoteIdentifier($table)) . implode(', ', $changes));
         }
+    }
+
+    /**
+     * Exact server-side spelling of a wanted utf8mb4 collation, or null when
+     * the server does not offer it. MariaDB lists some collations without the
+     * charset prefix, so both spellings are accepted.
+     */
+    private static function findCollation(array $applicable, string $wanted): ?string
+    {
+        foreach ($applicable as $available) {
+            if ($available === $wanted || 'utf8mb4_' . $available === $wanted) {
+                return $available;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * utf8mb4 equivalent preserving the source collation's comparison rules,
+     * or null when the server offers none. Binary collations keep byte-order
+     * comparison; NO PAD sources keep trailing-space significance by mapping
+     * onto the matching utf8mb4 nopad collation, or onto utf8mb4_0900_bin for
+     * binary ones (byte-order comparison is identical there either way).
+     */
+    private static function resolveConversionTarget(string $collation, ?string $unicodeTarget, ?string $binTarget, array $applicable): ?string
+    {
+        if (str_contains($collation, 'nopad')) {
+            if (preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
+                $native = self::findCollation($applicable, 'utf8mb4_' . $matches[1]);
+                if ($native !== null) {
+                    return $native;
+                }
+            }
+
+            return str_ends_with($collation, '_bin') ? self::findCollation($applicable, 'utf8mb4_0900_bin') : null;
+        }
+
+        if (str_ends_with($collation, '_bin')) {
+            return $binTarget;
+        }
+
+        return $unicodeTarget;
+    }
+
+    /**
+     * Whether any functional (expression) index on the table references the
+     * column. Those parts report a NULL column name, so the byte-limit check
+     * cannot measure them; widening blindly could overflow the key and fail
+     * the upgrade, so such columns are left for manual review instead.
+     */
+    private function isReferencedByExpressionIndex(string $column, array $indexes): bool
+    {
+        foreach ($indexes as $index) {
+            $expression = $index['Expression'] ?? null;
+            if (!is_string($expression) || $expression === '') {
+                continue;
+            }
+            if (preg_match('/(^|[^A-Za-z0-9_])' . preg_quote($column, '/') . '([^A-Za-z0-9_]|$)/i', $expression) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether any of the column's indexes is a multi-column FULLTEXT index,
+     * which can never convert no matter how small the key is.
+     */
+    private function hasUnsupportedFulltextIndex(array $columnIndexes, array $indexes): bool
+    {
+        foreach ($columnIndexes as $index) {
+            if ($index['Index_type'] !== 'FULLTEXT') {
+                continue;
+            }
+            $members = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
+            if (count($members) !== 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether every index containing a text column still fits the server's
+     * key length once that column widens to 4 bytes per character.
+     *
+     * Single-column FULLTEXT indexes rebuild with the table and are always
+     * safe; a null limit (no verifiable bound, e.g. small-block COMPRESSED)
+     * rejects everything else. Unknown column types or oversized indexes keep
+     * their old definition instead of failing the upgrade.
+     */
+    private function canConvertIndexedColumn(array $columnIndexes, array $indexes, array $liveColumns, array $columns, ?int $byteLimit): bool
+    {
+        foreach ($columnIndexes as $index) {
+            $members = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
+            if ($index['Index_type'] === 'FULLTEXT') {
+                if (count($members) !== 1) {
+                    return false;
+                }
+
+                continue;
+            }
+            if ($byteLimit === null) {
+                return false;
+            }
+            $bytes = 0;
+            foreach ($members as $member) {
+                $memberBytes = $this->utf8mb4IndexColumnBytes($member, $liveColumns, $columns);
+                if ($memberBytes === null) {
+                    return false;
+                }
+                $bytes += $memberBytes;
+            }
+            if ($bytes > $byteLimit) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Worst-case key bytes for one indexed column after conversion, or null
+     * when the size cannot be determined (treated as unsafe by the caller).
+     */
+    private function utf8mb4IndexColumnBytes(array $index, array $liveColumns, array $columns): ?int
+    {
+        $definition = $liveColumns[$index['Column_name']] ?? null;
+        if ($definition === null) {
+            return null;
+        }
+        $type = strtolower((string) ($definition['Type'] ?? ''));
+        $subPart = $index['Sub_part'] !== null ? (int) $index['Sub_part'] : null;
+        $isBinary = str_starts_with($type, 'binary') || str_starts_with($type, 'varbinary') || str_ends_with($type, 'blob');
+        $converting = in_array($definition['Field'], $columns, true);
+
+        if (preg_match('/^(?:var)?char\((\d+)\)$/', $type, $matches)) {
+            $characters = (int) $matches[1];
+            if ($isBinary) {
+                return $subPart ?? $characters;
+            }
+            $factor = $converting ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
+            if ($factor === null) {
+                return null;
+            }
+
+            return ($subPart ?? $characters) * $factor;
+        }
+
+        if (in_array($type, ['tinytext', 'text', 'mediumtext', 'longtext'], true)) {
+            // MySQL requires a prefix length to index a TEXT column.
+            if ($subPart === null) {
+                return null;
+            }
+            $factor = $converting ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
+
+            return $factor === null ? null : $subPart * $factor;
+        }
+
+        $base = preg_replace('/\(.*$/', '', $type);
+        $fixed = ['tinyint' => 1, 'smallint' => 2, 'mediumint' => 3, 'int' => 4, 'bigint' => 8, 'year' => 1, 'date' => 3, 'float' => 4, 'double' => 8];
+        if (isset($fixed[$base])) {
+            return $fixed[$base];
+        }
+        if (in_array($base, ['datetime', 'timestamp', 'time'], true)) {
+            $bytes = ['time' => 3, 'datetime' => 5, 'timestamp' => 4][$base];
+            if (preg_match('/\((\d+)\)$/', $type, $matches)) {
+                $bytes += intdiv((int) $matches[1] + 1, 2);
+            }
+
+            return $bytes;
+        }
+
+        return null;
+    }
+
+    private static function charsetMaxBytes(?string $collation): ?int
+    {
+        if (!is_string($collation) || $collation === '') {
+            return null;
+        }
+        if (str_starts_with($collation, 'utf8mb4_')) {
+            return 4;
+        }
+        if (preg_match('/^utf8(?:mb3)?_/', $collation)) {
+            return 3;
+        }
+        if (str_starts_with($collation, 'latin1_') || in_array($collation, ['ascii_bin', 'ascii_general_ci', 'binary'], true)) {
+            return 1;
+        }
+
+        return null;
+    }
+
+    private function utf8mb4IndexByteLimit(string $table): ?int
+    {
+        // Match in PHP rather than LIKE: table names contain underscores,
+        // which are single-character wildcards in a LIKE pattern.
+        $engine = '';
+        $rowFormat = '';
+        $createOptions = '';
+        foreach ($this->fetchAll('SHOW TABLE STATUS') as $status) {
+            if (($status['Name'] ?? null) === $table) {
+                $engine = strtolower((string) ($status['Engine'] ?? ''));
+                $rowFormat = strtolower((string) ($status['Row_format'] ?? ''));
+                $createOptions = strtolower((string) ($status['Create_options'] ?? ''));
+
+                break;
+            }
+        }
+        if ($engine !== 'innodb') {
+            return 767;
+        }
+        if ($rowFormat === 'compressed'
+            && preg_match('/key_block_size\s*=\s*(\d+)/', $createOptions, $matches)
+            && (int) $matches[1] < 8
+        ) {
+            // A hand-tuned block size below the server default shrinks what an
+            // index may hold, with no reliable bound to check against. The
+            // null result keeps indexed columns untouched via a dedicated
+            // warning instead of risking a failed ALTER.
+            return null;
+        }
+        if ($rowFormat !== 'dynamic' || !self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
+            return 767;
+        }
+
+        // Unknown page size falls back to the conservative limit rather than
+        // assuming large prefixes: affected indexes skip with a warning
+        // instead of risking a failed ALTER.
+        return match ($this->innoDbPageSize()) {
+            4096 => 768,
+            8192 => 1536,
+            null => 767,
+            default => 3072,
+        };
+    }
+
+    private function innoDbPageSize(): ?int
+    {
+        try {
+            $size = $this->fetchOne('SELECT @@innodb_page_size');
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return is_numeric($size) ? (int) $size : null;
+    }
+
+    private static function supportsLargeIndexPrefixes(mixed $version): bool
+    {
+        if (!is_string($version) || !preg_match('/^(\d+)\.(\d+)\.(\d+)/', $version, $matches)) {
+            return false;
+        }
+        [$major, $minor, $patch] = [(int) $matches[1], (int) $matches[2], (int) $matches[3]];
+        if (stripos($version, 'mariadb') !== false) {
+            return $major > 10 || ($major === 10 && ($minor > 2 || ($minor === 2 && $patch >= 2)));
+        }
+
+        return $major > 5 || ($major === 5 && ($minor > 7 || ($minor === 7 && $patch >= 7)));
     }
 
     public function legacyUnicodeColumns(): array
@@ -2505,7 +2841,7 @@ class Patcher implements InjectionAwareInterface
             'admin_password_reset' => [],
             'cart' => [],
             'cart_product' => [],
-            'client' => ['first_name', 'last_name', 'company', 'company_vat', 'company_number', 'postcode', 'billing_email', 'address_1', 'address_2', 'city', 'state', 'notes',
+            'client' => ['first_name', 'last_name', 'company', 'company_vat', 'company_number', 'postcode', 'email', 'billing_email', 'address_1', 'address_2', 'city', 'state', 'notes',
                 'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5', 'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
                 'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15', 'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20'],
             'client_balance' => ['description'],
@@ -2515,9 +2851,9 @@ class Patcher implements InjectionAwareInterface
             'client_order_meta' => ['value'],
             'client_order_status' => ['notes'],
             'client_password_reset' => [],
-            'currency' => ['format_pattern'],
-            'custom_pages' => ['title', 'description', 'keywords', 'content'],
-            'email_template' => ['subject', 'content', 'description', 'last_error'],
+            'currency' => ['format_pattern', 'code'],
+            'custom_pages' => ['title', 'description', 'keywords', 'content', 'slug'],
+            'email_template' => ['subject', 'content', 'description', 'last_error', 'action_code'],
             'email_template_group' => [],
             'email_queue' => ['recipient', 'sender', 'subject', 'content', 'to_name', 'from_name', 'attachment_name'],
             'extension' => [],
@@ -2526,14 +2862,17 @@ class Patcher implements InjectionAwareInterface
             'form_field' => ['label', 'description', 'default_value', 'prefix', 'suffix', 'options'],
             'invoice' => ['serie', 'notes', 'text_1', 'text_2', 'seller_company', 'seller_company_vat', 'seller_company_number', 'seller_phone', 'seller_email', 'seller_address', 'buyer_first_name', 'buyer_last_name',
                 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_zip', 'buyer_phone', 'buyer_email', 'buyer_address', 'buyer_city', 'buyer_state', 'taxname'],
+            'invoice_credit' => [],
             'invoice_event' => [],
             'invoice_item' => ['title', 'unit'],
+            'json_migration_record' => [],
+            'json_quarantine' => [],
             'mod_massmailer' => ['from_email', 'from_name', 'subject', 'content'],
             'pay_gateway' => ['name'],
             'pay_gateway_customer' => [],
             'pay_gateway_product' => ['name'],
-            'post' => ['title', 'description', 'content', 'section', 'image'],
-            'product' => ['title', 'description', 'unit', 'icon_url', 'plugin_config'],
+            'post' => ['title', 'description', 'content', 'section', 'image', 'slug'],
+            'product' => ['title', 'description', 'unit', 'icon_url', 'plugin_config', 'slug'],
             'product_category' => ['title', 'description', 'icon_url'],
             'product_payment' => [],
             'product_payment_period' => [],
@@ -2547,13 +2886,13 @@ class Patcher implements InjectionAwareInterface
             'service_hosting' => ['sld', 'tld', 'username'],
             'service_hosting_hp' => ['name'],
             'service_hosting_server' => ['name', 'username', 'password', 'status_url', 'hostname', 'ns1', 'ns2', 'ns3', 'ns4'],
-            'service_license' => [],
+            'service_license' => ['license_key'],
             'session' => [],
             'setting' => ['value'],
             'subscription' => [],
             'support_helpdesk' => ['name', 'signature', 'email'],
-            'support_kb_article' => ['title', 'content'],
-            'support_kb_article_category' => ['title', 'description'],
+            'support_kb_article' => ['title', 'content', 'slug'],
+            'support_kb_article_category' => ['title', 'description', 'slug'],
             'support_pr' => ['title', 'content'],
             'support_pr_category' => ['title'],
             'support_ticket' => ['author_name', 'author_email', 'subject', 'rel_new_value'],
@@ -2561,10 +2900,44 @@ class Patcher implements InjectionAwareInterface
             'support_ticket_message_history' => ['content'],
             'support_ticket_note' => ['note'],
             'tax' => ['name', 'state'],
-            'tld' => [],
+            'tld' => ['tld'],
             'tld_registrar' => ['name'],
             'transaction' => ['error', 'note', 'output', 'txn_status'],
         ];
+    }
+
+    public function repairDatabaseDefaultCharset(): void
+    {
+        $database = $this->fetchOne('SELECT DATABASE()');
+        if (!is_string($database) || $database === '') {
+            return;
+        }
+
+        $charset = $this->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()');
+        $collation = $this->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()');
+        if (!is_string($charset) || !preg_match('/^utf8(?:mb3)?$/', $charset) || !is_string($collation)) {
+            return;
+        }
+
+        // Normalize to the fresh-install collation; binary database defaults
+        // keep byte-order comparison via utf8mb4_bin instead.
+        $collations = $this->fetchFirstColumn(
+            'SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset',
+            ['charset' => 'utf8mb4']
+        );
+        $targetCollation = self::resolveConversionTarget(
+            $collation,
+            self::findCollation($collations, 'utf8mb4_unicode_ci'),
+            self::findCollation($collations, 'utf8mb4_bin'),
+            $collations
+        );
+        if ($targetCollation === null) {
+            $this->logUpdate('warning', 'Skipped utf8mb4 database default for ' . $database . ': no equivalent utf8mb4 collation is available on this server.');
+
+            return;
+        }
+
+        $this->executeSql('ALTER DATABASE CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($targetCollation));
     }
 
     public function backfillProductCategoryPriorities(\Doctrine\DBAL\Connection $connection): void
@@ -2576,6 +2949,153 @@ class Patcher implements InjectionAwareInterface
         }
 
         $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
+    }
+
+    /**
+     * Backfills invoice_item.order_id from rel_id for rows that reference orders
+     * (see https://github.com/FOSSBilling/FOSSBilling/issues/4688). Portable and
+     * idempotent: the numeric check runs in PHP so no per-platform regex is needed,
+     * and only rows still missing order_id are touched. $maxPages bounds periodic
+     * healing callers: 0 means no limit.
+     *
+     * Only the two shapes this codebase produces for order references are migrated:
+     * type='order' lines and unit='discount' lines (which default to TYPE_CUSTOM but
+     * still name an order). Any other numeric rel_id (invoice/credit-note references,
+     * third-party line types) is deliberately left alone.
+     *
+     * Bounded runs resume from a stored scan position so pages of unresolvable rows
+     * (hook_call JSON, invoice references) never strand later pages behind them;
+     * unbounded runs rescan from zero. Either way the marker is cleared and
+     * completion is recorded once a pass reaches the end. Bounded runs
+     * short-circuit on that flag (so the per-request heal in
+     * Finalization::healSchemaDrift() stays a single indexed lookup once
+     * converged); unbounded runs always rescan, so rows that appeared while
+     * the flag was set - e.g. written by a downgraded codebase that does not
+     * know order_id yet - are still picked up by the next finalization.
+     * Never throws: a failure only logs, and the next run picks up where this
+     * one stopped.
+     */
+    public function backfillInvoiceItemOrderIds(int $maxPages = 0): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return;
+        }
+
+        try {
+            $dbal = $this->di['em']->getConnection();
+
+            // A recorded completion short-circuits bounded runs only: without it the
+            // rescan below would revisit unresolvable rows on every invocation.
+            // Scope the cursor to the rule as well as the completion flag. An
+            // older rule may have skipped rows even if it never reached the end.
+            $marker = 'invoice_item_order_backfill_last_id_v' . self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION;
+            if ($maxPages !== 0) {
+                $completedRule = $dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE]);
+                if ($completedRule === self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION) {
+                    return;
+                }
+            }
+
+            $schemaManager = $dbal->createSchemaManager();
+            if (!$schemaManager->tablesExist(['invoice_item'])
+                || !$schemaManager->introspectTableByUnquotedName('invoice_item')->hasColumn('order_id')) {
+                return;
+            }
+
+            // Page by ID to bound reads. Written rows drop out via order_id IS NULL, and
+            // the conditional UPDATE keeps a racing writer's newer value intact.
+            // Rows whose rel_id isn't an order id advance the keyset without a write.
+            $lastId = 0;
+            if ($maxPages !== 0) {
+                $stored = $this->backfillPosition($dbal, $marker);
+                if ($stored !== null) {
+                    $lastId = $stored;
+                }
+            }
+
+            $updated = 0;
+            $pages = 0;
+            do {
+                $rows = $dbal->fetchAllAssociative(
+                    "SELECT id, invoice_id, type, unit, rel_id FROM invoice_item WHERE order_id IS NULL AND (type = 'order' OR unit = 'discount') AND id > :last ORDER BY id LIMIT 500",
+                    ['last' => $lastId]
+                );
+                if ($rows === []) {
+                    break;
+                }
+                ++$pages;
+
+                foreach ($rows as $row) {
+                    $lastId = (int) $row['id'];
+                    $orderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveOrderReference($row['type'], $row['unit'], $row['rel_id']);
+                    if ($orderId === null && $row['type'] === \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER) {
+                        $paidOrderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveLegacyPaidOrderReference($row['rel_id']);
+                        // Only historical paid items may use this relaxed rule.
+                        if ($paidOrderId !== null && $dbal->fetchOne('SELECT status FROM invoice WHERE id = :id', ['id' => $row['invoice_id']]) === \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID) {
+                            $orderId = $paidOrderId;
+                        }
+                    }
+                    if ($orderId === null) {
+                        continue;
+                    }
+
+                    $updated += (int) (bool) $dbal->executeStatement(
+                        'UPDATE invoice_item SET order_id = :order_id WHERE id = :id AND order_id IS NULL',
+                        ['order_id' => $orderId, 'id' => $row['id']]
+                    );
+                }
+
+                if ($maxPages !== 0) {
+                    $this->storeBackfillPosition($dbal, $marker, $lastId);
+                }
+            } while ($maxPages === 0 || $pages < $maxPages);
+
+            if ($maxPages === 0 || $rows === []) {
+                // Reached the end (unbounded runs always do; bounded ones just did):
+                // nothing eligible is left behind, so clear the resume marker and
+                // record completion for the short-circuit above.
+                $this->clearBackfillPosition($dbal, $marker);
+                $this->recordInvoiceItemOrderBackfillComplete($dbal);
+            }
+
+            if ($updated > 0) {
+                $this->logUpdate('info', sprintf('Backfilled invoice item order linkage for %d invoice item(s)', $updated));
+            }
+        } catch (\Throwable $e) {
+            // Runs from healSchemaDrift() on every request, which must not throw
+            // (an unreachable database simply reports "nothing to do"). The next
+            // request retries from the stored position.
+            $this->logUpdate('warning', 'Invoice item order linkage backfill skipped: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Records the order_id backfill as complete under the current rule version.
+     * Best-effort like the resume marker: a concurrent healer racing this write
+     * only duplicates an already-true statement. An older recorded version is
+     * upgraded so the next bounded run short-circuits instead of rescanning.
+     */
+    private function recordInvoiceItemOrderBackfillComplete(\Doctrine\DBAL\Connection $dbal): void
+    {
+        try {
+            $now = date('Y-m-d H:i:s');
+            if ($dbal->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE]) === false) {
+                $dbal->insert('setting', [
+                    'param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE,
+                    'value' => self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION,
+                    'public' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                $dbal->executeStatement(
+                    'UPDATE setting SET value = :value, updated_at = :updated WHERE param = :param',
+                    ['value' => self::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION, 'updated' => $now, 'param' => self::INVOICE_ITEM_ORDER_BACKFILL_DONE]
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logUpdate('warning', 'Invoice item order linkage backfill completion not recorded: ' . $e->getMessage());
+        }
     }
 
     /**

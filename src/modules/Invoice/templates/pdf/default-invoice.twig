@@ -121,6 +121,16 @@
 					<th style='text-align: right'  colspan='3'>{{ 'Total'|trans }}:</th>
 					<th style='text-align: right'>{{ invoice.total|format_currency(currency_code) }}</th>
 				</tr>
+				{% if invoice.status == 'unpaid' and invoice.amount_paid|default(0) > 0 %}
+					<tr>
+						<th style='text-align: right'  colspan='3'>{{ 'Amount paid'|trans }}:</th>
+						<th style='text-align: right'>−{{ invoice.amount_paid|format_currency(currency_code) }}</th>
+					</tr>
+					<tr>
+						<th style='text-align: right'  colspan='3'>{{ 'Balance due'|trans }}:</th>
+						<th style='text-align: right'>{{ invoice.balance_due|format_currency(currency_code) }}</th>
+					</tr>
+				{% endif %}
 			</table>
 		</div>
 

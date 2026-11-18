@@ -36,25 +36,17 @@ return [
         'tld_registrar.config',
         'transaction.ipn',
     ],
-    // Keep index widths and equality. Unicode slugs, license keys and indexed email identities need separate review.
+    // Keep index widths and equality. The remaining unique codes, names
+    // and params stay untouched; converted identifiers live in the patch.
     'indexed_identifiers' => [
         'admin.email',
         'admin.system_name',
         'admin_group.system_name',
         'client.aid',
-        'client.email',
-        'custom_pages.slug',
-        'email_template.action_code',
         'extension.name',
         'extension.type',
-        'post.slug',
-        'product.slug',
         'promo.code',
-        'service_license.license_key',
         'setting.param',
-        'support_kb_article.slug',
-        'support_kb_article_category.slug',
-        'tld.tld',
     ],
     // ASCII hashes/tokens, generated filenames and the hosting password placeholder.
     'generated_tokens' => [
@@ -63,6 +55,7 @@ return [
         'admin_password_reset.hash',
         'cart.session_id',
         'client.api_token',
+        'client_balance.gateway_receipt_key',
         'client.pass',
         'client_password_reset.hash',
         'invoice.hash',
@@ -109,7 +102,6 @@ return [
         'client.timezone',
         'client_order.currency',
         'client_password_reset.ip',
-        'currency.code',
         'email_queue.attachment_mime',
         'form_field.show_initial',
         'form_field.show_middle',
@@ -149,6 +141,7 @@ return [
         'transaction.s_period',
     ],
     // State, adapter, relation and configuration keys. Formbuilder names are transliterated to ASCII.
+    // json_quarantine review references are machine-generated identifiers, never content.
     'machine_keys' => [
         'admin.status',
         'client.auth_type',
@@ -181,6 +174,10 @@ return [
         'invoice_item.status',
         'invoice_item.task',
         'invoice_item.type',
+        'json_quarantine.column_name',
+        'json_quarantine.display_id',
+        'json_quarantine.issue',
+        'json_quarantine.table_name',
         'mod_massmailer.status',
         'pay_gateway.gateway',
         'post.status',

@@ -1099,7 +1099,7 @@ test('throws exception when checking availability not allowed to register', func
 
 test('syncs expiration date from the registrar', function (): void {
     $whois = new Registrar_Domain();
-    $whois->setExpirationTime((new DateTime('2030-06-15 00:00:00', new DateTimeZone('UTC')))->getTimestamp());
+    $whois->setExpirationTime((new DateTimeImmutable('2030-06-15 00:00:00', new DateTimeZone('UTC')))->getTimestamp());
 
     $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
     $adapter->shouldReceive('getDomainDetails')
@@ -1135,7 +1135,7 @@ test('preserves the existing expiration date when the registrar has none', funct
         ->andReturn([new Registrar_Domain(), $adapter]);
 
     $model = new ServiceDomain();
-    $model->setExpiresAt(new DateTime('2030-06-15 00:00:00', new DateTimeZone('UTC')));
+    $model->setExpiresAt(new DateTimeImmutable('2030-06-15 00:00:00', new DateTimeZone('UTC')));
 
     $di = container();
     $service->setDi($di);
@@ -1238,9 +1238,9 @@ test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, s
     $model->setPeriod(1);
     $model->setPrivacy(true);
     $model->setLocked(true);
-    $model->setRegisteredAt(new DateTime(date('Y-m-d H:i:s')));
-    $model->setExpiresAt(new DateTime(date('Y-m-d H:i:s')));
-    $model->setSyncedAt(new DateTime(date('Y-m-d H:i:s')));
+    $model->setRegisteredAt(new DateTimeImmutable(date('Y-m-d H:i:s')));
+    $model->setExpiresAt(new DateTimeImmutable(date('Y-m-d H:i:s')));
+    $model->setSyncedAt(new DateTimeImmutable(date('Y-m-d H:i:s')));
 
     $model->setContactFirstName('first_name');
     $model->setContactLastName('last_name');

@@ -131,20 +131,20 @@ class Order implements TimestampInterface
     #[ORM\Column(name: 'referred_by', type: Types::STRING, length: 255, nullable: true)]
     private ?string $referredBy = null;
 
-    #[ORM\Column(name: 'expires_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $expiresAt = null;
+    #[ORM\Column(name: 'expires_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $expiresAt = null;
 
-    #[ORM\Column(name: 'activated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $activatedAt = null;
+    #[ORM\Column(name: 'activated_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $activatedAt = null;
 
-    #[ORM\Column(name: 'suspended_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $suspendedAt = null;
+    #[ORM\Column(name: 'suspended_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $suspendedAt = null;
 
-    #[ORM\Column(name: 'unsuspended_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $unsuspendedAt = null;
+    #[ORM\Column(name: 'unsuspended_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $unsuspendedAt = null;
 
-    #[ORM\Column(name: 'canceled_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $canceledAt = null;
+    #[ORM\Column(name: 'canceled_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $canceledAt = null;
 
     public function getId(): ?int
     {
@@ -451,60 +451,60 @@ class Order implements TimestampInterface
         return $this;
     }
 
-    public function getExpiresAt(): ?\DateTime
+    public function getExpiresAt(): ?\DateTimeImmutable
     {
         return $this->expiresAt;
     }
 
-    public function setExpiresAt(?\DateTime $expiresAt): self
+    public function setExpiresAt(?\DateTimeImmutable $expiresAt): self
     {
         $this->expiresAt = $expiresAt;
 
         return $this;
     }
 
-    public function getActivatedAt(): ?\DateTime
+    public function getActivatedAt(): ?\DateTimeImmutable
     {
         return $this->activatedAt;
     }
 
-    public function setActivatedAt(?\DateTime $activatedAt): self
+    public function setActivatedAt(?\DateTimeImmutable $activatedAt): self
     {
         $this->activatedAt = $activatedAt;
 
         return $this;
     }
 
-    public function getSuspendedAt(): ?\DateTime
+    public function getSuspendedAt(): ?\DateTimeImmutable
     {
         return $this->suspendedAt;
     }
 
-    public function setSuspendedAt(?\DateTime $suspendedAt): self
+    public function setSuspendedAt(?\DateTimeImmutable $suspendedAt): self
     {
         $this->suspendedAt = $suspendedAt;
 
         return $this;
     }
 
-    public function getUnsuspendedAt(): ?\DateTime
+    public function getUnsuspendedAt(): ?\DateTimeImmutable
     {
         return $this->unsuspendedAt;
     }
 
-    public function setUnsuspendedAt(?\DateTime $unsuspendedAt): self
+    public function setUnsuspendedAt(?\DateTimeImmutable $unsuspendedAt): self
     {
         $this->unsuspendedAt = $unsuspendedAt;
 
         return $this;
     }
 
-    public function getCanceledAt(): ?\DateTime
+    public function getCanceledAt(): ?\DateTimeImmutable
     {
         return $this->canceledAt;
     }
 
-    public function setCanceledAt(?\DateTime $canceledAt): self
+    public function setCanceledAt(?\DateTimeImmutable $canceledAt): self
     {
         $this->canceledAt = $canceledAt;
 

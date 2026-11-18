@@ -20,10 +20,10 @@ test('cron execution', function (): void {
     expect($result->wasSuccessful())->toBeTrue();
 
     if (!empty($result->getResult()['last_cron_exec'])) {
-        $firstDate = new DateTime($result->getResult()['last_cron_exec']);
+        $firstDate = new DateTimeImmutable($result->getResult()['last_cron_exec']);
     } else {
-        $firstDate = new DateTime();
-        $firstDate->modify('-1 hour');
+        $firstDate = new DateTimeImmutable();
+        $firstDate = $firstDate->modify('-1 hour');
     }
 
     $result = Tests\Helpers\ApiClient::request('admin/cron/run');
@@ -35,6 +35,6 @@ test('cron execution', function (): void {
     expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult()['last_cron_exec'])->not->toBeEmpty();
 
-    $newDate = new DateTime($result->getResult()['last_cron_exec']);
+    $newDate = new DateTimeImmutable($result->getResult()['last_cron_exec']);
     expect($newDate)->toBeGreaterThan($firstDate);
 });

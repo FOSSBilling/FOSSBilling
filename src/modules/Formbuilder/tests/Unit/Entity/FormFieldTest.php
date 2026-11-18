@@ -61,12 +61,12 @@ test('treats nullable boolean flags as false by default', function (): void {
 });
 
 test('manages form field timestamps', function (): void {
-    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $createdAt = new DateTimeImmutable('2026-01-01 12:00:00');
     $field = new FormField();
     $field->setCreatedAt($createdAt);
 
     $field->onPrePersist();
 
     expect($field->getCreatedAt())->toBe($createdAt)
-        ->and($field->getUpdatedAt())->toBeInstanceOf(DateTime::class);
+        ->and($field->getUpdatedAt())->toBeInstanceOf(DateTimeImmutable::class);
 });

@@ -13,7 +13,7 @@ namespace FOSSBilling\Core\Doctrine;
 
 interface TimestampInterface
 {
-    public function setCreatedAt(?\DateTime $createdAt): self;
+    public function setCreatedAt(?\DateTimeImmutable $createdAt): self;
 
-    public function setUpdatedAt(?\DateTime $updatedAt): self;
+    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): self;
 }

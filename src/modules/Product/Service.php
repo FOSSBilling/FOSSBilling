@@ -533,7 +533,7 @@ class Service implements InjectionAwareInterface
         $model->setQuantityInStock((int) ($data['quantity_in_stock'] ?? $model->getQuantityInStock()));
         $model->setDescription($data['description'] ?? $model->getDescription());
         $model->setPlugin($data['plugin'] ?? $model->getPlugin());
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
 
         $this->di['em']->flush();
 
@@ -548,7 +548,7 @@ class Service implements InjectionAwareInterface
             $model = $this->getProductRepository()->find((int) $id);
             if ($model instanceof Product) {
                 $model->setPriority((int) $p);
-                $model->setUpdatedAt(new \DateTime());
+                $model->setUpdatedAt(new \DateTimeImmutable());
             }
         }
 
@@ -584,7 +584,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model->setConfig($config);
-        $model->setUpdatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product #{model_id} configuration', ['model_id' => $model->getId()]);
@@ -681,7 +681,7 @@ class Service implements InjectionAwareInterface
         if ($priority !== null && $priority !== '') {
             $productCategory->setPriority((int) $priority);
         }
-        $productCategory->setUpdatedAt(new \DateTime());
+        $productCategory->setUpdatedAt(new \DateTimeImmutable());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #{category_id}', ['category_id' => $productCategory->getId()]);
@@ -707,7 +707,7 @@ class Service implements InjectionAwareInterface
             $model = $this->getProductCategoryRepository()->find($id);
             if ($model instanceof ProductCategory) {
                 $model->setPriority($p);
-                $model->setUpdatedAt(new \DateTime());
+                $model->setUpdatedAt(new \DateTimeImmutable());
             }
         }
 
@@ -1068,7 +1068,7 @@ class Service implements InjectionAwareInterface
         $updated = $this->getProductRepository()->decrementStockIfAvailable(
             (int) $resolvedProduct->getId(),
             $quantity,
-            new \DateTime()
+            new \DateTimeImmutable()
         );
 
         if ($updated === 0) {
@@ -1136,7 +1136,7 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $this->getProductRepository()->incrementStock($productId, $quantity, new \DateTime());
+            $this->getProductRepository()->incrementStock($productId, $quantity, new \DateTimeImmutable());
 
             $resolvedProduct = $this->getProductRepository()->find($productId);
             if ($resolvedProduct instanceof Product) {
@@ -2255,7 +2255,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $committedAt = $invoice->getPaidAt() ?? new \DateTime();
+        $committedAt = $invoice->getPaidAt() ?? new \DateTimeImmutable();
         foreach ($redemptions as $redemption) {
             if (!$redemption instanceof PromoRedemption) {
                 continue;
@@ -2815,7 +2815,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $releasedAt = new \DateTime();
+        $releasedAt = new \DateTimeImmutable();
         $checkoutReleaseCounts = [];
         foreach ($redemptions as $redemption) {
             if ($redemption->getStatus() !== PromoRedemption::STATUS_RESERVED) {
@@ -2853,7 +2853,7 @@ class Service implements InjectionAwareInterface
         string $status,
     ): PromoRedemption {
         $timestamp = $createdAt ?? date('Y-m-d H:i:s');
-        $dateTime = new \DateTime($timestamp);
+        $dateTime = new \DateTimeImmutable($timestamp);
         $redemption = new PromoRedemption();
         $clientId = (int) $client->getId();
         $orderId = $order?->getId();
@@ -3070,6 +3070,109 @@ class Service implements InjectionAwareInterface
         return 0;
     }
 
+    /**
+     * Whether a domain order renews free: it was ordered with a hosting
+     * order (same order group) whose product offers it free with "Free
+     * Domain Renewals" on, by the same rules as at checkout, and that
+     * hosting is still active or suspended.
+     */
+    public function freeDomainRenewalUntil(int $orderId, bool $requirePaidTerm = true): ?int
+    {
+        $orderRepository = $this->di['em']->getRepository(Order::class);
+        $order = $orderRepository->find($orderId);
+        if (!$order instanceof Order) {
+            return null;
+        }
+        $config = $order->getConfig() ?? [];
+        $action = $config['action'] ?? null;
+        if (!in_array($action, ['register', 'transfer'], true)) {
+            return null;
+        }
+        $groupId = $order->getGroupId();
+        if ($groupId === null || $groupId === '') {
+            return null;
+        }
+        $sld = (string) ($config[$action . '_sld'] ?? '');
+        $tld = (string) ($config[$action . '_tld'] ?? '');
+        if ($sld === '' || $tld === '') {
+            return null;
+        }
+
+        $expiresAt = $order->getExpiresAt();
+        $period = $order->getPeriod();
+        if (!$expiresAt instanceof \DateTimeInterface || !$period) {
+            return null;
+        }
+        // A free renewal consumes a term even when the order renewal policy
+        // resets its visible expiration to today. Keep that entitlement
+        // independent of the order's display date.
+        $consumedUntil = (int) $this->di['em']->getConnection()->fetchOne(
+            'SELECT value FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
+            ['order_id' => $orderId, 'name' => 'free_domain_paid_through']
+        );
+        $from = max($expiresAt->getTimestamp(), $consumedUntil);
+        $logic = $this->di['mod_config']('order')['order_renewal_logic'] ?? '';
+        if ($logic === 'from_today' || $logic === 'from_greater') {
+            $from = max($from, time());
+        }
+        $renewedUntil = $this->di['period']($period)->getExpirationTime($from);
+
+        $candidates = $orderRepository->findBy([
+            'groupId' => $groupId,
+            'clientId' => $order->getClientId(),
+            'status' => [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED],
+        ]);
+        foreach ($candidates as $hosting) {
+            if ((int) $hosting->getId() === $orderId) {
+                continue;
+            }
+            $hostingExpiry = $hosting->getExpiresAt();
+            // Domain and hosting dates represent calendar terms. A hosting
+            // renewal performed moments before a from-today domain renewal
+            // must not lose eligibility merely because the seconds differ.
+            if ($requirePaidTerm && (!$hostingExpiry instanceof \DateTimeInterface || date('Y-m-d', $hostingExpiry->getTimestamp()) < date('Y-m-d', $renewedUntil))) {
+                continue;
+            }
+            $product = $this->getProductRepository()->find((int) $hosting->getProductId());
+            if (!$product instanceof Product || $product->getType() !== self::HOSTING) {
+                continue;
+            }
+            $settings = $product->getConfig() ?? [];
+            if (empty($settings['free_domain_renewals'])) {
+                continue;
+            }
+            $domain = $hosting->getConfig()['domain'] ?? null;
+            if (!is_array($domain) || ($domain['action'] ?? null) !== $action) {
+                continue;
+            }
+            if (($domain[$action . '_sld'] ?? null) !== $sld || ($domain[$action . '_tld'] ?? null) !== $tld) {
+                continue;
+            }
+            if ($action === 'transfer') {
+                if (!empty($settings['free_transfer'])) {
+                    return $requirePaidTerm ? min($renewedUntil, $hostingExpiry->getTimestamp()) : $renewedUntil;
+                }
+            } elseif (!empty($settings['free_domain'])
+                && (($settings['free_tlds'] ?? []) === [] || in_array($tld, (array) $settings['free_tlds'], true))
+                && in_array($hosting->getPeriod(), (array) ($settings['free_domain_periods'] ?? []), true)
+            ) {
+                return $requirePaidTerm ? min($renewedUntil, $hostingExpiry->getTimestamp()) : $renewedUntil;
+            }
+        }
+
+        return null;
+    }
+
+    public function isFreeDomainRenewalOffered(int $orderId): bool
+    {
+        return $this->freeDomainRenewalUntil($orderId, false) !== null;
+    }
+
+    public function hasFreeDomainRenewal(int $orderId): bool
+    {
+        return $this->freeDomainRenewalUntil($orderId) !== null;
+    }
+
     private function isDomainActionNameSet(array $item, string $actionName): bool
     {
         return isset($item['config']['domain']['action']) && $item['config']['domain']['action'] === $actionName;
@@ -3221,14 +3324,18 @@ class Service implements InjectionAwareInterface
         return !empty($value) ? date('Y-m-d H:i:s', strtotime((string) $value)) : null;
     }
 
-    private function normalizePromoDateTimeObject(mixed $value): ?\DateTime
+    private function normalizePromoDateTimeObject(mixed $value): ?\DateTimeImmutable
     {
-        if ($value instanceof \DateTime) {
-            return clone $value;
+        if ($value instanceof \DateTimeImmutable) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface($value);
         }
 
         $normalized = $this->normalizePromoDateTime($value);
 
-        return $normalized !== null ? new \DateTime($normalized) : null;
+        return $normalized !== null ? new \DateTimeImmutable($normalized) : null;
     }
 }

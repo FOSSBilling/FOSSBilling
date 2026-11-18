@@ -300,19 +300,25 @@ test('application readers share a lock that blocks an updater until active work 
     }
 });
 
-test('normal finalization migrates JSON and clears retired previews before restoring maintenance mode', function (): void {
+test('finalization completes with invalid JSON and unreadable extension settings', function (): void {
     $config = Config::getConfig();
     $config['maintenance_mode']['enabled'] = false;
     Config::setConfig($config, false);
     $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
     $c->executeStatement('CREATE TABLE email_template (id INTEGER PRIMARY KEY, vars TEXT)');
+    $c->executeStatement('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, meta_key TEXT, meta_value TEXT, rel_type TEXT, rel_id TEXT, client_id BIGINT)');
     $c->insert('product', ['id' => 1, 'config' => '{broken']);
     $c->insert('email_template', ['id' => 1, 'vars' => 'old-live-reset-token']);
+    $crypt = new FOSSBilling\Core\Security\Crypt();
+    $unreadable = $crypt->encrypt('{"private":true}', 'different-installation-salt');
+    $c->insert('extension_meta', ['id' => 9, 'extension' => 'mod_example', 'meta_key' => 'config', 'meta_value' => $unreadable]);
+    $logger = new Tests\Helpers\TestLogger();
     $di = new Pimple\Container([
         'em' => FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c),
-        'crypt' => new FOSSBilling\Core\Security\Crypt(),
+        'crypt' => $crypt,
         'cache' => new Symfony\Component\Cache\Adapter\ArrayAdapter(),
+        'logger' => $logger,
     ]);
     $patcher = new class extends Patcher {
         public function applyConfigPatches(bool $force = false): void
@@ -337,17 +343,20 @@ test('normal finalization migrates JSON and clears retired previews before resto
     $patcher->setDi($di);
     $finalization = finalizationWithStubPatcher($patcher);
     $finalization->setDi($di);
-    expect(fn () => $finalization->finalizeAndComplete())->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class)
-        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
-        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('pending')
-        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('old-live-reset-token');
-    $c->update('product', ['config' => ''], ['id' => 1]);
     $finalization->finalizeAndComplete();
     expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
         ->and($c->fetchOne('SELECT vars FROM email_template'))->toBeNull()
+        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 9'))->toBe($unreadable)
         ->and(Config::getProperty('maintenance_mode.enabled'))->toBeFalse()
         ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete')
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+    $status = $finalization->getStatus(false);
+    expect($status['json_migration']['quarantined'])->toHaveCount(1)
+        ->and($status['json_migration']['quarantined'][0]['table'])->toBe('product');
+    expect($logger->calls)->toHaveCount(2)
+        ->and($logger->calls[1])->toMatchArray(['method' => 'warning', 'channel' => 'update'])
+        ->and($logger->calls[1]['params'][0])->toContain('id=9', 'mod_example', 'cannot be decrypted')
+        ->not->toContain($unreadable)->not->toContain('"private"');
 });
 
 test('manual update entry point delegates to the same locked finalization flow', function (): void {

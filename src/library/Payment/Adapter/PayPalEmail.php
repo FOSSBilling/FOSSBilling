@@ -9,8 +9,14 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\Transaction;
+use FOSSBilling\Core\Doctrine\NamedLock;
+use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\System\Environment;
+use FOSSBilling\Core\Validation\PriceValidator;
 use Pimple\Container;
 
 class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Core\Container\InjectionAwareInterface
@@ -84,21 +90,65 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
     public function processTransaction($api_admin, int $id, array $data, int $gateway_id): void
     {
+        $post = $data['post'] ?? [];
+        if (!is_array($post) || $post === []) {
+            throw new Payment_Exception('PayPal payment data is missing.', [], 7021);
+        }
+        if (!Environment::isTesting() && !$this->_isIpnValid($data)) {
+            throw new Payment_Exception('IPN is invalid');
+        }
+        $providerId = (string) ($post['txn_id'] ?? '');
+        if ($providerId === '' || ($post['payment_status'] ?? '') !== 'Completed') {
+            $this->processTransactionUnderLock($api_admin, $id, $data, $gateway_id);
+
+            return;
+        }
+        $connection = $this->di['em']->getConnection();
+        $lock = 'fb:paypal:' . substr(hash('sha256', $gateway_id . ':' . $providerId), 0, 50);
+        if (!NamedLock::acquire($connection, $lock, 30)) {
+            throw new Payment_Exception('Another PayPal notification is being processed.');
+        }
+
+        try {
+            $this->processTransactionUnderLock($api_admin, $id, $data, $gateway_id);
+        } finally {
+            NamedLock::release($connection, $lock);
+        }
+    }
+
+    private function processTransactionUnderLock($api_admin, int $id, array $data, int $gateway_id): void
+    {
         $post = (isset($data['post']) && is_array($data['post'])) ? $data['post'] : [];
         if ($post === []) {
             throw new Payment_Exception('PayPal payment data is missing.', [], 7021);
         }
 
-        if (!Environment::isTesting() && !$this->_isIpnValid($data)) {
-            throw new Payment_Exception('IPN is invalid');
-        }
+        $this->withReceiptLock($id, function () use ($api_admin, $id, $data, $gateway_id): void {
+            $receipt = $this->di['em']->getRepository(Transaction::class)->find($id);
+            if ($receipt instanceof Transaction) {
+                $this->di['em']->refresh($receipt);
+            }
+            $this->processVerifiedTransaction($api_admin, $id, $data, $gateway_id);
+        });
+    }
 
+    private function processVerifiedTransaction($api_admin, int $id, array $data, int $gateway_id): void
+    {
+        $post = $data['post'];
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
         // The invoice binding arrives through a buyer-editable callback URL,
         // so authenticate it before anything below trusts it. Runs outside
         // the test-mode bypass above: the binding must hold in every environment.
-        $verifiedInvoiceId = $this->verifyCallbackBinding($data, $gateway_id, $tx['invoice_id'] ?? null, $id);
+        $bindingInvoiceId = $tx['invoice_id'] ?? null;
+        $rawType = (string) ($post['txn_type'] ?? '');
+        if (in_array($rawType, ['subscr_payment', 'recurring_payment'], true) && $bindingInvoiceId) {
+            $persistedTx = $this->di['em']->getRepository(Transaction::class)->find($id);
+            if ($persistedTx instanceof Transaction && $persistedTx->getOriginalInvoiceId() !== null) {
+                $bindingInvoiceId = $persistedTx->getOriginalInvoiceId();
+            }
+        }
+        $verifiedInvoiceId = $this->verifyCallbackBinding($data, $gateway_id, $bindingInvoiceId, $id);
 
         $ipn = $post;
 
@@ -146,7 +196,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             $api_admin->invoice_transaction_update(['id' => $id, 'currency' => $ipn['mc_currency']]);
         }
 
-        $invoice = $api_admin->invoice_get(['id' => $tx['invoice_id']]);
+        $invoice = $api_admin->invoice_get(['id' => $verifiedInvoiceId ?? $tx['invoice_id']]);
         $client_id = $invoice['client']['id'];
 
         $txnType = $ipn['txn_type'] ?? '';
@@ -159,17 +209,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'recurring_payment':
                 if (($ipn['payment_status'] ?? '') === 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
-                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
-                        $d = [
-                            'id' => $id,
-                            'error' => '',
-                            'error_code' => null,
-                            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
-                            'updated_at' => date('Y-m-d H:i:s'),
-                        ];
-                        $api_admin->invoice_transaction_update($d);
+                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
+                        $recorded = $this->di['em']->getRepository(Transaction::class)->find($id);
+                        if (!$recorded instanceof Transaction || $recorded->getGatewayCompletionState() === Transaction::GATEWAY_COMPLETION_DONE) {
+                            $this->completeReceipt($api_admin, $id);
 
-                        return;
+                            return;
+                        }
                     }
 
                     if (!isset($ipn['mc_gross'], $ipn['txn_id'])) {
@@ -185,9 +231,25 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         if ($paymentSubscription instanceof Box\Mod\Invoice\Entity\Subscription
                             && $paymentSubscription->getRelType() === 'invoice'
                             && $paymentSubscription->getRelId() !== null
-                            && $paymentSubscription->getRelId() !== (int) $tx['invoice_id']) {
+                            && $paymentSubscription->getRelId() !== (int) $verifiedInvoiceId) {
                             throw new Payment_Exception('PayPal subscription ' . $ipn['subscr_id'] . ' is not linked to invoice ' . $tx['invoice_id']);
                         }
+                    }
+                    // A stale claim/error handler can overwrite receipt status
+                    // after the credit committed. The ledger checkpoint remains
+                    // authoritative, including after the deletion hold is gone.
+                    $retained = $this->di['em']->getConnection()->fetchAssociative(
+                        'SELECT client_id, amount FROM client_balance WHERE type = :type AND rel_id = :id',
+                        ['type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $id],
+                    );
+                    if ($retained !== false) {
+                        $received = PriceValidator::validateAmount($ipn['mc_gross'], 'PayPal payment amount');
+                        if ((int) $retained['client_id'] !== (int) $client_id || abs(round($received, 2) - (float) $retained['amount']) > 0.005) {
+                            throw new Payment_Exception('PayPal payment differs from its retained credit');
+                        }
+                        $this->completeReceipt($api_admin, $id);
+
+                        return;
                     }
                 } elseif (($ipn['payment_status'] ?? '') === 'Refunded') {
                     break;
@@ -195,7 +257,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $api_admin->invoice_transaction_update([
                         'id' => $id,
                         'txn_status' => (string) ($ipn['payment_status'] ?? ''),
-                        'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_RECEIVED,
+                        'status' => Transaction::STATUS_RECEIVED,
                         'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
@@ -214,66 +276,80 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $tx['txn_status'] = 'Completed';
                 }
 
-                if ($this->isIpnDuplicate($ipn)) {
-                    throw new Payment_Exception('Cannot process duplicate IPN');
-                }
-
                 $invoiceService = $this->di['mod_service']('Invoice');
-                $invoiceDbModel = null;
-                if (!empty($tx['invoice_id'])) {
-                    $invoiceDbModel = $this->di['em']->getRepository(Invoice::class)->find($tx['invoice_id']);
+                $invoiceDbModel = $this->di['em']->getRepository(Invoice::class)->find((int) $tx['invoice_id']);
+                $originalInvoice = $this->di['em']->getRepository(Invoice::class)->find((int) ($verifiedInvoiceId ?? $tx['invoice_id']));
+                if ($originalInvoice instanceof Invoice) {
+                    $this->verifyIpnEcho($ipn, $originalInvoice);
                 }
-
-                // For subscription renewals, generate a renewal invoice so
-                // we validate against the correct amount. Skip this for the
-                // initial payment (original invoice still unpaid) — that
-                // payment should go to the original invoice.
-                // Echoed references describe the original invoice, so check
-                // them before the renewal reassignment below changes it.
-                if ($invoiceDbModel instanceof Invoice) {
-                    $this->verifyIpnEcho($ipn, $invoiceDbModel);
+                $client = $this->di['em']->getRepository(Client::class)->find($client_id);
+                if (!$client instanceof Client) {
+                    throw new Payment_Exception('PayPal client not found');
                 }
+                if ($invoiceService->gatewayReceiptExists($gateway_id, (string) $ipn['txn_id'], $client, (float) $ipn['mc_gross'], 'PayPal transaction ' . $ipn['txn_id'], 'PayPal')) {
+                    $this->finishDuplicateReceipt($api_admin, $id, $gateway_id, (string) $ipn['txn_id']);
 
-                if ($isSubscriptionPayment && isset($ipn['subscr_id'])) {
-                    $originalAlreadyPaid = $invoiceDbModel instanceof Invoice
-                        && $invoiceDbModel->getStatus() === Invoice::STATUS_PAID;
+                    return;
+                }
+                if ($isSubscriptionPayment && $originalInvoice instanceof Invoice
+                    && (int) $tx['invoice_id'] === (int) $originalInvoice->getId()
+                    && $originalInvoice->getStatus() === Invoice::STATUS_PAID) {
+                    $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
+                    if (!$renewalInvoice instanceof Invoice || $renewalInvoice->getId() === null) {
+                        if ($invoiceService->gatewayReceiptExists($gateway_id, (string) $ipn['txn_id'], $client, (float) $ipn['mc_gross'], 'PayPal transaction ' . $ipn['txn_id'], ClientBalance::TYPE_PAYPAL_DEFERRED)) {
+                            $this->finishDuplicateReceipt($api_admin, $id, $gateway_id, (string) $ipn['txn_id']);
 
-                    if ($originalAlreadyPaid) {
-                        $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
-                        if (!$renewalInvoice instanceof Invoice || $renewalInvoice->getId() === null) {
-                            throw new Payment_Exception('Unable to generate a renewal invoice for subscription payment');
+                            return;
                         }
+                        $amount = PriceValidator::validateAmount($ipn['mc_gross'], 'PayPal payment amount');
+                        $this->di['em']->wrapInTransaction(function () use ($api_admin, $client_id, $amount, $id, $ipn, $gateway_id): void {
+                            $api_admin->client_balance_add_funds([
+                                'id' => $client_id, 'amount' => $amount,
+                                'description' => 'PayPal transaction ' . $ipn['txn_id'],
+                                'type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'rel_id' => (string) $id,
+                            ]);
+                            $credit = $this->di['em']->getRepository(ClientBalance::class)->findOneBy([
+                                'client' => $client_id, 'type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'relId' => (string) $id,
+                            ]);
+                            if (!$credit instanceof ClientBalance) {
+                                throw new Payment_Exception('Deferred PayPal receipt was not recorded');
+                            }
+                            $credit->setGatewayReceiptKey(hash('sha256', $gateway_id . ':' . $ipn['txn_id']))->setGatewayTransactionId($id);
+                            $this->di['em']->flush();
+                            $this->completeReceipt($api_admin, $id);
+                        });
 
-                        $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->getId()]);
-                        $tx['invoice_id'] = $renewalInvoice->getId();
-                        $invoiceDbModel = $renewalInvoice;
+                        return;
                     }
+                    $persistedTx = $this->di['em']->getRepository(Transaction::class)->find($id);
+                    if (!$persistedTx instanceof Transaction) {
+                        throw new Payment_Exception('PayPal transaction not found');
+                    }
+                    $persistedTx->setOriginalInvoiceId((int) $originalInvoice->getId());
+                    $persistedTx->setInvoice($renewalInvoice);
+                    $this->di['em']->flush();
+                    $tx['invoice_id'] = $renewalInvoice->getId();
+                    $invoiceDbModel = $renewalInvoice;
                 }
-
-                if ($invoiceDbModel instanceof Invoice) {
-                    $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
-                    $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
+                if (!$invoiceDbModel instanceof Invoice || (int) $invoiceDbModel->getClientId() !== (int) $client_id) {
+                    throw new Payment_Exception('PayPal payment invoice does not belong to the client');
                 }
-
-                $bd = [
-                    'id' => $client_id,
-                    'amount' => $ipn['mc_gross'],
-                    'description' => 'PayPal transaction ' . $ipn['txn_id'],
-                    'type' => 'PayPal',
-                    'rel_id' => $ipn['txn_id'],
-                ];
-
-                $api_admin->client_balance_add_funds($bd);
-
-                if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                if ($invoiceDbModel->getStatus() !== Invoice::STATUS_PAID) {
                     if (!$invoiceDbModel->isIssued()) {
                         $invoiceService->issueInvoice($invoiceDbModel, ['use_credits' => false]);
                     }
-                    $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
-                } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
-                    $invoiceService->markAsPaid($invoiceDbModel);
-                } elseif (empty($tx['invoice_id'])) {
-                    $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
+                }
+                $transaction = $this->di['em']->getRepository(Transaction::class)->find($id);
+                if (!$transaction instanceof Transaction) {
+                    throw new Payment_Exception('PayPal transaction or client not found');
+                }
+                $transaction->setInvoice($invoiceDbModel);
+                $transaction->setAmount((string) $ipn['mc_gross']);
+                $transaction->setCurrency((string) $ipn['mc_currency']);
+                if (!$invoiceService->recordGatewayPayment($transaction, $client, (string) $ipn['txn_id'], 'PayPal transaction ' . $ipn['txn_id'], 'PayPal', (string) $ipn['txn_id'])) {
+                    $this->finishDuplicateReceipt($api_admin, $id, $gateway_id, (string) $ipn['txn_id']);
+
+                    return;
                 }
                 $this->di['logger']->info('Applied PayPal transaction ' . $ipn['txn_id'] . ' to invoice ' . $tx['invoice_id']);
 
@@ -418,25 +494,281 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             && $ipn['payment_status'] == 'Refunded'
             && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment', 'recurring_payment'], true)
         ) {
-            $refd = [
-                'id' => $invoice['id'],
-                'note' => 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''),
-            ];
-            $api_admin->invoice_refund($refd);
+            $parent = $this->refundDeferredCredit($api_admin, $id, $ipn, $gateway_id, (int) $tx['invoice_id'], (int) $client_id);
+            if ($parent instanceof Transaction) {
+                $this->withReceiptLock($parent->getId(), function () use ($api_admin, $id, $ipn, $parent, $gateway_id, $client_id): void {
+                    $this->reconcileInvoiceRefund($api_admin, $id, $ipn, $parent, $gateway_id, (int) $client_id);
+                });
+            }
+
+            return;
         }
 
         if ($awaitingCompletion) {
             return;
         }
 
-        $d = [
+        $this->completeReceipt($api_admin, $id);
+    }
+
+    private function finishDuplicateReceipt($api, int $id, int $gatewayId, string $providerId): void
+    {
+        $em = $this->di['em'];
+        $key = hash('sha256', $gatewayId . ':' . $providerId);
+        $balances = $em->getRepository(ClientBalance::class);
+        $backing = $balances->findOneBy(['gatewayTransactionId' => $id]);
+        if ($backing instanceof ClientBalance && $backing->getGatewayReceiptKey() !== $key) {
+            throw new Payment_Exception('PayPal receipt is already linked to a different payment');
+        }
+        $canonical = $balances->findOneBy(['gatewayReceiptKey' => $key]);
+        $canonicalId = $canonical?->getGatewayTransactionId();
+        if ($canonicalId !== null) {
+            $complete = function () use ($api, $canonicalId, $gatewayId, $providerId): void {
+                $receipt = $this->di['em']->getRepository(Transaction::class)->find($canonicalId);
+                if (!$receipt instanceof Transaction) {
+                    throw new Payment_Exception('The recorded PayPal payment needs staff reconciliation');
+                }
+                $this->di['em']->refresh($receipt);
+                if ($receipt->getGateway()?->getId() !== $gatewayId || $receipt->getTxnId() !== $providerId || $receipt->getTxnStatus() !== 'Completed') {
+                    throw new Payment_Exception('The recorded PayPal payment differs from its receipt');
+                }
+                if ($receipt->getGatewayCompletionState() !== Transaction::GATEWAY_COMPLETION_DONE) {
+                    $credit = $this->di['em']->getRepository(ClientBalance::class)->findOneBy(['gatewayTransactionId' => $canonicalId]);
+                    $client = $credit?->getClient();
+                    if (!$client instanceof Client) {
+                        throw new Payment_Exception('The recorded PayPal payment needs staff reconciliation');
+                    }
+                    $this->di['mod_service']('Invoice')->recordGatewayPayment($receipt, $client, $providerId, (string) $credit->getDescription(), (string) $credit->getType(), $credit->getRelId());
+                }
+                $this->completeReceipt($api, $canonicalId);
+            };
+            if ($canonicalId === $id) {
+                $complete();
+
+                return;
+            }
+            $this->withReceiptLock($canonicalId, $complete);
+        } elseif ($backing instanceof ClientBalance) {
+            throw new Payment_Exception('The recorded PayPal payment needs staff reconciliation');
+        }
+        // Only a separate delivery without a wallet checkpoint is disposable.
+        $duplicate = $em->getRepository(Transaction::class)->find($id);
+        if ($duplicate instanceof Transaction) {
+            $em->remove($duplicate);
+            $em->flush();
+        }
+    }
+
+    private function completeReceipt($api, int $id): void
+    {
+        $api->invoice_transaction_update([
             'id' => $id,
             'error' => '',
             'error_code' => null,
-            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
+            'status' => Transaction::STATUS_PROCESSED,
             'updated_at' => date('Y-m-d H:i:s'),
-        ];
-        $api_admin->invoice_transaction_update($d);
+        ]);
+    }
+
+    private function withReceiptLock(int $id, callable $callback): mixed
+    {
+        $connection = $this->di['em']->getConnection();
+        $name = 'paypal_receipt_' . $id;
+        if (!NamedLock::acquire($connection, $name, 10)) {
+            throw new Payment_Exception('Another worker is processing this PayPal receipt. Please retry.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            NamedLock::release($connection, $name);
+        }
+    }
+
+    /** Resolve an ordinary payment receipt; handle deferred credits and unresolved receipts directly. */
+    private function refundDeferredCredit($api, int $id, array $ipn, int $gatewayId, int $invoiceId, int $clientId): ?Transaction
+    {
+        $parentId = $ipn['parent_txn_id'] ?? null;
+        if (!is_string($parentId) || $parentId === '') {
+            throw new Payment_Exception('PayPal refund is missing its original payment ID');
+        }
+        $settledInvoice = null;
+        $settledParent = null;
+        $parents = $this->di['em']->getRepository(Transaction::class)->findBy(['txnId' => $parentId, 'gateway' => $gatewayId]);
+        // Earlier failed deliveries can share the external ID. Find the receipt
+        // whose ledger entry actually retained the money, not an arbitrary row.
+        foreach ($parents as $parent) {
+            if ($parent->getId() === $id) {
+                continue;
+            }
+
+            // Wait for the original credit to commit, and serialize distinct or
+            // repeated refund callbacks against that same credit.
+            $handled = $this->withReceiptLock($parent->getId(), function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId, &$settledInvoice, &$settledParent): bool {
+                $this->di['em']->refresh($parent);
+                $handled = $this->di['em']->wrapInTransaction(function () use ($api, $id, $ipn, $parent, $invoiceId, $clientId): bool {
+                    $connection = $this->di['em']->getConnection();
+                    // Serialize wallet deductions on the same client mutex as
+                    // settlement. No balance availability check is needed: the
+                    // gateway already returned the money. Parent receipt locks
+                    // serialize these ledger checkpoints, so range locks would
+                    // only block unrelated clients' inserts on MySQL.
+                    $connection->fetchOne(
+                        'SELECT id FROM client WHERE id = :client_id' . RowLock::suffix($connection),
+                        ['client_id' => $clientId],
+                    );
+                    $credit = $connection->fetchAssociative(
+                        'SELECT client_id, amount FROM client_balance WHERE client_id = :client_id AND type = :type AND rel_id = :id',
+                        ['client_id' => $clientId, 'type' => ClientBalance::TYPE_PAYPAL_DEFERRED, 'id' => (string) $parent->getId()],
+                    );
+                    if ($credit === false) {
+                        return false;
+                    }
+                    $this->di['em']->refresh($parent);
+                    if ($parent->getInvoice()?->getId() !== $invoiceId || (int) $credit['client_id'] !== $clientId) {
+                        throw new Payment_Exception('PayPal refund does not match the deferred payment owner');
+                    }
+                    $this->validateCurrency($ipn['mc_currency'] ?? null, $parent->getCurrency());
+                    $amount = PriceValidator::validateSignedAmount($ipn['mc_gross'] ?? null, 'PayPal refund amount');
+                    $refundId = $ipn['txn_id'] ?? null;
+                    if ($amount >= 0 || round(-$amount, 2) <= 0 || !is_string($refundId) || $refundId === '' || strlen($refundId) > 20 || $refundId === $parent->getTxnId()) {
+                        throw new Payment_Exception('PayPal refund details are invalid');
+                    }
+                    $amount = round(-$amount, 2);
+                    $type = ClientBalance::TYPE_PAYPAL_DEFERRED_REFUND_PREFIX . $parent->getId();
+                    $refunds = $connection->fetchAllAssociative(
+                        'SELECT rel_id, amount FROM client_balance WHERE client_id = :client_id AND type = :type',
+                        ['client_id' => $clientId, 'type' => $type],
+                    );
+                    $refunded = 0.0;
+                    $duplicate = false;
+                    foreach ($refunds as $refund) {
+                        $refunded -= (float) $refund['amount'];
+                        if ($refund['rel_id'] === $refundId) {
+                            if (abs((float) $refund['amount'] + $amount) > 0.005) {
+                                throw new Payment_Exception('PayPal refund amount differs from the recorded refund');
+                            }
+                            $duplicate = true;
+                        }
+                    }
+                    if (!$duplicate) {
+                        if ($refunded + $amount - (float) $credit['amount'] > 0.005) {
+                            throw new Payment_Exception('PayPal refunds exceed the deferred payment');
+                        }
+                        // The gateway already returned this money. Record the debt
+                        // even if the credit was spent; never refund the old invoice.
+                        $api->client_balance_add_funds([
+                            'id' => $clientId,
+                            'amount' => -$amount,
+                            'description' => 'PayPal refund ' . $refundId . ' for deferred payment ' . $parent->getTxnId(),
+                            'type' => $type,
+                            'rel_id' => $refundId,
+                        ]);
+                    }
+                    $this->completeReceipt($api, $id);
+
+                    return true;
+                });
+                $parentInvoice = $parent->getInvoice();
+                if ($parentInvoice instanceof Invoice) {
+                    $this->di['em']->refresh($parentInvoice);
+                }
+                if (!$handled && $parent->getStatus() === Transaction::STATUS_PROCESSED && $parent->getTxnStatus() === 'Completed'
+                    && $parentInvoice instanceof Invoice && $parentInvoice->getClientId() === $clientId
+                    && in_array($parentInvoice->getStatus(), [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true)) {
+                    if ($settledInvoice !== null && $settledInvoice->getId() !== $parentInvoice->getId()) {
+                        throw new Payment_Exception('PayPal refund has conflicting original payment invoices');
+                    }
+                    $settledInvoice = $parentInvoice;
+                    $settledParent = $parent;
+                }
+
+                return $handled;
+            });
+            if ($handled) {
+                return null;
+            }
+        }
+
+        if ($settledInvoice !== null) {
+            return $settledParent;
+        }
+
+        // A refund may arrive before its completed-payment callback is stored
+        // or processed. Absence of a credit is not proof of invoice settlement.
+        $api->invoice_transaction_update([
+            'id' => $id,
+            'status' => Transaction::STATUS_RECEIVED,
+            'error' => 'PayPal refund is awaiting its original payment receipt. Retry after payment reconciliation.',
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        return null;
+    }
+
+    /** Runs under both the refund receipt mutex and its original payment mutex. */
+    private function reconcileInvoiceRefund($api, int $id, array $ipn, Transaction $parent, int $gatewayId, int $clientId): void
+    {
+        $em = $this->di['em'];
+        $em->refresh($parent);
+        $invoice = $parent->getInvoice();
+        if ($invoice instanceof Invoice) {
+            $em->refresh($invoice);
+        }
+        if (!$invoice instanceof Invoice || $invoice->getClientId() !== $clientId
+            || $parent->getGateway()?->getId() !== $gatewayId || $parent->getTxnId() !== ($ipn['parent_txn_id'] ?? null)
+            || $parent->getStatus() !== Transaction::STATUS_PROCESSED || $parent->getTxnStatus() !== 'Completed'
+            || !in_array($invoice->getStatus(), [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true)) {
+            throw new Payment_Exception('PayPal refund no longer matches its settled payment');
+        }
+        $this->validateCurrency($ipn['mc_currency'] ?? null, $parent->getCurrency());
+        $this->validateCurrency($ipn['mc_currency'] ?? null, $invoice->getCurrency());
+        $amount = PriceValidator::validateSignedAmount($ipn['mc_gross'] ?? null, 'PayPal refund amount');
+        $refundId = $ipn['txn_id'] ?? null;
+        if ($amount >= 0 || round(-$amount, 2) <= 0 || !is_string($refundId) || $refundId === '' || strlen($refundId) > 20 || $refundId === $parent->getTxnId()) {
+            throw new Payment_Exception('PayPal refund details are invalid');
+        }
+        $total = round($this->di['mod_service']('Invoice')->getTotalWithTax($invoice), 2);
+        // The invoice API refunds whole line quantities, not arbitrary cash
+        // amounts. Never turn a partial gateway refund into a full credit note.
+        // Existing partial accounting also requires staff reconciliation.
+        if (abs(round(-$amount, 2) - (float) $parent->getAmount()) > 0.005
+            || abs(round(-$amount, 2) - $total) > 0.005
+            || ($invoice->getStatus() === Invoice::STATUS_PAID && (float) $invoice->getRefund() !== 0.0)
+            || ($invoice->getStatus() === Invoice::STATUS_REFUNDED && abs((float) $invoice->getRefund() - $total) > 0.005)) {
+            $api->invoice_transaction_update([
+                'id' => $id,
+                'status' => Transaction::STATUS_RECEIVED,
+                'error' => 'PayPal refund requires staff reconciliation: the refund does not match an unrefunded full invoice.',
+            ]);
+
+            return;
+        }
+        $receipt = $em->find(Transaction::class, $id);
+        if (!$receipt instanceof Transaction) {
+            throw new Payment_Exception('PayPal refund receipt no longer exists');
+        }
+        $em->refresh($receipt);
+        if ($receipt->getGateway()?->getId() !== $gatewayId || $receipt->getInvoice()?->getClientId() !== $clientId
+            || $receipt->getTxnId() !== $refundId || $receipt->getTxnStatus() !== 'Refunded'
+            || abs((float) $receipt->getAmount() - $amount) > 0.005) {
+            throw new Payment_Exception('PayPal refund differs from its stored receipt');
+        }
+        $this->validateCurrency($receipt->getCurrency(), $invoice->getCurrency());
+        if ($receipt->getInvoice()->getId() !== $invoice->getId()) {
+            if ($invoice->getStatus() === Invoice::STATUS_REFUNDED && $receipt->getStatus() !== Transaction::STATUS_PROCESSED) {
+                // Only this authenticated refund recovery may bind a receipt to
+                // an already-refunded invoice. Ordinary API updates stay blocked.
+                $receipt->setInvoice($invoice);
+                $em->flush();
+            } else {
+                $api->invoice_transaction_update(['id' => $id, 'invoice_id' => $invoice->getId()]);
+            }
+        }
+        if ($invoice->getStatus() !== Invoice::STATUS_REFUNDED) {
+            $api->invoice_refund(['id' => $invoice->getId(), 'note' => 'PayPal refund ' . $parent->getTxnId(), 'expected_amount' => round(-$amount, 2)]);
+        }
+        $this->completeReceipt($api, $id);
     }
 
     /**
@@ -510,7 +842,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if (!is_string($candidateTxnId) || $candidateTxnId === '') {
                     continue;
                 }
-                $earlier = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->findActiveByTxnIdAndGatewayId($candidateTxnId, $gatewayId, $currentTxId);
+                $earlier = $this->di['em']->getRepository(Transaction::class)->findActiveByTxnIdAndGatewayId($candidateTxnId, $gatewayId, $currentTxId);
                 $earlierInvoice = $earlier?->getInvoice();
                 if ($earlierInvoice instanceof Invoice && (int) $earlierInvoice->getId() === $invoiceId) {
                     $this->di['logger']->info('Accepted unsigned PayPal callback continuing transaction ' . $candidateTxnId . ' on invoice ' . $invoiceId);
@@ -784,6 +1116,11 @@ document.addEventListener('DOMContentLoaded', function() {
         $data['cmd'] = '_xclick';
         $data['amount'] = $this->moneyFormat($invoice['subtotal'], $invoice['currency']);
         $data['tax'] = $this->moneyFormat($invoice['tax'], $invoice['currency']);
+        // A part-paid invoice asks for its balance due.
+        if (($invoice['amount_paid'] ?? 0) > 0 && ($invoice['status'] ?? null) === Invoice::STATUS_UNPAID) {
+            $data['amount'] = $this->moneyFormat($invoice['balance_due'], $invoice['currency']);
+            $data['tax'] = $this->moneyFormat(0, $invoice['currency']);
+        }
         $data['bn'] = 'FOSSBilling_SP';
         $data['charset'] = 'utf-8';
 

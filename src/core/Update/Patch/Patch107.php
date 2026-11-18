@@ -33,7 +33,7 @@ class Patch107 implements PatchInterface
                     `sort_order` int(11) NOT NULL DEFAULT \'0\',
                     PRIMARY KEY (`id`),
                     UNIQUE KEY `product_payment_period_unique` (`product_payment_id`,`code`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;'
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;'
             );
         }
 
