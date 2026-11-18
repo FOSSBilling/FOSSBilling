@@ -4107,3 +4107,19 @@ test('hosting renewed moments before an overdue domain covers the same calendar 
     $service->getDi()['mod_config'] = $service->getDi()->protect(fn (): array => ['order_renewal_logic' => $logic]);
     expect($service->hasFreeDomainRenewal(20))->toBeTrue();
 })->with(['from_today', 'from_greater']);
+
+test('renewal draft pruning releases promo reservations only for that order and invoice', function (): void {
+    $redemption = (new PromoRedemption())->setPhase(PromoRedemption::PHASE_RENEWAL)->setStatus(PromoRedemption::STATUS_RESERVED);
+    $repo = Mockery::mock(PromoRedemptionRepository::class);
+    $repo->shouldReceive('findBy')->once()->with(['clientOrderId' => 10, 'status' => PromoRedemption::STATUS_RESERVED, 'invoiceId' => 11])->andReturn([$redemption]);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PromoRedemption::class)->andReturn($repo);
+    $em->shouldReceive('flush')->once();
+    $service = new Service();
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+    $service->releaseReservedPromoRedemptionsForOrder(createEntity(Order::class, ['id' => 10]), 'renewal_cancellation_hold', 11);
+    expect($redemption->getStatus())->toBe(PromoRedemption::STATUS_RELEASED)
+        ->and($redemption->getReleaseReason())->toBe('renewal_cancellation_hold');
+});

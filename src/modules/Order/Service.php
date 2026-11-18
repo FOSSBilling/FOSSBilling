@@ -1109,7 +1109,7 @@ class Service implements InjectionAwareInterface
                 try {
                     // Promo lines are added explicitly below so the first
                     // invoice records a checkout redemption, not a renewal one.
-                    $invoice = $invoiceService->generateForOrder($order, null, false);
+                    $invoice = $invoiceService->generateInitialInvoiceForOrder($order);
                 } catch (InformationException $e) {
                     $this->di['logger']->warning($e->getMessage());
                 }

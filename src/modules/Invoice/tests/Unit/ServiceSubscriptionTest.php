@@ -722,3 +722,15 @@ test('immediate cancellation requires gateway support for each live subscription
     $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): object => $gatewayService);
     expect($service->canCancelImmediatelyForOrder($order))->toBe($expected);
 })->with([[false, 'active', false], [true, 'active', true], [false, 'pending_cancellation', false], [false, 'canceled', true]]);
+
+test('unconfirmed gateway subscription states prevent free renewals', function (string $status, bool $held): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('sub_retry')->setStatus($status);
+    $repo = Mockery::mock(SubscriptionRepository::class);
+    $repo->shouldReceive('find')->with(7)->andReturn($subscription);
+    $service = subscriptionService(subRepo: $repo);
+    $dbal = createSubscriptionDbal();
+    $dbal->update('subscription', ['status' => $status], ['id' => 7]);
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($dbal);
+    expect($service->hasUncanceledSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBe($held);
+})->with([['past_due', true], ['unpaid', true], ['paused', true], ['pending_cancellation', true], ['canceled', false]]);

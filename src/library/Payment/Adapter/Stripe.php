@@ -1018,14 +1018,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     {
         $stripeSubscription = $event->data->object;
 
-        $status = ($stripeSubscription->cancel_at_period_end ?? false)
-            ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION
-            : match ($stripeSubscription->status) {
-                'active' => 'active',
-                'trialing' => 'active',
-                'past_due' => 'active',
-                default => 'canceled',
-            };
+        $status = in_array($stripeSubscription->status, ['canceled', 'incomplete_expired'], true)
+            ? 'canceled'
+            : (($stripeSubscription->cancel_at_period_end ?? false)
+                ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION : 'active');
 
         try {
             $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
@@ -1180,20 +1176,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
     private function handleInvoicePaymentFailed($api_admin, Transaction $tx, object $event): bool
     {
-        $stripeInvoice = $this->resolveStripeInvoice($event->data->object);
-
-        $subscriptionId = $this->extractSubscriptionId($stripeInvoice);
-
-        if ($stripeInvoice === null || $subscriptionId === null) {
-            return false;
-        }
-
-        try {
-            $this->updateSubscriptionStatusFromGateway($api_admin, $subscriptionId, 'canceled');
-        } catch (Exception $e) {
-            $this->debugLog('Stripe invoice payment failed webhook: ' . $e->getMessage());
-        }
-
+        // A failed invoice can still be retried. Only subscription lifecycle
+        // events establish whether collection has ended at the provider.
         return false;
     }
 

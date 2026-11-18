@@ -1881,23 +1881,45 @@ class Service implements InjectionAwareInterface
 
     public function issueInvoice(Invoice $invoice, array $data): bool
     {
-        $orderIds = array_map(intval(...), array_column($this->di['em']->getConnection()->fetchAllAssociative(
+        $orderIds = $this->renewalOrderIds($invoice);
+
+        return $this->withRenewalQuoteLocks($orderIds, fn (): bool => $this->issueInvoiceWithRenewalLock($invoice, $data, $orderIds));
+    }
+
+    /** @return list<int> */
+    private function renewalOrderIds(Invoice $invoice): array
+    {
+        $ids = array_map(intval(...), array_column($this->di['em']->getConnection()->fetchAllAssociative(
             "SELECT DISTINCT rel_id FROM invoice_item WHERE invoice_id = ? AND type = 'order' AND task = 'renew'",
             [$invoice->getId()]
         ), 'rel_id'));
+        sort($ids);
 
-        return $this->withRenewalQuoteLocks($orderIds, fn (): bool => $this->issueInvoiceWithRenewalLock($invoice, $data, $orderIds));
+        return $ids;
     }
 
     private function issueInvoiceWithRenewalLock(Invoice $invoice, array $data, array $renewalOrderIds): bool
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceIssueEvent((int) $invoice->getId()));
 
-        $issued = $this->di['em']->wrapInTransaction(function () use ($invoice, $data, $renewalOrderIds): bool {
+        $renewalBlocked = false;
+        $quoteChanged = false;
+        $issued = $this->di['em']->wrapInTransaction(function () use ($invoice, $data, $renewalOrderIds, &$renewalBlocked, &$quoteChanged): bool {
             $this->lockAndRefreshInvoice($invoice);
+            if ($this->invoiceHasDeletionHold($invoice)) {
+                return false;
+            }
             if (!$invoice->isIssued()) {
-                foreach ($renewalOrderIds as $id) {
-                    $this->assertNoCancellationRequest($id);
+                if ($this->renewalOrderIds($invoice) !== $renewalOrderIds) {
+                    $quoteChanged = true;
+
+                    return false;
+                }
+                $held = array_values(array_filter($renewalOrderIds, $this->hasRenewalHold(...)));
+                if ($held !== [] && !$this->removeHeldRenewalsFromDraft($invoice, $held)) {
+                    $renewalBlocked = true;
+
+                    return false;
                 }
             }
 
@@ -1906,9 +1928,6 @@ class Service implements InjectionAwareInterface
             // canceled rows keep their state); this guard is about drafts.
             if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Only unpaid draft invoices can be issued.');
-            }
-            if ($this->invoiceHasDeletionHold($invoice)) {
-                return false;
             }
 
             // Freeze the parties from the live records and claim the number
@@ -1931,6 +1950,13 @@ class Service implements InjectionAwareInterface
             return true;
         });
         if (!$issued) {
+            if ($quoteChanged) {
+                throw new InformationException('The renewal invoice changed. Reload it and retry issuance.');
+            }
+            if ($renewalBlocked) {
+                throw new InformationException('Cancellation prevents issuing this renewal invoice. Withdraw the request or have staff review the order and any received payment.');
+            }
+
             return false;
         }
 
@@ -1954,6 +1980,54 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Issued invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return true;
+    }
+
+    /** Caller holds the invoice row and every renewal order's request mutex. */
+    private function removeHeldRenewalsFromDraft(Invoice $invoice, array $heldOrderIds): bool
+    {
+        // Never rewrite a quote after incoming money has been linked to it.
+        if ($this->getAmountPaid($invoice) > 0 || $this->getTransactionRepository()->findOneBy(['invoice' => $invoice]) !== null) {
+            return false;
+        }
+        $em = $this->di['em'];
+        $orders = $this->di['mod_service']('Order');
+        $feeRemoved = false;
+        $remaining = 0;
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            $em->refresh($item);
+            $held = in_array((int) $item->getRelId(), $heldOrderIds, true)
+                && (($item->getType() === InvoiceItem::TYPE_ORDER && $item->getTask() === InvoiceItem::TASK_RENEW)
+                    || ($item->getType() === InvoiceItem::TYPE_CUSTOM && $item->getUnit() === 'discount'));
+            if ($held || $item->getTask() === ServiceGatewayFees::TASK) {
+                $feeRemoved = $feeRemoved || $item->getTask() === ServiceGatewayFees::TASK;
+                $em->remove($item);
+            } else {
+                ++$remaining;
+            }
+        }
+        foreach ($heldOrderIds as $id) {
+            $order = $em->getRepository(Order::class)->find($id);
+            if (!$order instanceof Order) {
+                continue;
+            }
+            $em->refresh($order);
+            if ($order->getUnpaidInvoiceId() === $invoice->getId()) {
+                $orders->unsetUnpaidInvoice($order);
+            }
+            $this->di['mod_service']('Product')->releaseReservedPromoRedemptionsForOrder($order, 'renewal_cancellation_hold', (int) $invoice->getId());
+            foreach (['free_domain_renewal_invoice_', 'domain_renewal_zero_price_invoice_'] as $prefix) {
+                $em->getConnection()->delete('client_order_meta', ['client_order_id' => $id, 'name' => $prefix . $invoice->getId()]);
+            }
+        }
+        if ($remaining === 0) {
+            $invoice->setStatus(Invoice::STATUS_CANCELED);
+        }
+        $em->flush();
+        if ($remaining > 0 && $feeRemoved) {
+            $this->di['mod_service']('Invoice', 'GatewayFees')->apply($invoice, $invoice->getGateway());
+        }
+
+        return $remaining > 0;
     }
 
     private function assignInvoiceNumberIfMissing(Invoice $invoice): void
@@ -5032,19 +5106,27 @@ class Service implements InjectionAwareInterface
         return ['price' => $price, 'line' => $line];
     }
 
-    /**
-     * @param int $due_days
-     */
+    /** Initial activation joins the transaction that creates the new order. */
+    public function generateInitialInvoiceForOrder(Order $order): Invoice
+    {
+        if ($order->getStatus() !== Order::STATUS_PENDING_SETUP || $order->getUnpaidInvoiceId() !== null
+            || !$this->di['em']->getConnection()->isTransactionActive()) {
+            throw new InformationException('Initial invoicing requires a new pending order inside its creation transaction.');
+        }
+
+        return $this->generateForOrderLocked($order, null, false, InvoiceItem::TASK_ACTIVATE);
+    }
+
     public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
     {
         return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo): Invoice {
-            $this->assertNoCancellationRequest((int) $order->getId());
+            $this->assertNoRenewalHold((int) $order->getId());
 
             return $this->di['em']->getConnection()->transactional(fn (): Invoice => $this->generateForOrderLocked($order, $due_days, $applyPromo));
         });
     }
 
-    private function generateForOrderLocked(Order $order, $due_days, bool $applyPromo): Invoice
+    private function generateForOrderLocked(Order $order, $due_days, bool $applyPromo, string $task = InvoiceItem::TASK_RENEW): Invoice
     {
         if ($order->getId() !== null) {
             \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
@@ -5084,7 +5166,7 @@ class Service implements InjectionAwareInterface
         $this->setInvoiceDefaults($proforma);
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
+        $invoiceItemService->generateFromOrder($proforma, $order, $task, $price, $line, $applyPromo);
 
         // invoice due date
         if ($due_days > 0) {
@@ -5173,7 +5255,13 @@ class Service implements InjectionAwareInterface
     public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true): Invoice
     {
         return $this->withRenewalQuoteLocks($orders, function () use ($orders, $applyPromo): Invoice {
-            $eligible = array_values(array_filter($orders, fn (Order $order): bool => !$this->hasCancellationRequest((int) $order->getId())));
+            foreach ($orders as $order) {
+                if ($order->getId() !== null) {
+                    \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
+                }
+            }
+
+            $eligible = array_values(array_filter($orders, fn (Order $order): bool => !$this->hasRenewalHold((int) $order->getId())));
 
             return $this->generateMergedInvoiceForOrdersLocked($eligible, $applyPromo);
         });
@@ -5184,12 +5272,6 @@ class Service implements InjectionAwareInterface
         $first = reset($orders);
         if (!$first instanceof Order) {
             throw new InformationException('No orders were provided for the merged renewal invoice.');
-        }
-
-        foreach ($orders as $order) {
-            if ($order->getId() !== null) {
-                \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
-            }
         }
 
         $client = $this->di['em']->getRepository(Client::class)->find($first->getClientId())
@@ -5267,18 +5349,30 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    private function hasCancellationRequest(int $orderId): bool
+    private function hasRenewalHold(int $orderId): bool
     {
-        return (int) $this->di['em']->getConnection()->fetchOne(
+        $connection = $this->di['em']->getConnection();
+        if ((int) $connection->fetchOne(
             'SELECT id FROM client_order_cancel_request WHERE client_order_id = ? AND status = ?',
             [$orderId, \Box\Mod\Order\Entity\ClientOrderCancelRequest::STATUS_PENDING]
-        ) > 0;
+        ) > 0) {
+            return true;
+        }
+        if ((int) $connection->fetchOne(
+            "SELECT id FROM client_order_meta WHERE client_order_id = ? AND ((name = ? AND value = '1') OR (name = ? AND value IN ('1', '2')))",
+            [$orderId, \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END, \Box\Mod\Order\Service::META_SCHEDULED_CANCEL_CLAIM]
+        ) > 0) {
+            return true;
+        }
+
+        return $connection->fetchOne('SELECT status FROM client_order WHERE id = ?', [$orderId]) === Order::STATUS_CANCELED;
     }
 
-    private function assertNoCancellationRequest(int $orderId): void
+    private function assertNoRenewalHold(int $orderId): void
     {
-        if ($this->hasCancellationRequest($orderId)) {
-            throw new InformationException('Withdraw the pending cancellation request before renewing this service.');
+        \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId);
+        if ($this->hasRenewalHold($orderId)) {
+            throw new InformationException('Withdraw the cancellation request or have staff resolve the order hold before renewing this service.');
         }
     }
 

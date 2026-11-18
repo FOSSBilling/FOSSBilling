@@ -23,7 +23,7 @@ function receiptTestContext(?Doctrine\DBAL\Connection $connection = null): array
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new EntityManager($connection ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
-    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Transaction::class]));
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, ClientBalance::class, PayGateway::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\InvoiceCredit::class, Box\Mod\Order\Entity\Order::class, Box\Mod\Order\Entity\OrderMeta::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Transaction::class]));
     $client = (new Client())->setCurrency('USD');
     $gateway = (new PayGateway())->setGateway('Stripe');
     $em->persist($client);

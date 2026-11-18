@@ -369,7 +369,7 @@ class ServiceSubscription implements InjectionAwareInterface
     public function hasUncanceledSubscriptionForOrder(Order $order): bool
     {
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
-            if (in_array($subscription->getStatus(), ['active', self::STATUS_PENDING_CANCELLATION], true)
+            if ($subscription->getStatus() !== 'canceled'
                 && trim((string) $subscription->getSid()) !== '') {
                 return true;
             }

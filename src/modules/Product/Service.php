@@ -2281,13 +2281,17 @@ class Service implements InjectionAwareInterface
         $this->releasePromoRedemptions($redemptions, $reason);
     }
 
-    public function releaseReservedPromoRedemptionsForOrder(Order $order, string $reason): void
+    public function releaseReservedPromoRedemptionsForOrder(Order $order, string $reason, ?int $invoiceId = null): void
     {
         $orderId = $order->getId();
-        $redemptions = $this->getPromoRedemptionRepository()->findBy([
+        $criteria = [
             'clientOrderId' => (int) $orderId,
             'status' => PromoRedemption::STATUS_RESERVED,
-        ]);
+        ];
+        if ($invoiceId !== null) {
+            $criteria['invoiceId'] = $invoiceId;
+        }
+        $redemptions = $this->getPromoRedemptionRepository()->findBy($criteria);
 
         $this->releasePromoRedemptions($redemptions, $reason);
     }

@@ -2212,9 +2212,9 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     $invoiceModel = orderServiceCreateInvoiceModel(10);
 
     $invoiceServiceMock = Mockery::mock();
-    $invoiceServiceMock->shouldReceive('generateForOrder')
+    $invoiceServiceMock->shouldReceive('generateInitialInvoiceForOrder')
         ->once()
-        ->with(Mockery::any(), null, false)
+        ->with(Mockery::any())
         ->andReturn($invoiceModel);
     $invoiceServiceMock->shouldReceive('issueInvoice')
         ->once()
@@ -3834,9 +3834,9 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     $invoiceModel = orderServiceCreateInvoiceModel(10);
 
     $invoiceServiceMock = Mockery::mock();
-    $invoiceServiceMock->shouldReceive('generateForOrder')
+    $invoiceServiceMock->shouldReceive('generateInitialInvoiceForOrder')
         ->once()
-        ->with(Mockery::any(), null, false)
+        ->with(Mockery::any())
         ->andReturn($invoiceModel);
     $invoiceServiceMock->shouldReceive('issueInvoice')
         ->once()
@@ -3950,9 +3950,9 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
     $invoiceServiceMock = Mockery::mock();
-    $invoiceServiceMock->shouldReceive('generateForOrder')
+    $invoiceServiceMock->shouldReceive('generateInitialInvoiceForOrder')
         ->once()
-        ->with(Mockery::any(), null, false)
+        ->with(Mockery::any())
         ->andThrow(new FOSSBilling\Core\Exception\InformationException('Invoices are not generated for negative amount orders.'));
     $invoiceServiceMock->shouldReceive('issueInvoice')->never();
 
@@ -4752,9 +4752,9 @@ test('createOrder applies a promo code and records the discount', function (): v
     $invoiceModel = orderServiceCreateInvoiceModel(10);
 
     $invoiceServiceMock = Mockery::mock();
-    $invoiceServiceMock->shouldReceive('generateForOrder')
+    $invoiceServiceMock->shouldReceive('generateInitialInvoiceForOrder')
         ->once()
-        ->with(Mockery::type(Order::class), null, false)
+        ->with(Mockery::type(Order::class))
         ->andReturn($invoiceModel);
     $invoiceServiceMock->shouldReceive('issueInvoice')->once()->andReturn(true);
 
