@@ -371,7 +371,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     }
 
     /** Restore repositories and listeners before cron moves to the next ticket or module. */
-    private function recoverEntityManager(): void
+    public function recoverEntityManager(): void
     {
         $manager = $this->di['em'];
         if ($manager->isOpen()) {
@@ -379,7 +379,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         }
         $connection = $manager->getConnection();
         if ($connection->isTransactionActive()) {
-            throw new \LogicException('Ticket closure must unwind before its entity manager can be replaced.');
+            throw new \LogicException('Support transactions must unwind before their entity manager can be replaced.');
         }
         $connection->fetchOne('SELECT 1');
         $replacement = EntityManagerFactory::create($connection);

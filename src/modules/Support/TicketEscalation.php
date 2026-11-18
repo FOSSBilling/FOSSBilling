@@ -188,6 +188,10 @@ final class TicketEscalation
                     self::log($di, 'escalation rule "' . $rule['name'] . '" failed on ticket #' . $ticket['id'] . ': ' . $e->getMessage());
                 }
                 if (!$di['em']->isOpen()) {
+                    // apply() has finished its outer transaction; the attempt marker
+                    // is durable and a fresh manager can safely serve later cron work.
+                    $di['mod_service']('support')->recoverEntityManager();
+
                     return $acted;
                 }
             }

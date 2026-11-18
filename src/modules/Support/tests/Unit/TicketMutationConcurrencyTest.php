@@ -138,7 +138,7 @@ test('ticket deletion serializes concurrent note message and history writes', fu
     }
 })->with(['sqlite', 'mysql', 'pgsql'])->with(['note', 'message', 'edit']);
 
-test('failed escalation SQL rolls back its actions while retaining the once per reply marker', function (string $driver, string $failure): void {
+test('failed escalation actions retain their attempt marker and leave cron usable', function (string $driver, string $failure): void {
     [$db, $params, $service, $ticket, $message, $cleanup] = supportMutationDatabase($driver, [
         Box\Mod\Support\Entity\SupportEscalationRule::class, Box\Mod\Support\Entity\SupportEscalationApplied::class,
     ]);
@@ -149,12 +149,32 @@ test('failed escalation SQL rolls back its actions while retaining the once per 
         $db->update('support_ticket_message', ['created_at' => date('Y-m-d H:i:s', time() - 3660)], ['id' => 1]);
         $db->insert('support_escalation_rule', [
             'id' => 1, 'name' => 'Failure regression', 'active' => 1, 'helpdesks' => '[]', 'statuses' => '["open"]', 'priorities' => '[]',
-            'minutes' => 60, 'new_status' => '', 'new_priority' => '', 'notify' => '[]', 'reply' => 'Escalate',
+            'minutes' => 60, 'new_status' => $failure === 'status_update' ? 'closed' : '', 'new_priority' => '', 'notify' => '[]', 'reply' => $failure === 'status_update' ? '' : 'Escalate',
             'created_at' => date('Y-m-d H:i:s', time() - 120), 'updated_at' => date('Y-m-d H:i:s'),
         ]);
         $di = $service->getDi();
+        $originalManager = $di['em'];
+        $originalRepository = $service->getSupportTicketRepository();
+        $listenerManagers = [];
+        $di['event_dispatcher'] = new FOSSBilling\Core\Events\EventDispatcher(fn (): array => ['invoice'], function () use ($di, &$listenerManagers): object {
+            $bound = $di['em'];
+            $listenerManagers[] = $bound;
+            $listener = Mockery::mock(Box\Mod\Invoice\Service::class)->shouldIgnoreMissing();
+            $listener->shouldReceive('healMissingJournalEntries')->zeroOrMoreTimes()->andReturnUsing(function () use ($bound): void {
+                expect($bound->isOpen())->toBeTrue();
+                $note = (new SupportTicketNote())->setSupportTicket($bound->getReference(SupportTicket::class, 1))->setNote('After-cron listener');
+                $bound->persist($note);
+                $bound->flush();
+            });
+
+            return $listener;
+        });
+        $di['event_dispatcher']->dispatch(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
         if ($failure === 'orm_flush') {
             $db->executeStatement('CREATE UNIQUE INDEX reject_second_reply ON support_ticket_message (support_ticket_id)');
+            $support = $service;
+        } elseif ($failure === 'status_update') {
+            // The close status flush succeeds before the absent outbox insert fails.
             $support = $service;
         } else {
             $support = Mockery::mock(Service::class);
@@ -174,9 +194,25 @@ test('failed escalation SQL rolls back its actions while retaining the once per 
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_note'))->toBe(0)
             ->and(Box\Mod\Support\TicketEscalation::run($di))->toBe(0)
             ->and($db->isTransactionActive())->toBeFalse()
-            ->and($di['em']->isOpen())->toBe($failure !== 'orm_flush')
-            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_message'))->toBe(1);
+            ->and($di['em']->isOpen())->toBeTrue()
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_message'))->toBe(1)
+            ->and($service->getTicketById(1)->getStatus())->toBe('open');
+        if ($failure !== 'raw_sql') {
+            expect($originalManager->isOpen())->toBeFalse()
+                ->and($di['em'])->not->toBe($originalManager)
+                ->and($service->getSupportTicketRepository())->not->toBe($originalRepository);
+        }
+        // Subsequent cron modules can persist using the shared replacement.
+        foreach (['client', 'cart', 'email'] as $task) {
+            $manager = $di['em'];
+            $note = (new SupportTicketNote())->setSupportTicket($manager->getReference(SupportTicket::class, 1))->setNote($task);
+            $manager->persist($note);
+            $manager->flush();
+        }
+        $di['event_dispatcher']->dispatch(new Box\Mod\Cron\Event\AfterAdminCronRunEvent());
+        expect($listenerManagers)->toBe($failure === 'raw_sql' ? [$originalManager] : [$originalManager, $di['em']])
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_note'))->toBe(4);
     } finally {
         $cleanup();
     }
-})->with(['sqlite', 'mysql', 'pgsql'])->with(['raw_sql', 'orm_flush']);
+})->with(['sqlite', 'mysql', 'pgsql'])->with(['raw_sql', 'orm_flush', 'status_update']);
