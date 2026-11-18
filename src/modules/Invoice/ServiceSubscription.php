@@ -88,6 +88,20 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->persistUpdate($model, ['status' => $status]);
     }
 
+    public function updateStatusForGatewayLink(int $id, string $sid, int $gatewayId, string $status): void
+    {
+        // Compare the link in the write itself. An administrator may change it
+        // while the adapter is waiting for the provider.
+        $this->di['em']->getConnection()->update('subscription', [
+            'status' => $status,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], ['id' => $id, 'sid' => $sid, 'pay_gateway_id' => $gatewayId]);
+        $model = $this->subscriptionRepository->find($id);
+        if ($model instanceof Subscription) {
+            $this->di['em']->refresh($model);
+        }
+    }
+
     private function persistUpdate(Subscription $model, array $data): bool
     {
         $model->setStatus($data['status'] ?? $model->getStatus());
@@ -257,15 +271,14 @@ class ServiceSubscription implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
         }
 
-        // A status update may arrive before the deletion webhook and already
-        // mark this row canceled. The deletion event still has to finish any
-        // order with an outstanding scheduled-cancellation marker.
+        // The provider result survives a failure in local service cleanup.
+        $this->persistUpdate($subscription, ['status' => 'canceled']);
         if ($subscription->getRelType() === 'invoice') {
             $query = $this->di['em']->getConnection()->createQueryBuilder();
             $orderIds = $query
                 ->select('DISTINCT ii.rel_id')
                 ->from('invoice_item', 'ii')
-                ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.rel_id')
+                ->innerJoin('ii', 'client_order_meta', 'com', $this->di['em']->getConnection()->getDatabasePlatform()->getConcatExpression("''", 'com.client_order_id') . ' = ii.rel_id')
                 ->where('ii.invoice_id = :invoice_id')
                 ->andWhere('ii.type = :item_type')
                 ->andWhere('com.name = :meta_name')
@@ -291,7 +304,7 @@ class ServiceSubscription implements InjectionAwareInterface
             }
         }
 
-        return $this->persistUpdate($subscription, ['status' => 'canceled']);
+        return true;
     }
 
     private function hasOtherLiveOrder(Subscription $subscription, Order $order): bool
@@ -301,15 +314,28 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         return (int) $this->di['em']->getConnection()->fetchOne(
-            'SELECT COUNT(*) FROM invoice_item ii INNER JOIN client_order o ON ' . $this->di['em']->getConnection()->getDatabasePlatform()->getConcatExpression("''", 'o.id') . ' = ii.rel_id WHERE ii.invoice_id = ? AND ii.type = ? AND o.id <> ? AND o.status <> ?',
+            'SELECT COUNT(*) FROM invoice_item ii INNER JOIN client_order o ON ' . $this->di['em']->getConnection()->getDatabasePlatform()->getConcatExpression("''", 'o.id') . ' = ii.rel_id WHERE ii.invoice_id = ? AND ii.type = ? AND o.id <> ? AND (o.status IS NULL OR o.status <> ?)',
             [$subscription->getRelId(), Entity\InvoiceItem::TYPE_ORDER, $order->getId(), Order::STATUS_CANCELED]
         ) > 0;
+    }
+
+    public function assertNoSharedSubscriptionForOrder(Order $order): void
+    {
+        foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
+            if ($subscription->getStatus() !== 'canceled' && $this->hasOtherLiveOrder($subscription, $order)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Reconcile the shared gateway subscription before canceling this service.');
+            }
+        }
     }
 
     public function canCancelImmediatelyForOrder(Order $order): bool
     {
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
             if ($subscription->getStatus() === 'canceled') {
+                if (!$this->isCanceledSubscriptionConfirmed($subscription)) {
+                    return false;
+                }
+
                 continue;
             }
 
@@ -352,9 +378,15 @@ class ServiceSubscription implements InjectionAwareInterface
         return true;
     }
 
-    public function findIdBySid(string $sid): ?int
+    public function findIdBySid(string $sid, ?int $gatewayId = null): ?int
     {
-        $id = $this->di['em']->getConnection()->fetchOne('SELECT id FROM subscription WHERE sid = :sid', ['sid' => $sid]);
+        $sql = 'SELECT id FROM subscription WHERE sid = :sid';
+        $parameters = ['sid' => $sid];
+        if ($gatewayId !== null) {
+            $sql .= ' AND pay_gateway_id = :gateway';
+            $parameters['gateway'] = $gatewayId;
+        }
+        $id = $this->di['em']->getConnection()->fetchOne($sql, $parameters);
 
         return is_numeric($id) ? (int) $id : null;
     }
@@ -380,24 +412,27 @@ class ServiceSubscription implements InjectionAwareInterface
     public function hasUncanceledSubscriptionForOrder(Order $order): bool
     {
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
-            if ($subscription->getStatus() === 'canceled' && trim((string) $subscription->getSid()) !== ''
-                && $subscription->getPayGateway()?->getGateway() === 'Stripe') {
-                try {
-                    if ($this->getGatewayAdapter($subscription)->getSubscriptionStatus($subscription->getSid()) !== 'canceled') {
-                        return true;
-                    }
-                } catch (\Exception) {
-                    // Unavailable provider state must keep existing priced renewals.
-                    return true;
-                }
-            }
-            if ($subscription->getStatus() !== 'canceled'
-                && trim((string) $subscription->getSid()) !== '') {
+            if (trim((string) $subscription->getSid()) !== ''
+                && ($subscription->getStatus() !== 'canceled' || !$this->isCanceledSubscriptionConfirmed($subscription))) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function isCanceledSubscriptionConfirmed(Subscription $subscription): bool
+    {
+        $sid = trim((string) $subscription->getSid());
+        if ($sid === '' || $subscription->getPayGateway()?->getGateway() !== 'Stripe') {
+            return true;
+        }
+
+        try {
+            return $this->getGatewayAdapter($subscription)->getSubscriptionStatus($sid) === 'canceled';
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     /**

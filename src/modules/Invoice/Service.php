@@ -1959,7 +1959,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        if (!empty($data['use_credits'])) {
+        if (!empty($data['use_credits']) && !$invoice->isSubscriptionPaymentDraft()) {
             try {
                 $this->tryPayWithCredits($invoice);
             } catch (\Throwable $e) {
@@ -2057,7 +2057,7 @@ class Service implements InjectionAwareInterface
             if ($invoice->getIssueNotificationState() === 0) {
                 return;
             }
-            if ($retryCredit && ($invoice->getIssueNotificationState() & 3) === 1 && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
+            if ($retryCredit && !$invoice->isSubscriptionPaymentDraft() && ($invoice->getIssueNotificationState() & 3) === 1 && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
                 $this->tryPayWithCredits($invoice);
             }
             // A deferred event is acknowledged only after its built-in
@@ -2154,7 +2154,7 @@ class Service implements InjectionAwareInterface
     {
         // Refresh after locking so a stale entity cannot authorize a credit deduction.
         $state = $this->lockAndRefreshInvoice($invoice);
-        if (!$state['issued']) {
+        if (!$state['issued'] || (!$gatewayPayment && $invoice->isSubscriptionPaymentDraft())) {
             return false;
         }
         if ($state['status'] !== Invoice::STATUS_UNPAID) {
@@ -5135,14 +5135,14 @@ class Service implements InjectionAwareInterface
         return $this->generateForOrderLocked($order, null, false, InvoiceItem::TASK_ACTIVATE);
     }
 
-    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
+    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true, bool $subscriptionPayment = false): Invoice
     {
-        return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo): Invoice {
+        return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo, $subscriptionPayment): Invoice {
             $order = $this->reloadRenewalOrder($order);
             $this->assertNoRenewalHold((int) $order->getId());
 
             try {
-                return $this->di['em']->getConnection()->transactional(fn (): Invoice => $this->generateForOrderLocked($order, $due_days, $applyPromo));
+                return $this->di['em']->getConnection()->transactional(fn (): Invoice => $this->generateForOrderLocked($order, $due_days, $applyPromo, subscriptionPayment: $subscriptionPayment));
             } catch (\Throwable $e) {
                 // DBAL rollback does not undo ORM identity-map changes from prior flushes.
                 $this->di['em']->close();
@@ -5178,7 +5178,7 @@ class Service implements InjectionAwareInterface
         return $invoice->getStatus() === Invoice::STATUS_UNPAID ? $invoice : null;
     }
 
-    private function generateForOrderLocked(Order $order, $due_days, bool $applyPromo, string $task = InvoiceItem::TASK_RENEW): Invoice
+    private function generateForOrderLocked(Order $order, $due_days, bool $applyPromo, string $task = InvoiceItem::TASK_RENEW, bool $subscriptionPayment = false): Invoice
     {
         if ($order->getId() !== null) {
             \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
@@ -5212,6 +5212,9 @@ class Service implements InjectionAwareInterface
         $proforma->setStatus(Invoice::STATUS_UNPAID);
         $proforma->setCurrency($order->getCurrency());
         $proforma->setIssued(false);
+        if ($subscriptionPayment) {
+            $proforma->setSubscriptionPaymentDraft();
+        }
         $this->di['em']->persist($proforma);
         $this->di['em']->flush();
 
@@ -5304,9 +5307,9 @@ class Service implements InjectionAwareInterface
      *
      * @param list<Order> $orders non-empty, same merge bucket
      */
-    public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true): Invoice
+    public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true, ?string $expectedMergeKey = null): Invoice
     {
-        return $this->withRenewalQuoteLocks($orders, function () use ($orders, $applyPromo): Invoice {
+        return $this->withRenewalQuoteLocks($orders, function () use ($orders, $applyPromo, $expectedMergeKey): Invoice {
             $orders = array_map($this->reloadRenewalOrder(...), $orders);
             foreach ($orders as $order) {
                 if ($order->getId() !== null) {
@@ -5314,7 +5317,10 @@ class Service implements InjectionAwareInterface
                 }
             }
 
-            $eligible = array_values(array_filter($orders, function (Order $order): bool {
+            $eligible = array_values(array_filter($orders, function (Order $order) use ($expectedMergeKey): bool {
+                if ($expectedMergeKey !== null && $this->renewalMergeKey($order) !== $expectedMergeKey) {
+                    return false;
+                }
                 if ($this->hasRenewalHold((int) $order->getId())) {
                     return false;
                 }
@@ -5439,7 +5445,7 @@ class Service implements InjectionAwareInterface
     private function retryUnissuedRenewalInvoices(): void
     {
         $ids = $this->di['em']->getConnection()->fetchFirstColumn(
-            'SELECT DISTINCT i.id FROM invoice i INNER JOIN invoice_item ii ON ii.invoice_id = i.id WHERE EXISTS (SELECT 1 FROM client_order o WHERE o.unpaid_invoice_id = i.id) AND i.issued = :issued AND i.status = :status AND ii.type = :type AND ii.task = :task ORDER BY i.id',
+            'SELECT DISTINCT i.id FROM invoice i INNER JOIN invoice_item ii ON ii.invoice_id = i.id WHERE EXISTS (SELECT 1 FROM client_order o WHERE o.unpaid_invoice_id = i.id) AND i.issued = :issued AND i.subscription_payment_draft = :issued AND i.status = :status AND ii.type = :type AND ii.task = :task ORDER BY i.id',
             ['issued' => false, 'status' => Invoice::STATUS_UNPAID, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW],
             ['issued' => \Doctrine\DBAL\ParameterType::BOOLEAN]
         );
@@ -5506,7 +5512,7 @@ class Service implements InjectionAwareInterface
             $buckets[$this->renewalMergeKey($model)][] = (int) $model->getId();
         }
 
-        foreach ($buckets as $bucketIds) {
+        foreach ($buckets as $mergeKey => $bucketIds) {
             $bucket = [];
             foreach ($bucketIds as $orderId) {
                 $order = $this->di['em']->getRepository(Order::class)->find($orderId);
@@ -5524,7 +5530,7 @@ class Service implements InjectionAwareInterface
                 // including the existing unpaid-invoice reuse branch.
                 $invoices = count($bucket) === 1
                     ? [$this->generateForOrder($bucket[0])]
-                    : [$this->generateMergedInvoiceForOrders($bucket)];
+                    : [$this->generateMergedInvoiceForOrders($bucket, expectedMergeKey: $mergeKey)];
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
 
@@ -5542,6 +5548,10 @@ class Service implements InjectionAwareInterface
                 if (count($bucket) > 1) {
                     foreach ($bucket as $order) {
                         try {
+                            $order = $this->reloadRenewalOrder($order);
+                            if ($this->renewalMergeKey($order) !== $mergeKey) {
+                                continue;
+                            }
                             $invoices[] = $this->generateForOrder($order);
                         } catch (\Exception $fallback) {
                             $this->di['logger']->warning($fallback->getMessage());
@@ -7034,7 +7044,7 @@ class Service implements InjectionAwareInterface
                 return null;
             }
 
-            $invoice = $this->generateForOrder($originalOrder);
+            $invoice = $this->generateForOrder($originalOrder, subscriptionPayment: true);
             $this->issueInvoice($invoice, ['use_credits' => false]);
 
             $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()} for subscription payment (SID: {$subscriptionSid}, client: {$clientId}).");

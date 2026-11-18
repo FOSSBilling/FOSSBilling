@@ -19,7 +19,7 @@ function cancellationRegressionContext(): array
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
-    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Order::class), $em->getClassMetadata(OrderMeta::class)]);
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Order::class), $em->getClassMetadata(OrderMeta::class), $em->getClassMetadata(Box\Mod\Order\Entity\ClientOrderCancelRequest::class)]);
     $order = (new Order())->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTimeImmutable('-1 day'));
     $em->persist($order);
     $em->flush();

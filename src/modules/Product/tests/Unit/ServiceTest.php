@@ -3920,6 +3920,7 @@ function freeDomainRenewalService(array $domainConfig, array $hostingOrders, arr
     $productRepo->shouldReceive('find')->withAnyArgs()->andReturnUsing(fn (int $id): ?Product => $productsById[$id] ?? null);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('contains')->andReturn(false);
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
     $em->shouldReceive('getRepository')->with(Product::class)->andReturn($productRepo);
 

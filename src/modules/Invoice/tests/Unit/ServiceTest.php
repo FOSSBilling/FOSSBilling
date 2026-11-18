@@ -4359,7 +4359,7 @@ test('renewal batch merges mergeable orders sharing a bucket into one invoice', 
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once();
     $serviceMock->shouldNotReceive('generateForOrder');
 
@@ -4469,7 +4469,7 @@ test('renewal batch retries each order singly when merged generation fails', fun
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andThrow(new Exception('second order has no rate'));
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andThrow(new Exception('second order has no rate'));
     $serviceMock->shouldReceive('generateForOrder')->twice()->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->twice();
 
@@ -4506,7 +4506,7 @@ test('renewal batch resets the manager and stops when merged generation closes i
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andThrow(new Exception('flush failed'));
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andThrow(new Exception('flush failed'));
     $serviceMock->shouldReceive('resetEntityManager')->once();
     $serviceMock->shouldNotReceive('generateForOrder', 'issueInvoice');
 
@@ -4541,7 +4541,7 @@ test('renewal batch does not regenerate when issuance fails', function (): void 
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once()->andThrow(new Exception('gateway credits failed'));
     $serviceMock->shouldNotReceive('generateForOrder');
 
@@ -5891,7 +5891,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('generateForOrder')
-        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
+        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder), null, true, true)
         ->once()
         ->andReturn($renewalInvoice);
     $serviceMock->shouldReceive('issueInvoice')
@@ -5941,7 +5941,7 @@ test('generateRenewalInvoiceForSubscriptionPayment still renews an order the bat
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('generateForOrder')
-        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
+        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder), null, true, true)
         ->once()
         ->andReturn($renewalInvoice);
     $serviceMock->shouldReceive('issueInvoice')

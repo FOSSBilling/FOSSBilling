@@ -439,16 +439,29 @@ describe('PayPal subscription IPN handling', function (): void {
         $updates = [];
         $deliveries = $contention ? 2 : 1;
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_transaction_get')->times($deliveries * 2)->with(['id' => 42])->andReturn(
-            ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
-            ['invoice_id' => 16, 'type' => 'subscr_payment', 'txn_id' => 'TXN-2', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
-        );
+        $receipt = null;
+        $apiAdmin->shouldReceive('invoice_transaction_get')->times($deliveries * 2)->with(['id' => 42])->andReturnUsing(function () use (&$receipt): array {
+            return [
+                'invoice_id' => $receipt->getInvoice()->getId(),
+                'type' => $receipt->getType(),
+                'txn_id' => $receipt->getTxnId(),
+                'txn_status' => $receipt->getTxnStatus(),
+                'amount' => $receipt->getAmount(),
+                'currency' => $receipt->getCurrency(),
+                'status' => $receipt->getStatus(),
+            ];
+        });
         $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->times($deliveries)->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
-        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates, &$receipt): bool {
             $updates[] = $data;
+            foreach (['type' => 'setType', 'txn_id' => 'setTxnId', 'txn_status' => 'setTxnStatus', 'amount' => 'setAmount', 'currency' => 'setCurrency', 'status' => 'setStatus'] as $key => $setter) {
+                if (isset($data[$key])) {
+                    $receipt->$setter((string) $data[$key]);
+                }
+            }
 
             return true;
         });
@@ -465,7 +478,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
-        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturn(true);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn ($tx, ...$args): bool => $tx->getInvoice()?->getId() === 99)->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
         $attempt = 0;
         $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->times($deliveries)->with('I-ABC123', 9)->andReturnUsing(function () use ($contention, &$attempt, $renewal) {
@@ -478,6 +491,8 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($paidInvoice);
+        $receipt = $em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42);
+        $receipt->setInvoice($paidInvoice)->setStatus('processing');
         $di = container();
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
@@ -497,7 +512,14 @@ describe('PayPal subscription IPN handling', function (): void {
         ], 2);
 
         if ($contention) {
-            expect($deliver)->toThrow(Box\Mod\Invoice\Exception\RenewalLockException::class, 'Quote lock busy');
+            try {
+                $deliver();
+                test()->fail('Expected the renewal lock to require redelivery');
+            } catch (Box\Mod\Invoice\Exception\RenewalLockException $e) {
+                expect($e->getMessage())->toBe('Quote lock busy')
+                    ->and((new FOSSBilling\Core\Http\ApiResponseFactory())->create(null, $e)->getStatusCode())->toBe(503);
+            }
+            expect($receipt->getStatus())->toBe('processing');
             expect(array_filter($updates, fn (array $update): bool => ($update['status'] ?? '') === 'processed'))->toBeEmpty();
         }
         $deliver();

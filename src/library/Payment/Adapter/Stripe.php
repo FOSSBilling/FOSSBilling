@@ -808,7 +808,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $this->getVerifiedWebhookEvent($data);
     }
 
-    private function getVerifiedWebhookEvent(array $data): Stripe\Event
+    private function getVerifiedWebhookEvent(array $data, bool $authenticatedAtIntake = false): Stripe\Event
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         $sigHeader = $data['server']['HTTP_STRIPE_SIGNATURE'] ?? '';
@@ -829,7 +829,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
 
         try {
-            $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret);
+            $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret, $authenticatedAtIntake ? 0 : Stripe\Webhook::DEFAULT_TOLERANCE);
         } catch (UnexpectedValueException) {
             throw new FOSSBilling\Core\Exception\BaseException('Invalid Stripe webhook payload');
         } catch (Stripe\Exception\SignatureVerificationException) {
@@ -841,7 +841,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
     private function processWebhookEvent($api_admin, Transaction $tx, array $data, int $gateway_id): void
     {
-        $event = $this->getVerifiedWebhookEvent($data);
+        // Only create() records this proof, after verifying freshness at intake.
+        // Recheck the signature on replay, but allow its original timestamp.
+        $stored = $tx->getIpn();
+        $authenticated = ($stored['authenticated_gateway_id'] ?? null) === $gateway_id
+            && ($stored['http_raw_post_data'] ?? null) === ($data['http_raw_post_data'] ?? null)
+            && ($stored['server']['HTTP_STRIPE_SIGNATURE'] ?? null) === ($data['server']['HTTP_STRIPE_SIGNATURE'] ?? null);
+        $event = $this->getVerifiedWebhookEvent($data, $authenticated);
 
         $tx->setTxnId($event->id);
         $tx->setTxnStatus($event->type);
@@ -1023,17 +1029,27 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     private function handleSubscriptionUpdated($api_admin, Transaction $tx, object $event): bool
     {
         $sid = $event->data->object->id;
+        $gatewayId = (int) $this->config['gateway_id'];
 
-        try {
-            $subscription = $api_admin->invoice_subscription_get(['sid' => $sid]);
-        } catch (Exception) {
-            return false;
-        }
+        return $this->withStripeObjectLock($sid, $gatewayId, function () use ($sid, $gatewayId): bool {
+            $subscriptions = $this->di['mod_service']('Invoice', 'Subscription');
+            $id = $subscriptions->findIdBySid($sid, $gatewayId);
+            if ($id === null) {
+                return false;
+            }
 
-        return $this->withStripeObjectLock($sid, (int) $this->config['gateway_id'], function () use ($subscription, $sid): bool {
-            // Webhook snapshots can precede a deletion delivered earlier. Query
-            // current state under the same mutex used by deletion processing.
-            $this->di['mod_service']('Invoice', 'Subscription')->updateStatusFromGateway((int) $subscription['id'], $this->getSubscriptionStatus($sid));
+            try {
+                $status = $this->getSubscriptionStatus($sid);
+            } catch (Stripe\Exception\ApiConnectionException|Stripe\Exception\RateLimitException) {
+                throw new Box\Mod\Invoice\Exception\RetryableCallbackException('Stripe subscription status is temporarily unavailable.');
+            } catch (Stripe\Exception\ApiErrorException $e) {
+                if (($e->getHttpStatus() ?? 0) >= 500) {
+                    throw new Box\Mod\Invoice\Exception\RetryableCallbackException('Stripe subscription status is temporarily unavailable.');
+                }
+
+                throw $e;
+            }
+            $subscriptions->updateStatusForGatewayLink($id, $sid, $gatewayId, $status);
 
             return false;
         });
@@ -1045,7 +1061,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         return $this->withStripeObjectLock($sid, (int) $this->config['gateway_id'], function () use ($sid): bool {
             $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-            $subscriptionId = $subscriptionService->findIdBySid($sid);
+            $subscriptionId = $subscriptionService->findIdBySid($sid, (int) $this->config['gateway_id']);
             if ($subscriptionId !== null) {
                 $subscriptionService->finalizeCancellationFromGateway($subscriptionId);
             }
@@ -1882,11 +1898,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      */
     private function getOrCreatePriceId(Invoice $invoice): string
     {
+        $period = $this->di['mod_service']('Invoice', 'Subscription')->getSubscriptionPeriod($invoice);
+        if ($period === null) {
+            throw new FOSSBilling\Core\Exception\InformationException('This invoice is no longer eligible for a subscription. Please use a one-time payment.');
+        }
         $gatewayId = (int) $this->config['gateway_id'];
         $productName = $this->getInvoiceProductName($invoice);
         $amount = $this->getAmountInCents($invoice);
         $currency = strtolower((string) $invoice->getCurrency());
-        $recurring = $this->getStripeRecurringParams($this->getSubscriptionPeriodForInvoice($invoice));
+        $recurring = $this->getStripeRecurringParams($period);
         $cacheKey = $this->buildProductCacheKey($productName, $currency, $amount, $recurring);
 
         $cached = $this->di['em']->getRepository(PayGatewayProduct::class)

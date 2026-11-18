@@ -54,7 +54,8 @@ beforeEach(function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $this->patcher = new Patcher();
     $this->patcher->setDi($di);
-    $this->runPatch = (new ReflectionMethod($this->patcher, 'patch133'))->getClosure($this->patcher);
+    $patcher = $this->patcher;
+    $this->runPatch = static fn () => (new FOSSBilling\Core\Update\Patch\Patch133())->apply($patcher);
 });
 
 afterEach(function (): void {
@@ -463,3 +464,25 @@ test('fresh installation supports supplementary Unicode in a legacy database wit
         ->and($saved->getSection())->toBe('🔒 Security')
         ->and($this->connection->fetchOne('SELECT @@character_set_database'))->toBe($databaseCharset);
 });
+
+test('post-sync repair stores four-byte cancellation reasons on a legacy database default', function (bool $existing): void {
+    if ($existing) {
+        $this->pdo->exec('CREATE TABLE client_order_cancel_request (id BIGINT PRIMARY KEY, reason TEXT NOT NULL)');
+    } else {
+        $em = EntityManagerFactory::create($this->connection);
+        (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
+            Box\Mod\Client\Entity\Client::class,
+            Box\Mod\Order\Entity\Order::class,
+            Box\Mod\Order\Entity\ClientOrderCancelRequest::class,
+        ]));
+    }
+    $this->patcher->widenLegacyTextColumns('client_order_cancel_request', ['reason']);
+    $this->patcher->widenLegacyTextColumns('client_order_cancel_request', ['reason']);
+    expect($this->connection->fetchOne("SELECT CHARACTER_SET_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'client_order_cancel_request' AND COLUMN_NAME = 'reason'"))->toBe('utf8mb4');
+    $row = ['id' => 1, 'reason' => 'Moving 🚀'];
+    if (!$existing) {
+        $row += ['status' => 'pending', 'type' => 'immediate'];
+    }
+    $this->connection->insert('client_order_cancel_request', $row);
+    expect($this->connection->fetchOne('SELECT reason FROM client_order_cancel_request WHERE id = 1'))->toBe($row['reason']);
+})->with(['existing table' => true, 'new table' => false]);

@@ -16,8 +16,8 @@ test('verified PayPal renewal receipts remain credit during deletion recovery, i
     $payload['get']['sig'] = FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId());
     $api = $c['api'];
     $adapter = $c['adapter'];
-    $c['em']->refresh($c['order']);
-    $expiresAt = clone $c['order']->getExpiresAt();
+    $orderId = $c['order']->getId();
+    $expiresAt = $c['connection']->fetchOne('SELECT expires_at FROM client_order WHERE id = ?', [$orderId]);
     if ($crash) {
         $api->crash = true;
         expect(fn () => $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId()))
@@ -39,7 +39,7 @@ test('verified PayPal renewal receipts remain credit during deletion recovery, i
         ->and($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processed')
         ->and($c['connection']->fetchOne('SELECT invoice_id FROM "transaction"'))->toBe($c['invoice']->getId())
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
-        ->and($c['order']->getExpiresAt())->toEqual($expiresAt);
+        ->and($c['connection']->fetchOne('SELECT expires_at FROM client_order WHERE id = ?', [$orderId]))->toBe($expiresAt);
 })->with(['subscr_payment', 'recurring_payment'])->with([false, true])->with(['10.00', '3.00']);
 
 test('deferred PayPal renewal credits reject invalid amounts and currencies before adding funds', function (string $amount, string $currency): void {

@@ -28,6 +28,7 @@ test('a committed cancellation claim blocks renewal and expiry changes before ga
     $service->shouldReceive('_callOnService')->never();
     $service->shouldReceive('finalizeCancellationAfterClaim')->once()->andReturn(true);
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('cancelForOrder')->once()->andReturnUsing(function () use ($em, $order, $service): int {
         $claim = $em->getRepository(OrderMeta::class)->getPairsForOrder($order->getId())[Service::META_SCHEDULED_CANCEL_CLAIM] ?? null;
         expect($em->getConnection()->isTransactionActive())->toBeFalse()
@@ -65,6 +66,7 @@ test('scheduling rechecks a stale order before contacting the provider', functio
     [$em, $order] = cancellationRegressionContext();
     $em->getConnection()->executeStatement('UPDATE client_order SET status = ? WHERE id = ?', [Order::STATUS_CANCELED, $order->getId()]);
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldNotReceive('scheduleCancellationForOrder');
     $service = new Service();
     $di = container();
@@ -80,6 +82,7 @@ test('provider scheduling failure leaves a committed review hold before any rene
     [$em, $order] = cancellationRegressionContext();
     $em->getConnection()->executeStatement('DELETE FROM client_order_meta WHERE client_order_id = ?', [$order->getId()]);
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
     $subscription->shouldReceive('scheduleCancellationForOrder')->once()->with($order)->andThrow(new RuntimeException('provider timeout'));
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -99,6 +102,7 @@ test('provider scheduling failure leaves a committed review hold before any rene
 test('gateway failure leaves a durable staff-review hold instead of retrying automatically', function (): void {
     [$em, $order] = cancellationRegressionContext();
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('cancelForOrder')->once()->andThrow(new RuntimeException('gateway timeout'));
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldNotReceive('finalizeCancellationAfterClaim');
@@ -207,6 +211,7 @@ test('staff retry updates a claim even when its ORM entity was previously cached
     $di = container();
     $di['em'] = $em;
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->once()->andReturn(false);
     $di['mod_service'] = $di->protect(fn (): object => $subscriptions);
     $service->setDi($di);
@@ -439,6 +444,7 @@ test('staff cannot confirm service cancellation while a gateway subscription rem
     $em->persist((new OrderMeta())->setOrder($order)->setName(Service::META_SCHEDULED_CANCEL_CLAIM)->setValue('1'));
     $em->flush();
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('hasUncanceledSubscriptionForOrder')->once()->with($order)->andReturn(true);
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldNotReceive('_callOnService');
@@ -462,6 +468,7 @@ test('staff retry reschedules an interrupted provider request and retains the ho
         $em->getConnection()->delete('client_order_meta', ['client_order_id' => $order->getId(), 'name' => Service::META_SCHEDULED_CANCEL_PHASE]);
     }
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     if ($legacy) {
         $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->once()->andReturn(true);
     }
@@ -495,6 +502,7 @@ test('scheduled cancellation recovery accepts failed-renew orders', function (st
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldReceive('finalizeCancellationAfterClaim')->once()->with($order, Mockery::any())->andReturn(true);
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     if ($entry === 'processScheduledCancellation') {
         $subscriptions->shouldReceive('cancelForOrder')->once()->andReturn(1);
     }
@@ -525,6 +533,7 @@ test('immediate cancellation of a scheduled order commits the hold before subscr
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldNotReceive('_callOnService');
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('cancelForOrder')->once()->andReturnUsing(function () use ($em, $order): never {
         expect($em->getConnection()->isTransactionActive())->toBeFalse()
             ->and($em->getRepository(OrderMeta::class)->getPairsForOrder($order->getId())[Service::META_SCHEDULED_CANCEL_CLAIM])->toBe('1');
@@ -552,6 +561,7 @@ test('scheduled immediate cancellation preserves reason and event skipping', fun
     $service->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_CANCEL)->andReturnUsing(function () use (&$orderOfCalls): void { $orderOfCalls[] = 'service'; });
     $service->shouldReceive('saveStatusChange')->once();
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('cancelForOrder')->once()->andReturnUsing(function () use (&$orderOfCalls): int {
         $orderOfCalls[] = 'subscription';
 
@@ -583,6 +593,7 @@ test('scheduled immediate termination commits cleanup recovery without repeating
     $service->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_CANCEL);
     $service->shouldReceive('saveStatusChange')->once();
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('cancelForOrder')->once()->andReturn(1);
     $product = Mockery::mock(Box\Mod\Product\Service::class);
     $product->shouldReceive('releaseReservedPromoRedemptionsForOrder')->twice();
@@ -652,6 +663,7 @@ test('staff-approved retry resumes immediate cancellation before period end', fu
     $em->flush();
     $orders = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $attempt = 0;
     $subscriptions->shouldReceive('cancelForOrder')->twice()->andReturnUsing(function () use (&$attempt, $failsAgain, $em, $order): int {
         expect($em->getConnection()->isTransactionActive())->toBeFalse()
@@ -710,6 +722,7 @@ test('approved period-end retry remains deferred until expiry', function (): voi
     $orders = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $orders->shouldNotReceive('_callOnService');
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscriptions->shouldNotReceive('cancelForOrder');
     $di = container();
     $di['em'] = $em;

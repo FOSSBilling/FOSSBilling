@@ -299,14 +299,14 @@ class ServiceCancelRequest implements InjectionAwareInterface
     private function stopBeforeCancellation(ClientOrderCancelRequest $request, Order $order, string $status): void
     {
         $orders = $this->di['mod_service']('Order');
-        $orders->withLifecycleLock($order, function () use ($request, $order, $orders, $status): void {
+        $orders->withCancellationScheduleLock($order, function () use ($request, $order, $orders, $status): void {
             $this->di['em']->refresh($request);
             if ($request->getStatus() !== ClientOrderCancelRequest::STATUS_PENDING) {
                 throw new InformationException('This cancellation request is no longer waiting.');
             }
             $this->assertCancellationNotStarted($order, $orders);
             $this->close($request, $status);
-        });
+        }, 0);
     }
 
     private function assertCancellationNotStarted(Order $order, Service $orders): void

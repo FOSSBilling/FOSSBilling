@@ -2067,7 +2067,7 @@ class Service implements InjectionAwareInterface
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $subscriptionService->cancelForOrder($order);
 
-        $this->completeCancellation($order, $reason, $skipEvent);
+        $this->di['em']->getConnection()->transactional(fn () => $this->completeCancellation($order, $reason, $skipEvent));
 
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
@@ -2110,7 +2110,7 @@ class Service implements InjectionAwareInterface
         if ($allowWithoutSubscription && $order->getExpiresAt() === null) {
             throw new InformationException('This service cannot be cancelled at the end of its period.');
         }
-        $options = $requestId === null ? [] : [self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['reason' => $reason, 'skip_event' => false, 'request_id' => $requestId], JSON_THROW_ON_ERROR)];
+        $options = $requestId === null ? [] : [self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'period_end', 'reason' => $reason, 'skip_event' => false, 'request_id' => $requestId], JSON_THROW_ON_ERROR)];
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         if ($allowWithoutSubscription && !$subscriptionService->hasActiveSubscriptionForOrder($order)) {
             $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1'] + $options);
@@ -2142,7 +2142,7 @@ class Service implements InjectionAwareInterface
     }
 
     /** Serialize provider scheduling with local renewal and expiry edits. */
-    private function withCancellationScheduleLock(Order $order, callable $operation, int $timeoutSeconds = 30): mixed
+    public function withCancellationScheduleLock(Order $order, callable $operation, int $timeoutSeconds = 30): mixed
     {
         $connection = $this->di['em']->getConnection();
         if ($connection->isTransactionActive()) {
@@ -2226,7 +2226,7 @@ class Service implements InjectionAwareInterface
             return $this->finishScheduledCancellation($order, $reason, $skipEvent);
         }
 
-        $this->completeCancellation($order, $reason, false);
+        $this->di['em']->getConnection()->transactional(fn () => $this->completeCancellation($order, $reason, false));
 
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
@@ -2260,12 +2260,6 @@ class Service implements InjectionAwareInterface
             $this->saveStatusChange($order, $reason === null ? 'Order canceled' : 'Canceled order for ' . $reason);
             if (!$skipEvent) {
                 $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($this->orderId($order), true));
-            }
-            if (isset($options['request_id'])) {
-                $connection->executeStatement(
-                    'UPDATE client_order_cancel_request SET status = ?, updated_at = ? WHERE client_order_id = ? AND status = ?',
-                    [Entity\ClientOrderCancelRequest::STATUS_ACCEPTED, date('Y-m-d H:i:s'), $order->getId(), Entity\ClientOrderCancelRequest::STATUS_PENDING]
-                );
             }
             $connection->commit();
         } catch (\Throwable $e) {
@@ -2322,6 +2316,12 @@ class Service implements InjectionAwareInterface
             'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name IN (:schedule_name, :claim_name, :phase_name, :options_name)',
             ['order_id' => $orderId, 'schedule_name' => self::META_CANCEL_AT_PERIOD_END, 'claim_name' => self::META_SCHEDULED_CANCEL_CLAIM, 'phase_name' => self::META_SCHEDULED_CANCEL_PHASE, 'options_name' => self::META_SCHEDULED_CANCEL_OPTIONS],
         );
+        if ($order->getId() !== null) {
+            $this->di['em']->getConnection()->executeStatement(
+                'UPDATE client_order_cancel_request SET status = ?, updated_at = ? WHERE client_order_id = ? AND status = ?',
+                [Entity\ClientOrderCancelRequest::STATUS_ACCEPTED, date('Y-m-d H:i:s'), $order->getId(), Entity\ClientOrderCancelRequest::STATUS_PENDING]
+            );
+        }
     }
 
     public function uncancelFromOrder(Order $order): bool
@@ -2630,6 +2630,8 @@ class Service implements InjectionAwareInterface
 
                 return false;
             }
+            $this->di['mod_service']('Invoice', 'Subscription')->assertNoSharedSubscriptionForOrder($order);
+
             // Commit the uncertain-action claim before any gateway I/O. A
             // renewal or staff expiry change then sees the claim and cannot
             // invalidate the cancellation while the gateway is responding.
@@ -2698,7 +2700,7 @@ class Service implements InjectionAwareInterface
                     $options = json_decode($meta[self::META_SCHEDULED_CANCEL_OPTIONS], true, 512, JSON_THROW_ON_ERROR);
                     // Before execution mode was explicit, only immediate
                     // cancellation wrote options. Preserve those held requests.
-                    if (($options['mode'] ?? 'immediate') === 'immediate') {
+                    if (($options['mode'] ?? (($meta[self::META_SCHEDULED_CANCEL_PHASE] ?? null) === 'scheduling' ? 'period_end' : 'immediate')) === 'immediate') {
                         // Claim 1 remains committed throughout this explicitly
                         // approved attempt; another failure requires review again.
                         $this->di['mod_service']('Invoice', 'Subscription')->cancelForOrder($order);
@@ -2775,9 +2777,6 @@ class Service implements InjectionAwareInterface
                         return;
                     }
                     if (($this->getOrderMetaRepository()->getPairsForOrder((int) $order->getId())[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
-                        return;
-                    }
-                    if ($this->di['em']->getRepository(Entity\ClientOrderCancelRequest::class)->findPendingByOrderId((int) $order->getId()) !== null) {
                         return;
                     }
                     $this->suspendFromOrder($order, $reason);

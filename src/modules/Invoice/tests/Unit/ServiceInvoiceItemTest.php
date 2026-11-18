@@ -1106,7 +1106,7 @@ test('staff can approve one retry of a held legacy renewal', function (): void {
     expect($item->getStatus())->toBe(InvoiceItem::STATUS_PENDING_SETUP)->and($item->getAttempts())->toBe(0);
 });
 
-test('insufficient hosting coverage defers only while its paid hosting renewal is pending', function (bool $hostingPending): void {
+test('free domain renewal checks the committed hosting term again before failing', function (bool $hostingPending, ?int $committedTerm, string $expectedStatus, int $expectedAttempts): void {
     $invoice = createEntity(Invoice::class, ['id' => 10]);
     $item = createEntity(InvoiceItem::class, ['id' => 11, 'invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'status' => InvoiceItem::STATUS_PENDING_SETUP, 'relId' => '20', 'price' => '0.00']);
     $order = createEntity(Order::class, ['id' => 20, 'productId' => 5, 'status' => Order::STATUS_ACTIVE]);
@@ -1119,11 +1119,15 @@ test('insufficient hosting coverage defers only while its paid hosting renewal i
     $orders->shouldNotReceive('renewOrder');
     $orders->shouldNotReceive('renewInvoiceItem');
     $orders->shouldReceive('renewFreeDomainInvoiceItem')->once()->andReturnUsing(fn (Order $order, int $id, callable $prepare): bool => $prepare());
-    $orders->shouldNotReceive('updateOrderMeta');
-    $orders->shouldReceive('saveStatusChange')->times($hostingPending ? 0 : 1);
+    $orders->shouldReceive('updateOrderMeta')->times($committedTerm === null ? 0 : 1)
+        ->with($order, ['free_domain_paid_through' => (string) $committedTerm, 'free_domain_renewal_claim_11' => '1']);
+    $orders->shouldReceive('saveStatusChange')->times($expectedAttempts);
     $products = Mockery::mock(Box\Mod\Product\Service::class);
-    $products->shouldReceive('freeDomainRenewalUntil')->with(20)->andReturnNull();
-    $products->shouldReceive('hasPendingHostingRenewal')->with(20, 10)->andReturn($hostingPending);
+    $products->shouldReceive('freeDomainRenewalUntil')->once()->with(20)->ordered()->andReturnNull();
+    $products->shouldReceive('hasPendingHostingRenewal')->once()->with(20, 10)->ordered()->andReturn($hostingPending);
+    if (!$hostingPending) {
+        $products->shouldReceive('freeDomainRenewalUntil')->once()->with(20)->ordered()->andReturn($committedTerm);
+    }
     $products->shouldReceive('isFreeDomainRenewalOffered')->with(20)->andReturnTrue();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
     $connection->shouldReceive('isTransactionActive')->andReturn(false);
@@ -1141,8 +1145,12 @@ test('insufficient hosting coverage defers only while its paid hosting renewal i
     $service->setDi($di);
 
     $service->executeTask($item);
-    expect($item->getAttempts())->toBe($hostingPending ? 0 : 1)->and($item->getStatus())->toBe($hostingPending ? InvoiceItem::STATUS_PENDING_SETUP : InvoiceItem::STATUS_FAILED);
-})->with([false, true]);
+    expect($item->getAttempts())->toBe($expectedAttempts)->and($item->getStatus())->toBe($expectedStatus);
+})->with([
+    'hosting still pending' => [true, null, InvoiceItem::STATUS_PENDING_SETUP, 0],
+    'hosting committed but still insufficient' => [false, null, InvoiceItem::STATUS_FAILED, 1],
+    'hosting committed new expiry between reads' => [false, 1900000000, InvoiceItem::STATUS_EXECUTED, 0],
+]);
 
 test('a stale worker does not retry a failed renewal after acquiring the lock', function (): void {
     $invoice = createEntity(Invoice::class, ['id' => 10]);

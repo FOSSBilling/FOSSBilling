@@ -3146,6 +3146,12 @@ class Service implements InjectionAwareInterface
             )) {
                 continue;
             }
+            if ($requirePaidTerm && $this->di['em']->contains($hosting)) {
+                $this->di['em']->refresh($hosting);
+                if (!in_array($hosting->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+                    continue;
+                }
+            }
             $hostingExpiry = $hosting->getExpiresAt();
             // Domain and hosting dates represent calendar terms. A hosting
             // renewal performed moments before a from-today domain renewal

@@ -19,7 +19,7 @@ use Box\Mod\Order\ServiceCancelRequest;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 
-function cancelRequestService(?object $em = null): ServiceCancelRequest
+function cancelRequestService(?object $em = null, ?object $email = null): ServiceCancelRequest
 {
     $service = new ServiceCancelRequest();
     $di = container();
@@ -36,12 +36,13 @@ function cancelRequestService(?object $em = null): ServiceCancelRequest
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $orders = Mockery::mock(Box\Mod\Order\Service::class);
+    $orders->shouldReceive('withCancellationScheduleLock')->byDefault()->andReturnUsing(fn ($order, Closure $operation, int $timeout): mixed => $operation());
     $orders->shouldReceive('withLifecycleLock')->andReturnUsing(fn ($order, Closure $operation): mixed => $operation());
     $orders->shouldReceive('assertOrderNotDeleting')->andReturnNull();
     $metadata = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
     $metadata->shouldReceive('getPairsForOrder')->andReturn([]);
     $orders->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
-    $di['mod_service'] = $di->protect(fn (string $module): object => $module === 'Order' ? $orders : Mockery::mock()->shouldIgnoreMissing());
+    $di['mod_service'] = $di->protect(fn (string $module): object => $module === 'Order' ? $orders : ($email ?? Mockery::mock()->shouldIgnoreMissing()));
     $service->setDi($di);
 
     return $service;
@@ -68,7 +69,11 @@ test('create stores a pending request', function (): void {
     $em->shouldReceive('persist')->once();
     $em->shouldReceive('flush')->once();
 
-    $service = cancelRequestService($em);
+    $email = Mockery::mock();
+    $email->shouldReceive('sendTemplate')->once()->with(Mockery::on(fn (array $data): bool => $data['code'] === 'mod_order_cancel_request' && $data['to_client'] === 7 && $data['order']['id'] === 11));
+    $email->shouldReceive('sendTemplate')->once()->with(Mockery::on(fn (array $data): bool => $data['code'] === 'mod_staff_order_cancel_request' && $data['to_staff'] === true && $data['order']['id'] === 11));
+    $service = cancelRequestService($em, $email);
+    $service->getDi()['url'] = Mockery::mock()->shouldReceive('adminLink')->once()->with('order/manage/11')->andReturn('/admin/order/manage/11')->getMock();
 
     $request = $service->create($order, ClientOrderCancelRequest::TYPE_IMMEDIATE, 'Too expensive');
 

@@ -335,6 +335,7 @@
     "invoice.seller_phone",
     "invoice.serie",
     "invoice.status",
+    "invoice.subscription_payment_draft",
     "invoice.taxname",
     "invoice.taxrate",
     "invoice.text_1",

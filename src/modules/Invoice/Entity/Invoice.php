@@ -159,6 +159,19 @@ class Invoice implements TimestampInterface
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $issued = false;
 
+    #[ORM\Column(name: 'subscription_payment_draft', type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $subscriptionPaymentDraft = false;
+
+    public function isSubscriptionPaymentDraft(): bool
+    {
+        return $this->subscriptionPaymentDraft;
+    }
+
+    public function setSubscriptionPaymentDraft(): void
+    {
+        $this->subscriptionPaymentDraft = true;
+    }
+
     // 0: no pending event; 1: retry credit first; 2: event only; bit 4: email queued.
     #[ORM\Column(name: 'issue_notification_state', type: Types::SMALLINT, options: ['default' => 0])]
     private int $issueNotificationState = 0;
