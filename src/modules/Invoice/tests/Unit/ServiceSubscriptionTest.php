@@ -415,7 +415,7 @@ test('detects orders paid through an active gateway subscription', function (): 
         ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 99])))->toBeFalse();
 });
 
-test('still finds a subscription through a legacy rel_id link the backfill has not reached', function (): void {
+test('validates legacy subscription order references before backfill', function (string $reference, bool $matches): void {
     $subscription = createEntity(Subscription::class, ['id' => 7]);
     $subscription->setSid('sub_123');
 
@@ -423,18 +423,20 @@ test('still finds a subscription through a legacy rel_id link the backfill has n
     $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
 
     $dbal = createSubscriptionDbal();
-    // Order 10's row still carries only the text link; order 11's row is converted.
-    $dbal->executeStatement("UPDATE invoice_item SET order_id = NULL WHERE invoice_id = 25 AND rel_id = '10'");
+    $dbal->executeStatement("UPDATE invoice_item SET order_id = NULL, rel_id = :reference WHERE invoice_id = 25 AND rel_id = '10'", ['reference' => $reference]);
 
     $service = subscriptionService(subRepo: $subRepo);
     $service->getDi()['em']->shouldReceive('getConnection')->andReturn($dbal);
 
-    // The typed lookup misses order 10, but the rel_id fallback still resolves it.
-    // Order 12 has no rows at all and stays invisible.
-    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeTrue()
+    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBe($matches)
         ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 11])))->toBeTrue()
         ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 12])))->toBeFalse();
-});
+})->with([
+    'canonical' => ['10', true],
+    'zero padded' => ['0010', true],
+    'trailing whitespace' => ['0010 ', false],
+    'fractional' => ['10.5', false],
+]);
 
 test('staff cancellation review still sees a subscription pending at the gateway', function (): void {
     $subscription = createEntity(Subscription::class, ['id' => 7]);

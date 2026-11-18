@@ -545,11 +545,27 @@ class Service implements InjectionAwareInterface
         $days_until_expiration = $systemService->getParamValue('invoice_issue_days_before_expire', 14);
 
         $client_id = $data['client_id'] ?? null;
-        $legacyMatch = InvoiceItemRepository::legacyOrderReferenceMatches($this->di['em']->getConnection(), 'pending_item.rel_id', 'co.id');
+        $connection = $this->di['em']->getConnection();
+        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'pending_item.rel_id');
+        $orderReference = InvoiceItemRepository::orderIdAsReference($connection, 'co.id');
 
-        $query = 'SELECT co.*
+        $pendingRenewals = 'FROM invoice_item pending_item
+                            INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
+                            WHERE pending_item.type = :pending_item_type
+                            AND pending_item.task = :pending_item_task
+                            AND pending_item.status != :pending_item_status
+                            AND pending_invoice.status = :pending_invoice_status';
+
+        // DISTINCT materializes the legacy references once for the whole query.
+        $query = "SELECT co.*
                 FROM client_order co
                 LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
+                LEFT JOIN (
+                    SELECT DISTINCT $legacyReference AS order_ref
+                    $pendingRenewals
+                    AND pending_item.order_id IS NULL
+                    AND pending_item.rel_id IS NOT NULL
+                ) legacy_renewal ON legacy_renewal.order_ref = $orderReference
                 WHERE co.status = :status
                 AND co.invoice_option = :invoice_option
                 AND NOT EXISTS (
@@ -560,6 +576,7 @@ class Service implements InjectionAwareInterface
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
                 AND i.id IS NULL
+                AND legacy_renewal.order_ref IS NULL
                 AND NOT EXISTS (
                     SELECT 1
                     FROM client_order_meta cancellation_meta
@@ -567,28 +584,11 @@ class Service implements InjectionAwareInterface
                     AND cancellation_meta.name = :cancellation_meta_name
                     AND cancellation_meta.value = :cancellation_meta_value
                 )
-                /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
                 AND NOT EXISTS (
                     SELECT 1
-                    FROM invoice_item pending_item
-                    INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
-                    WHERE pending_item.order_id = co.id
-                    AND pending_item.type = :pending_item_type
-                    AND pending_item.task = :pending_item_task
-                    AND pending_item.status != :pending_item_status
-                    AND pending_invoice.status = :pending_invoice_status
-                )
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM invoice_item pending_item
-                    INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
-                    WHERE pending_item.order_id IS NULL
-                    AND pending_item.type = :pending_item_type
-                    AND pending_item.task = :pending_item_task
-                    AND pending_item.status != :pending_item_status
-                    AND pending_invoice.status = :pending_invoice_status
-                    AND ' . $legacyMatch . '
-                )';
+                    $pendingRenewals
+                    AND pending_item.order_id = co.id
+                )";
 
         $where = [];
         $bindings = [];
@@ -2960,12 +2960,6 @@ class Service implements InjectionAwareInterface
         // Order ID to the draft ID this run detached it from.
         $detachedOrders = [];
 
-        // Whether the invoice map above is trustworthy: a failed rebuild must
-        // not read as "no invoices", which would treat every linked invoice
-        // as gone. While set, linked groups defer; invoice-less orders still
-        // proceed and the completion event still fires.
-        $invoicesUnknown = false;
-
         // Whether each invoice's group may proceed to order deletion - set only
         // once the invoice is confirmed gone or removed, so a failed removal
         // leaves it unresolved for a sibling order to retry rather than
@@ -3012,10 +3006,8 @@ class Service implements InjectionAwareInterface
                 }
 
                 if ($invoiceId !== null) {
-                    if ($invoicesUnknown) {
-                        // The map could not be rebuilt after a manager reset:
-                        // unknown state, not a missing invoice. Defer the group
-                        // for the next run.
+                    if ($invoicesById === null) {
+                        // Defer linked orders when the invoice lookup failed.
                         continue;
                     }
                     if (!array_key_exists($invoiceId, $invoiceHandled)) {
@@ -3073,10 +3065,9 @@ class Service implements InjectionAwareInterface
 
                     try {
                         $invoicesById = $this->findInvoicesByIds($invoiceService, $pendingOrders);
-                        $invoicesUnknown = false;
                     } catch (\Exception $e) {
                         $this->di['logger']->info($e->getMessage());
-                        $invoicesUnknown = true;
+                        $invoicesById = null;
                     }
                 }
             }

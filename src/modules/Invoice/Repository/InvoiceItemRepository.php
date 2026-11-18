@@ -21,16 +21,21 @@ use Doctrine\ORM\QueryBuilder;
 
 class InvoiceItemRepository extends EntityRepository
 {
-    /** Compare a legacy reference to a positive order ID without coercing the reference to a number. */
-    public static function legacyOrderReferenceMatches(Connection $connection, string $reference, string $orderId): string
+    /** Strip leading zeros and compare the remaining bytes as text. */
+    public static function normalizedLegacyOrderReference(Connection $connection, string $reference): string
     {
         $platform = $connection->getDatabasePlatform();
 
         return match (true) {
-            $platform instanceof AbstractMySQLPlatform => "TRIM(LEADING CAST('0' AS BINARY) FROM CAST($reference AS BINARY)) = CAST($orderId AS BINARY)",
-            $platform instanceof PostgreSQLPlatform => "LTRIM($reference, '0') COLLATE \"C\" = CAST($orderId AS TEXT)",
-            default => "LTRIM($reference, '0') COLLATE BINARY = CAST($orderId AS TEXT)",
+            $platform instanceof AbstractMySQLPlatform => "TRIM(LEADING CAST('0' AS BINARY) FROM CAST($reference AS BINARY))",
+            $platform instanceof PostgreSQLPlatform => "LTRIM($reference, '0') COLLATE \"C\"",
+            default => "LTRIM($reference, '0') COLLATE BINARY",
         };
+    }
+
+    public static function orderIdAsReference(Connection $connection, string $orderId): string
+    {
+        return $connection->getDatabasePlatform() instanceof AbstractMySQLPlatform ? "CAST($orderId AS BINARY)" : "CAST($orderId AS TEXT)";
     }
 
     /**

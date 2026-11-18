@@ -95,6 +95,25 @@ test('sync adds a column that entity metadata knows about but the database is mi
         ->and($connection->fetchOne("SELECT code FROM currency WHERE code = 'USD'"))->toBe('USD');
 });
 
+test('sync restores the invoice item order linkage and index on an existing table', function (): void {
+    [$connection, $entityManager] = schemaSynchronizerFixture();
+    $connection->executeStatement('DROP INDEX invoice_item_order_lookup_idx');
+    $connection->executeStatement('ALTER TABLE invoice_item DROP COLUMN order_id');
+    $connection->insert('invoice_item', ['type' => 'order', 'rel_id' => '007']);
+
+    SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Invoice\Entity\InvoiceItem::class]);
+
+    $table = $connection->createSchemaManager()->introspectTableByUnquotedName('invoice_item');
+    $indexColumns = array_map(
+        static fn ($column): string => $column->getColumnName()->getIdentifier()->getValue(),
+        $table->getIndex('invoice_item_order_lookup_idx')->getIndexedColumns(),
+    );
+    expect($table->hasColumn('order_id'))->toBeTrue()
+        ->and($indexColumns)->toBe(['order_id', 'type', 'task', 'status', 'invoice_id'])
+        ->and($connection->fetchAssociative('SELECT rel_id, order_id FROM invoice_item'))->toBe(['rel_id' => '007', 'order_id' => null]);
+    expect(SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Invoice\Entity\InvoiceItem::class])['applied'])->toBe([]);
+});
+
 test('sync never drops a table that exists in the database but has no entity metadata', function (): void {
     [$connection, $entityManager] = schemaSynchronizerFixture();
 

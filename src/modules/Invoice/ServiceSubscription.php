@@ -17,6 +17,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent;
 use Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\PromoRedemption;
@@ -395,52 +396,29 @@ class ServiceSubscription implements InjectionAwareInterface
      */
     private function getSubscriptionsForOrder(Order $order, ?string $status = null): array
     {
-        $query = $this->di['em']->getConnection()->createQueryBuilder();
-        $query
-            ->select('DISTINCT s.id')
-            ->from('subscription', 's')
-            ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
-            ->where('s.rel_type = :rel_type')
-            ->andWhere('ii.type = :item_type')
-            ->andWhere('ii.order_id = :order_id')
-            ->setParameter('rel_type', 'invoice')
-            ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
-            ->setParameter('order_id', $order->getId());
+        $orderId = $order->getId();
+        if ($orderId === null) {
+            return [];
+        }
 
+        $connection = $this->di['em']->getConnection();
+        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'ii.rel_id');
+        $orderReference = InvoiceItemRepository::orderIdAsReference($connection, ':order_id');
+        $query = 'SELECT s.id FROM subscription s INNER JOIN invoice_item ii ON ii.invoice_id = s.rel_id
+                  WHERE s.rel_type = :rel_type AND ii.type = :item_type';
+        $params = ['rel_type' => 'invoice', 'item_type' => Entity\InvoiceItem::TYPE_ORDER, 'order_id' => $orderId];
         if ($status !== null) {
-            $query->andWhere('s.status = :status')->setParameter('status', $status);
+            $query .= ' AND s.status = :status';
+            $params['status'] = $status;
         }
 
-        // Legacy links first: a backfill page converting a row between the
-        // two reads must not hide it from both. Reads are one-directional
-        // (order_id only ever fills in), so matching the legacy shape before
-        // the typed one covers every interleave. A separate query keeps the
-        // typed predicate above index-friendly instead of OR-ing the fallback
-        // into it. Without a persisted order id there is no text to match,
-        // so the fallback is skipped outright.
-        $fallbackIds = [];
-        if ($order->getId() !== null) {
-            $fallbackQuery = $this->di['em']->getConnection()->createQueryBuilder();
-            $fallbackQuery
-                ->select('DISTINCT s.id')
-                ->from('subscription', 's')
-                ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
-                ->where('s.rel_type = :rel_type')
-                ->andWhere('ii.type = :item_type')
-                ->andWhere('ii.order_id IS NULL')
-                ->andWhere('ii.rel_id = :rel_id')
-                ->setParameter('rel_type', 'invoice')
-                ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
-                ->setParameter('rel_id', (string) $order->getId());
-
-            if ($status !== null) {
-                $fallbackQuery->andWhere('s.status = :status')->setParameter('status', $status);
-            }
-
-            $fallbackIds = $fallbackQuery->executeQuery()->fetchFirstColumn();
-        }
-
-        $subscriptionIds = array_values(array_unique(array_merge($fallbackIds, $query->executeQuery()->fetchFirstColumn())));
+        // Read both link types together so backfill cannot move a row between reads.
+        $subscriptionIds = $connection->fetchFirstColumn(
+            "$query AND ii.order_id = :order_id
+             UNION
+             $query AND ii.order_id IS NULL AND $legacyReference = $orderReference",
+            $params,
+        );
 
         $subscriptions = [];
         foreach ($subscriptionIds as $id) {

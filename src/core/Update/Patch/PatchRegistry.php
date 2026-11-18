@@ -130,6 +130,5 @@ final class PatchRegistry
         143 => Patch143::class,
         144 => Patch144::class,
         145 => Patch145::class,
-        146 => Patch146::class,
     ];
 }
