@@ -310,7 +310,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             $products = $this->di['mod_service']('Product');
                             $until = $products->freeDomainRenewalUntil($orderId);
                             if ($until === null) {
-                                if ($products->hasPendingHostingRenewal($orderId, (int) $item->getInvoice()?->getId())) {
+                                if ($products->hasPendingHostingRenewal($orderId)) {
                                     return false;
                                 }
                                 // If hosting finished between the two reads, its expiry is now committed.

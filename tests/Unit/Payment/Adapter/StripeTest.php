@@ -526,7 +526,7 @@ test('finalizes local cancellation when Stripe deletes a subscription', function
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldReceive('findIdBySid')->once()->with('sub_123', 1)->andReturn(42);
-    $subscriptionService->shouldReceive('finalizeCancellationFromGateway')->once()->with(42);
+    $subscriptionService->shouldReceive('finalizeCancellationFromGateway')->once()->with(42, 'sub_123', 1);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
@@ -549,7 +549,7 @@ test('propagates local cancellation failures so Stripe retries the webhook', fun
     $subscriptionService->shouldReceive('findIdBySid')->once()->with('sub_123', 1)->andReturn(42);
     $subscriptionService->shouldReceive('finalizeCancellationFromGateway')
         ->once()
-        ->with(42)
+        ->with(42, 'sub_123', 1)
         ->andThrow(new RuntimeException('Service cancellation failed'));
 
     $di = container();
@@ -1614,7 +1614,11 @@ describe('processSetupIntent', function (): void {
 
         $tx = buildTransaction();
         $tx->id = 702;
-        $this->adapter->setDi(container());
+        $di = container();
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->andReturn('1Y');
+        $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:subscription' => $subscriptionService]));
+        $this->adapter->setDi($di);
 
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
@@ -2277,6 +2281,9 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $di = container();
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->andReturn('1Y');
+        $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:subscription' => $subscriptionService]));
         $invoiceRepo = $di['em']->getRepository(Invoice::class);
         $invoiceRepo->shouldReceive('find')
             ->with(25)
@@ -2337,6 +2344,12 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $stripeMock->products = $productsMock;
         $stripeMock->prices = $pricesMock;
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->twice()->with($invoiceModel)->andReturn('1Y');
+        $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:subscription' => $subscriptionService]));
+        $this->adapter->setDi($di);
 
         // Call each resolver twice, as the webhook and redirect flows would.
         $customerIdFromWebhook = invokePrivateMethod($this->adapter, 'resolveSubscriptionCustomerId', [$setupIntent, $invoiceModel]);
@@ -2478,7 +2491,7 @@ describe('processWebhookEvent noise filtering', function (): void {
 
         $di = container();
         $di['em'] = $em;
-        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+        $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:subscription' => $subscriptionService]));
         $this->adapter->setDi($di);
 
         $data = [
@@ -3364,6 +3377,9 @@ describe('setup first charge recording', function (): void {
         ['em' => $em] = buildEntityManagerMocks();
         $di = container();
         $di['em'] = $em;
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->andReturn('1Y');
+        $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:subscription' => $subscriptionService]));
         $this->adapter->setDi($di);
 
         $apiAdmin = Mockery::mock();
@@ -3639,3 +3655,33 @@ test('Stripe refuses to create a recurring price when the invoice no longer has 
     expect(fn () => invokePrivateMethod($this->adapter, 'getOrCreatePriceId', [$invoice]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no longer eligible for a subscription');
 });
+
+test('a stored Stripe setup price cannot subscribe an invoice that became ineligible', function (bool $webhook): void {
+    $invoice = createEntity(Invoice::class, ['id' => 92, 'currency' => 'USD']);
+    $intent = Stripe\SetupIntent::constructFrom([
+        'id' => 'seti_outdated',
+        'status' => 'succeeded',
+        'customer' => 'cus_invoice',
+        'metadata' => ['invoice_id' => '92', 'gateway_id' => '1', 'price_id' => 'price_old'],
+    ]);
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->with(92)->andReturn($invoice);
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('getSubscriptionPeriod')->once()->with($invoice)->andReturnNull();
+    $di['mod_service'] = $di->protect(fn () => $subscriptions);
+    $this->adapter->setDi($di);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = Mockery::mock();
+    $stripe->subscriptions->shouldNotReceive('create');
+    $stripe->setupIntents = Mockery::mock();
+    $stripe->setupIntents->shouldReceive('retrieve')->times($webhook ? 0 : 1)->with($intent->id, [])->andReturn($intent);
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    $tx = buildTransaction();
+    $tx->id = 702;
+    $api = Mockery::mock();
+    $call = $webhook
+        ? fn (): mixed => invokePrivateMethod($this->adapter, 'handleSetupIntentSucceededWebhook', [$api, $tx, (object) ['data' => (object) ['object' => $intent]], 1])
+        : fn (): mixed => invokePrivateMethod($this->adapter, 'processSetupIntent', [$api, $tx, $invoice, ['get' => ['setup_intent' => $intent->id]], 1]);
+
+    expect($call)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no longer eligible for a subscription');
+})->with(['webhook' => true, 'redirect' => false]);

@@ -1953,7 +1953,7 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('The renewal invoice changed. Reload it and retry issuance.');
             }
             if ($renewalBlocked) {
-                throw new InformationException('Cancellation prevents issuing this renewal invoice. Withdraw the request or have staff review the order and any received payment.');
+                throw new Exception\RenewalHoldException('Cancellation prevents issuing this renewal invoice. Withdraw the request or have staff review the order and any received payment.');
             }
 
             return false;
@@ -2798,6 +2798,9 @@ class Service implements InjectionAwareInterface
                 }
                 if ($this->isInvoiceTypeDeposit($invoice)) {
                     throw new InformationException('Account credit cannot pay a deposit invoice.');
+                }
+                if ($invoice->isSubscriptionPaymentDraft()) {
+                    throw new InformationException('Account credit cannot pay an invoice awaiting a subscription payment.');
                 }
                 $client = $this->di['em']->getRepository(Client::class)->find($clientId);
                 if (!$client instanceof Client) {
@@ -5135,14 +5138,26 @@ class Service implements InjectionAwareInterface
         return $this->generateForOrderLocked($order, null, false, InvoiceItem::TASK_ACTIVATE);
     }
 
-    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true, bool $subscriptionPayment = false): Invoice
+    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true, bool $subscriptionPayment = false, ?string $expectedMergeKey = null): Invoice
     {
-        return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo, $subscriptionPayment): Invoice {
+        return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo, $subscriptionPayment, $expectedMergeKey): Invoice {
             $order = $this->reloadRenewalOrder($order);
             $this->assertNoRenewalHold((int) $order->getId());
+            if ($subscriptionPayment && !in_array($order->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED, Order::STATUS_FAILED_RENEW], true)) {
+                throw new Exception\RenewalHoldException('This order is no longer eligible for a subscription renewal.');
+            }
 
             try {
-                return $this->di['em']->getConnection()->transactional(fn (): Invoice => $this->generateForOrderLocked($order, $due_days, $applyPromo, subscriptionPayment: $subscriptionPayment));
+                $invoice = $this->di['em']->getConnection()->transactional(function () use ($order, $due_days, $applyPromo, $subscriptionPayment, $expectedMergeKey): ?Invoice {
+                    if ($expectedMergeKey !== null) {
+                        $this->lockAndRefreshOrder($order);
+                        if ($this->renewalMergeKey($order) !== $expectedMergeKey) {
+                            return null;
+                        }
+                    }
+
+                    return $this->generateForOrderLocked($order, $due_days, $applyPromo, subscriptionPayment: $subscriptionPayment);
+                });
             } catch (\Throwable $e) {
                 // DBAL rollback does not undo ORM identity-map changes from prior flushes.
                 $this->di['em']->close();
@@ -5150,6 +5165,8 @@ class Service implements InjectionAwareInterface
 
                 throw $e;
             }
+
+            return $invoice ?? throw new InformationException('The order changed after renewal selection.');
         });
     }
 
@@ -5309,7 +5326,16 @@ class Service implements InjectionAwareInterface
      */
     public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true, ?string $expectedMergeKey = null): Invoice
     {
-        return $this->withRenewalQuoteLocks($orders, function () use ($orders, $applyPromo, $expectedMergeKey): Invoice {
+        $generate = function () use ($orders, $applyPromo, $expectedMergeKey): Invoice {
+            if ($expectedMergeKey !== null) {
+                $orderIds = array_map(static fn (Order $order): int => (int) $order->getId(), $orders);
+                sort($orderIds);
+                $repository = $this->di['em']->getRepository(Order::class);
+                // Take every row lock before an ORM read establishes a snapshot.
+                foreach ($orderIds as $orderId) {
+                    $repository->lockAndGetUnpaidInvoiceId($orderId);
+                }
+            }
             $orders = array_map($this->reloadRenewalOrder(...), $orders);
             foreach ($orders as $order) {
                 if ($order->getId() !== null) {
@@ -5329,7 +5355,11 @@ class Service implements InjectionAwareInterface
             }));
 
             return $this->generateMergedInvoiceForOrdersLocked($eligible, $applyPromo);
-        });
+        };
+
+        return $this->withRenewalQuoteLocks($orders, fn (): Invoice => $expectedMergeKey === null
+            ? $generate()
+            : $this->di['em']->getConnection()->transactional($generate));
     }
 
     private function generateMergedInvoiceForOrdersLocked(array $orders, bool $applyPromo): Invoice
@@ -5436,9 +5466,11 @@ class Service implements InjectionAwareInterface
 
     private function assertNoRenewalHold(int $orderId): void
     {
-        \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId);
+        if (\Box\Mod\Order\DeletionRecovery::isHeld($this->di['em']->getConnection(), $orderId)) {
+            throw new Exception\RenewalHoldException('Order deletion is awaiting recovery. Retry deletion before billing or changing the service.');
+        }
         if ($this->hasRenewalHold($orderId)) {
-            throw new InformationException('Withdraw the cancellation request or have staff resolve the order hold before renewing this service.');
+            throw new Exception\RenewalHoldException('Withdraw the cancellation request or have staff resolve the order hold before renewing this service.');
         }
     }
 
@@ -5487,6 +5519,7 @@ class Service implements InjectionAwareInterface
             if (!$model instanceof Order) {
                 continue;
             }
+            $mergeKey = $this->renewalMergeKey($model);
             $mergeable = false;
 
             try {
@@ -5500,7 +5533,7 @@ class Service implements InjectionAwareInterface
 
             if (!$mergeable) {
                 try {
-                    $invoice = $this->generateForOrder($model);
+                    $invoice = $this->generateForOrder($model, expectedMergeKey: $mergeKey);
                     $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
                 } catch (\Exception $e) {
                     $this->di['logger']->warning($e->getMessage());
@@ -5509,7 +5542,7 @@ class Service implements InjectionAwareInterface
                 continue;
             }
 
-            $buckets[$this->renewalMergeKey($model)][] = (int) $model->getId();
+            $buckets[$mergeKey][] = (int) $model->getId();
         }
 
         foreach ($buckets as $mergeKey => $bucketIds) {
@@ -5529,7 +5562,7 @@ class Service implements InjectionAwareInterface
                 // Single-order buckets keep the exact single-order behavior,
                 // including the existing unpaid-invoice reuse branch.
                 $invoices = count($bucket) === 1
-                    ? [$this->generateForOrder($bucket[0])]
+                    ? [$this->generateForOrder($bucket[0], expectedMergeKey: $mergeKey)]
                     : [$this->generateMergedInvoiceForOrders($bucket, expectedMergeKey: $mergeKey)];
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
@@ -5548,11 +5581,7 @@ class Service implements InjectionAwareInterface
                 if (count($bucket) > 1) {
                     foreach ($bucket as $order) {
                         try {
-                            $order = $this->reloadRenewalOrder($order);
-                            if ($this->renewalMergeKey($order) !== $mergeKey) {
-                                continue;
-                            }
-                            $invoices[] = $this->generateForOrder($order);
+                            $invoices[] = $this->generateForOrder($order, expectedMergeKey: $mergeKey);
                         } catch (\Exception $fallback) {
                             $this->di['logger']->warning($fallback->getMessage());
                         }
@@ -7045,22 +7074,26 @@ class Service implements InjectionAwareInterface
             }
 
             $invoice = $this->generateForOrder($originalOrder, subscriptionPayment: true);
-            $this->issueInvoice($invoice, ['use_credits' => false]);
+            if (!$this->issueInvoice($invoice, ['use_credits' => false])) {
+                return null;
+            }
 
             $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()} for subscription payment (SID: {$subscriptionSid}, client: {$clientId}).");
 
             return $invoice;
-        } catch (Exception\RenewalLockException $e) {
+        } catch (Exception\RenewalHoldException $e) {
+            $this->di['logger']->info('Subscription renewal is held: {message}', ['message' => $e->getMessage()]);
+
+            return null;
+        } catch (Exception\RetryableCallbackException $e) {
             throw $e;
-        } catch (\Exception $e) {
-            $this->di['logger']->warning('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
-            // Doctrine closes the manager after a failed transactional flush.
-            // The caller must still be able to record the verified payment.
+        } catch (\Throwable $e) {
+            $this->di['logger']->warning('Failed to generate or issue a subscription renewal invoice.', ['exception' => $e]);
             if (!$this->di['em']->isOpen()) {
                 $this->resetEntityManager();
             }
 
-            return null;
+            throw new Exception\RetryableCallbackException('The subscription renewal invoice is temporarily unavailable.');
         }
     }
 

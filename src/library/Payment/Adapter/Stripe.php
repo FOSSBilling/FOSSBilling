@@ -1059,11 +1059,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     {
         $sid = $event->data->object->id;
 
-        return $this->withStripeObjectLock($sid, (int) $this->config['gateway_id'], function () use ($sid): bool {
+        $gatewayId = (int) $this->config['gateway_id'];
+
+        return $this->withStripeObjectLock($sid, $gatewayId, function () use ($sid, $gatewayId): bool {
             $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-            $subscriptionId = $subscriptionService->findIdBySid($sid, (int) $this->config['gateway_id']);
+            $subscriptionId = $subscriptionService->findIdBySid($sid, $gatewayId);
             if ($subscriptionId !== null) {
-                $subscriptionService->finalizeCancellationFromGateway($subscriptionId);
+                $subscriptionService->finalizeCancellationFromGateway($subscriptionId, $sid, $gatewayId);
             }
 
             return false;
@@ -1882,12 +1884,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      */
     private function resolveSubscriptionPriceId(Stripe\SetupIntent $setupIntent, Invoice $invoice): string
     {
+        $period = $this->requireSubscriptionPeriod($invoice);
         $priceId = $setupIntent->metadata->price_id ?? null;
         if (!empty($priceId)) {
             return $priceId;
         }
 
-        return $this->getOrCreatePriceId($invoice);
+        return $this->getOrCreatePriceId($invoice, $period);
     }
 
     /**
@@ -1896,12 +1899,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      * for the same reason, and via the same pattern, as
      * {@see getOrCreateCustomer()}.
      */
-    private function getOrCreatePriceId(Invoice $invoice): string
+    private function getOrCreatePriceId(Invoice $invoice, ?string $period = null): string
     {
-        $period = $this->di['mod_service']('Invoice', 'Subscription')->getSubscriptionPeriod($invoice);
-        if ($period === null) {
-            throw new FOSSBilling\Core\Exception\InformationException('This invoice is no longer eligible for a subscription. Please use a one-time payment.');
-        }
+        $period ??= $this->requireSubscriptionPeriod($invoice);
         $gatewayId = (int) $this->config['gateway_id'];
         $productName = $this->getInvoiceProductName($invoice);
         $amount = $this->getAmountInCents($invoice);
@@ -2024,6 +2024,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
             return $winner instanceof PayGatewayProduct ? $winner->getExternalPriceId() : $externalPriceId;
         }
+    }
+
+    private function requireSubscriptionPeriod(Invoice $invoice): string
+    {
+        return $this->di['mod_service']('Invoice', 'Subscription')->getSubscriptionPeriod($invoice)
+            ?? throw new FOSSBilling\Core\Exception\InformationException('This invoice is no longer eligible for a subscription. Please use a one-time payment.');
     }
 
     private function getSubscriptionPeriodForInvoice(Invoice $invoice): string

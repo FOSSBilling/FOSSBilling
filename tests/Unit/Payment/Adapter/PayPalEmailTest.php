@@ -435,9 +435,9 @@ describe('PayPal subscription IPN handling', function (): void {
         expect($processed)->toHaveCount(1);
     });
 
-    test('renewal subscr_payment generates a renewal invoice once the original is paid', function (bool $contention): void {
+    test('renewal subscr_payment generates a renewal invoice once the original is paid', function (?Box\Mod\Invoice\Exception\RetryableCallbackException $failure): void {
         $updates = [];
-        $deliveries = $contention ? 2 : 1;
+        $deliveries = $failure === null ? 1 : 2;
         $apiAdmin = Mockery::mock();
         $receipt = null;
         $apiAdmin->shouldReceive('invoice_transaction_get')->times($deliveries * 2)->with(['id' => 42])->andReturnUsing(function () use (&$receipt): array {
@@ -481,9 +481,9 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn ($tx, ...$args): bool => $tx->getInvoice()?->getId() === 99)->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
         $attempt = 0;
-        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->times($deliveries)->with('I-ABC123', 9)->andReturnUsing(function () use ($contention, &$attempt, $renewal) {
-            if ($contention && ++$attempt === 1) {
-                throw new Box\Mod\Invoice\Exception\RenewalLockException('Quote lock busy');
+        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->times($deliveries)->with('I-ABC123', 9)->andReturnUsing(function () use ($failure, &$attempt, $renewal) {
+            if ($failure !== null && ++$attempt === 1) {
+                throw $failure;
             }
 
             return $renewal;
@@ -511,12 +511,12 @@ describe('PayPal subscription IPN handling', function (): void {
             'get' => signedPayPalGet(16, 2),
         ], 2);
 
-        if ($contention) {
+        if ($failure !== null) {
             try {
                 $deliver();
-                test()->fail('Expected the renewal lock to require redelivery');
-            } catch (Box\Mod\Invoice\Exception\RenewalLockException $e) {
-                expect($e->getMessage())->toBe('Quote lock busy')
+                test()->fail('Expected the renewal payment to require redelivery');
+            } catch (Box\Mod\Invoice\Exception\RetryableCallbackException $e) {
+                expect($e)->toBe($failure)
                     ->and((new FOSSBilling\Core\Http\ApiResponseFactory())->create(null, $e)->getStatusCode())->toBe(503);
             }
             expect($receipt->getStatus())->toBe('processing');
@@ -526,7 +526,11 @@ describe('PayPal subscription IPN handling', function (): void {
 
         expect($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getOriginalInvoiceId())->toBe(16)
             ->and($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getInvoice()->getId())->toBe(99);
-    })->with(['without contention' => false, 'retry after contention' => true]);
+    })->with([
+        'immediate settlement' => null,
+        'retry after contention' => fn () => new Box\Mod\Invoice\Exception\RenewalLockException('Quote lock busy'),
+        'retry after issuance failure' => fn () => new Box\Mod\Invoice\Exception\RetryableCallbackException('Invoice issuance unavailable'),
+    ]);
 
     test('non-completed payments keep their error instead of being marked processed', function (): void {
         $updates = [];

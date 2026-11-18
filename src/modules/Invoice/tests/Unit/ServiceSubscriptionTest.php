@@ -34,10 +34,10 @@ use function Tests\Helpers\createEntity;
 function createSubscriptionDbal(): Connection
 {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $connection->executeStatement('CREATE TABLE subscription (id INTEGER PRIMARY KEY, rel_type TEXT, rel_id INTEGER, status TEXT, sid TEXT)');
+    $connection->executeStatement('CREATE TABLE subscription (id INTEGER PRIMARY KEY, rel_type TEXT, rel_id INTEGER, status TEXT, sid TEXT, pay_gateway_id INTEGER, updated_at TEXT)');
     $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
     $connection->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
-    $connection->executeStatement("INSERT INTO subscription (id, rel_type, rel_id, status, sid) VALUES (7, 'invoice', 25, 'active', 'sub_123')");
+    $connection->executeStatement("INSERT INTO subscription (id, rel_type, rel_id, status, sid, pay_gateway_id) VALUES (7, 'invoice', 25, 'active', 'sub_123', 2)");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id) VALUES (25, 'order', 10), (25, 'order', 11)");
 
     return $connection;
@@ -263,6 +263,7 @@ test('finalizes a scheduled cancellation after subscription deletion regardless 
     $order = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $dbal = createSubscriptionDbal();
+    $dbal->update('subscription', ['status' => $status], ['id' => 7]);
     $dbal->insert('client_order_meta', [
         'client_order_id' => 10,
         'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
@@ -276,7 +277,7 @@ test('finalizes a scheduled cancellation after subscription deletion regardless 
     $subRepo->shouldReceive('find')->once()->with(7)->andReturn($subscription);
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('flush')->once();
+    $em->shouldReceive('refresh')->once()->with($subscription);
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class);
     $orderService->shouldReceive('finalizeCancellationFromGateway')
@@ -296,8 +297,8 @@ test('finalizes a scheduled cancellation after subscription deletion regardless 
     $service = new ServiceSubscription();
     $service->setDi($di);
 
-    expect($service->finalizeCancellationFromGateway(7))->toBeTrue()
-        ->and($subscription->getStatus())->toBe('canceled');
+    expect($service->finalizeCancellationFromGateway(7, 'sub_123', 2))->toBeTrue()
+        ->and($dbal->fetchOne('SELECT status FROM subscription WHERE id = 7'))->toBe('canceled');
 })->with([ServiceSubscription::STATUS_PENDING_CANCELLATION, 'canceled', 'active']);
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
@@ -638,7 +639,7 @@ test('subscribes an invoice whose discount comes from a recurring promo', functi
 
 test('order cancellation retries skip settled subscriptions and force failures retain reconciliation identifiers', function (bool $force): void {
     $dbal = createSubscriptionDbal();
-    $dbal->executeStatement("INSERT INTO subscription VALUES (8, 'invoice', 25, 'active', 'sub_456')");
+    $dbal->executeStatement("INSERT INTO subscription (id, rel_type, rel_id, status, sid) VALUES (8, 'invoice', 25, 'active', 'sub_456')");
     $first = createEntity(Subscription::class, ['id' => 7, 'sid' => 'sub_123', 'status' => 'active']);
     $second = createEntity(Subscription::class, ['id' => 8, 'sid' => 'sub_456', 'status' => 'active']);
     $repo = Mockery::mock(SubscriptionRepository::class);
@@ -831,14 +832,19 @@ test('a gateway deletion persists cancellation before attempting local cleanup',
         $di = container();
         $di['em'] = $em;
         $orders = Mockery::mock(Box\Mod\Order\Service::class);
-        $orders->shouldReceive('finalizeCancellationFromGateway')->once()->with($order, Mockery::type('string'))->andThrow(new RuntimeException('Backend unavailable'));
+        $orders->shouldReceive('finalizeCancellationFromGateway')->once()->with($order, Mockery::type('string'))->ordered()->andThrow(new RuntimeException('Backend unavailable'));
+        $orders->shouldReceive('finalizeCancellationFromGateway')->once()->with($order, Mockery::type('string'))->ordered()->andReturn(true);
         $di['mod_service'] = $di->protect(fn () => $orders);
         $subscriptions = new ServiceSubscription();
         $subscriptions->setDi($di);
 
-        expect(fn () => $subscriptions->finalizeCancellationFromGateway($subscription->getId()))->toThrow(RuntimeException::class, 'Backend unavailable');
+        expect(fn () => $subscriptions->finalizeCancellationFromGateway($subscription->getId(), 'sub_old', $gateway->getId()))->toThrow(RuntimeException::class, 'Backend unavailable');
         expect($em->getConnection()->fetchOne('SELECT status FROM subscription WHERE id = ?', [$subscription->getId()]))->toBe('canceled');
+        expect($subscriptions->finalizeCancellationFromGateway($subscription->getId(), 'sub_old', $gateway->getId()))->toBeTrue();
+        // The callback had resolved this local ID before staff changed the link.
         $em->getConnection()->update('subscription', ['sid' => 'sub_replacement', 'status' => 'active'], ['id' => $subscription->getId()]);
+        expect($subscriptions->finalizeCancellationFromGateway($subscription->getId(), 'sub_old', $gateway->getId()))->toBeFalse()
+            ->and($subscriptions->finalizeCancellationFromGateway($subscription->getId(), 'sub_replacement', $gateway->getId() + 1))->toBeFalse();
         $subscriptions->updateStatusForGatewayLink($subscription->getId(), 'sub_old', $gateway->getId(), 'canceled');
         expect($em->getConnection()->fetchOne('SELECT status FROM subscription WHERE id = ?', [$subscription->getId()]))->toBe('active');
     } finally {

@@ -603,7 +603,8 @@ test('reissue refuses renewal members added after its order mutexes were selecte
         ->and($em->getConnection()->fetchOne('SELECT status FROM invoice'))->toBe('unpaid');
 });
 
-test('background Stripe recovery replays authenticated callbacks after the signature window', function (bool $renewal): void {
+test('background Stripe recovery replays authenticated callbacks after the signature window', function (string $failure): void {
+    $renewal = $failure !== 'provider';
     [, $em, $client, $gateway] = receiptTestContext();
     $db = $em->getConnection();
     $table = $db->quoteSingleIdentifier('transaction');
@@ -620,10 +621,22 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $billing = renewalReviewService($em);
     $billing->shouldReceive('resolveRenewalLine')->andReturn(['price' => 15.0, 'line' => ['quantity' => 1]]);
     $di = $billing->getDi();
+    if ($failure === 'issuance') {
+        $dispatcher = (new ReflectionProperty(FOSSBilling\Core\Events\EventDispatcher::class, 'dispatcher'))->getValue($di['event_dispatcher']);
+        $dispatcher->addListener(Box\Mod\Invoice\Event\BeforeAdminInvoiceIssueEvent::class, function () use ($db): void {
+            static $failed = false;
+            if (!$failed) {
+                $failed = true;
+                expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice WHERE subscription_payment_draft = 1 AND issued = 0'))->toBe(1);
+
+                throw new RuntimeException('Invoice issuer unavailable');
+            }
+        });
+    }
     $metadata = ['invoice_id' => (string) $original->getId(), 'gateway_id' => (string) $gateway->getId(), 'client_id' => (string) $client->getId()];
     $provider = Mockery::mock();
     $current = Stripe\Subscription::constructFrom(['id' => 'sub_background', 'status' => 'active', 'metadata' => $metadata]);
-    if (!$renewal) {
+    if ($failure === 'provider') {
         $provider->shouldReceive('retrieve')->once()->andThrow(new Stripe\Exception\ApiConnectionException('Provider unavailable'));
     }
     $provider->shouldReceive('retrieve')->andReturn($current);
@@ -660,19 +673,23 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $tx = $em->find(Box\Mod\Invoice\Entity\Transaction::class, $id);
     $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $name = 'fb:cancel-request-order:' . $order->getId();
-    if ($renewal) {
+    if ($failure === 'lock') {
         expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0))->toBeTrue();
     }
 
     try {
         $worker->processAndCatchErrors($id);
     } finally {
-        if ($renewal) {
+        if ($failure === 'lock') {
             FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
         }
     }
     expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('received')
-        ->and(array_column($worker->getReceived(), 'id'))->toContain($id);
+        ->and(array_column($worker->getReceived(), 'id'))->toContain($id)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+    if ($failure === 'issuance') {
+        expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice WHERE subscription_payment_draft = 1 AND issued = 0'))->toBe(1);
+    }
     // Simulate elapsed time by backdating the signature in the trusted fixture.
     $callback['server']['HTTP_STRIPE_SIGNATURE'] = $sign(time() - 600);
     expect(fn () => $worker->create($callback))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invalid Stripe webhook signature');
@@ -687,12 +704,13 @@ test('background Stripe recovery replays authenticated callbacks after the signa
         expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
             ->and((int) $db->fetchOne("SELECT gateway_completion_state FROM $table WHERE id = ?", [$id]))->toBe(Box\Mod\Invoice\Entity\Transaction::GATEWAY_COMPLETION_DONE)
             ->and((int) $db->fetchOne("SELECT COUNT(*) FROM invoice WHERE status = 'paid'"))->toBe(2)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(2)
             ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1);
     } else {
         expect($db->fetchOne("SELECT id FROM $table WHERE id = ?", [$id]))->toBeFalse()
             ->and($db->fetchOne('SELECT status FROM subscription WHERE id = ?', [$subscription->getId()]))->toBe('active');
     }
-})->with(['provider outage' => false, 'renewal mutex contention' => true]);
+})->with(['provider outage' => 'provider', 'renewal mutex contention' => 'lock', 'failed draft issuance' => 'issuance']);
 
 test('cron leaves a draft created for a subscription payment to its callback', function (): void {
     [, $em, $client] = receiptTestContext();
@@ -724,3 +742,67 @@ test('a cron merge bucket drops an order whose expiry changed after grouping', f
         ->and($second->getUnpaidInvoiceId())->toBeNull()
         ->and($em->getConnection()->fetchFirstColumn('SELECT rel_id FROM invoice_item WHERE invoice_id = ?', [$invoice->getId()]))->toBe([(string) $first->getId()]);
 });
+
+test('wallet credit is rejected before writing a reservation on a subscription payment invoice', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $billing = renewalReviewService($em);
+    $billing->shouldReceive('resolveRenewalLine')->andReturn(['price' => 15.0, 'line' => ['quantity' => 1]]);
+    $invoice = $billing->generateForOrder($order, subscriptionPayment: true);
+    expect($billing->issueInvoice($invoice, ['use_credits' => false]))->toBeTrue();
+    $db = $em->getConnection();
+    $db->insert('client_balance', ['client_id' => $client->getId(), 'amount' => 15]);
+    $staleFlag = new ReflectionProperty(Invoice::class, 'subscriptionPaymentDraft');
+    $staleFlag->setValue($invoice, false);
+
+    expect(fn () => $billing->applyCredit($invoice, 15.0))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'awaiting a subscription payment');
+    expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_credit'))->toBe(0)
+        ->and($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(Invoice::STATUS_UNPAID)
+        ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0);
+});
+
+test('renewal cron skips a moved order on single and fallback paths', function (string $path): void {
+    [, $em, $client] = receiptTestContext();
+    $moved = renewalReviewOrder($em, $client->getId());
+    $orders = [$moved];
+    if ($path === 'fallback') {
+        $orders[] = renewalReviewOrder($em, $client->getId());
+    }
+    foreach ($orders as $order) {
+        $order->setExpiresAt(new DateTimeImmutable('today'))->setPeriod('1M')->setInvoiceOption('issue-invoice');
+    }
+    $em->flush();
+    $db = $em->getConnection();
+    $billing = renewalReviewService($em);
+    $di = $billing->getDi();
+    $subs = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subs->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(false);
+    $services = $di['mod_service'];
+    $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => $sub === 'Subscription' ? $subs : $services($name, $sub));
+    $move = fn () => $db->update('client_order', ['expires_at' => (new DateTimeImmutable('+6 months'))->format('Y-m-d H:i:s')], ['id' => $moved->getId()]);
+    $logger = Mockery::mock(Psr\Log\LoggerInterface::class)->shouldIgnoreMissing();
+    $di['logger'] = $logger;
+    if ($path === 'fallback') {
+        // Both orders were selected before the sibling entered deletion recovery.
+        $billing->shouldReceive('shouldMergeRenewalsForOrder')->once()->with($moved)->andReturn(true);
+        $billing->shouldReceive('shouldMergeRenewalsForOrder')->once()->with($orders[1])->andReturnUsing(function () use ($db, $orders): bool {
+            Box\Mod\Order\DeletionRecovery::setState($db, $orders[1]->getId(), Box\Mod\Order\DeletionRecovery::STARTED);
+
+            return true;
+        });
+        $logger->shouldReceive('warning')->twice()->with(Mockery::pattern('/deletion is awaiting recovery/'))->andReturnUsing($move, static fn () => null);
+    } else {
+        // The bucket uses the expiry that was selected before this edit.
+        $billing->shouldReceive('shouldMergeRenewalsForOrder')->once()->with($moved)->andReturnUsing(function () use ($path, $move): bool {
+            $move();
+
+            return $path === 'single bucket';
+        });
+    }
+
+    expect($billing->generateInvoicesForExpiringOrders())->toBeTrue()
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(0)
+        ->and($db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$moved->getId()]))->toBeNull();
+    $logger->shouldHaveReceived('warning')->with('The order changed after renewal selection.')->once();
+})->with(['single bucket', 'separate invoice', 'fallback']);

@@ -3085,12 +3085,13 @@ class Service implements InjectionAwareInterface
         return $this->resolveFreeDomainRenewalUntil($orderId, $requirePaidTerm);
     }
 
-    public function hasPendingHostingRenewal(int $orderId, int $invoiceId): bool
+    /** A paid renewal for the linked hosting may be queued on a separate invoice. */
+    public function hasPendingHostingRenewal(int $orderId): bool
     {
-        return $this->resolveFreeDomainRenewalUntil($orderId, false, $invoiceId) !== null;
+        return $this->resolveFreeDomainRenewalUntil($orderId, false, true) !== null;
     }
 
-    private function resolveFreeDomainRenewalUntil(int $orderId, bool $requirePaidTerm, ?int $pendingInvoiceId = null): ?int
+    private function resolveFreeDomainRenewalUntil(int $orderId, bool $requirePaidTerm, bool $pendingOnly = false): ?int
     {
         $orderRepository = $this->di['em']->getRepository(Order::class);
         $order = $orderRepository->find($orderId);
@@ -3131,24 +3132,25 @@ class Service implements InjectionAwareInterface
         }
         $renewedUntil = $this->di['period']($period)->getExpirationTime($from);
 
+        $hostingStatuses = [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED];
         $candidates = $orderRepository->findBy([
             'groupId' => $groupId,
             'clientId' => $order->getClientId(),
-            'status' => [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED],
+            'status' => $pendingOnly ? [...$hostingStatuses, Order::STATUS_FAILED_RENEW] : $hostingStatuses,
         ]);
         foreach ($candidates as $hosting) {
             if ((int) $hosting->getId() === $orderId) {
                 continue;
             }
-            if ($pendingInvoiceId !== null && !(int) $this->di['em']->getConnection()->fetchOne(
-                'SELECT COUNT(*) FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id WHERE i.id = ? AND i.status = ? AND ii.type = ? AND ii.task = ? AND ii.rel_id = ? AND ii.status = ?',
-                [$pendingInvoiceId, Invoice::STATUS_PAID, \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER, \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW, (string) $hosting->getId(), \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP]
+            if ($pendingOnly && !(int) $this->di['em']->getConnection()->fetchOne(
+                'SELECT 1 FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id WHERE i.client_id = ? AND i.status = ? AND ii.type = ? AND ii.task = ? AND ii.rel_id = ? AND ii.status = ? LIMIT 1',
+                [$order->getClientId(), Invoice::STATUS_PAID, \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER, \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW, (string) $hosting->getId(), \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP]
             )) {
                 continue;
             }
             if ($requirePaidTerm && $this->di['em']->contains($hosting)) {
                 $this->di['em']->refresh($hosting);
-                if (!in_array($hosting->getStatus(), [Order::STATUS_ACTIVE, Order::STATUS_SUSPENDED], true)) {
+                if (!in_array($hosting->getStatus(), $hostingStatuses, true)) {
                     continue;
                 }
             }

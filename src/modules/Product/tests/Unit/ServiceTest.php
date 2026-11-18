@@ -4125,22 +4125,37 @@ test('renewal draft pruning releases promo reservations only for that order and 
         ->and($redemption->getReleaseReason())->toBe('renewal_cancellation_hold');
 });
 
-test('domain deferral recognizes only its eligible hosting renewal on the same paid invoice', function (string $invoiceStatus, string $taskStatus, bool $matchingDomain, bool $pending): void {
-    $hosting = freeRenewalHostingOrder(['config' => ['domain' => ['action' => 'register', 'register_sld' => $matchingDomain ? 'example' : 'other', 'register_tld' => '.com']]]);
+test('domain waits for eligible paid hosting setup across invoices without granting the term', function (string $invoiceStatus, string $taskStatus, bool $matchingDomain, int $invoiceOwner, bool $pending): void {
+    $hosting = freeRenewalHostingOrder([
+        'status' => Order::STATUS_FAILED_RENEW,
+        'config' => ['domain' => ['action' => 'register', 'register_sld' => $matchingDomain ? 'example' : 'other', 'register_tld' => '.com']],
+    ]);
     [$service] = freeDomainRenewalService(
         ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'], [$hosting],
         [5 => freeRenewalHostingProduct(['free_domain_renewals' => true, 'free_domain' => true, 'free_tlds' => ['.com'], 'free_domain_periods' => ['1Y']])]
     );
     $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $db->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
-    $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
+    $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, status TEXT)');
     $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, task TEXT, rel_id TEXT, status TEXT)');
-    $db->insert('invoice', ['id' => 10, 'status' => $invoiceStatus]);
-    $db->insert('invoice_item', ['invoice_id' => 10, 'type' => 'order', 'task' => 'renew', 'rel_id' => '21', 'status' => $taskStatus]);
+    $db->insert('invoice', ['id' => 10, 'client_id' => 7, 'status' => 'paid']);
+    $db->insert('invoice_item', ['invoice_id' => 10, 'type' => 'order', 'task' => 'renew', 'rel_id' => '20', 'status' => 'pending_setup']);
+    $db->insert('invoice', ['id' => 99, 'client_id' => $invoiceOwner, 'status' => $invoiceStatus]);
+    $db->insert('invoice_item', ['invoice_id' => 99, 'type' => 'order', 'task' => 'renew', 'rel_id' => '21', 'status' => $taskStatus]);
     $service->getDi()['em']->shouldReceive('getConnection')->byDefault()->andReturn($db);
-    expect($service->hasPendingHostingRenewal(20, 10))->toBe($pending)
-        ->and($service->hasPendingHostingRenewal(20, 99))->toBeFalse();
+    expect($service->hasPendingHostingRenewal(20))->toBe($pending)
+        ->and($service->hasFreeDomainRenewal(20))->toBeFalse();
+    if ($pending) {
+        $db->update('invoice_item', ['status' => 'executed'], ['invoice_id' => 99]);
+        $hosting->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTimeImmutable('2031-01-01'));
+        expect($service->hasPendingHostingRenewal(20))->toBeFalse()
+            ->and($service->hasFreeDomainRenewal(20))->toBeTrue();
+    }
 })->with([
-    ['paid', 'pending_setup', true, true], ['unpaid', 'pending_setup', true, false],
-    ['paid', 'executed', true, false], ['paid', 'failed', true, false], ['paid', 'pending_setup', false, false],
+    'linked hosting on another paid invoice' => ['paid', 'pending_setup', true, 7, true],
+    'unpaid hosting invoice' => ['unpaid', 'pending_setup', true, 7, false],
+    'executed hosting item' => ['paid', 'executed', true, 7, false],
+    'failed hosting item' => ['paid', 'failed', true, 7, false],
+    'unrelated domain' => ['paid', 'pending_setup', false, 7, false],
+    'another client invoice' => ['paid', 'pending_setup', true, 8, false],
 ]);

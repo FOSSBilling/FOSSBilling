@@ -1124,7 +1124,7 @@ test('free domain renewal checks the committed hosting term again before failing
     $orders->shouldReceive('saveStatusChange')->times($expectedAttempts);
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('freeDomainRenewalUntil')->once()->with(20)->ordered()->andReturnNull();
-    $products->shouldReceive('hasPendingHostingRenewal')->once()->with(20, 10)->ordered()->andReturn($hostingPending);
+    $products->shouldReceive('hasPendingHostingRenewal')->once()->with(20)->ordered()->andReturn($hostingPending);
     if (!$hostingPending) {
         $products->shouldReceive('freeDomainRenewalUntil')->once()->with(20)->ordered()->andReturn($committedTerm);
     }
@@ -1242,7 +1242,7 @@ test('a renewal is held for staff when the hosting offer ends', function (): voi
     $orders->shouldNotReceive('updateOrderMeta');
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('freeDomainRenewalUntil')->with(20)->andReturnNull();
-    $products->shouldReceive('hasPendingHostingRenewal')->with(20, Mockery::any())->andReturn(false);
+    $products->shouldReceive('hasPendingHostingRenewal')->with(20)->andReturn(false);
     $products->shouldReceive('isFreeDomainRenewalOffered')->with(20)->andReturnFalse();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
     $connection->shouldReceive('isTransactionActive')->andReturn(false);

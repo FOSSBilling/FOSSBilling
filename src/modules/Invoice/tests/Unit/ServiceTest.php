@@ -4395,7 +4395,7 @@ test('renewal batch keeps subscription-backed orders on the single-invoice path'
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->with($order)->andReturn(true);
-    $serviceMock->shouldReceive('generateForOrder')->once()->with($order)->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateForOrder')->once()->with($order, null, true, false, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once();
     $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
 
@@ -4574,7 +4574,7 @@ test('renewal batch falls back to the single-invoice path when the merge check f
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->andThrow(new Exception('meta store unavailable'));
-    $serviceMock->shouldReceive('generateForOrder')->once()->with($order)->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateForOrder')->once()->with($order, null, true, false, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once();
     $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
 
@@ -5895,7 +5895,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
         ->once()
         ->andReturn($renewalInvoice);
     $serviceMock->shouldReceive('issueInvoice')
-        ->once();
+        ->once()->andReturn(true);
 
     $di = container();
     $di['em'] = $em;
@@ -5945,7 +5945,7 @@ test('generateRenewalInvoiceForSubscriptionPayment still renews an order the bat
         ->once()
         ->andReturn($renewalInvoice);
     $serviceMock->shouldReceive('issueInvoice')
-        ->once();
+        ->once()->andReturn(true);
 
     $di = container();
     $di['em'] = $em;
@@ -11223,7 +11223,7 @@ test('a paid pending free renewal invoice is reused after hosting payment', func
     expect($service->generateForOrder($order))->toBe($invoice);
 });
 
-test('failed renewal generation replaces a closed manager before returning', function (): void {
+test('failed renewal generation replaces a closed manager before allowing callback retry', function (): void {
     $old = Mockery::mock(EntityManagerInterface::class);
     $new = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
@@ -11237,6 +11237,7 @@ test('failed renewal generation replaces a closed manager before returning', fun
     $di = container();
     $di['em'] = $old;
     $service->setDi($di);
-    expect($service->generateRenewalInvoiceForSubscriptionPayment('sub_failed', 1))->toBeNull()
-        ->and($di['em'])->toBe($new);
+    expect(fn () => $service->generateRenewalInvoiceForSubscriptionPayment('sub_failed', 1))
+        ->toThrow(Box\Mod\Invoice\Exception\RetryableCallbackException::class, 'temporarily unavailable');
+    expect($di['em'])->toBe($new);
 });

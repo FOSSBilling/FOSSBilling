@@ -21,6 +21,7 @@ use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\PromoRedemption;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\RowLock;
 
 class ServiceSubscription implements InjectionAwareInterface
 {
@@ -90,16 +91,36 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function updateStatusForGatewayLink(int $id, string $sid, int $gatewayId, string $status): void
     {
-        // Compare the link in the write itself. An administrator may change it
-        // while the adapter is waiting for the provider.
-        $this->di['em']->getConnection()->update('subscription', [
-            'status' => $status,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ], ['id' => $id, 'sid' => $sid, 'pay_gateway_id' => $gatewayId]);
-        $model = $this->subscriptionRepository->find($id);
-        if ($model instanceof Subscription) {
-            $this->di['em']->refresh($model);
+        $this->writeStatusForGatewayLink($id, $sid, $gatewayId, $status);
+    }
+
+    /** @return array{sid: string, pay_gateway_id: int|string, rel_type: ?string, rel_id: int|string|null}|null */
+    private function writeStatusForGatewayLink(int $id, string $sid, int $gatewayId, string $status): ?array
+    {
+        $connection = $this->di['em']->getConnection();
+        $link = $connection->transactional(function () use ($connection, $id, $sid, $gatewayId, $status): ?array {
+            $row = $connection->fetchAssociative(
+                'SELECT sid, pay_gateway_id, rel_type, rel_id FROM subscription WHERE id = ?' . RowLock::suffix($connection),
+                [$id],
+            );
+            if ($row === false || $row['sid'] !== $sid || (int) $row['pay_gateway_id'] !== $gatewayId) {
+                return null;
+            }
+            $connection->update('subscription', [
+                'status' => $status,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], ['id' => $id]);
+
+            return $row;
+        });
+        if ($link !== null) {
+            $model = $this->subscriptionRepository->find($id);
+            if ($model instanceof Subscription) {
+                $this->di['em']->refresh($model);
+            }
         }
+
+        return $link;
     }
 
     private function persistUpdate(Subscription $model, array $data): bool
@@ -264,16 +285,15 @@ class ServiceSubscription implements InjectionAwareInterface
         return $scheduledSubscriptions;
     }
 
-    public function finalizeCancellationFromGateway(int $id): bool
+    public function finalizeCancellationFromGateway(int $id, string $sid, int $gatewayId): bool
     {
-        $subscription = $this->subscriptionRepository->find($id);
-        if ($subscription === null) {
-            throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
+        // Commit the provider result before service cleanup and use the link
+        // captured with that write, even if a later update changes the row.
+        $link = $this->writeStatusForGatewayLink($id, $sid, $gatewayId, 'canceled');
+        if ($link === null) {
+            return false;
         }
-
-        // The provider result survives a failure in local service cleanup.
-        $this->persistUpdate($subscription, ['status' => 'canceled']);
-        if ($subscription->getRelType() === 'invoice') {
+        if ($link['rel_type'] === 'invoice') {
             $query = $this->di['em']->getConnection()->createQueryBuilder();
             $orderIds = $query
                 ->select('DISTINCT ii.rel_id')
@@ -283,7 +303,7 @@ class ServiceSubscription implements InjectionAwareInterface
                 ->andWhere('ii.type = :item_type')
                 ->andWhere('com.name = :meta_name')
                 ->andWhere('com.value = :meta_value')
-                ->setParameter('invoice_id', $subscription->getRelId())
+                ->setParameter('invoice_id', $link['rel_id'])
                 ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
                 ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
                 ->setParameter('meta_value', '1')
