@@ -29,7 +29,7 @@ class Patch82 implements PatchInterface
                 UNIQUE KEY `email_template_group_unique` (`email_template_id`, `admin_group_id`),
                 KEY `email_template_group_template_id_idx` (`email_template_id`),
                 KEY `email_template_group_group_id_idx` (`admin_group_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;');
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;');
         }
 
         // Backfill: templates already sent to staff must keep reaching everyone

@@ -88,20 +88,22 @@ test('charset migration skips customized defaults, generated fields and other ch
         content TEXT CHARACTER SET latin1 NOT NULL
     ) DEFAULT CHARSET=utf8");
     $logger = Mockery::mock();
-    $logger->shouldReceive('withChannel')->with('update')->times(3)->andReturnSelf();
-    $logger->shouldReceive('log')->with('warning', Mockery::type('string'), [])->times(3);
+    $logger->shouldReceive('withChannel')->with('update')->times(2)->andReturnSelf();
+    $logger->shouldReceive('log')->with('warning', Mockery::type('string'), [])->times(2);
     $this->patcher->getDi()['logger'] = $logger;
     $before = $this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC);
+    $tableDefault = $this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'custom_pages'");
     ($this->runPatch)();
     // The unique description fits the index size limit after widening, so only
     // the literal default, the generated column and the latin1 text stay put.
+    // Patch128 never repairs table defaults, so the table collation is kept too.
     $after = $this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC);
     $byField = static fn (array $rows, string $field): array => array_values(array_filter($rows, static fn (array $row): bool => $row['Field'] === $field))[0];
     expect($byField($after, 'title'))->toBe($byField($before, 'title'))
         ->and($byField($after, 'keywords'))->toBe($byField($before, 'keywords'))
         ->and($byField($after, 'content'))->toBe($byField($before, 'content'))
         ->and($byField($after, 'description')['Collation'])->toBe('utf8mb4_unicode_ci')
-        ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'custom_pages'"))->toBe('utf8mb4_unicode_ci');
+        ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'custom_pages'"))->toBe($tableDefault);
 });
 
 test('charset migration is harmless when Custompages is not installed', function (): void {

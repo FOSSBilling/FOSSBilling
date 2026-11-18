@@ -479,7 +479,7 @@ test('fresh installation supports supplementary Unicode in a legacy database wit
 });
 
 test('Unicode repair normalizes the database default to utf8mb4_unicode_ci', function (): void {
-    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8');
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBeIn(['utf8', 'utf8mb3']);
 
     (new Patch146())->apply($this->patcher);
 
@@ -505,22 +505,24 @@ test('Unicode repair maps utf8mb3 database defaults to utf8mb4_unicode_ci', func
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
-test('Unicode repair leaves utf8mb4 database defaults untouched', function (): void {
-    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+test('Unicode repair leaves non-legacy utf8mb4 database defaults untouched', function (): void {
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin');
 
     (new Patch146())->apply($this->patcher);
 
     expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
-        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_bin')
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
 test('Unicode repair normalizes database collations without a utf8mb4 equivalent', function (): void {
-    $supported = $this->connection->fetchOne("SELECT COUNT(*) FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE COLLATION_NAME = 'utf8_general_mysql500_ci'");
-    if ((int) $supported === 0) {
-        $this->markTestSkipped('This server does not support the utf8_general_mysql500_ci collation.');
+    $legacyCollations = $this->connection->fetchFirstColumn("SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE COLLATION_NAME IN ('utf8_general_mysql500_ci', 'utf8mb3_general_mysql500_ci')");
+    if ($legacyCollations === []) {
+        $this->markTestSkipped('This server has no MySQL 5.0 compatibility collation to normalize.');
     }
-    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8 COLLATE utf8_general_mysql500_ci');
+    $collation = $legacyCollations[0];
+    $charset = str_starts_with($collation, 'utf8mb3_') ? 'utf8mb3' : 'utf8';
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET ' . $charset . ' COLLATE ' . $collation);
 
     (new Patch146())->apply($this->patcher);
 
@@ -536,9 +538,9 @@ test('Unicode repair converts unique slugs when the index fits the server limit'
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
     expect($column['Collation'])->toBe('utf8mb4_unicode_ci')
         ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('example');
+    expect(fn () => $this->connection->insert('post', ['id' => 2, 'slug' => 'EXAMPLE']))
+        ->toThrow(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class);
     $this->connection->executeStatement('UPDATE post SET slug = ?', ['🚀-release']);
     expect($this->connection->fetchOne('SELECT slug FROM post'))->toBe('🚀-release')
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
-    expect(fn () => $this->connection->insert('post', ['id' => 2, 'slug' => 'EXAMPLE']))
-        ->toThrow(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class);
 });

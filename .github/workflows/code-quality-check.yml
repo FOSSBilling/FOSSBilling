@@ -104,10 +104,13 @@ jobs:
 
       # Scoped to charset definitions so the intentional utf8/utf8mb3
       # handling in Patcher/DriverManagerFactory (connection normalization,
-      # collation mapping) never trips it.
+      # collation mapping) never trips it. Bare utf8 and utf8mb3 spellings are
+      # rejected; utf8mb4 (and longer tokens such as utf8mb4_0900_ai_ci) pass.
+      # SQL keywords match case-insensitively with optional whitespace, since
+      # MySQL itself is case-insensitive there.
       - name: Reject legacy MySQL charset defaults
         run: |
-          if grep -rnE "CHARSET=utf8([^m]|$)|CHARACTER SET utf8([^m]|$)|SET NAMES utf8([^m]|$)" src/ --include='*.php'; then
+          if grep -rniE "charset\s*=\s*utf8(mb3)?([^[:alnum:]_]|$)|character\s+set\s+utf8(mb3)?([^[:alnum:]_]|$)|set\s+names\s+utf8(mb3)?([^[:alnum:]_]|$)" src/ --include='*.php'; then
             echo '::error::Legacy utf8/utf8mb3 charset default found (see output above). Use utf8mb4 for MySQL/MariaDB definitions.'
             exit 1
           fi

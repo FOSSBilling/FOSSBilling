@@ -27,6 +27,6 @@ class Patch123 implements PatchInterface
             return;
         }
 
-        $patcher->executeSql('CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT \'updated\', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+        $patcher->executeSql('CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT \'updated\', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
     }
 }

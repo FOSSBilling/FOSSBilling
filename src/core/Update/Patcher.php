@@ -2422,7 +2422,7 @@ class Patcher implements InjectionAwareInterface
         foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
             $liveColumns[$column['Field']] = $column;
         }
-        $byteLimit = $this->utf8mb4IndexByteLimit($table);
+        $byteLimit = null;
         $changes = [];
         foreach ($liveColumns as $column) {
             $name = $column['Field'];
@@ -2442,10 +2442,15 @@ class Patcher implements InjectionAwareInterface
                 continue;
             }
             $columnIndexes = array_filter($indexes, static fn (array $index): bool => $index['Column_name'] === $name);
-            if ($columnIndexes !== [] && !$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
-                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': index would exceed the size limit after conversion and requires manual review.');
+            if ($columnIndexes !== []) {
+                // Look the limit up only when an indexed column actually needs
+                // it; most tables never reach this branch.
+                $byteLimit ??= $this->utf8mb4IndexByteLimit($table);
+                if (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
+                    $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': index would exceed the size limit after conversion and requires manual review.');
 
-                continue;
+                    continue;
+                }
             }
             $literalUnitDefault = null;
             if ($name === 'unit' && in_array($table, ['product', 'client_order', 'invoice_item'], true)
@@ -2622,20 +2627,39 @@ class Patcher implements InjectionAwareInterface
     {
         // Match in PHP rather than LIKE: table names contain underscores,
         // which are single-character wildcards in a LIKE pattern.
+        $engine = '';
         $rowFormat = '';
-
         foreach ($this->fetchAll('SHOW TABLE STATUS') as $status) {
             if (($status['Name'] ?? null) === $table) {
+                $engine = strtolower((string) ($status['Engine'] ?? ''));
                 $rowFormat = strtolower((string) ($status['Row_format'] ?? ''));
 
                 break;
             }
         }
-        if (in_array($rowFormat, ['dynamic', 'compressed'], true) && self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
-            return 3072;
+        if ($engine === 'myisam') {
+            return 1000;
+        }
+        if (!in_array($rowFormat, ['dynamic', 'compressed'], true) || !self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
+            return 767;
         }
 
-        return 767;
+        return match ($this->innoDbPageSize()) {
+            4096 => 768,
+            8192 => 1536,
+            default => 3072,
+        };
+    }
+
+    private function innoDbPageSize(): ?int
+    {
+        try {
+            $size = $this->fetchOne('SELECT @@innodb_page_size');
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return is_numeric($size) ? (int) $size : null;
     }
 
     private static function supportsLargeIndexPrefixes(mixed $version): bool
@@ -2736,16 +2760,8 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        $defaults = $this->fetchAll(
-            'SELECT DEFAULT_CHARACTER_SET_NAME AS charset, DEFAULT_COLLATION_NAME AS collation FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'
-        );
-        $charset = $defaults[0]['charset'] ?? null;
-        $collation = $defaults[0]['collation'] ?? null;
-        if (!is_string($charset) || !is_string($collation)) {
-            return;
-        }
-
-        if (!preg_match('/^utf8(?:mb3)?$/', $charset)) {
+        $charset = $this->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()');
+        if (!is_string($charset) || !preg_match('/^utf8(?:mb3)?$/', $charset)) {
             return;
         }
 
@@ -2761,10 +2777,7 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        $this->executeSql(sprintf(
-            'ALTER DATABASE `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
-            $this->quoteIdentifier($database)
-        ));
+        $this->executeSql('ALTER DATABASE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     }
 
     public function backfillProductCategoryPriorities(\Doctrine\DBAL\Connection $connection): void
