@@ -191,18 +191,18 @@ test('Unicode repair fixes every first-party table default and future schema add
         $this->pdo->exec('ALTER TABLE `' . $table . '` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci');
     }
     $this->pdo->exec('ALTER TABLE setting DROP COLUMN category');
-    // External tables must retain their own definitions.
+    // External tables and non-utf8mb4 server defaults must retain their own definitions.
     $this->pdo->exec('CREATE TABLE third_party (title TEXT) DEFAULT CHARSET=utf8 COLLATE=utf8_bin');
     $externalDefault = $this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'third_party'");
+    $slugBefore = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
     ($this->runPatch)();
 
     foreach ($tables as $table) {
         expect($this->connection->fetchOne('SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$table]))
             ->toBe('utf8mb4_unicode_ci');
     }
-    $slug = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
     expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'third_party'"))->toBe($externalDefault)
-        ->and($slug['Collation'])->toBe('utf8mb4_unicode_ci');
+        ->and($this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'"))->toBe($slugBefore);
     SchemaSynchronizer::syncEntities($em, [Box\Mod\System\Entity\Setting::class]);
     $this->connection->insert('setting', ['param' => 'unicode_test', 'category' => '🚀 𠮷']);
     expect($this->connection->fetchOne('SELECT category FROM setting'))->toBe('🚀 𠮷');
@@ -531,8 +531,10 @@ test('Unicode repair normalizes database collations without a utf8mb4 equivalent
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
-test('Unicode repair converts unique slugs when the index fits the server limit', function (): void {
-    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
+test('Unicode repair converts unique slugs and preserves their uniqueness', function (): void {
+    // VARCHAR(191) keeps the widened key within every InnoDB page size (and the legacy 767-byte limit),
+    // so this exercises conversion itself rather than any particular server configuration.
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(191) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
     $this->connection->insert('post', ['id' => 1, 'slug' => 'example']);
     ($this->runPatch)();
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
@@ -546,7 +548,7 @@ test('Unicode repair converts unique slugs when the index fits the server limit'
 });
 
 test('Unicode repair preserves case-sensitive uniqueness when widening binary slugs', function (): void {
-    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_bin');
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(191) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_bin');
     $this->connection->insert('post', ['id' => 1, 'slug' => 'about']);
     $this->connection->insert('post', ['id' => 2, 'slug' => 'ABOUT']);
     ($this->runPatch)();

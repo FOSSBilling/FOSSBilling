@@ -2397,12 +2397,13 @@ class Patcher implements InjectionAwareInterface
             return;
         }
 
-        // Normalize every listed text column to utf8mb4_unicode_ci, the same
-        // collation fresh installs get. TEXT columns keep their size (CONVERT
-        // TO CHARACTER SET can promote them to MEDIUMTEXT, so MODIFY is used
-        // instead). Indexed columns convert too, unless the wider 4-byte
-        // characters would overflow the server's index key length -
-        // those keep their definition for manual review.
+        // Normalize every listed legacy text column to utf8mb4 (unicode_ci,
+        // or utf8mb4_bin where byte-order comparison must be preserved).
+        // TEXT columns keep their size (CONVERT TO CHARACTER SET can promote
+        // them to MEDIUMTEXT, so MODIFY is used instead). Indexed columns
+        // convert too, unless the wider 4-byte characters would overflow the
+        // server's index key length - those keep their definition for manual
+        // review.
         $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
         // MariaDB's UCA-1400 collations appear without a charset prefix here
         // (and with NULL charset in COLLATIONS); applicability includes their aliases.
@@ -2429,10 +2430,12 @@ class Patcher implements InjectionAwareInterface
             }
 
             $collation = $column['Collation'] ?? '';
-            if ($collation === $unicodeTarget || $collation === $binTarget) {
+            if (str_starts_with($collation, 'utf8mb4_')) {
+                // Already modern (including NO PAD server defaults such as
+                // utf8mb4_0900_ai_ci); only legacy charsets convert.
                 continue;
             }
-            if (!preg_match('/^utf8(?:mb3)?_/', $collation) && !str_starts_with($collation, 'utf8mb4_')) {
+            if (!preg_match('/^utf8(?:mb3)?_/', $collation)) {
                 if ($repairTableDefault) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized character set requires manual review.');
                 }
@@ -2505,7 +2508,7 @@ class Patcher implements InjectionAwareInterface
                 ['table' => $table],
             );
             if (is_string($tableCollation) && $tableCollation !== $unicodeTarget && $tableCollation !== $binTarget
-                && (preg_match('/^utf8(?:mb3)?_/', $tableCollation) || str_starts_with($tableCollation, 'utf8mb4_'))) {
+                && preg_match('/^utf8(?:mb3)?_/', $tableCollation)) {
                 // DEFAULT changes only future columns; existing text moves via MODIFY COLUMN above.
                 // Binary table defaults keep byte-order comparison via utf8mb4_bin.
                 $defaultTarget = str_ends_with($tableCollation, '_bin') ? $binTarget : $unicodeTarget;
@@ -2663,7 +2666,10 @@ class Patcher implements InjectionAwareInterface
                 break;
             }
         }
-        if ($engine === 'myisam') {
+        if ($engine === 'myisam' || $engine === 'aria') {
+            // Fixed key-length caps well below InnoDB's. The conservative
+            // 1,000-byte bound keeps conversions safe on both; larger indexes
+            // are skipped with a warning for manual review instead.
             return 1000;
         }
         if (!in_array($rowFormat, ['dynamic', 'compressed'], true) || !self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
