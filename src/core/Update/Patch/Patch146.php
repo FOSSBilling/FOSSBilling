@@ -22,11 +22,12 @@ class Patch146 implements PatchInterface
         }
 
         // Full utf8mb3 -> utf8mb4 migration, normalizing legacy text columns
-        // and table defaults to utf8mb4_unicode_ci (binary collations to
-        // utf8mb4_bin, so case-sensitive uniqueness survives byte-for-byte).
-        // Already-modern columns are left alone; indexed columns convert only
-        // when the wider characters fit the server's index key length, and
-        // anything else is skipped with a logged warning.
+        // and table defaults to utf8mb4_unicode_ci. Binary and NO PAD
+        // collations map onto utf8mb4 equivalents that preserve their
+        // comparison rules instead. Already-modern columns are left alone;
+        // indexed columns convert only when the wider characters fit the
+        // server's index key length, and anything else is skipped with a
+        // logged warning.
         $patcher->repairDatabaseDefaultCharset();
 
         foreach ($patcher->legacyUnicodeColumns() as $table => $columns) {

@@ -537,6 +537,22 @@ test('Unicode repair normalizes database collations without a utf8mb4 equivalent
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
+test('Unicode repair preserves NO PAD comparison rules when widening', function (): void {
+    $available = $this->connection->fetchFirstColumn("SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE COLLATION_NAME IN ('utf8mb3_general_nopad_ci', 'utf8mb4_general_nopad_ci')");
+    if (count(array_intersect(['utf8mb3_general_nopad_ci', 'utf8mb4_general_nopad_ci'], $available)) < 2) {
+        $this->markTestSkipped('This server does not offer NO PAD collation equivalents.');
+    }
+    $this->pdo->exec("CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL, content TEXT NULL) DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_nopad_ci");
+    $this->connection->insert('post', ['id' => 1, 'title' => 'Résumé', 'content' => '日本語']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'title'");
+    expect($column['Collation'])->toBe('utf8mb4_general_nopad_ci')
+        ->and($this->connection->fetchOne('SELECT content FROM post'))->toBe('日本語');
+    $this->connection->executeStatement('UPDATE post SET title = ?', ['🚀']);
+    expect($this->connection->fetchOne('SELECT title FROM post'))->toBe('🚀')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
 test('Unicode repair converts unique slugs and preserves their uniqueness', function (): void {
     // VARCHAR(191) keeps the widened key within every InnoDB page size (and the legacy 767-byte limit),
     // so this exercises conversion itself rather than any particular server configuration.

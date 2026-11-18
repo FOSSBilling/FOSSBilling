@@ -2415,8 +2415,6 @@ class Patcher implements InjectionAwareInterface
             return;
         }
         $binTarget = self::findCollation($applicable, 'utf8mb4_bin');
-        // NO PAD sources keep trailing-space significance via utf8mb4_0900_bin.
-        $noPadTarget = self::findCollation($applicable, 'utf8mb4_0900_bin');
 
         $liveColumns = [];
         foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
@@ -2443,7 +2441,7 @@ class Patcher implements InjectionAwareInterface
 
                 continue;
             }
-            $columnTarget = self::resolveConversionTarget($collation, $unicodeTarget, $binTarget, $noPadTarget);
+            $columnTarget = self::resolveConversionTarget($collation, $unicodeTarget, $binTarget, $applicable);
             if ($columnTarget === null) {
                 $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': no equivalent utf8mb4 collation is available on this server.');
 
@@ -2516,11 +2514,11 @@ class Patcher implements InjectionAwareInterface
                 'SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
                 ['table' => $table],
             );
-            if (is_string($tableCollation) && $tableCollation !== $unicodeTarget && $tableCollation !== $binTarget && $tableCollation !== $noPadTarget
+            if (is_string($tableCollation) && $tableCollation !== $unicodeTarget && $tableCollation !== $binTarget
                 && preg_match('/^utf8(?:mb3)?_/', $tableCollation)) {
                 // DEFAULT changes only future columns; existing text moves via MODIFY COLUMN above.
                 // Binary table defaults keep byte-order comparison via utf8mb4_bin.
-                $defaultTarget = self::resolveConversionTarget($tableCollation, $unicodeTarget, $binTarget, $noPadTarget);
+                $defaultTarget = self::resolveConversionTarget($tableCollation, $unicodeTarget, $binTarget, $applicable);
                 if ($defaultTarget === null) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': no equivalent utf8mb4 collation is available on this server.');
                 } else {
@@ -2557,13 +2555,21 @@ class Patcher implements InjectionAwareInterface
     /**
      * utf8mb4 equivalent preserving the source collation's comparison rules,
      * or null when the server offers none. Binary collations keep byte-order
-     * comparison; NO PAD sources additionally keep trailing-space
-     * significance by mapping onto utf8mb4_0900_bin.
+     * comparison; NO PAD sources keep trailing-space significance by mapping
+     * onto the matching utf8mb4 nopad collation, or onto utf8mb4_0900_bin for
+     * binary ones (byte-order comparison is identical there either way).
      */
-    private static function resolveConversionTarget(string $collation, ?string $unicodeTarget, ?string $binTarget, ?string $noPadTarget): ?string
+    private static function resolveConversionTarget(string $collation, ?string $unicodeTarget, ?string $binTarget, array $applicable): ?string
     {
-        if (stripos($collation, 'nopad') !== false) {
-            return $noPadTarget;
+        if (str_contains($collation, 'nopad')) {
+            if (preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
+                $native = self::findCollation($applicable, 'utf8mb4_' . $matches[1]);
+                if ($native !== null) {
+                    return $native;
+                }
+            }
+
+            return str_ends_with($collation, '_bin') ? self::findCollation($applicable, 'utf8mb4_0900_bin') : null;
         }
 
         if (str_ends_with($collation, '_bin')) {
@@ -2862,7 +2868,7 @@ class Patcher implements InjectionAwareInterface
             $collation,
             self::findCollation($collations, 'utf8mb4_unicode_ci'),
             self::findCollation($collations, 'utf8mb4_bin'),
-            self::findCollation($collations, 'utf8mb4_0900_bin')
+            $collations
         );
         if ($targetCollation === null) {
             $this->logUpdate('warning', 'Skipped utf8mb4 database default for ' . $database . ': no equivalent utf8mb4 collation is available on this server.');
