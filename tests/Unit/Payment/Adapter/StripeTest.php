@@ -4014,6 +4014,7 @@ describe('bank debits', function (): void {
 
         $clearing = createEntity(Transaction::class, ['id' => 69, 'txn_id' => 'pi_debit']);
         $txRepo = Mockery::mock(TransactionRepository::class);
+        $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->andReturn(null);
         $txRepo->shouldReceive('findClearingByTxnId')->once()->with('pi_debit', 1, 70)->andReturn($clearing);
 
         $invoice = createEntity(Invoice::class, ['id' => 71, 'client_id' => 9]);
@@ -4024,6 +4025,7 @@ describe('bank debits', function (): void {
         $savedCards->shouldReceive('emailDebitFailure')->once()->with($invoice, '', 'Stripe payment failed: card declined');
 
         $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getConnection')->andReturn(stripeFailureDatabase());
         $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
         $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
         $em->shouldReceive('flush')->once();
@@ -4052,12 +4054,14 @@ describe('bank debits', function (): void {
         $tx->setGateway($gateway);
 
         $txRepo = Mockery::mock(TransactionRepository::class);
+        $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->andReturn(null);
         $txRepo->shouldReceive('findClearingByTxnId')->once()->andReturn(null);
 
         $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
         $savedCards->shouldNotReceive('emailDebitFailure');
 
         $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getConnection')->andReturn(stripeFailureDatabase());
         $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
         $em->shouldNotReceive('flush');
 
@@ -4167,3 +4171,211 @@ test('webhook save choice excludes its own transaction but preserves later card 
     invokePrivateMethod($this->adapter, 'rememberPaidCard', [$intent, 9, 42]);
     expect($row->getDefaultPaymentMethod())->toBe($state === 'first delivery' ? 'pm_new' : 'pm_old');
 })->with(['first delivery', 'own receipt', 'other transaction']);
+
+function stripeFailureDatabase(): Doctrine\DBAL\Connection
+{
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Invoice::class, PayGateway::class, Transaction::class, Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Client\Entity\ClientBalance::class]));
+
+    return $db;
+}
+
+function stripeFailureContext(): array
+{
+    $db = stripeFailureDatabase();
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    $gateway = (new PayGateway())->setGateway('Stripe')->setEnabled(true);
+    $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setClientId(9)->setCurrency('USD');
+    $em->persist($gateway);
+    $em->persist($invoice);
+    $em->flush();
+    $clearing = (new Transaction())->setInvoice($invoice)->setGateway($gateway)->setTxnId('pi_debit')->setTxnStatus('processing')->setStatus(Transaction::STATUS_RECEIVED)->setAmount('10.00')->setCurrency('USD');
+    $tx = (new Transaction())->setGateway($gateway)->setStatus(Transaction::STATUS_PROCESSING)->setProcessingToken(str_repeat('b', 32));
+    $em->persist($clearing);
+    $em->persist($tx);
+    $em->flush();
+    $attempt = Box\Mod\Invoice\GatewayChargeAttempts::begin($db, (int) $invoice->getId(), (int) $gateway->getId());
+    Box\Mod\Invoice\GatewayChargeAttempts::recordPayment($db, $attempt, 'pi_debit');
+    $intent = Stripe\PaymentIntent::constructFrom([
+        'id' => 'pi_debit', 'status' => 'requires_payment_method',
+        'metadata' => ['invoice_id' => (string) $invoice->getId(), 'gateway_id' => (string) $gateway->getId(), 'auto_pay' => '1'],
+        'last_payment_error' => ['message' => 'debit declined'],
+    ]);
+    $intents = Mockery::mock();
+    $intents->shouldReceive('retrieve')->with('pi_debit', [])->andReturn($intent);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->paymentIntents = $intents;
+    $di = container();
+    $di['em'] = $em;
+
+    return compact('db', 'em', 'invoice', 'gateway', 'clearing', 'tx', 'attempt', 'intent', 'di', 'stripe');
+}
+
+function processStripeDebitFailure(object $adapter, array $c): mixed
+{
+    setPrivateProperty($adapter, 'stripe', $c['stripe']);
+
+    return FOSSBilling\Core\Payment\ProcessingFence::transaction($c['db'], (int) $c['tx']->getId(), (string) $c['tx']->getProcessingToken(),
+        fn () => invokePrivateMethod($adapter, 'handlePaymentIntentFailedWebhook', [null, $c['tx'], (object) ['data' => (object) ['object' => $c['intent']]]]));
+}
+
+test('failed Stripe bank debits atomically release their journal and allow manual checkout', function (): void {
+    $c = stripeFailureContext();
+    $email = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $email->shouldReceive('emailDebitFailure')->once()->andReturnUsing(function () use ($c): void {
+        expect($c['db']->isTransactionActive())->toBeFalse()
+            ->and($c['db']->fetchOne('SELECT state FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe('failed')
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], (int) $c['invoice']->getId()))->toBeNull();
+    });
+    $c['di']['mod_service'] = $c['di']->protect(moduleService(['invoice:savedcards' => $email]));
+    $this->adapter->setDi($c['di']);
+
+    try {
+        expect(processStripeDebitFailure($this->adapter, $c))->toBeTrue()
+            ->and(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], (int) $c['invoice']->getId()))->toBeNull()
+            ->and($c['invoice']->getStatus())->toBe(Invoice::STATUS_UNPAID);
+        // Replayed failure does not resolve again or notify twice.
+        expect(processStripeDebitFailure($this->adapter, $c))->toBeTrue();
+        $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+        $invoiceRepo->shouldReceive('findByHash')->with('hash')->andReturn($c['invoice']);
+        $gatewayRepo = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+        $gatewayRepo->shouldReceive('find')->once()->with(999)->andReturn(null);
+        $em = Mockery::mock(EntityManagerInterface::class);
+        $em->shouldReceive('getConnection')->andReturn($c['db']);
+        $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+        $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo);
+        $c['db']->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
+        $c['di']['em'] = $em;
+        $billing = new Box\Mod\Invoice\Service();
+        $billing->setDi($c['di']);
+        expect(fn () => $billing->processInvoice(['hash' => 'hash', 'gateway_id' => 999]))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Payment method not found');
+    } finally {
+        $c['db']->close();
+    }
+});
+
+test('Stripe failures preserve unrelated or already resolved charge attempts', function (string $scenario): void {
+    $c = stripeFailureContext();
+    $changes = match ($scenario) {
+        'invoice' => ['invoice_id' => 999],
+        'gateway' => ['gateway_id' => 999],
+        'reference' => ['payment_id' => 'pi_other'],
+        'unknown reference' => ['payment_id' => null],
+        'resolved' => ['state' => 'settled'],
+        default => [],
+    };
+    if ($changes !== []) {
+        $c['db']->update('invoice_gateway_charge_attempt', $changes, ['id' => $c['attempt']]);
+    }
+    if ($scenario === 'not terminal') {
+        $c['intent']->status = 'processing';
+    } elseif ($scenario === 'already succeeded') {
+        $c['clearing']->setStatus(Transaction::STATUS_PROCESSED)->setTxnStatus('succeeded');
+        $c['em']->flush();
+    }
+    $before = $c['db']->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]);
+    $email = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class)->shouldIgnoreMissing();
+    $c['di']['mod_service'] = $c['di']->protect(moduleService(['invoice:savedcards' => $email]));
+    $this->adapter->setDi($c['di']);
+
+    try {
+        processStripeDebitFailure($this->adapter, $c);
+        expect($c['db']->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe($before);
+    } finally {
+        $c['db']->close();
+    }
+})->with(['invoice', 'gateway', 'reference', 'unknown reference', 'resolved', 'not terminal', 'already succeeded']);
+
+test('Stripe failure leaves the charge worker ownership and clearing marker intact while busy', function (): void {
+    $c = stripeFailureContext();
+    $this->adapter->setDi($c['di']);
+    $lock = 'fb:card-charge:' . $c['invoice']->getId();
+    $before = $c['db']->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]);
+    FOSSBilling\Core\Doctrine\NamedLock::acquire($c['db'], $lock, 0);
+
+    try {
+        expect(fn () => processStripeDebitFailure($this->adapter, $c))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'still active');
+        expect($c['db']->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe($before)
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], (int) $c['invoice']->getId()))->not->toBeNull();
+    } finally {
+        FOSSBilling\Core\Doctrine\NamedLock::release($c['db'], $lock);
+        $c['db']->close();
+    }
+});
+
+test('Stripe failure rolls back clearing changes when journal resolution fails', function (): void {
+    $c = stripeFailureContext();
+    $c['db']->executeStatement("CREATE TRIGGER fail_resolution BEFORE UPDATE OF state ON invoice_gateway_charge_attempt BEGIN SELECT RAISE(ABORT, 'resolution failed'); END");
+    $email = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $email->shouldNotReceive('emailDebitFailure');
+    $c['di']['mod_service'] = $c['di']->protect(moduleService(['invoice:savedcards' => $email]));
+    $this->adapter->setDi($c['di']);
+
+    try {
+        expect(fn () => processStripeDebitFailure($this->adapter, $c))->toThrow(Doctrine\DBAL\Exception\DriverException::class);
+        expect($c['db']->fetchOne('SELECT state FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe('pending')
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], (int) $c['invoice']->getId()))->not->toBeNull()
+            ->and($c['em']->isOpen())->toBeFalse();
+    } finally {
+        $c['db']->close();
+    }
+});
+
+test('an old Stripe failure cannot release an attempt when the provider is processing again', function (): void {
+    $c = stripeFailureContext();
+    $eventIntent = clone $c['intent'];
+    $c['intent']->status = 'processing';
+    $c['intent'] = $eventIntent;
+    $this->adapter->setDi($c['di']);
+
+    try {
+        expect(processStripeDebitFailure($this->adapter, $c))->toBeFalse()
+            ->and(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], (int) $c['invoice']->getId()))->not->toBeNull()
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], (int) $c['invoice']->getId()))->not->toBeNull();
+    } finally {
+        $c['db']->close();
+    }
+});
+
+test('Stripe failure uses the captured owner token and rolls back if ownership changes', function (): void {
+    $c = stripeFailureContext();
+    $before = $c['db']->fetchOne('SELECT owner_token FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]);
+    $c['em']->getEventManager()->addEventListener(['onFlush'], new readonly class($c['db'], $c['attempt']) {
+        public function __construct(private Doctrine\DBAL\Connection $db, private string $attempt)
+        {
+        }
+
+        public function onFlush(): void
+        {
+            $this->db->update('invoice_gateway_charge_attempt', ['owner_token' => str_repeat('c', 32)], ['id' => $this->attempt]);
+        }
+    });
+    $this->adapter->setDi($c['di']);
+
+    try {
+        expect(fn () => processStripeDebitFailure($this->adapter, $c))->toThrow(FOSSBilling\Core\Payment\OwnershipLost::class);
+        expect($c['db']->fetchOne('SELECT owner_token FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]))->toBe($before)
+            ->and(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], (int) $c['invoice']->getId()))->not->toBeNull()
+            ->and(Box\Mod\Invoice\PendingPayments::forInvoice($c['db'], (int) $c['invoice']->getId()))->not->toBeNull()
+            ->and($c['em']->isOpen())->toBeFalse();
+    } finally {
+        $c['db']->close();
+    }
+});
+
+test('Stripe failure cannot resolve a charge scope on its own connection', function (): void {
+    $c = stripeFailureContext();
+    $this->adapter->setDi($c['di']);
+    $owner = $c['db']->fetchOne('SELECT owner_token FROM invoice_gateway_charge_attempt WHERE id = ?', [$c['attempt']]);
+
+    try {
+        expect(fn () => FOSSBilling\Core\Payment\ProcessingFence::charge($c['db'], $c['attempt'], $owner,
+            fn () => invokePrivateMethod($this->adapter, 'handlePaymentIntentFailedUnderLock', [$c['tx'], $c['intent']])))
+            ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'still active');
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], (int) $c['invoice']->getId()))->not->toBeNull();
+    } finally {
+        $c['db']->close();
+    }
+});

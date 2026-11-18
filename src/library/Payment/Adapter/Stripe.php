@@ -1395,16 +1395,86 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     private function handlePaymentIntentFailedWebhook($api_admin, Transaction $tx, object $event): bool
     {
         $paymentIntent = $event->data->object;
+        $db = $this->di['em']->getConnection();
+        if ($db->isTransactionActive()) {
+            throw new LogicException('Payment failure processing must begin outside a database transaction.');
+        }
+        $invoiceId = (int) ($paymentIntent->metadata->invoice_id ?? 0);
+        // Match the saved-charge/recovery lock order: invoice, then Stripe object.
+        $lock = $invoiceId > 0 ? 'fb:card-charge:' . $invoiceId : null;
+        if ($lock !== null && !NamedLock::acquire($db, $lock, 0)) {
+            throw new FOSSBilling\Core\Exception\BaseException('The payment worker is still active. Retry this webhook later.');
+        }
+
+        try {
+            return $this->withStripeObjectLock((string) $paymentIntent->id, (int) $tx->getGateway()?->getId(),
+                fn (): bool => $this->handlePaymentIntentFailedUnderLock($tx, $paymentIntent));
+        } finally {
+            if ($lock !== null) {
+                NamedLock::release($db, $lock);
+            }
+        }
+    }
+
+    private function handlePaymentIntentFailedUnderLock(Transaction $tx, object $paymentIntent): bool
+    {
+        if (!in_array($paymentIntent->status, ['requires_payment_method', 'canceled'], true)) {
+            return false;
+        }
+        $em = $this->di['em'];
+        $db = $em->getConnection();
+        $gatewayId = (int) $tx->getGateway()?->getId();
+        if ($em->getRepository(Transaction::class)->findProcessingOrProcessedByTxnId((string) $paymentIntent->id, $gatewayId, (int) $tx->getId()) instanceof Transaction) {
+            return false;
+        }
+        $invoiceId = (int) ($paymentIntent->metadata->invoice_id ?? 0);
+        $attempt = $invoiceId > 0 ? $db->fetchAssociative("SELECT id, owner_token FROM invoice_gateway_charge_attempt WHERE invoice_id = ? AND gateway_id = ? AND payment_id = ? AND state = 'pending'", [$invoiceId, $gatewayId, (string) $paymentIntent->id]) : false;
+        // MySQL/PostgreSQL session locks are reentrant. Never revoke the charge
+        // scope of a worker using this same connection and call stack.
+        foreach (FOSSBilling\Core\Payment\ProcessingFence::claims() as $claim) {
+            if ($attempt && $claim['table'] === 'invoice_gateway_charge_attempt' && $claim['id'] === $attempt['id']) {
+                throw new FOSSBilling\Core\Exception\BaseException('The payment worker is still active. Retry this webhook later.');
+            }
+        }
+        if ($attempt) {
+            // Failure events may arrive after this PaymentIntent was retried.
+            // Only the provider's current terminal answer may release the barrier.
+            $current = $this->stripe->paymentIntents->retrieve((string) $paymentIntent->id, []);
+            if ($current->id !== $paymentIntent->id || !in_array($current->status, ['requires_payment_method', 'canceled'], true)) {
+                return false;
+            }
+        }
         $tx->setTxnId($paymentIntent->id);
         $tx->setTxnStatus($paymentIntent->status);
         $tx->setStatus(Transaction::STATUS_ERROR);
         $tx->setError($this->failureReason($paymentIntent));
-        $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
-        if ($invoiceId) {
-            $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
+        if ($invoiceId > 0) {
+            $tx->setInvoice($em->getRepository(Invoice::class)->find($invoiceId));
         }
-        // A bank debit that was clearing failed: the invoice is unpaid again, and an automatic one emails the client.
-        if ($this->settleClearing($paymentIntent, $tx) && $invoiceId && ($paymentIntent->metadata->auto_pay ?? '') === '1') {
+
+        try {
+            $wasClearing = $db->transactional(function () use ($db, $paymentIntent, $tx, $attempt): bool {
+                $cleared = $this->settleClearing($paymentIntent, $tx);
+                if ($attempt) {
+                    $owner = $attempt['owner_token'] === null ? 'owner_token IS NULL' : 'owner_token = ?';
+                    $parameters = [date('Y-m-d H:i:s'), $attempt['id']];
+                    if ($attempt['owner_token'] !== null) {
+                        $parameters[] = $attempt['owner_token'];
+                    }
+                    if ($db->executeStatement("UPDATE invoice_gateway_charge_attempt SET state = 'failed', resolved_at = ? WHERE id = ? AND state = 'pending' AND {$owner}", $parameters) !== 1) {
+                        throw new FOSSBilling\Core\Payment\OwnershipLost('The charge attempt changed while processing its failure.');
+                    }
+                }
+
+                return $cleared;
+            });
+        } catch (Throwable $e) {
+            $em->close();
+
+            throw $e;
+        }
+        // Notify only after the clearing marker and journal commit together.
+        if ($wasClearing && $invoiceId > 0 && ($paymentIntent->metadata->auto_pay ?? '') === '1') {
             $invoice = $tx->getInvoice();
             $method = $paymentIntent->last_payment_error->payment_method ?? null;
             if ($invoice instanceof Invoice) {
