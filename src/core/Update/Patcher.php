@@ -455,6 +455,9 @@ class Patcher implements InjectionAwareInterface
                 throw $syncError;
             }
 
+            if ($connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+                $this->widenLegacyTextColumns('client_order_cancel_request', ['reason']);
+            }
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with
@@ -2848,6 +2851,7 @@ class Patcher implements InjectionAwareInterface
             'client_group' => ['title'],
             'client_group_members' => [],
             'client_order' => ['title', 'reason', 'notes', 'unit'],
+            'client_order_cancel_request' => ['reason'],
             'client_order_meta' => ['value'],
             'client_order_status' => ['notes'],
             'client_password_reset' => [],

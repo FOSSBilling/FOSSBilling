@@ -59,6 +59,23 @@ class Subscription implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $status = null;
 
+    #[ORM\Column(name: 'gateway_cancellation_confirmation', type: Types::STRING, length: 64, nullable: true)]
+    /** @phpstan-ignore property.unusedType (Doctrine hydrates the confirmation written by the locked provider update) */
+    private ?string $gatewayCancellationConfirmation = null;
+
+    public function hasGatewayCancellationConfirmation(): bool
+    {
+        $gatewayId = $this->payGateway?->getId();
+
+        return $gatewayId !== null && $this->sid !== null
+            && $this->gatewayCancellationConfirmation === self::cancellationConfirmation($this->sid, $gatewayId);
+    }
+
+    public static function cancellationConfirmation(string $sid, int $gatewayId): string
+    {
+        return hash('sha256', $gatewayId . ':' . $sid);
+    }
+
     public function getId(): ?int
     {
         return $this->id;

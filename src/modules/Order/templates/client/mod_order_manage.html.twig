@@ -119,7 +119,9 @@
                     {{ render_widgets('client.order.manage.details.after', { 'order': order }) }}
                 </div>
                 <div class="card-footer">
-                    {% if order.period and order.status != 'failed_renew' %}
+                    {% set cancel_request = client.order_cancel_request_get({ 'id': order.id }) %}
+                    {% set cancellation_started = order.meta.cancel_at_period_end|default('0') == '1' or order.meta.scheduled_cancel_claim|default('0') in ['1', '2'] %}
+                    {% if not cancel_request and not cancellation_started and order.period and order.status != 'failed_renew' %}
                         <a class="btn btn-primary btn-sm"
                            {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'This will generate new invoice. Are you sure you want to continue?'|trans}, callback: 'onRenewalInvoiceCreated'}) }}>{{ 'Renew Now'|trans }}</a>
                         <script>window.onRenewalInvoiceCreated = (hash) => { window.location = "{{ 'invoice'|url }}/" + hash; };</script>
@@ -132,7 +134,14 @@
                         <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
                     {% endif %}
                     <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open Ticket'|trans }}</button>
-                    {% if order.status == 'active' %}
+                    {% if order.status == 'canceled' %}
+                        <span class="text-muted small d-block mb-2">{{ 'This service has been canceled.'|trans }}</span>
+                    {% elseif cancellation_started %}
+                        <span class="text-muted small d-block mb-2">{{ 'Cancellation is scheduled or awaiting staff review.'|trans }}</span>
+                    {% elseif cancel_request %}
+                        <span class="text-muted small d-block mb-2">{{ 'Your cancellation request is waiting to be processed.'|trans }}</span>
+                        <a class="btn btn-secondary btn-sm" {{ fb_api_link({href: 'order/cancel_request_withdraw'|api_url(query: {id: order.id, request_id: cancel_request.id}), modal: {type: 'confirm', title: 'Withdraw the cancellation request?'|trans}, reload: true}) }}>{{ 'Withdraw Cancellation Request'|trans }}</a>
+                    {% elseif order.status == 'active' %}
                         <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
                     {% endif %}
                     {{ render_widgets('client.order.manage.actions.end', { 'order': order }) }}
@@ -203,22 +212,25 @@
                             <h1 class="modal-title fs-5">{{ 'Submit Cancellation Request'|trans }}</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                         </div>
-                        <form action="" method="post" id="cancel-request-form" class="request-cancellation">
+                        <form method="post" action="{{ 'order/cancel_request'|api_url }}" id="cancel-request-form" {{ fb_api_form({message: 'Cancellation request received'|trans, reload: true}) }}>
                             <div class="modal-body">
-                                <input type="hidden" name="rel_type" value="order">
-                                <input type="hidden" name="rel_id" value="{{ order.id }}">
-                                <input type="hidden" name="rel_task" value="cancel">
+                                <input type="hidden" name="id" value="{{ order.id }}">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
-                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                                    <label class="form-label">{{ 'When should the service end?'|trans }}</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="cancel-type-immediate" value="immediate" checked>
+                                        <label class="form-check-label" for="cancel-type-immediate">{{ 'Immediately'|trans }}</label>
+                                    </div>
+                                    {% if order.expires_at %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="cancel-type-period" value="end_of_period">
+                                        <label class="form-check-label" for="cancel-type-period">{{ 'At the end of the billing period in effect when the request is accepted'|trans }}</label>
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 <div class="mb-3">
-                                    <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                                    <input class="form-control" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required/>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="content" class="form-label">{{ 'Reason'|trans }}</label>
-                                    <textarea class="form-control" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
+                                    <label for="cancel-reason" class="form-label">{{ 'Reason'|trans }}</label>
+                                    <textarea class="form-control" id="cancel-reason" name="reason" rows="5" required></textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -371,7 +383,6 @@
 {% autoescape "js" %}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const cancelRequestForm = document.getElementById('cancel-request-form');
             const upgradeRequestForm = document.getElementById('upgrade-request-form');
             const upgradeForm = document.getElementById('upgrade-form');
             const openTicketForm = document.getElementById('open-ticket-form');
@@ -404,19 +415,6 @@
                 });
             }
 
-            cancelRequestForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-
-                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(cancelRequestForm)),
-                    () => {
-                        FOSSBilling.message('Service cancellation request received');
-                        const cancelRequestModal = bootstrap.Modal.getInstance(document.getElementById('cancel-request-modal'))
-                        cancelRequestModal.hide();
-                    },
-                    (res) => {
-                        FOSSBilling.message(`${res.message} (${res.code})`, 'error');
-                    });
-            });
 
             upgradeRequestForm.addEventListener('submit', function(event) {
                 event.preventDefault();

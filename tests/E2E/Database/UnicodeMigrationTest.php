@@ -610,9 +610,10 @@ test('Unicode repair skips columns covered by functional indexes', function (): 
     }
     $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL, UNIQUE KEY slug_lower ((LOWER(slug)))) ENGINE=InnoDB ROW_FORMAT=COMPACT DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
     $this->connection->insert('post', ['id' => 1, 'slug' => 'Example']);
+    $before = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
     ($this->runPatch)();
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
-    expect($column['Collation'])->toBe('utf8_general_ci')
+    expect($column['Collation'])->toBe($before['Collation'])
         ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('Example');
     $calls = $this->patcher->getDi()['logger']->calls;
     expect($calls)->toHaveCount(1)
@@ -685,4 +686,36 @@ test('Unicode repair skips indexed columns on small-block compressed tables', fu
     expect($calls)->toHaveCount(1)
         ->and($calls[0]['method'])->toBe('warning')
         ->and($calls[0]['params'][0])->toContain('post.slug', 'compressed block size');
+});
+
+test('schema synchronization stores four-byte cancellation reasons on a legacy database default', function (bool $existing): void {
+    $em = EntityManagerFactory::create($this->connection);
+    SchemaInstaller::createSchema($em);
+    if ($existing) {
+        $this->pdo->exec('ALTER TABLE client_order_cancel_request MODIFY reason TEXT CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL');
+    } else {
+        $this->pdo->exec('DROP TABLE client_order_cancel_request');
+    }
+    $di = $this->patcher->getDi();
+    unset($di['em']);
+    $di['em'] = $em;
+    expect($this->patcher->syncPortableSchema())->not->toBeNull();
+    expect($this->patcher->syncPortableSchema())->not->toBeNull();
+    expect($this->connection->fetchOne("SELECT CHARACTER_SET_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'client_order_cancel_request' AND COLUMN_NAME = 'reason'"))->toBe('utf8mb4');
+    $this->connection->insert('client_order_cancel_request', ['id' => 1, 'reason' => 'Moving 🚀', 'status' => 'pending', 'type' => 'immediate']);
+    expect($this->connection->fetchOne('SELECT reason FROM client_order_cancel_request WHERE id = 1'))->toBe('Moving 🚀');
+})->with(['existing table' => true, 'new table' => false]);
+
+test('the MySQL renewal quote patch adds a nullable JSON column and can be retried', function (): void {
+    $this->pdo->exec('CREATE TABLE invoice (id BIGINT NOT NULL PRIMARY KEY)');
+    $this->connection->insert('invoice', ['id' => 1]);
+
+    $patch = new FOSSBilling\Core\Update\Patch\Patch149();
+    $patch->apply($this->patcher);
+    $patch->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT cron_renewal_expiries FROM invoice WHERE id = 1'))->toBeNull();
+    $quote = [42 => '2030-01-01 00:00:00'];
+    $this->connection->update('invoice', ['cron_renewal_expiries' => json_encode($quote, JSON_THROW_ON_ERROR)], ['id' => 1]);
+    expect(json_decode((string) $this->connection->fetchOne('SELECT cron_renewal_expiries FROM invoice WHERE id = 1'), true, 512, JSON_THROW_ON_ERROR))->toBe($quote);
 });

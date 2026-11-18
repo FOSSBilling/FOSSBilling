@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\PayGatewayCustomer;
 use Box\Mod\Invoice\Entity\PayGatewayProduct;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Exception\RetryableCallbackException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
@@ -67,9 +68,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         'customer.subscription.deleted',
         'invoice.payment_succeeded',
         'invoice.paid',
-        'invoice.payment_failed',
         'invoice_payment.paid',
-        'invoice_payment.failed',
         'payment_intent.succeeded',
         'payment_intent.payment_failed',
         'setup_intent.succeeded',
@@ -810,7 +809,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $this->getVerifiedWebhookEvent($data);
     }
 
-    private function getVerifiedWebhookEvent(array $data): Stripe\Event
+    private function getVerifiedWebhookEvent(array $data, bool $authenticatedAtIntake = false): Stripe\Event
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         $sigHeader = $data['server']['HTTP_STRIPE_SIGNATURE'] ?? '';
@@ -831,7 +830,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
 
         try {
-            $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret);
+            $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret, $authenticatedAtIntake ? 0 : Stripe\Webhook::DEFAULT_TOLERANCE);
         } catch (UnexpectedValueException) {
             throw new FOSSBilling\Core\Exception\BaseException('Invalid Stripe webhook payload');
         } catch (Stripe\Exception\SignatureVerificationException) {
@@ -843,7 +842,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
     private function processWebhookEvent($api_admin, Transaction $tx, array $data, int $gateway_id): void
     {
-        $event = $this->getVerifiedWebhookEvent($data);
+        // Only create() records this proof, after verifying freshness at intake.
+        // Recheck the signature on replay, but allow its original timestamp.
+        $stored = $tx->getIpn();
+        $authenticated = ($stored['authenticated_gateway_id'] ?? null) === $gateway_id
+            && ($stored['http_raw_post_data'] ?? null) === ($data['http_raw_post_data'] ?? null)
+            && ($stored['server']['HTTP_STRIPE_SIGNATURE'] ?? null) === ($data['server']['HTTP_STRIPE_SIGNATURE'] ?? null);
+        $event = $this->getVerifiedWebhookEvent($data, $authenticated);
 
         $tx->setTxnId($event->id);
         $tx->setTxnStatus($event->type);
@@ -885,9 +890,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 'customer.subscription.deleted' => $this->handleSubscriptionDeleted($api_admin, $tx, $event),
                 'invoice.payment_succeeded' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
                 'invoice.paid' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
-                'invoice.payment_failed' => $this->handleInvoicePaymentFailed($api_admin, $tx, $event),
                 'invoice_payment.paid' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
-                'invoice_payment.failed' => $this->handleInvoicePaymentFailed($api_admin, $tx, $event),
                 'payment_intent.succeeded' => $this->handlePaymentIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
                 'payment_intent.payment_failed' => $this->handlePaymentIntentFailedWebhook($api_admin, $tx, $event),
                 'setup_intent.succeeded' => $this->handleSetupIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
@@ -895,7 +898,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 'charge.refunded' => $this->handleRefundWebhook($tx, $event),
                 'refund.created' => $this->handleRefundCreatedWebhook($tx, $event, $gateway_id),
             };
-        } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
+        } catch (Stripe\Exception\ApiErrorException $e) {
+            // These handlers only read from Stripe. Keep their transaction
+            // queued after a temporary provider failure, including failures
+            // while looking up the invoice or deciding which gateway owns it.
+            if (in_array($event->type, ['customer.subscription.updated', 'invoice.payment_succeeded', 'invoice.paid', 'invoice_payment.paid'], true)
+                && ($e instanceof Stripe\Exception\ApiConnectionException
+                    || $e instanceof Stripe\Exception\RateLimitException
+                    || $e->getHttpStatus() === 429
+                    || ($e->getHttpStatus() ?? 0) >= 500)) {
+                throw new RetryableCallbackException('Stripe is temporarily unavailable. Please retry the callback.');
+            }
             $this->logError($e, $tx);
 
             throw new FOSSBilling\Core\Exception\BaseException('There was an error when processing the Stripe webhook');
@@ -1014,40 +1027,50 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         return false;
     }
 
+    public function getSubscriptionStatus(string $subscriptionId): string
+    {
+        $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
+
+        return in_array($subscription->status, ['canceled', 'incomplete_expired'], true)
+            ? 'canceled'
+            : (($subscription->cancel_at_period_end ?? false)
+                ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION : 'active');
+    }
+
     private function handleSubscriptionUpdated($api_admin, Transaction $tx, object $event): bool
     {
-        $stripeSubscription = $event->data->object;
+        $sid = $event->data->object->id;
+        $gatewayId = (int) $this->config['gateway_id'];
 
-        $status = ($stripeSubscription->cancel_at_period_end ?? false)
-            ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION
-            : match ($stripeSubscription->status) {
-                'active' => 'active',
-                'trialing' => 'active',
-                'past_due' => 'active',
-                default => 'canceled',
-            };
+        return $this->withStripeObjectLock($sid, $gatewayId, function () use ($sid, $gatewayId): bool {
+            $subscriptions = $this->di['mod_service']('Invoice', 'Subscription');
+            $id = $subscriptions->findIdBySid($sid, $gatewayId);
+            if ($id === null) {
+                return false;
+            }
 
-        try {
-            $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
-        } catch (Exception $e) {
-            $this->debugLog('Stripe subscription updated webhook: ' . $e->getMessage());
-        }
+            $status = $this->getSubscriptionStatus($sid);
+            $subscriptions->updateStatusForGatewayLink($id, $sid, $gatewayId, $status);
 
-        return false;
+            return false;
+        });
     }
 
     private function handleSubscriptionDeleted($api_admin, Transaction $tx, object $event): bool
     {
-        $stripeSubscription = $event->data->object;
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $subscriptionId = $subscriptionService->findIdBySid($stripeSubscription->id);
-        if ($subscriptionId === null) {
+        $sid = $event->data->object->id;
+
+        $gatewayId = (int) $this->config['gateway_id'];
+
+        return $this->withStripeObjectLock($sid, $gatewayId, function () use ($sid, $gatewayId): bool {
+            $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+            $subscriptionId = $subscriptionService->findIdBySid($sid, $gatewayId);
+            if ($subscriptionId !== null) {
+                $subscriptionService->finalizeCancellationFromGateway($subscriptionId, $sid, $gatewayId);
+            }
+
             return false;
-        }
-
-        $subscriptionService->finalizeCancellationFromGateway($subscriptionId);
-
-        return false;
+        });
     }
 
     private function handleInvoicePaymentSucceeded($api_admin, Transaction $tx, object $event, int $gateway_id): bool
@@ -1088,34 +1111,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return false;
         }
 
-        $previousTarget = $tx->getInvoice();
-        // Preserve the selected renewal invoice across retries.
-        if ($invoiceId && (!$previousTarget instanceof Invoice || (int) $previousTarget->getId() === (int) $invoiceId)) {
-            $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
-            $this->di['em']->flush();
-        }
-
+        $storedTarget = $tx->getInvoice();
+        $sourceInvoice = $invoiceId ? $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId) : null;
         $billingReason = (string) ($stripeInvoice->billing_reason ?? '');
-        $isInitialPayment = $billingReason === 'subscription_create';
-        $ambiguousPaidInvoice = false;
-
-        // The early link above already fetched the invoice, so this second find
-        // hits the identity map. It covers: (a) skip if already paid,
-        // (b) billing_reason fallback.
-        if ($invoiceId) {
-            $existingInvoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
-            if ($existingInvoice instanceof Invoice) {
-                // An inconclusive billing reason with a paid original is
-                // ambiguous, so do not guess whether this is a renewal.
-                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID && $billingReason === '') {
-                    $ambiguousPaidInvoice = true;
-                }
-                // Fallback: billing_reason inconclusive but original invoice still unpaid.
-                if (!$isInitialPayment && $existingInvoice->getStatus() === Invoice::STATUS_UNPAID) {
-                    $isInitialPayment = true;
-                }
-            }
-        }
+        $sourceStatus = $sourceInvoice?->getStatus();
+        $isInitialPayment = $billingReason === 'subscription_create' || $sourceStatus === Invoice::STATUS_UNPAID;
+        $ambiguousPaidInvoice = $billingReason === '' && $sourceStatus === Invoice::STATUS_PAID;
 
         $amount = $this->getAmountFromMinorUnits((int) ($stripeInvoice->amount_paid ?? 0), (string) ($stripeInvoice->currency ?? ''));
         if ($amount <= 0.0) {
@@ -1136,13 +1137,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         if ($ambiguousPaidInvoice) {
             throw new FOSSBilling\Core\Exception\InformationException('Stripe subscription payment needs staff review because its billing reason is missing.');
         }
+        $differentTarget = $storedTarget instanceof Invoice && (int) $storedTarget->getId() !== (int) $invoiceId;
+        if ($differentTarget && ($tx->getOriginalInvoiceId() !== (int) $invoiceId || $isInitialPayment)) {
+            throw new FOSSBilling\Core\Exception\InformationException('Stripe subscription payment needs staff review because its stored invoice could not be verified.');
+        }
         if ($isInitialPayment) {
-            $target = $invoiceId ? $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId) : null;
-        } elseif ($previousTarget instanceof Invoice && (int) $previousTarget->getId() !== (int) $invoiceId) {
-            $target = $previousTarget;
+            $target = $sourceInvoice;
+        } elseif ($differentTarget) {
+            $target = $storedTarget;
         } else {
             $manager = $this->di['em'];
-            $target = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($stripeSubscription->id, (int) $clientId);
+            $target = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($stripeSubscription->id, (int) $clientId, (int) $tx->getGateway()?->getId(), (int) $invoiceId, (int) $tx->getId());
             if ($manager !== $this->di['em']) {
                 // Invoice generation recovered a closed manager. Reload the
                 // entities detached by the failed transaction before recording
@@ -1163,6 +1168,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
         // A successful renewal charge still belongs to the customer when no
         // renewal invoice can be created. Preserve it as unallocated credit.
+        if (!$isInitialPayment && $invoiceId) {
+            $tx->setOriginalInvoiceId((int) $invoiceId);
+        }
         $tx->setInvoice($target);
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
         $tx->setAmount((string) $amount);
@@ -1176,32 +1184,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
 
         return true;
-    }
-
-    private function handleInvoicePaymentFailed($api_admin, Transaction $tx, object $event): bool
-    {
-        $stripeInvoice = $this->resolveStripeInvoice($event->data->object);
-
-        $subscriptionId = $this->extractSubscriptionId($stripeInvoice);
-
-        if ($stripeInvoice === null || $subscriptionId === null) {
-            return false;
-        }
-
-        try {
-            $this->updateSubscriptionStatusFromGateway($api_admin, $subscriptionId, 'canceled');
-        } catch (Exception $e) {
-            $this->debugLog('Stripe invoice payment failed webhook: ' . $e->getMessage());
-        }
-
-        return false;
-    }
-
-    private function updateSubscriptionStatusFromGateway($api_admin, string $subscriptionId, string $status): void
-    {
-        $subscription = $api_admin->invoice_subscription_get(['sid' => $subscriptionId]);
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $subscriptionService->updateStatusFromGateway((int) $subscription['id'], $status);
     }
 
     /**
@@ -1286,7 +1268,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 ['duration_ms' => $waitDurationMs, 'lock_name' => $lockName]
             );
 
-            throw new FOSSBilling\Core\Exception\BaseException('Timed out waiting to process this Stripe payment');
+            throw new RetryableCallbackException('Timed out waiting to process this Stripe payment');
         }
 
         try {
@@ -1888,12 +1870,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      */
     private function resolveSubscriptionPriceId(Stripe\SetupIntent $setupIntent, Invoice $invoice): string
     {
+        $period = $this->requireSubscriptionPeriod($invoice);
         $priceId = $setupIntent->metadata->price_id ?? null;
         if (!empty($priceId)) {
             return $priceId;
         }
 
-        return $this->getOrCreatePriceId($invoice);
+        return $this->getOrCreatePriceId($invoice, $period);
     }
 
     /**
@@ -1902,13 +1885,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
      * for the same reason, and via the same pattern, as
      * {@see getOrCreateCustomer()}.
      */
-    private function getOrCreatePriceId(Invoice $invoice): string
+    private function getOrCreatePriceId(Invoice $invoice, ?string $period = null): string
     {
+        $period ??= $this->requireSubscriptionPeriod($invoice);
         $gatewayId = (int) $this->config['gateway_id'];
         $productName = $this->getInvoiceProductName($invoice);
         $amount = $this->getAmountInCents($invoice);
         $currency = strtolower((string) $invoice->getCurrency());
-        $recurring = $this->getStripeRecurringParams($this->getSubscriptionPeriodForInvoice($invoice));
+        $recurring = $this->getStripeRecurringParams($period);
         $cacheKey = $this->buildProductCacheKey($productName, $currency, $amount, $recurring);
 
         $cached = $this->di['em']->getRepository(PayGatewayProduct::class)
@@ -2026,6 +2010,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
             return $winner instanceof PayGatewayProduct ? $winner->getExternalPriceId() : $externalPriceId;
         }
+    }
+
+    private function requireSubscriptionPeriod(Invoice $invoice): string
+    {
+        return $this->di['mod_service']('Invoice', 'Subscription')->getSubscriptionPeriod($invoice)
+            ?? throw new FOSSBilling\Core\Exception\InformationException('This invoice is no longer eligible for a subscription. Please use a one-time payment.');
     }
 
     private function getSubscriptionPeriodForInvoice(Invoice $invoice): string

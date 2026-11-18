@@ -317,18 +317,14 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         $reviewedZero = $knownZeroPrice || ($metadata['domain_renewal_reviewed_zero_' . $item->getId()] ?? null) === '1';
                         $claimValues = [$claim => '1'];
                         if (!$reviewedZero) {
-                            $until = $this->di['mod_service']('Product')->freeDomainRenewalUntil($orderId);
-                            if ($until === null) {
-                                if (($metadata[$approval] ?? null) === '1'
-                                    || !$this->di['mod_service']('Product')->isFreeDomainRenewalOffered($orderId)) {
-                                    $item->setStatus(InvoiceItem::STATUS_FAILED);
-
-                                    throw new \FOSSBilling\Core\Exception\InformationException('The paid hosting term does not cover this renewal; staff review is still required.');
-                                }
-
-                                // Wait for the linked hosting payment without
-                                // consuming a claim or a retry attempt.
+                            ['until' => $until, 'pending' => $pending] = $this->di['mod_service']('Product')->freeDomainRenewalState($orderId);
+                            if ($pending) {
                                 return false;
+                            }
+                            if ($until === null) {
+                                $item->setStatus(InvoiceItem::STATUS_FAILED);
+
+                                throw new \FOSSBilling\Core\Exception\InformationException('The paid hosting term does not cover this domain renewal. Staff must review it before expiry.');
                             }
                             $claimValues = ['free_domain_paid_through' => (string) $until, $claim => '1'];
                         }

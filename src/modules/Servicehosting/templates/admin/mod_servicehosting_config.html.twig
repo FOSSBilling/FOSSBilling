@@ -133,6 +133,22 @@
                     </div>
                 </div>
                 <div class="col-lg-6">
+                    <fieldset>
+                        <legend class="form-label">{{ 'Free Domain Renewals'|trans }}</legend>
+                        <div class="d-flex flex-wrap gap-3 pt-1">
+                            <label class="form-check">
+                                <input class="form-check-input" type="radio" name="config[free_domain_renewals]" value="1"{% if config.free_domain_renewals|default(false) %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" type="radio" name="config[free_domain_renewals]" value="0"{% if not config.free_domain_renewals|default(false) %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'No'|trans }}</span>
+                            </label>
+                        </div>
+                        <small class="form-text">{{ 'A domain registered or transferred free with this product renews free when active or suspended hosting is paid through the next domain term. Otherwise renewal needs staff review. Existing gateway subscriptions must be canceled before free pricing applies. Once hosting ends, renewals use the TLD price.'|trans }}</small>
+                    </fieldset>
+                </div>
+                <div class="col-lg-6">
                     <label class="form-label">{{ 'Free Domain Transfer'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
