@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Core\Filesystem;
 
+use PhpZip\Constants\ZipCompressionMethod;
 use PhpZip\Constants\ZipPlatform;
+use PhpZip\Exception\ZipException;
 use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -28,18 +30,20 @@ final class ZipExtractor
     public function extract(string $archive, string $destination, callable $validateEntry, int $maxEntries = PHP_INT_MAX, int $maxBytes = PHP_INT_MAX, ?callable $beforeWrite = null): void
     {
         $zip = class_exists(\ZipArchive::class) ? new \ZipArchive() : new ZipFile();
-        if ($zip instanceof ZipFile) {
-            $zip->openFile($archive);
-        } else {
-            $result = @$zip->open($archive, \ZipArchive::RDONLY | \ZipArchive::CHECKCONS);
-            if ($result !== true) {
-                throw new \RuntimeException(sprintf('Unable to open ZIP archive (error %s).', $result));
-            }
-        }
-
-        $filesystem = new Filesystem();
+        $opened = false;
 
         try {
+            if ($zip instanceof ZipFile) {
+                $zip->openFile($archive);
+            } else {
+                $result = @$zip->open($archive, \ZipArchive::RDONLY | \ZipArchive::CHECKCONS);
+                if ($result !== true) {
+                    throw new \RuntimeException(sprintf('Unable to open ZIP archive (error %s).', $result));
+                }
+            }
+
+            $opened = true;
+            $filesystem = new Filesystem();
             $count = $zip instanceof ZipFile ? count($zip->getEntries()) : $zip->numFiles;
             if ($count > $maxEntries) {
                 throw new \RuntimeException('The ZIP archive exceeds its entry limit.');
@@ -56,6 +60,10 @@ final class ZipExtractor
             for ($index = 0; $index < $count; ++$index) {
                 if ($zip instanceof ZipFile) {
                     $metadata = $fallbackEntries[$index];
+                    if (!$metadata->isEncrypted() && $metadata->getCompressionMethod() === ZipCompressionMethod::STORED
+                        && $metadata->getCompressedSize() !== $metadata->getUncompressedSize()) {
+                        throw new \RuntimeException('Stored ZIP entry sizes do not match.');
+                    }
                     $entry = [
                         'name' => $metadata->getName(),
                         'size' => $metadata->getUncompressedSize(),
@@ -73,7 +81,7 @@ final class ZipExtractor
 
                 $name = $entry['name'];
                 $directory = str_ends_with(str_replace('\\', '/', $name), '/') || ($attributes & 0x10) !== 0;
-                $mode = $platform === ZipPlatform::OS_UNIX ? ($attributes >> 16) & 0xFFFF : 0;
+                $mode = in_array($platform, [ZipPlatform::OS_UNIX, ZipPlatform::OS_MAC_OSX], true) ? ($attributes >> 16) & 0xFFFF : 0;
                 $mode = $mode ?: ($directory ? 0o040755 : 0o100644);
                 $directory = $directory || ($mode & 0o170000) === 0o040000;
                 $validateEntry($name, $mode);
@@ -128,8 +136,12 @@ final class ZipExtractor
             foreach ($directories as $directory => $mode) {
                 $filesystem->chmod($directory, $mode);
             }
+        } catch (ZipException $e) {
+            throw new \RuntimeException('Unable to extract ZIP archive: ' . $e->getMessage(), 0, $e);
         } finally {
-            $zip->close();
+            if ($opened) {
+                $zip->close();
+            }
         }
     }
 
@@ -143,14 +155,29 @@ final class ZipExtractor
             $output = false;
 
             try {
-                $input = $zip instanceof ZipFile ? $zip->getEntryStream($entry['name']) : @$zip->getStreamIndex($entry['index']);
                 $output = @fopen($temporary, 'wb');
-                if ($input === false || $output === false) {
-                    throw new \RuntimeException('Unable to read or stage ZIP entry contents.');
+                if ($output === false) {
+                    throw new \RuntimeException('Unable to stage ZIP entry contents.');
                 }
-                // Bound the actual write as well as checking the declared size.
-                $written = @stream_copy_to_stream($input, $output, $entry['size']);
-                $extra = @fread($input, 1);
+                if ($zip instanceof ZipFile) {
+                    // Copy directly: getEntryStream() caches a decoded buffer
+                    // for every entry until the archive is closed.
+                    $data = $zip->getEntry($entry['name'])->getData();
+                    if ($data === null) {
+                        throw new \RuntimeException('Unable to read ZIP entry contents.');
+                    }
+                    $data->copyDataToStream($output);
+                    $written = ftell($output);
+                    $extra = '';
+                } else {
+                    $input = @$zip->getStreamIndex($entry['index']);
+                    if ($input === false) {
+                        throw new \RuntimeException('Unable to read ZIP entry contents.');
+                    }
+                    // Bound the actual write as well as checking the declared size.
+                    $written = @stream_copy_to_stream($input, $output, $entry['size']);
+                    $extra = @fread($input, 1);
+                }
             } finally {
                 if ($input !== false) {
                     fclose($input);
@@ -197,13 +224,18 @@ final class ZipExtractor
             $declaredCount = unpack('vcount', substr($footer, 10, 2))['count'];
             $offset = unpack('Voffset', substr($footer, 16, 4))['offset'];
 
+            $locator = false;
             if ($offset === 0xFFFFFFFF || $declaredCount === 0xFFFF) {
-                // ZIP64 stores the directory offset in its extended footer.
-                fseek($stream, -42 - strlen($comment), SEEK_END);
-                $locator = fread($stream, 20);
-                if ($locator === false || strlen($locator) !== 20 || !str_starts_with($locator, "PK\x06\x07")) {
-                    throw new \RuntimeException('Invalid ZIP64 central directory locator.');
+                // A maximum classic count is valid without a ZIP64 locator.
+                if (fseek($stream, -42 - strlen($comment), SEEK_END) === 0) {
+                    $locator = fread($stream, 20);
                 }
+            }
+            $hasLocator = is_string($locator) && strlen($locator) === 20 && str_starts_with($locator, "PK\x06\x07");
+            if ($offset === 0xFFFFFFFF && !$hasLocator) {
+                throw new \RuntimeException('Invalid ZIP64 central directory locator.');
+            }
+            if ($hasLocator) {
                 $footerOffset = unpack('Poffset', substr($locator, 8, 8))['offset'];
                 if (fseek($stream, $footerOffset) !== 0) {
                     throw new \RuntimeException('Unable to read the ZIP64 footer.');

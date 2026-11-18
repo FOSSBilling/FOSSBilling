@@ -85,6 +85,17 @@ jobs:
             fossbilling:test-${{ matrix.php }} \
             ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci
 
+      - name: 'ZIP extraction without ext-zip'
+        run: |
+          docker run --rm \
+            --env APP_ENV=test \
+            --entrypoint sh \
+            fossbilling:test-${{ matrix.php }} -ec '
+              rm /usr/local/etc/php/conf.d/docker-php-ext-zip.ini
+              php -r "if (extension_loaded(\"zip\")) { exit(1); }"
+              ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist tests/Unit/FOSSBilling/ZipExtractorTest.php --ci
+            '
+
       - name: 'Export Test Image Artifact'
         # Shared with live-tests/cypress-tests so they don't each rebuild the same image.
         if: matrix.php == '8.5'

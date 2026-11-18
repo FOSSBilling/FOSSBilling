@@ -596,10 +596,6 @@
         {
             "filename": "src/core/Filesystem/ZipExtractor.php",
             "words": ["RDONLY", "CHECKCONS", "vcount", "Poffset", "Pcount", "vname", "vextra", "vcomment"]
-        },
-        {
-            "filename": "tests/Unit/FOSSBilling/ZipExtractorTest.php",
-            "words": ["Xname", "ther"]
         }
     ],
     "ignorePaths": [
