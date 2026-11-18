@@ -45,7 +45,7 @@ function ticketFilesConnection(): array
 
 function ticketFilesUpload(Symfony\Component\HttpFoundation\Request $request, string $name, string $content, string $mime): UploadedFile
 {
-    $path = tempnam(sys_get_temp_dir(), 'tftest');
+    $path = tempnam(sys_get_temp_dir(), 'ticket-file-test');
     file_put_contents($path, $content);
 
     return new UploadedFile($path, $name, $mime, null, true);
@@ -118,7 +118,7 @@ test('ticket file upload, attach, find and serve round-trip', function (): void 
     expect($served['content_type'])->toBe('text/plain; charset=utf-8');
 
     // A zip downloads instead of showing inline.
-    $zipPath = tempnam(sys_get_temp_dir(), 'tftest') . '.zip';
+    $zipPath = tempnam(sys_get_temp_dir(), 'ticket-file-test') . '.zip';
     $zipArchive = new ZipArchive();
     $zipArchive->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
     $zipArchive->addFromString('a.txt', str_repeat('x', 100));
@@ -562,3 +562,146 @@ test('reviewed legacy cleanup requires drain and rejects invalid paths before de
     expect(fn () => TicketFiles::cleanupLegacyInventory($di, ['version' => 1, 'files' => []], false))->toThrow(InvalidArgumentException::class)
         ->and(fn () => TicketFiles::cleanupLegacyInventory($di, ['version' => 1, 'files' => [['client_id' => 7, 'token' => '../secret']]], true))->toThrow(InvalidArgumentException::class);
 });
+
+function guestAttachmentContext(): array
+{
+    [$di, $db, $dir] = ticketFilesConnection();
+    $db->executeStatement('ALTER TABLE support_ticket ADD access_hash VARCHAR(255)');
+    $hash = str_repeat('c', 40);
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => null, 'status' => 'open', 'access_hash' => $hash]);
+    $db->insert('support_ticket', ['id' => 61, 'client_id' => null, 'status' => 'open', 'access_hash' => str_repeat('d', 40)]);
+    $db->insert('support_ticket', ['id' => 62, 'client_id' => 7, 'status' => 'open', 'access_hash' => str_repeat('e', 40)]);
+    $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'admin_id' => 3]);
+    $db->insert('support_ticket_message', ['id' => 71, 'support_ticket_id' => 61, 'admin_id' => 3]);
+    $uploaded = TicketFiles::uploadForStaff($di, 3, 60, ticketFilesUpload($di['request'], 'reply.txt', 'staff reply contents', 'text/plain'));
+    expect(TicketFiles::attach($di, 60, true, [$uploaded['id']], 70))->toBe(1);
+    $di['is_client_logged'] = static fn () => throw new RuntimeException('login required');
+    $di['response_factory'] = new FOSSBilling\Core\Http\ResponseFactory();
+
+    return [$di, $db, $dir, $hash, $uploaded];
+}
+
+test('staff reply attachments are listed and downloadable after guest hash authorization', function (): void {
+    [$di, $db, $dir, $hash, $uploaded] = guestAttachmentContext();
+    $ticket = Tests\Helpers\createEntity(Box\Mod\Support\Entity\SupportTicket::class, ['id' => 60, 'client_id' => null, 'access_hash' => $hash]);
+    $service = Mockery::mock(Box\Mod\Support\Service::class);
+    $service->shouldReceive('findOneByHash')->once()->with($hash)->andReturn($ticket);
+    $service->shouldReceive('toApiArray')->once()->with($ticket)->andReturn(['id' => 60, 'hash' => $hash, 'author' => ['role' => 'guest'], 'messages' => [['id' => 70]]]);
+    $api = new Box\Mod\Support\Api\Guest();
+    $api->setService($service);
+    $api->setDi($di);
+    $controller = new Box\Mod\Support\Controller\Client();
+    $controller->setDi($di);
+
+    try {
+        $data = $api->ticket_get(['hash' => $hash]);
+        expect($data['messages'][0])->toHaveKey('ticket_files');
+        expect($data['messages'][0]['ticket_files'][0]['id'])->toBe($uploaded['id'])
+            ->and($data['messages'][0]['ticket_files'][0]['name'])->toBe('reply.txt');
+        $response = $controller->get_guest_ticket_file(Mockery::mock(FOSSBilling\Core\Http\App::class), $hash, $uploaded['id']);
+        expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\BinaryFileResponse::class)
+            ->and((new Symfony\Component\Filesystem\Filesystem())->readFile($response->getFile()->getPathname()))->toBe('staff reply contents')
+            ->and($response->headers->get('Content-Type'))->toBe('text/plain; charset=utf-8')
+            ->and($response->headers->get('Cache-Control'))->toContain('no-store')
+            ->and($response->headers->get('X-Content-Type-Options'))->toBe('nosniff')
+            ->and($response->headers->get('Content-Security-Policy'))->toContain('sandbox')
+            ->and($response->headers->get('Referrer-Policy'))->toBe('no-referrer');
+    } finally {
+        $db->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove($dir);
+        putenv('FOSSBILLING_TICKET_FILES_DIR');
+    }
+});
+
+test('guest attachment downloads reject unrelated removed and unbound files', function (string $scenario): void {
+    [$di, $db, $dir, $hash, $uploaded] = guestAttachmentContext();
+    $token = $uploaded['id'];
+    switch ($scenario) {
+        case 'wrong hash': $hash = str_repeat('f', 40);
+
+            break;
+        case 'another guest hash': $hash = str_repeat('d', 40);
+
+            break;
+        case 'empty hash': $hash = '';
+
+            break;
+        case 'unknown token': $token = str_repeat('a', 32);
+
+            break;
+        case 'invalid token': $token = '../file';
+
+            break;
+        case 'removed': $db->update('support_ticket_file', ['removed_at' => date('Y-m-d H:i:s'), 'removed_reason' => 'staff'], ['token' => $token]);
+
+            break;
+        case 'expired': $db->update('support_ticket_file', ['removed_at' => date('Y-m-d H:i:s'), 'removed_reason' => 'expired'], ['token' => $token]);
+
+            break;
+        case 'unattached': $db->update('support_ticket_file', ['message_id' => null], ['token' => $token]);
+
+            break;
+        case 'wrong message': $db->update('support_ticket_file', ['message_id' => 71], ['token' => $token]);
+
+            break;
+        case 'client ticket':
+            $hash = str_repeat('e', 40);
+            $db->update('support_ticket_file', ['ticket_id' => 62], ['token' => $token]);
+            $db->update('support_ticket_message', ['support_ticket_id' => 62], ['id' => 70]);
+
+            break;
+        case 'client-owned file':
+            (new Symfony\Component\Filesystem\Filesystem())->mkdir($dir . '/7');
+            (new Symfony\Component\Filesystem\Filesystem())->rename($dir . '/0/' . $token, $dir . '/7/' . $token);
+            $db->update('support_ticket_file', ['client_id' => 7], ['token' => $token]);
+
+            break;
+        case 'missing file': (new Symfony\Component\Filesystem\Filesystem())->remove($dir . '/0/' . $token);
+
+            break;
+        case 'deleted ticket': $db->delete('support_ticket', ['id' => 60]);
+
+            break;
+    }
+    $controller = new Box\Mod\Support\Controller\Client();
+    $controller->setDi($di);
+
+    try {
+        expect(fn () => $controller->get_guest_ticket_file(Mockery::mock(FOSSBilling\Core\Http\App::class), $hash, $token))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'File not found.');
+    } finally {
+        $db->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove($dir);
+        putenv('FOSSBILLING_TICKET_FILES_DIR');
+    }
+})->with(['wrong hash', 'another guest hash', 'empty hash', 'unknown token', 'invalid token', 'removed', 'expired', 'unattached', 'wrong message', 'client ticket', 'client-owned file', 'missing file', 'deleted ticket']);
+
+test('guest attachment metadata requires successful ticket hash lookup', function (): void {
+    $service = Mockery::mock(Box\Mod\Support\Service::class);
+    $service->shouldReceive('findOneByHash')->once()->with('wrong')->andThrow(new FOSSBilling\Core\Exception\BaseException('Guest ticket not found'));
+    $service->shouldNotReceive('toApiArray');
+    $api = new Box\Mod\Support\Api\Guest();
+    $api->setService($service);
+    $api->setDi(container());
+
+    expect(fn () => $api->ticket_get(['hash' => 'wrong']))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Guest ticket not found');
+});
+
+test('ticket attachment links select guest hash authorization or client authentication', function (string $role, string $expected): void {
+    $twig = new Twig\Environment(new Twig\Loader\FilesystemLoader(PATH_MODS . '/Support/templates/client'), ['strict_variables' => true, 'autoescape' => 'html']);
+    $twig->addFilter(new Twig\TwigFilter('url', static fn (string $path): string => '/' . $path));
+    $twig->addFilter(new Twig\TwigFilter('trans', static fn (string $text, array $parameters = []): string => strtr($text, $parameters)));
+    $file = ['id' => str_repeat('a', 32), 'name' => '<reply>.txt', 'removed' => false, 'size_label' => '1 KB'];
+    $html = $twig->render('mod_support_ticket_files.html.twig', ['ticket' => ['author' => ['role' => $role], 'hash' => str_repeat('c', 40)], 'message' => ['ticket_files' => [$file]]]);
+
+    $document = new DOMDocument();
+    // cspell:ignore NOERROR NOWARNING
+    $document->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
+    $href = (new DOMXPath($document))->evaluate('string(//a/@href)');
+
+    expect($href)->toBe($expected)
+        ->and($html)->toContain('&lt;reply&gt;.txt');
+})->with([
+    'guest' => ['guest', '/support/ticket/' . str_repeat('c', 40) . '/file/' . str_repeat('a', 32)],
+    'client' => ['client', '/support/ticket-file/' . str_repeat('a', 32)],
+]);

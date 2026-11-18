@@ -483,6 +483,24 @@ final class TicketFiles
         return $row;
     }
 
+    /** A guest ticket hash grants access only to files on that ticket's messages. */
+    public static function findForGuest(\Pimple\Container $di, string $hash, string $token): ?array
+    {
+        if ($hash === '') {
+            return null;
+        }
+        $file = self::find($di, $token);
+        if ($file === null || (int) $file['client_id'] !== 0) {
+            return null;
+        }
+        $authorized = self::db($di)->fetchOne(
+            'SELECT 1 FROM support_ticket t JOIN support_ticket_message m ON m.support_ticket_id = t.id WHERE t.id = ? AND t.client_id IS NULL AND t.access_hash = ? AND m.id = ?',
+            [(int) $file['ticket_id'], $hash, (int) $file['message_id']]
+        );
+
+        return $authorized === false ? null : $file;
+    }
+
     /**
      * How to serve the file: {name, content_type, disposition, path}.
      * Images and PDFs show inline in a sandboxed page; the rest download.

@@ -30,6 +30,7 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
     public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/support', 'get_tickets', [], static::class);
+        $app->get('/support/ticket/:hash/file/:id', 'get_guest_ticket_file', ['hash' => '[a-z0-9]+', 'id' => '[a-f0-9]{32}'], static::class);
         $app->get('/support/ticket-file/:id', 'get_ticket_file', ['id' => '[a-f0-9]{32}'], static::class);
         $app->get('/support/feedback/:token', 'get_feedback', ['token' => '[a-f0-9]{64}'], static::class);
         $app->get('/support/ticket/:id', 'get_ticket', [], static::class);
@@ -109,6 +110,16 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $this->serveTicketFile($file);
     }
 
+    public function get_guest_ticket_file(\FOSSBilling\Core\Http\App $app, string $hash, string $id): Response
+    {
+        $file = \Box\Mod\Support\TicketFiles::findForGuest($this->di, $hash, $id);
+        if ($file === null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('File not found.', [], 404);
+        }
+
+        return $this->serveTicketFile($file);
+    }
+
     private function serveTicketFile(array $file): Response
     {
         $served = \Box\Mod\Support\TicketFiles::serve($file);
@@ -118,6 +129,7 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Content-Security-Policy', "default-src 'none'; img-src 'self'; sandbox");
         $response->headers->set('Cache-Control', 'private, no-store');
+        $response->headers->set('Referrer-Policy', 'no-referrer');
 
         return $response;
     }

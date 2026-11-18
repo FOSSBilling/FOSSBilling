@@ -6,7 +6,10 @@
     <div class="d-flex align-items-center gap-2 py-1">
         {% if not file.removed %}
         <svg class="icon"><use href="#paperclip" /></svg>
-        <a href='{{ "support/ticket-file/#{file.id}"|url }}' target="_blank">{{ file.name }}</a>
+        {% set file_path = ticket.author.role|default('') == 'guest' and ticket.hash|default('')
+            ? "support/ticket/#{ticket.hash}/file/#{file.id}"
+            : "support/ticket-file/#{file.id}" %}
+        <a href="{{ file_path|url }}" target="_blank" rel="noopener noreferrer">{{ file.name }}</a>
         <span class="text-muted">({{ file.size_label }})</span>
         {% elseif file.removed_reason == 'expired' %}
         <span class="text-muted">{{ 'Removed after the keep period: :name'|trans({ ':name': file.name }) }}</span>

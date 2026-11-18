@@ -60,7 +60,9 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
     {
         $guestTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->toApiArray($guestTicket);
+        // findOneByHash authorizes only guest-owned tickets. Add attachments
+        // here rather than exposing them to every identity-free serialization.
+        return TicketFiles::withFiles($this->getDi(), $this->getService()->toApiArray($guestTicket));
     }
 
     /**
