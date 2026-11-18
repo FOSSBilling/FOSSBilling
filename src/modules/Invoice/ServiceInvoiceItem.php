@@ -548,10 +548,19 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getOrderId(InvoiceItem $item): int
     {
-        if ($item->getType() == InvoiceItem::TYPE_ORDER) {
-            // Prefer the typed linkage, falling back to the legacy string
-            // reference for rows written before the order_id backfill ran.
-            return $item->getOrderId() ?? self::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId()) ?? 0;
+        if ($item->getType() !== InvoiceItem::TYPE_ORDER) {
+            return 0;
+        }
+
+        $reference = $item->getRelId();
+        $orderId = $item->getOrderId() ?? self::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, $reference);
+        if ($orderId !== null) {
+            return $orderId;
+        }
+
+        // Match the paid legacy reference accepted by renewal selection.
+        if ($item->getTask() === InvoiceItem::TASK_RENEW && $item->getInvoice()?->getStatus() === Invoice::STATUS_PAID) {
+            return self::resolveLegacyPaidOrderReference($reference) ?? 0;
         }
 
         return 0;

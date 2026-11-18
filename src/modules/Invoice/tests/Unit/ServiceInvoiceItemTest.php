@@ -391,6 +391,27 @@ test('getOrderId prefers the typed linkage with a rel_id fallback', function ():
         ->and($service->getOrderId($custom))->toBe(0);
 });
 
+test('getOrderId accepts trailing spaces only for paid renewal references', function (): void {
+    $invoice = createEntity(Invoice::class, ['status' => Invoice::STATUS_UNPAID]);
+    $item = createEntity(InvoiceItem::class, ['invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'relId' => '004 ']);
+    $service = invoiceItemService();
+
+    expect($service->getOrderId($item))->toBe(0);
+
+    $invoice->setStatus(Invoice::STATUS_PAID);
+    expect($service->getOrderId($item))->toBe(4);
+
+    $item->setRelId('4.5 ');
+    expect($service->getOrderId($item))->toBe(0);
+
+    $item->setRelId("4\t");
+    expect($service->getOrderId($item))->toBe(0);
+
+    $item->setTask(InvoiceItem::TASK_ACTIVATE);
+    $item->setRelId('004 ');
+    expect($service->getOrderId($item))->toBe(0);
+});
+
 test('addNew refuses locked invoices unless bypassed for internal flows', function (): void {
     $invoiceModel = createEntity(Invoice::class);
     $invoiceModel->setIssued(true);
@@ -1063,9 +1084,9 @@ test('a free domain renewal records its claim before contacting the registrar', 
     expect($item->getStatus())->toBe(InvoiceItem::STATUS_EXECUTED);
 });
 
-test('a known zero-priced domain renewal proceeds without a free hosting claim', function (): void {
-    $invoice = createEntity(Invoice::class, ['id' => 10]);
-    $item = createEntity(InvoiceItem::class, ['id' => 11, 'invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'status' => InvoiceItem::STATUS_PENDING_SETUP, 'relId' => '20', 'price' => '0.00']);
+test('a known zero-priced domain renewal proceeds without a free hosting claim', function (string $reference): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'status' => Invoice::STATUS_PAID]);
+    $item = createEntity(InvoiceItem::class, ['id' => 11, 'invoice' => $invoice, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW, 'status' => InvoiceItem::STATUS_PENDING_SETUP, 'relId' => $reference, 'price' => '0.00']);
     $order = createEntity(Order::class, ['id' => 20, 'productId' => 5, 'status' => Order::STATUS_ACTIVE]);
     $orderRepo = Mockery::mock(OrderRepository::class);
     $orderRepo->shouldReceive('find')->with(20)->andReturn($order);
@@ -1095,7 +1116,7 @@ test('a known zero-priced domain renewal proceeds without a free hosting claim',
 
     $service->executeTask($item);
     expect($item->getStatus())->toBe(InvoiceItem::STATUS_EXECUTED);
-});
+})->with(['canonical reference' => '20', 'legacy reference' => '020 ']);
 
 test('a newly quoted zero domain price records its provenance', function (): void {
     $order = createEntity(Order::class, ['id' => 20, 'clientId' => 3, 'quantity' => 1, 'title' => 'Domain']);
