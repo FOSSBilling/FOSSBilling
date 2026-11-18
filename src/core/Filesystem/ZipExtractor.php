@@ -14,6 +14,7 @@ namespace FOSSBilling\Core\Filesystem;
 use PhpZip\Constants\ZipCompressionMethod;
 use PhpZip\Constants\ZipPlatform;
 use PhpZip\Exception\ZipException;
+use PhpZip\Model\Data\ZipSourceFileData;
 use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -132,7 +133,7 @@ final class ZipExtractor
                     throw new \RuntimeException('Cannot extract a ZIP entry over a symbolic link.');
                 }
 
-                $this->extractFile($zip, $entry, $path, $filesystem);
+                $this->extractFile($zip, $entry, $path, $filesystem, $archive);
             }
 
             // Apply directory modes last so a read-only archived directory does
@@ -151,7 +152,7 @@ final class ZipExtractor
     }
 
     /** @param array{name: string, index?: int, size: int, crc: int, mode: int, mtime: int} $entry */
-    private function extractFile(\ZipArchive|ZipFile $zip, array $entry, string $path, Filesystem $filesystem): void
+    private function extractFile(\ZipArchive|ZipFile $zip, array $entry, string $path, Filesystem $filesystem, string $archive): void
     {
         $temporary = $filesystem->tempnam(Path::getDirectory($path), '.fossbilling-zip-');
 
@@ -165,14 +166,7 @@ final class ZipExtractor
                     throw new \RuntimeException('Unable to stage ZIP entry contents.');
                 }
                 if ($zip instanceof ZipFile) {
-                    // Copy directly: getEntryStream() caches a decoded buffer
-                    // for every entry until the archive is closed.
-                    $data = $zip->getEntry($entry['name'])->getData();
-                    if ($data === null) {
-                        throw new \RuntimeException('Unable to read ZIP entry contents.');
-                    }
-                    $data->copyDataToStream($output);
-                    $written = ftell($output);
+                    $written = $this->copyFallbackEntry($zip, $entry['name'], $archive, $output);
                     $extra = '';
                 } else {
                     $input = @$zip->getStreamIndex($entry['index']);
@@ -202,6 +196,65 @@ final class ZipExtractor
             $filesystem->rename($temporary, $path, true);
         } finally {
             $filesystem->remove($temporary);
+        }
+    }
+
+    /**
+     * Decode bounded compressed chunks without PhpZip's declared-length truncation
+     * or its archive-wide decoded stream cache.
+     *
+     * @param resource $output
+     */
+    private function copyFallbackEntry(ZipFile $zip, string $name, string $archive, $output): int
+    {
+        $entry = $zip->getEntry($name);
+        $data = $entry->getData();
+        $method = $entry->getCompressionMethod();
+        if (!$data instanceof ZipSourceFileData || $entry->isEncrypted()
+            || !in_array($method, [ZipCompressionMethod::STORED, ZipCompressionMethod::DEFLATED], true)) {
+            throw new \RuntimeException('Unsupported ZIP entry encoding.');
+        }
+        $input = @fopen($archive, 'rb');
+        if ($input === false) {
+            throw new \RuntimeException('Unable to read ZIP entry contents.');
+        }
+
+        try {
+            if (fseek($input, $data->getOffset()) !== 0) {
+                throw new \RuntimeException('Unable to seek ZIP entry contents.');
+            }
+            $remaining = $data->getCompressedSize();
+            $decoder = $method === ZipCompressionMethod::DEFLATED ? inflate_init(ZLIB_ENCODING_RAW) : null;
+            if ($decoder === false) {
+                throw new \RuntimeException('Unable to initialize ZIP decoder.');
+            }
+            $written = 0;
+            while ($remaining > 0) {
+                $chunk = fread($input, min(1024, $remaining));
+                if ($chunk === false || $chunk === '') {
+                    throw new \RuntimeException('Incomplete ZIP entry contents.');
+                }
+                $remaining -= strlen($chunk);
+                $decoded = $decoder === null ? $chunk : @inflate_add($decoder, $chunk, $remaining === 0 ? ZLIB_FINISH : ZLIB_SYNC_FLUSH);
+                if ($decoded === false || strlen($decoded) > $entry->getUncompressedSize() - $written) {
+                    throw new \RuntimeException('ZIP entry failed its decoded size check.');
+                }
+                $written += strlen($decoded);
+                if (fwrite($output, $decoded) !== strlen($decoded)) {
+                    throw new \RuntimeException('Unable to stage ZIP entry contents.');
+                }
+                if ($decoder !== null && inflate_get_status($decoder) === ZLIB_STREAM_END && $remaining !== 0) {
+                    throw new \RuntimeException('ZIP entry contains trailing compressed data.');
+                }
+            }
+            if ($decoder !== null && (inflate_get_status($decoder) !== ZLIB_STREAM_END
+                || inflate_get_read_len($decoder) !== $data->getCompressedSize())) {
+                throw new \RuntimeException('ZIP entry has an incomplete or oversized compressed stream.');
+            }
+
+            return $written;
+        } finally {
+            fclose($input);
         }
     }
 

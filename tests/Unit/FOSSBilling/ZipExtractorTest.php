@@ -104,7 +104,7 @@ test('corrupt ZIP errors retain their cause on the extraction error path', funct
         (new ZipExtractor())->extract($root . '/update.zip', $root . '/destination', static function (): void {}, beforeWrite: function () use (&$started): void { $started = true; });
         test()->fail('Corrupt archive was accepted');
     } catch (RuntimeException $e) {
-        if (!class_exists(ZipArchive::class)) {
+        if (!class_exists(ZipArchive::class) && !$badEntry) {
             expect($e->getPrevious())->toBeInstanceOf(PhpZip\Exception\ZipException::class);
         }
         expect($fs->exists($root . '/destination/entry-0.txt'))->toBeFalse();
@@ -223,3 +223,43 @@ test('ZIP64 directory counts and offsets remain supported', function (): void {
         $fs->remove($root);
     }
 });
+
+// cspell:ignore VvvvvvVVVvv VvvvvvvVVVvvvvvVV VvvvvVVv
+test('deflated entries require exact decoded size and a complete compressed stream', function (string $scenario): void {
+    $fs = new Filesystem();
+    $root = sys_get_temp_dir() . '/fb-zip-deflate-' . bin2hex(random_bytes(8));
+    $fs->mkdir($root . '/destination');
+    $name = 'entry.txt';
+    $contents = str_repeat('verified contents', 1024);
+    $compressed = gzdeflate($contents);
+    $declared = match ($scenario) {
+        'short size' => strlen($contents) - 1,
+        'long size' => strlen($contents) + 1,
+        default => strlen($contents),
+    };
+    $crc = $scenario === 'bad CRC' ? 0 : crc32(substr($contents, 0, $declared));
+    if ($scenario === 'incomplete stream') {
+        $compressed = substr($compressed, 0, -1);
+    } elseif ($scenario === 'trailing data') {
+        $compressed .= 'extra';
+    }
+    $size = strlen($compressed);
+    $files = pack('VvvvvvVVVvv', 0x04034B50, 20, 0, 8, 0, 33, $crc, $size, $declared, strlen($name), 0) . $name . $compressed;
+    $directory = pack('VvvvvvvVVVvvvvvVV', 0x02014B50, (3 << 8) | 20, 20, 0, 8, 0, 33, $crc, $size, $declared, strlen($name), 0, 0, 0, 0, 0o100644 << 16, 0) . $name;
+    $fs->dumpFile($root . '/update.zip', $files . $directory . pack('VvvvvVVv', 0x06054B50, 0, 0, 1, 1, strlen($directory), strlen($files), 0));
+    $fs->dumpFile($root . '/destination/' . $name, 'original');
+
+    try {
+        $extract = fn () => (new ZipExtractor())->extract($root . '/update.zip', $root . '/destination', static function (): void {});
+        if ($scenario === 'valid') {
+            $extract();
+            expect($fs->readFile($root . '/destination/' . $name))->toBe($contents);
+        } else {
+            expect($extract)->toThrow(RuntimeException::class);
+            expect($fs->readFile($root . '/destination/' . $name))->toBe('original')
+                ->and(iterator_to_array((new Symfony\Component\Finder\Finder())->files()->ignoreDotFiles(false)->name('.fossbilling-zip-*')->in($root . '/destination')))->toBeEmpty();
+        }
+    } finally {
+        $fs->remove($root);
+    }
+})->with(['valid', 'short size', 'long size', 'bad CRC', 'incomplete stream', 'trailing data']);
