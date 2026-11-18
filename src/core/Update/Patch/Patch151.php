@@ -17,26 +17,22 @@ class Patch151 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Help desks and knowledge base categories hidden from clients.
-        // Installs upgrading past it rely on this patch on MySQL; fresh
-        // installs and other drivers get the tables from the portable schema
-        // sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('support_helpdesk_hidden')) {
+        // Account credit applied to unpaid invoices ships with a new
+        // invoice_credit entity table. Installs upgrading past it rely on
+        // this patch on MySQL; fresh installs and other drivers get the
+        // table from the portable schema sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('invoice_credit')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_helpdesk_hidden` (
-                    `helpdesk_id` BIGINT NOT NULL,
-                    `hidden_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`helpdesk_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-            );
-        }
-
-        if (!$patcher->tableExists('support_kb_category_hidden')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_kb_category_hidden` (
-                    `category_id` BIGINT NOT NULL,
-                    `hidden_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`category_id`)
+                'CREATE TABLE `invoice_credit` (
+                    `id` BIGINT NOT NULL AUTO_INCREMENT,
+                    `invoice_id` BIGINT DEFAULT NULL,
+                    `client_id` BIGINT DEFAULT NULL,
+                    `amount` DECIMAL(18,2) DEFAULT \'0.00\',
+                    `created_at` DATETIME DEFAULT NULL,
+                    `updated_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `invoice_credit_invoice_id_idx` (`invoice_id`),
+                    KEY `invoice_credit_client_id_idx` (`client_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }

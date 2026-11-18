@@ -1558,3 +1558,40 @@ test('transaction errors are recorded through the replacement manager', function
     expect($transaction->getStatus())->toBe(Transaction::STATUS_ERROR)
         ->and($transaction->getError())->toBe('receipt failed');
 });
+
+test('retryable callbacks discard dirty objects without reopening an enclosing payment worker', function (bool $enclosingCharge): void {
+    [, $em, , , $transaction] = receiptTestContext();
+    $db = $em->getConnection();
+    $id = (int) $transaction->getId();
+    $token = str_repeat('a', 32);
+    $db->update('"transaction"', ['processing_token' => $token], ['id' => $id]);
+    $before = $db->fetchOne('SELECT amount FROM "transaction" WHERE id = ?', [$id]);
+    $service = new ServiceTransaction();
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+    (new ReflectionProperty($service, 'processingTokens'))->setValue($service, [$id => $token]);
+    $run = fn () => (new ReflectionMethod($service, 'withProcessingFence'))->invoke($service, $id, function () use ($transaction): never {
+        $transaction->setAmount('999.00');
+
+        throw new Box\Mod\Invoice\Exception\RetryableCallbackException('Provider temporarily unavailable');
+    });
+
+    try {
+        if ($enclosingCharge) {
+            $owner = null;
+            $attempt = Box\Mod\Invoice\GatewayChargeAttempts::begin($db, 42, 1, $owner);
+            expect(fn () => FOSSBilling\Core\Payment\ProcessingFence::charge($db, $attempt, $owner, $run))->toThrow(Box\Mod\Invoice\Exception\RetryableCallbackException::class);
+            expect($em->isOpen())->toBeFalse()
+                ->and(fn () => $em->flush())->toThrow(Doctrine\ORM\Exception\EntityManagerClosed::class);
+        } else {
+            expect($run)->toThrow(Box\Mod\Invoice\Exception\RetryableCallbackException::class);
+            expect($em->isOpen())->toBeTrue()->and($em->contains($transaction))->toBeFalse();
+            $em->flush();
+        }
+        expect($db->fetchOne('SELECT amount FROM "transaction" WHERE id = ?', [$id]))->toBe($before)
+            ->and(FOSSBilling\Core\Payment\ProcessingFence::claims())->toBe([]);
+    } finally {
+        $db->close();
+    }
+})->with([false, true]);

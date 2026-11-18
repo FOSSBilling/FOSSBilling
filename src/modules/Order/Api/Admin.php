@@ -413,7 +413,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     public function cancel_request_accept($data): bool
     {
         $this->checkPermissions('order', 'manage');
-        $this->di['mod_service']('Order', 'CancelRequest')->accept((int) $data['id']);
+        $this->di['mod_service']('Order', 'CancelRequest')->accept($this->cancelRequestId($data['id'] ?? null));
 
         return true;
     }
@@ -425,9 +425,18 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     public function cancel_request_stop($data): bool
     {
         $this->checkPermissions('order', 'manage');
-        $this->di['mod_service']('Order', 'CancelRequest')->stop((int) $data['id']);
+        $this->di['mod_service']('Order', 'CancelRequest')->stop($this->cancelRequestId($data['id'] ?? null));
 
         return true;
+    }
+
+    private function cancelRequestId(mixed $id): int
+    {
+        if ((!is_int($id) && !is_string($id)) || filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            throw new InformationException('A positive cancellation request ID is required.');
+        }
+
+        return (int) $id;
     }
 
     /**

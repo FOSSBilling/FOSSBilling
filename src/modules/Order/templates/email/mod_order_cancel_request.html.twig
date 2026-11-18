@@ -39,9 +39,9 @@
 	<p>{{ 'Hello %name%,'|trans({'%name%': c.first_name|default('')}) }}</p>
 	<p>{{ 'We have received your request to cancel this service: %title%.'|trans({'%title%': order.title|default('')}) }}</p>
 	{% if request.type|default('') == 'end_of_period' %}
-	<p>{{ 'It will be cancelled at the end of its billing period, on %date%. You will not be invoiced for it again.'|trans({'%date%': order.expires_at|default('')}) }}</p>
+	<p>{{ 'You requested cancellation at the end of the billing period. Check the service page for the current status.'|trans }}</p>
 	{% else %}
-	<p>{{ 'It will be cancelled shortly. If you change your mind, withdraw the request from the service page before it is processed.'|trans }}</p>
+	<p>{{ 'You requested immediate cancellation. Check the service page for the current status. If the request is still waiting and you change your mind, you can withdraw it there.'|trans }}</p>
 	{% endif %}
 	<p>{{ 'You may'|trans }} <a href="{{ "order/service/manage/#{order.id}"|url(area: 'client') }}" target="_blank">{{ 'manage your service'|trans }}</a>.</p>
 

@@ -105,6 +105,7 @@ class Service
                 'invoice_batch_invoke_due_event',
                 'invoice_batch_charge_saved_cards',
                 'order_batch_send_suspension_warnings',
+                'order_batch_process_cancel_requests',
                 'order_batch_suspend_expired',
                 'order_batch_cancel_suspended',
                 'order_batch_cancel_unpaid',

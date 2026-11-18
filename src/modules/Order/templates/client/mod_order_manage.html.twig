@@ -118,7 +118,9 @@
                     {{ render_widgets('client.order.manage.details.after', { 'order': order }) }}
                 </div>
                 <div class="card-footer">
-                    {% if order.period and order.status != 'failed_renew' %}
+                    {% set cancel_request = client.order_cancel_request_get({ 'id': order.id }) %}
+                    {% set cancellation_started = order.meta.cancel_at_period_end|default('0') == '1' or order.meta.scheduled_cancel_claim|default('0') in ['1', '2'] %}
+                    {% if not cancel_request and not cancellation_started and order.period and order.status != 'failed_renew' %}
                         <a class="btn btn-primary btn-sm"
                            {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'This will generate new invoice. Are you sure you want to continue?'|trans}, callback: 'onRenewalInvoiceCreated'}) }}>{{ 'Renew Now'|trans }}</a>
                         <script>window.onRenewalInvoiceCreated = (hash) => { window.location = "{{ 'invoice'|url }}/" + hash; };</script>
@@ -127,14 +129,15 @@
                         <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
                     {% endif %}
                     <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open Ticket'|trans }}</button>
-                    {% if order.status == 'active' %}
-                        {% set cancel_request = client.order_cancel_request_get({ 'id': order.id }) %}
-                        {% if cancel_request %}
-                            <span class="text-muted small d-block mb-2">{{ 'Cancellation requested. The service will be cancelled.'|trans }}</span>
-                            <a class="btn btn-secondary btn-sm" {{ fb_api_link({href: 'order/cancel_request_withdraw'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Withdraw the cancellation request?'|trans}, reload: true}) }}>{{ 'Withdraw Cancellation Request'|trans }}</a>
-                        {% else %}
-                            <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
-                        {% endif %}
+                    {% if order.status == 'canceled' %}
+                        <span class="text-muted small d-block mb-2">{{ 'This service has been canceled.'|trans }}</span>
+                    {% elseif cancellation_started %}
+                        <span class="text-muted small d-block mb-2">{{ 'Cancellation is scheduled or awaiting staff review.'|trans }}</span>
+                    {% elseif cancel_request %}
+                        <span class="text-muted small d-block mb-2">{{ 'Your cancellation request is waiting to be processed.'|trans }}</span>
+                        <a class="btn btn-secondary btn-sm" {{ fb_api_link({href: 'order/cancel_request_withdraw'|api_url(query: {id: order.id, request_id: cancel_request.id}), modal: {type: 'confirm', title: 'Withdraw the cancellation request?'|trans}, reload: true}) }}>{{ 'Withdraw Cancellation Request'|trans }}</a>
+                    {% elseif order.status == 'active' %}
+                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
                     {% endif %}
                     {{ render_widgets('client.order.manage.actions.end', { 'order': order }) }}
                 </div>
@@ -216,7 +219,7 @@
                                     {% if order.expires_at %}
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="type" id="cancel-type-period" value="end_of_period">
-                                        <label class="form-check-label" for="cancel-type-period">{{ 'At the end of the billing period (%date%)'|trans({'%date%': order.expires_at|format_date}) }}</label>
+                                        <label class="form-check-label" for="cancel-type-period">{{ 'At the end of the billing period in effect when the request is accepted'|trans }}</label>
                                     </div>
                                     {% endif %}
                                 </div>

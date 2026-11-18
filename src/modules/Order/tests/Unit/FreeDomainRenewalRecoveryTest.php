@@ -186,10 +186,10 @@ test('free eligibility and provider execution share the direct renewal lock', fu
     $em->flush();
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('findProductById')->andReturn((new Box\Mod\Product\Entity\Product())->setType('domain'));
-    $products->shouldReceive('freeDomainRenewalUntil')->once()->andReturnUsing(function () use ($orders, $order): int {
+    $products->shouldReceive('freeDomainRenewalState')->once()->andReturnUsing(function () use ($orders, $order): array {
         expect(fn () => $orders->renewOrder($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 
-        return time() + 366 * 86400;
+        return ['until' => time() + 366 * 86400, 'pending' => false];
     });
     $di = $executor->getDi();
     $services = $di['mod_service'];

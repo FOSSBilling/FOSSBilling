@@ -17,44 +17,18 @@ class Patch153 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Ticket escalation rules and the replies they already acted on.
-        // Installs upgrading past it rely on this patch on MySQL; fresh
-        // installs and other drivers get the tables from the portable schema
-        // sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('support_escalation_rule')) {
+        // Automatic saved-method charges count their tries per invoice so the
+        // cron spaces retries and eventually stops. Installs upgrading past
+        // it rely on this patch on MySQL; fresh installs and other drivers
+        // get the table from the portable schema sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('invoice_card_charge')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_escalation_rule` (
-                    `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `name` VARCHAR(100) NOT NULL,
-                    `active` TINYINT(1) NOT NULL DEFAULT 1,
-                    `helpdesks` TEXT NOT NULL,
-                    `statuses` TEXT NOT NULL,
-                    `priorities` TEXT NOT NULL,
-                    `minutes` INT NOT NULL,
-                    `new_helpdesk_id` BIGINT DEFAULT NULL,
-                    `new_status` VARCHAR(30) NOT NULL DEFAULT \'\',
-                    `new_priority` VARCHAR(10) NOT NULL DEFAULT \'\',
-                    `assign_to` BIGINT DEFAULT NULL,
-                    `notify` TEXT NOT NULL,
-                    `reply` TEXT NOT NULL,
-                    `created_at` DATETIME NOT NULL,
-                    `updated_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-            );
-        }
-
-        if (!$patcher->tableExists('support_escalation_applied')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_escalation_applied` (
-                    `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `rule_id` BIGINT NOT NULL,
-                    `ticket_id` BIGINT NOT NULL,
-                    `reply_at` DATETIME NOT NULL,
-                    `applied_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`id`),
-                    UNIQUE KEY `rule_ticket` (`rule_id`, `ticket_id`),
-                    KEY `ticket` (`ticket_id`)
+                'CREATE TABLE `invoice_card_charge` (
+                    `invoice_id` BIGINT NOT NULL,
+                    `attempts` INT NOT NULL DEFAULT 0,
+                    `last_attempt_at` DATETIME DEFAULT NULL,
+                    `last_error` VARCHAR(255) DEFAULT NULL,
+                    PRIMARY KEY (`invoice_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }

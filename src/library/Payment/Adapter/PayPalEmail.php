@@ -371,7 +371,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if ($isSubscriptionPayment && $originalInvoice instanceof Invoice
                     && (int) $tx['invoice_id'] === (int) $originalInvoice->getId()
                     && $originalInvoice->getStatus() === Invoice::STATUS_PAID) {
-                    $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
+                    $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id, $gateway_id, (int) $originalInvoice->getId(), $id);
                     if (!$renewalInvoice instanceof Invoice || $renewalInvoice->getId() === null) {
                         if ($invoiceService->gatewayReceiptExists($gateway_id, (string) $ipn['txn_id'], $client, (float) $ipn['mc_gross'], 'PayPal transaction ' . $ipn['txn_id'], ClientBalance::TYPE_PAYPAL_DEFERRED)) {
                             $this->finishDuplicateReceipt($api_admin, $id, $gateway_id, (string) $ipn['txn_id']);
@@ -505,9 +505,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
                 break;
 
-            case 'recurring_payment_suspended_due_to_max_failed_payment':
             case 'recurring_payment_profile_cancel':
-            case 'recurring_payment_suspended':
             case 'recurring_payment_expired':
             case 'subscr_eot':
             case 'subscr_cancel':
@@ -516,7 +514,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
                 }
 
-                $storedCancellation = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $cancelSid]);
+                $storedCancellation = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy([
+                    'sid' => $cancelSid,
+                    'payGateway' => $gateway_id,
+                    'relType' => 'invoice',
+                    'relId' => (int) ($verifiedInvoiceId ?? $tx['invoice_id']),
+                ]);
                 if (!$storedCancellation instanceof Box\Mod\Invoice\Entity\Subscription) {
                     // Nothing to cancel for an unknown subscription, so acknowledge
                     // the notification instead of failing the IPN.
@@ -524,11 +527,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
                     break;
                 }
-                $api_admin->invoice_subscription_update(['id' => $storedCancellation->getId(), 'status' => 'canceled']);
+                $this->di['mod_service']('Invoice', 'Subscription')->confirmCancellationFromGateway((int) $storedCancellation->getId(), $cancelSid, $gateway_id);
                 $this->di['logger']->info('Canceled subscription ' . $cancelSid . ' from PayPal ' . $txnType . ' IPN for transaction ' . $id);
 
                 break;
 
+            case 'recurring_payment_suspended_due_to_max_failed_payment':
+            case 'recurring_payment_suspended':
             case 'recurring_payment_failed':
             case 'subscr_failed':
                 $failedSid = (string) ($ipn['subscr_id'] ?? '');

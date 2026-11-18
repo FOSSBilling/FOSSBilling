@@ -17,65 +17,44 @@ class Patch156 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Reply ratings, closing feedback and its request links, and the per
-        // help desk feedback switch. Installs upgrading past it rely on this
-        // patch on MySQL; fresh installs and other drivers get the tables
-        // from the portable schema sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('support_ticket_message_rating')) {
+        // Ticket escalation rules and the replies they already acted on.
+        // Installs upgrading past it rely on this patch on MySQL; fresh
+        // installs and other drivers get the tables from the portable schema
+        // sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('support_escalation_rule')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_ticket_message_rating` (
-                    `message_id` BIGINT NOT NULL,
-                    `ticket_id` BIGINT NOT NULL,
-                    `admin_id` BIGINT NOT NULL,
-                    `rating` SMALLINT NOT NULL,
-                    `rated_by_kind` VARCHAR(10) NOT NULL,
-                    `rated_by_id` BIGINT NOT NULL,
-                    `ip` VARCHAR(45) NOT NULL DEFAULT \'\',
-                    `rated_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`message_id`),
-                    KEY `ticket` (`ticket_id`),
-                    KEY `admin_rated` (`admin_id`, `rated_at`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-            );
-        }
-
-        if (!$patcher->tableExists('support_ticket_feedback')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_ticket_feedback` (
+                'CREATE TABLE `support_escalation_rule` (
                     `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `ticket_id` BIGINT NOT NULL,
-                    `admin_id` BIGINT DEFAULT NULL,
-                    `rating` SMALLINT DEFAULT NULL,
-                    `comments` TEXT NOT NULL,
-                    `ip` VARCHAR(45) NOT NULL DEFAULT \'\',
+                    `name` VARCHAR(100) NOT NULL,
+                    `active` TINYINT(1) NOT NULL DEFAULT 1,
+                    `helpdesks` TEXT NOT NULL,
+                    `statuses` TEXT NOT NULL,
+                    `priorities` TEXT NOT NULL,
+                    `minutes` INT NOT NULL,
+                    `new_helpdesk_id` BIGINT DEFAULT NULL,
+                    `new_status` VARCHAR(30) NOT NULL DEFAULT \'\',
+                    `new_priority` VARCHAR(10) NOT NULL DEFAULT \'\',
+                    `assign_to` BIGINT DEFAULT NULL,
+                    `notify` TEXT NOT NULL,
+                    `reply` TEXT NOT NULL,
                     `created_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`id`),
-                    KEY `ticket` (`ticket_id`),
-                    KEY `admin_created` (`admin_id`, `created_at`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-            );
-        }
-
-        if (!$patcher->tableExists('support_ticket_feedback_request')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_ticket_feedback_request` (
-                    `ticket_id` BIGINT NOT NULL,
-                    `token` CHAR(64) NOT NULL,
-                    `sent_at` DATETIME NOT NULL,
-                    `answered_at` DATETIME DEFAULT NULL,
-                    PRIMARY KEY (`ticket_id`),
-                    UNIQUE KEY `token` (`token`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-            );
-        }
-
-        if (!$patcher->tableExists('support_helpdesk_feedback')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_helpdesk_feedback` (
-                    `helpdesk_id` BIGINT NOT NULL,
-                    `feedback_request` TINYINT(1) NOT NULL DEFAULT 1,
                     `updated_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`helpdesk_id`)
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
+        }
+
+        if (!$patcher->tableExists('support_escalation_applied')) {
+            $patcher->executeSql(
+                'CREATE TABLE `support_escalation_applied` (
+                    `id` BIGINT NOT NULL AUTO_INCREMENT,
+                    `rule_id` BIGINT NOT NULL,
+                    `ticket_id` BIGINT NOT NULL,
+                    `reply_at` DATETIME NOT NULL,
+                    `applied_at` DATETIME NOT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `rule_ticket` (`rule_id`, `ticket_id`),
+                    KEY `ticket` (`ticket_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }

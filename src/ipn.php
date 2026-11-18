@@ -82,6 +82,9 @@ try {
 
     $output = $service->createAndProcess($ipn);
     $response = $apiResponseFactory->create($output);
+} catch (Box\Mod\Invoice\Exception\RetryableCallbackException $e) {
+    $response = $apiResponseFactory->create(null, $e);
+    emitResponse($response);
 } catch (Exception $e) {
     $response = $apiResponseFactory->create(null, $e);
 }

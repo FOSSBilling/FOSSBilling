@@ -4551,6 +4551,26 @@ test('upstream refund tax migration remains patch 140', function (bool $exists):
     (new FOSSBilling\Core\Update\Patch\Patch140())->apply($patcher);
 })->with([true, false]);
 
+test('portable update sync creates cancellation request history and preserves it on retry', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em, 'pdo' => $connection->getNativeConnection(), 'logger' => new Tests\Helpers\TestLogger()]));
+
+    expect($connection->createSchemaManager()->tablesExist(['client_order_cancel_request']))->toBeFalse();
+    expect($patcher->syncPortableSchema())->not->toBeNull();
+    $table = $connection->createSchemaManager()->introspectTableByUnquotedName('client_order_cancel_request');
+    expect(array_map(static fn (Doctrine\DBAL\Schema\Column $column): string => $column->getName(), $table->getColumns()))->toContain('id', 'client_order_id', 'client_id', 'type', 'reason', 'status', 'created_at', 'updated_at')
+        ->and($table->hasIndex('client_order_cancel_request_order_id_idx'))->toBeTrue()
+        ->and($table->hasIndex('client_order_cancel_request_status_idx'))->toBeTrue()
+        ->and($table->getForeignKeys())->toHaveCount(2);
+    $connection->insert('client_order_cancel_request', ['type' => 'immediate', 'reason' => 'Retain history', 'status' => 'withdrawn']);
+    expect($patcher->syncPortableSchema())->not->toBeNull();
+    expect($connection->fetchAllAssociative('SELECT type, reason, status FROM client_order_cancel_request'))->toBe([
+        ['type' => 'immediate', 'reason' => 'Retain history', 'status' => 'withdrawn'],
+    ]);
+});
+
 test('gateway receipt migration adds both columns and the unique index', function (): void {
     $patcher = Mockery::mock(Patcher::class)->makePartial();
     $patcher->shouldReceive('tableHasColumn')->once()->with('client_balance', 'gateway_receipt_key')->andReturn(false);
@@ -4951,15 +4971,15 @@ test('a transient approval inspection failure stops additive sync and preserves 
     });
 });
 
-test('installations at the Unicode migration still receive every Phase B and C migration', function (): void {
-    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 146);
-    expect(array_keys($patches))->toBe(range(147, 161))
-        ->and($patches[147][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch147::class)
-        ->and($patches[161][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch161::class);
+test('installations at the latest main migration still receive every Phase B and C migration', function (): void {
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 149);
+    expect(array_keys($patches))->toBe(range(150, 164))
+        ->and($patches[150][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch150::class)
+        ->and($patches[164][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch164::class);
     $patcher = Mockery::mock(Patcher::class);
     $patcher->shouldReceive('tableExists')->once()->with('client_order_cancel_request')->andReturnFalse();
     $patcher->shouldReceive('executeSql')->once()->withArgs(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `client_order_cancel_request`') && str_contains($sql, 'CHARSET=utf8mb4'));
-    $patches[147][0]->apply($patcher);
+    $patches[150][0]->apply($patcher);
 });
 
 test('Unicode repair covers table defaults even when all columns are identifiers', function (): void {

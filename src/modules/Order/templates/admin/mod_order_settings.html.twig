@@ -99,7 +99,7 @@
                         </select>
                     </div>
                     <div class="col-lg-6 d-flex align-items-end">
-                        <small class="form-hint">{{ 'Automatically: once a day, the daily cron cancels a service with an Immediate request, and schedules one with an End of billing period request to be cancelled at the end of its paid period.'|trans }}</small>
+                        <small class="form-hint">{{ 'Automatically: once a day, the daily cron cancels a service with an Immediate request, and schedules one with an End of billing period request to be cancelled at the end of its paid period. If the gateway cannot cancel an active subscription, cancel it at the provider and mark it canceled in FOSSBilling before accepting the request.'|trans }}</small>
                     </div>
                 </div>
             </div>

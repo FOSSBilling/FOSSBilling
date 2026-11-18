@@ -19,7 +19,7 @@ function cancellationRegressionContext(): array
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $em = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
-    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Order::class), $em->getClassMetadata(OrderMeta::class)]);
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Order::class), $em->getClassMetadata(OrderMeta::class), $em->getClassMetadata(Box\Mod\Order\Entity\ClientOrderCancelRequest::class)]);
     $order = (new Order())->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTimeImmutable('-1 day'));
     $em->persist($order);
     $em->flush();
@@ -77,7 +77,7 @@ function freeHoldRegressionContext(string $kind): array
     $em->flush();
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('findProductById')->with(5)->andReturn((new Box\Mod\Product\Entity\Product())->setType(Box\Mod\Product\Service::DOMAIN));
-    $products->shouldReceive('freeDomainRenewalUntil')->andReturn(time() + 86400 * 365);
+    $products->shouldReceive('freeDomainRenewalState')->andReturn(['until' => time() + 86400 * 365, 'pending' => false]);
     $di = $cron->getDi();
     $executor = ($di['mod_service'])('Invoice', 'InvoiceItem');
     unset($di['mod_service']);

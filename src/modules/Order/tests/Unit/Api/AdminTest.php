@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+// cspell:words cancelrequest
+
 use Box\Mod\Order\Api\Admin;
 use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service;
@@ -905,3 +907,14 @@ test('runs the cancellation request cron batch', function (): void {
 
     expect($api->batch_process_cancel_requests([]))->toBeTrue();
 });
+
+test('cancellation actions reject malformed request ids before invoking the service', function (mixed $id): void {
+    $api = apiEndpoint(new Admin());
+    $cancel = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancel->shouldNotReceive('accept', 'stop');
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancel]));
+    $api->setDi($di);
+    expect(fn () => $api->cancel_request_accept(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'A positive cancellation request ID is required.')
+        ->and(fn () => $api->cancel_request_stop(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'A positive cancellation request ID is required.');
+})->with([[true], [false], [0], [-1], [1.5], ['bad'], [[]], [null], ['99999999999999999999999999']]);

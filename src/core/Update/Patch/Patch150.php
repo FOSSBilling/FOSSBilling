@@ -17,18 +17,24 @@ class Patch150 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Automatic saved-method charges count their tries per invoice so the
-        // cron spaces retries and eventually stops. Installs upgrading past
-        // it rely on this patch on MySQL; fresh installs and other drivers
-        // get the table from the portable schema sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('invoice_card_charge')) {
+        // Cancellation requests ship with a new client_order_cancel_request
+        // entity table. Installs upgrading past it rely on this patch on
+        // MySQL; fresh installs and other drivers get the table from the
+        // portable schema sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('client_order_cancel_request')) {
             $patcher->executeSql(
-                'CREATE TABLE `invoice_card_charge` (
-                    `invoice_id` BIGINT NOT NULL,
-                    `attempts` INT NOT NULL DEFAULT 0,
-                    `last_attempt_at` DATETIME DEFAULT NULL,
-                    `last_error` VARCHAR(255) DEFAULT NULL,
-                    PRIMARY KEY (`invoice_id`)
+                'CREATE TABLE `client_order_cancel_request` (
+                    `id` BIGINT NOT NULL AUTO_INCREMENT,
+                    `client_order_id` BIGINT DEFAULT NULL,
+                    `client_id` BIGINT DEFAULT NULL,
+                    `type` VARCHAR(32) DEFAULT NULL,
+                    `reason` TEXT DEFAULT NULL,
+                    `status` VARCHAR(32) DEFAULT NULL,
+                    `created_at` DATETIME DEFAULT NULL,
+                    `updated_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `client_order_cancel_request_order_id_idx` (`client_order_id`),
+                    KEY `client_order_cancel_request_status_idx` (`status`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }

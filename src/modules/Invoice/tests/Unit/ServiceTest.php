@@ -112,6 +112,7 @@ function invoiceItemEmAndRepo(): array
     $em->shouldReceive('refresh')->byDefault();
     $conn = Mockery::mock(Connection::class)->shouldIgnoreMissing();
     $conn->shouldReceive('fetchAssociative')->with(Mockery::pattern('/SELECT amount, currency, created_at/'), Mockery::any())->byDefault()->andReturn(false);
+    $conn->shouldReceive('transactional')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback($conn));
     $em->shouldReceive('getConnection')->byDefault()->andReturn($conn);
 
     return [$em, $repo];
@@ -4058,6 +4059,7 @@ test('returns existing invoice when generating for order with unpaid invoice', f
     $invoiceModel->status = Invoice::STATUS_UNPAID;
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('find')
         ->with(2)
@@ -4097,6 +4099,7 @@ test('clears stale paid invoice reference when generating for order', function (
         ->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('find')
         ->with(2)
@@ -4137,6 +4140,7 @@ test('generates invoice for order', function (): void {
         ->atLeast()->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemServiceMock);
@@ -4179,6 +4183,7 @@ test('generates invoice for active order using the order price, not the product 
         ->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(function (string $module) use ($productService, $invoiceItemServiceMock): Mockery\MockInterface {
@@ -4234,6 +4239,10 @@ test('generates domain renewal invoice with renewal title containing the domain'
         ->with($product)
         ->once()
         ->andReturn($domainService);
+    $productService->shouldReceive('hasFreeDomainRenewal')
+        ->once()
+        ->andReturn(false);
+    $productService->shouldReceive('isFreeDomainRenewalOffered')->once()->andReturn(false);
 
     $currencyServiceMock = Mockery::mock(CurrencyService::class);
     $currencyRepository = Mockery::mock(CurrencyRepository::class);
@@ -4246,6 +4255,7 @@ test('generates domain renewal invoice with renewal title containing the domain'
         ->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(function (string $module, ?string $sub = null) use ($productService, $currencyServiceMock, $invoiceItemServiceMock): Mockery\MockInterface {
@@ -4284,6 +4294,7 @@ test('generates invoice for zero amount order', function (): void {
         ->atLeast()->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemServiceMock);
@@ -4294,8 +4305,12 @@ test('generates invoice for zero amount order', function (): void {
 });
 
 test('throws exception when generating invoice for negative amount order', function (): void {
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('resetEntityManager')->once();
     $clientOrder = createEntity(Order::class, ['price' => -1, 'quantity' => 1]);
+    $di = container();
+    $di['em']->shouldReceive('contains')->with($clientOrder)->andReturn(true);
+    $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateForOrder($clientOrder))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invoices are not generated for negative amount orders.');
@@ -4476,7 +4491,7 @@ test('renewal batch merges mergeable orders sharing a bucket into one invoice', 
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4487,7 +4502,7 @@ test('renewal batch merges mergeable orders sharing a bucket into one invoice', 
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once();
     $serviceMock->shouldNotReceive('generateForOrder');
 
@@ -4512,7 +4527,7 @@ test('renewal batch keeps subscription-backed orders on the single-invoice path'
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->once()->with($order)->andReturn(true);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->once()->with($order)->andReturn(true);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1]]);
@@ -4523,7 +4538,7 @@ test('renewal batch keeps subscription-backed orders on the single-invoice path'
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->with($order)->andReturn(true);
-    $serviceMock->shouldReceive('generateForOrder')->once()->with($order)->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateForOrder')->once()->with($order, null, true, false, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once();
     $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
 
@@ -4549,7 +4564,7 @@ test('renewal batch invoices different billing periods separately', function ():
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4586,7 +4601,7 @@ test('renewal batch retries each order singly when merged generation fails', fun
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4597,7 +4612,7 @@ test('renewal batch retries each order singly when merged generation fails', fun
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andThrow(new Exception('second order has no rate'));
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andThrow(new Exception('second order has no rate'));
     $serviceMock->shouldReceive('generateForOrder')->twice()->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->twice();
 
@@ -4623,7 +4638,7 @@ test('renewal batch resets the manager and stops when merged generation closes i
     $second = createEntity(Order::class, ['id' => 2, 'client_id' => 7]);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4634,7 +4649,7 @@ test('renewal batch resets the manager and stops when merged generation closes i
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andThrow(new Exception('flush failed'));
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andThrow(new Exception('flush failed'));
     $serviceMock->shouldReceive('resetEntityManager')->once();
     $serviceMock->shouldNotReceive('generateForOrder', 'issueInvoice');
 
@@ -4658,7 +4673,7 @@ test('renewal batch does not regenerate when issuance fails', function (): void 
     $invoiceModel = createEntity(Invoice::class);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+    $subscriptionService->shouldReceive('hasUncanceledSubscriptionForOrder')->twice()->andReturn(false);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
@@ -4669,7 +4684,7 @@ test('renewal batch does not regenerate when issuance fails', function (): void 
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
-    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second], true, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once()->andThrow(new Exception('gateway credits failed'));
     $serviceMock->shouldNotReceive('generateForOrder');
 
@@ -4702,7 +4717,7 @@ test('renewal batch falls back to the single-invoice path when the merge check f
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->andThrow(new Exception('meta store unavailable'));
-    $serviceMock->shouldReceive('generateForOrder')->once()->with($order)->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('generateForOrder')->once()->with($order, null, true, false, Mockery::type('string'))->andReturn($invoiceModel);
     $serviceMock->shouldReceive('issueInvoice')->once();
     $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
 
@@ -4755,6 +4770,8 @@ test('merged renewal invoice carries exactly one line per order and falls due wi
 
     $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
+    $em->shouldReceive('contains')->with(Mockery::type(Order::class))->andReturn(true);
+    $em->shouldReceive('refresh')->with(Mockery::type(Order::class));
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['Invoice', 'InvoiceItem'] => $invoiceItemService,
@@ -4803,6 +4820,8 @@ test('merged renewal invoice resolves every line before persisting anything', fu
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
+    $em->shouldReceive('contains')->with(Mockery::type(Order::class))->andReturn(true);
+    $em->shouldReceive('refresh')->with(Mockery::type(Order::class));
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
@@ -5949,7 +5968,7 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when subscriptio
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1, 2, 82);
     expect($result)->toBeNull();
 });
 
@@ -5981,109 +6000,9 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when original or
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1, 2, 82);
     expect($result)->toBeNull();
 });
-
-test('generateRenewalInvoiceForSubscriptionPayment uses the original order and not a product_id lookup', function (): void {
-    $subscription = createEntity(Subscription::class, ['id' => 7, 'relType' => 'invoice', 'relId' => 82]);
-
-    $invoiceItem = createEntity(InvoiceItem::class, ['rel_id' => 82]);
-
-    $originalOrder = createEntity(Order::class, [
-        'status' => Order::STATUS_ACTIVE,
-        'productId' => 1,
-    ]);
-
-    $renewalInvoice = createEntity(Invoice::class);
-
-    $renewalInvoice->id = 99;
-
-    $orderRepoMock = Mockery::mock(OrderRepository::class);
-    $orderRepoMock->shouldReceive('find')
-        ->with(82)
-        ->andReturn($originalOrder);
-
-    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
-    $invoiceItemRepo->shouldReceive('findOneByInvoiceIdAndType')
-        ->with(82, InvoiceItem::TYPE_ORDER)
-        ->andReturn($invoiceItem);
-    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
-    $subscriptionRepo->shouldReceive('findOneBy')->once()->andReturn($subscription);
-    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
-    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('generateForOrder')
-        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
-        ->once()
-        ->andReturn($renewalInvoice);
-    $serviceMock->shouldReceive('issueInvoice')
-        ->once();
-
-    $di = container();
-    $di['em'] = $em;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
-
-    expect($result)->toBeInstanceOf(Invoice::class);
-    expect($result->id)->toBe(99);
-});
-
-test('generateRenewalInvoiceForSubscriptionPayment still renews an order the batch-suspend cron already suspended', function (string $status): void {
-    // A gateway's subscription-payment IPN can legitimately arrive after the
-    // batch-suspend cron has already suspended the order for missing its
-    // expiry, or after a prior renewal attempt left it failed_renew.
-    $subscription = createEntity(Subscription::class, ['id' => 7, 'relType' => 'invoice', 'relId' => 82]);
-
-    $invoiceItem = createEntity(InvoiceItem::class, ['rel_id' => 82]);
-
-    $originalOrder = createEntity(Order::class, [
-        'status' => $status,
-        'productId' => 1,
-    ]);
-
-    $renewalInvoice = createEntity(Invoice::class);
-
-    $renewalInvoice->id = 99;
-
-    $orderRepoMock = Mockery::mock(OrderRepository::class);
-    $orderRepoMock->shouldReceive('find')
-        ->with(82)
-        ->andReturn($originalOrder);
-
-    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
-    $invoiceItemRepo->shouldReceive('findOneByInvoiceIdAndType')
-        ->with(82, InvoiceItem::TYPE_ORDER)
-        ->andReturn($invoiceItem);
-    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
-    $subscriptionRepo->shouldReceive('findOneBy')->once()->andReturn($subscription);
-    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
-    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('generateForOrder')
-        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
-        ->once()
-        ->andReturn($renewalInvoice);
-    $serviceMock->shouldReceive('issueInvoice')
-        ->once();
-
-    $di = container();
-    $di['em'] = $em;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
-
-    expect($result)->toBeInstanceOf(Invoice::class);
-    expect($result->id)->toBe(99);
-})->with([
-    'suspended' => Order::STATUS_SUSPENDED,
-    'failed renew' => Order::STATUS_FAILED_RENEW,
-]);
 
 test('markAsPaid transitions a deposit invoice to paid status', function (): void {
     $service = new Service();
@@ -7770,6 +7689,7 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
@@ -7843,18 +7763,16 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     expect($copiedByRelId['']->getOrderId())->toBeNull();
 });
 
-test('reissueInvoice normalizes a legacy order link from the validated order', function (): void {
+test('reissueInvoice uses the validated order for both links', function (string $legacyId, ?int $typedId): void {
     $original = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
     $original->setIssued(true);
     $original->setStatus(Invoice::STATUS_UNPAID);
     setEntityId($original, 10);
 
-    // A writer from before the typed column stored the order id padded.
-    // The integer lookup below still resolves it to order 7, but the copy
-    // must carry the canonical form so paid-item resolution keeps working.
     $orderLine = createEntity(InvoiceItem::class, ['price' => 100.0, 'quantity' => 1, 'taxed' => false]);
     $orderLine->setType(InvoiceItem::TYPE_ORDER);
-    $orderLine->setRelId('07');
+    $orderLine->setRelId($legacyId);
+    $orderLine->setOrderId($typedId);
     $orderLine->setTask(InvoiceItem::TASK_ACTIVATE);
     setEntityId($orderLine, 20);
 
@@ -7887,6 +7805,7 @@ test('reissueInvoice normalizes a legacy order link from the validated order', f
     $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
@@ -7927,7 +7846,10 @@ test('reissueInvoice normalizes a legacy order link from the validated order', f
         ->and($copiedItems)->toHaveCount(1)
         ->and($copiedItems[0]->getRelId())->toBe('7')
         ->and($copiedItems[0]->getOrderId())->toBe(7);
-});
+})->with([
+    'padded historical link' => ['07', null],
+    'typed link overrides legacy value' => ['8', 7],
+]);
 
 test('reissueInvoice refuses an order line whose reference names no order', function (): void {
     $original = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
@@ -7962,6 +7884,7 @@ test('reissueInvoice refuses an order line whose reference names no order', func
     $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
@@ -8720,6 +8643,8 @@ test('issueInvoice refuses drafts that are not unpaid', function (): void {
     $em->shouldReceive('refresh')->byDefault();
 
     $di = container();
+    $em->shouldReceive('getConnection')->andReturn($di['em']->getConnection());
+    unset($di['em']);
     $di['em'] = $em;
     $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
 
@@ -11194,6 +11119,48 @@ test('refundInvoice refuses account credit for a deposit invoice', function (): 
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'account credit');
 });
 
+test('resolveRenewalLine bills a free domain renewal at zero while its hosting lasts', function (bool $free, float $price, bool $liveSubscription = false): void {
+    $service = new Service();
+
+    $order = createEntity(Order::class, ['id' => 20, 'clientId' => 7, 'productId' => 2, 'currency' => 'EUR', 'price' => '8.00', 'quantity' => 1, 'status' => Order::STATUS_ACTIVE]);
+
+    $product = createEntity(Product::class, ['id' => 2, 'type' => ProductService::DOMAIN]);
+
+    $productService = Mockery::mock(ProductService::class)->makePartial();
+    $productService->shouldReceive('findProductById')->once()->with(2)->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')->once()->andReturn(['price' => 12.0, 'quantity' => 1]);
+    $productService->shouldReceive('hasFreeDomainRenewal')->once()->with(20)->andReturn($free);
+    $productService->shouldReceive('isFreeDomainRenewalOffered')->zeroOrMoreTimes()->andReturn(false);
+    $productService->shouldReceive('getProductModuleService')->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $di = container();
+    $subscription = Mockery::mock(ServiceSubscription::class);
+    $subscription->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn($liveSubscription);
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice:subscription' => $subscription,
+        'product' => $productService,
+        'currency' => $currencyService,
+    ]));
+    $service->setDi($di);
+
+    $resolved = $service->resolveRenewalLine($order);
+
+    expect($resolved['price'])->toBe($price)
+        ->and($resolved['line']['price'])->toBe($price)
+        ->and($resolved['line']['free_domain_renewal'])->toBe($free && !$liveSubscription)
+        ->and($resolved['line']['free_domain_waiting_hosting'])->toBeFalse()
+        ->and($resolved['line']['quantity'])->toBe(1);
+})->with([
+    'billed' => [false, 24.0],
+    'free' => [true, 0.0],
+    'live subscription retains TLD pricing' => [true, 24.0, true],
+]);
+
 test('tryPayWithCredits refuses deposit invoices', function (): void {
     $invoice = createEntity(Invoice::class);
     $invoice->id = 10;
@@ -11457,6 +11424,44 @@ test('partly paid recurring invoices are not offered as subscribable', function 
     expect($result['credit_applied'])->toBe(0.0);
 });
 
+test('a linked domain is quoted free while its hosting payment is pending', function (): void {
+    $service = new Service();
+
+    $order = createEntity(Order::class, ['id' => 20, 'clientId' => 7, 'productId' => 2, 'currency' => 'EUR', 'price' => '8.00', 'quantity' => 1, 'status' => Order::STATUS_ACTIVE]);
+
+    $product = createEntity(Product::class, ['id' => 2, 'type' => ProductService::DOMAIN]);
+
+    $productService = Mockery::mock(ProductService::class)->makePartial();
+    $productService->shouldReceive('findProductById')->once()->with(2)->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')->once()->andReturn(['price' => 12.0, 'quantity' => 1]);
+    $productService->shouldReceive('hasFreeDomainRenewal')->once()->with(20)->andReturn(false);
+    $productService->shouldReceive('isFreeDomainRenewalOffered')->once()->andReturn(true);
+    $productService->shouldReceive('getProductModuleService')->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $di = container();
+    $subscription = Mockery::mock(ServiceSubscription::class);
+    $subscription->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(false);
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice:subscription' => $subscription,
+        'product' => $productService,
+        'currency' => $currencyService,
+    ]));
+    $service->setDi($di);
+
+    $resolved = $service->resolveRenewalLine($order);
+
+    expect($resolved['price'])->toBe(0.0)
+        ->and($resolved['line']['price'])->toBe(0.0)
+        ->and($resolved['line']['free_domain_renewal'])->toBeTrue()
+        ->and($resolved['line']['free_domain_waiting_hosting'])->toBeTrue()
+        ->and($resolved['line']['quantity'])->toBe(1);
+});
+
 test('a paid pending free renewal invoice is reused after hosting payment', function (): void {
     $order = createEntity(Order::class, ['id' => 20]);
     $invoice = createEntity(Invoice::class, ['id' => 10, 'status' => Invoice::STATUS_PAID]);
@@ -11466,12 +11471,14 @@ test('a paid pending free renewal invoice is reused after hosting payment', func
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('resolveRenewalLine')->once()->with($order)->andReturn(['price' => 0.0, 'line' => ['free_domain_renewal' => true, 'free_domain_waiting_hosting' => false]]);
     $service->shouldReceive('getInvoiceItemRepository')->once()->andReturn($items);
-    $service->setDi(container());
+    $di = container();
+    $di['em']->shouldReceive('contains')->with($order)->andReturn(true);
+    $service->setDi($di);
 
     expect($service->generateForOrder($order))->toBe($invoice);
 });
 
-test('failed renewal generation replaces a closed manager before returning', function (): void {
+test('failed renewal generation replaces a closed manager before allowing callback retry', function (): void {
     $old = Mockery::mock(EntityManagerInterface::class);
     $new = Mockery::mock(EntityManagerInterface::class);
     $connection = Mockery::mock(Connection::class);
@@ -11485,8 +11492,9 @@ test('failed renewal generation replaces a closed manager before returning', fun
     $di = container();
     $di['em'] = $old;
     $service->setDi($di);
-    expect($service->generateRenewalInvoiceForSubscriptionPayment('sub_failed', 1))->toBeNull()
-        ->and($di['em'])->toBe($new);
+    expect(fn () => $service->generateRenewalInvoiceForSubscriptionPayment('sub_failed', 1, 2, 82))
+        ->toThrow(Box\Mod\Invoice\Exception\RetryableCallbackException::class, 'temporarily unavailable');
+    expect($di['em'])->toBe($new);
 });
 
 test('refundInvoice books a custom line at the exact amount, tax-exempt', function (): void {
@@ -11849,42 +11857,6 @@ test('refundInvoice aborts before Stripe when the deposit credit cannot be rever
     $serviceMock->setDi($di);
     expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'insufficient');
 });
-
-test('resolveRenewalLine bills a free domain renewal at zero while its hosting lasts', function (bool $free, float $price): void {
-    $service = new Service();
-
-    $order = createEntity(Order::class, ['id' => 20, 'clientId' => 7, 'productId' => 2, 'currency' => 'EUR', 'price' => '8.00', 'quantity' => 1, 'status' => Order::STATUS_ACTIVE]);
-
-    $product = createEntity(Product::class, ['id' => 2, 'type' => ProductService::DOMAIN]);
-
-    $productService = Mockery::mock(ProductService::class)->makePartial();
-    $productService->shouldReceive('findProductById')->once()->with(2)->andReturn($product);
-    $productService->shouldReceive('getProductRenewalLineConfig')->once()->andReturn(['price' => 12.0, 'quantity' => 1]);
-    $productService->shouldReceive('hasFreeDomainRenewal')->once()->with(20)->andReturn($free);
-    $productService->shouldReceive('getProductModuleService')->andReturn(Mockery::mock()->shouldIgnoreMissing());
-
-    $currencyRepository = Mockery::mock(CurrencyRepository::class);
-    $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
-    $currencyService = Mockery::mock(CurrencyService::class);
-    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
-
-    $di = container();
-    $di['mod_service'] = $di->protect(moduleService([
-        'product' => $productService,
-        'currency' => $currencyService,
-    ]));
-    $service->setDi($di);
-
-    $resolved = $service->resolveRenewalLine($order);
-
-    expect($resolved['price'])->toBe($price)
-        ->and($resolved['line']['price'])->toBe($price)
-        ->and($resolved['line']['quantity'])->toBe(1)
-        ->and($resolved['line']['free_domain_renewal'])->toBe($free);
-})->with([
-    'billed' => [false, 24.0],
-    'free' => [true, 0.0],
-]);
 
 test('tryPayWithCredits refuses an invoice whose bank debit is clearing', function (): void {
     $invoice = createEntity(Invoice::class);

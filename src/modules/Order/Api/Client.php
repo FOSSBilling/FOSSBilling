@@ -146,7 +146,10 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
     #[RequiredParams(['type' => 'Choose when the service ends', 'reason' => 'Please tell us why you want to cancel.'])]
     public function cancel_request($data): bool
     {
-        $this->di['mod_service']('Order', 'CancelRequest')->create($this->_getOrder($data), (string) $data['type'], (string) $data['reason']);
+        if (!is_string($data['type'] ?? null) || !is_string($data['reason'] ?? null)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Cancellation type and reason must be strings.');
+        }
+        $this->di['mod_service']('Order', 'CancelRequest')->create($this->_getOrder($data), $data['type'], $data['reason']);
 
         return true;
     }
@@ -172,7 +175,11 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         if (!$identity instanceof ClientEntity) {
             throw new \FOSSBilling\Core\Exception\InformationException('Client identity not found');
         }
-        $this->di['mod_service']('Order', 'CancelRequest')->withdraw($this->_getOrder($data), $identity);
+        $id = $data['request_id'] ?? null;
+        if ((!is_int($id) && !is_string($id)) || filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            throw new \FOSSBilling\Core\Exception\InformationException('A positive cancellation request ID is required.');
+        }
+        $this->di['mod_service']('Order', 'CancelRequest')->withdraw($this->_getOrder($data), $identity, (int) $id);
 
         return true;
     }

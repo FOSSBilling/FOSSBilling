@@ -266,7 +266,7 @@ class ServiceTransaction implements InjectionAwareInterface
     /** Webhook signature headers (Stripe-Signature, PayPal-Transmission-Sig...) stay with the stored callback. */
     private const string SIGNATURE_HEADER_PATTERN = '/^HTTP_[A-Z0-9_]*(?:SIGNATURE|_SIG|HMAC|DIGEST)(?:_[0-9]+)?$/';
 
-    private function authenticateJsonCallback(array $data): void
+    private function authenticateJsonCallback(array $data): ?int
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         if (!is_string($rawBody) || strlen($rawBody) > self::MAX_CALLBACK_BODY_SIZE) {
@@ -281,7 +281,7 @@ class ServiceTransaction implements InjectionAwareInterface
             || isset($server['HTTP_STRIPE_SIGNATURE'])
             || ($body !== '' && json_validate($rawBody));
         if (!$isJson) {
-            return;
+            return null;
         }
 
         // Authenticate before lifecycle listeners, deduplication, logging or storage.
@@ -296,11 +296,13 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new InformationException('Payment gateway does not support authenticated JSON callbacks');
         }
         $adapter->authenticateJsonWebhook($data);
+
+        return $gateway->getId();
     }
 
     public function create(array $data): ?int
     {
-        $this->authenticateJsonCallback($data);
+        $authenticatedGatewayId = $this->authenticateJsonCallback($data);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionCreateEvent($this->getSafeCreateEventInput($data)));
 
         $skip_validation = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['skip_validation'] ?? false);
@@ -366,6 +368,9 @@ class ServiceTransaction implements InjectionAwareInterface
         // Fallback dedupe: compute a canonical hash of the IPN payload and
         // look up an existing transaction by (gateway_id, ipn_hash).
         $ipn_hash = $this->ipnHash($ipn);
+        if ($authenticatedGatewayId !== null) {
+            $ipn['authenticated_gateway_id'] = $authenticatedGatewayId;
+        }
         $supportsIpnHash = $this->supportsTransactionIpnHash();
         if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
             $existingByHash = $this->getTransactionRepository()->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], $ipn_hash);
@@ -876,12 +881,18 @@ class ServiceTransaction implements InjectionAwareInterface
     /** Record a processing failure without overwriting a concurrently settled transaction. */
     private function markTransactionError(int $id, \Throwable $e): void
     {
-        // Doctrine closes the entity manager after a failed transaction. Use the
-        // connection directly, and make the status guard part of the write.
+        // A failed transaction may have closed Doctrine's manager. Update
+        // the live row directly, guarded by the processing ownership token.
         $db = $this->di['em']->getConnection();
         $table = $db->quoteSingleIdentifier('transaction');
+        $retryable = $e instanceof Exception\RetryableCallbackException;
         $updated = $db->executeStatement(
-            "UPDATE {$table} SET gateway_completion_state = CASE WHEN status = 'processed' THEN 1 ELSE gateway_completion_state END, status = CASE WHEN status = 'processed' THEN status ELSE 'error' END, error = ?, error_code = ?, updated_at = ? WHERE id = ? AND (status <> 'processed' OR gateway_completion_state <> 0) AND processing_token = ?",
+            "UPDATE {$table} SET gateway_completion_state = CASE WHEN status = 'processed' THEN 1 ELSE gateway_completion_state END,"
+            . ($retryable
+                ? " status = CASE WHEN status = 'processing' THEN 'received' ELSE status END,"
+                : " status = CASE WHEN status = 'processed' THEN status ELSE 'error' END,")
+            . ' error = ?, error_code = ?, updated_at = ?'
+            . " WHERE id = ? AND (status <> 'processed' OR gateway_completion_state <> 0) AND processing_token = ?",
             [$e->getMessage(), (int) $e->getCode(), date('Y-m-d H:i:s'), $id, $this->processingTokens[$id] ?? null]
         );
         if ($this->di['em']->isOpen()) {
@@ -1018,9 +1029,16 @@ class ServiceTransaction implements InjectionAwareInterface
         try {
             return ProcessingFence::transaction($this->di['em']->getConnection(), $id, $token, $work);
         } catch (\Throwable $exception) {
-            // Queries may reject a worker after it dirtied managed objects but
-            // before flush. No later operation may flush that stale unit of work.
-            $this->di['em']->close();
+            // A retryable callback can resume in this request after discarding
+            // its uncommitted objects. An enclosing payment worker owns its
+            // own recovery; displaced workers must keep their manager closed.
+            $manager = $this->di['em'];
+            if ($exception instanceof Exception\RetryableCallbackException && $manager->isOpen()
+                && ProcessingFence::claims() === [] && !$manager->getConnection()->isTransactionActive()) {
+                $manager->clear();
+            } else {
+                $manager->close();
+            }
 
             throw $exception;
         }
