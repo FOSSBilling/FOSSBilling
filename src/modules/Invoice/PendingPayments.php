@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Doctrine\DBAL\Connection;
 
 /**
@@ -51,9 +52,11 @@ final class PendingPayments
     /** Whether an unpaid invoice of the order has a payment still clearing. */
     public static function forOrder(Connection $connection, int $orderId): bool
     {
+        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'ii.rel_id');
+
         return (bool) $connection->fetchOne(
-            'SELECT 1 FROM invoice_item ii JOIN invoice i ON i.id = ii.invoice_id WHERE ii.type = ? AND ii.rel_id = ? AND i.status = ? AND ' . self::sql('i.id', $connection) . ' LIMIT 1',
-            ['order', (string) $orderId, Invoice::STATUS_UNPAID]
+            "SELECT 1 FROM invoice_item ii JOIN invoice i ON i.id = ii.invoice_id WHERE ii.type = ? AND (ii.order_id = ? OR (ii.order_id IS NULL AND $legacyReference = ?)) AND i.status = ? AND " . self::sql('i.id', $connection) . ' LIMIT 1',
+            ['order', $orderId, (string) $orderId, Invoice::STATUS_UNPAID]
         );
     }
 }

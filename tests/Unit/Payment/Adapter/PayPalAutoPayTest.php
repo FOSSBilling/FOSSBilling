@@ -534,7 +534,7 @@ function autopayFailureContext(string $providerStatus = 'Failed'): array
     (new Doctrine\ORM\Tools\SchemaTool($schema))->createSchema([$schema->getClassMetadata(Box\Mod\Invoice\Entity\GatewayChargeAttempt::class)]);
     $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, gateway_id INTEGER)');
     $db->insert('invoice', ['id' => 60, 'status' => 'unpaid', 'gateway_id' => 5]);
-    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
+    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER, order_id INTEGER)');
     $db->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, invoice_id INTEGER, gateway_id INTEGER, txn_id TEXT, status TEXT, txn_status TEXT, amount TEXT, currency TEXT, created_at TEXT, updated_at TEXT, note TEXT, error TEXT, processing_token TEXT)');
     $db->insert('"transaction"', ['id' => 69, 'invoice_id' => 60, 'gateway_id' => 5, 'txn_id' => 'P-pending', 'status' => 'received', 'txn_status' => 'processing']);
     $db->insert('"transaction"', ['id' => 70, 'gateway_id' => 5, 'status' => 'processing', 'processing_token' => str_repeat('b', 32)]);

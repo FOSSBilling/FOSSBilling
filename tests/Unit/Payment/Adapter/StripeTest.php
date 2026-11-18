@@ -4253,7 +4253,7 @@ test('failed Stripe bank debits atomically release their journal and allow manua
         $em->shouldReceive('getConnection')->andReturn($c['db']);
         $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
         $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo);
-        $c['db']->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
+        $c['db']->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER, order_id INTEGER)');
         $c['di']['em'] = $em;
         $billing = new Box\Mod\Invoice\Service();
         $billing->setDi($c['di']);
