@@ -611,12 +611,22 @@ test('Unicode repair skips columns covered by functional indexes', function (): 
 test('Unicode repair skips indexed columns on small-block compressed tables', function (): void {
     try {
         $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(100) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=1 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
-    } catch (PDOException) {
+    } catch (PDOException $e) {
+        // Skip only for diagnostics that identify an unsupported table
+        // option; unrelated failures (a dropped connection, a typo in the
+        // fixture) must fail loudly instead of silently skipping the test.
+        $errorInfo = is_array($e->errorInfo ?? null) ? $e->errorInfo : [];
+        $unsupported = in_array((int) ($errorInfo[1] ?? 0), [1286, 1478], true)
+            || stripos($e->getMessage(), 'KEY_BLOCK_SIZE') !== false
+            || stripos($e->getMessage(), 'ROW_FORMAT') !== false;
+        if (!$unsupported) {
+            throw $e;
+        }
         $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
     }
-    $rowFormat = $this->connection->fetchOne("SELECT ROW_FORMAT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'");
-    if ($rowFormat !== 'Compressed') {
-        $this->markTestSkipped('This server does not honor ROW_FORMAT=COMPRESSED.');
+    $row = $this->connection->fetchAssociative("SELECT ROW_FORMAT, CREATE_OPTIONS FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'");
+    if (($row['ROW_FORMAT'] ?? null) !== 'Compressed' || stripos((string) ($row['CREATE_OPTIONS'] ?? ''), 'KEY_BLOCK_SIZE') === false) {
+        $this->markTestSkipped('This server does not honor ROW_FORMAT=COMPRESSED with an explicit block size.');
     }
     $this->connection->insert('post', ['id' => 1, 'slug' => 'example']);
     ($this->runPatch)();
@@ -626,5 +636,5 @@ test('Unicode repair skips indexed columns on small-block compressed tables', fu
     $calls = $this->patcher->getDi()['logger']->calls;
     expect($calls)->toHaveCount(1)
         ->and($calls[0]['method'])->toBe('warning')
-        ->and($calls[0]['params'][0])->toContain('post.slug', 'index would exceed');
+        ->and($calls[0]['params'][0])->toContain('post.slug', 'compressed block size');
 });

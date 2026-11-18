@@ -2421,6 +2421,7 @@ class Patcher implements InjectionAwareInterface
             $liveColumns[$column['Field']] = $column;
         }
         $byteLimit = null;
+        $byteLimitKnown = false;
         $changes = [];
         foreach ($liveColumns as $column) {
             $name = $column['Field'];
@@ -2451,7 +2452,15 @@ class Patcher implements InjectionAwareInterface
             if ($columnIndexes !== []) {
                 // Look the limit up only when an indexed column actually needs
                 // it; most tables never reach this branch.
-                $byteLimit ??= $this->utf8mb4IndexByteLimit($table);
+                if (!$byteLimitKnown) {
+                    $byteLimit = $this->utf8mb4IndexByteLimit($table);
+                    $byteLimitKnown = true;
+                }
+                if ($byteLimit === null) {
+                    $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': compressed block size requires manual review.');
+
+                    continue;
+                }
                 if (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': index would exceed the size limit after conversion and requires manual review.');
 
@@ -2708,7 +2717,7 @@ class Patcher implements InjectionAwareInterface
         return null;
     }
 
-    private function utf8mb4IndexByteLimit(string $table): int
+    private function utf8mb4IndexByteLimit(string $table): ?int
     {
         // Match in PHP rather than LIKE: table names contain underscores,
         // which are single-character wildcards in a LIKE pattern.
@@ -2732,9 +2741,10 @@ class Patcher implements InjectionAwareInterface
             && (int) $matches[1] < 8
         ) {
             // A hand-tuned block size below the server default shrinks what an
-            // index may hold; with no reliable bound, indexed columns are left
-            // for manual review instead of risking a failed ALTER.
-            return 0;
+            // index may hold, with no reliable bound to check against. The
+            // null result keeps indexed columns untouched via a dedicated
+            // warning instead of risking a failed ALTER.
+            return null;
         }
         if ($rowFormat !== 'dynamic' || !self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
             return 767;
