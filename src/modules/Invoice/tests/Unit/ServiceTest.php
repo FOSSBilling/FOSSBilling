@@ -7855,6 +7855,68 @@ test('reissueInvoice normalizes a legacy order link from the validated order', f
         ->and($copiedItems[0]->getOrderId())->toBe(7);
 });
 
+test('reissueInvoice refuses an order line whose reference names no order', function (): void {
+    $original = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
+    $original->setIssued(true);
+    $original->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($original, 10);
+
+    // A loose cast would read this as order 7 and link the wrong order to the
+    // replacement. The derivation rule resolves it to nothing, so the reissue
+    // is refused before anything is replaced.
+    $orderLine = createEntity(InvoiceItem::class, ['price' => 100.0, 'quantity' => 1, 'taxed' => false]);
+    $orderLine->setType(InvoiceItem::TYPE_ORDER);
+    $orderLine->setRelId('7.5');
+    setEntityId($orderLine, 20);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('reserveNextNumericParamValue')->with('invoice_starting_number')->andReturn(8);
+    $systemService->shouldReceive('getParamValue')->with('invoice_series')->andReturn('FB-');
+    $systemService->shouldReceive('getParamValue')->with('invoice_hash_lifetime_days', '90')->andReturn(90);
+
+    $productService = Mockery::mock(ProductService::class);
+    $orderService = Mockery::mock(OrderService::class);
+
+    $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([$orderLine]);
+
+    // The reference resolves to nothing, so no order lookup runs at all.
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldNotReceive('find');
+    $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'product' => $productService,
+        'order' => $orderService,
+    ]));
+    $di['event_dispatcher'] = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceItemRepository')->andReturn($invoiceItemRepo);
+
+    expect(fn () => $serviceMock->reissueInvoice($original, []))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Order #7.5 attached to this invoice could not be found');
+});
+
 test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 

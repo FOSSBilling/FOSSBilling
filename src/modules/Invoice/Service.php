@@ -4029,7 +4029,12 @@ class Service implements InjectionAwareInterface
             foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $original->getId()) as $item) {
                 $orderToLink = null;
                 if ($item->getType() === InvoiceItem::TYPE_ORDER) {
-                    $orderToLink = $entityManager->getRepository(Order::class)->find((int) $item->getRelId());
+                    // The established derivation rule validates the raw
+                    // reference: a non-order reference such as '7.5' resolves
+                    // to nothing and refuses the reissue instead of linking
+                    // the wrong order through a loose cast.
+                    $referencedOrderId = ServiceInvoiceItem::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId());
+                    $orderToLink = $referencedOrderId === null ? null : $entityManager->getRepository(Order::class)->find($referencedOrderId);
                     if (!$orderToLink instanceof Order) {
                         throw new InformationException('Order #:id attached to this invoice could not be found', [':id' => $item->getRelId()]);
                     }

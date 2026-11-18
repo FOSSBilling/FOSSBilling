@@ -2903,6 +2903,19 @@ class Service implements InjectionAwareInterface
 
         $invoicesById = $this->findInvoicesByIds($invoiceService, $staleOrders);
 
+        // Invoices this run actually removed: a sibling whose link was cleared
+        // by that removal (refresh reads null) may proceed, while a sibling
+        // pointing at any other invoice still defers. Tracked separately from
+        // $invoiceHandled, which also covers already-gone invoices the batch
+        // never removed itself.
+        $invoiceRemoved = [];
+
+        // Whether the invoice map above is trustworthy: a failed rebuild must
+        // not read as "no invoices", which would treat every linked invoice
+        // as gone. While set, linked groups defer; invoice-less orders still
+        // proceed and the completion event still fires.
+        $invoicesUnknown = false;
+
         // Whether each invoice's group may proceed to order deletion - set only
         // once the invoice is confirmed gone or removed, so a failed removal
         // leaves it unresolved for a sibling order to retry rather than
@@ -2938,11 +2951,16 @@ class Service implements InjectionAwareInterface
                 // order may have been activated or otherwise moved on while earlier
                 // orders in this same run were being processed.
                 $this->di['em']->refresh($order);
-                if ($order->getUnpaidInvoiceId() !== ($selectedInvoiceIds[$this->orderId($order)] ?? null)) {
+                $refreshedInvoiceId = $order->getUnpaidInvoiceId();
+                $selectedInvoiceId = $selectedInvoiceIds[$this->orderId($order)] ?? null;
+                if ($refreshedInvoiceId !== $selectedInvoiceId
+                    && !($refreshedInvoiceId === null && ($invoiceRemoved[$selectedInvoiceId] ?? false))) {
                     // Attached, detached, or re-attached while earlier orders
                     // were processed: the prefetched map describes the previous
                     // link, so the next run evaluates the current one instead
-                    // of deleting under it.
+                    // of deleting under it. A null link after this run removed
+                    // the selected invoice is the exception: the removal is
+                    // already confirmed, so the sibling may proceed.
                     continue;
                 }
                 if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
@@ -2964,6 +2982,12 @@ class Service implements InjectionAwareInterface
                 }
 
                 if ($invoiceId !== null) {
+                    if ($invoicesUnknown) {
+                        // The map could not be rebuilt after a manager reset:
+                        // unknown state, not a missing invoice. Defer the group
+                        // for the next run.
+                        continue;
+                    }
                     if (!array_key_exists($invoiceId, $invoiceHandled)) {
                         $invoice = $invoicesById[$invoiceId] ?? null;
                         $status = $invoice instanceof Invoice ? $invoice->getStatus() : null;
@@ -2978,6 +3002,9 @@ class Service implements InjectionAwareInterface
                             // so a payment or a concurrently attached paid order is seen
                             // rather than raced. A refused removal keeps the whole group.
                             $invoiceHandled[$invoiceId] = $invoiceService->deleteInvoiceByAdmin($invoice, true);
+                            if ($invoiceHandled[$invoiceId]) {
+                                $invoiceRemoved[$invoiceId] = true;
+                            }
                         } else {
                             // Already gone, or canceled/refunded/some other non-live
                             // status - either way it's no longer a live unpaid invoice,
@@ -3006,7 +3033,13 @@ class Service implements InjectionAwareInterface
                     $invoiceService = $this->di['mod_service']('Invoice');
                     // Restores the reversed orientation the loop consumes.
                     $pendingOrders = array_reverse($this->reloadOrders(array_reverse($pendingOrders)));
-                    $invoicesById = $this->findInvoicesByIds($invoiceService, $pendingOrders);
+
+                    try {
+                        $invoicesById = $this->findInvoicesByIds($invoiceService, $pendingOrders);
+                    } catch (\Exception $e) {
+                        $this->di['logger']->info($e->getMessage());
+                        $invoicesUnknown = true;
+                    }
                 }
             }
         }

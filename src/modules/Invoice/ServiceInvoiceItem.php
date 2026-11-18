@@ -561,20 +561,19 @@ class ServiceInvoiceItem implements InjectionAwareInterface
      * invoice/credit-note references, hook_call JSON and third-party line
      * types map to null.
      *
-     * The reference itself must be a canonical positive integer string: a
-     * loose cast would turn a non-order reference such as '7.5' into order 7
-     * and let order-scoped deletes take lines that never belonged to it. It
-     * must also survive an integer round-trip, so digit strings above the
-     * BIGINT maximum map to null instead of a saturated wrong id.
+     * The reference itself must be a positive integer string, with optional
+     * leading zeros (legacy writers zero-padded the reference): fractions,
+     * zero, and digit strings that do not survive an integer round-trip map
+     * to null instead of a saturated wrong id.
      */
     public static function resolveOrderReference(?string $type, ?string $unit, ?string $relId): ?int
     {
-        if ($relId === null || preg_match('/\A[1-9][0-9]*\z/', $relId) !== 1 || (string) (int) $relId !== $relId) {
+        if ($relId === null || preg_match('/\A0*([1-9][0-9]*)\z/', $relId, $matches) !== 1 || (string) (int) $matches[1] !== $matches[1]) {
             return null;
         }
 
         if ($type === InvoiceItem::TYPE_ORDER || $unit === 'discount') {
-            return (int) $relId;
+            return (int) $matches[1];
         }
 
         return null;

@@ -275,7 +275,7 @@ class ServiceSubscription implements InjectionAwareInterface
                 // Text-side counterpart of the join below: a text-to-integer
                 // comparison is coercion on MySQL, an error on PostgreSQL for
                 // junk like '7.5', and loose matching on SQLite. Only a
-                // canonical order id written as text resolves, mirroring the
+                // digit-only order id written as text resolves, mirroring the
                 // backfill's own rule.
                 $legacyOrderId = ServiceInvoiceItem::resolveOrderReference(Entity\InvoiceItem::TYPE_ORDER, null, is_scalar($relId) ? (string) $relId : null);
                 if ($legacyOrderId !== null) {
