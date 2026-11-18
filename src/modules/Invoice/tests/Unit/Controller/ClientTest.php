@@ -841,3 +841,70 @@ test('PayPal return capture requires an independently committed journal', functi
         $c['db']->close();
     }
 })->with([false, true]);
+
+function paypalReturnDeletionContext(bool $vault, ?int $orderId, string $reference, string $state = 'service_deleted', int $itemInvoiceId = 60): array
+{
+    $c = paypalReturnJournalContext($vault);
+    $db = $c['db'];
+    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, order_id INTEGER, rel_id TEXT)');
+    $db->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
+    // The approved checkout and managed invoice predate the deletion hold.
+    $db->insert('invoice_item', ['invoice_id' => 60, 'type' => 'order', 'order_id' => 3, 'rel_id' => '3']);
+    $db->insert('invoice_item', ['invoice_id' => $itemInvoiceId, 'type' => 'order', 'order_id' => $orderId, 'rel_id' => $reference]);
+    $db->insert('client_order_meta', ['client_order_id' => 7, 'name' => 'deletion_state', 'value' => $state]);
+    $di = $c['controller']->getDi();
+    $original = $di['mod_service'];
+    $actualInvoices = new Box\Mod\Invoice\Service();
+    $actualInvoices->setDi($di);
+    $invoices = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoices->shouldReceive('invoiceHasDeletionHold')->once()->with($c['invoice'])->andReturnUsing(function ($invoice) use ($db, $actualInvoices): bool {
+        $acquired = FOSSBilling\Core\Doctrine\NamedLock::acquire($db, 'fb:card-charge:60', 0);
+        if ($acquired) {
+            FOSSBilling\Core\Doctrine\NamedLock::release($db, 'fb:card-charge:60');
+        }
+        expect($acquired)->toBeFalse();
+
+        return $actualInvoices->invoiceHasDeletionHold($invoice);
+    });
+    $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => strcasecmp($module, 'invoice') === 0 && $sub === '' ? $invoices : $original($module, $sub));
+
+    return $c;
+}
+
+test('PayPal returns refuse capture and charge attempts while an order deletion is held', function (bool $vault, ?int $orderId, string $reference, string $state): void {
+    $c = paypalReturnDeletionContext($vault, $orderId, $reference, $state);
+    $c['adapter']->shouldNotReceive($c['capture']);
+    $c['transactions']->shouldNotReceive('createAndProcess');
+    $c['controller']->getDi()['mod_service']('Invoice', 'SavedCards')->shouldNotReceive('hold');
+
+    try {
+        $response = $c['controller']->{$c['method']}($c['app']);
+        expect($response->getContent())->toContain('https://billing.example/invoice/' . str_repeat('a', 32))
+            ->and($response->getContent())->not->toContain('thank-you')
+            ->and((int) $c['db']->fetchOne('SELECT COUNT(*) FROM invoice_gateway_charge_attempt'))->toBe(0)
+            ->and((int) $c['db']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0)
+            ->and($c['db']->fetchOne('SELECT status FROM invoice WHERE id = 60'))->toBe('unpaid')
+            ->and($c['db']->fetchOne('SELECT value FROM client_order_meta'))->toBe($state)
+            ->and(FOSSBilling\Core\Doctrine\NamedLock::acquire($c['db'], 'fb:card-charge:60', 0))->toBeTrue();
+        FOSSBilling\Core\Doctrine\NamedLock::release($c['db'], 'fb:card-charge:60');
+    } finally {
+        $c['db']->close();
+    }
+})->with([false, true])->with(['typed order link' => [7, '99'], 'legacy order link' => [null, '007 ']])->with(['started', 'service_deleted']);
+
+test('PayPal returns do not confuse unrelated or malformed order references with a deletion hold', function (bool $vault, ?int $orderId, string $reference, int $itemInvoiceId): void {
+    $c = paypalReturnDeletionContext($vault, $orderId, $reference, itemInvoiceId: $itemInvoiceId);
+    $c['adapter']->shouldReceive($c['capture'])->once()->andReturn('PAYMENT-1');
+    $c['transactions']->shouldReceive('createAndProcess')->once()->andReturn(70);
+
+    try {
+        $c['controller']->{$c['method']}($c['app']);
+        expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($c['db'], 60)['payment_id'])->toBe('PAYMENT-1');
+    } finally {
+        $c['db']->close();
+    }
+})->with([false, true])->with([
+    'typed link takes precedence' => [8, '7', 60],
+    'fractional legacy reference' => [null, '7.0', 60],
+    'another invoice' => [7, '7', 61],
+]);

@@ -276,6 +276,9 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 || GatewayChargeAttempts::pending($connection, $invoiceId) !== null) {
                 return null;
             }
+            if ($this->di['mod_service']('Invoice')->invoiceHasDeletionHold($invoice)) {
+                return null;
+            }
             $ownerToken = null;
             $attemptId = GatewayChargeAttempts::begin($connection, $invoiceId, $adapter->gatewayId(), $ownerToken);
 
