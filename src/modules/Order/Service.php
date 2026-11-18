@@ -2888,7 +2888,7 @@ class Service implements InjectionAwareInterface
 
         $days = $this->resolveBatchAfterDays($config['batch_cancel_unpaid_after_days'] ?? null);
 
-        $staleOrders = array_values($this->getOrderRepository()->getStaleUnpaid($days));
+        $staleOrders = $this->getOrderRepository()->getStaleUnpaid($days);
 
         $invoiceService = $this->di['mod_service']('Invoice');
 
@@ -2906,11 +2906,12 @@ class Service implements InjectionAwareInterface
         // invoice is removed first via deleteInvoiceByAdmin() so it doesn't linger
         // empty and still eligible for reminder emails after the order it belongs
         // to is gone.
-        // A for loop (not foreach): recovering from a closed manager replaces
-        // the tail below, and the loop must pick the new tail up instead of
-        // the array foreach already pinned down.
-        for ($position = 0; $position < count($staleOrders); ++$position) {
-            $order = $staleOrders[$position];
+        // A queue, not foreach: recovering from a closed manager replaces
+        // the remaining orders with reloaded ones, which a pinned-down
+        // foreach would never pick up.
+        $pendingOrders = $staleOrders;
+        while ($pendingOrders !== []) {
+            $order = array_shift($pendingOrders);
 
             try {
                 // Re-check the order's current status before touching anything for
@@ -2977,13 +2978,8 @@ class Service implements InjectionAwareInterface
                     // left for the next run.
                     $this->resetEntityManager();
                     $invoiceService = $this->di['mod_service']('Invoice');
-                    $staleOrders = $this->reloadOrders(array_slice($staleOrders, $position + 1));
-                    $invoicesById = $this->findInvoicesByIds($invoiceService, $staleOrders);
-                    // Restart at the reloaded tail; the for increment moves
-                    // -1 back to 0.
-                    $position = -1;
-
-                    continue;
+                    $pendingOrders = $this->reloadOrders($pendingOrders);
+                    $invoicesById = $this->findInvoicesByIds($invoiceService, $pendingOrders);
                 }
             }
         }

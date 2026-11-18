@@ -415,25 +415,31 @@ class ServiceSubscription implements InjectionAwareInterface
         // Rows written before the order_id backfill reached them (or by a
         // writer from before the typed column existed) carry only the rel_id
         // link. A separate query keeps the typed predicate above index-friendly
-        // instead of OR-ing the fallback into it.
-        $fallbackQuery = $this->di['em']->getConnection()->createQueryBuilder();
-        $fallbackQuery
-            ->select('DISTINCT s.id')
-            ->from('subscription', 's')
-            ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
-            ->where('s.rel_type = :rel_type')
-            ->andWhere('ii.type = :item_type')
-            ->andWhere('ii.order_id IS NULL')
-            ->andWhere('ii.rel_id = :rel_id')
-            ->setParameter('rel_type', 'invoice')
-            ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
-            ->setParameter('rel_id', (string) $order->getId());
+        // instead of OR-ing the fallback into it. Without a persisted order id
+        // there is no text to match, so the fallback is skipped outright.
+        $fallbackIds = [];
+        if ($order->getId() !== null) {
+            $fallbackQuery = $this->di['em']->getConnection()->createQueryBuilder();
+            $fallbackQuery
+                ->select('DISTINCT s.id')
+                ->from('subscription', 's')
+                ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
+                ->where('s.rel_type = :rel_type')
+                ->andWhere('ii.type = :item_type')
+                ->andWhere('ii.order_id IS NULL')
+                ->andWhere('ii.rel_id = :rel_id')
+                ->setParameter('rel_type', 'invoice')
+                ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
+                ->setParameter('rel_id', (string) $order->getId());
 
-        if ($status !== null) {
-            $fallbackQuery->andWhere('s.status = :status')->setParameter('status', $status);
+            if ($status !== null) {
+                $fallbackQuery->andWhere('s.status = :status')->setParameter('status', $status);
+            }
+
+            $fallbackIds = $fallbackQuery->executeQuery()->fetchFirstColumn();
         }
 
-        $subscriptionIds = array_values(array_unique(array_merge($subscriptionIds, $fallbackQuery->executeQuery()->fetchFirstColumn())));
+        $subscriptionIds = array_values(array_unique(array_merge($subscriptionIds, $fallbackIds)));
 
         $subscriptions = [];
         foreach ($subscriptionIds as $id) {
