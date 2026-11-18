@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// cspell:ignore Résumé boîtes
+// cspell:ignore Résumé boîtes nopad
 
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
@@ -542,7 +542,7 @@ test('Unicode repair preserves NO PAD comparison rules when widening', function 
     if (count(array_intersect(['utf8mb3_general_nopad_ci', 'utf8mb4_general_nopad_ci'], $available)) < 2) {
         $this->markTestSkipped('This server does not offer NO PAD collation equivalents.');
     }
-    $this->pdo->exec("CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL, content TEXT NULL) DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_nopad_ci");
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL, content TEXT NULL) DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_nopad_ci');
     $this->connection->insert('post', ['id' => 1, 'title' => 'Résumé', 'content' => '日本語']);
     ($this->runPatch)();
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'title'");
