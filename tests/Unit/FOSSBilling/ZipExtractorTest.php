@@ -192,9 +192,7 @@ test('fallback extraction stays within a small worker memory limit', function ()
     unset($zip);
 
     try {
-        $ini = php_ini_loaded_file();
-        $configuration = $ini === false ? ['-n'] : ['-c', $ini];
-        $process = new Symfony\Component\Process\Process([PHP_BINARY, ...$configuration, '-d', 'memory_limit=48M', PATH_TESTS . '/Fixtures/zip-memory.php', $root]);
+        $process = new Symfony\Component\Process\PhpSubprocess(['-d', 'memory_limit=48M', PATH_TESTS . '/Fixtures/zip-memory.php', $root], php: [PHP_BINARY]);
         $process->mustRun();
         expect($fs->readFile($root . '/destination/entry-79.txt'))->toHaveLength(1024 * 1024);
     } finally {

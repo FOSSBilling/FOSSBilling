@@ -94,6 +94,12 @@ jobs:
               rm /usr/local/etc/php/conf.d/docker-php-ext-zip.ini
               php -r "if (extension_loaded(\"zip\")) { exit(1); }"
               ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist tests/Unit/FOSSBilling/ZipExtractorTest.php --ci
+              # The default INI enables ZIP; the custom parent INI must keep it off in its child too.
+              printf "extension=zip\n" >> /usr/local/etc/php/php.ini
+              : > /tmp/fossbilling-zip-test.ini
+              php -r "if (!extension_loaded(\"zip\")) { exit(1); }"
+              php -c /tmp/fossbilling-zip-test.ini -r "if (extension_loaded(\"zip\")) { exit(1); }"
+              php -c /tmp/fossbilling-zip-test.ini ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist tests/Unit/FOSSBilling/ZipExtractorTest.php --filter "fallback extraction stays" --ci
             '
 
       - name: 'Export Test Image Artifact'
