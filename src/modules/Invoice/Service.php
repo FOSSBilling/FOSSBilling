@@ -4807,27 +4807,49 @@ class Service implements InjectionAwareInterface
         return (float) $order->getPrice() * (float) $order->getQuantity();
     }
 
-    /** @param-out list<int>|null $detachedOrderIds IDs detached by a successful guarded removal */
-    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null): bool
+    /**
+     * @param array{id: int, cutoff: \DateTimeImmutable}|null $staleOrder the order that qualified the invoice for automatic removal
+     *
+     * @param-out list<int>|null $detachedOrderIds IDs detached by a successful guarded removal
+     */
+    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): bool
     {
         $entityManager = $this->di['em'];
-        $removedLinks = $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions, $requireNoPaidLinkedOrder): ?array {
+        $requireNoPaidLinkedOrder = $requireNoPaidLinkedOrder || $staleOrder !== null;
+        $removedLinks = $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions, $requireNoPaidLinkedOrder, $staleOrder): ?array {
             $this->lockAndRefreshInvoice($model, $requireNoPaidLinkedOrder);
+
+            $connection = $entityManager->getConnection();
+            $linkedOrderIds = [];
+            if ($requireNoPaidLinkedOrder) {
+                // Lock before reading settings or payment state so MySQL's first
+                // snapshot read sees payments that committed while we waited.
+                $linkedOrderIds = array_map(intval(...), $connection->fetchFirstColumn(
+                    'SELECT id FROM client_order WHERE unpaid_invoice_id = :invoice_id ORDER BY id' . RowLock::suffix($connection),
+                    ['invoice_id' => $model->getId()],
+                ));
+            }
 
             if ($requireUnissuedUnpaid && !$this->isDeletableByAdmin($model)) {
                 throw new InformationException('Only unissued, unpaid invoices (drafts) can be deleted. Cancel (void) an issued unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.');
             }
 
-            // Cleanup callers refuse to remove a draft an order still depends on,
-            // while an explicit admin deletion is meant to win. Runs after the row
-            // locks so an order attached a moment ago is already visible.
-            $connection = $entityManager->getConnection();
-            $linkedOrderIds = [];
+            if ($staleOrder !== null && $connection->fetchOne(
+                'SELECT 1 FROM client_order o INNER JOIN invoice i ON i.id = o.unpaid_invoice_id
+                 WHERE o.id = :order_id AND i.id = :invoice_id AND o.status = :pending_status AND i.status = :unpaid_status
+                 AND COALESCE(i.due_at, o.created_at) < :cutoff',
+                [
+                    'order_id' => $staleOrder['id'],
+                    'invoice_id' => $model->getId(),
+                    'pending_status' => Order::STATUS_PENDING_SETUP,
+                    'unpaid_status' => Invoice::STATUS_UNPAID,
+                    'cutoff' => $staleOrder['cutoff']->format('Y-m-d H:i:s'),
+                ],
+            ) === false) {
+                return null;
+            }
+
             if ($requireNoPaidLinkedOrder) {
-                $linkedOrderIds = array_map(intval(...), $connection->fetchFirstColumn(
-                    'SELECT id FROM client_order WHERE unpaid_invoice_id = :invoice_id ORDER BY id' . RowLock::suffix($connection),
-                    ['invoice_id' => $model->getId()],
-                ));
                 /** @var OrderRepository $orderRepository */
                 $orderRepository = $entityManager->getRepository(Order::class);
                 foreach ($linkedOrderIds as $orderId) {
@@ -4887,9 +4909,11 @@ class Service implements InjectionAwareInterface
      * still linked to it has a paid invoice item; that returns false to signal
      * a policy skip, distinct from the exceptions raised for invalid states.
      *
+     * @param array{id: int, cutoff: \DateTimeImmutable}|null $staleOrder the order that qualified the invoice for automatic removal
+     *
      * @param-out list<int>|null $detachedOrderIds IDs detached by a successful guarded removal
      */
-    public function deleteInvoiceByAdmin(Invoice $model, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null): bool
+    public function deleteInvoiceByAdmin(Invoice $model, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): bool
     {
         // Fast rejection for the common case; rmInvoice rechecks the fresh state under its row
         // lock before detaching or deleting anything.
@@ -4900,7 +4924,7 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDeleteEvent((int) $model->getId()));
 
         $id = $model->getId();
-        if (!$this->rmInvoice($model, true, false, $requireNoPaidLinkedOrder, $detachedOrderIds)) {
+        if (!$this->rmInvoice($model, true, false, $requireNoPaidLinkedOrder, $detachedOrderIds, $staleOrder)) {
             // Cleanup policy skip: nothing was removed, so the owning batch
             // keeps the invoice and the orders linked to it for a later run.
             return false;
@@ -5631,7 +5655,7 @@ class Service implements InjectionAwareInterface
     {
         $connection = $this->di['em']->getConnection();
         $orderLinks = $connection->fetchAllAssociative(
-            'SELECT DISTINCT order_id, rel_id FROM invoice_item WHERE invoice_id = :invoice_id AND type = :type',
+            'SELECT order_id, rel_id FROM invoice_item WHERE invoice_id = :invoice_id AND type = :type',
             ['invoice_id' => $invoice->getId(), 'type' => InvoiceItem::TYPE_ORDER],
         );
         $orderIds = [];

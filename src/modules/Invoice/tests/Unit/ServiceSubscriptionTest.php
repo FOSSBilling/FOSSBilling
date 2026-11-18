@@ -35,7 +35,7 @@ function createSubscriptionDbal(): Connection
 {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE subscription (id INTEGER PRIMARY KEY, rel_type TEXT, rel_id INTEGER, status TEXT, sid TEXT)');
-    $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id TEXT, order_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id TEXT COLLATE RTRIM, order_id INTEGER)');
     $connection->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
     $connection->executeStatement("INSERT INTO subscription (id, rel_type, rel_id, status, sid) VALUES (7, 'invoice', 25, 'active', 'sub_123')");
     $connection->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '10', 10), (25, 'order', '11', 11)");
@@ -317,12 +317,9 @@ test('finalizes a scheduled cancellation through a legacy rel_id link the backfi
         'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
         'value' => '1',
     ]);
-    // Order 10's row still carries only the text link. Order 12 has both a
-    // converted row and a leftover legacy row; the fallback must not finalize
-    // it a second time. The '7.5' row is junk a loose cast would read as
-    // order 7; it must resolve to nothing.
-    $dbal->executeStatement("UPDATE invoice_item SET order_id = NULL WHERE invoice_id = 25 AND rel_id = '10'");
-    $dbal->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '12', 12), (25, 'order', '12', NULL), (25, 'order', '7.5', NULL)");
+    // RTRIM makes '10 ' and '10' equal for SQL DISTINCT. Validate both spellings first.
+    $dbal->executeStatement("UPDATE invoice_item SET rel_id = '10 ', order_id = NULL WHERE invoice_id = 25 AND rel_id = '10'");
+    $dbal->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '10', NULL), (25, 'order', '12', 12), (25, 'order', '12', NULL), (25, 'order', '7.5', NULL)");
 
     $order10 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
     $order12 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);

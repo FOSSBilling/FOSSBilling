@@ -3610,7 +3610,8 @@ test('invoice item order_id backfill repeats unbounded runs after completion', f
                 "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '10')"
             );
             $connection->executeStatement(
-                "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_item_order_id_backfill_done', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+                "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_item_order_id_backfill_done', :version, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')",
+                ['version' => Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION],
             );
 
             $di = new Pimple\Container();
@@ -3621,6 +3622,9 @@ test('invoice item order_id backfill repeats unbounded runs after completion', f
 
             $patcher = new Patcher();
             $patcher->setDi($di);
+            $patcher->backfillInvoiceItemOrderIds(1);
+            expect($connection->fetchOne('SELECT order_id FROM invoice_item'))->toBeNull();
+
             $patcher->backfillInvoiceItemOrderIds();
 
             expect((int) $connection->fetchOne('SELECT order_id FROM invoice_item'))->toBe(10);

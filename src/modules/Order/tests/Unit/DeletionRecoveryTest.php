@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
 use Box\Mod\Order\DeletionRecovery;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Entity\OrderMeta;
 use Box\Mod\Order\Entity\OrderStatus;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 use Doctrine\DBAL\DriverManager;
@@ -162,6 +164,45 @@ test('staff cannot attach a pending order once a deletion hold is committed', fu
         ->toThrow(InformationException::class, 'awaiting recovery');
     expect($context['connection']->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(0)
         ->and($context['connection']->fetchOne('SELECT unpaid_invoice_id FROM client_order'))->toBeNull();
+});
+
+test('stale order cleanup retains the draft attached between selection and hydration', function (): void {
+    $context = deletionRecoveryContext();
+    $em = $context['em'];
+    $connection = $context['connection'];
+    $connection->executeStatement('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    $connection->insert('setting', [
+        'param' => 'invoice_item_order_id_backfill_done',
+        'value' => FOSSBilling\Core\Update\Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION,
+    ]);
+    $order = $context['order']->setStatus(Order::STATUS_PENDING_SETUP)->setCreatedAt(new DateTimeImmutable('-30 days'));
+    $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setDueAt(new DateTimeImmutable('+10 days'));
+    $em->persist($invoice);
+    $em->flush();
+    $em->clear();
+
+    $repository = Mockery::mock(OrderRepository::class, [$em, $em->getClassMetadata(Order::class)])->makePartial();
+    $repository->shouldReceive('findBy')->once()->andReturnUsing(static function (array $criteria, array $orderBy) use ($em, $connection, $invoice, $order): array {
+        $connection->update('client_order', ['unpaid_invoice_id' => $invoice->getId()], ['id' => $order->getId()]);
+
+        return $em->getRepository(Order::class)->findBy($criteria, $orderBy);
+    });
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getOrderRepository')->andReturn($repository);
+    $billing = Mockery::mock(Box\Mod\Invoice\Service::class)->makePartial();
+    $billing->shouldNotReceive('deleteInvoiceByAdmin');
+
+    $di = $context['di'];
+    $module = Mockery::mock();
+    $module->shouldReceive('getConfig')->andReturn(['batch_cancel_unpaid' => true]);
+    $di['mod'] = $di->protect(fn () => $module);
+    $di['mod_service'] = $di->protect(fn () => $billing);
+    $service->setDi($di);
+    $billing->setDi($di);
+
+    expect($service->batchCancelUnpaid())->toBeTrue()
+        ->and($connection->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBe($invoice->getId())
+        ->and($connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(Invoice::STATUS_UNPAID);
 });
 
 test('gateway failure leaves a durable billing hold and retry skips completed backend deletion', function (): void {
@@ -338,6 +379,15 @@ test('received gateway funds remain credit without settling or fulfilling a held
         $c['em']->persist($entity);
     }
     $c['em']->flush();
+
+    $paymentEvents = [];
+    $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $dispatcher->addListener(AfterAdminInvoicePaymentReceivedEvent::class, static function (AfterAdminInvoicePaymentReceivedEvent $event) use (&$paymentEvents): void {
+        $paymentEvents[] = $event;
+    });
+    unset($c['di']['event_dispatcher']);
+    $c['di']['event_dispatcher'] = $dispatcher;
+
     if ($directItem) {
         $items = new Box\Mod\Invoice\ServiceInvoiceItem();
         $items->setDi($c['di']);
@@ -349,10 +399,15 @@ test('received gateway funds remain credit without settling or fulfilling a held
         expect($billing->markAsPaid($invoice, true, true, actuallyPaid: $actuallyPaid))->toBeTrue()
             ->and($actuallyPaid)->toBeFalse();
     }
-    expect($c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10)
+    $storedItem = $c['connection']->fetchAssociative('SELECT status, attempts, charged FROM invoice_item WHERE id = ?', [$item->getId()]);
+    expect($storedItem)->not->toBeFalse()
+        ->and($storedItem['status'])->toBe(InvoiceItem::STATUS_PENDING_PAYMENT)
+        ->and((int) $storedItem['attempts'])->toBe(0)
+        ->and((bool) $storedItem['charged'])->toBeFalse()
+        ->and($paymentEvents)->toBe([])
+        ->and($c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10)
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance WHERE amount < 0'))->toBe(0)
         ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_UNPAID)
-        ->and($item->getCharged())->toBeFalse()
         ->and($c['backend']->calls)->toBe(1);
 })->with([false, true])->with(['padded legacy link' => false, 'typed link' => true]);
 

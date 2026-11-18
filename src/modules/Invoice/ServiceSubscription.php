@@ -268,7 +268,7 @@ class ServiceSubscription implements InjectionAwareInterface
             // (order_id only ever fills in), so matching the legacy shape
             // before the typed one covers every interleave.
             $legacyRelIds = $this->di['em']->getConnection()->fetchFirstColumn(
-                'SELECT DISTINCT ii.rel_id FROM invoice_item ii WHERE ii.invoice_id = :invoice_id AND ii.type = :item_type AND ii.order_id IS NULL',
+                'SELECT ii.rel_id FROM invoice_item ii WHERE ii.invoice_id = :invoice_id AND ii.type = :item_type AND ii.order_id IS NULL',
                 ['invoice_id' => $subscription->getRelId(), 'item_type' => Entity\InvoiceItem::TYPE_ORDER]
             );
             $legacyOrderIds = [];

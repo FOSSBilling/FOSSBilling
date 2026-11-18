@@ -14,6 +14,7 @@ namespace Box\Mod\Order;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Service as InvoiceService;
 use Box\Mod\Order\Entity\Order;
@@ -616,9 +617,9 @@ class Service implements InjectionAwareInterface
         $bindings['deletion_meta_name'] = self::META_DELETION_STATE;
         $bindings['cancellation_meta_name'] = self::META_CANCEL_AT_PERIOD_END;
         $bindings['cancellation_meta_value'] = '1';
-        $bindings['pending_item_type'] = \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER;
-        $bindings['pending_item_task'] = \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW;
-        $bindings['pending_item_status'] = \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED;
+        $bindings['pending_item_type'] = InvoiceItem::TYPE_ORDER;
+        $bindings['pending_item_task'] = InvoiceItem::TASK_RENEW;
+        $bindings['pending_item_status'] = InvoiceItem::STATUS_EXECUTED;
         $bindings['pending_invoice_status'] = Invoice::STATUS_PAID;
         $bindings['expires_before'] = (new \DateTimeImmutable('today'))
             ->modify('+' . ((int) $days_until_expiration + 1) . ' days')
@@ -2424,16 +2425,16 @@ class Service implements InjectionAwareInterface
 
     public function rmInvoiceItemByOrder(Order $order): void
     {
-        // Matches rows through either linkage: order_id is the typed form, while
-        // rel_id covers rows written before the order_id backfill reached them.
-        // Single-order scope, so both branches can still use an index (unlike
-        // the same shape in a table-wide correlated subquery).
-        $this->di['em']->getConnection()->executeStatement(
-            'DELETE FROM invoice_item WHERE status = :status AND (order_id = :order_id OR (order_id IS NULL AND rel_id = :rel_id))',
+        $connection = $this->di['em']->getConnection();
+        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'rel_id');
+        $orderReference = InvoiceItemRepository::orderIdAsReference($connection, ':order_id');
+        $connection->executeStatement(
+            "DELETE FROM invoice_item WHERE status = :status
+             AND (order_id = :order_id OR (order_id IS NULL AND (type = :order_type OR unit = 'discount') AND $legacyReference = $orderReference))",
             [
                 'order_id' => $this->orderId($order),
-                'rel_id' => (string) $this->orderId($order),
-                'status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
+                'order_type' => InvoiceItem::TYPE_ORDER,
+                'status' => InvoiceItem::STATUS_PENDING_PAYMENT,
             ],
         );
     }
@@ -2950,8 +2951,10 @@ class Service implements InjectionAwareInterface
         }
 
         $days = $this->resolveBatchAfterDays($config['batch_cancel_unpaid_after_days'] ?? null);
-
-        $staleOrders = $this->getOrderRepository()->getStaleUnpaid($days);
+        $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days");
+        $orderRepository = $this->getOrderRepository();
+        $selectedInvoiceIds = $orderRepository->findStaleUnpaidInvoiceLinks($cutoff, $this->di['logger']);
+        $staleOrders = $selectedInvoiceIds === [] ? [] : $orderRepository->findBy(['id' => array_keys($selectedInvoiceIds)], ['id' => 'ASC']);
 
         $invoiceService = $this->getInvoiceService();
 
@@ -2965,17 +2968,6 @@ class Service implements InjectionAwareInterface
         // leaves it unresolved for a sibling order to retry rather than
         // wrongly treating the group as already handled.
         $invoiceHandled = [];
-
-        // Pending-setup orders use the deletion workflow. Remove the linked
-        // unpaid invoice first so an empty draft cannot send reminders.
-        // The selected links snapshot: refresh() below re-reads each order,
-        // and a link attached mid-run is not in the prefetched map. Compared
-        // after every refresh so a changed link defers the order instead of
-        // reading a map miss as "invoice gone".
-        $selectedInvoiceIds = [];
-        foreach ($staleOrders as $selectedOrder) {
-            $selectedInvoiceIds[$this->orderId($selectedOrder)] = $selectedOrder->getUnpaidInvoiceId();
-        }
 
         // A queue, not foreach: recovering from a closed manager replaces
         // the remaining orders with reloaded ones, which a pinned-down
@@ -3026,7 +3018,12 @@ class Service implements InjectionAwareInterface
                             $detachedOrderIds = null;
 
                             try {
-                                $invoiceHandled[$invoiceId] = $invoiceService->deleteInvoiceByAdmin($invoice, true, $detachedOrderIds);
+                                $invoiceHandled[$invoiceId] = $invoiceService->deleteInvoiceByAdmin(
+                                    $invoice,
+                                    true,
+                                    $detachedOrderIds,
+                                    ['id' => $orderId, 'cutoff' => $cutoff],
+                                );
                             } finally {
                                 // The draft can be committed even if its completion event throws.
                                 foreach ($detachedOrderIds ?? [] as $detachedOrderId) {

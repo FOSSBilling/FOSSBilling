@@ -3658,25 +3658,32 @@ test('removes an invoice', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('rmInvoice keeps a draft a paid linked order still points at when the cleanup asks', function (): void {
+test('rmInvoice keeps an unpaid invoice a paid linked order still points at', function (bool $issued): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
     setEntityId($invoiceModel, 55);
+    $invoiceModel->setStatus(Invoice::STATUS_UNPAID);
+    $invoiceModel->setIssued($issued);
 
     [$em] = invoiceItemEmAndRepo();
 
     $connection = Mockery::mock(Connection::class)->shouldIgnoreMissing();
     $connection->shouldReceive('fetchFirstColumn')
         ->once()
+        ->globally()->ordered()
         ->withArgs(fn (string $sql, array $params): bool => str_contains($sql, 'unpaid_invoice_id') && $params === ['invoice_id' => 55])
         ->andReturn([7, 8]);
     $em->shouldReceive('getConnection')->andReturn($connection);
+    $systemService = Mockery::mock(SystemService::class);
+    if ($issued) {
+        $systemService->shouldReceive('getParamValue')->once()->globally()->ordered()->with('invoice_immutability', null)->andReturn('relaxed');
+    }
 
     // The second linked order is the one with money against it; the check must
     // look past the first, and the refusal must stop the removal outright.
     $orderRepository = Mockery::mock(OrderRepository::class);
-    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(7)->andReturn(false);
-    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(8)->andReturn(true);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->once()->globally()->ordered()->with(7)->andReturn(false);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->once()->globally()->ordered()->with(8)->andReturn(true);
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
 
     $em->shouldNotReceive('remove');
@@ -3687,11 +3694,41 @@ test('rmInvoice keeps a draft a paid linked order still points at when the clean
 
     $di = container();
     $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
 
     $service->setDi($di);
 
     expect($service->rmInvoice($invoiceModel, true, false, true))->toBeFalse();
-});
+})->with(['unissued draft' => false, 'issued invoice in relaxed mode' => true]);
+
+test('rmInvoice defers automatic removal when the locked invoice no longer meets the cutoff', function (?string $dueAt, string $orderCreatedAt): void {
+    $invoice = createEntity(Invoice::class, ['id' => 55, 'status' => Invoice::STATUS_UNPAID]);
+    $invoice->setDueAt(new DateTimeImmutable('2026-01-01'));
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, due_at TEXT)');
+    $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, unpaid_invoice_id INTEGER, status TEXT, created_at TEXT)');
+    $connection->insert('invoice', ['id' => 55, 'status' => Invoice::STATUS_UNPAID, 'due_at' => $dueAt]);
+    $connection->insert('client_order', ['id' => 7, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP, 'created_at' => $orderCreatedAt]);
+
+    [$em] = invoiceItemEmAndRepo();
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldNotReceive('remove', 'flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $service = new Service();
+    $service->setDi($di);
+
+    $detachedOrderIds = null;
+    $staleOrder = ['id' => 7, 'cutoff' => new DateTimeImmutable('2026-02-01')];
+    expect($service->deleteInvoiceByAdmin($invoice, true, $detachedOrderIds, $staleOrder))->toBeFalse()
+        ->and($detachedOrderIds)->toBeNull()
+        ->and($connection->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = 7'))->toBe(55);
+})->with([
+    'due date extended' => ['2026-02-02 00:00:00', '2026-01-01 00:00:00'],
+    'due date removed and order is recent' => [null, '2026-02-02 00:00:00'],
+]);
 
 test('rmInvoice deletes a draft when no linked order has a paid item', function (): void {
     $service = new Service();
@@ -3702,6 +3739,8 @@ test('rmInvoice deletes a draft when no linked order has a paid item', function 
 
     $connection = Mockery::mock(Connection::class)->shouldIgnoreMissing();
     $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([7]);
+    $connection->shouldReceive('fetchOne')->once()->withArgs(fn (string $sql, array $params): bool => str_contains($sql, 'COALESCE(i.due_at, o.created_at) < :cutoff')
+        && $params['order_id'] === 7 && $params['cutoff'] === '2026-02-01 00:00:00')->andReturn(1);
     $connection->shouldReceive('executeStatement')->atLeast()->once();
     $em->shouldReceive('getConnection')->andReturn($connection);
 
@@ -3727,7 +3766,8 @@ test('rmInvoice deletes a draft when no linked order has a paid item', function 
     $service->setDi($di);
 
     $detachedOrderIds = null;
-    expect($service->rmInvoice($invoiceModel, true, false, true, $detachedOrderIds))->toBeTrue()
+    $staleOrder = ['id' => 7, 'cutoff' => new DateTimeImmutable('2026-02-01')];
+    expect($service->rmInvoice($invoiceModel, true, false, true, $detachedOrderIds, $staleOrder))->toBeTrue()
         ->and($detachedOrderIds)->toBe([7]);
 });
 
@@ -7222,7 +7262,7 @@ test('deleteInvoiceByAdmin only deletes unissued unpaid invoices', function (): 
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
-    $serviceMock->shouldReceive('rmInvoice')->once()->with($invoice, true, false, false, null)->andReturn(true);
+    $serviceMock->shouldReceive('rmInvoice')->once()->with($invoice, true, false, false, null, null)->andReturn(true);
 
     expect($serviceMock->deleteInvoiceByAdmin($invoice))->toBeTrue()
         ->and($eventDispatcher->events)->toHaveCount(2)
@@ -7249,7 +7289,7 @@ test('deleteInvoiceByAdmin reports a cleanup refusal instead of a delete', funct
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('rmInvoice')
         ->once()
-        ->with($invoice, true, false, true, null)
+        ->with($invoice, true, false, true, null, null)
         ->andReturn(false);
 
     $di = container();
@@ -8427,7 +8467,7 @@ test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
     $issuedOn->setIssued(true);
     $issuedOn->setStatus(Invoice::STATUS_UNPAID);
     setEntityId($issuedOn, 10);
-    $onService->shouldReceive('rmInvoice')->once()->with($issuedOn, true, false, false, null)->andReturn(true);
+    $onService->shouldReceive('rmInvoice')->once()->with($issuedOn, true, false, false, null, null)->andReturn(true);
     expect($onService->deleteInvoiceByAdmin($issuedOn))->toBeTrue()
         ->and($onEvents->events)->toHaveCount(2)
         ->and($onEvents->events[0])->toBeInstanceOf(BeforeAdminInvoiceDeleteEvent::class)
@@ -8439,7 +8479,7 @@ test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
     $canceled->setIssued(true);
     $canceled->setStatus(Invoice::STATUS_CANCELED);
     setEntityId($canceled, 11);
-    $canceledService->shouldReceive('rmInvoice')->once()->with($canceled, true, false, false, null)->andReturn(true);
+    $canceledService->shouldReceive('rmInvoice')->once()->with($canceled, true, false, false, null, null)->andReturn(true);
     expect($canceledService->deleteInvoiceByAdmin($canceled))->toBeTrue()
         ->and($canceledEvents->events)->toHaveCount(2);
 

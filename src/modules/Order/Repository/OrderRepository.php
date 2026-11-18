@@ -11,6 +11,7 @@ use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
 use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Doctrine\SqlExpr;
+use Psr\Log\LoggerInterface;
 
 class OrderRepository extends EntityRepository
 {
@@ -209,6 +210,15 @@ class OrderRepository extends EntityRepository
      */
     public function getStaleUnpaid(int $days): array
     {
+        $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days");
+        $invoiceLinks = $this->findStaleUnpaidInvoiceLinks($cutoff);
+
+        return $invoiceLinks === [] ? [] : $this->findBy(['id' => array_keys($invoiceLinks)], ['id' => 'ASC']);
+    }
+
+    /** @return array<int, ?int> Selected order IDs and their invoice links at selection time */
+    public function findStaleUnpaidInvoiceLinks(\DateTimeImmutable $cutoff, ?LoggerInterface $logger = null): array
+    {
         $connection = $this->getEntityManager()->getConnection();
 
         // Destructive-caller guard: the NOT EXISTS below excludes orders with any
@@ -223,9 +233,9 @@ class OrderRepository extends EntityRepository
                 'SELECT value FROM setting WHERE param = :param',
                 ['param' => 'invoice_item_order_id_backfill_done']
             );
-        } catch (\Throwable) {
-            // Fail closed like the missing flag: without proof the linkage is
-            // complete, a destructive batch must not run.
+        } catch (\Throwable $e) {
+            $logger?->warning('Stale unpaid order cleanup deferred because the invoice-item backfill marker could not be read.', ['exception' => $e]);
+
             return [];
         }
         // The completion records the derivation rule version (see
@@ -235,14 +245,9 @@ class OrderRepository extends EntityRepository
             return [];
         }
 
-        // DATEDIFF(NOW(), X) > :days, compared only by calendar date, is equivalent to
-        // X < cutoff, where cutoff is midnight $days days ago - a portable stand-in that also
-        // lets $days collapse to a single bound parameter computed once in PHP.
-        $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days")->format('Y-m-d H:i:s');
-
-        $ids = $connection->fetchFirstColumn(
+        $rows = $connection->fetchAllAssociative(
             <<<'SQL'
-                SELECT o.id
+                SELECT o.id, o.unpaid_invoice_id
                 FROM client_order o
                 WHERE o.status = :status
                   AND NOT EXISTS (
@@ -273,11 +278,16 @@ class OrderRepository extends EntityRepository
                 'item_type' => InvoiceItem::TYPE_ORDER,
                 'paid_status' => Invoice::STATUS_PAID,
                 'unpaid_status' => Invoice::STATUS_UNPAID,
-                'cutoff' => $cutoff,
+                'cutoff' => $cutoff->format('Y-m-d H:i:s'),
             ]
         );
 
-        return $ids === [] ? [] : $this->findBy(['id' => array_map(intval(...), $ids)]);
+        $invoiceLinks = [];
+        foreach ($rows as $row) {
+            $invoiceLinks[(int) $row['id']] = $row['unpaid_invoice_id'] === null ? null : (int) $row['unpaid_invoice_id'];
+        }
+
+        return $invoiceLinks;
     }
 
     /**
