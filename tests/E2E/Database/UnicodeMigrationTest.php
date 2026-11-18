@@ -19,6 +19,7 @@ use Symfony\Component\Filesystem\Path;
 final class UnicodeMigrationPdo extends PDO
 {
     public array $alters = [];
+    public array $dbAlters = [];
     public ?string $rejectAlter = null;
 
     public function prepare(string $query, array $options = []): PDOStatement|false
@@ -28,6 +29,9 @@ final class UnicodeMigrationPdo extends PDO
             if ($this->rejectAlter !== null && str_contains($query, $this->rejectAlter)) {
                 throw new PDOException('Simulated DDL failure');
             }
+        }
+        if (str_starts_with($query, 'ALTER DATABASE')) {
+            $this->dbAlters[] = $query;
         }
 
         return parent::prepare($query, $options);
@@ -485,9 +489,11 @@ test('Unicode repair normalizes the database default to utf8mb4_unicode_ci', fun
 
     expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
         ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->pdo->dbAlters)->toHaveCount(1)
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
     (new Patch146())->apply($this->patcher);
     expect($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->pdo->dbAlters)->toHaveCount(1)
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
@@ -561,4 +567,24 @@ test('Unicode repair preserves case-sensitive uniqueness when widening binary sl
     $this->connection->executeStatement('UPDATE post SET slug = ? WHERE id = 1', ['🚀-about']);
     expect($this->connection->fetchOne('SELECT slug FROM post WHERE id = 1'))->toBe('🚀-about')
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair skips columns covered by functional indexes', function (): void {
+    $version = (string) $this->connection->fetchOne('SELECT VERSION()');
+    $supportsFunctionalIndexes = stripos($version, 'mariadb') === false
+        && preg_match('/^(\d+)\.(\d+)\.(\d+)/', $version, $matches) === 1
+        && version_compare($matches[1] . '.' . $matches[2] . '.' . $matches[3], '8.0.13', '>=');
+    if (!$supportsFunctionalIndexes) {
+        $this->markTestSkipped('Functional key parts require MySQL 8.0.13 or newer.');
+    }
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL, UNIQUE KEY slug_lower ((LOWER(slug)))) ENGINE=InnoDB ROW_FORMAT=COMPACT DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
+    $this->connection->insert('post', ['id' => 1, 'slug' => 'Example']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    expect($column['Collation'])->toBe('utf8_general_ci')
+        ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('Example');
+    $calls = $this->patcher->getDi()['logger']->calls;
+    expect($calls)->toHaveCount(1)
+        ->and($calls[0]['method'])->toBe('warning')
+        ->and($calls[0]['params'][0])->toContain('post.slug', 'functional index');
 });

@@ -2415,6 +2415,8 @@ class Patcher implements InjectionAwareInterface
             return;
         }
         $binTarget = self::findCollation($applicable, 'utf8mb4_bin');
+        // NO PAD sources keep trailing-space significance via utf8mb4_0900_bin.
+        $noPadTarget = self::findCollation($applicable, 'utf8mb4_0900_bin');
 
         $liveColumns = [];
         foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
@@ -2441,7 +2443,7 @@ class Patcher implements InjectionAwareInterface
 
                 continue;
             }
-            $columnTarget = str_ends_with($collation, '_bin') ? $binTarget : $unicodeTarget;
+            $columnTarget = self::resolveConversionTarget($collation, $unicodeTarget, $binTarget, $noPadTarget);
             if ($columnTarget === null) {
                 $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': no equivalent utf8mb4 collation is available on this server.');
 
@@ -2457,6 +2459,14 @@ class Patcher implements InjectionAwareInterface
 
                     continue;
                 }
+            }
+            if ($this->isReferencedByExpressionIndex($name, $indexes)) {
+                // SHOW INDEX reports functional key parts with a NULL column
+                // name, so the byte check above cannot see them; the widened
+                // value could overflow the key and fail the whole upgrade.
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': functional index requires manual review.');
+
+                continue;
             }
             $literalUnitDefault = null;
             if ($name === 'unit' && in_array($table, ['product', 'client_order', 'invoice_item'], true)
@@ -2506,11 +2516,11 @@ class Patcher implements InjectionAwareInterface
                 'SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
                 ['table' => $table],
             );
-            if (is_string($tableCollation) && $tableCollation !== $unicodeTarget && $tableCollation !== $binTarget
+            if (is_string($tableCollation) && $tableCollation !== $unicodeTarget && $tableCollation !== $binTarget && $tableCollation !== $noPadTarget
                 && preg_match('/^utf8(?:mb3)?_/', $tableCollation)) {
                 // DEFAULT changes only future columns; existing text moves via MODIFY COLUMN above.
                 // Binary table defaults keep byte-order comparison via utf8mb4_bin.
-                $defaultTarget = str_ends_with($tableCollation, '_bin') ? $binTarget : $unicodeTarget;
+                $defaultTarget = self::resolveConversionTarget($tableCollation, $unicodeTarget, $binTarget, $noPadTarget);
                 if ($defaultTarget === null) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': no equivalent utf8mb4 collation is available on this server.');
                 } else {
@@ -2542,6 +2552,46 @@ class Patcher implements InjectionAwareInterface
         }
 
         return null;
+    }
+
+    /**
+     * utf8mb4 equivalent preserving the source collation's comparison rules,
+     * or null when the server offers none. Binary collations keep byte-order
+     * comparison; NO PAD sources additionally keep trailing-space
+     * significance by mapping onto utf8mb4_0900_bin.
+     */
+    private static function resolveConversionTarget(string $collation, ?string $unicodeTarget, ?string $binTarget, ?string $noPadTarget): ?string
+    {
+        if (stripos($collation, 'nopad') !== false) {
+            return $noPadTarget;
+        }
+
+        if (str_ends_with($collation, '_bin')) {
+            return $binTarget;
+        }
+
+        return $unicodeTarget;
+    }
+
+    /**
+     * Whether any functional (expression) index on the table references the
+     * column. Those parts report a NULL column name, so the byte-limit check
+     * cannot measure them; widening blindly could overflow the key and fail
+     * the upgrade, so such columns are left for manual review instead.
+     */
+    private function isReferencedByExpressionIndex(string $column, array $indexes): bool
+    {
+        foreach ($indexes as $index) {
+            $expression = $index['Expression'] ?? null;
+            if (!is_string($expression) || $expression === '') {
+                continue;
+            }
+            if (preg_match('/(^|[^A-Za-z0-9_])' . preg_quote($column, '/') . '([^A-Za-z0-9_]|$)/i', $expression) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -2808,9 +2858,12 @@ class Patcher implements InjectionAwareInterface
             'SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset',
             ['charset' => 'utf8mb4']
         );
-        $unicodeTarget = self::findCollation($collations, 'utf8mb4_unicode_ci');
-        $binTarget = self::findCollation($collations, 'utf8mb4_bin');
-        $targetCollation = str_ends_with($collation, '_bin') ? $binTarget : $unicodeTarget;
+        $targetCollation = self::resolveConversionTarget(
+            $collation,
+            self::findCollation($collations, 'utf8mb4_unicode_ci'),
+            self::findCollation($collations, 'utf8mb4_bin'),
+            self::findCollation($collations, 'utf8mb4_0900_bin')
+        );
         if ($targetCollation === null) {
             $this->logUpdate('warning', 'Skipped utf8mb4 database default for ' . $database . ': no equivalent utf8mb4 collation is available on this server.');
 
