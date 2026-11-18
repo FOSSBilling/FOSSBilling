@@ -22,9 +22,10 @@ test('the intermediate release hands finalization to new code and protects runti
 
     try {
         bridgeUpgradeSource($root);
-        foreach (['core/Update/RuntimeLock.php', 'core/Filesystem/ZipExtractor.php'] as $file) {
-            expect($filesystem->readFile($root . '/' . $file))->toBe($filesystem->readFile(PATH_ROOT . '/' . $file));
-        }
+        // The lock protocol stays shared; the historical ZIP reader remains
+        // frozen and is exercised by the upgrade scenarios below.
+        expect($filesystem->readFile($root . '/core/Update/RuntimeLock.php'))
+            ->toBe($filesystem->readFile(PATH_ROOT . '/core/Update/RuntimeLock.php'));
         $process = new Process([PHP_BINARY, PATH_TESTS . '/Fixtures/update-cache-clear.php', $root, $scenario, 'bridge']);
         $process->mustRun();
         $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
