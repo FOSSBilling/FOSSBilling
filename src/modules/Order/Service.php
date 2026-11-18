@@ -2848,6 +2848,17 @@ class Service implements InjectionAwareInterface
         // wrongly treating the group as already handled.
         $invoiceHandled = [];
 
+        // Protect each invoice shared with a paid order before any sibling can
+        // delete it: the per-order re-check below skips the paid order itself,
+        // but without this a sibling processed first would remove the shared
+        // unpaid invoice out from under it.
+        foreach ($staleOrders as $order) {
+            $protectedInvoiceId = $order->getUnpaidInvoiceId();
+            if ($protectedInvoiceId !== null && $this->getOrderRepository()->hasPaidInvoiceItem($this->orderId($order))) {
+                $invoiceHandled[$protectedInvoiceId] = false;
+            }
+        }
+
         // Pending-setup orders were never provisioned, so cancelFromOrder() (which
         // tears down an active service) explicitly rejects them. deleteFromOrder()
         // is the same path an admin uses to manually remove one. The linked unpaid

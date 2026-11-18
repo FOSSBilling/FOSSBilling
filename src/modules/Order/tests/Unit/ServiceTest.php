@@ -4200,6 +4200,64 @@ test('batchCancelUnpaid removes each stale unpaid order and dispatches typed eve
         ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchCancelUnpaidOrdersEvent::class);
 });
 
+test('batchCancelUnpaid protects a shared invoice when a sibling order paid elsewhere', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    // Both orders share one unpaid draft invoice, but order 1 was paid through
+    // another invoice (legacy rel_id, backfill not yet run). Without the
+    // pre-pass, whichever sibling runs first deletes the shared invoice
+    // before the paid order's own re-check can protect it.
+    $paidElsewhere = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $neverPaid = createEntity(Order::class, ['id' => 2, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $unpaidInvoice = orderServiceCreateInvoiceModel(55);
+    $unpaidInvoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->with(10)
+        ->andReturn([$paidElsewhere, $neverPaid]);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(1)->andReturn(true);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(2)->andReturn(false);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->twice();
+
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')
+        ->once()
+        ->with(['id' => [55]])
+        ->andReturn([$unpaidInvoice]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldNotReceive('deleteInvoiceByAdmin');
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => '1', 'batch_cancel_unpaid_after_days' => 10];
+        }
+    });
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
+
+    $serviceMock->shouldNotReceive('deleteFromOrder');
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelUnpaidOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchCancelUnpaidOrdersEvent::class);
+});
+
 test('batchCancelUnpaid falls back to the 7 day default when the configured value is blank', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
@@ -4245,9 +4303,10 @@ test('batchCancelUnpaid skips a stale order with a paid item the re-check finds'
         ->with(10)
         ->andReturn([$paidElsewhere, $neverPaid]);
     // A paid invoice item the typed scan missed (e.g. legacy rel_id, backfill
-    // not yet run) blocks deletion of order 1 only.
-    $orderRepository->shouldReceive('hasPaidInvoiceItem')->once()->with(1)->andReturn(true);
-    $orderRepository->shouldReceive('hasPaidInvoiceItem')->once()->with(2)->andReturn(false);
+    // not yet run) blocks deletion of order 1 only. Called from both the
+    // pre-pass (shared-invoice protection) and the per-order re-check.
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(1)->andReturn(true);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(2)->andReturn(false);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
