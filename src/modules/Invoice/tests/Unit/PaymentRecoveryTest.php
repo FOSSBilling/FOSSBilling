@@ -23,8 +23,8 @@ function chargeRecoveryFixture(?Doctrine\DBAL\Connection $connection = null): ar
     $db = $connection ?? Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $realEm = EntityManagerFactory::create($db);
     (new Doctrine\ORM\Tools\SchemaTool($realEm))->createSchema([$realEm->getClassMetadata(GatewayChargeAttempt::class)]);
-    $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, gateway_id INTEGER)');
-    $db->insert('invoice', ['id' => 21, 'status' => 'unpaid']);
+    $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, gateway_id INTEGER, issued BOOLEAN)');
+    $db->insert('invoice', ['id' => 21, 'status' => 'unpaid', 'issued' => true]);
     $table = $db->quoteSingleIdentifier('transaction');
     $db->executeStatement("CREATE TABLE {$table} (id INTEGER PRIMARY KEY, invoice_id INTEGER, gateway_id INTEGER, txn_id TEXT, status TEXT, txn_status TEXT, amount TEXT, currency TEXT, created_at TEXT, updated_at TEXT)");
     $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7, 'currency' => 'USD']);

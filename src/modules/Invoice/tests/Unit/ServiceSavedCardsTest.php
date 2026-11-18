@@ -379,8 +379,8 @@ describe('charge', function (): void {
         $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
         $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
         $connection->shouldReceive('fetchOne')->once()->with('SELECT GET_LOCK(:name, :timeout)', Mockery::any())->andReturn(1);
-        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(
-            ['status' => 'unpaid', 'gateway_id' => null],
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id, issued FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(
+            ['status' => 'unpaid', 'gateway_id' => null, 'issued' => true],
             ['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']
         );
         $connection->shouldReceive('executeStatement')->once()->with('SELECT RELEASE_LOCK(:name)', Mockery::any());
@@ -410,8 +410,8 @@ describe('charge success', function (): void {
         $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
         $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->andReturn('"transaction"');
         $connection->shouldReceive('fetchOne')->times(3)->andReturn(1, 'paid', 44);
-        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(
-            ['status' => 'unpaid', 'gateway_id' => null],
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id, issued FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(
+            ['status' => 'unpaid', 'gateway_id' => null, 'issued' => true],
             false
         );
         $connection->shouldReceive('executeStatement')->once()->with('SELECT RELEASE_LOCK(:name)', Mockery::any());
@@ -485,7 +485,7 @@ describe('runDue charges', function (): void {
         ]);
         // NamedLock acquire, then the final invoice status read.
         $connection->shouldReceive('fetchOne')->times(3)->andReturn(1, 'paid', 44);
-        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(['status' => 'unpaid', 'gateway_id' => 5], false);
+        $connection->shouldReceive('fetchAssociative')->with(Mockery::pattern('/^(SELECT status, gateway_id, issued FROM invoice|SELECT .*transaction)/s'), Mockery::any())->twice()->andReturn(['status' => 'unpaid', 'gateway_id' => 5, 'issued' => true], false);
         $connection->shouldReceive('executeStatement')->byDefault();
 
         $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
@@ -607,7 +607,7 @@ describe('paypal subscription teardown', function (): void {
 test('automatic charge query runs against the invoice schema', function (): void {
     $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     foreach ([
-        'CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, due_at TEXT, status TEXT, gateway_id INTEGER)',
+        'CREATE TABLE invoice (id INTEGER PRIMARY KEY, client_id INTEGER, due_at TEXT, status TEXT, gateway_id INTEGER, issued BOOLEAN)',
         'CREATE TABLE pay_gateway_customer (client_id INTEGER, pay_gateway_id INTEGER, test_mode BOOLEAN, saved_cards BOOLEAN, default_payment_method TEXT)',
         'CREATE TABLE invoice_card_charge (invoice_id INTEGER, attempts INTEGER, last_attempt_at TEXT)',
         'CREATE TABLE "transaction" (invoice_id INTEGER, status TEXT, txn_status TEXT, created_at TEXT)',
@@ -641,7 +641,7 @@ test('queued automatic charges refresh retry limits and timing under the charge 
     (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
         Invoice::class, PayGateway::class, InvoiceCardCharge::class, Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\Transaction::class,
     ]));
-    $invoice = (new Invoice())->setStatus('unpaid')->setClientId(7)->setCurrency('USD')->setDueAt(new DateTimeImmutable('-1 month'));
+    $invoice = (new Invoice())->setIssued(true)->setStatus('unpaid')->setClientId(7)->setCurrency('USD')->setDueAt(new DateTimeImmutable('-1 month'));
     $gateway = (new PayGateway())->setGateway('Stripe');
     $em->persist($invoice);
     $em->persist($gateway);
@@ -663,6 +663,7 @@ test('queued automatic charges refresh retry limits and timing under the charge 
     $extension = Mockery::mock();
     $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn(['card_retry_count' => $scenario === 'no retries' ? '0' : '2', 'card_retry_every' => '7']);
     $invoices = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoices->shouldReceive('invoiceHasDeletionHold')->andReturnFalse();
     $invoices->shouldReceive('toApiArray')->times($expected)->andReturn([]);
     $invoices->shouldReceive('withBillingRecipient')->times($expected)->andReturnUsing(fn (array $data): array => $data);
     $emails = Mockery::mock();
@@ -696,7 +697,7 @@ test('cron recovers after saved payment settlement closes its entity manager', f
     $em->flush();
     $ids = [];
     for ($client = 7; $client < 7 + $invoiceCount; ++$client) {
-        $invoice = (new Invoice())->setClientId($client)->setStatus('unpaid')->setCurrency('USD')->setDueAt(new DateTimeImmutable('-1 month'));
+        $invoice = (new Invoice())->setIssued(true)->setClientId($client)->setStatus('unpaid')->setCurrency('USD')->setDueAt(new DateTimeImmutable('-1 month'));
         $em->persist($invoice);
         $em->persist((new PayGatewayCustomer())->setPayGateway($gateway)->setClientId($client)->setTestMode(false)->setSavedCards(true)->setExternalCustomerId('cus_' . $client)->setDefaultPaymentMethod('pm_' . $client)->setDefaultCard('Saved card')->setAutoPayAt(new DateTimeImmutable()));
         $em->flush();
@@ -749,6 +750,13 @@ test('cron recovers after saved payment settlement closes its entity manager', f
             $system->setDi($di);
 
             return $system;
+        }
+
+        if ($sub === '') {
+            $invoices = new Box\Mod\Invoice\Service();
+            $invoices->setDi($di);
+
+            return $invoices;
         }
 
         return match ($sub) {
@@ -817,3 +825,81 @@ test('cron recovers after saved payment settlement closes its entity manager', f
         $db->close();
     }
 })->with(['failed last invoice' => 1, 'later invoice still settles' => 2]);
+
+test('saved charges reject drafts and deletion holds before changing payment state', function (string $case, bool $byStaff, bool $byClient, ?int $typedId, string $reference): void {
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
+        Invoice::class, PayGateway::class, InvoiceCardCharge::class,
+        Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\Transaction::class,
+        Box\Mod\Invoice\Entity\InvoiceItem::class,
+    ]));
+    $db->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
+    $invoice = (new Invoice())->setIssued(true)->setStatus('unpaid')->setClientId(7)->setCurrency('USD');
+    $gateway = (new PayGateway())->setGateway('Stripe');
+    $em->persist($invoice);
+    $em->persist($gateway);
+    $em->flush();
+    if ($case === 'draft') {
+        // runDue can select an issued invoice before a later edit restores its draft state.
+        $db->update('invoice', ['issued' => false], ['id' => $invoice->getId()]);
+        expect($invoice->isIssued())->toBeTrue();
+    } else {
+        $db->insert('invoice_item', ['invoice_id' => $invoice->getId(), 'type' => 'order', 'order_id' => $typedId, 'rel_id' => $reference]);
+        $db->insert('client_order_meta', ['client_order_id' => 7, 'name' => 'deletion_state', 'value' => $case]);
+    }
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $adapter->shouldReceive('gatewayId')->andReturn($gateway->getId());
+    $adapter->shouldNotReceive('chargeSavedCard', 'savedCard');
+    $fees = Mockery::mock(Box\Mod\Invoice\ServiceGatewayFees::class);
+    $fees->shouldNotReceive('apply');
+    $invoices = new Box\Mod\Invoice\Service();
+    $invoices->setDi(savedCardsService($em)->getDi());
+    $extension = Mockery::mock();
+    $extension->shouldReceive('getConfig')->with('mod_invoice')->andReturn([]);
+    $service = savedCardsService($em, ['invoice' => $invoices, 'invoice:gatewayfees' => $fees, 'extension' => $extension]);
+
+    expect($service->charge($invoice, $adapter, $byStaff, $byClient))->toBe([
+        'paid' => false,
+        'error' => $case === 'draft' ? null : 'Order deletion is awaiting recovery. Retry deletion before billing or changing the service.',
+    ])->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_card_charge'))->toBe(0)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_gateway_charge_attempt'))->toBe(0)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0);
+    $db->close();
+})->with([
+    'draft selected before edit' => ['draft', false, false, null, '7'],
+    'automatic charge after remote deletion' => ['service_deleted', false, false, 7, '99'],
+    'staff charge during interrupted deletion' => ['started', true, false, 7, '99'],
+    'client charge with legacy link' => ['service_deleted', true, true, null, '007 '],
+]);
+
+test('automatic selection excludes due drafts while retaining issued invoices', function (): void {
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
+        Invoice::class, PayGateway::class, PayGatewayCustomer::class, InvoiceCardCharge::class,
+        Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\InvoiceItem::class, Box\Mod\Invoice\Entity\Subscription::class,
+    ]));
+    $gateway = (new PayGateway())->setGateway('Stripe');
+    $em->persist($gateway);
+    $em->flush();
+    $draft = (new Invoice())->setStatus('unpaid')->setClientId(7)->setDueAt(new DateTimeImmutable('-1 month'));
+    $issued = (new Invoice())->setIssued(true)->setStatus('unpaid')->setClientId(7)->setDueAt(new DateTimeImmutable('-1 month'));
+    $em->persist($draft);
+    $em->persist($issued);
+    $em->persist((new PayGatewayCustomer())->setPayGateway($gateway)->setClientId(7)->setTestMode(false)->setSavedCards(true)->setExternalCustomerId('cus_7')->setDefaultPaymentMethod('pm_7'));
+    $em->flush();
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $adapter->shouldReceive('gatewayId')->andReturn($gateway->getId());
+    $adapter->shouldReceive('testMode')->andReturnFalse();
+    $service = Mockery::mock(ServiceSavedCards::class)->makePartial();
+    $service->setDi(savedCardsService($em)->getDi());
+    $service->shouldReceive('adapters')->andReturn([$adapter]);
+    $service->shouldReceive('paypal')->andReturnNull();
+    $service->shouldReceive('settings')->andReturn(['days_before' => 0, 'every' => 7, 'retries' => 2]);
+    $service->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter]);
+    $service->shouldReceive('charge')->once()->with($issued, $adapter, false)->andReturn(['paid' => true, 'error' => null]);
+
+    $service->runDue();
+    $db->close();
+});

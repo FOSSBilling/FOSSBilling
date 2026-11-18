@@ -384,7 +384,9 @@ test('a displaced saved-charge worker cannot leak a dirty invoice into later wor
         $invoice = $em->find(Invoice::class, 1);
         $fees = Mockery::mock();
         $fees->shouldReceive('apply')->once();
-        $di['mod_service'] = $di->protect(fn (): object => $fees);
+        $invoices = new Box\Mod\Invoice\Service();
+        $invoices->setDi($di);
+        $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => $sub === '' ? $invoices : $fees);
         $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
         $adapter->shouldReceive('gatewayId')->andReturn(1);
         $adapter->shouldReceive('savedCard')->once()->andReturn(['card' => 'test']);

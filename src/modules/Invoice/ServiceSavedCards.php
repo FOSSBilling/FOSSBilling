@@ -234,7 +234,7 @@ class ServiceSavedCards implements InjectionAwareInterface
                    JOIN pay_gateway_customer g ON g.client_id = i.client_id AND g.pay_gateway_id = ? AND g.test_mode = ? AND g.saved_cards = TRUE
                         AND g.default_payment_method IS NOT NULL AND g.default_payment_method <> ''
                    LEFT JOIN invoice_card_charge c ON c.invoice_id = i.id
-                  WHERE i.status = 'unpaid' AND i.due_at IS NOT NULL
+                  WHERE i.status = 'unpaid' AND i.issued = TRUE AND i.due_at IS NOT NULL
                     AND (i.gateway_id IS NULL OR i.gateway_id IN (" . implode(',', $gatewayIds) . ')) AND COALESCE(c.attempts, 0) < ?
                     AND (c.last_attempt_at IS NULL OR c.last_attempt_at < ?)
                     AND NOT ' . PendingPayments::sql('i.id', $connection) . "
@@ -359,9 +359,12 @@ class ServiceSavedCards implements InjectionAwareInterface
     private function chargeUnderLock(Invoice $invoice, \Payment_Adapter_Stripe|\Payment_Adapter_PayPalAutoPay|\Payment_Adapter_PayPalEmail $adapter, bool $byStaff, bool $byClient = false): array
     {
         $connection = $this->di['em']->getConnection();
-        $row = $connection->fetchAssociative('SELECT status, gateway_id FROM invoice WHERE id = ?', [(int) $invoice->getId()]) ?: [];
+        $row = $connection->fetchAssociative('SELECT status, gateway_id, issued FROM invoice WHERE id = ?', [(int) $invoice->getId()]) ?: [];
         if (($row['status'] ?? null) !== Invoice::STATUS_UNPAID) {
             return ['paid' => false, 'error' => 'This invoice is already paid or cancelled.'];
+        }
+        if (!$byStaff && empty($row['issued'])) {
+            return ['paid' => false, 'error' => null];
         }
         if (PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null) {
             return ['paid' => false, 'error' => 'A payment for this invoice is still clearing.'];
@@ -393,6 +396,9 @@ class ServiceSavedCards implements InjectionAwareInterface
             if ($attempt > $settings['retries'] || ($charge?->getLastAttemptAt() !== null && $charge->getLastAttemptAt() >= $retryBefore)) {
                 return ['paid' => false, 'error' => null];
             }
+        }
+        if ($this->di['mod_service']('Invoice')->invoiceHasDeletionHold($invoice)) {
+            return ['paid' => false, 'error' => 'Order deletion is awaiting recovery. Retry deletion before billing or changing the service.'];
         }
         $this->recordAttempt((int) $invoice->getId(), !$byStaff);
         // The saved method's gateway takes the payment, with its fee.

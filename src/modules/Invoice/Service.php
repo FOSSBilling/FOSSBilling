@@ -6006,7 +6006,7 @@ class Service implements InjectionAwareInterface
         });
     }
 
-    private function invoiceHasDeletionHold(Invoice $invoice): bool
+    public function invoiceHasDeletionHold(Invoice $invoice): bool
     {
         $connection = $this->di['em']->getConnection();
         $orderLinks = $connection->fetchAllAssociative(
