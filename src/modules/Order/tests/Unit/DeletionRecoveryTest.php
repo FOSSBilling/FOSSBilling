@@ -201,6 +201,12 @@ test('held paid invoice tasks and subscription callbacks cannot renew a deleted 
     $c = deletionRecoveryContext();
     $order = failDeletionAtGateway($c);
     $invoice = (new Invoice())->setStatus(Invoice::STATUS_PAID)->setIssued(true)->setClientId(1);
+    if ($operation === 'callback') {
+        $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Stripe');
+        $c['em']->persist($gateway);
+        $invoice->setGateway($gateway);
+        $order->setClientId(1);
+    }
     $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setRelId((string) $order->getId())->setTask(InvoiceItem::TASK_RENEW)->setStatus(InvoiceItem::STATUS_PENDING_SETUP)->setPrice(10)->setQuantity(1);
     $c['em']->persist($invoice);
     $c['em']->persist($item);
@@ -212,12 +218,12 @@ test('held paid invoice tasks and subscription callbacks cannot renew a deleted 
         $items->executeTask($item);
         expect($item->getStatus())->not->toBe(InvoiceItem::STATUS_EXECUTED);
     } else {
-        $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('held-subscription')->setRelType('invoice')->setRelId($invoice->getId());
+        $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('held-subscription')->setPayGateway($invoice->getGateway())->setRelType('invoice')->setRelId($invoice->getId());
         $c['em']->persist($subscription);
         $c['em']->flush();
         $billing = new Box\Mod\Invoice\Service();
         $billing->setDi($c['di']);
-        expect($billing->generateRenewalInvoiceForSubscriptionPayment('held-subscription', 1))->toBeNull();
+        expect($billing->generateRenewalInvoiceForSubscriptionPayment('held-subscription', 1, (int) $invoice->getGateway()?->getId(), (int) $invoice->getId()))->toBeNull();
     }
     expect($order->getExpiresAt()->format(DATE_ATOM))->toBe($expiry)
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(0)

@@ -1337,9 +1337,15 @@ test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellati
     $svc->setDi($di);
 
     $data = ['client_id' => $randId];
+    $platform = Mockery::mock(Doctrine\DBAL\Platforms\AbstractPlatform::class);
+    $platform->shouldReceive('getConcatExpression')->with("''", 'co.id')->andReturn("'' || co.id");
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn($platform);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+
     $result = $svc->getSoonExpiringActiveOrdersQuery($data);
 
-    $expectedQuery = 'SELECT co.*
+    $expectedQuery = 'SELECT co.*, :expires_before AS renewal_cutoff
                 FROM client_order co
                 LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
                 WHERE co.status = :status
@@ -1364,7 +1370,7 @@ test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellati
                     SELECT 1
                     FROM invoice_item pending_item
                     INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
-                    WHERE pending_item.rel_id = co.id
+                    WHERE pending_item.rel_id = ' . "'' || co.id" . '
                     AND pending_item.type = :pending_item_type
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
@@ -4960,7 +4966,7 @@ test('interrupted scheduled cancellation is held until staff reviews it', functi
     $subscription = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscription->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     $subscription->shouldReceive('cancelForOrder')->once()->with($order)->andReturn(1);
-    $subscription->shouldReceive('hasActiveSubscriptionForOrder')->once()->andReturn(false);
+    $subscription->shouldReceive('hasUncanceledSubscriptionForOrder')->once()->andReturn(false);
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
     $service->shouldReceive('updateOrderMeta')->times(3)->andReturnUsing(function ($unused, array $values) use (&$state): int {

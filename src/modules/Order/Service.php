@@ -468,7 +468,8 @@ class Service implements InjectionAwareInterface
 
         $client_id = $data['client_id'] ?? null;
 
-        $query = 'SELECT co.*
+        $orderIdAsText = $this->di['em']->getConnection()->getDatabasePlatform()->getConcatExpression("''", 'co.id');
+        $query = 'SELECT co.*, :expires_before AS renewal_cutoff
                 FROM client_order co
                 LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
                 WHERE co.status = :status
@@ -493,7 +494,7 @@ class Service implements InjectionAwareInterface
                     SELECT 1
                     FROM invoice_item pending_item
                     INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
-                    WHERE pending_item.rel_id = co.id
+                    WHERE pending_item.rel_id = ' . $orderIdAsText . '
                     AND pending_item.type = :pending_item_type
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
@@ -2043,7 +2044,7 @@ class Service implements InjectionAwareInterface
     {
         $this->assertOrderCanBeCanceled($order);
         if ($requestId !== null && !$this->di['mod_service']('Invoice', 'Subscription')->canCancelImmediatelyForOrder($order)) {
-            throw new InformationException('Cancel the subscription at the payment provider and mark it canceled here before accepting this request.');
+            throw new InformationException('Cancel the subscription at the payment provider and confirm the cancellation before accepting this request.');
         }
         // A shared durable claim also supports staff-reviewed retries and local
         // cleanup recovery through the existing scheduled cancellation protocol.
@@ -2112,12 +2113,12 @@ class Service implements InjectionAwareInterface
         }
         $options = $requestId === null ? [] : [self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['mode' => 'period_end', 'reason' => $reason, 'skip_event' => false, 'request_id' => $requestId], JSON_THROW_ON_ERROR)];
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        if ($allowWithoutSubscription && !$subscriptionService->hasActiveSubscriptionForOrder($order)) {
+        if ($allowWithoutSubscription && !$subscriptionService->hasUncanceledSubscriptionForOrder($order)) {
             $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1'] + $options);
         } else {
             if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
                 if ($allowWithoutSubscription) {
-                    throw new InformationException('Cancel the subscription at the payment provider and mark it canceled here before accepting this request.');
+                    throw new InformationException('Cancel the subscription at the payment provider and confirm the cancellation before accepting this request.');
                 }
 
                 throw new InformationException('No active gateway subscription that supports cancellation at period end is linked to this order.');
@@ -2711,10 +2712,10 @@ class Service implements InjectionAwareInterface
                 $phase = $meta[self::META_SCHEDULED_CANCEL_PHASE] ?? null;
                 if ($phase === 'scheduling' || $phase === null) {
                     $subscriptions = $this->di['mod_service']('Invoice', 'Subscription');
-                    // Older claims have no phase. An active subscription must
-                    // be scheduled again after staff approves the retry.
-                    if ($phase === 'scheduling' || $subscriptions->hasActiveSubscriptionForOrder($order)) {
-                        if ($subscriptions->scheduleCancellationForOrder($order) === 0 && $subscriptions->hasActiveSubscriptionForOrder($order)) {
+                    // Older claims have no phase. An uncanceled subscription must
+                    // be scheduled after staff approves the retry.
+                    if ($phase === 'scheduling' || $subscriptions->hasUncanceledSubscriptionForOrder($order)) {
+                        if ($subscriptions->scheduleCancellationForOrder($order) === 0 && $subscriptions->hasUncanceledSubscriptionForOrder($order)) {
                             throw new InformationException('The gateway cancellation has not been scheduled.');
                         }
                     }

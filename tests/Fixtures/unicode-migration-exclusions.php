@@ -73,6 +73,7 @@ return [
         'pay_gateway_customer.external_customer_id',
         'pay_gateway_product.external_price_id',
         'pay_gateway_product.external_product_id',
+        'subscription.gateway_cancellation_confirmation',
         'subscription.sid',
         'transaction.s_id',
         'transaction.txn_id',

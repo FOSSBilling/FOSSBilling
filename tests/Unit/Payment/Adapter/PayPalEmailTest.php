@@ -481,7 +481,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn ($tx, ...$args): bool => $tx->getInvoice()?->getId() === 99)->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
         $attempt = 0;
-        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->times($deliveries)->with('I-ABC123', 9)->andReturnUsing(function () use ($failure, &$attempt, $renewal) {
+        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->times($deliveries)->with('I-ABC123', 9, 2, 16, 42)->andReturnUsing(function () use ($failure, &$attempt, $renewal) {
             if ($failure !== null && ++$attempt === 1) {
                 throw $failure;
             }
@@ -638,7 +638,7 @@ describe('PayPal subscription IPN handling', function (): void {
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldNotReceive('invoice_subscription_get');
-        $apiAdmin->shouldReceive('invoice_subscription_update')->once()->with(['id' => 7, 'status' => 'canceled'])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_subscription_update');
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
             $updates[] = $data;
 
@@ -649,6 +649,12 @@ describe('PayPal subscription IPN handling', function (): void {
         $di = container();
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptions->shouldReceive('confirmCancellationFromGateway')->once()->with(7, 'I-ABC123', 2);
+        $di['mod_service'] = $di->protect(fn () => $subscriptions);
+        $di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->shouldReceive('findOneBy')
+            ->once()->with(['sid' => 'I-ABC123', 'payGateway' => 2, 'relType' => 'invoice', 'relId' => 16])->andReturn($stored);
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'subscr_cancel', 'subscr_id' => 'I-ABC123'],
@@ -1082,7 +1088,7 @@ describe('PayPal subscription IPN handling', function (): void {
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldNotReceive('invoice_subscription_get');
-        $apiAdmin->shouldReceive('invoice_subscription_update')->once()->with(['id' => 7, 'status' => 'canceled'])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_subscription_update');
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
             $updates[] = $data;
 
@@ -1093,6 +1099,12 @@ describe('PayPal subscription IPN handling', function (): void {
         $di = container();
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptions->shouldReceive('confirmCancellationFromGateway')->once()->with(7, 'I-PROFILE1', 2);
+        $di['mod_service'] = $di->protect(fn () => $subscriptions);
+        $di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->shouldReceive('findOneBy')
+            ->once()->with(['sid' => 'I-PROFILE1', 'payGateway' => 2, 'relType' => 'invoice', 'relId' => 16])->andReturn($stored);
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'recurring_payment_profile_cancel', 'recurring_payment_id' => 'I-PROFILE1'],
@@ -1448,7 +1460,7 @@ describe('PayPal callback invoice binding', function (): void {
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
-        $apiAdmin->shouldReceive('invoice_subscription_update')->once()->with(['id' => 5, 'status' => 'canceled']);
+        $apiAdmin->shouldNotReceive('invoice_subscription_update');
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
             $updates[] = $data;
 
@@ -1460,6 +1472,12 @@ describe('PayPal callback invoice binding', function (): void {
         $di['logger'] = new Tests\Helpers\TestLogger();
 
         // Legacy recurring profile: callback URL predates signing, so no sig.
+        $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptions->shouldReceive('confirmCancellationFromGateway')->once()->with(5, 'I-LEGACY', 2);
+        $di['mod_service'] = $di->protect(fn () => $subscriptions);
+        $di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->shouldReceive('findOneBy')
+            ->once()->with(['sid' => 'I-LEGACY', 'payGateway' => 2, 'relType' => 'invoice', 'relId' => 16])->andReturn($stored);
+
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'recurring_payment_profile_cancel', 'subscr_id' => 'I-LEGACY'],
             'get' => ['invoice_id' => 16],

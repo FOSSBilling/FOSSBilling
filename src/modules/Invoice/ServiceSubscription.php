@@ -94,22 +94,31 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->writeStatusForGatewayLink($id, $sid, $gatewayId, $status);
     }
 
-    /** @return array{sid: string, pay_gateway_id: int|string, rel_type: ?string, rel_id: int|string|null}|null */
-    private function writeStatusForGatewayLink(int $id, string $sid, int $gatewayId, string $status): ?array
+    public function confirmCancellationFromGateway(int $id, string $sid, int $gatewayId): void
+    {
+        $this->writeStatusForGatewayLink($id, $sid, $gatewayId, 'canceled', confirmedCancellation: true);
+    }
+
+    /** @return array{sid: string, pay_gateway_id: int|string, rel_type: ?string, rel_id: int|string|null, status: ?string}|null */
+    private function writeStatusForGatewayLink(int $id, string $sid, int $gatewayId, string $status, bool $onlyIfActive = false, bool $confirmedCancellation = false): ?array
     {
         $connection = $this->di['em']->getConnection();
-        $link = $connection->transactional(function () use ($connection, $id, $sid, $gatewayId, $status): ?array {
+        $link = $connection->transactional(function () use ($connection, $id, $sid, $gatewayId, $status, $onlyIfActive, $confirmedCancellation): ?array {
             $row = $connection->fetchAssociative(
-                'SELECT sid, pay_gateway_id, rel_type, rel_id FROM subscription WHERE id = ?' . RowLock::suffix($connection),
+                'SELECT sid, pay_gateway_id, rel_type, rel_id, status FROM subscription WHERE id = ?' . RowLock::suffix($connection),
                 [$id],
             );
             if ($row === false || $row['sid'] !== $sid || (int) $row['pay_gateway_id'] !== $gatewayId) {
                 return null;
             }
-            $connection->update('subscription', [
-                'status' => $status,
-                'updated_at' => date('Y-m-d H:i:s'),
-            ], ['id' => $id]);
+            if ($onlyIfActive && $row['status'] !== 'active') {
+                return $row;
+            }
+            $changes = ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')];
+            if ($confirmedCancellation) {
+                $changes['gateway_cancellation_confirmation'] = Subscription::cancellationConfirmation($sid, $gatewayId);
+            }
+            $connection->update('subscription', $changes, ['id' => $id]);
 
             return $row;
         });
@@ -218,8 +227,13 @@ class ServiceSubscription implements InjectionAwareInterface
             throw new \FOSSBilling\Core\Exception\InformationException('The payment gateway does not support cancellation at the end of the billing period.');
         }
 
+        $id = (int) $model->getId();
+        $gatewayId = (int) $model->getPayGateway()?->getId();
         $adapter->cancelSubscriptionAtPeriodEnd($subscriptionId);
-        $this->persistUpdate($model, ['status' => self::STATUS_PENDING_CANCELLATION]);
+        $link = $this->writeStatusForGatewayLink($id, $subscriptionId, $gatewayId, self::STATUS_PENDING_CANCELLATION, onlyIfActive: true);
+        if ($link === null || !in_array($link['status'], ['active', self::STATUS_PENDING_CANCELLATION, 'canceled'], true)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The subscription changed while the payment gateway was scheduling cancellation. Staff must reconcile it.');
+        }
     }
 
     private function cancelAtGateway(Subscription $model): void
@@ -251,11 +265,14 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $canceledSubscriptions = 0;
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
-            if ($subscription->getStatus() === 'canceled') {
-                continue;
-            }
-
             try {
+                if ($subscription->getStatus() === 'canceled') {
+                    if ($subscription->getPayGateway()?->getGateway() === 'PayPalEmail' && !$this->isCanceledSubscriptionConfirmed($subscription)) {
+                        throw new \FOSSBilling\Core\Exception\InformationException('PayPal has not confirmed cancellation of this subscription.');
+                    }
+
+                    continue;
+                }
                 $this->cancel($subscription);
                 ++$canceledSubscriptions;
             } catch (\Exception $e) {
@@ -342,7 +359,8 @@ class ServiceSubscription implements InjectionAwareInterface
     public function assertNoSharedSubscriptionForOrder(Order $order): void
     {
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
-            if ($subscription->getStatus() !== 'canceled' && $this->hasOtherLiveOrder($subscription, $order)) {
+            if ($this->hasOtherLiveOrder($subscription, $order)
+                && ($subscription->getStatus() !== 'canceled' || !$this->isCanceledSubscriptionConfirmed($subscription))) {
                 throw new \FOSSBilling\Core\Exception\InformationException('Reconcile the shared gateway subscription before canceling this service.');
             }
         }
@@ -444,7 +462,13 @@ class ServiceSubscription implements InjectionAwareInterface
     private function isCanceledSubscriptionConfirmed(Subscription $subscription): bool
     {
         $sid = trim((string) $subscription->getSid());
-        if ($sid === '' || $subscription->getPayGateway()?->getGateway() !== 'Stripe') {
+        if ($sid === '') {
+            return true;
+        }
+        if ($subscription->getPayGateway()?->getGateway() === 'PayPalEmail') {
+            return $subscription->hasGatewayCancellationConfirmation();
+        }
+        if ($subscription->getPayGateway()?->getGateway() !== 'Stripe') {
             return true;
         }
 
@@ -550,7 +574,7 @@ class ServiceSubscription implements InjectionAwareInterface
                 return null;
             }
         }
-        if ($subscriptionPeriod !== null && ($orderIds !== [] || $discountTotal > 0) && !$this->matchesRenewalTotal($positiveTotal - $discountTotal, array_keys($orderIds))) {
+        if ($subscriptionPeriod !== null && !$this->matchesRenewalTotal($positiveTotal - $discountTotal, array_keys($orderIds))) {
             return null;
         }
 

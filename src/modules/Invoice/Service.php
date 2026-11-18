@@ -97,6 +97,8 @@ class Service implements InjectionAwareInterface
     ];
 
     /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
+    private const int SUBSCRIPTION_RENEWAL_FAILURE_LIMIT = 3;
+
     private const array DEFAULT_EXPORT_COLUMNS = [
         'id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund',
         'base_refund_tax', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
@@ -1936,7 +1938,7 @@ class Service implements InjectionAwareInterface
             $this->assignInvoiceNumberIfMissing($invoice);
 
             if (!$invoice->isIssued()) {
-                $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) ? 1 : 2);
+                $invoice->setIssueNotificationState(!empty($data['deferred_issue_use_credits']) && !$invoice->isSubscriptionPaymentDraft() ? 1 : 2);
             }
             $invoice->setIssued(true);
             $this->di['em']->persist($invoice);
@@ -4096,6 +4098,9 @@ class Service implements InjectionAwareInterface
             $new->setStatus(Invoice::STATUS_UNPAID);
             $new->setCurrency($original->getCurrency());
             $new->setIssued(true);
+            if ($original->isSubscriptionPaymentDraft()) {
+                $new->setSubscriptionPaymentDraft();
+            }
             $new->setTaxname($original->getTaxname());
             $new->setTaxrate($original->getTaxrate());
             $new->setGateway($original->getGateway());
@@ -5524,7 +5529,7 @@ class Service implements InjectionAwareInterface
             try {
                 $invoice = $this->getInvoiceRepository()->find((int) $id);
                 if ($invoice instanceof Invoice) {
-                    $this->issueInvoice($invoice, ['use_credits' => true]);
+                    $this->issueInvoice($invoice, ['use_credits' => true, 'deferred_issue_use_credits' => true]);
                 }
             } catch (\Throwable $e) {
                 $this->di['logger']->warning('Could not issue renewal draft #{id}: {message}', ['id' => $id, 'message' => $e->getMessage()]);
@@ -5545,8 +5550,8 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $orderIds = array_map(static fn (array $order): int => (int) ($order['id'] ?? 0), $orders);
-        $models = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
+        $selection = array_column($orders, null, 'id');
+        $models = $this->di['em']->getRepository(Order::class)->findBy(['id' => array_keys($selection)]);
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
 
@@ -5556,6 +5561,14 @@ class Service implements InjectionAwareInterface
             // Issuance of a previous renewal can replace the manager.
             $model = $this->di['em']->getRepository(Order::class)->find($selected->getId());
             if (!$model instanceof Order) {
+                continue;
+            }
+            // Validate the date on the reloaded entity against the cutoff
+            // that selected it. The quote lock then checks this bucket key.
+            $cutoff = $selection[$model->getId()]['renewal_cutoff'] ?? null;
+            if ($cutoff !== null && ($model->getExpiresAt() === null || $model->getPeriod() === null
+                || $model->getExpiresAt()->format('Y-m-d H:i:s') >= $cutoff
+                || $model->getStatus() !== Order::STATUS_ACTIVE || $model->getInvoiceOption() !== 'issue-invoice')) {
                 continue;
             }
             $mergeKey = $this->renewalMergeKey($model);
@@ -5573,7 +5586,7 @@ class Service implements InjectionAwareInterface
             if (!$mergeable) {
                 try {
                     $invoice = $this->generateForOrder($model, expectedMergeKey: $mergeKey);
-                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true, 'deferred_issue_use_credits' => true]);
                 } catch (\Exception $e) {
                     $this->di['logger']->warning($e->getMessage());
                 }
@@ -5636,7 +5649,7 @@ class Service implements InjectionAwareInterface
                     if (!$invoice instanceof Invoice) {
                         continue;
                     }
-                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true, 'deferred_issue_use_credits' => true]);
                 } catch (\Exception $e) {
                     $this->di['logger']->warning($e->getMessage());
                 }
@@ -7065,15 +7078,21 @@ class Service implements InjectionAwareInterface
      * This handles the case where PayPal/Stripe sends a subscription payment before
      * the cron job generates the renewal invoice.
      *
-     * @param string $subscriptionSid The subscription ID from the payment gateway
-     * @param int    $clientId        The client ID
-     *
-     * @return Invoice|null The generated invoice or null if unable to generate
+     * The adapter supplies the gateway and original invoice verified on the callback.
      */
-    public function generateRenewalInvoiceForSubscriptionPayment(string $subscriptionSid, int $clientId): ?Invoice
+    public function generateRenewalInvoiceForSubscriptionPayment(string $subscriptionSid, int $clientId, int $gatewayId, int $originalInvoiceId, ?int $callbackId = null): ?Invoice
     {
         try {
-            $subscription = $this->di['em']->getRepository(Entity\Subscription::class)->findOneBy(['sid' => $subscriptionSid]);
+            $callback = $callbackId === null ? null : $this->getTransactionRepository()->find($callbackId);
+            if ((int) ($callback?->getIpn()['subscription_renewal_failures'] ?? 0) >= self::SUBSCRIPTION_RENEWAL_FAILURE_LIMIT) {
+                return null;
+            }
+            $subscription = $this->di['em']->getRepository(Entity\Subscription::class)->findOneBy([
+                'sid' => $subscriptionSid,
+                'payGateway' => $gatewayId,
+                'relType' => 'invoice',
+                'relId' => $originalInvoiceId,
+            ]);
             if (!$subscription instanceof Entity\Subscription) {
                 return null;
             }
@@ -7082,7 +7101,10 @@ class Service implements InjectionAwareInterface
                 return null;
             }
 
-            $originalOrderId = $this->getOrderIdFromInvoice((int) $subscription->getRelId());
+            if ($subscription->getRelId() !== $originalInvoiceId) {
+                return null;
+            }
+            $originalOrderId = $this->getOrderIdFromInvoice($originalInvoiceId);
             if ($originalOrderId === null) {
                 return null;
             }
@@ -7132,8 +7154,38 @@ class Service implements InjectionAwareInterface
                 $this->resetEntityManager();
             }
 
+            if ($callbackId !== null && $this->recordSubscriptionRenewalFailure($callbackId, $originalInvoiceId)) {
+                // The adapter retains the verified receipt through its existing
+                // unallocated credit path, including receipt deduplication.
+                return null;
+            }
+
             throw new Exception\RetryableCallbackException('The subscription renewal invoice is temporarily unavailable.');
         }
+    }
+
+    /** Persist the local issuance retry budget on the authenticated or verified callback. */
+    private function recordSubscriptionRenewalFailure(int $callbackId, int $originalInvoiceId): bool
+    {
+        $transaction = $this->getTransactionRepository()->find($callbackId);
+        if (!$transaction instanceof Transaction) {
+            return false;
+        }
+        $this->di['em']->refresh($transaction);
+        $ipn = $transaction->getIpn() ?? [];
+        $failures = min(self::SUBSCRIPTION_RENEWAL_FAILURE_LIMIT, (int) ($ipn['subscription_renewal_failures'] ?? 0) + 1);
+        $ipn['subscription_renewal_failures'] = $failures;
+        $transaction->setIpn($ipn);
+        if ($failures === self::SUBSCRIPTION_RENEWAL_FAILURE_LIMIT) {
+            $message = "Subscription renewal could not be issued after three attempts. Review the retained payment for original invoice #{$originalInvoiceId}.";
+            $note = $transaction->getNote();
+            if (!str_contains((string) $note, $message)) {
+                $transaction->setNote(trim($note . "\n" . $message));
+            }
+        }
+        $this->di['em']->flush();
+
+        return $failures === self::SUBSCRIPTION_RENEWAL_FAILURE_LIMIT;
     }
 
     // End of PDF related functions

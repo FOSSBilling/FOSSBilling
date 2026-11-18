@@ -5825,7 +5825,7 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when subscriptio
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1, 2, 82);
     expect($result)->toBeNull();
 });
 
@@ -5857,7 +5857,7 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when original or
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1, 2, 82);
     expect($result)->toBeNull();
 });
 
@@ -5903,7 +5903,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1, 2, 82);
 
     expect($result)->toBeInstanceOf(Invoice::class);
     expect($result->id)->toBe(99);
@@ -5954,7 +5954,7 @@ test('generateRenewalInvoiceForSubscriptionPayment still renews an order the bat
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1, 2, 82);
 
     expect($result)->toBeInstanceOf(Invoice::class);
     expect($result->id)->toBe(99);
@@ -11239,7 +11239,7 @@ test('failed renewal generation replaces a closed manager before allowing callba
     $di = container();
     $di['em'] = $old;
     $service->setDi($di);
-    expect(fn () => $service->generateRenewalInvoiceForSubscriptionPayment('sub_failed', 1))
+    expect(fn () => $service->generateRenewalInvoiceForSubscriptionPayment('sub_failed', 1, 2, 82))
         ->toThrow(Box\Mod\Invoice\Exception\RetryableCallbackException::class, 'temporarily unavailable');
     expect($di['em'])->toBe($new);
 });

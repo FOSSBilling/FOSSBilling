@@ -665,6 +665,7 @@
     "subscription.client_id",
     "subscription.created_at",
     "subscription.currency",
+    "subscription.gateway_cancellation_confirmation",
     "subscription.id",
     "subscription.pay_gateway_id",
     "subscription.period",

@@ -212,7 +212,7 @@ test('staff retry updates a claim even when its ORM entity was previously cached
     $di['em'] = $em;
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->once()->andReturn(false);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->once()->andReturn(false);
     $di['mod_service'] = $di->protect(fn (): object => $subscriptions);
     $service->setDi($di);
     expect($service->reviewScheduledCancellation($order, 'retry'))->toBeTrue();
@@ -470,7 +470,7 @@ test('staff retry reschedules an interrupted provider request and retains the ho
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
     if ($legacy) {
-        $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->once()->andReturn(true);
+        $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->once()->andReturn(true);
     }
     $attempt = $subscriptions->shouldReceive('scheduleCancellationForOrder')->once()->with($order);
     if ($failsAgain) {

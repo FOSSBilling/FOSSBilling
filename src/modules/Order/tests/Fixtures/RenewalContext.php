@@ -77,7 +77,7 @@ function freeHoldRegressionContext(string $kind): array
     $em->flush();
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('findProductById')->with(5)->andReturn((new Box\Mod\Product\Entity\Product())->setType(Box\Mod\Product\Service::DOMAIN));
-    $products->shouldReceive('freeDomainRenewalUntil')->andReturn(time() + 86400 * 365);
+    $products->shouldReceive('freeDomainRenewalState')->andReturn(['until' => time() + 86400 * 365, 'pending' => false]);
     $di = $cron->getDi();
     $executor = ($di['mod_service'])('Invoice', 'InvoiceItem');
     unset($di['mod_service']);

@@ -43,7 +43,7 @@ function cancellationRequestConcurrencyContext(string $type = ClientOrderCancelR
     $orders->shouldReceive('saveStatusChange')->byDefault()->zeroOrMoreTimes();
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptions->shouldReceive('assertNoSharedSubscriptionForOrder')->byDefault();
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->byDefault()->andReturn(false);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->byDefault()->andReturn(false);
     $subscriptions->shouldReceive('canCancelImmediatelyForOrder')->byDefault()->andReturn(true);
     $products = Mockery::mock(Box\Mod\Product\Service::class);
     $products->shouldReceive('releaseReservedPromoRedemptionsForOrder', 'releaseReservedStockForOrder')->byDefault()->andReturnNull();
@@ -167,7 +167,7 @@ test('request scheduling preserves an unresolved cancellation claim', function (
 
 test('request scheduling still rejects unsupported subscription cancellation', function (): void {
     [$requests, $em, $request, , , , $subscriptions] = cancellationRequestConcurrencyContext();
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(true);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(true);
     $subscriptions->shouldReceive('canCancelAtPeriodEndForOrder')->once()->andReturn(false);
     $subscriptions->shouldNotReceive('scheduleCancellationForOrder');
     expect(fn () => $requests->accept($request->getId()))->toThrow(InformationException::class, 'payment provider');
@@ -177,7 +177,7 @@ test('request scheduling still rejects unsupported subscription cancellation', f
 
 test('failed subscription scheduling retains its durable hold and releases the request mutex', function (): void {
     [$requests, $em, $request, $order, , , $subscriptions] = cancellationRequestConcurrencyContext();
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(true);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(true);
     $subscriptions->shouldReceive('canCancelAtPeriodEndForOrder')->once()->andReturn(true);
     $subscriptions->shouldReceive('scheduleCancellationForOrder')->once()->andThrow(new RuntimeException('provider outcome uncertain'));
     expect(fn () => $requests->accept($request->getId()))->toThrow(RuntimeException::class, 'outcome uncertain');
@@ -192,7 +192,7 @@ test('failed subscription scheduling retains its durable hold and releases the r
 
 test('accepted subscription requests commit scheduling checkpoints before provider work', function (): void {
     [$requests, $em, $request, , , , $subscriptions] = cancellationRequestConcurrencyContext();
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(true);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(true);
     $subscriptions->shouldReceive('canCancelAtPeriodEndForOrder')->once()->andReturn(true);
     $subscriptions->shouldReceive('scheduleCancellationForOrder')->once()->andReturnUsing(function () use ($em): int {
         expect($em->getConnection()->isTransactionActive())->toBeFalse()
@@ -537,7 +537,7 @@ test('the automatic batch holds its mutex across the marker read and scan', func
 
 test('end-of-period requests reject deletion holds and missing gateway expiry before provider work', function (string $hold): void {
     [$requests, $em, $request, $order, , , $subscriptions] = cancellationRequestConcurrencyContext();
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(true);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(true);
     $subscriptions->shouldNotReceive('scheduleCancellationForOrder');
     if ($hold === 'deletion') {
         $em->persist((new OrderMeta())->setOrder($order)->setName(Service::META_DELETION_STATE)->setValue(Box\Mod\Order\DeletionRecovery::SERVICE_DELETED));
@@ -691,7 +691,7 @@ test('stop and withdrawal cannot run under a direct cancellation in progress', f
 
 test('staff retry of an interrupted period-end request keeps the active service scheduled', function (bool $legacy): void {
     [$requests, $em, $request, $order, , $orders, $subscriptions] = cancellationRequestConcurrencyContext();
-    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(true);
+    $subscriptions->shouldReceive('hasUncanceledSubscriptionForOrder')->andReturn(true);
     $subscriptions->shouldReceive('canCancelAtPeriodEndForOrder')->once()->andReturn(true);
     $subscriptions->shouldReceive('scheduleCancellationForOrder')->twice()->andReturnUsing(
         function () use (&$attempt): int {

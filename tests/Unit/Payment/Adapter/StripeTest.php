@@ -868,7 +868,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
             return true;
         });
         $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')
-            ->with('sub_renew', 8)
+            ->with('sub_renew', 8, 0, 77, 60)
             ->andReturn($renewalInvoice);
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
@@ -3470,6 +3470,7 @@ test('a Stripe subscription retry reuses its previously selected renewal invoice
     $tx->gateway = createEntity(PayGateway::class, ['id' => 1]);
     $renewal = createEntity(Invoice::class, ['id' => 88, 'client_id' => 8, 'currency' => 'USD', 'status' => Invoice::STATUS_UNPAID, 'issued' => true]);
     $tx->setInvoice($renewal);
+    $tx->setOriginalInvoiceId(77);
     $original = createEntity(Invoice::class, ['id' => 77, 'client_id' => 8, 'currency' => 'USD', 'status' => Invoice::STATUS_PAID, 'issued' => true]);
     $stripeInvoice = (object) ['id' => 'in_resume', 'subscription' => 'sub_resume', 'billing_reason' => 'subscription_cycle', 'amount_paid' => 1500, 'currency' => 'usd'];
     $subscription = (object) ['id' => 'sub_resume', 'metadata' => (object) ['invoice_id' => '77', 'client_id' => '8']];
@@ -3517,7 +3518,7 @@ test('a renewal charge without a renewable order is retained as unallocated cred
     $em->shouldReceive('getConnection')->andReturn($connection);
     $invoiceService = Mockery::mock();
     $invoiceService->shouldReceive('gatewayReceiptExists')->once()->andReturn(false);
-    $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8)->andReturn(null);
+    $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8, 1, 77, 987)->andReturn(null);
     $invoiceService->shouldReceive('recordGatewayPayment')->once()->withArgs(fn (Transaction $payment, $client, $id): bool => $payment->getInvoice() === null && (float) $payment->getAmount() === 15.0 && $id === 'in_no_order')->andReturn(true);
     $di = container();
     $di['em'] = $em;
@@ -3553,7 +3554,7 @@ test('a renewal charge is recorded after a closed manager is replaced', function
     $replacementTx->id = 987;
     $replacementTx->gateway = createEntity(PayGateway::class, ['id' => 1]);
     $replacementTxRepo->shouldReceive('find')->with(987)->andReturn($replacementTx);
-    $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8)->andReturnUsing(function () use (&$di, $replacement): ?Invoice {
+    $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('sub_missing', 8, 1, 77, 987)->andReturnUsing(function () use (&$di, $replacement): ?Invoice {
         unset($di['em']);
         $di['em'] = $replacement;
 

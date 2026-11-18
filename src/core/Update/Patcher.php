@@ -257,9 +257,6 @@ class Patcher implements InjectionAwareInterface
         // MySQL/MariaDB a catch-all for anything the patches above didn't (or, going forward, for
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
-        if ($this->isLegacyPatchDriver() && $this->di['em']->getConnection()->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
-            $this->widenLegacyTextColumns('client_order_cancel_request', ['reason']);
-        }
 
         $this->applyJsonMigrations();
 
@@ -447,6 +444,9 @@ class Patcher implements InjectionAwareInterface
                 throw $syncError;
             }
 
+            if ($connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+                $this->widenLegacyTextColumns('client_order_cancel_request', ['reason']);
+            }
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with

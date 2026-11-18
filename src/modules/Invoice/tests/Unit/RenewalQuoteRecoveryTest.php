@@ -280,7 +280,10 @@ test('reissue copies quote entitlement to the replacement without copying execut
 
         return $base($module, $sub);
     });
+    $original->setSubscriptionPaymentDraft();
+    $em->flush();
     $replacementId = $service->reissueInvoice($original);
+    expect((bool) $em->getConnection()->fetchOne('SELECT subscription_payment_draft FROM invoice WHERE id = ?', [$replacementId]))->toBeTrue();
     $meta = $orders->getOrderMetaRepository()->getPairsForOrder($order->getId());
     expect($meta['free_domain_renewal_invoice_' . $replacementId])->toBe('1')
         ->and($order->getUnpaidInvoiceId())->toBe($replacementId)
@@ -560,12 +563,12 @@ test('subscription invoice selection retries mutex contention and settles exactl
     expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $lock, 0))->toBeTrue();
 
     try {
-        expect(fn () => $service->generateRenewalInvoiceForSubscriptionPayment('sub_contention', $client->getId()))->toThrow(Box\Mod\Invoice\Exception\RenewalLockException::class);
+        expect(fn () => $service->generateRenewalInvoiceForSubscriptionPayment('sub_contention', $client->getId(), $gateway->getId(), $source->getId()))->toThrow(Box\Mod\Invoice\Exception\RenewalLockException::class);
         expect((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
     } finally {
         FOSSBilling\Core\Doctrine\NamedLock::release($other, $lock);
     }
-    $selected = $service->generateRenewalInvoiceForSubscriptionPayment('sub_contention', $client->getId());
+    $selected = $service->generateRenewalInvoiceForSubscriptionPayment('sub_contention', $client->getId(), $gateway->getId(), $source->getId());
     expect($selected?->getId())->toBe($quote->getId());
     $transaction->setInvoice($selected);
     $em->flush();
@@ -574,9 +577,18 @@ test('subscription invoice selection retries mutex contention and settles exactl
     expect(fn () => $service->recordGatewayPayment($transaction, $client, $provider, 'Subscription receipt ' . $provider, $type, (string) $transaction->getId()))->toThrow(Error::class, 'stopped after settlement');
     $fresh = new Doctrine\ORM\EntityManager($em->getConnection(), $em->getConfiguration());
     $retry = renewalReviewService($fresh);
-    $retry->shouldReceive('completeGatewayPayment')->zeroOrMoreTimes();
+    $retryDi = $retry->getDi();
+    $retryOrders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $retryOrders->setDi($retryDi);
+    $retryOrders->shouldReceive('renewInvoiceItem')->once()->andReturn(true);
+    $retryServices = $retryDi['mod_service'];
+    $retryDi['mod_service'] = $retryDi->protect(fn (string $name, string $sub = ''): object => $name === 'Order' ? $retryOrders : $retryServices($name, $sub));
+    $retry->shouldReceive('completeGatewayPayment')->once()->passthru();
     foreach ([1, 2] as $attempt) {
-        $retry->recordGatewayPayment($fresh->find(Box\Mod\Invoice\Entity\Transaction::class, $transaction->getId()), $fresh->find(Box\Mod\Client\Entity\Client::class, $client->getId()), $provider, 'Subscription receipt ' . $provider, $type, (string) $transaction->getId());
+        $replaying = $fresh->find(Box\Mod\Invoice\Entity\Transaction::class, $transaction->getId());
+        $retry->recordGatewayPayment($replaying, $fresh->find(Box\Mod\Client\Entity\Client::class, $client->getId()), $provider, 'Subscription receipt ' . $provider, $type, (string) $transaction->getId());
+        $fresh->refresh($replaying);
+        expect($replaying->getGatewayCompletionState())->toBe(Box\Mod\Invoice\Entity\Transaction::GATEWAY_COMPLETION_DONE);
     }
     expect((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
         ->and((float) $em->getConnection()->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0)
@@ -625,11 +637,17 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $billing->shouldReceive('resolveRenewalLine')->andReturn(['price' => 15.0, 'line' => ['quantity' => 1]]);
     $di = $billing->getDi();
     $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
-    if ($failure === 'issuance' || $failure === 'cancellation') {
+    if ($failure === 'persistent') {
+        $billing->shouldReceive('recordGatewayPayment')->once()->andThrow(new Box\Mod\Invoice\Exception\RetryableCallbackException('Interrupted before retaining the receipt'));
+        $billing->shouldReceive('recordGatewayPayment')->once()->passthru();
+    }
+    $issuanceAttempts = 0;
+    if (in_array($failure, ['issuance', 'cancellation', 'persistent'], true)) {
         $dispatcher = (new ReflectionProperty(FOSSBilling\Core\Events\EventDispatcher::class, 'dispatcher'))->getValue($di['event_dispatcher']);
-        $dispatcher->addListener(Box\Mod\Invoice\Event\BeforeAdminInvoiceIssueEvent::class, function () use ($db): void {
+        $dispatcher->addListener(Box\Mod\Invoice\Event\BeforeAdminInvoiceIssueEvent::class, function () use ($db, $failure, &$issuanceAttempts): void {
+            ++$issuanceAttempts;
             static $failed = false;
-            if (!$failed) {
+            if (!$failed || $failure === 'persistent') {
                 $failed = true;
                 expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice WHERE subscription_payment_draft = 1 AND issued = 0'))->toBe(1);
 
@@ -669,7 +687,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $gateways->shouldReceive('getPaymentAdapter')->with($gateway)->andReturn($adapter);
     $orders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
     $orders->setDi($di);
-    $orders->shouldReceive('renewInvoiceItem')->times($renewal && $failure !== 'invalid request' ? 1 : 0)->andReturn(true);
+    $orders->shouldReceive('renewInvoiceItem')->times($renewal && !in_array($failure, ['invalid request', 'persistent'], true) ? 1 : 0)->andReturn(true);
     $services = $di['mod_service'];
     unset($di['mod_service']);
     $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => match ($sub) {
@@ -715,7 +733,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('received')
         ->and(array_column($worker->getReceived(), 'id'))->toContain($id)
         ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
-    if ($failure === 'issuance' || $failure === 'cancellation') {
+    if (in_array($failure, ['issuance', 'cancellation', 'persistent'], true)) {
         expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice WHERE subscription_payment_draft = 1 AND issued = 0'))->toBe(1);
     }
     // Simulate elapsed time by backdating the signature in the trusted fixture.
@@ -725,6 +743,25 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     $saved['server']['HTTP_STRIPE_SIGNATURE'] = $callback['server']['HTTP_STRIPE_SIGNATURE'];
     $tx->setIpn($saved);
     $em->flush();
+
+    if ($failure === 'persistent') {
+        $worker->processReceivedATransactions();
+        expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('received')
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+        $worker->processReceivedATransactions();
+        expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('received')
+            ->and($issuanceAttempts)->toBe(3);
+        $worker->processReceivedATransactions();
+        $worker->processReceivedATransactions();
+        expect($db->fetchOne("SELECT status FROM $table WHERE id = ?", [$id]))->toBe('processed')
+            ->and($issuanceAttempts)->toBe(3)
+            ->and($db->fetchOne("SELECT note FROM $table WHERE id = ?", [$id]))->toContain('Review the retained payment')
+            ->and($db->fetchOne("SELECT invoice_id FROM $table WHERE id = ?", [$id]))->toBeNull()
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
+            ->and((float) $db->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(15.0);
+
+        return;
+    }
 
     if ($failure === 'cancellation') {
         $draftId = $order->getUnpaidInvoiceId();
@@ -778,6 +815,7 @@ test('background Stripe recovery replays authenticated callbacks after the signa
     'permanent Stripe request failure' => 'invalid request',
     'renewal mutex contention' => 'lock',
     'failed draft issuance' => 'issuance',
+    'persistent issuance failure retains one payment' => 'persistent',
     'failed draft issuance followed by cancellation and withdrawal' => 'cancellation',
 ]);
 
@@ -898,3 +936,113 @@ test('renewal cron skips a moved order on single and fallback paths', function (
         ->and($db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$moved->getId()]))->toBeNull();
     $logger->shouldHaveReceived('warning')->with('The order changed after renewal selection.')->once();
 })->with(['single bucket', 'separate invoice', 'fallback']);
+
+test('cron recovers zero-priced renewal settlement from the issued checkpoint', function (bool $existingDraft): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $order->setExpiresAt(new DateTimeImmutable('today'))->setPeriod('1M')->setInvoiceOption('issue-invoice');
+    $em->flush();
+    $billing = renewalReviewService($em);
+    $billing->shouldReceive('resolveRenewalLine')->andReturn(['price' => 0.0, 'line' => ['quantity' => 1]]);
+    $billing->shouldReceive('shouldMergeRenewalsForOrder')->andReturn(false);
+    $di = $billing->getDi();
+    $services = $di['mod_service'];
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $di['mod_service'] = $di->protect(fn (string $name, string $sub = ''): object => $sub === 'Subscription' ? $subscriptions : $services($name, $sub));
+    $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
+    if ($existingDraft) {
+        $billing->generateForOrder($order);
+    }
+    $billing->shouldReceive('tryPayWithCredits')->once()->andThrow(new RuntimeException('Credit processing interrupted'));
+    $billing->shouldReceive('notifyDeferredInvoiceIssued')->once()->andThrow(new RuntimeException('Worker stopped after issuance'));
+    $billing->generateInvoicesForExpiringOrders();
+
+    $db = $em->getConnection();
+    expect($db->fetchOne('SELECT status FROM invoice'))->toBe('unpaid')
+        ->and((int) $db->fetchOne('SELECT issue_notification_state FROM invoice'))->toBe(1)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+    $retry = renewalReviewService($em);
+    $retryDi = $retry->getDi();
+    $retryOrders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $retryOrders->setDi($retryDi);
+    $retryOrders->shouldReceive('renewInvoiceItem')->once()->andReturn(true);
+    $retryServices = $retryDi['mod_service'];
+    $products = Mockery::mock(Box\Mod\Product\Service::class);
+    $products->shouldReceive('findProductById')->andReturn((new Product())->setType('hosting'));
+    $products->shouldReceive('commitReservedPromoRedemptionsForInvoice')->zeroOrMoreTimes();
+    $retryDi['mod_service'] = $retryDi->protect(fn (string $name, string $sub = ''): object => match ($name) {
+        'Order' => $retryOrders,
+        'Product' => $products,
+        default => $retryServices($name, $sub),
+    });
+    $retry->doBatchDeliverIssuedNotifications();
+    $retry->doBatchDeliverIssuedNotifications();
+    expect($db->fetchOne('SELECT status FROM invoice'))->toBe('paid')
+        ->and((int) $db->fetchOne('SELECT issue_notification_state FROM invoice'))->toBe(0);
+})->with(['new quote' => false, 'existing draft' => true]);
+
+test('cron uses the original expiry cutoff when an order moves before ORM loading', function (bool $withinCutoff, bool $mayMerge): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $order->setExpiresAt(new DateTimeImmutable('today'))->setPeriod('1M')->setInvoiceOption('issue-invoice');
+    if ($mayMerge) {
+        $peer = renewalReviewOrder($em, $client->getId());
+        $peer->setExpiresAt(new DateTimeImmutable('today'))->setPeriod('1M')->setInvoiceOption('issue-invoice');
+    }
+    $em->flush();
+    $billing = renewalReviewService($em);
+    $billing->shouldReceive('resolveRenewalLine')->andReturn(['price' => 15.0, 'line' => ['quantity' => 1]]);
+    $billing->shouldReceive('shouldMergeRenewalsForOrder')->andReturn($mayMerge);
+    $di = $billing->getDi();
+    $di['period'] = $di->protect(fn (string $code): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($code));
+    $orders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orders->setDi($di);
+    $db = $em->getConnection();
+    $orders->shouldReceive('getSoonExpiringActiveOrders')->once()->andReturnUsing(function () use ($orders, $db, $em, $order, $withinCutoff): array {
+        [$query, $params] = $orders->getSoonExpiringActiveOrdersQuery();
+        $selected = $db->fetchAllAssociative($query, $params);
+        $db->update('client_order', ['expires_at' => (new DateTimeImmutable($withinCutoff ? 'yesterday' : '+6 months'))->format('Y-m-d H:i:s')], ['id' => $order->getId()]);
+        $em->clear();
+
+        return $selected;
+    });
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->andReturn(false);
+    $services = $di['mod_service'];
+    $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => match ([$module, $sub]) {
+        ['Order', ''] => $orders,
+        ['Invoice', 'Subscription'] => $subscriptions,
+        default => $services($module, $sub),
+    });
+
+    expect($billing->generateInvoicesForExpiringOrders())->toBeTrue();
+    $billedOrders = $db->fetchFirstColumn('SELECT rel_id FROM invoice_item ORDER BY rel_id');
+    expect(in_array((string) $order->getId(), $billedOrders, true))->toBe($withinCutoff)
+        ->and(count($billedOrders))->toBe((int) $withinCutoff + (int) $mayMerge);
+})->with([false, true])->with([false, true]);
+
+test('recurring invoice selection requires the verified gateway and original invoice for a reused SID', function (): void {
+    [, $em, $client, $gateway] = receiptTestContext();
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\Subscription::class)]);
+    $otherGateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Stripe');
+    $em->persist($otherGateway);
+    $links = [];
+    foreach ([$otherGateway, $gateway] as $linkedGateway) {
+        $order = renewalReviewOrder($em, $client->getId());
+        $source = (new Invoice())->setClientId($client->getId())->setIssued(true)->setStatus('paid')->setGateway($linkedGateway);
+        $em->persist($source);
+        $em->flush();
+        $em->persist((new InvoiceItem())->setInvoice($source)->setType('order')->setTask('activate')->setRelId((string) $order->getId()));
+        $em->persist((new Box\Mod\Invoice\Entity\Subscription())->setPayGateway($linkedGateway)->setSid('sub_shared_id')->setRelType('invoice')->setRelId($source->getId())->setClientId($client->getId()));
+        $em->flush();
+        $links[] = [$order, $source];
+    }
+    [[$otherOrder, $otherSource], [$verifiedOrder, $verifiedSource]] = $links;
+    $billing = renewalReviewService($em);
+    $billing->shouldReceive('resolveRenewalLine')->andReturn(['price' => 15.0, 'line' => ['quantity' => 1]]);
+    expect($billing->generateRenewalInvoiceForSubscriptionPayment('sub_shared_id', $client->getId(), $gateway->getId(), $otherSource->getId()))->toBeNull();
+    $renewal = $billing->generateRenewalInvoiceForSubscriptionPayment('sub_shared_id', $client->getId(), $gateway->getId(), $verifiedSource->getId());
+    expect($renewal)->toBeInstanceOf(Invoice::class)
+        ->and($verifiedOrder->getUnpaidInvoiceId())->toBe($renewal->getId())
+        ->and($otherOrder->getUnpaidInvoiceId())->toBeNull();
+});

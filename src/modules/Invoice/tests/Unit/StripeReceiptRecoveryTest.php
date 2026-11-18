@@ -26,6 +26,7 @@ test('Stripe keeps the canonical receipt through post-commit failure and competi
         $em->persist($source);
         $em->flush();
         $sourceId = $source->getId();
+        $transaction->setOriginalInvoiceId($sourceId);
     }
     $em->flush();
     $gatewayId = $gateway->getId();

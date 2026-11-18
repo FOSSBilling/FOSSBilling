@@ -687,24 +687,20 @@ test('Unicode repair skips indexed columns on small-block compressed tables', fu
         ->and($calls[0]['params'][0])->toContain('post.slug', 'compressed block size');
 });
 
-test('post-sync repair stores four-byte cancellation reasons on a legacy database default', function (bool $existing): void {
+test('schema synchronization stores four-byte cancellation reasons on a legacy database default', function (bool $existing): void {
+    $em = EntityManagerFactory::create($this->connection);
+    SchemaInstaller::createSchema($em);
     if ($existing) {
-        $this->pdo->exec('CREATE TABLE client_order_cancel_request (id BIGINT PRIMARY KEY, reason TEXT NOT NULL)');
+        $this->pdo->exec('ALTER TABLE client_order_cancel_request MODIFY reason TEXT CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL');
     } else {
-        $em = EntityManagerFactory::create($this->connection);
-        (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
-            Box\Mod\Client\Entity\Client::class,
-            Box\Mod\Order\Entity\Order::class,
-            Box\Mod\Order\Entity\ClientOrderCancelRequest::class,
-        ]));
+        $this->pdo->exec('DROP TABLE client_order_cancel_request');
     }
-    $this->patcher->widenLegacyTextColumns('client_order_cancel_request', ['reason']);
-    $this->patcher->widenLegacyTextColumns('client_order_cancel_request', ['reason']);
+    $di = $this->patcher->getDi();
+    unset($di['em']);
+    $di['em'] = $em;
+    expect($this->patcher->syncPortableSchema())->not->toBeNull();
+    expect($this->patcher->syncPortableSchema())->not->toBeNull();
     expect($this->connection->fetchOne("SELECT CHARACTER_SET_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'client_order_cancel_request' AND COLUMN_NAME = 'reason'"))->toBe('utf8mb4');
-    $row = ['id' => 1, 'reason' => 'Moving 🚀'];
-    if (!$existing) {
-        $row += ['status' => 'pending', 'type' => 'immediate'];
-    }
-    $this->connection->insert('client_order_cancel_request', $row);
-    expect($this->connection->fetchOne('SELECT reason FROM client_order_cancel_request WHERE id = 1'))->toBe($row['reason']);
+    $this->connection->insert('client_order_cancel_request', ['id' => 1, 'reason' => 'Moving 🚀', 'status' => 'pending', 'type' => 'immediate']);
+    expect($this->connection->fetchOne('SELECT reason FROM client_order_cancel_request WHERE id = 1'))->toBe('Moving 🚀');
 })->with(['existing table' => true, 'new table' => false]);

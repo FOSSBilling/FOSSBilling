@@ -180,38 +180,42 @@ test('does not call the gateway when canceling a subscription without a sid', fu
         ->and($subscriptionModel->status)->toBe('canceled');
 });
 
-test('schedules a subscription cancellation at the gateway', function (): void {
-    $gateway = createEntity(PayGateway::class, ['id' => 2]);
+test('period-end scheduling preserves cancellation recorded during the provider call', function (bool $canceled): void {
+    require_once dirname(__DIR__) . '/Fixtures/GatewayReceiptContext.php';
+    [, $em, , $gateway] = receiptTestContext();
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Subscription::class)]);
+    $subscription = (new Subscription())->setPayGateway($gateway)->setSid('sub_schedule')->setStatus('active');
+    $em->persist($subscription);
+    $em->flush();
+    $db = $em->getConnection();
+    $adapter = new class($db, $subscription, $canceled) {
+        public ?string $scheduled = null;
 
-    $subscription = createEntity(Subscription::class, ['id' => 3, 'payGateway' => $gateway]);
-    $subscription->setSid('sub_123');
-
-    $adapter = new class {
-        public ?string $scheduledSubscriptionId = null;
-
-        public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
+        public function __construct(private readonly Connection $db, private readonly Subscription $subscription, private readonly bool $canceled)
         {
-            $this->scheduledSubscriptionId = $subscriptionId;
+        }
+
+        public function cancelSubscriptionAtPeriodEnd(string $sid): void
+        {
+            $this->scheduled = $sid;
+            if ($this->canceled) {
+                $this->db->update('subscription', ['status' => 'canceled'], ['id' => $this->subscription->getId()]);
+            }
         }
     };
-
-    $payGatewayService = Mockery::mock(ServicePayGateway::class);
-    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
-
-    $pgRepo = Mockery::mock(PayGatewayRepository::class)->shouldIgnoreMissing();
-
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('flush')->once();
-
-    $service = subscriptionService(payGatewayRepo: $pgRepo, em: $em);
-    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
-    $service->getDi()['mod_service'] = $service->getDi()->protect(fn () => $payGatewayService);
+    $gateways = Mockery::mock(ServicePayGateway::class);
+    $gateways->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn () => $gateways);
+    $service = new ServiceSubscription();
+    $service->setDi($di);
 
     $service->scheduleCancellation($subscription);
-
-    expect($adapter->scheduledSubscriptionId)->toBe('sub_123')
-        ->and($subscription->getStatus())->toBe(ServiceSubscription::STATUS_PENDING_CANCELLATION);
-});
+    expect($adapter->scheduled)->toBe('sub_schedule')
+        ->and($subscription->getStatus())->toBe($canceled ? 'canceled' : ServiceSubscription::STATUS_PENDING_CANCELLATION)
+        ->and($db->fetchOne('SELECT status FROM subscription WHERE id = ?', [$subscription->getId()]))->toBe($subscription->getStatus());
+})->with([false, true]);
 
 test('updates subscription status from a gateway without calling the adapter', function (): void {
     $subscriptionModel = createEntity(Subscription::class, ['id' => 1]);
@@ -488,44 +492,12 @@ test('returns false when invoice is not subscribable', function (): void {
     expect($result)->toBeBool()->toBeFalse();
 });
 
-test('checks if invoice is subscribable', function (): void {
-    $getAllResults = [
-        ['period' => '1W', 'price' => 10, 'quantity' => 1],
-    ];
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('fetchAllAssociative')
-        ->atLeast()->once()
-        ->andReturn($getAllResults);
+test('rejects recurring checkout for custom period lines without an order', function (): void {
+    $service = discountedInvoiceService([['type' => 'custom', 'period' => '1M', 'price' => 20, 'quantity' => 1]], 0.0);
+    $invoice = createEntity(Invoice::class, ['id' => 30]);
 
-    $service = subscriptionService();
-    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
-
-    $invoice_id = 2;
-    $result = $service->isSubscribable($invoice_id);
-    expect($result)->toBeBool()->toBeTrue();
-});
-
-test('gets subscription period', function (): void {
-    $serviceMock = Mockery::mock(ServiceSubscription::class)->makePartial()->shouldAllowMockingProtectedMethods();
-
-    $period = '1W';
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('fetchAllAssociative')
-        ->atLeast()->once()
-        ->andReturn([['period' => $period, 'price' => 10, 'quantity' => 1]]);
-
-    $di = container();
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn(Mockery::mock(SubscriptionRepository::class));
-    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
-    $em->shouldReceive('getConnection')->andReturn($connection);
-    $di['em'] = $em;
-    $serviceMock->setDi($di);
-
-    $invoiceModel = createEntity(Invoice::class);
-
-    $result = $serviceMock->getSubscriptionPeriod($invoiceModel);
-    expect($result)->toBeString()->toBe($period);
+    expect($service->getSubscriptionPeriod($invoice))->toBeNull()
+        ->and($service->isSubscribable($invoice->getId()))->toBeFalse();
 });
 
 test('unsubscribes', function (): void {
@@ -746,13 +718,19 @@ test('shared subscriptions require staff reconciliation before canceling either 
     $repo = Mockery::mock(SubscriptionRepository::class);
     $repo->shouldReceive('find')->with(7)->andReturn($subscription);
     $adapter = new class {
+        public int $calls = 0;
+
         public function cancelSubscription(string $sid): never
         {
+            ++$this->calls;
+
             throw new LogicException('Preflight must not cancel');
         }
 
         public function cancelSubscriptionAtPeriodEnd(string $sid): never
         {
+            ++$this->calls;
+
             throw new LogicException('Preflight must not schedule');
         }
     };
@@ -763,7 +741,8 @@ test('shared subscriptions require staff reconciliation before canceling either 
     $service->getDi()['mod_service'] = $service->getDi()->protect(fn () => $gateways);
     $order = createEntity(Order::class, ['id' => 10]);
     expect($service->canCancelImmediatelyForOrder($order))->toBe(!$otherLive)
-        ->and($service->canCancelAtPeriodEndForOrder($order))->toBe(!$otherLive);
+        ->and($service->canCancelAtPeriodEndForOrder($order))->toBe(!$otherLive)
+        ->and($adapter->calls)->toBe(0);
 })->with([['suspended', true], ['canceled', false], [null, true]]);
 
 test('locally canceled Stripe subscriptions require current gateway confirmation before free pricing', function (?string $providerState, bool $held, bool $cancelRequest): void {
@@ -854,3 +833,39 @@ test('a gateway deletion persists cancellation before attempting local cleanup',
         }
     }
 })->with(['SQLite' => false, 'PostgreSQL' => true]);
+
+test('a local PayPal cancellation still blocks free renewals until the gateway confirms the current link', function (): void {
+    require_once dirname(__DIR__) . '/Fixtures/GatewayReceiptContext.php';
+    [, $em, $client, $gateway] = receiptTestContext();
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Subscription::class)]);
+    $gateway->setGateway('PayPalEmail');
+    $order = (new Order())->setClientId($client->getId())->setStatus(Order::STATUS_ACTIVE);
+    $invoice = (new Invoice())->setClientId($client->getId());
+    $em->persist($order);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($invoice)->setType('order')->setRelId((string) $order->getId()));
+    $subscription = (new Subscription())->setPayGateway($gateway)->setRelType('invoice')->setRelId($invoice->getId())->setSid('I-LOCAL')->setStatus('active');
+    $em->persist($subscription);
+    $em->flush();
+    $gatewayService = Mockery::mock(ServicePayGateway::class);
+    $gatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn(new stdClass());
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn () => $gatewayService);
+    $service = new ServiceSubscription();
+    $service->setDi($di);
+    $service->update($subscription, ['status' => 'canceled']);
+
+    expect($service->canCancelImmediatelyForOrder($order))->toBeFalse()
+        ->and($service->hasUncanceledSubscriptionForOrder($order))->toBeTrue();
+    expect(fn () => $service->cancelForOrder($order))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'has not confirmed');
+    $service->confirmCancellationFromGateway($subscription->getId(), 'I-OTHER', $gateway->getId());
+    expect($service->canCancelImmediatelyForOrder($order))->toBeFalse();
+    $service->confirmCancellationFromGateway($subscription->getId(), 'I-LOCAL', $gateway->getId());
+    expect($service->canCancelImmediatelyForOrder($order))->toBeTrue()
+        ->and($service->hasUncanceledSubscriptionForOrder($order))->toBeFalse();
+    $service->update($subscription, ['sid' => 'I-REPLACEMENT']);
+    expect($service->canCancelImmediatelyForOrder($order))->toBeFalse()
+        ->and($service->hasUncanceledSubscriptionForOrder($order))->toBeTrue();
+});

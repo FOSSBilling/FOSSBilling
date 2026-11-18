@@ -1111,8 +1111,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             return false;
         }
 
-        $previousTarget = $tx->getInvoice();
-        // Preserve the selected renewal invoice across retries.
+        // A callback's requested invoice is not proof of prior selection.
+        $previousTarget = $tx->getOriginalInvoiceId() === (int) $invoiceId ? $tx->getInvoice() : null;
         if ($invoiceId && (!$previousTarget instanceof Invoice || (int) $previousTarget->getId() === (int) $invoiceId)) {
             $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
             $this->di['em']->flush();
@@ -1165,7 +1165,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $target = $previousTarget;
         } else {
             $manager = $this->di['em'];
-            $target = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($stripeSubscription->id, (int) $clientId);
+            $target = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($stripeSubscription->id, (int) $clientId, (int) $tx->getGateway()?->getId(), (int) $invoiceId, (int) $tx->getId());
             if ($manager !== $this->di['em']) {
                 // Invoice generation recovered a closed manager. Reload the
                 // entities detached by the failed transaction before recording
@@ -1186,6 +1186,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
         // A successful renewal charge still belongs to the customer when no
         // renewal invoice can be created. Preserve it as unallocated credit.
+        if (!$isInitialPayment && $invoiceId) {
+            $tx->setOriginalInvoiceId((int) $invoiceId);
+        }
         $tx->setInvoice($target);
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
         $tx->setAmount((string) $amount);

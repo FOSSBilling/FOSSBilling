@@ -307,14 +307,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         $reviewedZero = $knownZeroPrice || ($metadata['domain_renewal_reviewed_zero_' . $item->getId()] ?? null) === '1';
                         $claimValues = [$claim => '1'];
                         if (!$reviewedZero) {
-                            $products = $this->di['mod_service']('Product');
-                            $until = $products->freeDomainRenewalUntil($orderId);
-                            if ($until === null) {
-                                if ($products->hasPendingHostingRenewal($orderId)) {
-                                    return false;
-                                }
-                                // If hosting finished between the two reads, its expiry is now committed.
-                                $until = $products->freeDomainRenewalUntil($orderId);
+                            ['until' => $until, 'pending' => $pending] = $this->di['mod_service']('Product')->freeDomainRenewalState($orderId);
+                            if ($pending) {
+                                return false;
                             }
                             if ($until === null) {
                                 $item->setStatus(InvoiceItem::STATUS_FAILED);

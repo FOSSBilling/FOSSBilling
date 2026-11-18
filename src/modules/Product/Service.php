@@ -3082,41 +3082,43 @@ class Service implements InjectionAwareInterface
      */
     public function freeDomainRenewalUntil(int $orderId, bool $requirePaidTerm = true): ?int
     {
-        return $this->resolveFreeDomainRenewalUntil($orderId, $requirePaidTerm);
+        return $this->resolveFreeDomainRenewal($orderId, $requirePaidTerm)['until'];
     }
 
-    /** A paid renewal for the linked hosting may be queued on a separate invoice. */
-    public function hasPendingHostingRenewal(int $orderId): bool
+    /** @return array{until: ?int, pending: bool} */
+    public function freeDomainRenewalState(int $orderId): array
     {
-        return $this->resolveFreeDomainRenewalUntil($orderId, false, true) !== null;
+        return $this->resolveFreeDomainRenewal($orderId, true, true);
     }
 
-    private function resolveFreeDomainRenewalUntil(int $orderId, bool $requirePaidTerm, bool $pendingOnly = false): ?int
+    /** @return array{until: ?int, pending: bool} */
+    private function resolveFreeDomainRenewal(int $orderId, bool $requirePaidTerm, bool $observePending = false): array
     {
+        $pending = false;
         $orderRepository = $this->di['em']->getRepository(Order::class);
         $order = $orderRepository->find($orderId);
         if (!$order instanceof Order) {
-            return null;
+            return ['until' => null, 'pending' => $pending];
         }
         $config = $order->getConfig() ?? [];
         $action = $config['action'] ?? null;
         if (!in_array($action, ['register', 'transfer'], true)) {
-            return null;
+            return ['until' => null, 'pending' => $pending];
         }
         $groupId = $order->getGroupId();
         if ($groupId === null || $groupId === '') {
-            return null;
+            return ['until' => null, 'pending' => $pending];
         }
         $sld = (string) ($config[$action . '_sld'] ?? '');
         $tld = (string) ($config[$action . '_tld'] ?? '');
         if ($sld === '' || $tld === '') {
-            return null;
+            return ['until' => null, 'pending' => $pending];
         }
 
         $expiresAt = $order->getExpiresAt();
         $period = $order->getPeriod();
         if (!$expiresAt instanceof \DateTimeInterface || !$period) {
-            return null;
+            return ['until' => null, 'pending' => $pending];
         }
         // A free renewal consumes a term even when the order renewal policy
         // resets its visible expiration to today. Keep that entitlement
@@ -3136,29 +3138,53 @@ class Service implements InjectionAwareInterface
         $candidates = $orderRepository->findBy([
             'groupId' => $groupId,
             'clientId' => $order->getClientId(),
-            'status' => $pendingOnly ? [...$hostingStatuses, Order::STATUS_FAILED_RENEW] : $hostingStatuses,
+            'status' => $observePending ? [...$hostingStatuses, Order::STATUS_FAILED_RENEW] : $hostingStatuses,
         ]);
+        $observed = $observePending && $candidates !== [] ? $this->di['em']->getConnection()->fetchAllAssociativeIndexed(
+            'SELECT o.id, o.expires_at, o.status, CASE WHEN EXISTS (
+                SELECT 1 FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id
+                WHERE i.client_id = o.client_id AND i.status = :paid AND ii.type = :item_type
+                AND ii.task = :renew AND ii.rel_id = ' . $this->di['em']->getConnection()->getDatabasePlatform()->getConcatExpression("''", 'o.id') . '
+                AND ii.status IN (:pending, :awaiting_charge)
+            ) THEN 1 ELSE 0 END AS pending FROM client_order o
+            WHERE o.id IN (:hosting_ids) AND o.client_id = :client AND o.group_id = :order_group',
+            [
+                'paid' => Invoice::STATUS_PAID,
+                'item_type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
+                'renew' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
+                'pending' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP,
+                'awaiting_charge' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
+                'hosting_ids' => array_map(static fn (Order $hosting): int => (int) $hosting->getId(), $candidates),
+                'client' => $order->getClientId(), 'order_group' => $groupId,
+            ],
+            ['hosting_ids' => \Doctrine\DBAL\ArrayParameterType::INTEGER],
+        ) : [];
         foreach ($candidates as $hosting) {
-            if ((int) $hosting->getId() === $orderId) {
+            $hostingId = (int) $hosting->getId();
+            if ($hostingId === $orderId) {
                 continue;
             }
-            if ($pendingOnly && !(int) $this->di['em']->getConnection()->fetchOne(
-                'SELECT 1 FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id WHERE i.client_id = ? AND i.status = ? AND ii.type = ? AND ii.task = ? AND ii.rel_id = ? AND ii.status = ? LIMIT 1',
-                [$order->getClientId(), Invoice::STATUS_PAID, \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER, \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW, (string) $hosting->getId(), \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP]
-            )) {
-                continue;
-            }
-            if ($requirePaidTerm && $this->di['em']->contains($hosting)) {
-                $this->di['em']->refresh($hosting);
-                if (!in_array($hosting->getStatus(), $hostingStatuses, true)) {
+            if ($observePending) {
+                $current = $observed[$hostingId] ?? null;
+                if ($current === null) {
                     continue;
                 }
+                $hostingExpiry = $current['expires_at'] === null ? null : new \DateTimeImmutable($current['expires_at']);
+                $hostingStatus = $current['status'];
+                $hostingPending = (int) $current['pending'] === 1
+                    && in_array($hostingStatus, [...$hostingStatuses, Order::STATUS_FAILED_RENEW], true);
+            } else {
+                if ($requirePaidTerm && $this->di['em']->contains($hosting)) {
+                    $this->di['em']->refresh($hosting);
+                }
+                $hostingExpiry = $hosting->getExpiresAt();
+                $hostingStatus = $hosting->getStatus();
+                $hostingPending = false;
             }
-            $hostingExpiry = $hosting->getExpiresAt();
-            // Domain and hosting dates represent calendar terms. A hosting
-            // renewal performed moments before a from-today domain renewal
-            // must not lose eligibility merely because the seconds differ.
-            if ($requirePaidTerm && (!$hostingExpiry instanceof \DateTimeInterface || date('Y-m-d', $hostingExpiry->getTimestamp()) < date('Y-m-d', $renewedUntil))) {
+            // Compare billing dates rather than the wall-clock seconds.
+            $coversTerm = !$requirePaidTerm || (in_array($hostingStatus, $hostingStatuses, true)
+                && $hostingExpiry instanceof \DateTimeInterface && $hostingExpiry->format('Y-m-d') >= date('Y-m-d', $renewedUntil));
+            if (!$coversTerm && !$hostingPending) {
                 continue;
             }
             $product = $this->getProductRepository()->find((int) $hosting->getProductId());
@@ -3176,19 +3202,24 @@ class Service implements InjectionAwareInterface
             if (($domain[$action . '_sld'] ?? null) !== $sld || ($domain[$action . '_tld'] ?? null) !== $tld) {
                 continue;
             }
-            if ($action === 'transfer') {
-                if (!empty($settings['free_transfer'])) {
-                    return $requirePaidTerm ? min($renewedUntil, $hostingExpiry->getTimestamp()) : $renewedUntil;
-                }
-            } elseif (!empty($settings['free_domain'])
-                && (($settings['free_tlds'] ?? []) === [] || in_array($tld, (array) $settings['free_tlds'], true))
-                && in_array($hosting->getPeriod(), (array) ($settings['free_domain_periods'] ?? []), true)
-            ) {
-                return $requirePaidTerm ? min($renewedUntil, $hostingExpiry->getTimestamp()) : $renewedUntil;
+            $offered = $action === 'transfer'
+                ? !empty($settings['free_transfer'])
+                : !empty($settings['free_domain'])
+                    && (($settings['free_tlds'] ?? []) === [] || in_array($tld, (array) $settings['free_tlds'], true))
+                    && in_array($hosting->getPeriod(), (array) ($settings['free_domain_periods'] ?? []), true);
+            if (!$offered) {
+                continue;
             }
+
+            if ($coversTerm) {
+                $until = $requirePaidTerm && $hostingExpiry !== null ? min($renewedUntil, $hostingExpiry->getTimestamp()) : $renewedUntil;
+
+                return ['until' => $until, 'pending' => false];
+            }
+            $pending = true;
         }
 
-        return null;
+        return ['until' => null, 'pending' => $pending];
     }
 
     public function isFreeDomainRenewalOffered(int $orderId): bool
