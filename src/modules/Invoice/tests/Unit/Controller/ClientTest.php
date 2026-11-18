@@ -369,12 +369,7 @@ test('invoice autopay return records the approved payment', function (): void {
     $cookie = new Symfony\Component\HttpFoundation\Cookie('paypal_return', 'bind', time() + 100);
     $request = Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-autopay-paid?token=EC-1', cookies: ['paypal_return' => 'bind', session_name() => 'x']);
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
-    $connection->shouldReceive('fetchOne')->andReturn(1, 'unpaid');
-    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
-    $connection->shouldReceive('fetchAssociative')->andReturn(false);
-    $connection->shouldReceive('executeStatement')->andReturn(1);
+    $connection = paypalReturnDatabase();
 
     $cacheItem = Mockery::mock(Psr\Cache\CacheItemInterface::class);
     $cacheItem->shouldReceive('isHit')->andReturn(true);
@@ -507,12 +502,7 @@ test('invoice vault return records the approved order', function (): void {
 
     $request = Symfony\Component\HttpFoundation\Request::create('/invoice/paypal-paid?token=O-1', cookies: ['paypal_return' => 'bind', session_name() => 'x']);
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
-    $connection->shouldReceive('fetchOne')->andReturn(1, 'unpaid');
-    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
-    $connection->shouldReceive('fetchAssociative')->andReturn(false);
-    $connection->shouldReceive('executeStatement')->andReturn(1);
+    $connection = paypalReturnDatabase();
 
     $cacheItem = Mockery::mock(Psr\Cache\CacheItemInterface::class);
     $cacheItem->shouldReceive('isHit')->andReturn(true);
@@ -560,6 +550,7 @@ test('invoice vault return waits when another payment is clearing', function ():
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\MySQLPlatform());
+    $connection->shouldReceive('isTransactionActive')->byDefault()->andReturn(false);
     $connection->shouldReceive('fetchOne')->andReturn(1, 'unpaid');
     $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('fetchAssociative')->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01']);
@@ -733,4 +724,120 @@ test('PayPal returns leave approved payments uncaptured while a saved charge is 
         ->and($db->fetchOne('SELECT state FROM invoice_gateway_charge_attempt'))->toBe('pending')
         ->and($db->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0);
     $db->close();
+})->with([false, true]);
+
+function paypalReturnDatabase(): Doctrine\DBAL\Connection
+{
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\GatewayChargeAttempt::class)]);
+    $db->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
+    $db->insert('invoice', ['id' => 60, 'status' => 'unpaid']);
+    $db->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, invoice_id INTEGER, gateway_id INTEGER, txn_id TEXT, status TEXT, txn_status TEXT, amount TEXT, currency TEXT, created_at TEXT)');
+
+    return $db;
+}
+
+function paypalReturnJournalContext(bool $vault, ?Doctrine\DBAL\Connection $db = null): array
+{
+    $db ??= paypalReturnDatabase();
+    $invoice = createEntity(Box\Mod\Invoice\Entity\Invoice::class, ['id' => 60, 'client_id' => 7, 'hash' => str_repeat('a', 32), 'status' => 'unpaid']);
+    $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $repo->shouldReceive('find')->with(60)->andReturn($invoice);
+    $adapter = Mockery::mock($vault ? Payment_Adapter_PayPalEmail::class : Payment_Adapter_PayPalAutoPay::class);
+    $adapter->shouldReceive('gatewayId')->andReturn(5);
+    $saved = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $saved->shouldReceive($vault ? 'paypal' : 'autopay')->andReturn($adapter);
+    $saved->shouldReceive('hold')->byDefault();
+    $transactions = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
+    $request = Symfony\Component\HttpFoundation\Request::create('/return?token=approved', cookies: ['paypal_return' => 'bind', session_name() => 'x']);
+    $item = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+    $item->shouldReceive('isHit')->andReturn(true);
+    $item->shouldReceive('get')->andReturn(['invoice' => 60, 'bind' => hash('sha256', 'bind')]);
+    $cache = Mockery::mock(Psr\SimpleCache\CacheInterface::class);
+    $cache->shouldReceive('getItem')->andReturn($item);
+    $cache->shouldReceive('deleteItem')->byDefault();
+    $url = new FOSSBilling\Core\Url();
+    $url->setBaseUri('https://billing.example/');
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($repo);
+    $di['em']->shouldReceive('getConnection')->andReturn($db);
+    $di['em']->shouldReceive('close')->byDefault();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['invoice:savedcards' => $saved, 'invoice:transaction' => $transactions]));
+    $di['cache'] = $cache;
+    $di['request'] = $request;
+    $di['url'] = $url;
+    $controller = new Client();
+    $controller->setDi($di);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+    $method = $vault ? 'get_invoice_paypal_paid' : 'get_invoice_autopay_paid';
+    $capture = $vault ? 'vaultCapture' : 'checkoutPaid';
+
+    return compact('db', 'invoice', 'adapter', 'transactions', 'controller', 'app', 'method', 'capture', 'request');
+}
+
+test('PayPal return captures keep a durable barrier through provider and settlement failures', function (bool $vault, string $outcome): void {
+    $c = paypalReturnJournalContext($vault);
+    $db = $c['db'];
+    $c['adapter']->shouldReceive($c['capture'])->once()->andReturnUsing(function () use ($db, $outcome): string {
+        $attempt = Box\Mod\Invoice\GatewayChargeAttempts::pending($db, 60);
+        expect($attempt)->not->toBeNull()->and($attempt['payment_id'])->toBeNull()
+            ->and($db->isTransactionActive())->toBeFalse()
+            ->and(FOSSBilling\Core\Payment\ProcessingFence::claims())->not->toBeEmpty();
+        if ($outcome === 'provider timeout') {
+            throw new FOSSBilling\Core\Exception\InformationException('Provider timeout');
+        }
+
+        return 'PAYMENT-1';
+    });
+    if ($outcome === 'provider timeout') {
+        $c['transactions']->shouldNotReceive('createAndProcess');
+    } else {
+        $c['transactions']->shouldReceive('createAndProcess')->once()->andReturnUsing(function () use ($db, $outcome): int {
+            expect(Box\Mod\Invoice\GatewayChargeAttempts::pending($db, 60)['payment_id'])->toBe('PAYMENT-1')
+                ->and(FOSSBilling\Core\Doctrine\NamedLock::acquire($db, 'fb:card-charge:60', 0))->toBeFalse();
+            if ($outcome === 'settlement failure') {
+                throw new RuntimeException('Settlement failed');
+            }
+            $db->insert($db->quoteSingleIdentifier('transaction'), ['id' => 70, 'invoice_id' => 60, 'gateway_id' => 5, 'txn_id' => 'PAYMENT-1', 'status' => $outcome === 'pending' ? 'received' : 'processed', 'txn_status' => $outcome === 'pending' ? 'processing' : 'completed']);
+            if ($outcome === 'settled') {
+                $db->update('invoice', ['status' => 'paid'], ['id' => 60]);
+            }
+
+            return 70;
+        });
+    }
+    $callback = fn (): mixed => $c['controller']->{$c['method']}($c['app']);
+    if (in_array($outcome, ['provider timeout', 'settlement failure'], true)) {
+        expect($callback)->toThrow($outcome === 'provider timeout' ? FOSSBilling\Core\Exception\InformationException::class : RuntimeException::class);
+    } else {
+        expect($callback())->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
+    }
+    $attempt = $db->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt');
+    expect($attempt['state'])->toBe($outcome === 'settled' ? 'settled' : 'pending')
+        ->and($attempt['payment_id'])->toBe($outcome === 'provider timeout' ? null : 'PAYMENT-1');
+    // Another approved checkout must never capture while the first is unresolved.
+    $other = paypalReturnJournalContext($vault, $db);
+    $other['request']->query->set('token', 'second-approved-checkout');
+    $other['adapter']->shouldNotReceive($other['capture']);
+    $other['transactions']->shouldNotReceive('createAndProcess');
+    $other['controller']->{$other['method']}($other['app']);
+    expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_gateway_charge_attempt'))->toBe(1);
+    $db->close();
+})->with([false, true])->with(['provider timeout', 'settlement failure', 'pending', 'receipt only', 'settled']);
+
+test('PayPal return capture requires an independently committed journal', function (bool $vault): void {
+    $c = paypalReturnJournalContext($vault);
+    $c['adapter']->shouldNotReceive($c['capture']);
+    $c['transactions']->shouldNotReceive('createAndProcess');
+    $c['db']->beginTransaction();
+
+    try {
+        expect(fn (): mixed => $c['controller']->{$c['method']}($c['app']))->toThrow(LogicException::class, 'inside a transaction');
+        expect((int) $c['db']->fetchOne('SELECT COUNT(*) FROM invoice_gateway_charge_attempt'))->toBe(0);
+    } finally {
+        $c['db']->rollBack();
+        $c['db']->close();
+    }
 })->with([false, true]);

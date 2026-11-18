@@ -27,6 +27,8 @@ function cancelRequestService(?object $em = null): ServiceCancelRequest
     $em->shouldReceive('getRepository')->byDefault()->with(ClientOrderCancelRequest::class)->andReturn(
         Mockery::mock(ClientOrderCancelRequestRepository::class)->shouldIgnoreMissing()
     );
+    $em->shouldReceive('getConnection')->byDefault()->andReturn(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+    $em->shouldReceive('refresh')->byDefault();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -96,7 +98,9 @@ test('withdraw takes back the client’s own waiting request', function (): void
     $request->setClient($client);
 
     $requestRepo = Mockery::mock(ClientOrderCancelRequestRepository::class);
+    $request->setOrder($order);
     $requestRepo->shouldReceive('findPendingByOrderId')->once()->with(11)->andReturn($request);
+    $requestRepo->shouldReceive('findOneBy')->once()->with(['id' => 3, 'status' => ClientOrderCancelRequest::STATUS_PENDING])->andReturn($request);
 
     $query = Mockery::mock(Doctrine\ORM\Query::class);
     $query->shouldReceive('execute')->once()->andReturn(1);
@@ -299,3 +303,117 @@ test('auto-process accepts waiting requests once a day', function (): void {
     expect($service->runAutoProcess())->toBeTrue();
     expect($params)->toBe(['cancel_requests_last_day' => date('Y-m-d')]);
 });
+
+afterEach(function (): void {
+    if (isset($this->cancellationRaceCleanup)) {
+        ($this->cancellationRaceCleanup)();
+    }
+});
+
+function cancellationRaceContext(string $type): array
+{
+    $path = (new Symfony\Component\Filesystem\Filesystem())->tempnam(sys_get_temp_dir(), 'cancel-race-');
+    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Client::class, Order::class, ClientOrderCancelRequest::class]));
+    $client = (new Client())->setEmail('cancel@example.com');
+    $em->persist($client);
+    $em->flush();
+    $order = (new Order())->setClientId($client->getId())->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTimeImmutable('+1 month'));
+    $em->persist($order);
+    $em->flush();
+    $request = (new ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setType($type)->setStatus(ClientOrderCancelRequest::STATUS_PENDING);
+    $em->persist($request);
+    $em->flush();
+    $otherDb = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+    $otherEm = new Doctrine\ORM\EntityManager($otherDb, $em->getConfiguration());
+    test()->cancellationRaceCleanup = static function () use ($db, $otherDb, $path): void {
+        $otherDb->close();
+        $db->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove($path);
+    };
+    $otherEm->find(ClientOrderCancelRequest::class, $request->getId());
+    $orders = Mockery::mock(Box\Mod\Order\Service::class);
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('hasActiveSubscriptionForOrder')->byDefault()->andReturn(false);
+    $services = [];
+    foreach ([$em, $otherEm] as $manager) {
+        $di = container();
+        $di['em'] = $manager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order' => $orders, 'invoice:subscription' => $subscriptions]));
+        $service = new ServiceCancelRequest();
+        $service->setDi($di);
+        $services[] = $service;
+    }
+
+    return compact('db', 'em', 'otherEm', 'order', 'client', 'request', 'orders', 'services');
+}
+
+test('acceptance excludes withdrawal and stopping until its destructive action is complete', function (string $operation, string $type): void {
+    $c = cancellationRaceContext($type);
+    $blocked = false;
+    $c['orders']->shouldReceive('findByClientIdAndOrderId')->once()->andReturnUsing(function () use ($c, $operation, &$blocked): Order {
+        try {
+            if ($operation === 'withdraw') {
+                $c['services'][1]->withdraw($c['order'], $c['client']);
+            } else {
+                $c['services'][1]->stop($c['request']->getId());
+            }
+        } catch (FOSSBilling\Core\Exception\InformationException) {
+            $blocked = true;
+        }
+
+        return $c['order'];
+    });
+    $c['orders']->shouldReceive($type === ClientOrderCancelRequest::TYPE_IMMEDIATE ? 'cancelFromOrder' : 'updateOrderMeta')->once()->andReturn($type === ClientOrderCancelRequest::TYPE_IMMEDIATE ? true : 1);
+    $c['services'][0]->accept($c['request']->getId());
+    expect($blocked)->toBeTrue()
+        ->and($c['db']->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe(ClientOrderCancelRequest::STATUS_ACCEPTED);
+    $c['db']->close();
+})->with(['withdraw', 'stop'])->with([ClientOrderCancelRequest::TYPE_IMMEDIATE, ClientOrderCancelRequest::TYPE_END_OF_PERIOD]);
+
+test('withdrawal or stopping committed before acceptance prevents any order action', function (string $operation): void {
+    $c = cancellationRaceContext(ClientOrderCancelRequest::TYPE_IMMEDIATE);
+    $c['orders']->shouldNotReceive('findByClientIdAndOrderId');
+    $c['orders']->shouldNotReceive('cancelFromOrder');
+    if ($operation === 'withdraw') {
+        $c['services'][1]->withdraw($c['order'], $c['client']);
+    } else {
+        $c['services'][1]->stop($c['request']->getId());
+    }
+    expect(fn () => $c['services'][0]->accept($c['request']->getId()))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no longer waiting');
+    expect($c['db']->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe($operation === 'withdraw' ? ClientOrderCancelRequest::STATUS_WITHDRAWN : ClientOrderCancelRequest::STATUS_STOPPED);
+    $c['db']->close();
+})->with(['withdraw', 'stop']);
+
+test('failed acceptance releases its request lock and leaves the request pending', function (): void {
+    $c = cancellationRaceContext(ClientOrderCancelRequest::TYPE_IMMEDIATE);
+    $c['orders']->shouldReceive('findByClientIdAndOrderId')->once()->andReturn($c['order']);
+    $c['orders']->shouldReceive('cancelFromOrder')->once()->andThrow(new RuntimeException('Provider failure'));
+    expect(fn () => $c['services'][0]->accept($c['request']->getId()))->toThrow(RuntimeException::class, 'Provider failure');
+    expect($c['db']->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe(ClientOrderCancelRequest::STATUS_PENDING);
+    $c['services'][1]->stop($c['request']->getId());
+    expect($c['db']->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe(ClientOrderCancelRequest::STATUS_STOPPED);
+    $c['db']->close();
+});
+
+test('cancellation decisions reject an outer transaction before acting on the order', function (string $operation): void {
+    $c = cancellationRaceContext(ClientOrderCancelRequest::TYPE_IMMEDIATE);
+    $c['orders']->shouldNotReceive('findByClientIdAndOrderId');
+    $c['orders']->shouldNotReceive('cancelFromOrder');
+    $c['db']->beginTransaction();
+
+    try {
+        expect(function () use ($c, $operation): void {
+            if ($operation === 'withdraw') {
+                $c['services'][0]->withdraw($c['order'], $c['client']);
+            } else {
+                $c['services'][0]->$operation($c['request']->getId());
+            }
+        })->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'inside a database transaction');
+    } finally {
+        $c['db']->rollBack();
+    }
+    expect($c['db']->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe(ClientOrderCancelRequest::STATUS_PENDING);
+})->with(['accept', 'stop', 'withdraw']);

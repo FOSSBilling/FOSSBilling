@@ -166,37 +166,11 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
             return $this->movesOn('invoice/' . $invoice->getHash());
         }
-        // Checked again and held under the charge lock, so a cron charge of the agreement and this payment never both happen.
-        $connection = $this->di['em']->getConnection();
-        $lockName = 'fb:card-charge:' . (int) $invoice->getId();
-        if (!NamedLock::acquire($connection, $lockName, 10)) {
-            return $this->movesOn('invoice/' . $invoice->getHash());
-        }
-
-        try {
-            $state = $connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [(int) $invoice->getId()]);
-            $pending = PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null
-                || GatewayChargeAttempts::pending($connection, (int) $invoice->getId()) !== null;
-            if ($state !== Invoice::STATUS_UNPAID || $pending) {
-                $txnId = null;
-            } else {
-                $txnId = $adapter->checkoutPaid($invoice, $token);
-                // Taken: the cron never charges the agreement for it, also while PayPal holds the payment.
-                $this->di['mod_service']('Invoice', 'SavedCards')->hold((int) $invoice->getId(), 'Payment ' . $txnId . ' is not completed yet.');
-            }
-        } finally {
-            NamedLock::release($connection, $lockName);
-        }
+        $txnId = $this->capturePaypalReturn($invoice, $adapter, $token);
         $this->di['cache']->deleteItem(self::paypalKey($token));
         if ($txnId === null) {
             return $this->movesOn('invoice/' . $invoice->getHash());
         }
-        $this->di['mod_service']('Invoice', 'Transaction')->createAndProcess([
-            'invoice_id' => (int) $invoice->getId(),
-            'gateway_id' => $adapter->gatewayId(),
-            'source' => 'paypal_autopay_return',
-            'get' => ['paypal_txn' => $txnId, 'invoice_id' => (int) $invoice->getId()],
-        ]);
 
         return $this->movesOn('invoice/thank-you/' . $invoice->getHash());
     }
@@ -274,40 +248,70 @@ class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
             return $this->movesOn('invoice/' . $invoice->getHash());
         }
-        // Checked again and held under the charge lock, so a cron charge of the saved account and this payment never both happen.
-        $connection = $this->di['em']->getConnection();
-        $lockName = 'fb:card-charge:' . (int) $invoice->getId();
-        if (!NamedLock::acquire($connection, $lockName, 10)) {
+        $captureId = $this->capturePaypalReturn($invoice, $adapter, $orderId);
+        $this->di['cache']->deleteItem(self::paypalKey($orderId));
+        if ($captureId === null) {
             return $this->movesOn('invoice/' . $invoice->getHash());
+        }
+
+        return $this->movesOn('invoice/thank-you/' . $invoice->getHash());
+    }
+
+    /** Capture and settle under one lock, with a durable barrier before external I/O. */
+    private function capturePaypalReturn(Invoice $invoice, \Payment_Adapter_PayPalAutoPay|\Payment_Adapter_PayPalEmail $adapter, string $token): ?string
+    {
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new \LogicException('Saved payments cannot run inside a transaction.');
+        }
+        $invoiceId = (int) $invoice->getId();
+        $lockName = 'fb:card-charge:' . $invoiceId;
+        if (!NamedLock::acquire($connection, $lockName, 10)) {
+            return null;
         }
 
         try {
-            $state = $connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [(int) $invoice->getId()]);
-            $pending = PendingPayments::forInvoice($connection, (int) $invoice->getId()) !== null
-                || GatewayChargeAttempts::pending($connection, (int) $invoice->getId()) !== null;
-            if ($state !== Invoice::STATUS_UNPAID || $pending) {
-                $captureId = null;
-            } else {
-                $captureId = $adapter->vaultCapture($invoice, $orderId);
-                // Taken: the cron never charges the saved account for it, also while PayPal holds the payment.
-                $this->di['mod_service']('Invoice', 'SavedCards')->hold((int) $invoice->getId(), 'Payment ' . $captureId . ' is not completed yet.');
+            $state = $connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoiceId]);
+            if ($state !== Invoice::STATUS_UNPAID || PendingPayments::forInvoice($connection, $invoiceId) !== null
+                || GatewayChargeAttempts::pending($connection, $invoiceId) !== null) {
+                return null;
             }
+            $ownerToken = null;
+            $attemptId = GatewayChargeAttempts::begin($connection, $invoiceId, $adapter->gatewayId(), $ownerToken);
+
+            // All errors, including an uncertain provider timeout, retain this
+            // attempt for reconciliation. Never retry capture on another order.
+            return \FOSSBilling\Core\Payment\ProcessingFence::charge($connection, $attemptId, $ownerToken, function () use ($connection, $invoice, $invoiceId, $adapter, $token, $attemptId): string {
+                if ($adapter instanceof \Payment_Adapter_PayPalEmail) {
+                    $paymentId = $adapter->vaultCapture($invoice, $token);
+                    $source = 'paypal_return';
+                } else {
+                    $paymentId = $adapter->checkoutPaid($invoice, $token);
+                    $source = 'paypal_autopay_return';
+                }
+                GatewayChargeAttempts::recordPayment($connection, $attemptId, $paymentId);
+                $this->di['mod_service']('Invoice', 'SavedCards')->hold($invoiceId, 'Payment ' . $paymentId . ' is not completed yet.');
+                $this->di['mod_service']('Invoice', 'Transaction')->createAndProcess([
+                    'invoice_id' => $invoiceId,
+                    'gateway_id' => $adapter->gatewayId(),
+                    'source' => $source,
+                    'get' => [GatewayChargeAttempts::referenceParameter($adapter) => $paymentId, 'invoice_id' => $invoiceId],
+                ]);
+                $table = $connection->quoteSingleIdentifier('transaction');
+                if ($connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoiceId]) === Invoice::STATUS_PAID
+                    && $connection->fetchOne("SELECT id FROM {$table} WHERE invoice_id = ? AND gateway_id = ? AND txn_id = ? AND status = 'processed'", [$invoiceId, $adapter->gatewayId(), $paymentId]) !== false) {
+                    GatewayChargeAttempts::resolve($connection, $attemptId, 'settled');
+                }
+
+                return $paymentId;
+            });
+        } catch (\Throwable $e) {
+            $this->di['em']->close();
+
+            throw $e;
         } finally {
             NamedLock::release($connection, $lockName);
         }
-        // Kept until PayPal took the payment, so that the client can come back again after an error.
-        $this->di['cache']->deleteItem(self::paypalKey($orderId));
-        if (!isset($captureId)) {
-            return $this->movesOn('invoice/' . $invoice->getHash());
-        }
-        $this->di['mod_service']('Invoice', 'Transaction')->createAndProcess([
-            'invoice_id' => (int) $invoice->getId(),
-            'gateway_id' => $adapter->gatewayId(),
-            'source' => 'paypal_return',
-            'get' => ['paypal_capture' => $captureId, 'invoice_id' => (int) $invoice->getId()],
-        ]);
-
-        return $this->movesOn('invoice/thank-you/' . $invoice->getHash());
     }
 
     private function paypalForClient(): \Payment_Adapter_PayPalEmail

@@ -16,11 +16,15 @@ use Box\Mod\Order\Entity\ClientOrderCancelRequest;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\ClientOrderCancelRequestRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Exception\InformationException;
 
 class ServiceCancelRequest implements InjectionAwareInterface
 {
     final public const int MAX_REASON = 2000;
+
+    /** @var array<string, true> */
+    private static array $activeRequests = [];
 
     protected ?\Pimple\Container $di = null;
 
@@ -113,21 +117,34 @@ class ServiceCancelRequest implements InjectionAwareInterface
             throw new InformationException('This service has no cancellation request waiting.');
         }
 
-        $this->close($request, ClientOrderCancelRequest::STATUS_WITHDRAWN);
-        $this->di['logger']->info('Client withdrew the cancellation request of order #{order_id}', ['order_id' => $order->getId()]);
+        $this->withRequestLock((int) $request->getId(), function () use ($request, $order, $client): void {
+            $request = $this->find((int) $request->getId());
+            if ((int) $request->getClient()?->getId() !== (int) $client->getId() || (int) $request->getOrder()?->getId() !== (int) $order->getId()) {
+                throw new InformationException('This service has no cancellation request waiting.');
+            }
+            $this->close($request, ClientOrderCancelRequest::STATUS_WITHDRAWN);
+            $this->di['logger']->info('Client withdrew the cancellation request of order #{order_id}', ['order_id' => $order->getId()]);
+        });
     }
 
     public function stop(int $id): void
     {
-        $request = $this->find($id);
-        $this->close($request, ClientOrderCancelRequest::STATUS_STOPPED);
-        $this->di['logger']->info('Stopped cancellation request #{id}', ['id' => $id]);
+        $this->withRequestLock($id, function () use ($id): void {
+            $request = $this->find($id);
+            $this->close($request, ClientOrderCancelRequest::STATUS_STOPPED);
+            $this->di['logger']->info('Stopped cancellation request #{id}', ['id' => $id]);
+        });
     }
 
     /**
      * A failing request stays waiting for staff.
      */
     public function accept(int $id): void
+    {
+        $this->withRequestLock($id, fn () => $this->acceptLocked($id));
+    }
+
+    private function acceptLocked(int $id): void
     {
         $request = $this->find($id);
         $orderService = $this->di['mod_service']('Order');
@@ -185,10 +202,36 @@ class ServiceCancelRequest implements InjectionAwareInterface
         return true;
     }
 
+    private function withRequestLock(int $id, \Closure $operation): void
+    {
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new InformationException('Cancellation request changes cannot run inside a database transaction.');
+        }
+        $name = 'fb:cancel-request:' . $id;
+        $key = spl_object_id($connection) . ':' . $id;
+        if (isset(self::$activeRequests[$key]) || !NamedLock::acquire($connection, $name, 0)) {
+            throw new InformationException('Another request is being processed. Please try again.');
+        }
+        self::$activeRequests[$key] = true;
+
+        try {
+            $operation();
+        } finally {
+            unset(self::$activeRequests[$key]);
+            NamedLock::release($connection, $name);
+        }
+    }
+
     private function find(int $id): ClientOrderCancelRequest
     {
         $request = $this->cancelRequestRepository->findOneBy(['id' => $id, 'status' => ClientOrderCancelRequest::STATUS_PENDING]);
         if (!$request instanceof ClientOrderCancelRequest) {
+            throw new InformationException('This cancellation request is no longer waiting.');
+        }
+
+        $this->di['em']->refresh($request);
+        if ($request->getStatus() !== ClientOrderCancelRequest::STATUS_PENDING) {
             throw new InformationException('This cancellation request is no longer waiting.');
         }
 
