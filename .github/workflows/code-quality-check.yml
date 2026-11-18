@@ -110,7 +110,15 @@ jobs:
       # MySQL itself is case-insensitive there.
       - name: Reject legacy MySQL charset defaults
         run: |
-          if grep -rniE "charset\s*=\s*utf8(mb3)?([^[:alnum:]_]|$)|character\s+set\s+utf8(mb3)?([^[:alnum:]_]|$)|set\s+names\s+utf8(mb3)?([^[:alnum:]_]|$)" src/ --include='*.php'; then
+          # grep exits 1 on a clean scan and 0 on a policy violation; any
+          # other code is a scan error and must fail the step either way.
+          hits=$(grep -rniE "charset\s*=\s*utf8(mb3)?([^[:alnum:]_]|$)|character\s+set\s+utf8(mb3)?([^[:alnum:]_]|$)|set\s+names\s+utf8(mb3)?([^[:alnum:]_]|$)" src/ --include='*.php') || status=$?
+          status=${status:-0}
+          if [ "$status" -eq 0 ]; then
+            echo "$hits"
             echo '::error::Legacy utf8/utf8mb3 charset default found (see output above). Use utf8mb4 for MySQL/MariaDB definitions.'
             exit 1
+          elif [ "$status" -ne 1 ]; then
+            echo "::error::Legacy charset guard scan failed with exit code $status."
+            exit "$status"
           fi

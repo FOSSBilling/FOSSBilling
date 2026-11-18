@@ -2407,17 +2407,15 @@ class Patcher implements InjectionAwareInterface
         // MariaDB's UCA-1400 collations appear without a charset prefix here
         // (and with NULL charset in COLLATIONS); applicability includes their aliases.
         $applicable = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
-        $normalized = array_map(
-            static fn (string $name): string => str_starts_with($name, 'utf8mb4_') ? $name : 'utf8mb4_' . $name,
-            $applicable,
-        );
-        $position = array_search('utf8mb4_unicode_ci', $normalized, true);
-        if ($position === false) {
+        $unicodeTarget = self::findCollation($applicable, 'utf8mb4_unicode_ci');
+        if ($unicodeTarget === null) {
             $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . ': utf8mb4_unicode_ci is not available on this server.');
 
             return;
         }
-        $targetCollation = $applicable[$position];
+        // Binary collations keep byte-order comparison; mapping them onto
+        // each other preserves case-sensitive uniqueness through the widening.
+        $binTarget = self::findCollation($applicable, 'utf8mb4_bin');
         $liveColumns = [];
         foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
             $liveColumns[$column['Field']] = $column;
@@ -2431,13 +2429,19 @@ class Patcher implements InjectionAwareInterface
             }
 
             $collation = $column['Collation'] ?? '';
-            if ($collation === $targetCollation) {
+            if ($collation === $unicodeTarget || $collation === $binTarget) {
                 continue;
             }
             if (!preg_match('/^utf8(?:mb3)?_/', $collation) && !str_starts_with($collation, 'utf8mb4_')) {
                 if ($repairTableDefault) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized character set requires manual review.');
                 }
+
+                continue;
+            }
+            $columnTarget = str_ends_with($collation, '_bin') ? $binTarget : $unicodeTarget;
+            if ($columnTarget === null) {
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': no equivalent utf8mb4 collation is available on this server.');
 
                 continue;
             }
@@ -2483,7 +2487,7 @@ class Patcher implements InjectionAwareInterface
             $definition = sprintf('MODIFY COLUMN `%s` %s CHARACTER SET utf8mb4 COLLATE %s %s',
                 $this->quoteIdentifier($name),
                 $column['Type'],
-                $this->quoteIdentifier($targetCollation),
+                $this->quoteIdentifier($columnTarget),
                 $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
             );
             if ($literalUnitDefault !== null) {
@@ -2500,10 +2504,16 @@ class Patcher implements InjectionAwareInterface
                 'SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
                 ['table' => $table],
             );
-            if (is_string($tableCollation) && $tableCollation !== $targetCollation
+            if (is_string($tableCollation) && $tableCollation !== $unicodeTarget && $tableCollation !== $binTarget
                 && (preg_match('/^utf8(?:mb3)?_/', $tableCollation) || str_starts_with($tableCollation, 'utf8mb4_'))) {
                 // DEFAULT changes only future columns; existing text moves via MODIFY COLUMN above.
-                $changes[] = 'DEFAULT CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($targetCollation);
+                // Binary table defaults keep byte-order comparison via utf8mb4_bin.
+                $defaultTarget = str_ends_with($tableCollation, '_bin') ? $binTarget : $unicodeTarget;
+                if ($defaultTarget === null) {
+                    $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': no equivalent utf8mb4 collation is available on this server.');
+                } else {
+                    $changes[] = 'DEFAULT CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($defaultTarget);
+                }
             } elseif (is_string($tableCollation) && !str_starts_with($tableCollation, 'utf8mb4_')) {
                 $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': customized character set requires manual review.');
             }
@@ -2514,6 +2524,22 @@ class Patcher implements InjectionAwareInterface
             // patch sequence, leaving the patch pending; successful reruns skip widened columns.
             $this->executeSql(sprintf('ALTER TABLE `%s` ', $this->quoteIdentifier($table)) . implode(', ', $changes));
         }
+    }
+
+    /**
+     * Exact server-side spelling of a wanted utf8mb4 collation, or null when
+     * the server does not offer it. MariaDB lists some collations without the
+     * charset prefix, so both spellings are accepted.
+     */
+    private static function findCollation(array $applicable, string $wanted): ?string
+    {
+        foreach ($applicable as $available) {
+            if ($available === $wanted || 'utf8mb4_' . $available === $wanted) {
+                return $available;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -2644,9 +2670,13 @@ class Patcher implements InjectionAwareInterface
             return 767;
         }
 
+        // Unknown page size falls back to the conservative limit rather than
+        // assuming large prefixes: affected indexes skip with a warning
+        // instead of risking a failed ALTER.
         return match ($this->innoDbPageSize()) {
             4096 => 768,
             8192 => 1536,
+            null => 767,
             default => 3072,
         };
     }
@@ -2761,23 +2791,27 @@ class Patcher implements InjectionAwareInterface
         }
 
         $charset = $this->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()');
-        if (!is_string($charset) || !preg_match('/^utf8(?:mb3)?$/', $charset)) {
+        $collation = $this->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()');
+        if (!is_string($charset) || !preg_match('/^utf8(?:mb3)?$/', $charset) || !is_string($collation)) {
             return;
         }
 
-        // Normalize to the fresh-install collation; every legacy suffix maps
-        // onto it, including ones with no direct utf8mb4 equivalent.
+        // Normalize to the fresh-install collation; binary database defaults
+        // keep byte-order comparison via utf8mb4_bin instead.
         $collations = $this->fetchFirstColumn(
             'SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset',
             ['charset' => 'utf8mb4']
         );
-        if (!in_array('utf8mb4_unicode_ci', $collations, true)) {
-            $this->logUpdate('warning', 'Skipped utf8mb4 database default for ' . $database . ': utf8mb4_unicode_ci is not available on this server.');
+        $unicodeTarget = self::findCollation($collations, 'utf8mb4_unicode_ci');
+        $binTarget = self::findCollation($collations, 'utf8mb4_bin');
+        $targetCollation = str_ends_with($collation, '_bin') ? $binTarget : $unicodeTarget;
+        if ($targetCollation === null) {
+            $this->logUpdate('warning', 'Skipped utf8mb4 database default for ' . $database . ': no equivalent utf8mb4 collation is available on this server.');
 
             return;
         }
 
-        $this->executeSql('ALTER DATABASE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $this->executeSql('ALTER DATABASE CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($targetCollation));
     }
 
     public function backfillProductCategoryPriorities(\Doctrine\DBAL\Connection $connection): void

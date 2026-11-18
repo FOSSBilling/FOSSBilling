@@ -415,7 +415,7 @@ test('news charset patch repairs legacy text and preserves data, definitions and
         ->and($columns['content']['Null'])->toBe('YES')
         ->and($columns['content']['Default'])->toBeNull()
         ->and($columns['content']['Comment'])->toBe('Editor content')
-        ->and($columns['content']['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($columns['content']['Collation'])->toBe('utf8mb4_bin')
         ->and($columns['title']['Type'])->toBe('varchar(255)')
         ->and($columns['title']['Null'])->toBe('NO')
         ->and($columns['title']['Comment'])->toBe('Announcement title')
@@ -542,5 +542,21 @@ test('Unicode repair converts unique slugs when the index fits the server limit'
         ->toThrow(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class);
     $this->connection->executeStatement('UPDATE post SET slug = ?', ['🚀-release']);
     expect($this->connection->fetchOne('SELECT slug FROM post'))->toBe('🚀-release')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair preserves case-sensitive uniqueness when widening binary slugs', function (): void {
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_bin');
+    $this->connection->insert('post', ['id' => 1, 'slug' => 'about']);
+    $this->connection->insert('post', ['id' => 2, 'slug' => 'ABOUT']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    expect($column['Collation'])->toBe('utf8mb4_bin')
+        ->and($this->connection->fetchOne('SELECT slug FROM post WHERE id = 1'))->toBe('about')
+        ->and($this->connection->fetchOne('SELECT slug FROM post WHERE id = 2'))->toBe('ABOUT');
+    expect(fn () => $this->connection->insert('post', ['id' => 3, 'slug' => 'about']))
+        ->toThrow(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class);
+    $this->connection->executeStatement('UPDATE post SET slug = ? WHERE id = 1', ['🚀-about']);
+    expect($this->connection->fetchOne('SELECT slug FROM post WHERE id = 1'))->toBe('🚀-about')
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });

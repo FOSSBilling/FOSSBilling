@@ -62,7 +62,7 @@ test('charset migration repairs legacy page text and preserves definitions, data
     expect($columns['content']['Type'])->toBe('text')
         ->and($columns['content']['Null'])->toBe('NO')
         ->and($columns['content']['Comment'])->toBe('Editor content')
-        ->and($columns['content']['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($columns['content']['Collation'])->toBe('utf8mb4_bin')
         ->and($columns['title']['Type'])->toBe('varchar(255)')
         ->and($columns['title']['Comment'])->toBe('Page title')
         ->and($columns['description']['Null'])->toBe('YES')

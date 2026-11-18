@@ -21,11 +21,11 @@ class Patch146 implements PatchInterface
             $patcher->logUpdate('warning', 'The database connection uses a legacy character set. Set db.charset to utf8mb4 in config.php to store full Unicode after the schema repair.');
         }
 
-        // Full utf8mb3 -> utf8mb4 migration, normalizing every text column
-        // and table default to utf8mb4_unicode_ci (the fresh-install
-        // collation). Indexed columns convert only when the wider characters
-        // fit the server's index key length; anything else is skipped with a
-        // logged warning.
+        // Full utf8mb3 -> utf8mb4 migration, normalizing text columns and table
+        // defaults to utf8mb4_unicode_ci (binary collations to utf8mb4_bin,
+        // so case-sensitive uniqueness survives byte-for-byte). Indexed
+        // columns convert only when the wider characters fit the server's
+        // index key length; anything else is skipped with a logged warning.
         $patcher->repairDatabaseDefaultCharset();
 
         foreach ($patcher->legacyUnicodeColumns() as $table => $columns) {
