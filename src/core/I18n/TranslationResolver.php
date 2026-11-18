@@ -14,10 +14,11 @@ use PhpMyAdmin\MoTranslator\Translator as MoTranslator;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-/** Module translations fall back to core, then English. */
+/** Module translations override core; theme translations fill missing core strings. */
 final class TranslationResolver
 {
     private static ?Loader $moduleLoader = null;
+    private static ?Loader $themeLoader = null;
 
     public static function translate(string $msgid, ?string $from = null): string
     {
@@ -60,6 +61,26 @@ final class TranslationResolver
 
         if ($from === 'core') {
             yield $core->getTranslator('messages');
+
+            return;
+        }
+
+        if (str_starts_with($from, 'theme:')) {
+            // Themes supplement core translations without overriding them.
+            yield $core->getTranslator('messages');
+
+            $theme = substr($from, 6);
+            if (defined('PATH_THEMES') && preg_match('/\A[A-Za-z0-9_-]+\z/', $theme) === 1) {
+                $themePath = Path::join(PATH_THEMES, $theme);
+                if ((new Filesystem())->exists($themePath)) {
+                    $themes = self::$themeLoader ??= new Loader();
+                    $themes->setlocale($core->setlocale(''));
+                    $domain = 'theme_' . $theme;
+                    $themes->bindtextdomain($domain, Path::join($themePath, 'locale'));
+
+                    yield $themes->getTranslator($domain);
+                }
+            }
 
             return;
         }
