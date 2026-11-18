@@ -11939,7 +11939,9 @@ test('ordinary checkout respects durable charge attempts until reconciliation', 
         $requested[] = $sub;
 
         return match ($sub) {
-            'Subscription' => $subscription, 'PayGateway' => $gatewayService, 'GatewayFees' => $fees
+            'Subscription' => $subscription,
+            'PayGateway' => $gatewayService,
+            'GatewayFees' => $fees,
         };
     });
     $service = Mockery::mock(Service::class)->makePartial();
