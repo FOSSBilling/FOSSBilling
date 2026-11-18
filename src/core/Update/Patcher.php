@@ -14,6 +14,7 @@ namespace FOSSBilling\Core\Update;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Doctrine\Driver;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\ModuleEntityScope;
 use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
@@ -291,7 +292,10 @@ class Patcher implements InjectionAwareInterface
             $this->logUpdate('info', sprintf('Decoded %d double-encoded JSON value(s) in place during migration.', $result['decoded_values']));
         }
         $connection = $em->getConnection();
-        (new \FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration())->run($connection, $crypt, $this->di['cache']);
+        $warnings = (new EncryptedConfigurationMigration())->run($connection, $crypt, $this->di['cache']);
+        foreach ($warnings as $warning) {
+            $this->logUpdate('warning', $warning);
+        }
         if ($connection->createSchemaManager()->tablesExist(['email_template']) && $connection->createSchemaManager()->introspectTableByUnquotedName('email_template')->hasColumn('vars')) {
             $connection->executeStatement('UPDATE email_template SET vars = NULL WHERE vars IS NOT NULL');
         }
