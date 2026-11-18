@@ -115,7 +115,8 @@ test('stale order deletion revalidates billing and order state when it claims th
     $orderId = $order->getId();
     $connection = $context['connection'];
     $context['subscription']->fail = false;
-    $order->setStatus(Order::STATUS_PENDING_SETUP);
+    $cutoff = new DateTimeImmutable('2026-02-01');
+    $order->setStatus(Order::STATUS_PENDING_SETUP)->setCreatedAt($cutoff->modify('-1 day'));
     $context['em']->flush();
 
     // The batch saw a pending order with no draft. Model changes committed
@@ -123,7 +124,7 @@ test('stale order deletion revalidates billing and order state when it claims th
     if ($change === 'paid') {
         $invoice = (new Invoice())->setStatus(Invoice::STATUS_PAID);
         $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)
-            ->setRelId('0' . $orderId)->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+            ->setRelId('0' . $orderId . ' ')->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
         $context['em']->persist($invoice);
         $context['em']->persist($item);
         $context['em']->flush();
@@ -131,22 +132,24 @@ test('stale order deletion revalidates billing and order state when it claims th
         $connection->update('client_order', ['unpaid_invoice_id' => 78], ['id' => $orderId]);
     } elseif ($change === 'activated') {
         $connection->update('client_order', ['status' => Order::STATUS_ACTIVE], ['id' => $orderId]);
+    } elseif ($change === 'age reset') {
+        $connection->update('client_order', ['created_at' => $cutoff->format('Y-m-d H:i:s')], ['id' => $orderId]);
     }
 
     $service = new class extends Service {
-        public function removeStaleOrder(Order $order): bool
+        public function removeStaleOrder(Order $order, DateTimeImmutable $cutoff): bool
         {
-            return $this->deleteStaleUnpaidOrder($order, null);
+            return $this->deleteStaleUnpaidOrder($order, null, $cutoff);
         }
     };
     $service->setDi($context['di']);
 
     $shouldDelete = $change === 'unchanged';
-    expect($service->removeStaleOrder($order))->toBe($shouldDelete)
+    expect($service->removeStaleOrder($order, $cutoff))->toBe($shouldDelete)
         ->and($context['backend']->calls)->toBe($shouldDelete ? 1 : 0)
         ->and($connection->fetchOne('SELECT id FROM client_order WHERE id = ?', [$orderId]))->toBe($shouldDelete ? false : $orderId)
         ->and(DeletionRecovery::getState($connection, $orderId))->toBeNull();
-})->with(['paid', 'attached', 'activated', 'unchanged']);
+})->with(['paid', 'attached', 'activated', 'age reset', 'unchanged']);
 
 test('staff cannot attach a pending order once a deletion hold is committed', function (): void {
     $context = deletionRecoveryContext();
@@ -373,7 +376,7 @@ test('received gateway funds remain credit without settling or fulfilling a held
     if ($typed) {
         $item->setOrderId($order->getId());
     } else {
-        $item->setRelId('00' . $order->getId());
+        $item->setRelId('00' . $order->getId() . ' ');
     }
     foreach ([$incoming, $invoice, $item] as $entity) {
         $c['em']->persist($entity);
@@ -409,7 +412,7 @@ test('received gateway funds remain credit without settling or fulfilling a held
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance WHERE amount < 0'))->toBe(0)
         ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_UNPAID)
         ->and($c['backend']->calls)->toBe(1);
-})->with([false, true])->with(['padded legacy link' => false, 'typed link' => true]);
+})->with([false, true])->with(['legacy link with trailing space' => false, 'typed link' => true]);
 
 test('MySQL and MariaDB snapshot conflicts roll back billing and preserve deletion holds on transaction retry', function (): void {
     $params = [

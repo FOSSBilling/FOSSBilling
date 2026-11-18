@@ -3371,6 +3371,7 @@ test('invoice item order_id backfill links order references and leaves other row
             $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
             FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
 
+            $connection->executeStatement("INSERT INTO invoice (id, status) VALUES (4, 'paid'), (5, 'unpaid')");
             $connection->executeStatement(
                 "INSERT INTO invoice_item (invoice_id, type, task, status, unit, rel_id, order_id) VALUES
                     (1, 'order', 'renew', 'pending_payment', NULL, '10', NULL),
@@ -3379,7 +3380,10 @@ test('invoice item order_id backfill links order references and leaves other row
                     (2, 'custom', 'void', 'pending_payment', 'discount', '11', NULL),
                     (2, 'order', 'renew', 'pending_payment', NULL, '12', 99),
                     (3, 'order', 'renew', 'pending_payment', NULL, '7.5', NULL),
-                    (3, 'order', 'renew', 'pending_payment', NULL, '07', NULL)"
+                    (3, 'order', 'renew', 'pending_payment', NULL, '07', NULL),
+                    (4, 'order', 'renew', 'pending_setup', NULL, '007 ', NULL),
+                    (5, 'order', 'renew', 'pending_payment', NULL, '007 ', NULL),
+                    (4, 'order', 'renew', 'pending_setup', NULL, '7.5 ', NULL)"
             );
 
             $di = new Pimple\Container();
@@ -3393,17 +3397,20 @@ test('invoice item order_id backfill links order references and leaves other row
             $patcher->backfillInvoiceItemOrderIds();
 
             $rows = $connection->fetchAllAssociative('SELECT rel_id, order_id FROM invoice_item ORDER BY id');
-            expect($rows)->toHaveCount(7)
+            expect($rows)->toHaveCount(10)
                 ->and($rows[0]['order_id'])->toBe(10)
                 ->and($rows[1]['order_id'])->toBeNull()
                 ->and($rows[2]['order_id'])->toBeNull()
                 ->and($rows[3]['order_id'])->toBe(11)
                 ->and($rows[4]['order_id'])->toBe(99)
                 ->and($rows[5]['order_id'])->toBeNull()
-                ->and($rows[6]['order_id'])->toBe(7);
+                ->and($rows[6]['order_id'])->toBe(7)
+                ->and($rows[7]['order_id'])->toBe(7)
+                ->and($rows[8]['order_id'])->toBeNull()
+                ->and($rows[9]['order_id'])->toBeNull();
 
             // Completion is recorded and the resume marker cleared.
-            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2')
+            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION)
                 ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id'"))->toBe(false);
 
             // Idempotent: a second run changes nothing.
@@ -3443,13 +3450,13 @@ test('invoice item order_id backfill pages bounded runs', function (): void {
 
             // First page done, resume marker stored, completion not yet recorded.
             expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(500)
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe('500')
+                ->and($connection->fetchOne('SELECT value FROM setting WHERE param = ?', ['invoice_item_order_backfill_last_id_v' . Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION]))->toBe('500')
                 ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(false);
 
             $patcher->backfillInvoiceItemOrderIds();
             expect((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE order_id IS NOT NULL'))->toBe(550)
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2')
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe(false);
+                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION)
+                ->and($connection->fetchOne('SELECT value FROM setting WHERE param = ?', ['invoice_item_order_backfill_last_id_v' . Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION]))->toBe(false);
         } finally {
             (new Filesystem())->remove($dbFile);
         }
@@ -3494,7 +3501,7 @@ test('invoice item order_id backfill converges past unresolvable rows across bou
 
             // A second bounded run finds no more pages and records completion.
             $patcher->backfillInvoiceItemOrderIds(1);
-            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2');
+            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION);
         } finally {
             (new Filesystem())->remove($dbFile);
         }
@@ -3514,7 +3521,8 @@ test('invoice item order_id backfill short-circuits bounded runs once completion
                 "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '10')"
             );
             $connection->executeStatement(
-                "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_item_order_id_backfill_done', '2', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+                "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_item_order_id_backfill_done', :version, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')",
+                ['version' => Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION],
             );
 
             $di = new Pimple\Container();
@@ -3529,7 +3537,7 @@ test('invoice item order_id backfill short-circuits bounded runs once completion
 
             // Untouched: the flag short-circuits bounded runs before any scan or marker write.
             expect($connection->fetchOne('SELECT order_id FROM invoice_item'))->toBeNull()
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe(false);
+                ->and($connection->fetchOne('SELECT value FROM setting WHERE param = ?', ['invoice_item_order_backfill_last_id_v' . Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION]))->toBe(false);
         } finally {
             (new Filesystem())->remove($dbFile);
         }
@@ -3545,6 +3553,7 @@ test('invoice item order_id backfill resumes under the current rule after a full
             $entityManager = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
             FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
 
+            $connection->executeStatement("INSERT INTO invoice (id, status) VALUES (1, 'paid')");
             $connection->transactional(function () use ($connection): void {
                 for ($i = 0; $i < 500; ++$i) {
                     $connection->executeStatement(
@@ -3552,17 +3561,17 @@ test('invoice item order_id backfill resumes under the current rule after a full
                     );
                 }
                 $connection->executeStatement(
-                    "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '07')"
+                    "INSERT INTO invoice_item (invoice_id, type, task, status, rel_id) VALUES (1, 'order', 'renew', 'pending_payment', '07 ')"
                 );
             });
             $connection->executeStatement(
                 "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES
-                    ('invoice_item_order_backfill_last_id', '501', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+                    ('invoice_item_order_backfill_last_id_v2', '501', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
             );
             if ($previousRuleCompleted) {
                 $connection->executeStatement(
                     "INSERT INTO setting (param, value, public, created_at, updated_at) VALUES
-                        ('invoice_item_order_id_backfill_done', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+                        ('invoice_item_order_id_backfill_done', '2', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
                 );
             }
 
@@ -3576,18 +3585,18 @@ test('invoice item order_id backfill resumes under the current rule after a full
             $patcher->setDi($di);
             $patcher->backfillInvoiceItemOrderIds(1);
 
-            expect($connection->fetchOne("SELECT order_id FROM invoice_item WHERE rel_id = '07'"))->toBeNull()
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe('500')
+            expect($connection->fetchOne("SELECT order_id FROM invoice_item WHERE rel_id = '07 '"))->toBeNull()
+                ->and($connection->fetchOne('SELECT value FROM setting WHERE param = ?', ['invoice_item_order_backfill_last_id_v' . Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION]))->toBe('500')
                 ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))
-                ->toBe($previousRuleCompleted ? '1' : false);
+                ->toBe($previousRuleCompleted ? '2' : false);
 
             $patcher->backfillInvoiceItemOrderIds(1);
-            expect((int) $connection->fetchOne("SELECT order_id FROM invoice_item WHERE rel_id = '07'"))->toBe(7)
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe('501');
+            expect((int) $connection->fetchOne("SELECT order_id FROM invoice_item WHERE rel_id = '07 '"))->toBe(7)
+                ->and($connection->fetchOne('SELECT value FROM setting WHERE param = ?', ['invoice_item_order_backfill_last_id_v' . Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION]))->toBe('501');
 
             $patcher->backfillInvoiceItemOrderIds(1);
-            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('2')
-                ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_backfill_last_id_v2'"))->toBe(false);
+            expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe(Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION)
+                ->and($connection->fetchOne('SELECT value FROM setting WHERE param = ?', ['invoice_item_order_backfill_last_id_v' . Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION]))->toBe(false);
         } finally {
             (new Filesystem())->remove($dbFile);
         }

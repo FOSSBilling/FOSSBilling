@@ -514,8 +514,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
     {
-        if ($item->getType() === InvoiceItem::TYPE_ORDER && ($orderId = $this->getOrderId($item)) > 0) {
-            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId, true);
+        if ($item->getType() === InvoiceItem::TYPE_ORDER) {
+            $orderId = $item->getOrderId() ?? self::resolveLegacyPaidOrderReference($item->getRelId());
+            if ($orderId !== null && $orderId > 0) {
+                \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId, true);
+            }
         }
         $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
             ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
@@ -577,6 +580,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         return null;
+    }
+
+    /** Resolve historical payment evidence for a line already known to have type order. */
+    public static function resolveLegacyPaidOrderReference(?string $relId): ?int
+    {
+        return self::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, rtrim($relId ?? '', ' '));
     }
 
     protected function markAsExecuted(InvoiceItem $item)

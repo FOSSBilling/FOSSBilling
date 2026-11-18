@@ -307,7 +307,7 @@ class OrderRepository extends EntityRepository
         $query = 'SELECT 1 FROM invoice_item ii INNER JOIN invoice pi ON pi.id = ii.invoice_id
                   WHERE ii.type = :item_type AND pi.status = :paid_status';
         $params = ['order_id' => $orderId, 'item_type' => InvoiceItem::TYPE_ORDER, 'paid_status' => Invoice::STATUS_PAID];
-        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'ii.rel_id');
+        $legacyReference = InvoiceItemRepository::normalizedLegacyPaidOrderReference($connection, 'ii.rel_id');
         $orderReference = InvoiceItemRepository::orderIdAsReference($connection, ':order_id');
 
         return $connection->fetchOne(

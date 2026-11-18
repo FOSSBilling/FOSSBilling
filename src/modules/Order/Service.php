@@ -547,7 +547,7 @@ class Service implements InjectionAwareInterface
 
         $client_id = $data['client_id'] ?? null;
         $connection = $this->di['em']->getConnection();
-        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'pending_item.rel_id');
+        $legacyReference = InvoiceItemRepository::normalizedLegacyPaidOrderReference($connection, 'pending_item.rel_id');
         $orderReference = InvoiceItemRepository::orderIdAsReference($connection, 'co.id');
 
         $pendingRenewals = 'FROM invoice_item pending_item
@@ -2469,31 +2469,33 @@ class Service implements InjectionAwareInterface
         return $this->deleteOrderWithLifecycleLock($order, $forceDelete);
     }
 
-    protected function deleteStaleUnpaidOrder(Order $order, ?int $expectedInvoiceId): bool
+    protected function deleteStaleUnpaidOrder(Order $order, ?int $expectedInvoiceId, ?\DateTimeImmutable $ageCutoff = null): bool
     {
-        return $this->deleteOrderWithLifecycleLock($order, false, true, $expectedInvoiceId);
+        return $this->deleteOrderWithLifecycleLock($order, false, true, $expectedInvoiceId, $ageCutoff);
     }
 
-    private function deleteOrderWithLifecycleLock(Order $order, bool $forceDelete, bool $staleUnpaidOnly = false, ?int $expectedInvoiceId = null): bool
+    private function deleteOrderWithLifecycleLock(Order $order, bool $forceDelete, bool $staleUnpaidOnly = false, ?int $expectedInvoiceId = null, ?\DateTimeImmutable $ageCutoff = null): bool
     {
         if ($this->di['em']->getConnection()->isTransactionActive()) {
             throw new InformationException('Order deletion cannot run inside a database transaction.');
         }
 
-        return $this->withLifecycleLock($order, fn (): bool => $this->deleteHeldOrder($order, $forceDelete, $staleUnpaidOnly, $expectedInvoiceId));
+        return $this->withLifecycleLock($order, fn (): bool => $this->deleteHeldOrder($order, $forceDelete, $staleUnpaidOnly, $expectedInvoiceId, $ageCutoff));
     }
 
-    private function deleteHeldOrder(Order $order, bool $forceDelete, bool $staleUnpaidOnly = false, ?int $expectedInvoiceId = null): bool
+    private function deleteHeldOrder(Order $order, bool $forceDelete, bool $staleUnpaidOnly, ?int $expectedInvoiceId, ?\DateTimeImmutable $ageCutoff): bool
     {
         $orderId = $this->orderId($order);
         $connection = $this->di['em']->getConnection();
-        $claim = function () use ($order, $orderId, $connection, $forceDelete, $staleUnpaidOnly, $expectedInvoiceId): ?string {
+        $claim = function () use ($order, $orderId, $connection, $forceDelete, $staleUnpaidOnly, $expectedInvoiceId, $ageCutoff): ?string {
             if ($staleUnpaidOnly) {
                 // Settlement and attachment lock the same order row. Check before
                 // recording the durable hold, then commit before remote deletion.
                 $this->refreshLockedOrder($order);
+                $createdAt = $order->getCreatedAt();
                 if ($order->getStatus() !== Order::STATUS_PENDING_SETUP
                     || $order->getUnpaidInvoiceId() !== $expectedInvoiceId
+                    || ($ageCutoff !== null && ($createdAt === null || $createdAt >= $ageCutoff))
                     || $this->getOrderRepository()->hasPaidInvoiceItem($orderId)) {
                     return null;
                 }
@@ -3014,16 +3016,20 @@ class Service implements InjectionAwareInterface
                             // The removal itself refuses a draft that any linked order
                             // still depends on, re-checked under the invoice's row lock
                             // so a payment or a concurrently attached paid order is seen
-                            // rather than raced. A refused removal keeps the whole group.
+                            // rather than raced.
                             $detachedOrderIds = null;
 
                             try {
-                                $invoiceHandled[$invoiceId] = $invoiceService->deleteInvoiceByAdmin(
+                                $removed = $invoiceService->deleteInvoiceByAdmin(
                                     $invoice,
                                     true,
                                     $detachedOrderIds,
                                     ['id' => $orderId, 'cutoff' => $cutoff],
                                 );
+                                if ($removed === null) {
+                                    continue;
+                                }
+                                $invoiceHandled[$invoiceId] = $removed;
                             } finally {
                                 // The draft can be committed even if its completion event throws.
                                 foreach ($detachedOrderIds ?? [] as $detachedOrderId) {
@@ -3043,8 +3049,8 @@ class Service implements InjectionAwareInterface
                     }
                 }
 
-                $expectedInvoiceId = ($detachedOrders[$orderId] ?? null) === $invoiceId ? null : $invoiceId;
-                $this->deleteStaleUnpaidOrder($order, $expectedInvoiceId);
+                $detachedFromSelectedInvoice = $selectedInvoiceId !== null && ($detachedOrders[$orderId] ?? null) === $selectedInvoiceId;
+                $this->deleteStaleUnpaidOrder($order, $detachedFromSelectedInvoice ? null : $invoiceId, $detachedFromSelectedInvoice ? null : $cutoff);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
 

@@ -38,6 +38,12 @@ class InvoiceItemRepository extends EntityRepository
         return $connection->getDatabasePlatform() instanceof AbstractMySQLPlatform ? "CAST($orderId AS BINARY)" : "CAST($orderId AS TEXT)";
     }
 
+    /** Match historical payment evidence with optional trailing ASCII spaces. */
+    public static function normalizedLegacyPaidOrderReference(Connection $connection, string $reference): string
+    {
+        return self::normalizedLegacyOrderReference($connection, "RTRIM($reference)");
+    }
+
     /**
      * @return InvoiceItem[]
      */

@@ -37,12 +37,10 @@ class Patcher implements InjectionAwareInterface
     private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
     private const string INVOICE_ITEM_ORDER_BACKFILL_DONE = 'invoice_item_order_id_backfill_done';
     /**
-     * Derivation rule version recorded with backfill completion. Rule 2 accepts
-     * zero-padded references the rule 1 pattern skipped, so a stale completion
-     * is rescanned from the start instead of short-circuiting. Consumers gate
-     * destructive work on this version, not just on the flag being present.
+     * Rescan when the derivation rule changes. Rule 3 also recognizes paid
+     * order references ending in ASCII spaces, which older rules skipped.
      */
-    public const string INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION = '2';
+    public const string INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION = '3';
     public ?\Pimple\Container $di = null;
     public Filesystem $filesystem;
 
@@ -3004,9 +3002,7 @@ class Patcher implements InjectionAwareInterface
                 return;
             }
 
-            // Keyset pages, not one unbounded read: a production invoice_item table holds
-            // tens of thousands of rows, and only id/rel_id are needed per row.
-            // Idempotent: written rows drop out of later pages via order_id IS NULL, and
+            // Page by ID to bound reads. Written rows drop out via order_id IS NULL, and
             // the conditional UPDATE keeps a racing writer's newer value intact.
             // Rows whose rel_id isn't an order id advance the keyset without a write.
             $lastId = 0;
@@ -3021,7 +3017,7 @@ class Patcher implements InjectionAwareInterface
             $pages = 0;
             do {
                 $rows = $dbal->fetchAllAssociative(
-                    "SELECT id, type, unit, rel_id FROM invoice_item WHERE order_id IS NULL AND (type = 'order' OR unit = 'discount') AND id > :last ORDER BY id LIMIT 500",
+                    "SELECT id, invoice_id, type, unit, rel_id FROM invoice_item WHERE order_id IS NULL AND (type = 'order' OR unit = 'discount') AND id > :last ORDER BY id LIMIT 500",
                     ['last' => $lastId]
                 );
                 if ($rows === []) {
@@ -3031,9 +3027,14 @@ class Patcher implements InjectionAwareInterface
 
                 foreach ($rows as $row) {
                     $lastId = (int) $row['id'];
-                    // Use the same derivation rule as live writes. A loose cast
-                    // would incorrectly link a reference like '7.5' to order 7.
-                    $orderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveOrderReference($row['type'] ?? null, $row['unit'] ?? null, $row['rel_id'] ?? null);
+                    $orderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveOrderReference($row['type'], $row['unit'], $row['rel_id']);
+                    if ($orderId === null && $row['type'] === \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER) {
+                        $paidOrderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveLegacyPaidOrderReference($row['rel_id']);
+                        // Only historical paid items may use this relaxed rule.
+                        if ($paidOrderId !== null && $dbal->fetchOne('SELECT status FROM invoice WHERE id = :id', ['id' => $row['invoice_id']]) === \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID) {
+                            $orderId = $paidOrderId;
+                        }
+                    }
                     if ($orderId === null) {
                         continue;
                     }

@@ -47,6 +47,7 @@ use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendRemindersEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\BeforeInvoiceIsDueEvent;
 use Box\Mod\Invoice\Repository\InvoiceCreditRepository;
+use Box\Mod\Invoice\Repository\InvoiceEventRepository;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
@@ -4808,15 +4809,21 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * A guarded removal returns null if the selected order is no longer stale.
+     * A false result means the invoice itself must be kept.
+     *
      * @param array{id: int, cutoff: \DateTimeImmutable}|null $staleOrder the order that qualified the invoice for automatic removal
      *
      * @param-out list<int>|null $detachedOrderIds IDs detached by a successful guarded removal
+     *
+     * @return ($staleOrder is null ? bool : bool|null)
      */
-    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): bool
+    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): ?bool
     {
+        /** @var EntityManagerInterface $entityManager */
         $entityManager = $this->di['em'];
         $requireNoPaidLinkedOrder = $requireNoPaidLinkedOrder || $staleOrder !== null;
-        $removedLinks = $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions, $requireNoPaidLinkedOrder, $staleOrder): ?array {
+        $removal = $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions, $requireNoPaidLinkedOrder, $staleOrder): array|false|null {
             $this->lockAndRefreshInvoice($model, $requireNoPaidLinkedOrder);
 
             $connection = $entityManager->getConnection();
@@ -4828,6 +4835,11 @@ class Service implements InjectionAwareInterface
                     'SELECT id FROM client_order WHERE unpaid_invoice_id = :invoice_id ORDER BY id' . RowLock::suffix($connection),
                     ['invoice_id' => $model->getId()],
                 ));
+            }
+
+            if ($staleOrder !== null && ($model->getStatus() !== Invoice::STATUS_UNPAID
+                || ($model->getDueAt() !== null && $model->getDueAt() >= $staleOrder['cutoff']))) {
+                return false;
             }
 
             if ($requireUnissuedUnpaid && !$this->isDeletableByAdmin($model)) {
@@ -4854,7 +4866,7 @@ class Service implements InjectionAwareInterface
                 $orderRepository = $entityManager->getRepository(Order::class);
                 foreach ($linkedOrderIds as $orderId) {
                     if ($orderRepository->hasPaidInvoiceItem($orderId)) {
-                        return null;
+                        return false;
                     }
                 }
             }
@@ -4877,7 +4889,9 @@ class Service implements InjectionAwareInterface
             // Runs inside the same transaction as the flushes below: without that, a later flush
             // failing (e.g. removing the invoice itself) would leave these transactions
             // permanently detached from an invoice that was never actually deleted.
-            $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId(), $anonymizeTransactions);
+            /** @var TransactionRepository $transactionRepository */
+            $transactionRepository = $entityManager->getRepository(Transaction::class);
+            $transactionRepository->detachFromInvoice((int) $model->getId(), $anonymizeTransactions);
 
             // Applied credit is an internal earmark, not a payment record: it dies with the invoice.
             $this->getInvoiceCreditRepository()->deleteByInvoiceId((int) $model->getId());
@@ -4891,29 +4905,36 @@ class Service implements InjectionAwareInterface
             // deletions of issued invoices keep it as the audit trail of a
             // numbered document.
             if (!$model->isIssued() || $anonymizeTransactions) {
-                $entityManager->getRepository(InvoiceEvent::class)->deleteByInvoiceId((int) $model->getId());
+                /** @var InvoiceEventRepository $invoiceEventRepository */
+                $invoiceEventRepository = $entityManager->getRepository(InvoiceEvent::class);
+                $invoiceEventRepository->deleteByInvoiceId((int) $model->getId());
             }
             $entityManager->remove($model);
             $entityManager->flush();
 
             return $linkedOrderIds;
         });
-        $detachedOrderIds = $removedLinks;
+        if (is_array($removal)) {
+            $detachedOrderIds = $removal;
 
-        return $removedLinks !== null;
+            return true;
+        }
+        $detachedOrderIds = null;
+
+        return $removal;
     }
 
     /**
-     * Deletes an invoice on an admin's instruction. A cleanup caller passes
-     * $requireNoPaidLinkedOrder so the draft is left in place when an order
-     * still linked to it has a paid invoice item; that returns false to signal
-     * a policy skip, distinct from the exceptions raised for invalid states.
+     * Returns false for an invoice-wide cleanup refusal, or null if only the
+     * selected order failed the stale-order guard.
      *
      * @param array{id: int, cutoff: \DateTimeImmutable}|null $staleOrder the order that qualified the invoice for automatic removal
      *
      * @param-out list<int>|null $detachedOrderIds IDs detached by a successful guarded removal
+     *
+     * @return ($staleOrder is null ? bool : bool|null)
      */
-    public function deleteInvoiceByAdmin(Invoice $model, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): bool
+    public function deleteInvoiceByAdmin(Invoice $model, bool $requireNoPaidLinkedOrder = false, ?array &$detachedOrderIds = null, ?array $staleOrder = null): ?bool
     {
         // Fast rejection for the common case; rmInvoice rechecks the fresh state under its row
         // lock before detaching or deleting anything.
@@ -4924,10 +4945,9 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDeleteEvent((int) $model->getId()));
 
         $id = $model->getId();
-        if (!$this->rmInvoice($model, true, false, $requireNoPaidLinkedOrder, $detachedOrderIds, $staleOrder)) {
-            // Cleanup policy skip: nothing was removed, so the owning batch
-            // keeps the invoice and the orders linked to it for a later run.
-            return false;
+        $removed = $this->rmInvoice($model, true, false, $requireNoPaidLinkedOrder, $detachedOrderIds, $staleOrder);
+        if ($removed !== true) {
+            return $removed;
         }
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceDeleteEvent((int) $id));
@@ -5661,7 +5681,7 @@ class Service implements InjectionAwareInterface
         $orderIds = [];
         foreach ($orderLinks as $link) {
             $orderId = $link['order_id'] === null
-                ? ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, $link['rel_id'])
+                ? ServiceInvoiceItem::resolveLegacyPaidOrderReference($link['rel_id'])
                 : (int) $link['order_id'];
             if ($orderId !== null) {
                 $orderIds[$orderId] = $orderId;

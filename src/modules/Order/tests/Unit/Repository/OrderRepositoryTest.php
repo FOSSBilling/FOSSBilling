@@ -171,11 +171,11 @@ test('lockAndGetUnpaidInvoiceId rejects being called outside of a transaction', 
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'outside of a transaction');
 });
 
-test('paid order check respects typed linkage and validates legacy references', function (?int $typedOrderId, string $reference, bool $paid): void {
+test('paid order check respects typed linkage and validates legacy references', function (?int $typedOrderId, string $reference, bool $matches, string $invoiceStatus = Invoice::STATUS_PAID): void {
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
     $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, order_id INTEGER, rel_id TEXT)');
-    $connection->insert('invoice', ['id' => 1, 'status' => Invoice::STATUS_PAID]);
+    $connection->insert('invoice', ['id' => 1, 'status' => $invoiceStatus]);
     $connection->insert('invoice_item', [
         'invoice_id' => 1,
         'type' => InvoiceItem::TYPE_ORDER,
@@ -188,7 +188,7 @@ test('paid order check respects typed linkage and validates legacy references', 
 
     $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
 
-    expect($repository->hasPaidInvoiceItem(7))->toBe($paid);
+    expect($repository->hasPaidInvoiceItem(7))->toBe($matches);
 })->with([
     'typed link takes precedence' => [7, '20', true],
     'legacy reference' => [null, '7', true],
@@ -196,7 +196,9 @@ test('paid order check respects typed linkage and validates legacy references', 
     'typed link to another order' => [8, '007', false],
     'fraction' => [null, '7.5', false],
     'leading whitespace' => [null, ' 7', false],
-    'trailing whitespace' => [null, '07 ', false],
+    'trailing ASCII spaces' => [null, '07  ', true],
+    'trailing tab' => [null, "07\t", false],
+    'trailing space on an unpaid invoice' => [null, '07 ', false, Invoice::STATUS_UNPAID],
     'plus sign' => [null, '+7', false],
     'integer overflow' => [null, '9223372036854775808', false],
 ]);

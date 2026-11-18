@@ -3701,7 +3701,7 @@ test('rmInvoice keeps an unpaid invoice a paid linked order still points at', fu
     expect($service->rmInvoice($invoiceModel, true, false, true))->toBeFalse();
 })->with(['unissued draft' => false, 'issued invoice in relaxed mode' => true]);
 
-test('rmInvoice defers automatic removal when the locked invoice no longer meets the cutoff', function (?string $dueAt, string $orderCreatedAt): void {
+test('rmInvoice distinguishes invoice-wide and order-specific cutoff refusals', function (?string $dueAt, string $orderCreatedAt, ?bool $expected): void {
     $invoice = createEntity(Invoice::class, ['id' => 55, 'status' => Invoice::STATUS_UNPAID]);
     $invoice->setDueAt(new DateTimeImmutable('2026-01-01'));
 
@@ -3713,6 +3713,9 @@ test('rmInvoice defers automatic removal when the locked invoice no longer meets
 
     [$em] = invoiceItemEmAndRepo();
     $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('refresh')->once()->with($invoice, Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE)->andReturnUsing(static function (Invoice $invoice) use ($dueAt): void {
+        $invoice->setDueAt($dueAt === null ? null : new DateTimeImmutable($dueAt));
+    });
     $em->shouldNotReceive('remove', 'flush');
 
     $di = container();
@@ -3722,12 +3725,12 @@ test('rmInvoice defers automatic removal when the locked invoice no longer meets
 
     $detachedOrderIds = null;
     $staleOrder = ['id' => 7, 'cutoff' => new DateTimeImmutable('2026-02-01')];
-    expect($service->deleteInvoiceByAdmin($invoice, true, $detachedOrderIds, $staleOrder))->toBeFalse()
+    expect($service->deleteInvoiceByAdmin($invoice, true, $detachedOrderIds, $staleOrder))->toBe($expected)
         ->and($detachedOrderIds)->toBeNull()
         ->and($connection->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = 7'))->toBe(55);
 })->with([
-    'due date extended' => ['2026-02-02 00:00:00', '2026-01-01 00:00:00'],
-    'due date removed and order is recent' => [null, '2026-02-02 00:00:00'],
+    'due date extended' => ['2026-02-02 00:00:00', '2026-01-01 00:00:00', false],
+    'due date removed and order is recent' => [null, '2026-02-02 00:00:00', null],
 ]);
 
 test('rmInvoice deletes a draft when no linked order has a paid item', function (): void {
