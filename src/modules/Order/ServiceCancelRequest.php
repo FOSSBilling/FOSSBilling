@@ -189,7 +189,7 @@ class ServiceCancelRequest implements InjectionAwareInterface
         if ($order instanceof Order && $order->getStatus() !== Order::STATUS_CANCELED) {
             $reason = 'Cancellation request #' . $request->getId();
             if ($request->getType() === ClientOrderCancelRequest::TYPE_END_OF_PERIOD) {
-                $orderService->scheduleCancellationFromOrder($order, $reason, true);
+                $orderService->scheduleCancellationFromOrder($order, $reason, true, (int) $request->getId());
             } else {
                 $orderService->cancelFromRequest($order, $reason, (int) $request->getId());
             }

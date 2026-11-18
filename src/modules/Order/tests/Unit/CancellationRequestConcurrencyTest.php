@@ -122,6 +122,8 @@ test('requests cannot report success before an enclosing transaction commits', f
 
 test('requests without subscriptions respect the renewal executor mutex', function (): void {
     [$requests, $em, $request, $order] = cancellationRequestConcurrencyContext();
+    $request->setUpdatedAt(new DateTimeImmutable('2000-01-01'));
+    $em->flush();
     $expires = $order->getExpiresAt()->format('c');
     $lock = 'fb:scheduled-cancel:' . $order->getId();
     expect(NamedLock::acquire($em->getConnection(), $lock, 0))->toBeTrue();
@@ -376,12 +378,12 @@ test('successful cancellation requests persist the requested terminal state', fu
     $em->refresh($request);
     $em->refresh($order);
     expect($request->getStatus())->toBe(ClientOrderCancelRequest::STATUS_ACCEPTED)
-        ->and($request->getUpdatedAt())->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($request->getUpdatedAt())->toBeGreaterThan(new DateTimeImmutable('2000-01-01'))
         ->and($order->getStatus())->toBe($type === ClientOrderCancelRequest::TYPE_IMMEDIATE ? Order::STATUS_CANCELED : Order::STATUS_ACTIVE)
         ->and($order->getReason())->toBe('Cancellation request #' . $request->getId())
         ->and($order->getExpiresAt()?->format('c'))->toBe($type === ClientOrderCancelRequest::TYPE_IMMEDIATE ? null : $expires);
     $meta = $orders->getOrderMetaRepository()->getPairsForOrder($order->getId());
-    expect($meta)->toBe($type === ClientOrderCancelRequest::TYPE_IMMEDIATE ? [] : [Service::META_CANCEL_AT_PERIOD_END => '1']);
+    expect($meta)->toBe($type === ClientOrderCancelRequest::TYPE_IMMEDIATE ? [] : [Service::META_CANCEL_AT_PERIOD_END => '1', Service::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['reason' => 'Cancellation request #' . $request->getId(), 'skip_event' => false, 'request_id' => $request->getId()], JSON_THROW_ON_ERROR)]);
 })->with([ClientOrderCancelRequest::TYPE_IMMEDIATE, ClientOrderCancelRequest::TYPE_END_OF_PERIOD]);
 
 test('withdraw persists its status and update time without cancelling the service', function (): void {
@@ -600,4 +602,55 @@ test('automatic cancellation replaces a closed manager while preserving the fail
         ->and($connection->fetchOne('SELECT status FROM client_order_cancel_request WHERE id = ?', [$second->getId()]))->toBe(ClientOrderCancelRequest::STATUS_ACCEPTED)
         ->and($connection->fetchOne('SELECT value FROM client_order_meta WHERE client_order_id = ? AND name = ?', [$order->getId(), Service::META_SCHEDULED_CANCEL_CLAIM]))->toBe('2')
         ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'cancel_requests_last_day'"))->toBe(date('Y-m-d'));
+});
+
+test('expiry acknowledges a durably scheduled request after its original history write failed', function (): void {
+    [$requests, $em, $request, $order, , $orders, $subscriptions] = cancellationRequestConcurrencyContext(ClientOrderCancelRequest::TYPE_END_OF_PERIOD);
+    $orders->shouldReceive('saveStatusChange')->andReturnUsing(function (Order $order, string $note): void {
+        if (str_contains($note, 'Cancellation scheduled')) {
+            throw new RuntimeException('History unavailable');
+        }
+    });
+    expect(fn () => $requests->accept($request->getId()))->toThrow(RuntimeException::class, 'History unavailable');
+    expect($em->getConnection()->fetchOne('SELECT status FROM client_order_cancel_request'))->toBe('pending');
+    $order->setExpiresAt(new DateTimeImmutable('-1 day'));
+    $em->flush();
+    $orders->shouldAllowMockingProtectedMethods()->shouldReceive('_callOnService')->once();
+    $subscriptions->shouldReceive('cancelForOrder')->once()->with($order)->andReturn(1);
+    expect($orders->processScheduledCancellation($order))->toBeTrue();
+    $em->refresh($request);
+    expect($request->getStatus())->toBe('accepted');
+    $order->setStatus(Order::STATUS_ACTIVE)->setExpiresAt(new DateTimeImmutable('+1 month'));
+    $em->flush();
+    $requests->accept($request->getId());
+    expect($orders->getOrderMetaRepository()->getPairsForOrder($order->getId()))->toBeEmpty()
+        ->and($order->getStatus())->toBe(Order::STATUS_ACTIVE);
+});
+
+test('automatic selection includes every unlinked request and only the oldest linked request', function (): void {
+    [, $em, $first, $order, $client] = cancellationRequestConcurrencyContext();
+    $duplicate = (new ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setStatus('pending');
+    $orphanA = (new ClientOrderCancelRequest())->setClient($client)->setStatus('pending');
+    $orphanB = (new ClientOrderCancelRequest())->setClient($client)->setStatus('pending');
+    foreach ([$duplicate, $orphanA, $orphanB] as $request) {
+        $em->persist($request);
+    }
+    $em->flush();
+    expect($em->getRepository(ClientOrderCancelRequest::class)->getAutomaticRequestIds())->toBe([$first->getId(), $orphanA->getId(), $orphanB->getId()]);
+});
+
+test('expiry suspension honors a pending cancellation while automatic acceptance is disabled', function (): void {
+    [, $em, , $order, , $orders] = cancellationRequestConcurrencyContext();
+    $order->setExpiresAt(new DateTimeImmutable('-1 day'));
+    $em->flush();
+    $di = $orders->getDi();
+    $di['mod'] = $di->protect(fn () => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $orders->shouldReceive('getExpiredOrders')->once()->andReturn([$order]);
+    $orders->shouldNotReceive('suspendFromOrder');
+    expect($orders->batchSuspendExpired())->toBeTrue()->and($order->getStatus())->toBe(Order::STATUS_ACTIVE);
 });

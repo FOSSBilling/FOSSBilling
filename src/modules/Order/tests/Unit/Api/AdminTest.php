@@ -902,6 +902,6 @@ test('cancellation actions reject malformed request ids before invoking the serv
     $di = container();
     $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancel]));
     $api->setDi($di);
-    expect(fn () => $api->cancel_request_accept(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class)
-        ->and(fn () => $api->cancel_request_stop(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+    expect(fn () => $api->cancel_request_accept(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'A positive cancellation request ID is required.')
+        ->and(fn () => $api->cancel_request_stop(['id' => $id]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'A positive cancellation request ID is required.');
 })->with([[true], [false], [0], [-1], [1.5], ['bad'], [[]], [null], ['99999999999999999999999999']]);

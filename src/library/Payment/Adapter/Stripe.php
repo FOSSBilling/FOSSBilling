@@ -67,9 +67,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         'customer.subscription.deleted',
         'invoice.payment_succeeded',
         'invoice.paid',
-        'invoice.payment_failed',
         'invoice_payment.paid',
-        'invoice_payment.failed',
         'payment_intent.succeeded',
         'payment_intent.payment_failed',
         'setup_intent.succeeded',
@@ -885,9 +883,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 'customer.subscription.deleted' => $this->handleSubscriptionDeleted($api_admin, $tx, $event),
                 'invoice.payment_succeeded' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
                 'invoice.paid' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
-                'invoice.payment_failed' => $this->handleInvoicePaymentFailed($api_admin, $tx, $event),
                 'invoice_payment.paid' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
-                'invoice_payment.failed' => $this->handleInvoicePaymentFailed($api_admin, $tx, $event),
                 'payment_intent.succeeded' => $this->handlePaymentIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
                 'payment_intent.payment_failed' => $this->handlePaymentIntentFailedWebhook($api_admin, $tx, $event),
                 'setup_intent.succeeded' => $this->handleSetupIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
@@ -1014,36 +1010,48 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         return false;
     }
 
+    public function getSubscriptionStatus(string $subscriptionId): string
+    {
+        $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
+
+        return in_array($subscription->status, ['canceled', 'incomplete_expired'], true)
+            ? 'canceled'
+            : (($subscription->cancel_at_period_end ?? false)
+                ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION : 'active');
+    }
+
     private function handleSubscriptionUpdated($api_admin, Transaction $tx, object $event): bool
     {
-        $stripeSubscription = $event->data->object;
-
-        $status = in_array($stripeSubscription->status, ['canceled', 'incomplete_expired'], true)
-            ? 'canceled'
-            : (($stripeSubscription->cancel_at_period_end ?? false)
-                ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION : 'active');
+        $sid = $event->data->object->id;
 
         try {
-            $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
-        } catch (Exception $e) {
-            $this->debugLog('Stripe subscription updated webhook: ' . $e->getMessage());
+            $subscription = $api_admin->invoice_subscription_get(['sid' => $sid]);
+        } catch (Exception) {
+            return false;
         }
 
-        return false;
+        return $this->withStripeObjectLock($sid, (int) $this->config['gateway_id'], function () use ($subscription, $sid): bool {
+            // Webhook snapshots can precede a deletion delivered earlier. Query
+            // current state under the same mutex used by deletion processing.
+            $this->di['mod_service']('Invoice', 'Subscription')->updateStatusFromGateway((int) $subscription['id'], $this->getSubscriptionStatus($sid));
+
+            return false;
+        });
     }
 
     private function handleSubscriptionDeleted($api_admin, Transaction $tx, object $event): bool
     {
-        $stripeSubscription = $event->data->object;
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $subscriptionId = $subscriptionService->findIdBySid($stripeSubscription->id);
-        if ($subscriptionId === null) {
+        $sid = $event->data->object->id;
+
+        return $this->withStripeObjectLock($sid, (int) $this->config['gateway_id'], function () use ($sid): bool {
+            $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+            $subscriptionId = $subscriptionService->findIdBySid($sid);
+            if ($subscriptionId !== null) {
+                $subscriptionService->finalizeCancellationFromGateway($subscriptionId);
+            }
+
             return false;
-        }
-
-        $subscriptionService->finalizeCancellationFromGateway($subscriptionId);
-
-        return false;
+        });
     }
 
     private function handleInvoicePaymentSucceeded($api_admin, Transaction $tx, object $event, int $gateway_id): bool
@@ -1172,20 +1180,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         }
 
         return true;
-    }
-
-    private function handleInvoicePaymentFailed($api_admin, Transaction $tx, object $event): bool
-    {
-        // A failed invoice can still be retried. Only subscription lifecycle
-        // events establish whether collection has ended at the provider.
-        return false;
-    }
-
-    private function updateSubscriptionStatusFromGateway($api_admin, string $subscriptionId, string $status): void
-    {
-        $subscription = $api_admin->invoice_subscription_get(['sid' => $subscriptionId]);
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $subscriptionService->updateStatusFromGateway((int) $subscription['id'], $status);
     }
 
     /**

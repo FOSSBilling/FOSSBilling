@@ -52,6 +52,7 @@ test('renewal batches reload single and bucketed orders after credit closes the 
     $em->flush();
     $ids = array_map(fn (Order $order): int => (int) $order->getId(), $orders);
     $service = gatewayDepositTestService($em);
+    $service->shouldAllowMockingProtectedMethods()->shouldReceive('createEntityManager')->byDefault()->andReturnUsing(fn ($connection) => new Doctrine\ORM\EntityManager($connection, $em->getConfiguration()));
     $service->shouldReceive('setInvoiceDefaults')->byDefault()->zeroOrMoreTimes();
     $number = 1;
     $service->shouldReceive('getNextInvoiceNumber')->andReturnUsing(function () use (&$number): int { return $number++; });
@@ -132,11 +133,11 @@ function renewalReviewService(Doctrine\ORM\EntityManager $em): Box\Mod\Invoice\S
         }
         if ($module === 'Product') {
             $products = Mockery::mock(Box\Mod\Product\Service::class);
-            $products->shouldReceive('releaseReservedPromoRedemptionsForOrder')->zeroOrMoreTimes();
+            $products->shouldReceive('releaseReservedPromoRedemptionsForOrder', 'commitReservedPromoRedemptionsForInvoice')->zeroOrMoreTimes();
 
             return $products;
         }
-        if (strtolower($module) === 'client') {
+        if (strtolower($module) === 'client' && $sub === '') {
             $clients = Mockery::mock(Box\Mod\Client\Service::class);
             $clients->shouldReceive('isClientTaxable')->andReturn(false);
             $clients->shouldReceive('toApiArray')->andReturn([]);
@@ -205,7 +206,39 @@ test('renewal creation owns the request mutex until the quote and entitlement ar
         }
         expect($acquired)->toBeFalse();
     });
+    $writes = 0;
+    $probe = function () use ($order, &$writes): void {
+        ++$writes;
+        $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $name = 'fb:cancel-request-order:' . $order->getId();
+        $acquired = FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0);
+        if ($acquired) {
+            FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
+        }
+        expect($acquired)->toBeFalse();
+    };
+    $em->getEventManager()->addEventListener(['postPersist'], new readonly class($probe) {
+        public function __construct(private Closure $probe)
+        {
+        }
+
+        public function postPersist(Doctrine\ORM\Event\PostPersistEventArgs $event): void
+        {
+            $entity = $event->getObject();
+            if ($entity instanceof OrderMeta && str_starts_with($entity->getName(), 'free_domain_renewal_invoice_')) {
+                ($this->probe)();
+            }
+        }
+    });
     $invoice = $service->generateForOrder($order, null, false);
+    expect($writes)->toBe(1);
+    $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $name = 'fb:cancel-request-order:' . $order->getId();
+    $released = FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0);
+    if ($released) {
+        FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
+    }
+    expect($released)->toBeTrue();
     expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE client_order_id = ? AND name = ?', [$order->getId(), 'free_domain_renewal_invoice_' . $invoice->getId()]))->toBe('1');
 });
 
@@ -412,4 +445,169 @@ test('draft membership changed after acquiring renewal locks requires a fresh is
     $service->getDi()['event_dispatcher'] = $dispatcher;
     expect(fn () => $service->issueInvoice($invoice, ['defer_issue_event' => true]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'changed');
     expect($em->isOpen())->toBeTrue()->and($invoice->isIssued())->toBeFalse();
+});
+
+test('a stale renewal worker reloads the committed invoice link before creating any quote', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $first = renewalReviewOrder($em, $client->getId());
+    $second = renewalReviewOrder($em, $client->getId());
+    $worker = new Doctrine\ORM\EntityManager($em->getConnection(), $em->getConfiguration());
+    $stale = $worker->find(Order::class, $first->getId());
+    $quote = renewalReviewService($em)->generateForOrder($first, null, false);
+    expect($stale->getUnpaidInvoiceId())->toBeNull();
+    $service = renewalReviewService($worker);
+    expect($service->generateForOrder($stale, null, false)->getId())->toBe($quote->getId());
+    $merged = $service->generateMergedInvoiceForOrders([$stale, $worker->find(Order::class, $second->getId())], false);
+    expect($em->getConnection()->fetchFirstColumn('SELECT rel_id FROM invoice_item WHERE invoice_id = ?', [$merged->getId()]))->toBe([(string) $second->getId()])
+        ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE rel_id = ?', [(string) $first->getId()]))->toBe(1);
+});
+
+test('generation retries on the same service never return an invoice rolled back after its line flush', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $db = $em->getConnection();
+    $db->executeStatement("CREATE TRIGGER abort_quote BEFORE INSERT ON client_order_meta BEGIN SELECT RAISE(ABORT, 'quote interrupted'); END");
+    expect(fn () => $service->generateForOrder($order, null, false))->toThrow(Exception::class, 'quote interrupted');
+    expect($em->isOpen())->toBeFalse()->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(0);
+    $db->executeStatement('DROP TRIGGER abort_quote');
+    $quote = $service->generateForOrder($order, null, false);
+    expect((int) $db->fetchOne('SELECT COUNT(*) FROM invoice WHERE id = ?', [$quote->getId()]))->toBe(1)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_item WHERE invoice_id = ?', [$quote->getId()]))->toBe(1)
+        ->and((int) $db->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBe($quote->getId());
+});
+
+test('an existing renewal draft survives mutex contention and is issued by the next cron pass', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $invoice = $service->generateForOrder($order, null, false);
+    $service->shouldReceive('tryPayWithCredits')->once();
+    $di = $service->getDi();
+    $base = $di['mod_service'];
+    $orders = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orders->setDi($di);
+    $orders->shouldReceive('getSoonExpiringActiveOrders')->andReturn([]);
+    $di['mod_service'] = $di->protect(fn (string $module, string $sub = '') => $module === 'Order' ? $orders : $base($module, $sub));
+    $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $name = 'fb:cancel-request-order:' . $order->getId();
+    expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0))->toBeTrue();
+
+    try {
+        expect($service->generateInvoicesForExpiringOrders())->toBeTrue()->and($invoice->isIssued())->toBeFalse();
+    } finally {
+        FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
+    }
+    expect($service->generateInvoicesForExpiringOrders())->toBeTrue()->and($invoice->isIssued())->toBeTrue()
+        ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
+        ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(1);
+});
+
+test('canceled renewal drafts remain unchanged when issuance encounters a late hold', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $invoice = $service->generateForOrder($order, null, false);
+    $invoice->setStatus(Invoice::STATUS_CANCELED);
+    $em->persist((new OrderMeta())->setOrder($order)->setName('cancel_at_period_end')->setValue('1'));
+    $em->flush();
+    $before = $em->getConnection()->fetchAllAssociative('SELECT * FROM invoice_item');
+    expect(fn () => $service->issueInvoice($invoice, []))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Only unpaid draft');
+    expect($em->getConnection()->fetchAllAssociative('SELECT * FROM invoice_item'))->toBe($before)
+        ->and((int) $em->getConnection()->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBe($invoice->getId())
+        ->and($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE name = ?', ['free_domain_renewal_invoice_' . $invoice->getId()]))->toBe('1');
+});
+
+test('only empty unnumbered unfunded canceled drafts gain the strict cleanup exception', function (): void {
+    [, $em, $client, , $receipt] = receiptTestContext();
+    $invoice = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setStatus(Invoice::STATUS_CANCELED)->setIssued(false);
+    $em->persist($invoice);
+    $em->flush();
+    $service = renewalReviewService($em);
+    expect($service->isDeletableByAdmin($invoice))->toBeTrue();
+    $invoice->setIssued(true);
+    expect($service->isDeletableByAdmin($invoice))->toBeFalse();
+    $invoice->setIssued(false)->setNr(1);
+    expect($service->isDeletableByAdmin($invoice))->toBeFalse();
+    $invoice->setNr(null);
+    $receipt->setInvoice($invoice);
+    $em->flush();
+    expect($service->isDeletableByAdmin($invoice))->toBeFalse();
+});
+
+test('staff reissue cannot bypass a pending cancellation on an issued renewal', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $invoice = $service->generateForOrder($order, null, false);
+    $invoice->setIssued(true);
+    $em->persist((new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setOrder($order)->setClient($client)->setStatus('pending'));
+    $em->flush();
+    expect(fn () => $service->reissueInvoice($invoice))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'cancellation request');
+    expect($em->isOpen())->toBeTrue()->and($invoice->getStatus())->toBe(Invoice::STATUS_UNPAID)
+        ->and($invoice->getReplacedByInvoiceId())->toBeNull()
+        ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1);
+});
+
+test('subscription invoice selection retries mutex contention and settles exactly once across a completion crash', function (string $provider, string $type): void {
+    [, $em, $client, $gateway, $transaction] = receiptTestContext();
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema([$em->getClassMetadata(Box\Mod\Invoice\Entity\Subscription::class)]);
+    $order = renewalReviewOrder($em, $client->getId());
+    $source = (new Invoice())->setClientId($client->getId())->setCurrency('USD')->setIssued(true)->setStatus(Invoice::STATUS_PAID);
+    $em->persist($source);
+    $em->flush();
+    $em->persist((new InvoiceItem())->setInvoice($source)->setType('order')->setTask('activate')->setRelId((string) $order->getId())->setPrice(15)->setQuantity(1));
+    $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setClientId($client->getId())->setPayGateway($gateway)->setSid('sub_contention')->setRelType('invoice')->setRelId($source->getId())->setStatus('active');
+    $em->persist($subscription);
+    $em->flush();
+    $service = renewalReviewService($em);
+    $service->shouldReceive('resolveRenewalLine')->andReturn(['price' => 15.0, 'line' => ['quantity' => 1]]);
+    $quote = $service->generateForOrder($order, null, false);
+    $service->issueInvoice($quote, ['defer_issue_event' => true]);
+    $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $lock = 'fb:cancel-request-order:' . $order->getId();
+    expect(FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $lock, 0))->toBeTrue();
+
+    try {
+        expect(fn () => $service->generateRenewalInvoiceForSubscriptionPayment('sub_contention', $client->getId()))->toThrow(Box\Mod\Invoice\Exception\RenewalLockException::class);
+        expect((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(0);
+    } finally {
+        FOSSBilling\Core\Doctrine\NamedLock::release($other, $lock);
+    }
+    $selected = $service->generateRenewalInvoiceForSubscriptionPayment('sub_contention', $client->getId());
+    expect($selected?->getId())->toBe($quote->getId());
+    $transaction->setInvoice($selected);
+    $em->flush();
+    $service = renewalReviewService($em);
+    $service->shouldReceive('completeGatewayPayment')->once()->andThrow(new Error('stopped after settlement'));
+    expect(fn () => $service->recordGatewayPayment($transaction, $client, $provider, 'Subscription receipt ' . $provider, $type, (string) $transaction->getId()))->toThrow(Error::class, 'stopped after settlement');
+    $fresh = new Doctrine\ORM\EntityManager($em->getConnection(), $em->getConfiguration());
+    $retry = renewalReviewService($fresh);
+    $retry->shouldReceive('completeGatewayPayment')->zeroOrMoreTimes();
+    foreach ([1, 2] as $attempt) {
+        $retry->recordGatewayPayment($fresh->find(Box\Mod\Invoice\Entity\Transaction::class, $transaction->getId()), $fresh->find(Box\Mod\Client\Entity\Client::class, $client->getId()), $provider, 'Subscription receipt ' . $provider, $type, (string) $transaction->getId());
+    }
+    expect((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
+        ->and((float) $em->getConnection()->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0)
+        ->and($em->getConnection()->fetchOne('SELECT status FROM invoice WHERE id = ?', [$quote->getId()]))->toBe('paid')
+        ->and((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(2);
+})->with([['PAYPAL-CONTENTION', 'PayPal'], ['in_contention', 'transaction']]);
+
+test('reissue refuses renewal members added after its order mutexes were selected', function (): void {
+    [, $em, $client] = receiptTestContext();
+    $order = renewalReviewOrder($em, $client->getId());
+    $second = renewalReviewOrder($em, $client->getId());
+    $service = renewalReviewService($em);
+    $invoice = $service->generateForOrder($order, null, false);
+    $invoice->setIssued(true);
+    $em->flush();
+    $service->shouldReceive('getNextInvoiceNumber')->once()->andReturnUsing(function () use ($em, $invoice, $second): int {
+        $em->persist((new InvoiceItem())->setInvoice($invoice)->setType('order')->setTask('renew')->setRelId((string) $second->getId())->setPrice(10)->setQuantity(1));
+        $em->flush();
+
+        return 2;
+    });
+    expect(fn () => $service->reissueInvoice($invoice))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'retry reissue');
+    expect((int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
+        ->and($em->getConnection()->fetchOne('SELECT status FROM invoice'))->toBe('unpaid');
 });

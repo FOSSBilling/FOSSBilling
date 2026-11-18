@@ -1906,6 +1906,12 @@ class Service implements InjectionAwareInterface
         $quoteChanged = false;
         $issued = $this->di['em']->wrapInTransaction(function () use ($invoice, $data, $renewalOrderIds, &$renewalBlocked, &$quoteChanged): bool {
             $this->lockAndRefreshInvoice($invoice);
+            // First issuance is only valid from the unpaid state. Re-issuing
+            // an already-issued invoice stays idempotent (paid, refunded, or
+            // canceled rows keep their state); this guard is about drafts.
+            if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Only unpaid draft invoices can be issued.');
+            }
             if ($this->invoiceHasDeletionHold($invoice)) {
                 return false;
             }
@@ -1921,13 +1927,6 @@ class Service implements InjectionAwareInterface
 
                     return false;
                 }
-            }
-
-            // First issuance is only valid from the unpaid state. Re-issuing
-            // an already-issued invoice stays idempotent (paid, refunded, or
-            // canceled rows keep their state); this guard is about drafts.
-            if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
-                throw new InformationException('Only unpaid draft invoices can be issued.');
             }
 
             // Freeze the parties from the live records and claim the number
@@ -4034,13 +4033,26 @@ class Service implements InjectionAwareInterface
             throw new InformationException('This invoice has already been reissued as invoice #:id', [':id' => $original->getReplacedByInvoiceId()]);
         }
 
+        $orderIds = $this->renewalOrderIds($original);
+
+        return $this->withRenewalQuoteLocks($orderIds, function () use ($original, $data, $orderIds): int {
+            foreach ($orderIds as $orderId) {
+                $this->assertNoRenewalHold($orderId);
+            }
+
+            return $this->reissueInvoiceLocked($original, $data, $orderIds);
+        });
+    }
+
+    private function reissueInvoiceLocked(Invoice $original, array $data, array $orderIds): int
+    {
         $attachPayload = (!empty($data['order_id']) || !empty($data['product_id']))
             ? $this->resolveAttachOrderPayload($data)
             : null;
         $reason = trim((string) ($data['reason'] ?? ''));
         $systemService = $this->di['mod_service']('system');
 
-        $new = $this->di['em']->wrapInTransaction(function () use ($original, $attachPayload, $reason, $systemService): Invoice {
+        $new = $this->di['em']->wrapInTransaction(function () use ($original, $attachPayload, $reason, $systemService, $orderIds): Invoice {
             // Reserve the number before any invoice reads. SQLite must acquire its write
             // lock before the locking read; the outer transaction rolls this back on failure.
             $next_nr = $this->getNextInvoiceNumber();
@@ -4051,6 +4063,12 @@ class Service implements InjectionAwareInterface
             $state = $this->lockAndRefreshInvoice($original);
             if (!$state['issued'] || $state['status'] !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Only issued unpaid invoices can be reissued');
+            }
+            if ($this->renewalOrderIds($original) !== $orderIds) {
+                throw new InformationException('The renewal invoice changed. Reload it and retry reissue.');
+            }
+            foreach ($orderIds as $orderId) {
+                $this->assertNoRenewalHold($orderId);
             }
             // Re-check against the locked row, which may have changed while
             // waiting on the lock.
@@ -5120,10 +5138,30 @@ class Service implements InjectionAwareInterface
     public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
     {
         return $this->withRenewalQuoteLocks([$order], function () use ($order, $due_days, $applyPromo): Invoice {
+            $order = $this->reloadRenewalOrder($order);
             $this->assertNoRenewalHold((int) $order->getId());
 
-            return $this->di['em']->getConnection()->transactional(fn (): Invoice => $this->generateForOrderLocked($order, $due_days, $applyPromo));
+            try {
+                return $this->di['em']->getConnection()->transactional(fn (): Invoice => $this->generateForOrderLocked($order, $due_days, $applyPromo));
+            } catch (\Throwable $e) {
+                // DBAL rollback does not undo ORM identity-map changes from prior flushes.
+                $this->di['em']->close();
+                $this->resetEntityManager();
+
+                throw $e;
+            }
         });
+    }
+
+    private function reloadRenewalOrder(Order $order): Order
+    {
+        $current = $this->di['em']->contains($order) ? $order : $this->di['em']->getRepository(Order::class)->find($order->getId());
+        if (!$current instanceof Order) {
+            throw new InformationException('Order not found');
+        }
+        $this->di['em']->refresh($current);
+
+        return $current;
     }
 
     private function generateForOrderLocked(Order $order, $due_days, bool $applyPromo, string $task = InvoiceItem::TASK_RENEW): Invoice
@@ -5134,6 +5172,9 @@ class Service implements InjectionAwareInterface
         // check if we do have invoice prepared already
         if ($order->getUnpaidInvoiceId() !== null) {
             $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
+            if ($p instanceof Invoice) {
+                $this->di['em']->refresh($p);
+            }
             if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
                 return $p;
             }
@@ -5255,13 +5296,24 @@ class Service implements InjectionAwareInterface
     public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true): Invoice
     {
         return $this->withRenewalQuoteLocks($orders, function () use ($orders, $applyPromo): Invoice {
+            $orders = array_map($this->reloadRenewalOrder(...), $orders);
             foreach ($orders as $order) {
                 if ($order->getId() !== null) {
                     \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $order->getId());
                 }
             }
 
-            $eligible = array_values(array_filter($orders, fn (Order $order): bool => !$this->hasRenewalHold((int) $order->getId())));
+            $eligible = array_values(array_filter($orders, function (Order $order): bool {
+                if ($this->hasRenewalHold((int) $order->getId())) {
+                    return false;
+                }
+                $existing = $order->getUnpaidInvoiceId() === null ? null : $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
+                if ($existing instanceof Invoice) {
+                    $this->di['em']->refresh($existing);
+                }
+
+                return !$existing instanceof Invoice || $existing->getStatus() !== Invoice::STATUS_UNPAID;
+            }));
 
             return $this->generateMergedInvoiceForOrdersLocked($eligible, $applyPromo);
         });
@@ -5336,7 +5388,7 @@ class Service implements InjectionAwareInterface
             foreach ($ids as $id) {
                 $name = 'fb:cancel-request-order:' . $id;
                 if (!NamedLock::acquire($connection, $name, 0)) {
-                    throw new InformationException('A cancellation request is being processed. Please retry renewal later.');
+                    throw new Exception\RenewalLockException('A cancellation request is being processed. Please retry renewal later.');
                 }
                 $held[] = $name;
             }
@@ -5352,20 +5404,21 @@ class Service implements InjectionAwareInterface
     private function hasRenewalHold(int $orderId): bool
     {
         $connection = $this->di['em']->getConnection();
+        $currentRead = $connection->isTransactionActive() ? RowLock::suffix($connection) : '';
         if ((int) $connection->fetchOne(
-            'SELECT id FROM client_order_cancel_request WHERE client_order_id = ? AND status = ?',
+            'SELECT id FROM client_order_cancel_request WHERE client_order_id = ? AND status = ?' . $currentRead,
             [$orderId, \Box\Mod\Order\Entity\ClientOrderCancelRequest::STATUS_PENDING]
         ) > 0) {
             return true;
         }
         if ((int) $connection->fetchOne(
-            "SELECT id FROM client_order_meta WHERE client_order_id = ? AND ((name = ? AND value = '1') OR (name = ? AND value IN ('1', '2')))",
+            "SELECT id FROM client_order_meta WHERE client_order_id = ? AND ((name = ? AND value = '1') OR (name = ? AND value IN ('1', '2')))" . $currentRead,
             [$orderId, \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END, \Box\Mod\Order\Service::META_SCHEDULED_CANCEL_CLAIM]
         ) > 0) {
             return true;
         }
 
-        return $connection->fetchOne('SELECT status FROM client_order WHERE id = ?', [$orderId]) === Order::STATUS_CANCELED;
+        return $connection->fetchOne('SELECT status FROM client_order WHERE id = ?' . $currentRead, [$orderId]) === Order::STATUS_CANCELED;
     }
 
     private function assertNoRenewalHold(int $orderId): void
@@ -5376,8 +5429,31 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    private function retryUnissuedRenewalInvoices(): void
+    {
+        $ids = $this->di['em']->getConnection()->fetchFirstColumn(
+            'SELECT DISTINCT i.id FROM invoice i INNER JOIN invoice_item ii ON ii.invoice_id = i.id WHERE EXISTS (SELECT 1 FROM client_order o WHERE o.unpaid_invoice_id = i.id) AND i.issued = :issued AND i.status = :status AND ii.type = :type AND ii.task = :task ORDER BY i.id',
+            ['issued' => false, 'status' => Invoice::STATUS_UNPAID, 'type' => InvoiceItem::TYPE_ORDER, 'task' => InvoiceItem::TASK_RENEW],
+            ['issued' => \Doctrine\DBAL\ParameterType::BOOLEAN]
+        );
+        foreach ($ids as $id) {
+            try {
+                $invoice = $this->getInvoiceRepository()->find((int) $id);
+                if ($invoice instanceof Invoice) {
+                    $this->issueInvoice($invoice, ['use_credits' => true]);
+                }
+            } catch (\Throwable $e) {
+                $this->di['logger']->warning('Could not issue renewal draft #{id}: {message}', ['id' => $id, 'message' => $e->getMessage()]);
+                if (!$this->di['em']->isOpen()) {
+                    $this->resetEntityManager();
+                }
+            }
+        }
+    }
+
     public function generateInvoicesForExpiringOrders(): bool
     {
+        $this->retryUnissuedRenewalInvoices();
         $orderService = $this->di['mod_service']('Order');
         $orders = $orderService->getSoonExpiringActiveOrders();
 
@@ -6203,6 +6279,13 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
+        if (!$invoice->isIssued() && $invoice->getStatus() === Invoice::STATUS_CANCELED && $invoice->getNr() === null
+            && $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) === []
+            && $this->getAmountPaid($invoice) === 0.0
+            && $this->getTransactionRepository()->findOneBy(['invoice' => $invoice]) === null) {
+            return true;
+        }
+
         if (!$invoice->isIssued() && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
             return true;
         }
@@ -6950,6 +7033,8 @@ class Service implements InjectionAwareInterface
             $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()} for subscription payment (SID: {$subscriptionSid}, client: {$clientId}).");
 
             return $invoice;
+        } catch (Exception\RenewalLockException $e) {
+            throw $e;
         } catch (\Exception $e) {
             $this->di['logger']->warning('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
             // Doctrine closes the manager after a failed transactional flush.

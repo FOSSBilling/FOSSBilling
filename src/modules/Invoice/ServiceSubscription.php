@@ -260,8 +260,7 @@ class ServiceSubscription implements InjectionAwareInterface
         // A status update may arrive before the deletion webhook and already
         // mark this row canceled. The deletion event still has to finish any
         // order with an outstanding scheduled-cancellation marker.
-        if (in_array($subscription->getStatus(), [self::STATUS_PENDING_CANCELLATION, 'canceled'], true)
-            && $subscription->getRelType() === 'invoice') {
+        if ($subscription->getRelType() === 'invoice') {
             $query = $this->di['em']->getConnection()->createQueryBuilder();
             $orderIds = $query
                 ->select('DISTINCT ii.rel_id')
@@ -295,6 +294,18 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->persistUpdate($subscription, ['status' => 'canceled']);
     }
 
+    private function hasOtherLiveOrder(Subscription $subscription, Order $order): bool
+    {
+        if ($subscription->getRelType() !== 'invoice') {
+            return false;
+        }
+
+        return (int) $this->di['em']->getConnection()->fetchOne(
+            'SELECT COUNT(*) FROM invoice_item ii INNER JOIN client_order o ON ' . $this->di['em']->getConnection()->getDatabasePlatform()->getConcatExpression("''", 'o.id') . ' = ii.rel_id WHERE ii.invoice_id = ? AND ii.type = ? AND o.id <> ? AND o.status <> ?',
+            [$subscription->getRelId(), Entity\InvoiceItem::TYPE_ORDER, $order->getId(), Order::STATUS_CANCELED]
+        ) > 0;
+    }
+
     public function canCancelImmediatelyForOrder(Order $order): bool
     {
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
@@ -303,7 +314,7 @@ class ServiceSubscription implements InjectionAwareInterface
             }
 
             try {
-                if (trim((string) $subscription->getSid()) === ''
+                if ($this->hasOtherLiveOrder($subscription, $order) || trim((string) $subscription->getSid()) === ''
                     || !method_exists($this->getGatewayAdapter($subscription), 'cancelSubscription')) {
                     return false;
                 }
@@ -323,7 +334,7 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         foreach ($subscriptions as $subscription) {
-            if (trim((string) $subscription->getSid()) === '') {
+            if ($this->hasOtherLiveOrder($subscription, $order) || trim((string) $subscription->getSid()) === '') {
                 return false;
             }
 
@@ -369,6 +380,17 @@ class ServiceSubscription implements InjectionAwareInterface
     public function hasUncanceledSubscriptionForOrder(Order $order): bool
     {
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
+            if ($subscription->getStatus() === 'canceled' && trim((string) $subscription->getSid()) !== ''
+                && $subscription->getPayGateway()?->getGateway() === 'Stripe') {
+                try {
+                    if ($this->getGatewayAdapter($subscription)->getSubscriptionStatus($subscription->getSid()) !== 'canceled') {
+                        return true;
+                    }
+                } catch (\Exception) {
+                    // Unavailable provider state must keep existing priced renewals.
+                    return true;
+                }
+            }
             if ($subscription->getStatus() !== 'canceled'
                 && trim((string) $subscription->getSid()) !== '') {
                 return true;
@@ -433,6 +455,12 @@ class ServiceSubscription implements InjectionAwareInterface
             if (($item['task'] ?? null) === ServiceGatewayFees::TASK) {
                 continue;
             }
+            if (($item['type'] ?? null) === Entity\InvoiceItem::TYPE_ORDER && is_numeric($item['rel_id'] ?? null)) {
+                $orderIds[(int) $item['rel_id']] = true;
+                if (count($orderIds) > 1) {
+                    return null;
+                }
+            }
             $lineTotal = (float) ($item['price'] ?? 0) * (float) ($item['quantity'] ?? 0);
             $period = $item['period'] ?? null;
 
@@ -447,9 +475,6 @@ class ServiceSubscription implements InjectionAwareInterface
             }
 
             $positiveTotal += $lineTotal;
-            if (($item['type'] ?? null) === Entity\InvoiceItem::TYPE_ORDER && is_numeric($item['rel_id'] ?? null)) {
-                $orderIds[(int) $item['rel_id']] = true;
-            }
 
             if ($subscriptionPeriod === null) {
                 $subscriptionPeriod = $period;

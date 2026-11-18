@@ -107,7 +107,7 @@ test('withdraw refuses another client’s request', function (): void {
     $owner = createEntity(Client::class, ['id' => 7]);
     $other = createEntity(Client::class, ['id' => 9]);
     $request = createEntity(ClientOrderCancelRequest::class, ['status' => ClientOrderCancelRequest::STATUS_PENDING]);
-    $request->setClient($owner);
+    $request->setClient($owner)->setOrder($order);
 
     $requestRepo = Mockery::mock(ClientOrderCancelRequestRepository::class);
     $requestRepo->shouldReceive('find')->once()->with(3)->andReturn($request);
@@ -176,7 +176,7 @@ test('accept leaves an unsupported gateway subscription for staff to cancel', fu
     $orders = Mockery::mock(Box\Mod\Order\Service::class);
     $orders->shouldReceive('findByClientIdAndOrderId')->once()->andReturn($order);
     $orders->shouldNotReceive('updateOrderMeta');
-    $orders->shouldReceive('scheduleCancellationFromOrder')->once()->with($order, 'Cancellation request #6', true)->andThrow(new FOSSBilling\Core\Exception\InformationException('Cancel the subscription at the payment provider.'));
+    $orders->shouldReceive('scheduleCancellationFromOrder')->once()->with($order, 'Cancellation request #6', true, 6)->andThrow(new FOSSBilling\Core\Exception\InformationException('Cancel the subscription at the payment provider.'));
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);

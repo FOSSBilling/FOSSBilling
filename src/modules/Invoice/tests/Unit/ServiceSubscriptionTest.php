@@ -298,7 +298,7 @@ test('finalizes a scheduled cancellation after subscription deletion regardless 
 
     expect($service->finalizeCancellationFromGateway(7))->toBeTrue()
         ->and($subscription->getStatus())->toBe('canceled');
-})->with([ServiceSubscription::STATUS_PENDING_CANCELLATION, 'canceled']);
+})->with([ServiceSubscription::STATUS_PENDING_CANCELLATION, 'canceled', 'active']);
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
     $order = createEntity(Order::class, ['id' => 10]);
@@ -734,3 +734,63 @@ test('unconfirmed gateway subscription states prevent free renewals', function (
     $service->getDi()['em']->shouldReceive('getConnection')->andReturn($dbal);
     expect($service->hasUncanceledSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBe($held);
 })->with([['past_due', true], ['unpaid', true], ['paused', true], ['pending_cancellation', true], ['canceled', false]]);
+
+test('shared subscriptions require staff reconciliation before canceling either live order', function (bool $otherLive): void {
+    $connection = createSubscriptionDbal();
+    $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, status TEXT)');
+    $connection->insert('client_order', ['id' => 10, 'status' => 'active']);
+    $connection->insert('client_order', ['id' => 11, 'status' => $otherLive ? 'suspended' : 'canceled']);
+    $gateway = createEntity(PayGateway::class, ['id' => 2]);
+    $subscription = createEntity(Subscription::class, ['id' => 7, 'payGateway' => $gateway, 'relType' => 'invoice', 'relId' => 25, 'sid' => 'sub_123', 'status' => 'active']);
+    $repo = Mockery::mock(SubscriptionRepository::class);
+    $repo->shouldReceive('find')->with(7)->andReturn($subscription);
+    $adapter = new class {
+        public function cancelSubscription(string $sid): never
+        {
+            throw new LogicException('Preflight must not cancel');
+        }
+
+        public function cancelSubscriptionAtPeriodEnd(string $sid): never
+        {
+            throw new LogicException('Preflight must not schedule');
+        }
+    };
+    $gateways = Mockery::mock(ServicePayGateway::class);
+    $gateways->shouldReceive('getPaymentAdapter')->zeroOrMoreTimes()->with($gateway)->andReturn($adapter);
+    $service = subscriptionService(subRepo: $repo);
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn () => $gateways);
+    $order = createEntity(Order::class, ['id' => 10]);
+    expect($service->canCancelImmediatelyForOrder($order))->toBe(!$otherLive)
+        ->and($service->canCancelAtPeriodEndForOrder($order))->toBe(!$otherLive);
+})->with([true, false]);
+
+test('locally canceled Stripe subscriptions require current gateway confirmation before free pricing', function (?string $providerState, bool $held): void {
+    $gateway = createEntity(PayGateway::class, ['id' => 2, 'gateway' => 'Stripe']);
+    $subscription = createEntity(Subscription::class, ['id' => 7, 'payGateway' => $gateway, 'sid' => 'sub_123', 'status' => 'canceled']);
+    $repo = Mockery::mock(SubscriptionRepository::class);
+    $repo->shouldReceive('find')->with(7)->andReturn($subscription);
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $expectation = $adapter->shouldReceive('getSubscriptionStatus')->once()->with('sub_123');
+    if ($providerState === null) {
+        $expectation->andThrow(new RuntimeException('Gateway unavailable'));
+    } else {
+        $expectation->andReturn($providerState);
+    }
+    $gateways = Mockery::mock(ServicePayGateway::class);
+    $gateways->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+    $service = subscriptionService(subRepo: $repo);
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn(createSubscriptionDbal());
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn () => $gateways);
+    expect($service->hasUncanceledSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBe($held);
+})->with([['active', true], ['pending_cancellation', true], ['canceled', false], [null, true]]);
+
+test('multi-order invoices cannot start a subscription even with matching prices or a free second line', function (float $secondPrice): void {
+    $items = [orderLine(10, 12), orderLine(11, $secondPrice)];
+    expect(discountedInvoiceService($items, 0, [discountedOrder(10, 12), discountedOrder(11, $secondPrice)])->isSubscribable(30))->toBeFalse();
+})->with([8.0, 0.0]);
+
+test('single-order subscriptions without discounts compare their renewal price', function (float $renewalPrice, bool $allowed): void {
+    $service = discountedInvoiceService([orderLine(10, 12)], 0, [discountedOrder(10, 12)], [], [10 => ['price' => $renewalPrice, 'line' => ['quantity' => 1]]]);
+    expect($service->isSubscribable(30))->toBe($allowed);
+})->with([[12.0, true], [0.0, false]]);

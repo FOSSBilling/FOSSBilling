@@ -129,7 +129,9 @@
                         <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
                     {% endif %}
                     <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open Ticket'|trans }}</button>
-                    {% if cancellation_started %}
+                    {% if order.status == 'canceled' %}
+                        <span class="text-muted small d-block mb-2">{{ 'This service has been canceled.'|trans }}</span>
+                    {% elseif cancellation_started %}
                         <span class="text-muted small d-block mb-2">{{ 'Cancellation is scheduled or awaiting staff review.'|trans }}</span>
                     {% elseif cancel_request %}
                         <span class="text-muted small d-block mb-2">{{ 'Your cancellation request is waiting to be processed.'|trans }}</span>

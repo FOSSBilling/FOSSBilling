@@ -244,7 +244,7 @@ test('requests cancellation of a service', function (): void {
     expect($apiMock->cancel_request(['id' => 1, 'type' => 'immediate', 'reason' => 'Leaving']))->toBeTrue();
 });
 
-test('gets and withdraws a waiting cancellation request', function (): void {
+test('gets and withdraws a waiting cancellation request', function (int|string $requestId): void {
     $order = createEntity(Box\Mod\Order\Entity\Order::class);
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
     $request = createEntity(Box\Mod\Order\Entity\ClientOrderCancelRequest::class, ['id' => 3, 'type' => 'immediate', 'reason' => 'Leaving']);
@@ -265,8 +265,8 @@ test('gets and withdraws a waiting cancellation request', function (): void {
 
     expect($apiMock->cancel_request_get(['id' => 1]))->toBe(['id' => 3, 'type' => 'immediate']);
     expect($apiMock->cancel_request_get(['id' => 1]))->toBeNull();
-    expect($apiMock->cancel_request_withdraw(['id' => 1, 'request_id' => 3]))->toBeTrue();
-});
+    expect($apiMock->cancel_request_withdraw(['id' => 1, 'request_id' => $requestId]))->toBeTrue();
+})->with([3, '3']);
 
 test('cancellation API rejects non-string type and reason', function (mixed $type, mixed $reason): void {
     $api = apiEndpoint(new Client());
@@ -277,3 +277,13 @@ test('cancellation API rejects non-string type and reason', function (mixed $typ
     $api->setDi($di);
     expect(fn () => $api->cancel_request(['id' => 1, 'type' => $type, 'reason' => $reason]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'must be strings');
 })->with([[['immediate'], 'reason'], ['immediate', ['reason']], [true, 'reason'], ['immediate', 123]]);
+
+test('withdrawal rejects a fractional query-string request id before invoking the service', function (): void {
+    $api = apiEndpoint(new Client());
+    $cancel = Mockery::mock(Box\Mod\Order\ServiceCancelRequest::class);
+    $cancel->shouldNotReceive('withdraw');
+    $di = container();
+    $di['mod_service'] = $di->protect(Tests\Helpers\moduleService(['order:cancelrequest' => $cancel]));
+    $api->setDi($di);
+    expect(fn () => $api->cancel_request_withdraw(['id' => 1, 'request_id' => '3.5']))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'positive cancellation request ID');
+});

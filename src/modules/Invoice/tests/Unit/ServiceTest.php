@@ -111,7 +111,7 @@ function invoiceItemEmAndRepo(): array
     $em->shouldReceive('getRepository')->with(ClientBalance::class)->byDefault()->andReturn($gatewayBalanceRepo);
     $em->shouldReceive('refresh')->byDefault();
     $conn = Mockery::mock(Connection::class)->shouldIgnoreMissing();
-    $conn->shouldReceive('transactional')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $conn->shouldReceive('transactional')->byDefault()->andReturnUsing(fn (callable $callback): mixed => $callback($conn));
     $em->shouldReceive('getConnection')->byDefault()->andReturn($conn);
 
     return [$em, $repo];
@@ -3917,6 +3917,7 @@ test('returns existing invoice when generating for order with unpaid invoice', f
     $invoiceModel->status = Invoice::STATUS_UNPAID;
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('find')
         ->with(2)
@@ -3956,6 +3957,7 @@ test('clears stale paid invoice reference when generating for order', function (
         ->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('find')
         ->with(2)
@@ -3996,6 +3998,7 @@ test('generates invoice for order', function (): void {
         ->atLeast()->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemServiceMock);
@@ -4038,6 +4041,7 @@ test('generates invoice for active order using the order price, not the product 
         ->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(function (string $module) use ($productService, $invoiceItemServiceMock): Mockery\MockInterface {
@@ -4108,6 +4112,7 @@ test('generates domain renewal invoice with renewal title containing the domain'
         ->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(function (string $module, ?string $sub = null) use ($productService, $currencyServiceMock, $invoiceItemServiceMock): Mockery\MockInterface {
@@ -4146,6 +4151,7 @@ test('generates invoice for zero amount order', function (): void {
         ->atLeast()->once();
 
     $di = container();
+    $di['em']->shouldReceive('contains')->byDefault()->with(Mockery::type(Order::class))->andReturn(true);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemServiceMock);
@@ -4156,9 +4162,12 @@ test('generates invoice for zero amount order', function (): void {
 });
 
 test('throws exception when generating invoice for negative amount order', function (): void {
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('resetEntityManager')->once();
     $clientOrder = createEntity(Order::class, ['price' => -1, 'quantity' => 1]);
-    $service->setDi(container());
+    $di = container();
+    $di['em']->shouldReceive('contains')->with($clientOrder)->andReturn(true);
+    $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateForOrder($clientOrder))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invoices are not generated for negative amount orders.');
@@ -4618,6 +4627,8 @@ test('merged renewal invoice carries exactly one line per order and falls due wi
 
     $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
+    $em->shouldReceive('contains')->with(Mockery::type(Order::class))->andReturn(true);
+    $em->shouldReceive('refresh')->with(Mockery::type(Order::class));
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['Invoice', 'InvoiceItem'] => $invoiceItemService,
@@ -4666,6 +4677,8 @@ test('merged renewal invoice resolves every line before persisting anything', fu
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $di = container();
+    $em->shouldReceive('contains')->with(Mockery::type(Order::class))->andReturn(true);
+    $em->shouldReceive('refresh')->with(Mockery::type(Order::class));
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
@@ -7596,6 +7609,7 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getConnection')->andReturn(container()['em']->getConnection());
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
@@ -11202,7 +11216,9 @@ test('a paid pending free renewal invoice is reused after hosting payment', func
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('resolveRenewalLine')->once()->with($order)->andReturn(['price' => 0.0, 'line' => ['free_domain_renewal' => true, 'free_domain_waiting_hosting' => false]]);
     $service->shouldReceive('getInvoiceItemRepository')->once()->andReturn($items);
-    $service->setDi(container());
+    $di = container();
+    $di['em']->shouldReceive('contains')->with($order)->andReturn(true);
+    $service->setDi($di);
 
     expect($service->generateForOrder($order))->toBe($invoice);
 });

@@ -3082,6 +3082,16 @@ class Service implements InjectionAwareInterface
      */
     public function freeDomainRenewalUntil(int $orderId, bool $requirePaidTerm = true): ?int
     {
+        return $this->resolveFreeDomainRenewalUntil($orderId, $requirePaidTerm);
+    }
+
+    public function hasPendingHostingRenewal(int $orderId, int $invoiceId): bool
+    {
+        return $this->resolveFreeDomainRenewalUntil($orderId, false, $invoiceId) !== null;
+    }
+
+    private function resolveFreeDomainRenewalUntil(int $orderId, bool $requirePaidTerm, ?int $pendingInvoiceId = null): ?int
+    {
         $orderRepository = $this->di['em']->getRepository(Order::class);
         $order = $orderRepository->find($orderId);
         if (!$order instanceof Order) {
@@ -3128,6 +3138,12 @@ class Service implements InjectionAwareInterface
         ]);
         foreach ($candidates as $hosting) {
             if ((int) $hosting->getId() === $orderId) {
+                continue;
+            }
+            if ($pendingInvoiceId !== null && !(int) $this->di['em']->getConnection()->fetchOne(
+                'SELECT COUNT(*) FROM invoice_item ii INNER JOIN invoice i ON i.id = ii.invoice_id WHERE i.id = ? AND i.status = ? AND ii.type = ? AND ii.task = ? AND ii.rel_id = ? AND ii.status = ?',
+                [$pendingInvoiceId, Invoice::STATUS_PAID, \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER, \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW, (string) $hosting->getId(), \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_SETUP]
+            )) {
                 continue;
             }
             $hostingExpiry = $hosting->getExpiresAt();

@@ -309,6 +309,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         if (!$reviewedZero) {
                             $until = $this->di['mod_service']('Product')->freeDomainRenewalUntil($orderId);
                             if ($until === null) {
+                                if ($this->di['mod_service']('Product')->hasPendingHostingRenewal($orderId, (int) $item->getInvoice()?->getId())) {
+                                    return false;
+                                }
                                 $item->setStatus(InvoiceItem::STATUS_FAILED);
 
                                 throw new \FOSSBilling\Core\Exception\InformationException('The paid hosting term does not cover this domain renewal. Staff must review it before expiry.');

@@ -460,6 +460,12 @@ test('syncs subscription webhook status through the internal service path', func
     ];
     $event = (object) ['data' => (object) ['object' => $stripeSubscription]];
 
+    $subscriptions = Mockery::mock();
+    $subscriptions->shouldReceive('retrieve')->once()->with('sub_123', [])->andReturn($stripeSubscription);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $subscriptions;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+
     $apiAdmin = Mockery::mock();
     $apiAdmin->shouldReceive('invoice_subscription_get')
         ->once()
@@ -489,6 +495,12 @@ test('syncs end-of-period cancellation state from Stripe', function (): void {
         'status' => 'active',
         'cancel_at_period_end' => true,
     ]]];
+
+    $subscriptions = Mockery::mock();
+    $subscriptions->shouldReceive('retrieve')->once()->with('sub_123', [])->andReturn($event->data->object);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $subscriptions;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
 
     $apiAdmin = Mockery::mock();
     $apiAdmin->shouldReceive('invoice_subscription_get')->once()->andReturn(['id' => 42]);
@@ -2436,7 +2448,8 @@ describe('processWebhookEvent noise filtering', function (): void {
         $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->shouldReceive('findIdBySid')->once()->with('sub_nonexistent')->andReturn(null);
 
-        ['em' => $em] = buildEntityManagerMocks();
+        ['em' => $em, 'connection' => $connection] = buildEntityManagerMocks();
+        expectStripeObjectLock($connection, 'sub_nonexistent', 1);
         $em->shouldReceive('remove')->once()->with($tx);
         $em->shouldReceive('flush')->once();
 
@@ -3518,22 +3531,23 @@ test('a renewal charge is recorded after a closed manager is replaced', function
         ->and($replacementTx->getTxnId())->toBe('in_no_order');
 });
 
-test('failed Stripe invoices never establish or reverse subscription cancellation', function (): void {
-    $api = Mockery::mock();
-    $api->shouldNotReceive('invoice_subscription_get');
-    $api->shouldNotReceive('invoice_subscription_update');
+test('failed Stripe invoice events are discarded after verification without provider lookups', function (string $type): void {
+    $rawBody = json_encode(['id' => 'evt_failed', 'type' => $type, 'data' => ['object' => ['id' => 'inpay_failed']]], JSON_THROW_ON_ERROR);
     $di = container();
-    $di['mod_service'] = $di->protect(function (): never {
-        throw new LogicException('A failed invoice must not update subscription status');
-    });
+    $tx = buildTransaction();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->once()->with($tx);
+    $em->shouldReceive('flush')->once();
+    $em->shouldNotReceive('getConnection', 'getRepository');
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function (): never { throw new LogicException('Failed invoice must not update billing'); });
     $this->adapter->setDi($di);
-    $event = (object) ['data' => (object) ['object' => (object) ['subscription' => 'sub_retry']]];
-    foreach ([1, 2] as $attempt) {
-        expect(invokePrivateMethod($this->adapter, 'handleInvoicePaymentFailed', [$api, buildTransaction(), $event]))->toBeFalse();
-    }
-});
+    $data = ['http_raw_post_data' => $rawBody, 'server' => ['HTTP_STRIPE_SIGNATURE' => signStripeWebhookPayload($rawBody)], 'get' => [], 'post' => []];
+    invokePrivateMethod($this->adapter, 'processWebhookEvent', [Mockery::mock(), $tx, $data, 1]);
+    expect($tx->getTxnId())->toBe('evt_failed');
+})->with(['invoice.payment_failed', 'invoice_payment.failed']);
 
-test('Stripe lifecycle updates distinguish subscriptions that have ended', function (string $providerStatus, string $localStatus): void {
+test('Stripe lifecycle updates distinguish subscriptions that have ended', function (string $providerStatus, string $localStatus, bool $cancelAtPeriodEnd = false): void {
     $api = Mockery::mock();
     $api->shouldReceive('invoice_subscription_get')->once()->with(['sid' => 'sub_retry'])->andReturn(['id' => 42]);
     $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
@@ -3541,6 +3555,45 @@ test('Stripe lifecycle updates distinguish subscriptions that have ended', funct
     $di = container();
     $di['mod_service'] = $di->protect(fn () => $subscriptions);
     $this->adapter->setDi($di);
-    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_retry', 'status' => $providerStatus]]];
+    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_retry', 'status' => $providerStatus, 'cancel_at_period_end' => $cancelAtPeriodEnd]]];
+    $provider = Mockery::mock();
+    $provider->shouldReceive('retrieve')->once()->with('sub_retry', [])->andReturn($event->data->object);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $provider;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
     expect(invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [$api, buildTransaction(), $event]))->toBeFalse();
-})->with([['past_due', 'active'], ['unpaid', 'active'], ['paused', 'active'], ['incomplete', 'active'], ['trialing', 'active'], ['incomplete_expired', 'canceled'], ['canceled', 'canceled']]);
+})->with([['past_due', 'active'], ['unpaid', 'active'], ['paused', 'active'], ['incomplete', 'active'], ['trialing', 'active'], ['incomplete_expired', 'canceled'], ['canceled', 'canceled'], ['past_due', 'pending_cancellation', true], ['canceled', 'canceled', true]]);
+
+test('delayed Stripe updates apply current provider state instead of reopening a canceled snapshot', function (string $providerStatus, string $localStatus): void {
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_subscription_get')->once()->with(['sid' => 'sub_delayed'])->andReturn(['id' => 42, 'status' => 'canceled']);
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldReceive('updateStatusFromGateway')->once()->with(42, $localStatus);
+    $provider = Mockery::mock();
+    $provider->shouldReceive('retrieve')->once()->with('sub_delayed', [])->andReturn((object) ['id' => 'sub_delayed', 'status' => $providerStatus]);
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $provider;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptions);
+    $this->adapter->setDi($di);
+    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_delayed', 'status' => 'unpaid']]];
+    expect(invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [$api, buildTransaction(), $event]))->toBeFalse();
+})->with([['canceled', 'canceled'], ['past_due', 'active']]);
+
+test('Stripe state reconciliation failures remain retryable instead of acknowledging an old update', function (): void {
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_subscription_get')->once()->andReturn(['id' => 42]);
+    $subscriptions = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptions->shouldNotReceive('updateStatusFromGateway');
+    $provider = Mockery::mock();
+    $provider->shouldReceive('retrieve')->once()->andThrow(new RuntimeException('Stripe unavailable'));
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->subscriptions = $provider;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptions);
+    $this->adapter->setDi($di);
+    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_delayed', 'status' => 'unpaid']]];
+    expect(fn () => invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [$api, buildTransaction(), $event]))->toThrow(RuntimeException::class, 'Stripe unavailable');
+});

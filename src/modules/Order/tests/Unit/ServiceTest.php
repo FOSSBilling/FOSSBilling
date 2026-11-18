@@ -4921,6 +4921,7 @@ test('batchSuspendExpired cancels scheduled orders at expiry instead of suspendi
     $service->shouldReceive('processScheduledCancellation')->once()->with($order)->andReturn($completed);
     $service->shouldNotReceive('suspendFromOrder');
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchFirstColumn')->once()->andReturn([42]);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getConnection')->andReturn($connection);

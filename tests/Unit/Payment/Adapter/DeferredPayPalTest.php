@@ -16,6 +16,7 @@ test('verified PayPal renewal receipts remain credit during deletion recovery, i
     $payload['get']['sig'] = FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId());
     $api = $c['api'];
     $adapter = $c['adapter'];
+    $c['em']->refresh($c['order']);
     $expiresAt = clone $c['order']->getExpiresAt();
     if ($crash) {
         $api->crash = true;

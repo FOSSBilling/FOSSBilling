@@ -2085,16 +2085,16 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function scheduleCancellationFromOrder(Order $order, $reason = null, bool $allowWithoutSubscription = false): bool
+    public function scheduleCancellationFromOrder(Order $order, $reason = null, bool $allowWithoutSubscription = false, ?int $requestId = null): bool
     {
-        return $this->withCancellationScheduleLock($order, function () use ($order, $reason, $allowWithoutSubscription): bool {
+        return $this->withCancellationScheduleLock($order, function () use ($order, $reason, $allowWithoutSubscription, $requestId): bool {
             $this->di['em']->refresh($order);
 
-            return $this->scheduleCancellationUnderLock($order, $reason, $allowWithoutSubscription);
+            return $this->scheduleCancellationUnderLock($order, $reason, $allowWithoutSubscription, $requestId);
         }, $allowWithoutSubscription ? 0 : 30);
     }
 
-    private function scheduleCancellationUnderLock(Order $order, $reason, bool $allowWithoutSubscription): bool
+    private function scheduleCancellationUnderLock(Order $order, $reason, bool $allowWithoutSubscription, ?int $requestId): bool
     {
         $orderId = $this->orderId($order);
         $this->assertOrderNotDeleting($order);
@@ -2110,9 +2110,10 @@ class Service implements InjectionAwareInterface
         if ($allowWithoutSubscription && $order->getExpiresAt() === null) {
             throw new InformationException('This service cannot be cancelled at the end of its period.');
         }
+        $options = $requestId === null ? [] : [self::META_SCHEDULED_CANCEL_OPTIONS => json_encode(['reason' => $reason, 'skip_event' => false, 'request_id' => $requestId], JSON_THROW_ON_ERROR)];
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         if ($allowWithoutSubscription && !$subscriptionService->hasActiveSubscriptionForOrder($order)) {
-            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
+            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1'] + $options);
         } else {
             if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
                 if ($allowWithoutSubscription) {
@@ -2124,7 +2125,7 @@ class Service implements InjectionAwareInterface
 
             // Commit a review hold before provider I/O. A crash or ambiguous
             // response must not leave a provider cancellation with no local marker.
-            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1', self::META_SCHEDULED_CANCEL_PHASE => 'scheduling']);
+            $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1', self::META_SCHEDULED_CANCEL_CLAIM => '1', self::META_SCHEDULED_CANCEL_PHASE => 'scheduling'] + $options);
             if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
                 throw new InformationException('No active gateway subscription is linked to this order.');
             }
@@ -2762,20 +2763,25 @@ class Service implements InjectionAwareInterface
 
         foreach ($list as $order) {
             try {
-                // Re-check under the current state: the order may have been
-                // renewed/paid while earlier orders in this run were processed.
-                $this->di['em']->refresh($order);
-                if ($order->getStatus() !== Order::STATUS_ACTIVE) {
-                    continue;
-                }
-                $expiresAt = $order->getExpiresAt();
-                if (!$expiresAt instanceof \DateTimeInterface || $expiresAt->format('Y-m-d H:i:s') > date('Y-m-d H:i:s')) {
-                    continue;
-                }
-                if (($this->getOrderMetaRepository()->getPairsForOrder((int) $order->getId())[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
-                    continue;
-                }
-                $this->suspendFromOrder($order, $reason);
+                $this->withLifecycleLock($order, function () use ($order, $reason): void {
+                    // Re-check under the current state: the order may have been
+                    // renewed/paid while earlier orders in this run were processed.
+                    $this->di['em']->refresh($order);
+                    if ($order->getStatus() !== Order::STATUS_ACTIVE) {
+                        return;
+                    }
+                    $expiresAt = $order->getExpiresAt();
+                    if (!$expiresAt instanceof \DateTimeInterface || $expiresAt->format('Y-m-d H:i:s') > date('Y-m-d H:i:s')) {
+                        return;
+                    }
+                    if (($this->getOrderMetaRepository()->getPairsForOrder((int) $order->getId())[self::META_CANCEL_AT_PERIOD_END] ?? null) === '1') {
+                        return;
+                    }
+                    if ($this->di['em']->getRepository(Entity\ClientOrderCancelRequest::class)->findPendingByOrderId((int) $order->getId()) !== null) {
+                        return;
+                    }
+                    $this->suspendFromOrder($order, $reason);
+                });
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
             }

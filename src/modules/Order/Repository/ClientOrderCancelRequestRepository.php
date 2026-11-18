@@ -48,11 +48,11 @@ class ClientOrderCancelRequestRepository extends EntityRepository
     public function getAutomaticRequestIds(): array
     {
         return array_map(intval(...), array_column($this->createQueryBuilder('r')
-            ->select('MIN(r.id) AS id')
+            ->select('r.id')
             ->where('r.status = :status')
             ->setParameter('status', ClientOrderCancelRequest::STATUS_PENDING)
-            ->groupBy('r.order')
-            ->orderBy('id', 'ASC')
+            ->andWhere('r.order IS NULL OR r.id IN (SELECT MIN(oldest.id) FROM ' . ClientOrderCancelRequest::class . ' oldest WHERE oldest.status = :status GROUP BY oldest.order)')
+            ->orderBy('r.id', 'ASC')
             ->getQuery()->getArrayResult(), 'id'));
     }
 }
