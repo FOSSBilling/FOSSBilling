@@ -2414,9 +2414,8 @@ class Patcher implements InjectionAwareInterface
 
             return;
         }
-        // Binary collations keep byte-order comparison; mapping them onto
-        // each other preserves case-sensitive uniqueness through the widening.
         $binTarget = self::findCollation($applicable, 'utf8mb4_bin');
+
         $liveColumns = [];
         foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
             $liveColumns[$column['Field']] = $column;
@@ -2593,13 +2592,14 @@ class Patcher implements InjectionAwareInterface
         $type = strtolower((string) ($definition['Type'] ?? ''));
         $subPart = $index['Sub_part'] !== null ? (int) $index['Sub_part'] : null;
         $isBinary = str_starts_with($type, 'binary') || str_starts_with($type, 'varbinary') || str_ends_with($type, 'blob');
+        $converting = in_array($definition['Field'], $columns, true);
 
         if (preg_match('/^(?:var)?char\((\d+)\)$/', $type, $matches)) {
             $characters = (int) $matches[1];
             if ($isBinary) {
                 return $subPart ?? $characters;
             }
-            $factor = in_array($definition['Field'], $columns, true) ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
+            $factor = $converting ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
             if ($factor === null) {
                 return null;
             }
@@ -2612,18 +2612,18 @@ class Patcher implements InjectionAwareInterface
             if ($subPart === null) {
                 return null;
             }
-            $factor = in_array($definition['Field'], $columns, true) ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
+            $factor = $converting ? 4 : self::charsetMaxBytes($definition['Collation'] ?? null);
 
             return $factor === null ? null : $subPart * $factor;
         }
 
         $base = preg_replace('/\(.*$/', '', $type);
-        $fixed = ['tinyint' => 1, 'smallint' => 2, 'mediumint' => 3, 'int' => 4, 'integer' => 4, 'bigint' => 8, 'year' => 1, 'date' => 3, 'float' => 4, 'double' => 8];
+        $fixed = ['tinyint' => 1, 'smallint' => 2, 'mediumint' => 3, 'int' => 4, 'bigint' => 8, 'year' => 1, 'date' => 3, 'float' => 4, 'double' => 8];
         if (isset($fixed[$base])) {
             return $fixed[$base];
         }
         if (in_array($base, ['datetime', 'timestamp', 'time'], true)) {
-            $bytes = $base === 'time' ? 3 : 5;
+            $bytes = ['time' => 3, 'datetime' => 5, 'timestamp' => 4][$base];
             if (preg_match('/\((\d+)\)$/', $type, $matches)) {
                 $bytes += intdiv((int) $matches[1] + 1, 2);
             }
@@ -2645,7 +2645,7 @@ class Patcher implements InjectionAwareInterface
         if (preg_match('/^utf8(?:mb3)?_/', $collation)) {
             return 3;
         }
-        if (in_array($collation, ['latin1_bin', 'latin1_general_ci', 'latin1_general_cs', 'ascii_bin', 'ascii_general_ci', 'binary'], true)) {
+        if (str_starts_with($collation, 'latin1_') || in_array($collation, ['ascii_bin', 'ascii_general_ci', 'binary'], true)) {
             return 1;
         }
 
