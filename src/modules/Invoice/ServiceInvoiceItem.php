@@ -548,7 +548,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         if ($item->getType() == InvoiceItem::TYPE_ORDER) {
             // Prefer the typed linkage, falling back to the legacy string
             // reference for rows written before the order_id backfill ran.
-            return $item->getOrderId() ?? (int) $item->getRelId();
+            return $item->getOrderId() ?? self::resolveOrderReference($item->getType(), $item->getUnit(), $item->getRelId()) ?? 0;
         }
 
         return 0;
@@ -560,10 +560,14 @@ class ServiceInvoiceItem implements InjectionAwareInterface
      * order references qualify (type='order' lines, unit='discount' lines);
      * invoice/credit-note references, hook_call JSON and third-party line
      * types map to null.
+     *
+     * The reference itself must be a canonical positive integer string: a
+     * loose cast would turn a non-order reference such as '7.5' into order 7
+     * and let order-scoped deletes take lines that never belonged to it.
      */
     public static function resolveOrderReference(?string $type, ?string $unit, ?string $relId): ?int
     {
-        if ($relId === null || !is_numeric($relId)) {
+        if ($relId === null || preg_match('/\A[1-9][0-9]*\z/', $relId) !== 1) {
             return null;
         }
 

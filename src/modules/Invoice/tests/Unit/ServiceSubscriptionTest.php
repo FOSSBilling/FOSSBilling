@@ -300,6 +300,76 @@ test('finalizes a scheduled cancellation after subscription deletion regardless 
         ->and($subscription->getStatus())->toBe('canceled');
 })->with([ServiceSubscription::STATUS_PENDING_CANCELLATION, 'canceled']);
 
+test('finalizes a scheduled cancellation through a legacy rel_id link the backfill has not reached', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setStatus(ServiceSubscription::STATUS_PENDING_CANCELLATION);
+    $subscription->setRelType('invoice');
+    $subscription->setRelId(25);
+
+    $dbal = createSubscriptionDbal();
+    $dbal->insert('client_order_meta', [
+        'client_order_id' => 10,
+        'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
+        'value' => '1',
+    ]);
+    $dbal->insert('client_order_meta', [
+        'client_order_id' => 12,
+        'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
+        'value' => '1',
+    ]);
+    // Order 10's row still carries only the text link. Order 12 has both a
+    // converted row and a leftover legacy row; the fallback must not finalize
+    // it a second time. The '7.5' row is junk a loose cast would read as
+    // order 7; it must resolve to nothing.
+    $dbal->executeStatement("UPDATE invoice_item SET order_id = NULL WHERE invoice_id = 25 AND rel_id = '10'");
+    $dbal->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id, order_id) VALUES (25, 'order', '12', 12), (25, 'order', '12', NULL), (25, 'order', '7.5', NULL)");
+
+    $order10 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $order12 = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')->once()->with(10)->andReturn($order10);
+    $orderRepoMock->shouldReceive('find')->once()->with(12)->andReturn($order12);
+
+    $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $orderMetaRepoMock->shouldReceive('getPairsForOrder')
+        ->once()
+        ->with(10)
+        ->andReturn([Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END => '1']);
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->once()->with(7)->andReturn($subscription);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->once();
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('getOrderMetaRepository')->andReturn($orderMetaRepoMock);
+    $orderService->shouldReceive('finalizeCancellationFromGateway')
+        ->once()
+        ->with($order10, 'Subscription ended at the payment gateway')
+        ->andReturn(true);
+    $orderService->shouldReceive('finalizeCancellationFromGateway')
+        ->once()
+        ->with($order12, 'Subscription ended at the payment gateway')
+        ->andReturn(true);
+
+    $di = container();
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['em'] = $em;
+    $em->shouldReceive('getConnection')->andReturn($dbal);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+
+    $service = new ServiceSubscription();
+    $service->setDi($di);
+
+    expect($service->finalizeCancellationFromGateway(7))->toBeTrue()
+        ->and($subscription->getStatus())->toBe('canceled');
+});
+
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
     $order = createEntity(Order::class, ['id' => 10]);
 
@@ -343,6 +413,27 @@ test('detects orders paid through an active gateway subscription', function (): 
     // Order 99 has no subscription rows at all.
     expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeTrue()
         ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 99])))->toBeFalse();
+});
+
+test('still finds a subscription through a legacy rel_id link the backfill has not reached', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('sub_123');
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
+
+    $dbal = createSubscriptionDbal();
+    // Order 10's row still carries only the text link; order 11's row is converted.
+    $dbal->executeStatement("UPDATE invoice_item SET order_id = NULL WHERE invoice_id = 25 AND rel_id = '10'");
+
+    $service = subscriptionService(subRepo: $subRepo);
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($dbal);
+
+    // The typed lookup misses order 10, but the rel_id fallback still resolves it.
+    // Order 12 has no rows at all and stays invisible.
+    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeTrue()
+        ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 11])))->toBeTrue()
+        ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 12])))->toBeFalse();
 });
 
 test('staff cancellation review still sees a subscription pending at the gateway', function (): void {

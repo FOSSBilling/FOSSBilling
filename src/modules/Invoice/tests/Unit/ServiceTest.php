@@ -3681,6 +3681,9 @@ test('rmInvoice keeps a draft a paid linked order still points at when the clean
 
     $em->shouldNotReceive('remove');
     $em->shouldNotReceive('flush');
+    // The guard runs before any deletion effect: the unpaid_invoice_id links
+    // and the journal must be untouched, not just the ORM removals.
+    $connection->shouldNotReceive('executeStatement');
 
     $di = container();
     $di['em'] = $em;

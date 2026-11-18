@@ -2660,7 +2660,7 @@ class Patcher implements InjectionAwareInterface
             $pages = 0;
             do {
                 $rows = $dbal->fetchAllAssociative(
-                    "SELECT id, rel_id FROM invoice_item WHERE order_id IS NULL AND (type = 'order' OR unit = 'discount') AND id > :last ORDER BY id LIMIT 500",
+                    "SELECT id, type, unit, rel_id FROM invoice_item WHERE order_id IS NULL AND (type = 'order' OR unit = 'discount') AND id > :last ORDER BY id LIMIT 500",
                     ['last' => $lastId]
                 );
                 if ($rows === []) {
@@ -2670,14 +2670,17 @@ class Patcher implements InjectionAwareInterface
 
                 foreach ($rows as $row) {
                     $lastId = (int) $row['id'];
-                    $relId = $row['rel_id'] ?? null;
-                    if (!is_numeric($relId)) {
+                    // Single source for the derivation rule (canonical positive
+                    // integer strings only): a loose cast here would link lines
+                    // such as rel_id '7.5' to order 7.
+                    $orderId = \Box\Mod\Invoice\ServiceInvoiceItem::resolveOrderReference($row['type'] ?? null, $row['unit'] ?? null, $row['rel_id'] ?? null);
+                    if ($orderId === null) {
                         continue;
                     }
 
                     $updated += (int) (bool) $dbal->executeStatement(
                         'UPDATE invoice_item SET order_id = :order_id WHERE id = :id AND order_id IS NULL',
-                        ['order_id' => (int) $relId, 'id' => $row['id']]
+                        ['order_id' => $orderId, 'id' => $row['id']]
                     );
                 }
 

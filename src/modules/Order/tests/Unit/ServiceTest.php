@@ -1447,6 +1447,10 @@ test('rmInvoiceItemByOrder removes pending items through either order linkage', 
     $connection->insert('invoice_item', ['id' => 2, 'rel_id' => '7', 'order_id' => null, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT]);
     $connection->insert('invoice_item', ['id' => 3, 'rel_id' => '8', 'order_id' => 8, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT]);
     $connection->insert('invoice_item', ['id' => 4, 'rel_id' => '7', 'order_id' => 7, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED]);
+    // A non-canonical reference that a loose cast would read as order 7 must
+    // survive: the typed linkage stays null for it and the text comparison is
+    // exact, so neither branch of the delete matches.
+    $connection->insert('invoice_item', ['id' => 5, 'rel_id' => '7.5', 'order_id' => null, 'status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT]);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getConnection')->andReturn($connection);
@@ -1461,8 +1465,8 @@ test('rmInvoiceItemByOrder removes pending items through either order linkage', 
     $svc->rmInvoiceItemByOrder(createEntity(Order::class, ['id' => 7]));
 
     // Both the typed and the legacy (pre-backfill) links to order 7 are gone;
-    // other orders and non-pending statuses are untouched.
-    expect($connection->fetchFirstColumn('SELECT id FROM invoice_item ORDER BY id'))->toBe([3, 4]);
+    // other orders, non-pending statuses, and non-canonical references are untouched.
+    expect($connection->fetchFirstColumn('SELECT id FROM invoice_item ORDER BY id'))->toBe([3, 4, 5]);
 });
 
 test('getRelatedOrderIdByType returns id', function (): void {
@@ -4340,6 +4344,7 @@ test('batchCancelUnpaid keeps a draft and continues when its removal fails', fun
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
+    $emMock->shouldReceive('isOpen')->andReturn(true);
 
     $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepositoryMock->shouldReceive('findBy')
@@ -4377,6 +4382,82 @@ test('batchCancelUnpaid keeps a draft and continues when its removal fails', fun
     expect($serviceMock->batchCancelUnpaid())->toBeTrue()
         ->and($eventDispatcher->events)->toHaveCount(2)
         ->and(array_column($logger->calls, 'params'))->toContain(['link lookup failed']);
+});
+
+test('batchCancelUnpaid rebuilds a closed manager after a failed removal and continues', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    // The guarded removal runs inside the shared manager's transaction, which
+    // closes the manager when it throws. The batch must rebuild it and reload
+    // what the run still needs: the failed order keeps its draft for the next
+    // run, while the next eligible order is still removed in this one.
+    $orderWithDraft = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $otherOrder = createEntity(Order::class, ['id' => 2, 'status' => Order::STATUS_PENDING_SETUP]);
+    $reloadedOtherOrder = createEntity(Order::class, ['id' => 2, 'status' => Order::STATUS_PENDING_SETUP]);
+    $unpaidInvoice = orderServiceCreateInvoiceModel(55);
+    $unpaidInvoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->with(10)
+        ->andReturn([$orderWithDraft, $otherOrder]);
+    $orderRepository->shouldReceive('hasPaidInvoiceItem')->with(1)->andReturn(false);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+    $emMock->shouldReceive('refresh')->once()->with($orderWithDraft);
+    $emMock->shouldReceive('isOpen')->andReturn(false);
+
+    $freshOrderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $freshOrderRepository->shouldReceive('hasPaidInvoiceItem')->with(2)->andReturn(false);
+
+    $freshEmMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $freshEmMock->shouldReceive('find')->once()->with(Order::class, 2)->andReturn($reloadedOtherOrder);
+    $freshEmMock->shouldReceive('getRepository')->with(Order::class)->andReturn($freshOrderRepository);
+    $freshEmMock->shouldReceive('refresh')->once()->with($reloadedOtherOrder);
+
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')
+        ->once()
+        ->with(['id' => [55]])
+        ->andReturn([$unpaidInvoice]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
+        ->once()
+        ->with($unpaidInvoice, true)
+        ->andThrow(new FOSSBilling\Core\Exception\BaseException('db went away'));
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = $logger;
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => '1', 'batch_cancel_unpaid_after_days' => 10];
+        }
+    });
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceServiceMock);
+
+    $serviceMock->shouldReceive('createEntityManager')->once()->with($connection)->andReturn($freshEmMock);
+    $serviceMock->shouldNotReceive('deleteFromOrder')->with($orderWithDraft);
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($reloadedOtherOrder);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($di['em'])->toBe($freshEmMock)
+        ->and(array_column($logger->calls, 'params'))->toContain(['db went away']);
 });
 
 test('batchCancelUnpaid falls back to the 7 day default when the configured value is blank', function (): void {
@@ -4576,6 +4657,7 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
+    $emMock->shouldReceive('isOpen')->andReturn(true);
 
     $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepositoryMock->shouldReceive('findBy')
@@ -4717,6 +4799,7 @@ test('batchCancelUnpaid logs and continues when removing one stale order fails',
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
+    $emMock->shouldReceive('isOpen')->andReturn(true);
 
     $di = container();
     $di['em'] = $emMock;

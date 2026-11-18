@@ -324,6 +324,10 @@ test('adds new item derives the typed order linkage from rel_id', function (): v
             ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '{"hook":"call"}'],
             null,
         ],
+        'order line with a non-canonical reference stays untyped' => [
+            ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER, 'rel_id' => '7.5'],
+            null,
+        ],
         'order line without a reference stays untyped' => [
             ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER],
             null,
@@ -364,6 +368,10 @@ test('resolves the typed order reference only for order shapes', function (): vo
         ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_CUSTOM, null, '19'))->toBeNull()
         ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '{"hook":"call"}'))->toBeNull()
         ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, ''))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '7.5'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '07'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, ' 7'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '0'))->toBeNull()
         ->and(ServiceInvoiceItem::resolveOrderReference(null, null, null))->toBeNull();
 });
 

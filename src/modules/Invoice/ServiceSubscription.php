@@ -290,6 +290,37 @@ class ServiceSubscription implements InjectionAwareInterface
 
                 $orderService->finalizeCancellationFromGateway($order, 'Subscription ended at the payment gateway');
             }
+
+            // Text-side counterpart of the join above for rows the order_id
+            // backfill hasn't reached (or that predate the typed column): the
+            // join can't be reused because a text-to-integer comparison is
+            // coercion on MySQL, an error on PostgreSQL for junk like '7.5',
+            // and loose matching on SQLite. Only a canonical order id written
+            // as text resolves, mirroring the backfill's own rule.
+            $typedOrderIds = array_map(intval(...), $orderIds);
+            $legacyRelIds = $this->di['em']->getConnection()->fetchFirstColumn(
+                'SELECT DISTINCT ii.rel_id FROM invoice_item ii WHERE ii.invoice_id = :invoice_id AND ii.type = :item_type AND ii.order_id IS NULL',
+                ['invoice_id' => $subscription->getRelId(), 'item_type' => Entity\InvoiceItem::TYPE_ORDER]
+            );
+            foreach ($legacyRelIds as $relId) {
+                $legacyOrderId = ServiceInvoiceItem::resolveOrderReference(Entity\InvoiceItem::TYPE_ORDER, null, is_scalar($relId) ? (string) $relId : null);
+                if ($legacyOrderId === null || in_array($legacyOrderId, $typedOrderIds, true)) {
+                    continue;
+                }
+                $order = $this->di['em']->getRepository(Order::class)->find($legacyOrderId);
+                if (!$order instanceof Order) {
+                    continue;
+                }
+                if (in_array($order->getStatus(), [Order::STATUS_CANCELED, Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)) {
+                    continue;
+                }
+                $pairs = $orderService->getOrderMetaRepository()->getPairsForOrder($legacyOrderId);
+                if (($pairs[\Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END] ?? null) !== '1') {
+                    continue;
+                }
+
+                $orderService->finalizeCancellationFromGateway($order, 'Subscription ended at the payment gateway');
+            }
         }
 
         return $this->persistUpdate($subscription, ['status' => 'canceled']);
@@ -380,6 +411,29 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         $subscriptionIds = $query->executeQuery()->fetchFirstColumn();
+
+        // Rows written before the order_id backfill reached them (or by a
+        // writer from before the typed column existed) carry only the rel_id
+        // link. A separate query keeps the typed predicate above index-friendly
+        // instead of OR-ing the fallback into it.
+        $fallbackQuery = $this->di['em']->getConnection()->createQueryBuilder();
+        $fallbackQuery
+            ->select('DISTINCT s.id')
+            ->from('subscription', 's')
+            ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
+            ->where('s.rel_type = :rel_type')
+            ->andWhere('ii.type = :item_type')
+            ->andWhere('ii.order_id IS NULL')
+            ->andWhere('ii.rel_id = :rel_id')
+            ->setParameter('rel_type', 'invoice')
+            ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
+            ->setParameter('rel_id', (string) $order->getId());
+
+        if ($status !== null) {
+            $fallbackQuery->andWhere('s.status = :status')->setParameter('status', $status);
+        }
+
+        $subscriptionIds = array_values(array_unique(array_merge($subscriptionIds, $fallbackQuery->executeQuery()->fetchFirstColumn())));
 
         $subscriptions = [];
         foreach ($subscriptionIds as $id) {

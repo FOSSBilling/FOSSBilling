@@ -3444,7 +3444,9 @@ test('invoice item order_id backfill links order references and leaves other row
                     (1, 'order', 'renew', 'pending_payment', NULL, '{\"hook\":\"call\"}', NULL),
                     (1, 'custom', 'void', 'pending_payment', NULL, '19', NULL),
                     (2, 'custom', 'void', 'pending_payment', 'discount', '11', NULL),
-                    (2, 'order', 'renew', 'pending_payment', NULL, '12', 99)"
+                    (2, 'order', 'renew', 'pending_payment', NULL, '12', 99),
+                    (3, 'order', 'renew', 'pending_payment', NULL, '7.5', NULL),
+                    (3, 'order', 'renew', 'pending_payment', NULL, '07', NULL)"
             );
 
             $di = new Pimple\Container();
@@ -3458,12 +3460,14 @@ test('invoice item order_id backfill links order references and leaves other row
             $patcher->backfillInvoiceItemOrderIds();
 
             $rows = $connection->fetchAllAssociative('SELECT rel_id, order_id FROM invoice_item ORDER BY id');
-            expect($rows)->toHaveCount(5)
+            expect($rows)->toHaveCount(7)
                 ->and($rows[0]['order_id'])->toBe(10)
                 ->and($rows[1]['order_id'])->toBeNull()
                 ->and($rows[2]['order_id'])->toBeNull()
                 ->and($rows[3]['order_id'])->toBe(11)
-                ->and($rows[4]['order_id'])->toBe(99);
+                ->and($rows[4]['order_id'])->toBe(99)
+                ->and($rows[5]['order_id'])->toBeNull()
+                ->and($rows[6]['order_id'])->toBeNull();
 
             // Completion is recorded and the resume marker cleared.
             expect($connection->fetchOne("SELECT value FROM setting WHERE param = 'invoice_item_order_id_backfill_done'"))->toBe('1')

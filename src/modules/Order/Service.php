@@ -48,8 +48,11 @@ use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\EntityManagerInterface;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\NamedLock;
 use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Exception\InformationException;
@@ -145,6 +148,65 @@ class Service implements InjectionAwareInterface
         $this->orderRepository ??= $this->di['em']->getRepository(Order::class);
 
         return $this->orderRepository;
+    }
+
+    protected function resetEntityManager(): void
+    {
+        $connection = $this->di['em']->getConnection();
+        unset($this->di['em']);
+        $this->di['em'] = $this->createEntityManager($connection);
+        $this->orderRepository = null;
+        $this->orderMetaRepository = null;
+        $this->orderStatusRepository = null;
+    }
+
+    protected function createEntityManager(?Connection $connection = null): EntityManagerInterface
+    {
+        return EntityManagerFactory::create($connection);
+    }
+
+    /**
+     * Batch-loads the invoices a set of stale orders links to. A single
+     * invoice can cover several orders from one cart checkout (Cart\Service
+     * sets the same unpaid_invoice_id on all of them), so they're loaded once
+     * up front rather than once per order.
+     *
+     * @param list<Order> $orders
+     */
+    private function findInvoicesByIds(mixed $invoiceService, array $orders): array
+    {
+        $invoiceIds = array_values(array_unique(array_filter(
+            array_map(static fn (Order $order): ?int => $order->getUnpaidInvoiceId(), $orders),
+            static fn (?int $id): bool => $id !== null
+        )));
+        $invoicesById = [];
+        foreach ($invoiceIds === [] ? [] : $invoiceService->getInvoiceRepository()->findBy(['id' => $invoiceIds]) as $invoice) {
+            $invoicesById[$invoice->getId()] = $invoice;
+        }
+
+        return $invoicesById;
+    }
+
+    /**
+     * Reloads orders through the current manager. Entities held before an
+     * EntityManager reset belong to the closed manager and can no longer be
+     * refreshed or deleted through the new one.
+     *
+     * @param list<Order> $orders
+     *
+     * @return list<Order>
+     */
+    private function reloadOrders(array $orders): array
+    {
+        $reloaded = [];
+        foreach ($orders as $order) {
+            $fresh = $this->di['em']->find(Order::class, $this->orderId($order));
+            if ($fresh instanceof Order) {
+                $reloaded[] = $fresh;
+            }
+        }
+
+        return $reloaded;
     }
 
     public function getOrderMetaRepository(): OrderMetaRepository
@@ -2826,21 +2888,11 @@ class Service implements InjectionAwareInterface
 
         $days = $this->resolveBatchAfterDays($config['batch_cancel_unpaid_after_days'] ?? null);
 
-        $staleOrders = $this->getOrderRepository()->getStaleUnpaid($days);
+        $staleOrders = array_values($this->getOrderRepository()->getStaleUnpaid($days));
 
         $invoiceService = $this->di['mod_service']('Invoice');
 
-        // A single invoice can cover several orders from one cart checkout
-        // (Cart\Service sets the same unpaid_invoice_id on all of them), so
-        // they're batch-loaded once up front rather than once per order.
-        $invoiceIds = array_values(array_unique(array_filter(
-            array_map(static fn (Order $order): ?int => $order->getUnpaidInvoiceId(), $staleOrders),
-            static fn (?int $id): bool => $id !== null
-        )));
-        $invoicesById = [];
-        foreach ($invoiceIds === [] ? [] : $invoiceService->getInvoiceRepository()->findBy(['id' => $invoiceIds]) as $invoice) {
-            $invoicesById[$invoice->getId()] = $invoice;
-        }
+        $invoicesById = $this->findInvoicesByIds($invoiceService, $staleOrders);
 
         // Whether each invoice's group may proceed to order deletion - set only
         // once the invoice is confirmed gone or removed, so a failed removal
@@ -2854,7 +2906,12 @@ class Service implements InjectionAwareInterface
         // invoice is removed first via deleteInvoiceByAdmin() so it doesn't linger
         // empty and still eligible for reminder emails after the order it belongs
         // to is gone.
-        foreach ($staleOrders as $order) {
+        // A for loop (not foreach): recovering from a closed manager replaces
+        // the tail below, and the loop must pick the new tail up instead of
+        // the array foreach already pinned down.
+        for ($position = 0; $position < count($staleOrders); ++$position) {
+            $order = $staleOrders[$position];
+
             try {
                 // Re-check the order's current status before touching anything for
                 // it: deleteFromOrder() has no status guard of its own, and this
@@ -2910,6 +2967,24 @@ class Service implements InjectionAwareInterface
                 $this->deleteFromOrder($order);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
+
+                if (!$this->di['em']->isOpen()) {
+                    // The guarded removal runs inside wrapInTransaction(), which
+                    // closes the shared manager when its closure throws: every
+                    // later refresh() would then fail on the closed manager and
+                    // wedge the rest of the run. Rebuild it and reload what the
+                    // run still needs; the failed order keeps its draft and is
+                    // left for the next run.
+                    $this->resetEntityManager();
+                    $invoiceService = $this->di['mod_service']('Invoice');
+                    $staleOrders = $this->reloadOrders(array_slice($staleOrders, $position + 1));
+                    $invoicesById = $this->findInvoicesByIds($invoiceService, $staleOrders);
+                    // Restart at the reloaded tail; the for increment moves
+                    // -1 back to 0.
+                    $position = -1;
+
+                    continue;
+                }
             }
         }
 
