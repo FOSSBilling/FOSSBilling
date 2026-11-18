@@ -790,3 +790,31 @@ test('attachment retries do not treat already attached files as excess', functio
         ->and(TicketFiles::attachFromRequest($di, 60, false, 70))->toBe(0)
         ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = 70'))->toBe(5);
 });
+
+test('malformed attachment tokens are ignored without conversion warnings', function (bool $json): void {
+    [$di, $db] = ticketFilesConnection();
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'client_id' => 7]);
+    $token = TicketFiles::uploadForClient($di, 7, 60, ticketFilesUpload($di['request'], 'note.txt', 'hello', 'text/plain'))['id'];
+    $tokens = [$token, [$token], [], null, false, 1, $token];
+    if ($json) {
+        $di['request'] = Symfony\Component\HttpFoundation\Request::create('http://localhost/', 'POST', server: ['CONTENT_TYPE' => 'application/json'], content: json_encode(['ticket_files' => $tokens]));
+    } else {
+        $di['request']->request->set('ticket_files', $tokens);
+    }
+    $warnings = [];
+    set_error_handler(static function (int $severity, string $message) use (&$warnings): bool {
+        $warnings[] = $message;
+
+        return true;
+    }, E_WARNING);
+
+    try {
+        TicketFiles::validateRequest($di);
+        expect(TicketFiles::attachFromRequest($di, 60, false, 70))->toBe(1);
+    } finally {
+        restore_error_handler();
+    }
+    expect($warnings)->toBe([])
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = 70'))->toBe(1);
+})->with([false, true]);

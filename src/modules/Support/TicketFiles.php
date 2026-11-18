@@ -278,7 +278,7 @@ final class TicketFiles
 
     private static function validateTokens(array $tokens): array
     {
-        $tokens = array_values(array_unique(array_filter(array_map(strval(...), $tokens), static fn (string $token): bool => preg_match('/^[a-f0-9]{32}$/', $token) === 1)));
+        $tokens = array_values(array_unique(array_filter($tokens, static fn (mixed $token): bool => is_string($token) && preg_match('/^[a-f0-9]{32}$/', $token) === 1)));
         if (count($tokens) > self::MAX_FILES) {
             throw new \FOSSBilling\Core\Exception\InformationException('A message can have at most :files attachments. Remove a file before sending.', [':files' => self::MAX_FILES]);
         }
