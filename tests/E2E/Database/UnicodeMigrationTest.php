@@ -607,3 +607,24 @@ test('Unicode repair skips columns covered by functional indexes', function (): 
         ->and($calls[0]['method'])->toBe('warning')
         ->and($calls[0]['params'][0])->toContain('post.slug', 'functional index');
 });
+
+test('Unicode repair skips indexed columns on small-block compressed tables', function (): void {
+    try {
+        $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(100) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=1 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
+    } catch (PDOException) {
+        $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
+    }
+    $rowFormat = $this->connection->fetchOne("SELECT ROW_FORMAT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'");
+    if ($rowFormat !== 'Compressed') {
+        $this->markTestSkipped('This server does not honor ROW_FORMAT=COMPRESSED.');
+    }
+    $this->connection->insert('post', ['id' => 1, 'slug' => 'example']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    expect($column['Collation'])->toBe('utf8_general_ci')
+        ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('example');
+    $calls = $this->patcher->getDi()['logger']->calls;
+    expect($calls)->toHaveCount(1)
+        ->and($calls[0]['method'])->toBe('warning')
+        ->and($calls[0]['params'][0])->toContain('post.slug', 'index would exceed');
+});

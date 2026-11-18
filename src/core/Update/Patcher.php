@@ -2714,21 +2714,27 @@ class Patcher implements InjectionAwareInterface
         // which are single-character wildcards in a LIKE pattern.
         $engine = '';
         $rowFormat = '';
+        $createOptions = '';
         foreach ($this->fetchAll('SHOW TABLE STATUS') as $status) {
             if (($status['Name'] ?? null) === $table) {
                 $engine = strtolower((string) ($status['Engine'] ?? ''));
                 $rowFormat = strtolower((string) ($status['Row_format'] ?? ''));
+                $createOptions = strtolower((string) ($status['Create_options'] ?? ''));
 
                 break;
             }
         }
         if ($engine !== 'innodb') {
-            // Only InnoDB has large, page-size-dependent key limits. Other
-            // engines fall back to the conservative bound; oversized indexes
-            // are skipped with a warning instead of risking a failed ALTER.
-            // (This also covers COMPRESSED tables, whose real limit follows
-            // the smaller KEY_BLOCK_SIZE rather than the page size.)
             return 767;
+        }
+        if ($rowFormat === 'compressed'
+            && preg_match('/key_block_size\s*=\s*(\d+)/', $createOptions, $matches)
+            && (int) $matches[1] < 8
+        ) {
+            // A hand-tuned block size below the server default shrinks what an
+            // index may hold; with no reliable bound, indexed columns are left
+            // for manual review instead of risking a failed ALTER.
+            return 0;
         }
         if ($rowFormat !== 'dynamic' || !self::supportsLargeIndexPrefixes($this->fetchOne('SELECT VERSION()'))) {
             return 767;
