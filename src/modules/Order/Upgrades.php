@@ -474,7 +474,7 @@ class Upgrades
             $order->setPrice((float) $up['to_price']);
             $order->setPeriod((string) $up['to_period']);
             if (!empty($up['to_expires_at'])) {
-                $order->setExpiresAt(new \DateTime((string) $up['to_expires_at']));
+                $order->setExpiresAt(new \DateTimeImmutable((string) $up['to_expires_at']));
             }
             $order->setConfig($orderConfig);
 
