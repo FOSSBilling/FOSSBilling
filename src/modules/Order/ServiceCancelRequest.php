@@ -16,7 +16,9 @@ use Box\Mod\Order\Entity\ClientOrderCancelRequest;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\ClientOrderCancelRequestRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\NamedLock;
+use FOSSBilling\Core\Events\EventDispatcher;
 use FOSSBilling\Core\Exception\InformationException;
 
 class ServiceCancelRequest implements InjectionAwareInterface
@@ -194,12 +196,42 @@ class ServiceCancelRequest implements InjectionAwareInterface
                 $this->accept((int) ($row['id'] ?? 0));
             } catch (\Throwable $e) {
                 $this->di['logger']->error('Order: cancellation request #{id} was not processed: {message}', ['id' => $row['id'] ?? 0, 'message' => $e->getMessage()]);
+                $this->recoverEntityManager();
             }
         }
 
-        $systemService->setParamValue('cancel_requests_last_day', $today, true);
+        try {
+            // A failed request can replace the manager. Resolve a fresh settings
+            // service rather than reusing its earlier repository and entities.
+            $this->di['mod_service']('system')->setParamValue('cancel_requests_last_day', $today, true);
+        } catch (\Throwable $e) {
+            $this->recoverEntityManager();
+
+            throw $e;
+        }
 
         return true;
+    }
+
+    /** Restore the shared manager after a failed cancellation has released its locks. */
+    private function recoverEntityManager(): void
+    {
+        $manager = $this->di['em'];
+        if ($manager->isOpen()) {
+            return;
+        }
+        $connection = $manager->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new \LogicException('Cancellation transactions must unwind before their entity manager can be replaced.');
+        }
+        $connection->fetchOne('SELECT 1');
+        $replacement = EntityManagerFactory::create($connection);
+        unset($this->di['em']);
+        $this->di['em'] = $replacement;
+        $this->setDi($this->di);
+        if ($this->di['event_dispatcher'] instanceof EventDispatcher) {
+            $this->di['event_dispatcher']->refresh();
+        }
     }
 
     private function withRequestLock(int $id, \Closure $operation): void
