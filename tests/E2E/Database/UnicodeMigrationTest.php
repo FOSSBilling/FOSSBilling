@@ -616,10 +616,42 @@ test('Unicode repair skips indexed columns on small-block compressed tables', fu
         // option; unrelated failures (a dropped connection, a typo in the
         // fixture) must fail loudly instead of silently skipping the test.
         $errorInfo = is_array($e->errorInfo ?? null) ? $e->errorInfo : [];
-        $unsupported = in_array((int) ($errorInfo[1] ?? 0), [1286, 1478], true)
-            || stripos($e->getMessage(), 'KEY_BLOCK_SIZE') !== false
-            || stripos($e->getMessage(), 'ROW_FORMAT') !== false;
-        if (!$unsupported) {
+        $code = (int) ($errorInfo[1] ?? 0);
+        if ($code === 1064) {
+            // Parse errors echo the offending SQL, which may itself contain
+            // the option tokens below; a fixture typo must fail, never skip.
+            throw $e;
+        }
+        if (in_array($code, [1286, 1478], true)) {
+            $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
+        }
+        if ($code === 1005) {
+            // MariaDB strict mode surfaces a generic 1005 here; the reason
+            // lives in a separate SHOW WARNINGS diagnostic on the same
+            // connection.
+            try {
+                $warnings = $this->pdo->query('SHOW WARNINGS')->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException) {
+                throw $e;
+            }
+            $detail = strtolower((string) json_encode($warnings));
+            $mentionsCompression = str_contains($detail, 'compress') || str_contains($detail, 'key_block_size') || str_contains($detail, 'row_format');
+            if ($mentionsCompression) {
+                $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
+            }
+            throw $e;
+        }
+        $message = strtolower($e->getMessage());
+        $mentionsOption = str_contains($message, 'key_block_size')
+            || str_contains($message, 'row_format')
+            || str_contains($message, 'compressed');
+        $indicatesUnsupported = str_contains($message, 'support')
+            || str_contains($message, 'have this option')
+            || str_contains($message, 'unknown storage')
+            || str_contains($message, 'wrong create options')
+            || str_contains($message, 'strict mode')
+            || str_contains($message, 'no such option');
+        if (!($mentionsOption && $indicatesUnsupported)) {
             throw $e;
         }
         $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
@@ -628,10 +660,13 @@ test('Unicode repair skips indexed columns on small-block compressed tables', fu
     if (($row['ROW_FORMAT'] ?? null) !== 'Compressed' || stripos((string) ($row['CREATE_OPTIONS'] ?? ''), 'KEY_BLOCK_SIZE') === false) {
         $this->markTestSkipped('This server does not honor ROW_FORMAT=COMPRESSED with an explicit block size.');
     }
+    // MySQL 8.0.30+ reports utf8 as utf8mb3; capture the pre-migration value
+    // instead of asserting a hard-coded collation name.
+    $before = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
     $this->connection->insert('post', ['id' => 1, 'slug' => 'example']);
     ($this->runPatch)();
     $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
-    expect($column['Collation'])->toBe('utf8_general_ci')
+    expect($column['Collation'])->toBe($before['Collation'])
         ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('example');
     $calls = $this->patcher->getDi()['logger']->calls;
     expect($calls)->toHaveCount(1)

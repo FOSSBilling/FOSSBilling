@@ -2461,11 +2461,25 @@ class Patcher implements InjectionAwareInterface
                     $byteLimitKnown = true;
                 }
                 if ($byteLimit === null) {
-                    $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': compressed block size requires manual review.');
+                    // Single-column FULLTEXT indexes rebuild with the table
+                    // and never consult the byte limit, so they stay eligible
+                    // even when no bound can be established; anything else
+                    // still needs manual review.
+                    $needsLimit = false;
+                    foreach ($columnIndexes as $index) {
+                        $members = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
+                        if ($index['Index_type'] !== 'FULLTEXT' || count($members) !== 1) {
+                            $needsLimit = true;
 
-                    continue;
-                }
-                if (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
+                            break;
+                        }
+                    }
+                    if ($needsLimit) {
+                        $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': compressed block size requires manual review.');
+
+                        continue;
+                    }
+                } elseif (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
                     $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': index would exceed the size limit after conversion and requires manual review.');
 
                     continue;
