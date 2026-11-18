@@ -14,20 +14,23 @@ class Patch159 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        if (!$patcher->tableExists('invoice_gateway_charge_attempt')) {
-            $patcher->executeSql('CREATE TABLE `invoice_gateway_charge_attempt` (
-                `id` VARCHAR(32) NOT NULL,
-                `invoice_id` BIGINT NOT NULL,
-                `gateway_id` BIGINT NOT NULL,
-                `state` VARCHAR(16) NOT NULL,
-                `payment_id` VARCHAR(255) DEFAULT NULL,
-                `created_at` DATETIME NOT NULL,
-                `resolution` JSON DEFAULT NULL,
-                `resolved_at` DATETIME DEFAULT NULL,
-                PRIMARY KEY (`id`),
-                KEY `gateway_charge_attempt_invoice_idx` (`invoice_id`, `state`),
-                KEY `gateway_charge_attempt_pending_idx` (`state`, `created_at`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8');
+        if (!$patcher->tableExists('support_ticket_close_event')) {
+            $patcher->executeSql(
+                'CREATE TABLE `support_ticket_close_event` (
+                    `id` VARCHAR(32) NOT NULL,
+                    `ticket_id` BIGINT NOT NULL,
+                    `actor` VARCHAR(10) NOT NULL,
+                    `actor_id` BIGINT DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL,
+                    `attempted_at` DATETIME DEFAULT NULL,
+                    `notification_queued_at` DATETIME DEFAULT NULL,
+                    `feedback_queued_at` DATETIME DEFAULT NULL,
+                    `delivered_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `ticket_close_event_pending_idx` (`delivered_at`, `created_at`),
+                    KEY `ticket_close_event_ticket_idx` (`ticket_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
         }
     }
 }

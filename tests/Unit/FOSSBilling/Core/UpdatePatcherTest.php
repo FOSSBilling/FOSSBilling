@@ -3272,7 +3272,7 @@ test('invoice journal patch creates the journal table for existing installs', fu
         ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
         ->andReturn($tableCheck);
     $pdo->expects('prepare')
-        ->with("CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT 'updated', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`))")
+        ->with("CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT 'updated', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci")
         ->andReturn($createTable);
 
     $di = new Pimple\Container();
@@ -4600,4 +4600,15 @@ test('a transient approval inspection failure stops additive sync and preserves 
             ->and((int) $connection->fetchOne('SELECT nr FROM invoice WHERE id = 1'))->toBe(42)
             ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM invoice_event WHERE invoice_id = 1'))->toBe(1);
     });
+});
+
+test('installations at the Unicode migration still receive every Phase B and C migration', function (): void {
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 146);
+    expect(array_keys($patches))->toBe(range(147, 161))
+        ->and($patches[147][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch147::class)
+        ->and($patches[161][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch161::class);
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableExists')->once()->with('client_order_cancel_request')->andReturnFalse();
+    $patcher->shouldReceive('executeSql')->once()->withArgs(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `client_order_cancel_request`') && str_contains($sql, 'CHARSET=utf8mb4'));
+    $patches[147][0]->apply($patcher);
 });

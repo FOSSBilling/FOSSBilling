@@ -17,27 +17,19 @@ class Patch150 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Help desks and knowledge base categories hidden from clients.
-        // Installs upgrading past it rely on this patch on MySQL; fresh
-        // installs and other drivers get the tables from the portable schema
-        // sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('support_helpdesk_hidden')) {
+        // Automatic saved-method charges count their tries per invoice so the
+        // cron spaces retries and eventually stops. Installs upgrading past
+        // it rely on this patch on MySQL; fresh installs and other drivers
+        // get the table from the portable schema sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('invoice_card_charge')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_helpdesk_hidden` (
-                    `helpdesk_id` BIGINT NOT NULL,
-                    `hidden_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`helpdesk_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
-            );
-        }
-
-        if (!$patcher->tableExists('support_kb_category_hidden')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_kb_category_hidden` (
-                    `category_id` BIGINT NOT NULL,
-                    `hidden_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`category_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                'CREATE TABLE `invoice_card_charge` (
+                    `invoice_id` BIGINT NOT NULL,
+                    `attempts` INT NOT NULL DEFAULT 0,
+                    `last_attempt_at` DATETIME DEFAULT NULL,
+                    `last_error` VARCHAR(255) DEFAULT NULL,
+                    PRIMARY KEY (`invoice_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
     }

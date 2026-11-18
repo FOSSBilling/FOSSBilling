@@ -275,7 +275,7 @@ test('legacy payment rows gain fencing through additive and repeatable upgrades'
                     $this->connection->executeStatement($sql, $params);
                 }
             };
-            $patch = new FOSSBilling\Core\Update\Patch\Patch160();
+            $patch = new FOSSBilling\Core\Update\Patch\Patch161();
             $patch->apply($patcher);
             $patch->apply($patcher);
         }

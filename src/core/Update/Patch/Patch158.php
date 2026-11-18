@@ -14,22 +14,17 @@ class Patch158 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        if (!$patcher->tableExists('support_ticket_close_event')) {
+        if (!$patcher->tableExists('invoice_gateway_refund_attempt')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_ticket_close_event` (
+                'CREATE TABLE `invoice_gateway_refund_attempt` (
                     `id` VARCHAR(32) NOT NULL,
-                    `ticket_id` BIGINT NOT NULL,
-                    `actor` VARCHAR(10) NOT NULL,
-                    `actor_id` BIGINT DEFAULT NULL,
+                    `invoice_id` BIGINT NOT NULL,
+                    `fingerprint` VARCHAR(64) NOT NULL,
+                    `state` VARCHAR(16) NOT NULL,
                     `created_at` DATETIME NOT NULL,
-                    `attempted_at` DATETIME DEFAULT NULL,
-                    `notification_queued_at` DATETIME DEFAULT NULL,
-                    `feedback_queued_at` DATETIME DEFAULT NULL,
-                    `delivered_at` DATETIME DEFAULT NULL,
                     PRIMARY KEY (`id`),
-                    KEY `ticket_close_event_pending_idx` (`delivered_at`, `created_at`),
-                    KEY `ticket_close_event_ticket_idx` (`ticket_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                    KEY `gateway_refund_attempt_invoice_idx` (`invoice_id`, `state`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
     }

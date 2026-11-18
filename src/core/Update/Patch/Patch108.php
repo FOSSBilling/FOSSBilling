@@ -34,7 +34,7 @@ class Patch108 implements PatchInterface
                     PRIMARY KEY (`id`),
                     UNIQUE KEY `service_downloadable_file_key_idx` (`service_downloadable_id`, `file_key`),
                     KEY `service_downloadable_file_stored_filename_idx` (`stored_filename`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
 

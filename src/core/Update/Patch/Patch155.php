@@ -17,66 +17,40 @@ class Patch155 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Reply ratings, closing feedback and its request links, and the per
-        // help desk feedback switch. Installs upgrading past it rely on this
-        // patch on MySQL; fresh installs and other drivers get the tables
-        // from the portable schema sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('support_ticket_message_rating')) {
+        // Secrets clients attach to tickets (encrypted) and their audit
+        // trail. Installs upgrading past it rely on this patch on MySQL;
+        // fresh installs and other drivers get the tables from the portable
+        // schema sync. Guarded rerun no-op.
+        if (!$patcher->tableExists('support_ticket_secret')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_ticket_message_rating` (
-                    `message_id` BIGINT NOT NULL,
-                    `ticket_id` BIGINT NOT NULL,
-                    `admin_id` BIGINT NOT NULL,
-                    `rating` SMALLINT NOT NULL,
-                    `rated_by_kind` VARCHAR(10) NOT NULL,
-                    `rated_by_id` BIGINT NOT NULL,
-                    `ip` VARCHAR(45) NOT NULL DEFAULT \'\',
-                    `rated_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`message_id`),
-                    KEY `ticket` (`ticket_id`),
-                    KEY `admin_rated` (`admin_id`, `rated_at`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
-            );
-        }
-
-        if (!$patcher->tableExists('support_ticket_feedback')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_ticket_feedback` (
+                'CREATE TABLE `support_ticket_secret` (
                     `id` BIGINT NOT NULL AUTO_INCREMENT,
                     `ticket_id` BIGINT NOT NULL,
-                    `admin_id` BIGINT DEFAULT NULL,
-                    `rating` SMALLINT DEFAULT NULL,
-                    `comments` TEXT NOT NULL,
-                    `ip` VARCHAR(45) NOT NULL DEFAULT \'\',
+                    `kind` VARCHAR(10) NOT NULL,
+                    `label` VARCHAR(100) NOT NULL,
+                    `data` TEXT NOT NULL,
+                    `added_by_client_id` BIGINT DEFAULT NULL,
                     `created_at` DATETIME NOT NULL,
                     PRIMARY KEY (`id`),
                     KEY `ticket` (`ticket_id`),
-                    KEY `admin_created` (`admin_id`, `created_at`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                    KEY `created` (`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
 
-        if (!$patcher->tableExists('support_ticket_feedback_request')) {
+        if (!$patcher->tableExists('support_ticket_secret_event')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_ticket_feedback_request` (
+                'CREATE TABLE `support_ticket_secret_event` (
+                    `id` BIGINT NOT NULL AUTO_INCREMENT,
                     `ticket_id` BIGINT NOT NULL,
-                    `token` CHAR(64) NOT NULL,
-                    `sent_at` DATETIME NOT NULL,
-                    `answered_at` DATETIME DEFAULT NULL,
-                    PRIMARY KEY (`ticket_id`),
-                    UNIQUE KEY `token` (`token`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
-            );
-        }
-
-        if (!$patcher->tableExists('support_helpdesk_feedback')) {
-            $patcher->executeSql(
-                'CREATE TABLE `support_helpdesk_feedback` (
-                    `helpdesk_id` BIGINT NOT NULL,
-                    `feedback_request` TINYINT(1) NOT NULL DEFAULT 1,
-                    `updated_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`helpdesk_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                    `secret_label` VARCHAR(100) NOT NULL,
+                    `action` VARCHAR(10) NOT NULL,
+                    `admin_id` BIGINT DEFAULT NULL,
+                    `client_id` BIGINT DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `ticket` (`ticket_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
     }

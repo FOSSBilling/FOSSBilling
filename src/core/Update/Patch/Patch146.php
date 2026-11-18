@@ -17,26 +17,21 @@ class Patch146 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Cancellation requests ship with a new client_order_cancel_request
-        // entity table. Installs upgrading past it rely on this patch on
-        // MySQL; fresh installs and other drivers get the table from the
-        // portable schema sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('client_order_cancel_request')) {
-            $patcher->executeSql(
-                'CREATE TABLE `client_order_cancel_request` (
-                    `id` BIGINT NOT NULL AUTO_INCREMENT,
-                    `client_order_id` BIGINT DEFAULT NULL,
-                    `client_id` BIGINT DEFAULT NULL,
-                    `type` VARCHAR(32) DEFAULT NULL,
-                    `reason` TEXT DEFAULT NULL,
-                    `status` VARCHAR(32) DEFAULT NULL,
-                    `created_at` DATETIME DEFAULT NULL,
-                    `updated_at` DATETIME DEFAULT NULL,
-                    PRIMARY KEY (`id`),
-                    KEY `client_order_cancel_request_order_id_idx` (`client_order_id`),
-                    KEY `client_order_cancel_request_status_idx` (`status`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
-            );
+        if ($patcher->fetchOne('SELECT @@character_set_connection') !== 'utf8mb4') {
+            $patcher->logUpdate('warning', 'The database connection uses a legacy character set. Set db.charset to utf8mb4 in config.php to store full Unicode after the schema repair.');
+        }
+
+        // Full utf8mb3 -> utf8mb4 migration, normalizing legacy text columns
+        // and table defaults to utf8mb4_unicode_ci. Binary and NO PAD
+        // collations map onto utf8mb4 equivalents that preserve their
+        // comparison rules instead. Already-modern columns are left alone;
+        // indexed columns convert only when the wider characters fit the
+        // server's index key length, and anything else is skipped with a
+        // logged warning.
+        $patcher->repairDatabaseDefaultCharset();
+
+        foreach ($patcher->legacyUnicodeColumns() as $table => $columns) {
+            $patcher->widenLegacyTextColumns($table, $columns, repairTableDefault: true);
         }
     }
 }

@@ -17,31 +17,27 @@ class Patch151 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Pinned tickets (staff list) and tickets assigned to a staff member.
+        // Help desks and knowledge base categories hidden from clients.
         // Installs upgrading past it rely on this patch on MySQL; fresh
         // installs and other drivers get the tables from the portable schema
         // sync. Guarded rerun no-op.
-        if (!$patcher->tableExists('support_ticket_pin')) {
+        if (!$patcher->tableExists('support_helpdesk_hidden')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_ticket_pin` (
-                    `ticket_id` BIGINT NOT NULL,
-                    `pinned_by` BIGINT DEFAULT NULL,
-                    `pinned_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`ticket_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                'CREATE TABLE `support_helpdesk_hidden` (
+                    `helpdesk_id` BIGINT NOT NULL,
+                    `hidden_at` DATETIME NOT NULL,
+                    PRIMARY KEY (`helpdesk_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
 
-        if (!$patcher->tableExists('support_ticket_assignment')) {
+        if (!$patcher->tableExists('support_kb_category_hidden')) {
             $patcher->executeSql(
-                'CREATE TABLE `support_ticket_assignment` (
-                    `ticket_id` BIGINT NOT NULL,
-                    `admin_id` BIGINT NOT NULL,
-                    `assigned_by` BIGINT DEFAULT NULL,
-                    `assigned_at` DATETIME NOT NULL,
-                    PRIMARY KEY (`ticket_id`),
-                    KEY `admin` (`admin_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                'CREATE TABLE `support_kb_category_hidden` (
+                    `category_id` BIGINT NOT NULL,
+                    `hidden_at` DATETIME NOT NULL,
+                    PRIMARY KEY (`category_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
     }

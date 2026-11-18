@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Update\Patch\Patch128;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -30,7 +31,7 @@ beforeEach(function (): void {
     $di['em'] = $em;
     $this->patcher = new Patcher();
     $this->patcher->setDi($di);
-    $this->runPatch = (new ReflectionMethod($this->patcher, 'patch128'))->getClosure($this->patcher);
+    $this->runPatch = fn () => (new Patch128())->apply($this->patcher);
 });
 
 afterEach(function (): void {
@@ -78,7 +79,7 @@ test('charset migration repairs legacy page text and preserves definitions, data
     expect($this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC))->toBe($columns);
 });
 
-test('charset migration skips customized defaults, indexes, generated fields and other charsets', function (): void {
+test('charset migration skips customized defaults, generated fields and other charsets', function (): void {
     $this->pdo->exec("CREATE TABLE custom_pages (
         id INT PRIMARY KEY,
         title VARCHAR(255) NOT NULL DEFAULT 'custom',
@@ -87,12 +88,22 @@ test('charset migration skips customized defaults, indexes, generated fields and
         content TEXT CHARACTER SET latin1 NOT NULL
     ) DEFAULT CHARSET=utf8");
     $logger = Mockery::mock();
-    $logger->shouldReceive('withChannel')->with('update')->times(3)->andReturnSelf();
-    $logger->shouldReceive('log')->with('warning', Mockery::type('string'), [])->times(3);
+    $logger->shouldReceive('withChannel')->with('update')->times(2)->andReturnSelf();
+    $logger->shouldReceive('log')->with('warning', Mockery::type('string'), [])->times(2);
     $this->patcher->getDi()['logger'] = $logger;
     $before = $this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC);
+    $tableDefault = $this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'custom_pages'");
     ($this->runPatch)();
-    expect($this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC))->toBe($before);
+    // The unique description fits the index size limit after widening, so only
+    // the literal default, the generated column and the latin1 text stay put.
+    // Patch128 never repairs table defaults, so the table collation is kept too.
+    $after = $this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC);
+    $byField = static fn (array $rows, string $field): array => array_values(array_filter($rows, static fn (array $row): bool => $row['Field'] === $field))[0];
+    expect($byField($after, 'title'))->toBe($byField($before, 'title'))
+        ->and($byField($after, 'keywords'))->toBe($byField($before, 'keywords'))
+        ->and($byField($after, 'content'))->toBe($byField($before, 'content'))
+        ->and($byField($after, 'description')['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'custom_pages'"))->toBe($tableDefault);
 });
 
 test('charset migration is harmless when Custompages is not installed', function (): void {
