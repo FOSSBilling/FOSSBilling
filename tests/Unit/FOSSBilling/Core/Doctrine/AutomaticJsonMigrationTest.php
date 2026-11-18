@@ -49,25 +49,29 @@ test('form defaults preserve text and false-like values while checkbox collectio
     expect(array_map(fn ($v) => json_decode($v, true), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe($actual);
 });
 
-test('extension configuration is re-encrypted without changing unrelated metadata or plaintext meaning', function (): void {
+test('extension configuration migration skips unreadable rows and preserves the meaning of readable settings', function (): void {
     $c = automaticJsonConnection();
     $c->executeStatement('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, meta_key TEXT, meta_value TEXT, rel_type TEXT, rel_id TEXT, client_id BIGINT)');
     $pass = FOSSBilling\Core\System\Config::getProperty('info.salt');
     $plain = '{ "password":"secret", "unknown_extension_option":false }';
     $iv = str_repeat('x', 16);
     $v2 = 'v2:' . base64_encode($iv . openssl_encrypt($plain, Crypt::LEGACY_METHOD, hash_pbkdf2('sha256', $pass, 'fossbilling_salt', 100000, 32, true), OPENSSL_RAW_DATA, $iv));
-    $c->insert('extension_meta', ['id' => 1, 'meta_key' => 'config', 'meta_value' => $v2]);
-    $c->insert('extension_meta', ['id' => 2, 'meta_key' => 'config', 'meta_value' => 'plain-theme-setting', 'rel_type' => 'settings']);
-    $c->insert('extension_meta', ['id' => 3, 'meta_key' => 'token', 'meta_value' => 'opaque-token-hash']);
+    $c->insert('extension_meta', ['id' => 1, 'extension' => 'mod_example', 'meta_key' => 'config', 'meta_value' => 'v3:invalid']);
+    $c->insert('extension_meta', ['id' => 2, 'meta_key' => 'config', 'meta_value' => $v2]);
+    $c->insert('extension_meta', ['id' => 3, 'meta_key' => 'config', 'meta_value' => 'plain-theme-setting', 'rel_type' => 'settings']);
+    $c->insert('extension_meta', ['id' => 4, 'meta_key' => 'token', 'meta_value' => 'opaque-token-hash']);
     $crypt = new Crypt();
     $migration = new FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration();
-    $migration->run($c, $crypt);
-    $stored = $c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 1');
+    $warnings = $migration->run($c, $crypt);
+    $stored = $c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 2');
+    expect($warnings)->toHaveCount(1)
+        ->and($warnings[0])->toContain('id=1', 'mod_example', 'cannot be decrypted')->not->toContain('v3:invalid');
     expect($stored)->toStartWith('v3:')->and($crypt->decrypt($stored))->toBe($plain)
-        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 2'))->toBe('plain-theme-setting')
-        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 3'))->toBe('opaque-token-hash');
-    $migration->run($c, $crypt);
-    expect($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 1'))->toBe($stored);
+        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 1'))->toBe('v3:invalid')
+        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 3'))->toBe('plain-theme-setting')
+        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 4'))->toBe('opaque-token-hash');
+    expect($migration->run($c, $crypt))->toBe($warnings)
+        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 2'))->toBe($stored);
 });
 
 test('an interrupted preflight resumes from its durable batch cursor before any source writes', function (): void {
@@ -143,20 +147,22 @@ test('a no-op default update still rejects a missing source row and rolls back p
         ->and((new FOSSBilling\Core\Doctrine\JsonMigrationJournal($em, $crypt))->has('prepared:form_field.default_value:1'))->toBeFalse();
 });
 
-test('current-format extension configuration is validated without re-encrypting valid documents', function (string $plain): void {
+test('current-format extension settings are validated without being rewritten', function (string $plain, int $warningCount): void {
     $c = automaticJsonConnection();
     $c->executeStatement('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, meta_key TEXT, meta_value TEXT, rel_type TEXT, rel_id TEXT, client_id BIGINT)');
     $crypt = new Crypt();
-    $stored = $plain === 'truncated' ? 'v3:invalid' : $crypt->encrypt($plain);
+    $stored = $crypt->encrypt($plain);
     $c->insert('extension_meta', ['id' => 1, 'meta_key' => 'config', 'meta_value' => $stored]);
     $migration = new FOSSBilling\Core\Doctrine\EncryptedConfigurationMigration();
-    if (in_array($plain, ['{}', '[]'], true)) {
-        $migration->run($c, $crypt);
-    } else {
-        expect(fn () => $migration->run($c, $crypt))->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class);
-    }
-    expect($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 1'))->toBe($stored);
-})->with(['{}', '[]', 'null', '"private-secret"', '{broken', 'truncated']);
+    expect($migration->run($c, $crypt))->toHaveCount($warningCount)
+        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 1'))->toBe($stored);
+})->with([
+    ['{}', 0],
+    ['[]', 0],
+    ['null', 1],
+    ['"private-secret"', 1],
+    ['{broken', 1],
+]);
 
 test('readiness retries retain validated batches but revalidate changed or inserted rows', function (string $change): void {
     $logger = new class extends Psr\Log\AbstractLogger {
