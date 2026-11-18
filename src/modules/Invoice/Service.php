@@ -4061,6 +4061,12 @@ class Service implements InjectionAwareInterface
                 $entityManager->persist($copy);
 
                 if ($orderToLink instanceof Order) {
+                    // The validated order is the authority for the link: a legacy
+                    // reference such as '07' resolves to order 7 here through the
+                    // integer lookup, but would no longer resolve after payment,
+                    // so the replacement carries the canonical form throughout.
+                    $copy->setRelId((string) $orderToLink->getId());
+                    $copy->setOrderId((int) $orderToLink->getId());
                     $orderService->setUnpaidInvoice($orderToLink, $new);
                     $movedOrderIds[] = (int) $orderToLink->getId();
                 }

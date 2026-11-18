@@ -7769,6 +7769,92 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     expect($copiedByRelId['']->getOrderId())->toBeNull();
 });
 
+test('reissueInvoice normalizes a legacy order link from the validated order', function (): void {
+    $original = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
+    $original->setIssued(true);
+    $original->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($original, 10);
+
+    // A writer from before the typed column stored the order id padded.
+    // The integer lookup below still resolves it to order 7, but the copy
+    // must carry the canonical form so paid-item resolution keeps working.
+    $orderLine = createEntity(InvoiceItem::class, ['price' => 100.0, 'quantity' => 1, 'taxed' => false]);
+    $orderLine->setType(InvoiceItem::TYPE_ORDER);
+    $orderLine->setRelId('07');
+    $orderLine->setTask(InvoiceItem::TASK_ACTIVATE);
+    setEntityId($orderLine, 20);
+
+    $order = createEntity(Order::class, ['clientId' => 5]);
+    setEntityId($order, 7);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('resendUpdatedInvoice')->once();
+    $serviceMock->shouldReceive('addNote')->twice();
+    $serviceMock->shouldReceive('recordJournalEvent')->once();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('reserveNextNumericParamValue')->with('invoice_starting_number')->andReturn(8);
+    $systemService->shouldReceive('getParamValue')->with('invoice_series')->andReturn('FB-');
+    $systemService->shouldReceive('getParamValue')->with('invoice_hash_lifetime_days', '90')->andReturn(90);
+    $systemService->shouldReceive('getParamValue')->with('invoice_send_cancel_email', '0')->andReturn('0');
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('transferReservedPromoRedemptionsForOrders')->once()->with([7], Mockery::type(Invoice::class));
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('setUnpaidInvoice')->once()->with($order, Mockery::type(Invoice::class));
+
+    $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([$orderLine]);
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('find')->with(7)->andReturn($order);
+    $orderRepo->shouldReceive('findByUnpaidInvoiceId')->with(10)->andReturn([]);
+    $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
+    $copiedItems = [];
+    $em->shouldReceive('persist')->atLeast()->once()->andReturnUsing(
+        function (object $entity) use (&$copiedItems): void {
+            if ($entity instanceof InvoiceItem) {
+                $copiedItems[] = $entity;
+            }
+        }
+    );
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'product' => $productService,
+        'order' => $orderService,
+    ]));
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceItemRepository')->andReturn($invoiceItemRepo);
+
+    expect($serviceMock->reissueInvoice($original, []))->toBeInt()
+        ->and($copiedItems)->toHaveCount(1)
+        ->and($copiedItems[0]->getRelId())->toBe('7')
+        ->and($copiedItems[0]->getOrderId())->toBe(7);
+});
+
 test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 

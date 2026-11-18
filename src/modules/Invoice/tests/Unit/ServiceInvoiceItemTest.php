@@ -372,6 +372,8 @@ test('resolves the typed order reference only for order shapes', function (): vo
         ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '07'))->toBeNull()
         ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, ' 7'))->toBeNull()
         ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '0'))->toBeNull()
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, (string) PHP_INT_MAX))->toBe(PHP_INT_MAX)
+        ->and(ServiceInvoiceItem::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, '99999999999999999999'))->toBeNull()
         ->and(ServiceInvoiceItem::resolveOrderReference(null, null, null))->toBeNull();
 });
 

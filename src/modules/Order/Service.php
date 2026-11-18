@@ -200,7 +200,16 @@ class Service implements InjectionAwareInterface
     {
         $reloaded = [];
         foreach ($orders as $order) {
-            $fresh = $this->di['em']->find(Order::class, $this->orderId($order));
+            try {
+                $fresh = $this->di['em']->find(Order::class, $this->orderId($order));
+            } catch (\Exception $e) {
+                // One unreadable order must not wedge the rest of the batch:
+                // it is left for the next run while the remaining orders
+                // proceed and the completion event still fires.
+                $this->di['logger']->info($e->getMessage());
+
+                continue;
+            }
             if ($fresh instanceof Order) {
                 $reloaded[] = $fresh;
             }
@@ -2906,12 +2915,22 @@ class Service implements InjectionAwareInterface
         // invoice is removed first via deleteInvoiceByAdmin() so it doesn't linger
         // empty and still eligible for reminder emails after the order it belongs
         // to is gone.
+        // The selected links snapshot: refresh() below re-reads each order,
+        // and a link attached mid-run is not in the prefetched map. Compared
+        // after every refresh so a changed link defers the order instead of
+        // reading a map miss as "invoice gone".
+        $selectedInvoiceIds = [];
+        foreach ($staleOrders as $selectedOrder) {
+            $selectedInvoiceIds[$this->orderId($selectedOrder)] = $selectedOrder->getUnpaidInvoiceId();
+        }
+
         // A queue, not foreach: recovering from a closed manager replaces
         // the remaining orders with reloaded ones, which a pinned-down
-        // foreach would never pick up.
-        $pendingOrders = $staleOrders;
+        // foreach would never pick up. Reversed once so the loop consumes
+        // from the end; array_shift would reindex the queue every iteration.
+        $pendingOrders = array_reverse($staleOrders);
         while ($pendingOrders !== []) {
-            $order = array_shift($pendingOrders);
+            $order = array_pop($pendingOrders);
 
             try {
                 // Re-check the order's current status before touching anything for
@@ -2919,6 +2938,13 @@ class Service implements InjectionAwareInterface
                 // order may have been activated or otherwise moved on while earlier
                 // orders in this same run were being processed.
                 $this->di['em']->refresh($order);
+                if ($order->getUnpaidInvoiceId() !== ($selectedInvoiceIds[$this->orderId($order)] ?? null)) {
+                    // Attached, detached, or re-attached while earlier orders
+                    // were processed: the prefetched map describes the previous
+                    // link, so the next run evaluates the current one instead
+                    // of deleting under it.
+                    continue;
+                }
                 if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
                     continue;
                 }
@@ -2978,7 +3004,8 @@ class Service implements InjectionAwareInterface
                     // left for the next run.
                     $this->resetEntityManager();
                     $invoiceService = $this->di['mod_service']('Invoice');
-                    $pendingOrders = $this->reloadOrders($pendingOrders);
+                    // Restores the reversed orientation the loop consumes.
+                    $pendingOrders = array_reverse($this->reloadOrders(array_reverse($pendingOrders)));
                     $invoicesById = $this->findInvoicesByIds($invoiceService, $pendingOrders);
                 }
             }

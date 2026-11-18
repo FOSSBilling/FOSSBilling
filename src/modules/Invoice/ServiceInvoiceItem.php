@@ -563,11 +563,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
      *
      * The reference itself must be a canonical positive integer string: a
      * loose cast would turn a non-order reference such as '7.5' into order 7
-     * and let order-scoped deletes take lines that never belonged to it.
+     * and let order-scoped deletes take lines that never belonged to it. It
+     * must also survive an integer round-trip, so digit strings above the
+     * BIGINT maximum map to null instead of a saturated wrong id.
      */
     public static function resolveOrderReference(?string $type, ?string $unit, ?string $relId): ?int
     {
-        if ($relId === null || preg_match('/\A[1-9][0-9]*\z/', $relId) !== 1) {
+        if ($relId === null || preg_match('/\A[1-9][0-9]*\z/', $relId) !== 1 || (string) (int) $relId !== $relId) {
             return null;
         }
 

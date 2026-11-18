@@ -273,8 +273,8 @@ class Patcher implements InjectionAwareInterface
             $this->backfillRefundIncomeBasis();
             // Typed order linkage backfill (see invoice_item.order_id): runs here for
             // every driver while the column the sync above added is guaranteed present.
-            // Same-version deploys converge through the bounded heal in
-            // ensureSchemaInSync().
+            // Same-version deploys converge through the bounded per-request heal
+            // Finalization::healSchemaDrift() schedules.
             $this->backfillInvoiceItemOrderIds();
             $this->checkInvoiceNumberCounter();
         } catch (\Doctrine\DBAL\Exception\ConnectionException) {

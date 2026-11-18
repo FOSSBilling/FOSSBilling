@@ -262,61 +262,62 @@ class ServiceSubscription implements InjectionAwareInterface
         // order with an outstanding scheduled-cancellation marker.
         if (in_array($subscription->getStatus(), [self::STATUS_PENDING_CANCELLATION, 'canceled'], true)
             && $subscription->getRelType() === 'invoice') {
-            $query = $this->di['em']->getConnection()->createQueryBuilder();
-            $orderIds = $query
-                ->select('DISTINCT ii.order_id')
-                ->from('invoice_item', 'ii')
-                ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.order_id')
-                ->where('ii.invoice_id = :invoice_id')
-                ->andWhere('ii.type = :item_type')
-                ->andWhere('com.name = :meta_name')
-                ->andWhere('com.value = :meta_value')
-                ->setParameter('invoice_id', $subscription->getRelId())
-                ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
-                ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
-                ->setParameter('meta_value', '1')
-                ->executeQuery()
-                ->fetchFirstColumn();
-
-            $orderService = $this->di['mod_service']('Order');
-            foreach ($orderIds as $orderId) {
-                $order = $this->di['em']->getRepository(Order::class)->find((int) $orderId);
-                if (!$order instanceof Order) {
-                    continue;
-                }
-                if (in_array($order->getStatus(), [Order::STATUS_CANCELED, Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)) {
-                    continue;
-                }
-
-                $orderService->finalizeCancellationFromGateway($order, 'Subscription ended at the payment gateway');
-            }
-
-            // Text-side counterpart of the join above for rows the order_id
-            // backfill hasn't reached (or that predate the typed column): the
-            // join can't be reused because a text-to-integer comparison is
-            // coercion on MySQL, an error on PostgreSQL for junk like '7.5',
-            // and loose matching on SQLite. Only a canonical order id written
-            // as text resolves, mirroring the backfill's own rule.
-            $typedOrderIds = array_map(intval(...), $orderIds);
+            // Legacy links first: a backfill page converting a row between the
+            // two reads must not hide it from both. Reads are one-directional
+            // (order_id only ever fills in), so matching the legacy shape
+            // before the typed one covers every interleave.
             $legacyRelIds = $this->di['em']->getConnection()->fetchFirstColumn(
                 'SELECT DISTINCT ii.rel_id FROM invoice_item ii WHERE ii.invoice_id = :invoice_id AND ii.type = :item_type AND ii.order_id IS NULL',
                 ['invoice_id' => $subscription->getRelId(), 'item_type' => Entity\InvoiceItem::TYPE_ORDER]
             );
+            $legacyOrderIds = [];
             foreach ($legacyRelIds as $relId) {
+                // Text-side counterpart of the join below: a text-to-integer
+                // comparison is coercion on MySQL, an error on PostgreSQL for
+                // junk like '7.5', and loose matching on SQLite. Only a
+                // canonical order id written as text resolves, mirroring the
+                // backfill's own rule.
                 $legacyOrderId = ServiceInvoiceItem::resolveOrderReference(Entity\InvoiceItem::TYPE_ORDER, null, is_scalar($relId) ? (string) $relId : null);
-                if ($legacyOrderId === null || in_array($legacyOrderId, $typedOrderIds, true)) {
-                    continue;
+                if ($legacyOrderId !== null) {
+                    $legacyOrderIds[] = $legacyOrderId;
                 }
-                $order = $this->di['em']->getRepository(Order::class)->find($legacyOrderId);
+            }
+
+            $query = $this->di['em']->getConnection()->createQueryBuilder();
+            $typedOrderIds = array_map(
+                intval(...),
+                $query
+                    ->select('DISTINCT ii.order_id')
+                    ->from('invoice_item', 'ii')
+                    ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.order_id')
+                    ->where('ii.invoice_id = :invoice_id')
+                    ->andWhere('ii.type = :item_type')
+                    ->andWhere('com.name = :meta_name')
+                    ->andWhere('com.value = :meta_value')
+                    ->setParameter('invoice_id', $subscription->getRelId())
+                    ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
+                    ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
+                    ->setParameter('meta_value', '1')
+                    ->executeQuery()
+                    ->fetchFirstColumn()
+            );
+
+            $orderService = $this->di['mod_service']('Order');
+            foreach (array_values(array_unique(array_merge($typedOrderIds, $legacyOrderIds))) as $orderId) {
+                $order = $this->di['em']->getRepository(Order::class)->find($orderId);
                 if (!$order instanceof Order) {
                     continue;
                 }
                 if (in_array($order->getStatus(), [Order::STATUS_CANCELED, Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)) {
                     continue;
                 }
-                $pairs = $orderService->getOrderMetaRepository()->getPairsForOrder($legacyOrderId);
-                if (($pairs[\Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END] ?? null) !== '1') {
-                    continue;
+                if (!in_array($orderId, $typedOrderIds, true)) {
+                    // Typed candidates proved the scheduled-cancellation flag
+                    // through the join; legacy-only ones prove it here.
+                    $pairs = $orderService->getOrderMetaRepository()->getPairsForOrder($orderId);
+                    if (($pairs[\Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END] ?? null) !== '1') {
+                        continue;
+                    }
                 }
 
                 $orderService->finalizeCancellationFromGateway($order, 'Subscription ended at the payment gateway');
@@ -410,13 +411,13 @@ class ServiceSubscription implements InjectionAwareInterface
             $query->andWhere('s.status = :status')->setParameter('status', $status);
         }
 
-        $subscriptionIds = $query->executeQuery()->fetchFirstColumn();
-
-        // Rows written before the order_id backfill reached them (or by a
-        // writer from before the typed column existed) carry only the rel_id
-        // link. A separate query keeps the typed predicate above index-friendly
-        // instead of OR-ing the fallback into it. Without a persisted order id
-        // there is no text to match, so the fallback is skipped outright.
+        // Legacy links first: a backfill page converting a row between the
+        // two reads must not hide it from both. Reads are one-directional
+        // (order_id only ever fills in), so matching the legacy shape before
+        // the typed one covers every interleave. A separate query keeps the
+        // typed predicate above index-friendly instead of OR-ing the fallback
+        // into it. Without a persisted order id there is no text to match,
+        // so the fallback is skipped outright.
         $fallbackIds = [];
         if ($order->getId() !== null) {
             $fallbackQuery = $this->di['em']->getConnection()->createQueryBuilder();
@@ -439,7 +440,7 @@ class ServiceSubscription implements InjectionAwareInterface
             $fallbackIds = $fallbackQuery->executeQuery()->fetchFirstColumn();
         }
 
-        $subscriptionIds = array_values(array_unique(array_merge($subscriptionIds, $fallbackIds)));
+        $subscriptionIds = array_values(array_unique(array_merge($fallbackIds, $query->executeQuery()->fetchFirstColumn())));
 
         $subscriptions = [];
         foreach ($subscriptionIds as $id) {
