@@ -2461,9 +2461,13 @@ class Patcher implements InjectionAwareInterface
                     $byteLimitKnown = true;
                 }
                 if (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
-                    $reason = $byteLimit === null
-                        ? 'compressed block size requires manual review.'
-                        : 'index would exceed the size limit after conversion and requires manual review.';
+                    if ($this->hasUnsupportedFulltextIndex($columnIndexes, $indexes)) {
+                        $reason = 'multi-column FULLTEXT index requires manual review.';
+                    } elseif ($byteLimit === null) {
+                        $reason = 'compressed block size requires manual review.';
+                    } else {
+                        $reason = 'index would exceed the size limit after conversion and requires manual review.';
+                    }
                     $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': ' . $reason);
 
                     continue;
@@ -2604,6 +2608,25 @@ class Patcher implements InjectionAwareInterface
                 continue;
             }
             if (preg_match('/(^|[^A-Za-z0-9_])' . preg_quote($column, '/') . '([^A-Za-z0-9_]|$)/i', $expression) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether any of the column's indexes is a multi-column FULLTEXT index,
+     * which can never convert no matter how small the key is.
+     */
+    private function hasUnsupportedFulltextIndex(array $columnIndexes, array $indexes): bool
+    {
+        foreach ($columnIndexes as $index) {
+            if ($index['Index_type'] !== 'FULLTEXT') {
+                continue;
+            }
+            $members = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
+            if (count($members) !== 1) {
                 return true;
             }
         }

@@ -232,9 +232,12 @@ test('Unicode repair converts safe prefix indexes but skips multi-column fulltex
     } else {
         expect($this->pdo->query('SHOW FULL COLUMNS FROM support_ticket_message')->fetchAll(PDO::FETCH_ASSOC))->toBe($before)
             ->and($this->patcher->getDi()['logger']->calls)->not->toBeEmpty();
+        $messages = [];
         foreach ($this->patcher->getDi()['logger']->calls as $call) {
             expect($call['method'])->toBe('warning');
+            $messages[] = $call['params'][0] ?? '';
         }
+        expect(implode("\n", $messages))->toContain('FULLTEXT');
     }
 })->with([
     'multi-column fulltext' => ['FULLTEXT KEY custom_search (content, attachment)', false],
@@ -484,16 +487,25 @@ test('fresh installation supports supplementary Unicode in a legacy database wit
 
 test('Unicode repair normalizes the database default to utf8mb4_unicode_ci', function (): void {
     expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBeIn(['utf8', 'utf8mb3']);
+    $this->pdo->exec("CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
+    $this->connection->insert('post', ['id' => 1, 'title' => 'Résumé']);
 
     (new Patch146())->apply($this->patcher);
 
     expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
-        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci');
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'title'");
+    expect($column['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne('SELECT title FROM post'))->toBe('Résumé')
         ->and($this->pdo->dbAlters)->toHaveCount(1)
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+    $alters = count($this->pdo->alters);
+    expect($alters)->toBeGreaterThan(0);
     (new Patch146())->apply($this->patcher);
     expect($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne('SELECT title FROM post'))->toBe('Résumé')
         ->and($this->pdo->dbAlters)->toHaveCount(1)
+        ->and(count($this->pdo->alters))->toBe($alters)
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
