@@ -5164,6 +5164,20 @@ class Service implements InjectionAwareInterface
         return $current;
     }
 
+    private function findUnpaidInvoiceForOrder(Order $order): ?Invoice
+    {
+        if ($order->getUnpaidInvoiceId() === null) {
+            return null;
+        }
+        $invoice = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
+        if (!$invoice instanceof Invoice) {
+            return null;
+        }
+        $this->di['em']->refresh($invoice);
+
+        return $invoice->getStatus() === Invoice::STATUS_UNPAID ? $invoice : null;
+    }
+
     private function generateForOrderLocked(Order $order, $due_days, bool $applyPromo, string $task = InvoiceItem::TASK_RENEW): Invoice
     {
         if ($order->getId() !== null) {
@@ -5171,12 +5185,9 @@ class Service implements InjectionAwareInterface
         }
         // check if we do have invoice prepared already
         if ($order->getUnpaidInvoiceId() !== null) {
-            $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
-            if ($p instanceof Invoice) {
-                $this->di['em']->refresh($p);
-            }
-            if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
-                return $p;
+            $existing = $this->findUnpaidInvoiceForOrder($order);
+            if ($existing !== null) {
+                return $existing;
             }
 
             $orderService = $this->di['mod_service']('Order');
@@ -5307,12 +5318,8 @@ class Service implements InjectionAwareInterface
                 if ($this->hasRenewalHold((int) $order->getId())) {
                     return false;
                 }
-                $existing = $order->getUnpaidInvoiceId() === null ? null : $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
-                if ($existing instanceof Invoice) {
-                    $this->di['em']->refresh($existing);
-                }
 
-                return !$existing instanceof Invoice || $existing->getStatus() !== Invoice::STATUS_UNPAID;
+                return $this->findUnpaidInvoiceForOrder($order) === null;
             }));
 
             return $this->generateMergedInvoiceForOrdersLocked($eligible, $applyPromo);

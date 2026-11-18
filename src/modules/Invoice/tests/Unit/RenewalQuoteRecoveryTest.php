@@ -197,28 +197,22 @@ test('renewal creation owns the request mutex until the quote and entitlement ar
     [, $em, $client] = receiptTestContext();
     $order = renewalReviewOrder($em, $client->getId());
     $service = renewalReviewService($em);
-    $service->shouldReceive('setInvoiceDefaults')->once()->andReturnUsing(function () use ($order): void {
+    $probe = static function (bool $held) use ($order): void {
         $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
         $name = 'fb:cancel-request-order:' . $order->getId();
         $acquired = FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0);
         if ($acquired) {
             FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
         }
-        expect($acquired)->toBeFalse();
-    });
-    $writes = 0;
-    $probe = function () use ($order, &$writes): void {
-        ++$writes;
-        $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-        $name = 'fb:cancel-request-order:' . $order->getId();
-        $acquired = FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0);
-        if ($acquired) {
-            FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
-        }
-        expect($acquired)->toBeFalse();
+        expect($acquired)->toBe(!$held);
     };
-    $em->getEventManager()->addEventListener(['postPersist'], new readonly class($probe) {
-        public function __construct(private Closure $probe)
+    $service->shouldReceive('setInvoiceDefaults')->once()->andReturnUsing(function () use ($probe): void {
+        $probe(true);
+    });
+    $listener = new class($probe) {
+        public int $writes = 0;
+
+        public function __construct(private readonly Closure $probe)
         {
         }
 
@@ -226,19 +220,15 @@ test('renewal creation owns the request mutex until the quote and entitlement ar
         {
             $entity = $event->getObject();
             if ($entity instanceof OrderMeta && str_starts_with($entity->getName(), 'free_domain_renewal_invoice_')) {
-                ($this->probe)();
+                ++$this->writes;
+                ($this->probe)(true);
             }
         }
-    });
+    };
+    $em->getEventManager()->addEventListener(['postPersist'], $listener);
     $invoice = $service->generateForOrder($order, null, false);
-    expect($writes)->toBe(1);
-    $other = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $name = 'fb:cancel-request-order:' . $order->getId();
-    $released = FOSSBilling\Core\Doctrine\NamedLock::acquire($other, $name, 0);
-    if ($released) {
-        FOSSBilling\Core\Doctrine\NamedLock::release($other, $name);
-    }
-    expect($released)->toBeTrue();
+    expect($listener->writes)->toBe(1);
+    $probe(false);
     expect($em->getConnection()->fetchOne('SELECT value FROM client_order_meta WHERE client_order_id = ? AND name = ?', [$order->getId(), 'free_domain_renewal_invoice_' . $invoice->getId()]))->toBe('1');
 });
 

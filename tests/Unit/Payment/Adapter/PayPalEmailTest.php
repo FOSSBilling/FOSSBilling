@@ -435,15 +435,16 @@ describe('PayPal subscription IPN handling', function (): void {
         expect($processed)->toHaveCount(1);
     });
 
-    test('renewal subscr_payment generates a renewal invoice once the original is paid', function (): void {
+    test('renewal subscr_payment generates a renewal invoice once the original is paid', function (bool $contention): void {
         $updates = [];
+        $deliveries = $contention ? 2 : 1;
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn(
+        $apiAdmin->shouldReceive('invoice_transaction_get')->times($deliveries * 2)->with(['id' => 42])->andReturn(
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'subscr_payment', 'txn_id' => 'TXN-2', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
         $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
-        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+        $apiAdmin->shouldReceive('invoice_get')->times($deliveries)->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
@@ -464,9 +465,16 @@ describe('PayPal subscription IPN handling', function (): void {
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
-        $invoiceService->shouldReceive('recordGatewayPayment')->byDefault()->andReturn(true);
+        $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('I-ABC123', 9)->andReturn($renewal);
+        $attempt = 0;
+        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->times($deliveries)->with('I-ABC123', 9)->andReturnUsing(function () use ($contention, &$attempt, $renewal) {
+            if ($contention && ++$attempt === 1) {
+                throw new Box\Mod\Invoice\Exception\RenewalLockException('Quote lock busy');
+            }
+
+            return $renewal;
+        });
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
 
         $em = paypalEmMocks($paidInvoice);
@@ -475,7 +483,8 @@ describe('PayPal subscription IPN handling', function (): void {
         $di['logger'] = new Tests\Helpers\TestLogger();
         $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
 
-        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+        $adapter = paypalProcessAdapter($di);
+        $deliver = fn () => $adapter->processTransaction($apiAdmin, 42, [
             'post' => [
                 'txn_type' => 'subscr_payment',
                 'payment_status' => 'Completed',
@@ -487,10 +496,15 @@ describe('PayPal subscription IPN handling', function (): void {
             'get' => signedPayPalGet(16, 2),
         ], 2);
 
-        $reassigned = array_values(array_filter($updates, fn (array $u): bool => isset($u['invoice_id']) && (int) $u['invoice_id'] === 99));
+        if ($contention) {
+            expect($deliver)->toThrow(Box\Mod\Invoice\Exception\RenewalLockException::class, 'Quote lock busy');
+            expect(array_filter($updates, fn (array $update): bool => ($update['status'] ?? '') === 'processed'))->toBeEmpty();
+        }
+        $deliver();
+
         expect($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getOriginalInvoiceId())->toBe(16)
             ->and($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getInvoice()->getId())->toBe(99);
-    });
+    })->with(['without contention' => false, 'retry after contention' => true]);
 
     test('non-completed payments keep their error instead of being marked processed', function (): void {
         $updates = [];
@@ -1905,72 +1919,4 @@ test('a PayPal subscription retry retains the signed original and selected renew
         'get' => signedPayPalGet(16, 2),
     ], 2);
     expect($transaction->getOriginalInvoiceId())->toBe(16)->and($transaction->getInvoice())->toBe($renewal);
-});
-test('renewal subscr_payment retries invoice selection after a temporary quote lock conflict', function (): void {
-    $updates = [];
-    $apiAdmin = Mockery::mock();
-    $apiAdmin->shouldReceive('invoice_transaction_get')->times(4)->with(['id' => 42])->andReturn(
-        ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
-        ['invoice_id' => 16, 'type' => 'subscr_payment', 'txn_id' => 'TXN-2', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
-    );
-    $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
-    $apiAdmin->shouldReceive('invoice_get')->twice()->with(['id' => 16])->andReturn([
-        'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
-    ]);
-    $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
-        $updates[] = $data;
-
-        return true;
-    });
-    $apiAdmin->shouldNotReceive('client_balance_add_funds');
-
-    $paidInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
-    $paidInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
-    $paidInvoice->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
-    $renewal = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
-    $renewal->shouldReceive('getId')->byDefault()->andReturn(99);
-    $renewal->shouldReceive('getClientId')->byDefault()->andReturn(9);
-    $renewal->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
-    $renewal->shouldReceive('isIssued')->byDefault()->andReturn(true);
-
-    $invoiceService = Mockery::mock();
-    $invoiceService->shouldReceive('gatewayReceiptExists')->byDefault()->andReturn(false);
-    $invoiceService->shouldReceive('recordGatewayPayment')->once()->andReturn(true);
-    $invoiceService->shouldReceive('payInvoiceWithCredits')->byDefault()->withAnyArgs()->andReturn(true);
-    $attempt = 0;
-    $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->twice()->with('I-ABC123', 9)->andReturnUsing(function () use (&$attempt, $renewal) {
-        if (++$attempt === 1) {
-            throw new Box\Mod\Invoice\Exception\RenewalLockException('Quote lock busy');
-        }
-
-        return $renewal;
-    });
-    $invoiceService->shouldReceive('isInvoiceTypeDeposit')->zeroOrMoreTimes()->andReturn(false);
-
-    $em = paypalEmMocks($paidInvoice);
-    $di = container();
-    $di['em'] = $em;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
-
-    $adapter = paypalProcessAdapter($di);
-    $deliver = fn () => $adapter->processTransaction($apiAdmin, 42, [
-        'post' => [
-            'txn_type' => 'subscr_payment',
-            'payment_status' => 'Completed',
-            'txn_id' => 'TXN-2',
-            'mc_gross' => '120.00',
-            'mc_currency' => 'USD',
-            'subscr_id' => 'I-ABC123',
-        ],
-        'get' => signedPayPalGet(16, 2),
-    ], 2);
-
-    expect($deliver)->toThrow(Box\Mod\Invoice\Exception\RenewalLockException::class, 'Quote lock busy');
-    expect(array_filter($updates, fn (array $update): bool => ($update['status'] ?? '') === 'processed'))->toBeEmpty();
-    $deliver();
-
-    $reassigned = array_values(array_filter($updates, fn (array $u): bool => isset($u['invoice_id']) && (int) $u['invoice_id'] === 99));
-    expect($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getOriginalInvoiceId())->toBe(16)
-        ->and($em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find(42)->getInvoice()->getId())->toBe(99);
 });
