@@ -487,7 +487,7 @@ test('fresh installation supports supplementary Unicode in a legacy database wit
 
 test('Unicode repair normalizes the database default to utf8mb4_unicode_ci', function (): void {
     expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBeIn(['utf8', 'utf8mb3']);
-    $this->pdo->exec("CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
     $this->connection->insert('post', ['id' => 1, 'title' => 'Résumé']);
 
     (new Patch146())->apply($this->patcher);
