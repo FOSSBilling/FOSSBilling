@@ -26,7 +26,7 @@ class Patch125 implements PatchInterface
         // drivers get the table and assignment copy from syncPortableSchema();
         // only the legacy column drop remains MySQL-only.
         if (!$patcher->tableExists('client_group_members')) {
-            $patcher->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8');
+            $patcher->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
         }
 
         if ($patcher->tableHasColumn('client', 'client_group_id')) {
