@@ -32,24 +32,15 @@ coordinated rollout appropriate to their infrastructure.
 
 ## Transition from older releases
 
-The coordination protocol is proposed for `0.8-next`, which tracks the next
-maintenance release (currently planned as 0.8.10). It can ship with that release's
-other changes; a separate mandatory bridge release is not required. The complete
-Phase B/C implementation targets `main`. Maintainers should review the two PRs
-and select their release versions through the project's normal release process.
-See `tools/upgrade-bridge/README.md` for the local candidates and transition plan.
+Request and cron coordination was merged into `0.8-next` in
+[#4699](https://github.com/FOSSBilling/FOSSBilling/pull/4699). The complete Phase
+B/C changes target `main` for 0.9.0. Install a published coordination-capable
+maintenance release before moving to that release.
 
-Already-running processes from releases without this protocol cannot be enrolled
-retroactively. A coordination-capable maintenance release prepares subsequent
-built-in updates to drain participating requests automatically, but it cannot
-prove that an indefinitely running older worker has ended. Release notes should
-explain this first-transition limitation and the existing maintenance procedure
-for installations that cannot establish that older workers have finished.
-There is no new release-service query or permanent API routing requirement.
-
-If the maintenance backport is unsuitable, include coordination with Phase B/C
-in 0.9.0 and document the same first-transition limitation. Do not describe direct
-upgrades from an uncoordinated release as automatically draining old requests.
+Processes already running code from an older release cannot join the new lock
+protocol retroactively. During the first transition, let those processes finish;
+use the installation's existing maintenance controls if necessary. Subsequent
+built-in updates drain participating requests and cron automatically.
 
 Historical SQL/config upgrade tests cover 0.7.2, 0.8.1 and 0.8.9 on MySQL/MariaDB,
 including interruption and retry. Portable schema and concurrency tests also
