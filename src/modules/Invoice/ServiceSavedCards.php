@@ -19,8 +19,11 @@ use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayCustomerRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\NamedLock;
+use FOSSBilling\Core\Events\EventDispatcher;
 use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Payment\ProcessingFence;
 
 /**
  * Automatic payments with saved payment methods. A client saves a Stripe
@@ -257,9 +260,33 @@ class ServiceSavedCards implements InjectionAwareInterface
                         // One invoice (a charge the gateway left unclear, a lock
                         // held by a concurrent request) must not abort the rest.
                         $this->di['logger']->warning('Invoice #{id}: automatic saved-method charge failed: {message}', ['id' => $row['id'], 'message' => $e->getMessage()]);
+                        $this->recoverEntityManager();
                     }
                 }
             }
+        }
+    }
+
+    /** Discard a failed payment's unit of work before another invoice or cron task runs. */
+    private function recoverEntityManager(): void
+    {
+        $manager = $this->di['em'];
+        if ($manager->isOpen()) {
+            return;
+        }
+        $connection = $manager->getConnection();
+        if (ProcessingFence::claims() !== [] || $connection->isTransactionActive()) {
+            throw new \LogicException('Payment processing must unwind before its entity manager can be replaced.');
+        }
+        // Do not continue on an unusable or uncertain database connection.
+        $connection->fetchOne('SELECT 1');
+        $replacement = EntityManagerFactory::create($connection);
+        unset($this->di['em']);
+        $this->di['em'] = $replacement;
+        // Module services are created per call, but the dispatcher retains
+        // listener services whose repositories belong to the discarded manager.
+        if ($this->di['event_dispatcher'] instanceof EventDispatcher) {
+            $this->di['event_dispatcher']->refresh();
         }
     }
 
@@ -380,7 +407,7 @@ class ServiceSavedCards implements InjectionAwareInterface
         $attemptId = GatewayChargeAttempts::begin($connection, (int) $invoice->getId(), $adapter->gatewayId(), $ownerToken);
 
         try {
-            return \FOSSBilling\Core\Payment\ProcessingFence::charge($connection, $attemptId, $ownerToken, fn (): array => $this->chargePrepared($invoice, $adapter, $byStaff, $card, $attempt, $attemptId));
+            return ProcessingFence::charge($connection, $attemptId, $ownerToken, fn (): array => $this->chargePrepared($invoice, $adapter, $byStaff, $card, $attempt, $attemptId));
         } catch (\Throwable $exception) {
             $this->di['em']->close();
 

@@ -681,3 +681,139 @@ test('queued automatic charges refresh retry limits and timing under the charge 
         ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_gateway_charge_attempt'))->toBe($expected);
     $db->close();
 })->with(['no retries', 'retry interval', 'eligible retry']);
+
+test('cron recovers after saved payment settlement closes its entity manager', function (int $invoiceCount): void {
+    $db = Tests\Helpers\fencedConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [
+        Invoice::class, PayGateway::class, PayGatewayCustomer::class, InvoiceCardCharge::class,
+        Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\Transaction::class,
+        Box\Mod\Invoice\Entity\InvoiceItem::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\System\Entity\Setting::class,
+    ]));
+    $db->executeStatement('CREATE TABLE session (lifetime INTEGER, created_at INTEGER)');
+    $gateway = (new PayGateway())->setGateway('Stripe');
+    $em->persist($gateway);
+    $em->flush();
+    $ids = [];
+    for ($client = 7; $client < 7 + $invoiceCount; ++$client) {
+        $invoice = (new Invoice())->setClientId($client)->setStatus('unpaid')->setCurrency('USD')->setDueAt(new DateTimeImmutable('-1 month'));
+        $em->persist($invoice);
+        $em->persist((new PayGatewayCustomer())->setPayGateway($gateway)->setClientId($client)->setTestMode(false)->setSavedCards(true)->setExternalCustomerId('cus_' . $client)->setDefaultPaymentMethod('pm_' . $client)->setDefaultCard('Saved card')->setAutoPayAt(new DateTimeImmutable()));
+        $em->flush();
+        $ids[] = (int) $invoice->getId();
+    }
+    $di = container();
+    $di['em'] = fn (): EntityManagerInterface => $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = Mockery::mock(ServiceSavedCards::class)->makePartial();
+    $service->setDi($di);
+    $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+    $adapter->shouldReceive('gatewayId')->andReturn((int) $gateway->getId());
+    $adapter->shouldReceive('testMode')->andReturn(false);
+    $adapter->shouldReceive('savedCard')->andReturnUsing(fn (int $client): ?array => $service->saved((int) $gateway->getId(), false, $client));
+    $charged = [];
+    $adapter->shouldReceive('chargeSavedCard')->times($invoiceCount)->andReturnUsing(function (Invoice $invoice) use (&$charged): string {
+        $charged[] = (int) $invoice->getId();
+
+        return 'pi_' . $invoice->getId();
+    });
+    $service->shouldReceive('adapters')->andReturn([$adapter]);
+    $service->shouldReceive('paypal')->andReturn(null);
+    $service->shouldReceive('settings')->andReturn(['days_before' => 0, 'every' => 7, 'retries' => 2]);
+    $fees = Mockery::mock(Box\Mod\Invoice\ServiceGatewayFees::class);
+    $fees->shouldReceive('apply')->times($invoiceCount);
+    $transactions = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
+    $transactions->shouldReceive('createAndProcess')->times($invoiceCount)->andReturnUsing(function (array $data) use ($di, $ids): int {
+        $manager = $di['em'];
+        $invoice = $manager->find(Invoice::class, $data['invoice_id']);
+        $invoice->setStatus(Invoice::STATUS_PAID);
+        if ($data['invoice_id'] === $ids[0]) {
+            // The provider accepted payment, but local settlement fails with
+            // dirty managed state. Recovery must never flush that state later.
+            throw new RuntimeException('Payment details lookup timed out');
+        }
+        $tx = (new Box\Mod\Invoice\Entity\Transaction())->setInvoice($invoice)
+            ->setGateway($manager->find(PayGateway::class, $data['gateway_id']))
+            ->setTxnId($data['get']['payment_intent'])->setTxnStatus('succeeded')->setStatus('processed');
+        $manager->persist($tx);
+        $manager->flush();
+
+        return (int) $tx->getId();
+    });
+    $di['mod_service'] = $di->protect(function (string $module, string $sub = '') use ($di, $fees, $transactions): object {
+        if (strtolower($module) === 'staff') {
+            return Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+        }
+        if (strtolower($module) === 'system') {
+            $system = new Box\Mod\System\Service();
+            $system->setDi($di);
+
+            return $system;
+        }
+
+        return match ($sub) {
+            'GatewayFees' => $fees, 'Transaction' => $transactions,
+        };
+    });
+    $listenerManagers = [];
+    $di['event_dispatcher'] = new FOSSBilling\Core\Events\EventDispatcher(fn (): array => ['invoice'], function () use ($di, &$listenerManagers): object {
+        $boundManager = $di['em'];
+        $listenerManagers[] = $boundManager;
+        $listener = Mockery::mock(Box\Mod\Invoice\Service::class)->shouldIgnoreMissing();
+        $listener->shouldReceive('healMissingJournalEntries')->zeroOrMoreTimes()->andReturnUsing(function () use ($boundManager): void {
+            expect($boundManager->isOpen())->toBeTrue();
+            $boundManager->persist((new Box\Mod\System\Entity\Setting())->setParam('after_cron_listener')->setValue('healthy'));
+            $boundManager->flush();
+        });
+
+        return $listener;
+    });
+    $api = new class($service, $di) {
+        public function __construct(private readonly ServiceSavedCards $saved, private Pimple\Container $di)
+        {
+        }
+
+        public function __call(string $method, array $args): void
+        {
+            if ($method === 'invoice_batch_charge_saved_cards') {
+                $this->saved->runDue();
+            } elseif (in_array($method, ['order_batch_send_suspension_warnings', 'support_batch_ticket_auto_close', 'email_batch_sendmail'], true)) {
+                $manager = $this->di['em'];
+                expect($manager->isOpen())->toBeTrue();
+                $manager->persist((new Box\Mod\System\Entity\Setting())->setParam($method)->setValue('healthy'));
+                $manager->flush();
+            }
+        }
+    };
+    $finalization = Mockery::mock();
+    $finalization->shouldReceive('withRuntimeLock')->andReturnUsing(fn (callable $work): mixed => $work());
+    $finalization->shouldReceive('isRequired')->andReturnFalse();
+    $finalization->shouldReceive('healSchemaDrift')->andReturnNull();
+    $di['update_finalization'] = $finalization;
+    $di['api_system'] = $api;
+    $cron = new Box\Mod\Cron\Service();
+    $cron->setDi($di);
+    ob_start();
+
+    try {
+        expect($cron->runCrons())->toBeTrue()
+            ->and($charged)->toBe($ids)
+            ->and($em->isOpen())->toBeFalse()
+            ->and($di['em']->isOpen())->toBeTrue()
+            ->and($di['em'])->not->toBe($em)
+            ->and($listenerManagers)->toHaveCount(2)
+            ->and($listenerManagers[1])->toBe($di['em'])
+            ->and($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$ids[0]]))->toBe('unpaid')
+            ->and(Box\Mod\Invoice\GatewayChargeAttempts::pending($db, $ids[0])['payment_id'])->toBe('pi_' . $ids[0]);
+        if ($invoiceCount > 1) {
+            expect($db->fetchOne('SELECT status FROM invoice WHERE id = ?', [$ids[1]]))->toBe('paid')
+                ->and(Box\Mod\Invoice\GatewayChargeAttempts::pending($db, $ids[1]))->toBeNull();
+        }
+        foreach (['order_batch_send_suspension_warnings', 'support_batch_ticket_auto_close', 'email_batch_sendmail', 'after_cron_listener'] as $param) {
+            expect($db->fetchOne('SELECT value FROM setting WHERE param = ?', [$param]))->toBe('healthy');
+        }
+    } finally {
+        ob_end_clean();
+        $db->close();
+    }
+})->with(['failed last invoice' => 1, 'later invoice still settles' => 2]);
