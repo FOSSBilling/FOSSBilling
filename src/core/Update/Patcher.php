@@ -2460,27 +2460,11 @@ class Patcher implements InjectionAwareInterface
                     $byteLimit = $this->utf8mb4IndexByteLimit($table);
                     $byteLimitKnown = true;
                 }
-                if ($byteLimit === null) {
-                    // Single-column FULLTEXT indexes rebuild with the table
-                    // and never consult the byte limit, so they stay eligible
-                    // even when no bound can be established; anything else
-                    // still needs manual review.
-                    $needsLimit = false;
-                    foreach ($columnIndexes as $index) {
-                        $members = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
-                        if ($index['Index_type'] !== 'FULLTEXT' || count($members) !== 1) {
-                            $needsLimit = true;
-
-                            break;
-                        }
-                    }
-                    if ($needsLimit) {
-                        $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': compressed block size requires manual review.');
-
-                        continue;
-                    }
-                } elseif (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
-                    $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': index would exceed the size limit after conversion and requires manual review.');
+                if (!$this->canConvertIndexedColumn($columnIndexes, $indexes, $liveColumns, $columns, $byteLimit)) {
+                    $reason = $byteLimit === null
+                        ? 'compressed block size requires manual review.'
+                        : 'index would exceed the size limit after conversion and requires manual review.';
+                    $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': ' . $reason);
 
                     continue;
                 }
@@ -2632,10 +2616,11 @@ class Patcher implements InjectionAwareInterface
      * key length once that column widens to 4 bytes per character.
      *
      * Single-column FULLTEXT indexes rebuild with the table and are always
-     * safe; anything referencing an unknown column type or exceeding the
-     * limit keeps its old definition instead of failing the upgrade.
+     * safe; a null limit (no verifiable bound, e.g. small-block COMPRESSED)
+     * rejects everything else. Unknown column types or oversized indexes keep
+     * their old definition instead of failing the upgrade.
      */
-    private function canConvertIndexedColumn(array $columnIndexes, array $indexes, array $liveColumns, array $columns, int $byteLimit): bool
+    private function canConvertIndexedColumn(array $columnIndexes, array $indexes, array $liveColumns, array $columns, ?int $byteLimit): bool
     {
         foreach ($columnIndexes as $index) {
             $members = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
@@ -2645,6 +2630,9 @@ class Patcher implements InjectionAwareInterface
                 }
 
                 continue;
+            }
+            if ($byteLimit === null) {
+                return false;
             }
             $bytes = 0;
             foreach ($members as $member) {
