@@ -3898,7 +3898,7 @@ describe('card management', function (): void {
         $customerRepo->shouldReceive('findOneByGatewayAndClient')->times(3)->with(1, 9, true)->andReturn($row);
 
         $txRepo = Mockery::mock(TransactionRepository::class);
-        $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->once()->with('pi_save', 1)->andReturn(null);
+        $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')->once()->with('pi_save', 1, null)->andReturn(null);
 
         $paymentMethods = Mockery::mock();
         $paymentMethods->shouldReceive('retrieve')->once()->with('pm_x', [])->andReturn(
@@ -3912,6 +3912,9 @@ describe('card management', function (): void {
         $em = Mockery::mock(EntityManagerInterface::class);
         $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
         $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+        $receipts = Mockery::mock(Doctrine\ORM\EntityRepository::class);
+        $receipts->shouldReceive('findOneBy')->once()->andReturn(null);
+        $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientBalance::class)->andReturn($receipts);
         $em->shouldReceive('flush')->once();
 
         $di = container();
@@ -4123,3 +4126,44 @@ test('Stripe setup recovery without its recorded subscription stops before creat
     expect(fn () => invokePrivateMethod($this->adapter, 'createStripeSubscription', ['cus_1', 'price_1', Stripe\SetupIntent::constructFrom(['id' => 'seti_1']), createEntity(Invoice::class, ['id' => 95]), $tx]))
         ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'verified subscription ID');
 });
+
+test('webhook save choice excludes its own transaction but preserves later card choices on replay', function (string $state): void {
+    $row = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_1']);
+    $row->setSavedCards(true)->setDefaultPaymentMethod('pm_old')->setDefaultCard('Existing card');
+    $customers = Mockery::mock(PayGatewayCustomerRepository::class);
+    $customers->shouldReceive('findOneByGatewayAndClient')->with(1, 9, true)->andReturn($row);
+    $transactions = Mockery::mock(TransactionRepository::class);
+    $transactions->shouldReceive('findProcessingOrProcessedByTxnId')->once()->with('pi_webhook', 1, 42)
+        ->andReturn($state === 'other transaction' ? new Transaction() : null);
+    $receipts = Mockery::mock(Doctrine\ORM\EntityRepository::class);
+    if ($state !== 'other transaction') {
+        $receipts->shouldReceive('findOneBy')->once()->with(['gatewayReceiptKey' => hash('sha256', '1:pi_webhook')])
+            ->andReturn($state === 'own receipt' ? new Box\Mod\Client\Entity\ClientBalance() : null);
+    }
+    $methods = Mockery::mock();
+    $methods->shouldReceive('retrieve')->with('pm_new', [])->andReturn(Stripe\PaymentMethod::constructFrom([
+        'id' => 'pm_new', 'customer' => 'cus_1', 'type' => 'card',
+        'card' => ['brand' => 'visa', 'last4' => '4242', 'exp_month' => 12, 'exp_year' => 2030],
+    ]));
+    $stripe = Mockery::mock(StripeClient::class);
+    $stripe->paymentMethods = $methods;
+    setPrivateProperty($this->adapter, 'stripe', $stripe);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customers);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactions);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientBalance::class)->andReturn($receipts);
+    if ($state === 'first delivery') {
+        $em->shouldReceive('flush')->once();
+    } else {
+        $em->shouldNotReceive('flush');
+    }
+    $di = container();
+    $di['em'] = $em;
+    $this->adapter->setDi($di);
+    $intent = Stripe\PaymentIntent::constructFrom([
+        'id' => 'pi_webhook', 'status' => 'succeeded', 'customer' => 'cus_1', 'payment_method' => 'pm_new',
+        'setup_future_usage' => 'off_session', 'metadata' => ['make_default' => '1'],
+    ]);
+    invokePrivateMethod($this->adapter, 'rememberPaidCard', [$intent, 9, 42]);
+    expect($row->getDefaultPaymentMethod())->toBe($state === 'first delivery' ? 'pm_new' : 'pm_old');
+})->with(['first delivery', 'own receipt', 'other transaction']);

@@ -2427,6 +2427,7 @@ class Service implements InjectionAwareInterface
             $productService->releaseReservedStockForOrder($order, 'order_deleted');
             $this->rmClientOrderStatusByOrder($order);
             $this->getOrderMetaRepository()->deleteByOrderId($orderId);
+            $this->di['em']->getConnection()->delete('client_order_cancel_request', ['client_order_id' => $orderId]);
             $this->rmOrder($order);
         });
 
@@ -3180,8 +3181,10 @@ class Service implements InjectionAwareInterface
                 $productService->releaseReservedStockForOrder($order, 'client_deleted');
                 $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
                 $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
+                $connection->delete('client_order_cancel_request', ['client_order_id' => $this->orderId($order)]);
                 $connection->delete('client_order', ['id' => $this->orderId($order), 'client_id' => $clientId]);
             }
+            $connection->delete('client_order_cancel_request', ['client_id' => $clientId]);
         });
     }
 

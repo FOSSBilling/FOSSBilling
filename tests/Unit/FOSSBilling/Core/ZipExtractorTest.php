@@ -184,3 +184,16 @@ test('native extraction does not write through existing destination symlinks', f
     expect(fn () => (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate))->toThrow(RuntimeException::class, 'symbolic link')
         ->and(file_get_contents($this->directory . '/outside/file.txt'))->toBe('original');
 })->with([true, false]);
+
+test('native extraction preserves Darwin executables and symbolic link types', function (): void {
+    $zip = new ZipArchive();
+    $zip->open($this->archive, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+    $zip->addFromString('script.sh', 'executable');
+    $zip->setExternalAttributesName('script.sh', ZipArchive::OPSYS_OS_X, 0o100755 << 16);
+    $zip->addFromString('link', '../outside');
+    $zip->setExternalAttributesName('link', ZipArchive::OPSYS_OS_X, 0o120777 << 16);
+    $zip->close();
+    (new ZipExtractor())->extract($this->archive, $this->destination, $this->validate);
+    expect(fileperms($this->destination . '/script.sh') & 0o777)->toBe(0o755)
+        ->and($this->filesystem->exists($this->destination . '/link'))->toBeFalse();
+});

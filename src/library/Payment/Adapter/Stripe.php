@@ -1766,7 +1766,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         // A payment the client chose to save the card with keeps it (default
         // when none, or when the client chose it). Runs before anything is
         // recorded; a replay never undoes a default chosen since.
-        $this->rememberPaidCard($charge, (int) ($invoice?->getClientId() ?? ($charge->metadata->client_id ?? 0)));
+        $this->rememberPaidCard($charge, (int) ($invoice?->getClientId() ?? ($charge->metadata->client_id ?? 0)), $tx->getId());
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $client = $invoice instanceof Invoice
@@ -2191,7 +2191,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     }
 
     /** A successful payment the client chose to save the card with: keeps the card (default when none, or when the client chose it). */
-    private function rememberPaidCard(object $paymentIntent, int $clientId): void
+    private function rememberPaidCard(object $paymentIntent, int $clientId, ?int $currentTransactionId = null): void
     {
         $save = ($paymentIntent->setup_future_usage ?? null) === 'off_session' || ($paymentIntent->payment_method_options->card->setup_future_usage ?? null) === 'off_session';
         if (($paymentIntent->status ?? '') !== 'succeeded' || !$save
@@ -2203,7 +2203,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         // A payment already recorded is a replay (webhook retry, old return link): it must not undo a default chosen since.
         $makeDefault = ($paymentIntent->metadata->make_default ?? '') === '1'
-            && !$this->di['em']->getRepository(Transaction::class)->findProcessingOrProcessedByTxnId($paymentIntent->id, $this->gatewayId());
+            && !$this->di['em']->getRepository(Transaction::class)->findProcessingOrProcessedByTxnId($paymentIntent->id, $this->gatewayId(), $currentTransactionId)
+            && !$this->di['em']->getRepository(Box\Mod\Client\Entity\ClientBalance::class)->findOneBy([
+                'gatewayReceiptKey' => hash('sha256', $this->gatewayId() . ':' . $paymentIntent->id),
+            ]);
 
         try {
             $this->rememberCard($clientId, $method, $makeDefault);

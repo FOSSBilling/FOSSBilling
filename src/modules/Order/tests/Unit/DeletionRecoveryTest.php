@@ -684,3 +684,39 @@ test('MySQL renewal checkpoint aliases cannot be forged overwritten or removed t
     ->with(['case', 'accent', 'space'])
     ->with(['new alias' => [false, false], 'existing checkpoint' => [true, false], 'clear stored alias' => [true, true]])
     ->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+
+test('order deletion removes every cancellation request with or without foreign keys', function (string $path, bool $foreignKeys): void {
+    $c = deletionRecoveryContext();
+    $client = (new Box\Mod\Client\Entity\Client())->setEmail('erase@example.com');
+    $c['em']->persist($client);
+    $c['em']->flush();
+    $c['order']->setClientId($client->getId());
+    $otherClient = (new Box\Mod\Client\Entity\Client())->setEmail('keep@example.com');
+    $c['em']->persist($otherClient);
+    $c['em']->flush();
+    foreach (['pending', 'accepted', 'stopped', 'withdrawn'] as $status) {
+        $request = (new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setOrder($c['order'])->setClient($client)->setStatus($status);
+        $c['em']->persist($request);
+    }
+    $otherRequest = (new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setClient($otherClient)->setStatus('withdrawn');
+    $c['em']->persist($otherRequest);
+    $c['em']->flush();
+    if ($foreignKeys) {
+        $c['connection']->executeStatement('PRAGMA foreign_keys = ON');
+    }
+    $c['subscription']->fail = false;
+    if ($path === 'order') {
+        expect($c['service']->deleteFromOrder($c['order']))->toBeTrue();
+    } else {
+        $orphan = (new Box\Mod\Order\Entity\ClientOrderCancelRequest())->setClient($client)->setStatus('withdrawn');
+        $c['em']->persist($orphan);
+        $c['em']->flush();
+        $c['service']->rmByClient($client);
+        $c['em']->remove($client);
+        $c['em']->flush();
+    }
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order'))->toBe(0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order_cancel_request'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT client_id FROM client_order_cancel_request'))->toBe($otherClient->getId());
+    $c['connection']->close();
+})->with(['order', 'client'])->with([false, true]);
