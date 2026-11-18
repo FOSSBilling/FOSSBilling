@@ -11884,3 +11884,88 @@ test('refund lookup finds completed PayPal payments but skips notifications and 
     ['PayPalEmail', 'web_accept'],
     ['PayPalAutoPay', 'paypal_nvp'],
 ]);
+
+test('ordinary checkout respects durable charge attempts until reconciliation', function (string $state, ?string $paymentId, int $attemptInvoice): void {
+    $db = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $schema = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
+    (new Doctrine\ORM\Tools\SchemaTool($schema))->createSchema([$schema->getClassMetadata(Box\Mod\Invoice\Entity\GatewayChargeAttempt::class)]);
+    $db->executeStatement('CREATE TABLE "transaction" (id INTEGER PRIMARY KEY, invoice_id INTEGER, status TEXT, txn_status TEXT, amount TEXT, currency TEXT, created_at TEXT)');
+    $db->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
+    $attempt = Box\Mod\Invoice\GatewayChargeAttempts::begin($db, $attemptInvoice, 7);
+    if ($paymentId !== null) {
+        Box\Mod\Invoice\GatewayChargeAttempts::recordPayment($db, $attempt, $paymentId);
+    }
+    if ($state !== 'pending') {
+        Box\Mod\Invoice\GatewayChargeAttempts::resolve($db, $attempt, $state);
+    }
+    $before = $db->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$attempt]);
+    $invoice = createEntity(Invoice::class, ['id' => 70, 'status' => Invoice::STATUS_UNPAID, 'client_id' => 20]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findByHash')->with('checkout-hash')->andReturn($invoice);
+    $gateway = createEntity(PayGateway::class, ['id' => 5, 'enabled' => true]);
+    $gatewayRepo = Mockery::mock(PayGatewayRepository::class);
+    $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gateway);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($db);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo);
+    $adapter = new class {
+        public int $calls = 0;
+
+        public function getConfig(): array
+        {
+            return [];
+        }
+
+        public function getHtml(mixed $api, int $invoiceId, bool $subscribe): string
+        {
+            ++$this->calls;
+
+            return 'checkout generated';
+        }
+    };
+    $subscription = Mockery::mock(ServiceSubscription::class);
+    $subscription->shouldReceive('isSubscribable')->once()->with(70)->andReturnFalse();
+    $gatewayService = Mockery::mock(ServicePayGateway::class);
+    $gatewayService->shouldReceive('canPerformSinglePayment')->once()->with($gateway)->andReturnTrue();
+    $gatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn($adapter);
+    $fees = Mockery::mock(Box\Mod\Invoice\ServiceGatewayFees::class);
+    $fees->shouldReceive('apply')->once()->with($invoice, $gateway);
+    $requested = [];
+    $di = container();
+    $di['em'] = $em;
+    $di['api_system'] = new stdClass();
+    $di['mod_service'] = $di->protect(function (string $module, string $sub) use ($subscription, $gatewayService, $fees, &$requested): object {
+        $requested[] = $sub;
+
+        return match ($sub) {
+            'Subscription' => $subscription, 'PayGateway' => $gatewayService, 'GatewayFees' => $fees
+        };
+    });
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getAmountPaid')->once()->with($invoice)->andReturn(0.0);
+    $service->setDi($di);
+    $data = ['hash' => 'checkout-hash', 'gateway_id' => 5];
+
+    try {
+        if ($state === 'pending' && $attemptInvoice === 70) {
+            expect(fn () => $service->processInvoice($data))
+                ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'needs reconciliation');
+            expect($requested)->toBeEmpty()->and($adapter->calls)->toBe(0)
+                ->and((int) $db->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0)
+                ->and($db->fetchAssociative('SELECT * FROM invoice_gateway_charge_attempt WHERE id = ?', [$attempt]))->toBe($before);
+            Box\Mod\Invoice\GatewayChargeAttempts::resolve($db, $attempt, 'failed');
+        }
+        expect($service->processInvoice($data)['result'])->toBe('checkout generated')
+            ->and($adapter->calls)->toBe(1)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM invoice_gateway_charge_attempt'))->toBe(1);
+    } finally {
+        $db->close();
+    }
+})->with([
+    'unknown provider outcome without a transaction' => ['pending', null, 70],
+    'known provider reference awaiting settlement' => ['pending', 'provider-reference', 70],
+    'definitively failed attempt' => ['failed', null, 70],
+    'reconciled settled attempt' => ['settled', 'provider-reference', 70],
+    'another invoice awaiting reconciliation' => ['pending', null, 71],
+]);

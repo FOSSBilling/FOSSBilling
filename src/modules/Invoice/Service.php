@@ -5853,6 +5853,12 @@ class Service implements InjectionAwareInterface
             throw new InformationException('A payment for this invoice is still clearing', [], 403);
         }
 
+        // A provider timeout can leave only the durable attempt, with no
+        // transaction yet. Require reconciliation before starting any checkout.
+        if (GatewayChargeAttempts::pending($this->di['em']->getConnection(), (int) $invoice->getId()) !== null) {
+            throw new InformationException('A previous payment attempt needs reconciliation before another payment can be started', [], 403);
+        }
+
         if ($this->invoiceHasDeletionHold($invoice)) {
             throw new InformationException('Order deletion is awaiting recovery. Retry deletion before billing or changing the service.');
         }
