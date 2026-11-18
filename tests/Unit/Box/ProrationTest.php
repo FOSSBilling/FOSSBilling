@@ -45,15 +45,15 @@ test('calculates downgrade same cycle correctly', function (): void {
 });
 
 test('calculates different cycle upgrade correctly', function (): void {
-    // 10/month moving to 100/year
-    $quote = Proration::quote(10.0, '1M', '2026-11-16 00:00:00', 100.0, '1Y', '2026-11-01 10:00:00');
+    // 10/month moving to 150/year (150/year is more expensive rate than 10/month)
+    $quote = Proration::quote(10.0, '1M', '2026-11-16 00:00:00', 150.0, '1Y', '2026-11-01 10:00:00');
 
     expect($quote['kind'])->toBe('upgrade');
     expect($quote['same_cycle'])->toBeFalse();
     expect($quote['days_left'])->toBe(15);
     expect($quote['credit'])->toBe(4.84);
-    expect($quote['charge'])->toBe(100.0);
-    expect($quote['amount'])->toBe(95.16);
+    expect($quote['charge'])->toBe(150.0);
+    expect($quote['amount'])->toBe(145.16);
 });
 
 test('handles service expiring today', function (): void {

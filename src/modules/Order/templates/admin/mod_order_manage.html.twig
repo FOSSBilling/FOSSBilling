@@ -826,7 +826,7 @@
                                     </td>
                                     <td>
                                         {% if up.status == 'failed' %}
-                                            <a class="btn btn-sm btn-outline-danger api-link" href="{{ 'api/admin/order/upgrade_retry'|link({ 'id': up.id }) }}" data-api-reload="1">{{ 'Retry'|trans }}</a>
+                                            <a class="btn btn-sm btn-outline-danger" href="{{ 'order/upgrade_retry'|api_url(query: { 'id': up.id }) }}" {{ fb_api_link({ reload: true }) }}>{{ 'Retry'|trans }}</a>
                                         {% endif %}
                                     </td>
                                 </tr>
