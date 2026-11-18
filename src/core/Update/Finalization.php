@@ -197,9 +197,16 @@ class Finalization implements InjectionAwareInterface
         $patcher->migrateExtensionTypeValues();
         $patcher->syncSeededModuleVersions();
 
+        // The invoice item order_id backfill likewise converges without a version
+        // change: one bounded page per request from the stored scan position, a
+        // no-op once a pass reaches the end and records completion. Never throws.
         if ($patcher->isSchemaOutOfSync()) {
             $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());
         }
+
+        // Runs after the drift sync above so the column exists when the backfill
+        // checks for it; otherwise the first request after a deploy is a no-op.
+        $patcher->backfillInvoiceItemOrderIds(1);
     }
 
     public function createPendingState(?string $fromVersion, string $targetVersion, array $context = []): array

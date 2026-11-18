@@ -379,6 +379,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $pi->setPeriod($period);
             $pi->setQuantity(PriceValidator::validateQuantity($data['quantity'] ?? 1));
             $pi->setUnit($data['unit'] ?? null);
+            // Dual-write the typed order linkage (see invoice_item.order_id).
+            // Derived after unit because discount lines name their order
+            // through unit='discount' rather than type='order'.
+            $pi->setOrderId(self::resolveOrderReference($pi->getType(), $pi->getUnit(), $pi->getRelId()));
             $pi->setCharged($data['charged'] ?? 0);
             $pi->setPrice(PriceValidator::validateSignedAmount($data['price'] ?? 0));
             $pi->setTaxed($data['taxed'] ?? false);
@@ -510,8 +514,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
     {
-        if ($item->getType() === InvoiceItem::TYPE_ORDER && $item->getRelId() !== null) {
-            \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), (int) $item->getRelId(), true);
+        if ($item->getType() === InvoiceItem::TYPE_ORDER) {
+            $orderId = $item->getOrderId() ?? self::resolveLegacyPaidOrderReference($item->getRelId());
+            if ($orderId !== null && $orderId > 0) {
+                \Box\Mod\Order\DeletionRecovery::assertNotHeld($this->di['em']->getConnection(), $orderId, true);
+            }
         }
         $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
             ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
@@ -541,11 +548,53 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getOrderId(InvoiceItem $item): int
     {
-        if ($item->getType() == InvoiceItem::TYPE_ORDER) {
-            return (int) $item->getRelId();
+        if ($item->getType() !== InvoiceItem::TYPE_ORDER) {
+            return 0;
+        }
+
+        $reference = $item->getRelId();
+        $orderId = $item->getOrderId() ?? self::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, $reference);
+        if ($orderId !== null) {
+            return $orderId;
+        }
+
+        // Match the paid legacy reference accepted by renewal selection.
+        if ($item->getTask() === InvoiceItem::TASK_RENEW && $item->getInvoice()?->getStatus() === Invoice::STATUS_PAID) {
+            return self::resolveLegacyPaidOrderReference($reference) ?? 0;
         }
 
         return 0;
+    }
+
+    /**
+     * Derives the typed order linkage from a new item's generic reference
+     * (see invoice_item.order_id). Only the shapes this codebase produces for
+     * order references qualify (type='order' lines, unit='discount' lines);
+     * invoice/credit-note references, hook_call JSON and third-party line
+     * types map to null.
+     *
+     * The reference itself must be a positive integer string, with optional
+     * leading zeros (legacy writers zero-padded the reference): fractions,
+     * zero, and digit strings that do not survive an integer round-trip map
+     * to null instead of a saturated wrong id.
+     */
+    public static function resolveOrderReference(?string $type, ?string $unit, ?string $relId): ?int
+    {
+        if ($relId === null || preg_match('/\A0*([1-9][0-9]*)\z/', $relId, $matches) !== 1 || (string) (int) $matches[1] !== $matches[1]) {
+            return null;
+        }
+
+        if ($type === InvoiceItem::TYPE_ORDER || $unit === 'discount') {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
+    /** Resolve historical payment evidence for a line already known to have type order. */
+    public static function resolveLegacyPaidOrderReference(?string $relId): ?int
+    {
+        return self::resolveOrderReference(InvoiceItem::TYPE_ORDER, null, rtrim($relId ?? '', ' '));
     }
 
     protected function markAsExecuted(InvoiceItem $item)
@@ -722,6 +771,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->setInvoice($proforma);
         $pi->setType(InvoiceItem::TYPE_ORDER);
         $pi->setRelId((string) $order->getId());
+        $pi->setOrderId((int) $order->getId());
         $pi->setTask($task);
         $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
         $pi->setTitle($line['title'] ?? $order->getTitle());

@@ -17,6 +17,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent;
 use Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\PromoRedemption;
@@ -262,30 +263,62 @@ class ServiceSubscription implements InjectionAwareInterface
         // order with an outstanding scheduled-cancellation marker.
         if (in_array($subscription->getStatus(), [self::STATUS_PENDING_CANCELLATION, 'canceled'], true)
             && $subscription->getRelType() === 'invoice') {
+            // Legacy links first: a backfill page converting a row between the
+            // two reads must not hide it from both. Reads are one-directional
+            // (order_id only ever fills in), so matching the legacy shape
+            // before the typed one covers every interleave.
+            $legacyRelIds = $this->di['em']->getConnection()->fetchFirstColumn(
+                'SELECT ii.rel_id FROM invoice_item ii WHERE ii.invoice_id = :invoice_id AND ii.type = :item_type AND ii.order_id IS NULL',
+                ['invoice_id' => $subscription->getRelId(), 'item_type' => Entity\InvoiceItem::TYPE_ORDER]
+            );
+            $legacyOrderIds = [];
+            foreach ($legacyRelIds as $relId) {
+                // Text-side counterpart of the join below: a text-to-integer
+                // comparison is coercion on MySQL, an error on PostgreSQL for
+                // junk like '7.5', and loose matching on SQLite. Only a
+                // digit-only order id written as text resolves, mirroring the
+                // backfill's own rule.
+                $legacyOrderId = ServiceInvoiceItem::resolveOrderReference(Entity\InvoiceItem::TYPE_ORDER, null, is_scalar($relId) ? (string) $relId : null);
+                if ($legacyOrderId !== null) {
+                    $legacyOrderIds[] = $legacyOrderId;
+                }
+            }
+
             $query = $this->di['em']->getConnection()->createQueryBuilder();
-            $orderIds = $query
-                ->select('DISTINCT ii.rel_id')
-                ->from('invoice_item', 'ii')
-                ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.rel_id')
-                ->where('ii.invoice_id = :invoice_id')
-                ->andWhere('ii.type = :item_type')
-                ->andWhere('com.name = :meta_name')
-                ->andWhere('com.value = :meta_value')
-                ->setParameter('invoice_id', $subscription->getRelId())
-                ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
-                ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
-                ->setParameter('meta_value', '1')
-                ->executeQuery()
-                ->fetchFirstColumn();
+            $typedOrderIds = array_map(
+                intval(...),
+                $query
+                    ->select('DISTINCT ii.order_id')
+                    ->from('invoice_item', 'ii')
+                    ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.order_id')
+                    ->where('ii.invoice_id = :invoice_id')
+                    ->andWhere('ii.type = :item_type')
+                    ->andWhere('com.name = :meta_name')
+                    ->andWhere('com.value = :meta_value')
+                    ->setParameter('invoice_id', $subscription->getRelId())
+                    ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
+                    ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
+                    ->setParameter('meta_value', '1')
+                    ->executeQuery()
+                    ->fetchFirstColumn()
+            );
 
             $orderService = $this->di['mod_service']('Order');
-            foreach ($orderIds as $orderId) {
-                $order = $this->di['em']->getRepository(Order::class)->find((int) $orderId);
+            foreach (array_values(array_unique(array_merge($typedOrderIds, $legacyOrderIds))) as $orderId) {
+                $order = $this->di['em']->getRepository(Order::class)->find($orderId);
                 if (!$order instanceof Order) {
                     continue;
                 }
                 if (in_array($order->getStatus(), [Order::STATUS_CANCELED, Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)) {
                     continue;
+                }
+                if (!in_array($orderId, $typedOrderIds, true)) {
+                    // Typed candidates proved the scheduled-cancellation flag
+                    // through the join; legacy-only ones prove it here.
+                    $pairs = $orderService->getOrderMetaRepository()->getPairsForOrder($orderId);
+                    if (($pairs[\Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END] ?? null) !== '1') {
+                        continue;
+                    }
                 }
 
                 $orderService->finalizeCancellationFromGateway($order, 'Subscription ended at the payment gateway');
@@ -363,23 +396,29 @@ class ServiceSubscription implements InjectionAwareInterface
      */
     private function getSubscriptionsForOrder(Order $order, ?string $status = null): array
     {
-        $query = $this->di['em']->getConnection()->createQueryBuilder();
-        $query
-            ->select('DISTINCT s.id')
-            ->from('subscription', 's')
-            ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
-            ->where('s.rel_type = :rel_type')
-            ->andWhere('ii.type = :item_type')
-            ->andWhere('ii.rel_id = :order_id')
-            ->setParameter('rel_type', 'invoice')
-            ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
-            ->setParameter('order_id', $order->getId());
-
-        if ($status !== null) {
-            $query->andWhere('s.status = :status')->setParameter('status', $status);
+        $orderId = $order->getId();
+        if ($orderId === null) {
+            return [];
         }
 
-        $subscriptionIds = $query->executeQuery()->fetchFirstColumn();
+        $connection = $this->di['em']->getConnection();
+        $legacyReference = InvoiceItemRepository::normalizedLegacyOrderReference($connection, 'ii.rel_id');
+        $orderReference = InvoiceItemRepository::orderIdAsReference($connection, ':order_id');
+        $query = 'SELECT s.id FROM subscription s INNER JOIN invoice_item ii ON ii.invoice_id = s.rel_id
+                  WHERE s.rel_type = :rel_type AND ii.type = :item_type';
+        $params = ['rel_type' => 'invoice', 'item_type' => Entity\InvoiceItem::TYPE_ORDER, 'order_id' => $orderId];
+        if ($status !== null) {
+            $query .= ' AND s.status = :status';
+            $params['status'] = $status;
+        }
+
+        // Read both link types together so backfill cannot move a row between reads.
+        $subscriptionIds = $connection->fetchFirstColumn(
+            "$query AND ii.order_id = :order_id
+             UNION
+             $query AND ii.order_id IS NULL AND $legacyReference = $orderReference",
+            $params,
+        );
 
         $subscriptions = [];
         foreach ($subscriptionIds as $id) {

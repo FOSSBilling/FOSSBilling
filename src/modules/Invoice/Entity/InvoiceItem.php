@@ -34,6 +34,15 @@ use FOSSBilling\Core\Doctrine\TimestampTrait;
 // database - harmless (skipped items are never applied, see SchemaSynchronizer's docblock), but
 // worth knowing before treating a nonzero skip count as evidence of drift on those platforms.
 #[ORM\Index(name: 'invoice_item_pending_renewal_idx', columns: ['rel_id', 'type', 'task', 'status', 'invoice_id'], options: ['lengths' => [20, null, null, null, null]])]
+// Typed order linkage, replacing rel_id for every database predicate that joins
+// invoice items to orders (see https://github.com/FOSSBilling/FOSSBilling/issues/4688):
+// rel_id is TEXT holding order ids as strings (plus invoice ids and hook_call JSON),
+// so comparing it to client_order.id converts the column per row and can never use
+// the index above - and the fix can't be a charset cast either, since legacy installs
+// are utf8mb3 while fresh ones are utf8mb4. An integer-to-integer predicate on this
+// BIGINT column can use an index on every platform with no charset involvement. rel_id
+// stays populated (dual-write) as the generic legacy reference and API field.
+#[ORM\Index(name: 'invoice_item_order_lookup_idx', columns: ['order_id', 'type', 'task', 'status', 'invoice_id'])]
 #[ORM\HasLifecycleCallbacks]
 class InvoiceItem implements ArrayInterface, TimestampInterface
 {
@@ -67,6 +76,9 @@ class InvoiceItem implements ArrayInterface, TimestampInterface
 
     #[ORM\Column(name: 'rel_id', type: Types::TEXT, nullable: true)]
     private ?string $relId = null;
+
+    #[ORM\Column(name: 'order_id', type: Types::BIGINT, nullable: true)]
+    private ?int $orderId = null;
 
     #[ORM\Column(name: 'refunded_item_id', type: Types::BIGINT, nullable: true)]
     private ?int $refundedItemId = null;
@@ -138,6 +150,18 @@ class InvoiceItem implements ArrayInterface, TimestampInterface
     public function setRelId(?string $relId): self
     {
         $this->relId = $relId;
+
+        return $this;
+    }
+
+    public function getOrderId(): ?int
+    {
+        return $this->orderId;
+    }
+
+    public function setOrderId(?int $orderId): self
+    {
+        $this->orderId = $orderId;
 
         return $this;
     }
