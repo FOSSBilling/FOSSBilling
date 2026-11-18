@@ -241,7 +241,7 @@ test('stale unpaid orders are deferred when the backfill flag cannot be read', f
     expect($repository->getStaleUnpaid(5))->toBe([]);
 });
 
-test('stale unpaid orders are deferred while an older backfill rule version is rescanned', function (): void {
+test('stale unpaid orders are deferred while an older backfill rule version is re-scanned', function (): void {
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     $connection->shouldReceive('fetchOne')

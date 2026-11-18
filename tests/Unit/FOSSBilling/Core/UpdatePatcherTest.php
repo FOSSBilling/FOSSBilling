@@ -3603,9 +3603,9 @@ test('invoice item order_id backfill short-circuits bounded runs once completion
     });
 });
 
-test('invoice item order_id backfill rescans rows an older rule version skipped', function (): void {
+test('invoice item order_id backfill picks up rows an older rule version skipped', function (): void {
     withNonMysqlDbDriver(function (): void {
-        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-rescan-' . bin2hex(random_bytes(8)) . '.sqlite');
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-skipped-' . bin2hex(random_bytes(8)) . '.sqlite');
 
         try {
             $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
@@ -3613,7 +3613,7 @@ test('invoice item order_id backfill rescans rows an older rule version skipped'
             FOSSBilling\Core\Doctrine\SchemaInstaller::createSchema($entityManager);
 
             // Completed under the rule that rejected zero-padded references,
-            // with a resume marker past the skipped row: without a rescan from
+            // with a resume marker past the skipped row: without a repeat scan from
             // the start, the row would never link.
             $connection->executeStatement(
                 "INSERT INTO invoice_item (invoice_id, type, task, status, unit, rel_id, order_id) VALUES (1, 'order', 'renew', 'pending_payment', NULL, '07', NULL)"
@@ -3634,7 +3634,7 @@ test('invoice item order_id backfill rescans rows an older rule version skipped'
             $patcher->setDi($di);
             $patcher->backfillInvoiceItemOrderIds(1);
 
-            // Converted through a rescan from the start, but completion is not
+            // Converted through a repeat scan from the start, but completion is not
             // recorded until a page comes back empty.
             expect((int) $connection->fetchOne('SELECT order_id FROM invoice_item'))->toBe(7);
 
@@ -3706,7 +3706,7 @@ test('invoice item order_id backfill never throws without a usable database', fu
 
 test('stale unpaid cleanup excludes a paid legacy item once its backfill completes', function (): void {
     withNonMysqlDbDriver(function (): void {
-        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-stalepaid-' . bin2hex(random_bytes(8)) . '.sqlite');
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-orderid-stale-paid-' . bin2hex(random_bytes(8)) . '.sqlite');
 
         try {
             $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);

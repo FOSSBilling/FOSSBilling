@@ -225,8 +225,8 @@ class OrderRepository extends EntityRepository
             return [];
         }
         // The completion records the derivation rule version (see
-        // Patcher::backfillInvoiceItemOrderIds()): an older version means a
-        // rescan is still converging, so cleanup waits for it like a missing flag.
+        // Patcher::backfillInvoiceItemOrderIds()): an older version means a repeat
+        // scan is still converging, so cleanup waits for it like a missing flag.
         if ($backfilled !== \FOSSBilling\Core\Update\Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION) {
             return [];
         }
