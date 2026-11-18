@@ -705,3 +705,88 @@ test('ticket attachment links select guest hash authorization or client authenti
     'guest' => ['guest', '/support/ticket/' . str_repeat('c', 40) . '/file/' . str_repeat('a', 32)],
     'client' => ['client', '/support/ticket-file/' . str_repeat('a', 32)],
 ]);
+
+test('upload limits reject a sixth file and allow a replacement after discard', function (bool $staff): void {
+    [$di, $db] = ticketFilesConnection();
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $db->insert('support_ticket', ['id' => 61, 'client_id' => 7, 'status' => 'open']);
+    $upload = function (int $ticketId = 60) use ($di, $staff): array {
+        $file = ticketFilesUpload($di['request'], 'note.txt', 'hello', 'text/plain');
+
+        return $staff ? TicketFiles::uploadForStaff($di, 1, $ticketId, $file) : TicketFiles::uploadForClient($di, 7, $ticketId, $file);
+    };
+    $files = [];
+    for ($i = 0; $i < TicketFiles::MAX_FILES; ++$i) {
+        $files[] = $upload();
+    }
+    expect($upload)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most')
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file'))->toBe(5);
+    // A separate ticket is a separate selection in the same browser session.
+    expect($upload(61)['id'])->toBeString();
+    TicketFiles::discard($di, $files[0]['id'], $staff ? 'admin' : 'client', $staff ? 1 : 7);
+    expect($upload()['id'])->toBeString()
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE ticket_id = 60 AND removed_at IS NULL'))->toBe(5);
+})->with([false, true]);
+
+test('excess attachment tokens are rejected instead of truncated', function (bool $json): void {
+    [$di, $db] = ticketFilesConnection();
+    $tokens = array_map(fn ($n): string => str_pad(dechex($n), 32, '0', STR_PAD_LEFT), range(1, 6));
+    if ($json) {
+        $di['request'] = Symfony\Component\HttpFoundation\Request::create('http://localhost/', 'POST', server: ['CONTENT_TYPE' => 'application/json'], content: json_encode(['ticket_files' => $tokens]));
+    } else {
+        $di['request']->request->set('ticket_files', $tokens);
+    }
+    expect(fn () => TicketFiles::validateRequest($di))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most')
+        ->and(fn () => TicketFiles::attachFromRequest($di, 60, false))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most')
+        ->and(fn () => TicketFiles::attach($di, 60, true, $tokens))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most');
+})->with([false, true]);
+
+test('message attachment overflow leaves every waiting file unattached', function (): void {
+    [$di, $db] = ticketFilesConnection();
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'client_id' => 7]);
+    $first = TicketFiles::uploadForClient($di, 7, 60, ticketFilesUpload($di['request'], 'first.txt', 'hello', 'text/plain'));
+    TicketFiles::attach($di, 60, false, [$first['id']], 70);
+    $tokens = [];
+    for ($i = 0; $i < 5; ++$i) {
+        $tokens[] = TicketFiles::uploadForClient($di, 7, 60, ticketFilesUpload($di['request'], 'next.txt', 'hello', 'text/plain'))['id'];
+    }
+    $di['request']->request->set('ticket_files', $tokens);
+    expect(fn () => TicketFiles::attachFromRequest($di, 60, false, 70))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most')
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = 70'))->toBe(1)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id IS NULL'))->toBe(5);
+});
+
+test('excess attachments prevent saving tickets and replies', function (string $path): void {
+    $di = container();
+    $di['em'] = FOSSBilling\Core\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+    $di['request']->request->set('ticket_files', array_map(fn ($n): string => str_pad(dechex($n), 32, '0', STR_PAD_LEFT), range(1, 6)));
+    $service = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $service->setDi($di);
+    $service->shouldReceive('guestTicketsEnabled')->andReturnTrue();
+    $data = ['name' => 'Guest', 'email' => 'guest@example.com', 'subject' => 'Subject', 'content' => 'Content'];
+    $helpdesk = new Box\Mod\Support\Entity\Helpdesk();
+    $call = match ($path) {
+        'reply' => fn () => $service->ticketReply(new Box\Mod\Support\Entity\SupportTicket(), Tests\Helpers\admin(), 'Content'),
+        'admin' => fn () => $service->ticketCreateForAdmin(7, $helpdesk, $data, Tests\Helpers\admin()),
+        'client' => fn () => $service->ticketCreateForClient(new Box\Mod\Client\Entity\Client(), $helpdesk, $data),
+        'guest' => fn () => $service->ticketCreateForGuest($data),
+    };
+    expect($call)->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'at most')
+        ->and($di['em']->getUnitOfWork()->getScheduledEntityInsertions())->toBe([])
+        ->and($di['em']->isOpen())->toBeTrue();
+})->with(['reply', 'admin', 'client', 'guest']);
+
+test('attachment retries do not treat already attached files as excess', function (): void {
+    [$di, $db] = ticketFilesConnection();
+    $db->insert('support_ticket', ['id' => 60, 'client_id' => 7, 'status' => 'open']);
+    $db->insert('support_ticket_message', ['id' => 70, 'support_ticket_id' => 60, 'client_id' => 7]);
+    $tokens = [];
+    for ($i = 0; $i < 5; ++$i) {
+        $tokens[] = TicketFiles::uploadForClient($di, 7, 60, ticketFilesUpload($di['request'], 'next.txt', 'hello', 'text/plain'))['id'];
+    }
+    $di['request']->request->set('ticket_files', $tokens);
+    expect(TicketFiles::attachFromRequest($di, 60, false, 70))->toBe(5)
+        ->and(TicketFiles::attachFromRequest($di, 60, false, 70))->toBe(0)
+        ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = 70'))->toBe(5);
+});

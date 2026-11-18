@@ -2260,8 +2260,7 @@ test('guest ticket creation uses values from the typed before event', function (
         $steps[] = 'flush';
     });
 
-    $requestMock = Mockery::mock(Symfony\Component\HttpFoundation\Request::class);
-    $requestMock->shouldReceive('getClientIp')->twice()->andReturn('198.51.100.20');
+    $requestMock = Symfony\Component\HttpFoundation\Request::create('http://localhost/', server: ['REMOTE_ADDR' => '198.51.100.20']);
     $extensionService = Mockery::mock();
     $extensionService->shouldReceive('getConfig')->once()->with('mod_support')->andReturn([]);
 

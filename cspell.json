@@ -5,6 +5,7 @@
         "libzip",
         "OPSYS",
         "TINYTEXT",
+        "BIGSERIAL",
         "FULLTEXT",
         "MEDIUMTEXT",
         "dropup",

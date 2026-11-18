@@ -2,7 +2,7 @@
 <div class="mb-2" data-ticket-files>
     <label class="form-label" for="ticket-file-input">{{ 'Attachments'|trans }}</label>
     <div class="d-flex flex-wrap gap-2 align-items-center">
-        <input class="form-control w-auto" type="file" id="ticket-file-input" multiple>
+        <input class="form-control w-auto" type="file" id="ticket-file-input" multiple disabled>
         <span class="form-text" data-ticket-files-hint></span>
     </div>
     <div class="list-group mt-2" data-ticket-files-list></div>
@@ -19,10 +19,13 @@
         const list = widget.querySelector('[data-ticket-files-list]');
         const hint = widget.querySelector('[data-ticket-files-hint]');
         let uploading = 0;
+        let maxFiles = 0;
 
         FOSSBilling.api.guest.get('support/ticket_file_rules', {}, (rules) => {
             hint.textContent = "{{ 'Up to :files files, :mb MB each: :types'|trans({ ':files': '__FILES__', ':mb': '__MB__', ':types': '__TYPES__' }) }}".replace('__FILES__', rules.max_files).replace('__MB__', rules.max_mb).replace('__TYPES__', rules.extensions.join(', '));
             input.setAttribute('accept', rules.accept);
+            maxFiles = rules.max_files;
+            input.disabled = false;
         });
 
         function setUploading(delta) {
@@ -31,7 +34,13 @@
         }
 
         input.addEventListener('change', () => {
-            Array.from(input.files || []).forEach((file) => {
+            const files = Array.from(input.files || []);
+            if (files.length + uploading + list.querySelectorAll('input[name="ticket_files[]"]').length > maxFiles) {
+                FOSSBilling.message("{{ 'A message can have at most :files attachments. Remove a file before adding another.'|trans({ ':files': '__FILES__' }) }}".replace('__FILES__', maxFiles), 'error');
+                input.value = '';
+                return;
+            }
+            files.forEach((file) => {
                 const data = new FormData();
                 data.append('file', file);
                 data.append('ticket_id', '{{ ticket.id }}');

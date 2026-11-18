@@ -193,6 +193,14 @@ final class TicketFiles
             throw new \FOSSBilling\Core\Exception\InformationException('Send your message first, then attach more files.');
         }
 
+        $selected = (int) $db->fetchOne(
+            'SELECT COUNT(*) FROM support_ticket_file WHERE session_hash = ? AND client_id = ? AND uploader_kind = ? AND uploader_id = ? AND message_id IS NULL AND removed_at IS NULL AND ' . ($ticketId === null ? 'ticket_id IS NULL' : 'ticket_id = ?'),
+            [self::sessionHash($di), $clientId, $kind, $uploaderId, ...($ticketId === null ? [] : [$ticketId])]
+        );
+        if ($selected >= self::MAX_FILES) {
+            throw new \FOSSBilling\Core\Exception\InformationException('A message can have at most :files attachments. Remove a file before adding another.', [':files' => self::MAX_FILES]);
+        }
+
         $size = $file->getSize() ?: 0;
         if ($size < 1 || $size > self::MAX_BYTES) {
             throw new \FOSSBilling\Core\Exception\InformationException('Each file must be smaller than :size MB.', [':size' => self::MAX_BYTES / 1024 / 1024]);
@@ -251,28 +259,48 @@ final class TicketFiles
         self::cleanupPrunedFiles($di, $db);
     }
 
-    /**
-     * Binds the request's waiting uploads to the saved message. Never throws:
-     * an attachment failure must not fail the message save.
-     */
+    /** Reject excess selections before saving a ticket or reply. */
+    public static function validateRequest(\Pimple\Container $di): void
+    {
+        self::requestTokens($di);
+    }
+
+    private static function requestTokens(\Pimple\Container $di): array
+    {
+        $body = $di['request']->request->all();
+        if (!isset($body['ticket_files']) && str_contains((string) $di['request']->headers->get('Content-Type'), 'json')) {
+            $json = json_decode((string) $di['request']->getContent(), true);
+            $body = is_array($json) ? $json : [];
+        }
+
+        return self::validateTokens(is_array($body['ticket_files'] ?? null) ? $body['ticket_files'] : []);
+    }
+
+    private static function validateTokens(array $tokens): array
+    {
+        $tokens = array_values(array_unique(array_filter(array_map(strval(...), $tokens), static fn (string $token): bool => preg_match('/^[a-f0-9]{32}$/', $token) === 1)));
+        if (count($tokens) > self::MAX_FILES) {
+            throw new \FOSSBilling\Core\Exception\InformationException('A message can have at most :files attachments. Remove a file before sending.', [':files' => self::MAX_FILES]);
+        }
+
+        return $tokens;
+    }
+
+    /** Binds validated waiting uploads; storage failures are logged without losing the message. */
     public static function attachFromRequest(\Pimple\Container $di, int $ticketId, bool $staff, ?int $messageId = null): int
     {
         if ($ticketId <= 0) {
             return 0;
         }
+        $tokens = self::requestTokens($di);
+        if ($tokens === []) {
+            return 0;
+        }
 
         try {
-            $body = $di['request']->request->all();
-            if (!isset($body['ticket_files']) && str_contains((string) $di['request']->headers->get('Content-Type'), 'json')) {
-                $json = json_decode((string) $di['request']->getContent(), true);
-                $body = is_array($json) ? $json : [];
-            }
-            $tokens = $body['ticket_files'] ?? null;
-            if (!is_array($tokens) || $tokens === []) {
-                return 0;
-            }
-
             return self::attach($di, $ticketId, $staff, $tokens, $messageId);
+        } catch (\FOSSBilling\Core\Exception\InformationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             try {
                 $di['logger']->warning('Support: ticket #{id} attachments failed: {error}', ['id' => $ticketId, 'error' => $e->getMessage()]);
@@ -287,8 +315,7 @@ final class TicketFiles
     public static function attach(\Pimple\Container $di, int $ticketId, bool $staff, array $tokens, ?int $messageId = null): int
     {
         $db = self::db($di);
-        $tokens = array_values(array_unique(array_filter(array_map(strval(...), $tokens), static fn (string $token): bool => preg_match('/^[a-f0-9]{32}$/', $token) === 1)));
-        $tokens = array_slice($tokens, 0, self::MAX_FILES);
+        $tokens = self::validateTokens($tokens);
         if ($tokens === []) {
             return 0;
         }
@@ -317,13 +344,22 @@ final class TicketFiles
             if ($messageId === false) {
                 return 0;
             }
+            $where = 'session_hash = :session AND client_id = :client AND message_id IS NULL AND removed_at IS NULL AND (ticket_id IS NULL OR ticket_id = :ticket)';
+            $parameters = ['tokens' => $tokens, 'session' => self::sessionHash($di), 'client' => (int) $clientId, 'ticket' => $ticketId];
+            if ($staff) {
+                $where .= " AND uploader_kind = 'admin' AND uploader_id = (SELECT admin_id FROM support_ticket_message WHERE id = :message)";
+                $parameters['message'] = (int) $messageId;
+            } else {
+                $where .= " AND uploader_kind = 'client'";
+            }
+            $tokens = $db->fetchFirstColumn('SELECT token FROM support_ticket_file WHERE token IN (:tokens) AND ' . $where . RowLock::suffix($db), $parameters, ['tokens' => ArrayParameterType::STRING]);
             $already = count($db->fetchFirstColumn('SELECT id FROM support_ticket_file WHERE message_id = ? AND removed_at IS NULL' . RowLock::suffix($db), [(int) $messageId]));
             $room = self::MAX_FILES - $already;
-            if ($room <= 0) {
-                return 0;
+            if (count($tokens) > $room) {
+                throw new \FOSSBilling\Core\Exception\InformationException('A message can have at most :files attachments.', [':files' => self::MAX_FILES]);
             }
             $attached = 0;
-            foreach (array_slice($tokens, 0, $room) as $token) {
+            foreach ($tokens as $token) {
                 $sql = 'UPDATE support_ticket_file SET message_id = ?, ticket_id = ?, attached_at = ? WHERE token = ? AND session_hash = ? AND client_id = ? AND message_id IS NULL AND removed_at IS NULL AND (ticket_id IS NULL OR ticket_id = ?)';
                 $params = [(int) $messageId, $ticketId, date('Y-m-d H:i:s'), $token, self::sessionHash($di), (int) $clientId, $ticketId];
                 if ($staff) {

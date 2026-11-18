@@ -37,8 +37,10 @@ use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Doctrine\SqlExpr;
+use FOSSBilling\Core\Events\EventDispatcher;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Twig\Markdown\FOSSBillingMarkdown;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -351,7 +353,13 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function autoClose(SupportTicket $model): bool
     {
-        $result = $this->closeTicketInTransaction($model, true, null, null, true);
+        try {
+            $result = $this->closeTicketInTransaction($model, true, null, null, true);
+        } catch (\Throwable $exception) {
+            $this->recoverEntityManager();
+
+            throw $exception;
+        }
         if (!$result['closed']) {
             return false;
         }
@@ -360,6 +368,27 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $this->di['logger']->info('Ticket {model_id} was closed', ['model_id' => $model->getId()]);
 
         return true;
+    }
+
+    /** Restore repositories and listeners before cron moves to the next ticket or module. */
+    private function recoverEntityManager(): void
+    {
+        $manager = $this->di['em'];
+        if ($manager->isOpen()) {
+            return;
+        }
+        $connection = $manager->getConnection();
+        if ($connection->isTransactionActive()) {
+            throw new \LogicException('Ticket closure must unwind before its entity manager can be replaced.');
+        }
+        $connection->fetchOne('SELECT 1');
+        $replacement = EntityManagerFactory::create($connection);
+        unset($this->di['em']);
+        $this->di['em'] = $replacement;
+        $this->setDi($this->di);
+        if ($this->di['event_dispatcher'] instanceof EventDispatcher) {
+            $this->di['event_dispatcher']->refresh();
+        }
     }
 
     /** @return array{closed: bool, event_id: ?string} */
@@ -1111,6 +1140,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     public function ticketReply(SupportTicket $ticket, \Box\Mod\Staff\Entity\Admin|Client|\FOSSBilling\Core\Identity\Guest $identity, string $content): int
     {
         SupportTicketValidator::validateContent($content);
+        TicketFiles::validateRequest($this->di);
 
         $em = $this->di['em'];
         $id = $ticket->getId();
@@ -1164,6 +1194,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $status = $data['status'] ?? SupportTicket::STATUS_ONHOLD;
 
         SupportTicketValidator::validateContent($data['content'] ?? null);
+        TicketFiles::validateRequest($this->di);
 
         $this->di['event_dispatcher']->dispatch(new BeforeTicketCreateEvent(TicketActorRole::ADMIN, $clientId, $data));
 
@@ -1209,6 +1240,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $data['content'] ??= $data['message'] ?? null;
 
         SupportTicketValidator::validateTicketCreation($data);
+        TicketFiles::validateRequest($this->di);
 
         $event_params = $data;
         $event_params['author_role'] = 'guest';
@@ -1309,6 +1341,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
     public function ticketCreateForClient(Client $client, Helpdesk $helpdesk, array $data): int
     {
         SupportTicketValidator::validateTicketCreation($data);
+        TicketFiles::validateRequest($this->di);
 
         if (isset($data['rel_id'])) {
             if (filter_var($data['rel_id'], FILTER_VALIDATE_INT) === false) {

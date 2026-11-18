@@ -332,9 +332,13 @@ test('concurrent attachment requests cannot exceed the message file limit', func
         $db->commit();
         $one = attachmentRaceResult($first, $firstPipes);
         $two = attachmentRaceResult($second, $secondPipes);
-        expect($one)->toHaveKey('result')->and($two)->toHaveKey('result')
-            ->and($one['result'] + $two['result'])->toBe(1)
-            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = 70'))->toBe(TicketFiles::MAX_FILES);
+        $accepted = array_values(array_filter([$one, $two], fn ($result): bool => isset($result['result'])));
+        $rejected = array_values(array_filter([$one, $two], fn ($result): bool => isset($result['error'])));
+        expect($accepted)->toBe([['result' => 1]])
+            ->and($rejected)->toHaveCount(1)
+            ->and($rejected[0]['error'])->toContain('at most')
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id = 70'))->toBe(TicketFiles::MAX_FILES)
+            ->and((int) $db->fetchOne('SELECT COUNT(*) FROM support_ticket_file WHERE message_id IS NULL'))->toBe(1);
     } finally {
         putenv('ATTACHMENT_RACE_TOKEN');
         if ($db->isTransactionActive()) {
