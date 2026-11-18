@@ -113,13 +113,13 @@ test('module configuration rejects unreadable or non-document ciphertext consist
     $di = container();
     $crypt = new FOSSBilling\Core\Security\Crypt();
     $meta = new Box\Mod\Extension\Entity\ExtensionMeta();
-    $meta->setMetaValue($stored === 'tampered' ? $stored : $crypt->encrypt($stored));
+    $meta->setMetaValue(in_array($stored, ['tampered', '0'], true) ? $stored : $crypt->encrypt($stored));
     $di['em']->getRepository(Box\Mod\Extension\Entity\ExtensionMeta::class)
         ->shouldReceive('findOneByExtensionAndScope')->with('mod_api', 'config')->andReturn($meta);
     $mod = new Module('api');
     $mod->setDi($di);
     expect(fn () => $mod->getConfig())->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Encrypted extension configuration could not be read');
-})->with(['tampered', '{invalid', 'null', '"scalar"']);
+})->with(['tampered', '0', '{invalid', 'null', '"scalar"']);
 
 test('module icons are discovered by filename without manifest metadata', function (string $format): void {
     $di = container();
