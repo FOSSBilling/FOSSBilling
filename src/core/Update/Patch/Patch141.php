@@ -33,7 +33,7 @@ class Patch141 implements PatchInterface
                     PRIMARY KEY (`id`),
                     KEY `invoice_credit_invoice_id_idx` (`invoice_id`),
                     KEY `invoice_credit_client_id_idx` (`client_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
     }

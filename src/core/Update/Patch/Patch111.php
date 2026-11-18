@@ -31,7 +31,7 @@ class Patch111 implements PatchInterface
                     `updated_at` DATETIME DEFAULT NULL,
                     PRIMARY KEY (`id`),
                     KEY `client_id_idx` (`client_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
             );
         }
     }

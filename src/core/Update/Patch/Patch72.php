@@ -58,7 +58,7 @@ class Patch72 implements PatchInterface
                     KEY `invoice_id_idx` (`invoice_id`),
                     KEY `phase_idx` (`phase`),
                     KEY `status_idx` (`status`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
             );
         }
 

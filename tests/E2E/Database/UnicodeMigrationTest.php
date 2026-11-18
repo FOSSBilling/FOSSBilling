@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// cspell:ignore Résumé boîtes
+// cspell:ignore Résumé boîtes nopad
 
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Core\Doctrine\DriverManagerFactory;
@@ -10,6 +10,8 @@ use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use FOSSBilling\Core\Doctrine\InstallSeeder;
 use FOSSBilling\Core\Doctrine\SchemaInstaller;
 use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
+use FOSSBilling\Core\Update\Patch\Patch133;
+use FOSSBilling\Core\Update\Patch\Patch146;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -17,6 +19,7 @@ use Symfony\Component\Filesystem\Path;
 final class UnicodeMigrationPdo extends PDO
 {
     public array $alters = [];
+    public array $dbAlters = [];
     public ?string $rejectAlter = null;
 
     public function prepare(string $query, array $options = []): PDOStatement|false
@@ -26,6 +29,9 @@ final class UnicodeMigrationPdo extends PDO
             if ($this->rejectAlter !== null && str_contains($query, $this->rejectAlter)) {
                 throw new PDOException('Simulated DDL failure');
             }
+        }
+        if (str_starts_with($query, 'ALTER DATABASE')) {
+            $this->dbAlters[] = $query;
         }
 
         return parent::prepare($query, $options);
@@ -54,7 +60,7 @@ beforeEach(function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $this->patcher = new Patcher();
     $this->patcher->setDi($di);
-    $this->runPatch = (new ReflectionMethod($this->patcher, 'patch133'))->getClosure($this->patcher);
+    $this->runPatch = fn () => (new Patch133())->apply($this->patcher);
 });
 
 afterEach(function (): void {
@@ -189,7 +195,7 @@ test('Unicode repair fixes every first-party table default and future schema add
         $this->pdo->exec('ALTER TABLE `' . $table . '` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci');
     }
     $this->pdo->exec('ALTER TABLE setting DROP COLUMN category');
-    // External tables and indexed identifiers must retain their own definitions.
+    // External tables and non-utf8mb4 server defaults must retain their own definitions.
     $this->pdo->exec('CREATE TABLE third_party (title TEXT) DEFAULT CHARSET=utf8 COLLATE=utf8_bin');
     $externalDefault = $this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'third_party'");
     $slugBefore = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
@@ -197,7 +203,7 @@ test('Unicode repair fixes every first-party table default and future schema add
 
     foreach ($tables as $table) {
         expect($this->connection->fetchOne('SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$table]))
-            ->toBe('utf8mb4_general_ci');
+            ->toBe('utf8mb4_unicode_ci');
     }
     expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'third_party'"))->toBe($externalDefault)
         ->and($this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'"))->toBe($slugBefore);
@@ -209,18 +215,33 @@ test('Unicode repair fixes every first-party table default and future schema add
     expect($this->pdo->alters)->toBe($alters);
 });
 
-test('Unicode repair leaves customized support indexes intact for manual review', function (string $index): void {
+test('Unicode repair converts safe prefix indexes but skips multi-column fulltext', function (string $index, bool $converts): void {
     $this->pdo->exec('CREATE TABLE support_ticket_message (id INT PRIMARY KEY, content TEXT NULL, attachment TEXT NULL, ' . $index . ') ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
     $before = $this->pdo->query('SHOW FULL COLUMNS FROM support_ticket_message')->fetchAll(PDO::FETCH_ASSOC);
     ($this->runPatch)();
-    expect($this->pdo->query('SHOW FULL COLUMNS FROM support_ticket_message')->fetchAll(PDO::FETCH_ASSOC))->toBe($before)
-        ->and($this->patcher->getDi()['logger']->calls)->not->toBeEmpty();
-    foreach ($this->patcher->getDi()['logger']->calls as $call) {
-        expect($call['method'])->toBe('warning');
+    if ($converts) {
+        $after = $this->pdo->query('SHOW FULL COLUMNS FROM support_ticket_message')->fetchAll(PDO::FETCH_ASSOC);
+        expect($after)->not->toBe($before);
+        foreach ($after as $column) {
+            if (in_array($column['Field'], ['content', 'attachment'], true)) {
+                expect($column['Collation'])->toBe('utf8mb4_unicode_ci');
+            }
+        }
+        expect($this->connection->fetchOne('SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', ['support_ticket_message']))->toBe('utf8mb4_unicode_ci')
+            ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+    } else {
+        expect($this->pdo->query('SHOW FULL COLUMNS FROM support_ticket_message')->fetchAll(PDO::FETCH_ASSOC))->toBe($before)
+            ->and($this->patcher->getDi()['logger']->calls)->not->toBeEmpty();
+        $messages = [];
+        foreach ($this->patcher->getDi()['logger']->calls as $call) {
+            expect($call['method'])->toBe('warning');
+            $messages[] = $call['params'][0] ?? '';
+        }
+        expect(implode("\n", $messages))->toContain('FULLTEXT');
     }
 })->with([
-    'multi-column fulltext' => ['FULLTEXT KEY custom_search (content, attachment)'],
-    'ordinary prefix index' => ['KEY custom_search (content(100)), KEY attachment_idx (attachment(100))'],
+    'multi-column fulltext' => ['FULLTEXT KEY custom_search (content, attachment)', false],
+    'ordinary prefix index' => ['KEY custom_search (content(100)), KEY attachment_idx (attachment(100))', true],
 ]);
 
 test('Unicode repair preserves customized defaults, generated columns and non-UTF8 table defaults', function (): void {
@@ -246,7 +267,7 @@ test('Unicode repair can resume after DDL failure without repeating completed co
     }
     $this->pdo->rejectAlter = '`product`';
     expect(fn () => ($this->runPatch)())->toThrow(FOSSBilling\Core\Exception\BaseException::class);
-    expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'client'"))->toBe('utf8mb4_general_ci')
+    expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'client'"))->toBe('utf8mb4_unicode_ci')
         ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'product'"))->not->toStartWith('utf8mb4');
     $this->pdo->rejectAlter = null;
     ($this->runPatch)();
@@ -258,7 +279,7 @@ test('Unicode repair can resume after DDL failure without repeating completed co
     expect($this->pdo->alters)->toBe($alters);
 });
 
-test('Unicode repair preserves MariaDB UCA-1400 collation semantics', function (): void {
+test('Unicode repair normalizes MariaDB UCA-1400 collations to utf8mb4_unicode_ci', function (): void {
     $available = $this->connection->fetchFirstColumn("SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = 'utf8mb4'");
     if (!in_array('uca1400_ai_ci', $available, true)) {
         $this->markTestSkipped('MariaDB UCA-1400 collations are not available on this server.');
@@ -267,7 +288,7 @@ test('Unicode repair preserves MariaDB UCA-1400 collation semantics', function (
     $this->connection->insert('post', ['id' => 1, 'title' => 'Résumé', 'content' => '日本語']);
     expect($this->connection->fetchOne("SELECT id FROM post WHERE title = 'resume'"))->toBe(1);
     ($this->runPatch)();
-    expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'"))->toBe('utf8mb4_uca1400_ai_ci')
+    expect($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'"))->toBe('utf8mb4_unicode_ci')
         ->and($this->connection->fetchOne("SELECT id FROM post WHERE title = 'resume'"))->toBe(1)
         ->and($this->connection->fetchOne('SELECT content FROM post'))->toBe('日本語');
     $this->connection->executeStatement('UPDATE post SET title = ?, content = ?', ['🚀', '𠮷']);
@@ -275,14 +296,13 @@ test('Unicode repair preserves MariaDB UCA-1400 collation semantics', function (
         ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
-test('Unicode repair logs collations without an equivalent instead of changing comparison semantics', function (): void {
+test('Unicode repair normalizes collations without a utf8mb4 equivalent', function (): void {
     $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, content TEXT NULL) DEFAULT CHARSET=utf8 COLLATE=utf8_general_mysql500_ci');
-    $before = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'content'");
-    $default = $this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'");
     ($this->runPatch)();
-    expect($this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'content'"))->toBe($before)
-        ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'"))->toBe($default)
-        ->and($this->patcher->getDi()['logger']->calls)->toHaveCount(2);
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'content'");
+    expect($column['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne("SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'"))->toBe('utf8mb4_unicode_ci')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
 });
 
 test('Unicode repair diagnoses an explicit legacy connection charset', function (): void {
@@ -337,7 +357,7 @@ test('Unicode repair preserves literal unit defaults and definitions throughout 
     ($this->runPatch)();
     foreach (['product' => $productDefault, 'client_order' => $billingDefault, 'invoice_item' => $billingDefault] as $table => $default) {
         $column = $this->connection->fetchAssociative('SHOW FULL COLUMNS FROM `' . $table . "` LIKE 'unit'");
-        expect($column['Collation'])->toBe('utf8mb4_general_ci');
+        expect($column['Collation'])->toBe('utf8mb4_unicode_ci');
         unset($column['Collation'], $before[$table]['Collation']);
         expect($column)->toBe($before[$table])
             ->and($this->connection->fetchOne('SELECT unit FROM `' . $table . '`'))->toBe($default);
@@ -356,19 +376,20 @@ test('Unicode repair preserves literal unit defaults and definitions throughout 
     'empty defaults' => ['', ''],
 ]);
 
-test('Unicode repair leaves expression defaults and indexed unit customizations unchanged', function (): void {
+test('Unicode repair converts indexed unit columns when the index fits, expression defaults stay', function (): void {
     $this->pdo->exec("CREATE TABLE product (id INT PRIMARY KEY, unit VARCHAR(50) NOT NULL DEFAULT (concat('pro', 'duct'))) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
     $this->pdo->exec("CREATE TABLE invoice_item (id INT PRIMARY KEY, unit VARCHAR(100) NULL DEFAULT 'hour', KEY unit_idx (unit)) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
-    foreach (['product', 'invoice_item'] as $table) {
-        $before[$table] = $this->connection->fetchAssociative('SHOW FULL COLUMNS FROM `' . $table . "` LIKE 'unit'");
-    }
+    $beforeProduct = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM `product` LIKE 'unit'");
     ($this->runPatch)();
-    foreach (['product' => 'product', 'invoice_item' => 'hour'] as $table => $default) {
-        expect($this->connection->fetchAssociative('SHOW FULL COLUMNS FROM `' . $table . "` LIKE 'unit'"))->toBe($before[$table]);
-        $this->connection->insert($table, ['id' => 1]);
-        expect($this->connection->fetchOne('SELECT unit FROM `' . $table . '`'))->toBe($default);
-    }
-    expect($this->patcher->getDi()['logger']->calls)->toHaveCount(2);
+    expect($this->connection->fetchAssociative("SHOW FULL COLUMNS FROM `product` LIKE 'unit'"))->toBe($beforeProduct);
+    $unit = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM `invoice_item` LIKE 'unit'");
+    expect($unit['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($unit['Default'])->toBe('hour');
+    $this->connection->insert('product', ['id' => 1]);
+    expect($this->connection->fetchOne('SELECT unit FROM `product`'))->toBe('product');
+    $this->connection->insert('invoice_item', ['id' => 1]);
+    expect($this->connection->fetchOne('SELECT unit FROM `invoice_item`'))->toBe('hour');
+    expect($this->patcher->getDi()['logger']->calls)->toHaveCount(1);
 });
 
 test('news charset patch repairs legacy text and preserves data, definitions and slug uniqueness', function (): void {
@@ -462,4 +483,206 @@ test('fresh installation supports supplementary Unicode in a legacy database wit
         ->and($saved->getContent())->toBe('🚀 🎧 🔒')
         ->and($saved->getSection())->toBe('🔒 Security')
         ->and($this->connection->fetchOne('SELECT @@character_set_database'))->toBe($databaseCharset);
+});
+
+test('Unicode repair normalizes the database default to utf8mb4_unicode_ci', function (): void {
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBeIn(['utf8', 'utf8mb3']);
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
+    $this->connection->insert('post', ['id' => 1, 'title' => 'Résumé']);
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci');
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'title'");
+    expect($column['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne('SELECT title FROM post'))->toBe('Résumé')
+        ->and($this->pdo->dbAlters)->toHaveCount(1)
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+    $alters = count($this->pdo->alters);
+    expect($alters)->toBeGreaterThan(0);
+    (new Patch146())->apply($this->patcher);
+    expect($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne('SELECT title FROM post'))->toBe('Résumé')
+        ->and($this->pdo->dbAlters)->toHaveCount(1)
+        ->and(count($this->pdo->alters))->toBe($alters)
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair maps utf8mb3 database defaults to utf8mb4_unicode_ci', function (): void {
+    $available = $this->connection->fetchFirstColumn("SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = 'utf8mb3'");
+    if (!in_array('utf8mb3_general_ci', $available, true)) {
+        $this->markTestSkipped('This server does not support utf8mb3 database defaults.');
+    }
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci');
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair leaves non-legacy utf8mb4 database defaults untouched', function (): void {
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin');
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_bin')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair normalizes database collations without a utf8mb4 equivalent', function (): void {
+    $legacyCollations = $this->connection->fetchFirstColumn("SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE COLLATION_NAME IN ('utf8_general_mysql500_ci', 'utf8mb3_general_mysql500_ci')");
+    if ($legacyCollations === []) {
+        $this->markTestSkipped('This server has no MySQL 5.0 compatibility collation to normalize.');
+    }
+    $collation = $legacyCollations[0];
+    $charset = str_starts_with($collation, 'utf8mb3_') ? 'utf8mb3' : 'utf8';
+    $this->pdo->exec('ALTER DATABASE `' . $this->database . '` CHARACTER SET ' . $charset . ' COLLATE ' . $collation);
+
+    (new Patch146())->apply($this->patcher);
+
+    expect($this->connection->fetchOne('SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4')
+        ->and($this->connection->fetchOne('SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()'))->toBe('utf8mb4_unicode_ci')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair preserves NO PAD comparison rules when widening', function (): void {
+    $available = $this->connection->fetchFirstColumn("SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE COLLATION_NAME IN ('utf8mb3_general_nopad_ci', 'utf8mb4_general_nopad_ci')");
+    if (count(array_intersect(['utf8mb3_general_nopad_ci', 'utf8mb4_general_nopad_ci'], $available)) < 2) {
+        $this->markTestSkipped('This server does not offer NO PAD collation equivalents.');
+    }
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, title VARCHAR(255) NULL, content TEXT NULL) DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_nopad_ci');
+    $this->connection->insert('post', ['id' => 1, 'title' => 'Résumé', 'content' => '日本語']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'title'");
+    expect($column['Collation'])->toBe('utf8mb4_general_nopad_ci')
+        ->and($this->connection->fetchOne('SELECT content FROM post'))->toBe('日本語');
+    // Case-insensitivity is preserved while trailing spaces stay significant.
+    expect($this->connection->fetchOne("SELECT id FROM post WHERE title = 'RÉSUMÉ'"))->toBe(1)
+        ->and($this->connection->fetchOne("SELECT id FROM post WHERE title = 'Résumé '"))->toBeFalse();
+    $this->connection->executeStatement('UPDATE post SET title = ?', ['🚀']);
+    expect($this->connection->fetchOne('SELECT title FROM post'))->toBe('🚀')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair converts unique slugs and preserves their uniqueness', function (): void {
+    // VARCHAR(191) keeps the widened key within every InnoDB page size (and the legacy 767-byte limit),
+    // so this exercises conversion itself rather than any particular server configuration.
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(191) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
+    $this->connection->insert('post', ['id' => 1, 'slug' => 'example']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    expect($column['Collation'])->toBe('utf8mb4_unicode_ci')
+        ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('example');
+    expect(fn () => $this->connection->insert('post', ['id' => 2, 'slug' => 'EXAMPLE']))
+        ->toThrow(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class);
+    $this->connection->executeStatement('UPDATE post SET slug = ?', ['🚀-release']);
+    expect($this->connection->fetchOne('SELECT slug FROM post'))->toBe('🚀-release')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair preserves case-sensitive uniqueness when widening binary slugs', function (): void {
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(191) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET=utf8 COLLATE=utf8_bin');
+    $this->connection->insert('post', ['id' => 1, 'slug' => 'about']);
+    $this->connection->insert('post', ['id' => 2, 'slug' => 'ABOUT']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    expect($column['Collation'])->toBe('utf8mb4_bin')
+        ->and($this->connection->fetchOne('SELECT slug FROM post WHERE id = 1'))->toBe('about')
+        ->and($this->connection->fetchOne('SELECT slug FROM post WHERE id = 2'))->toBe('ABOUT');
+    expect(fn () => $this->connection->insert('post', ['id' => 3, 'slug' => 'about']))
+        ->toThrow(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class);
+    $this->connection->executeStatement('UPDATE post SET slug = ? WHERE id = 1', ['🚀-about']);
+    expect($this->connection->fetchOne('SELECT slug FROM post WHERE id = 1'))->toBe('🚀-about')
+        ->and($this->patcher->getDi()['logger']->calls)->toBe([]);
+});
+
+test('Unicode repair skips columns covered by functional indexes', function (): void {
+    $version = (string) $this->connection->fetchOne('SELECT VERSION()');
+    $supportsFunctionalIndexes = stripos($version, 'mariadb') === false
+        && preg_match('/^(\d+)\.(\d+)\.(\d+)/', $version, $matches) === 1
+        && version_compare($matches[1] . '.' . $matches[2] . '.' . $matches[3], '8.0.13', '>=');
+    if (!$supportsFunctionalIndexes) {
+        $this->markTestSkipped('Functional key parts require MySQL 8.0.13 or newer.');
+    }
+    $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(255) NOT NULL, UNIQUE KEY slug_lower ((LOWER(slug)))) ENGINE=InnoDB ROW_FORMAT=COMPACT DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
+    $this->connection->insert('post', ['id' => 1, 'slug' => 'Example']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    expect($column['Collation'])->toBe('utf8_general_ci')
+        ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('Example');
+    $calls = $this->patcher->getDi()['logger']->calls;
+    expect($calls)->toHaveCount(1)
+        ->and($calls[0]['method'])->toBe('warning')
+        ->and($calls[0]['params'][0])->toContain('post.slug', 'functional index');
+});
+
+test('Unicode repair skips indexed columns on small-block compressed tables', function (): void {
+    try {
+        $this->pdo->exec('CREATE TABLE post (id INT PRIMARY KEY, slug VARCHAR(100) NOT NULL UNIQUE) ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=1 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci');
+    } catch (PDOException $e) {
+        // Skip only for diagnostics that identify an unsupported table
+        // option; unrelated failures (a dropped connection, a typo in the
+        // fixture) must fail loudly instead of silently skipping the test.
+        $errorInfo = is_array($e->errorInfo ?? null) ? $e->errorInfo : [];
+        $code = (int) ($errorInfo[1] ?? 0);
+        if ($code === 1064) {
+            // Parse errors echo the offending SQL, which may itself contain
+            // the option tokens below; a fixture typo must fail, never skip.
+            throw $e;
+        }
+        if (in_array($code, [1286, 1478], true)) {
+            $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
+        }
+        if ($code === 1005) {
+            // MariaDB strict mode surfaces a generic 1005 here; the reason
+            // lives in a separate SHOW WARNINGS diagnostic on the same
+            // connection.
+            try {
+                $warnings = $this->pdo->query('SHOW WARNINGS')->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException) {
+                throw $e;
+            }
+            $detail = strtolower((string) json_encode($warnings));
+            $mentionsCompression = str_contains($detail, 'compress') || str_contains($detail, 'key_block_size') || str_contains($detail, 'row_format');
+            if ($mentionsCompression) {
+                $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
+            }
+
+            throw $e;
+        }
+        $message = strtolower($e->getMessage());
+        $mentionsOption = str_contains($message, 'key_block_size')
+            || str_contains($message, 'row_format')
+            || str_contains($message, 'compressed');
+        $indicatesUnsupported = str_contains($message, 'support')
+            || str_contains($message, 'have this option')
+            || str_contains($message, 'unknown storage')
+            || str_contains($message, 'wrong create options')
+            || str_contains($message, 'strict mode')
+            || str_contains($message, 'no such option');
+        if (!($mentionsOption && $indicatesUnsupported)) {
+            throw $e;
+        }
+        $this->markTestSkipped('This server does not support COMPRESSED tables with an explicit block size.');
+    }
+    $row = $this->connection->fetchAssociative("SELECT ROW_FORMAT, CREATE_OPTIONS FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post'");
+    if (($row['ROW_FORMAT'] ?? null) !== 'Compressed' || stripos((string) ($row['CREATE_OPTIONS'] ?? ''), 'KEY_BLOCK_SIZE') === false) {
+        $this->markTestSkipped('This server does not honor ROW_FORMAT=COMPRESSED with an explicit block size.');
+    }
+    // MySQL 8.0.30+ reports utf8 as utf8mb3; capture the pre-migration value
+    // instead of asserting a hard-coded collation name.
+    $before = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    $this->connection->insert('post', ['id' => 1, 'slug' => 'example']);
+    ($this->runPatch)();
+    $column = $this->connection->fetchAssociative("SHOW FULL COLUMNS FROM post LIKE 'slug'");
+    expect($column['Collation'])->toBe($before['Collation'])
+        ->and($this->connection->fetchOne('SELECT slug FROM post'))->toBe('example');
+    $calls = $this->patcher->getDi()['logger']->calls;
+    expect($calls)->toHaveCount(1)
+        ->and($calls[0]['method'])->toBe('warning')
+        ->and($calls[0]['params'][0])->toContain('post.slug', 'compressed block size');
 });
