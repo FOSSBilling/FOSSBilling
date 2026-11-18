@@ -1505,6 +1505,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!$invoice instanceof Invoice) {
             throw new Payment_Exception('Invoice not found');
         }
+        if (in_array($capture['status'] ?? '', ['DECLINED', 'FAILED'], true)) {
+            $this->failRestCapture($api_admin, $id, $captureId, (int) $invoice->getId());
+
+            return;
+        }
         $amount = (float) ($capture['amount']['value'] ?? 0);
         $currency = (string) ($capture['amount']['currency_code'] ?? '');
         $completed = ($capture['status'] ?? '') === 'COMPLETED';
@@ -1550,6 +1555,81 @@ document.addEventListener('DOMContentLoaded', function() {
             $this->di['mod_service']('Invoice')->settleClearingPayment($invoice, $payment, $payment, 'PayPal');
         } finally {
             NamedLock::release($db, $lock);
+        }
+    }
+
+    /** End a failed capture and its saved-charge barrier in the same transaction. */
+    private function failRestCapture($api, int $transactionId, string $captureId, int $invoiceId): void
+    {
+        $db = $this->di['em']->getConnection();
+        if ($db->isTransactionActive()) {
+            throw new LogicException('Payment failure processing must begin outside a database transaction.');
+        }
+        $invoiceLock = 'fb:card-charge:' . $invoiceId;
+        if (!NamedLock::acquire($db, $invoiceLock, 0)) {
+            throw new Payment_Exception('The payment worker is still active. Retry this capture later.');
+        }
+        $paymentLock = 'fb:paypal:' . substr(hash('sha256', $this->gatewayId() . ':' . $captureId), 0, 48);
+
+        try {
+            // Do not wait with the charge lock held: a completion can already
+            // hold the capture lock while waiting to settle this invoice.
+            if (!NamedLock::acquire($db, $paymentLock, 0)) {
+                throw new Payment_Exception('PayPal payment is already being processed');
+            }
+
+            try {
+                $attempt = $db->fetchAssociative("SELECT id, owner_token FROM invoice_gateway_charge_attempt WHERE invoice_id = ? AND gateway_id = ? AND payment_id = ? AND state = 'pending' ORDER BY created_at, id LIMIT 1", [$invoiceId, $this->gatewayId(), $captureId]);
+                foreach (FOSSBilling\Core\Payment\ProcessingFence::claims() as $claim) {
+                    if ($attempt && $claim['table'] === 'invoice_gateway_charge_attempt' && $claim['id'] === $attempt['id']) {
+                        throw new Payment_Exception('The payment worker is still active. Retry this capture later.');
+                    }
+                }
+                // A late failure response must not clear a payment that has
+                // resumed processing or completed while these locks were acquired.
+                $current = $this->inspectPayment($captureId, $invoiceId);
+                if ($current['state'] !== 'failed') {
+                    return;
+                }
+                $table = $db->quoteSingleIdentifier('transaction');
+                if ($db->fetchOne("SELECT id FROM {$table} WHERE gateway_id = ? AND txn_id = ? AND status = ? LIMIT 1", [$this->gatewayId(), $captureId, Transaction::STATUS_PROCESSED]) !== false) {
+                    return;
+                }
+                $transaction = $db->fetchAssociative("SELECT invoice_id, gateway_id, txn_id FROM {$table} WHERE id = ?", [$transactionId]);
+                if (!$transaction || ($transaction['invoice_id'] !== null && (int) $transaction['invoice_id'] !== $invoiceId) || (int) $transaction['gateway_id'] !== $this->gatewayId()
+                    || ($transaction['txn_id'] !== null && $transaction['txn_id'] !== '' && $transaction['txn_id'] !== $captureId)) {
+                    throw new Payment_Exception('PayPal capture does not match this transaction');
+                }
+
+                try {
+                    $db->transactional(function () use ($db, $api, $transactionId, $captureId, $invoiceId, $current, $attempt): void {
+                        $api->invoice_transaction_update([
+                            'id' => $transactionId, 'invoice_id' => $invoiceId, 'txn_id' => $captureId, 'type' => 'paypal_rest',
+                            'txn_status' => ucfirst(strtolower((string) $current['provider_status'])),
+                            'status' => Transaction::STATUS_ERROR, 'amount' => $current['amount'], 'currency' => $current['currency'],
+                            'error' => 'PayPal payment not completed: ' . $current['provider_status'], 'updated_at' => date('Y-m-d H:i:s'),
+                        ]);
+                        if ($attempt) {
+                            $owner = $attempt['owner_token'] === null ? 'owner_token IS NULL' : 'owner_token = ?';
+                            $parameters = [date('Y-m-d H:i:s'), $attempt['id']];
+                            if ($attempt['owner_token'] !== null) {
+                                $parameters[] = $attempt['owner_token'];
+                            }
+                            if ($db->executeStatement("UPDATE invoice_gateway_charge_attempt SET state = 'failed', resolved_at = ? WHERE id = ? AND state = 'pending' AND {$owner}", $parameters) !== 1) {
+                                throw new FOSSBilling\Core\Payment\OwnershipLost('The charge attempt changed while processing its failure.');
+                            }
+                        }
+                    });
+                } catch (Throwable $e) {
+                    $this->di['em']->close();
+
+                    throw $e;
+                }
+            } finally {
+                NamedLock::release($db, $paymentLock);
+            }
+        } finally {
+            NamedLock::release($db, $invoiceLock);
         }
     }
 
