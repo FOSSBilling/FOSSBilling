@@ -69,7 +69,9 @@
         "nelexa",
         "rediss",
         "Åland",
-        "dedup"
+        "dedup",
+        "inodes",
+        "libzip"
     ],
 
     "ignoreWords": [
@@ -589,6 +591,16 @@
         "telnocc",
         "actionstatus",
         "AUTOINCREMENT"
+    ],
+    "overrides": [
+        {
+            "filename": "src/core/Filesystem/ZipExtractor.php",
+            "words": ["RDONLY", "CHECKCONS", "vcount", "Poffset", "Pcount", "vname", "vextra", "vcomment"]
+        },
+        {
+            "filename": "tests/Unit/FOSSBilling/ZipExtractorTest.php",
+            "words": ["Xname", "ther"]
+        }
     ],
     "ignorePaths": [
         "node_modules/**",
