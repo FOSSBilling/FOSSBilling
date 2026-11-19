@@ -706,10 +706,30 @@
             ]
         },
         {
+            "filename": "src/modules/Client/ClientRowLock.php",
+            "words": [
+                "hashtextextended",
+                "xact"
+            ]
+        },
+        {
             "filename": "src/modules/Support/TicketFiles.php",
             "words": [
                 "hashtextextended",
                 "xact"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/tests/Unit/Api/AdminTest.php",
+            "words": [
+                "tftest"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/tests/Unit/TicketMergeTest.php",
+            "words": [
+                "guesthash",
+                "oldhash"
             ]
         },
         {
@@ -724,6 +744,9 @@
         "src/themes/**/assets/**",
         "src/install/assets/**",
         "src/install/sql/**",
+        "tests/Fixtures/upgrades/**/*.sql",
+        "tests/Fixtures/upgrades/**/*.php.txt",
+        "tools/upgrade-bridge/*.patch",
         "src/modules/*/assets/**",
         "composer.json",
         "composer.lock",
