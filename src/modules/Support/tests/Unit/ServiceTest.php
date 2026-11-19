@@ -2840,3 +2840,40 @@ test('a retried close email uses its stored admin and propagates delivery failur
     expect(fn () => $service->notifyTicketClosed(new AfterTicketClosedEvent(10, TicketActorRole::ADMIN, 7)))
         ->toThrow(RuntimeException::class, 'mail queue unavailable');
 });
+
+/*
+ * To API Array Tests
+ */
+
+test('returns an empty messages array for a ticket without messages', function (): void {
+    $service = new Service();
+    $ticket = new SupportTicket();
+    setEntityId($ticket, 1);
+
+    $messageRepo = Mockery::mock(SupportTicketMessageRepository::class);
+    $messageRepo->shouldReceive('findFirstByTicketId')
+        ->atLeast()->once()
+        ->with(1)
+        ->andReturnNull();
+    $messageRepo->shouldReceive('findByTicketId')
+        ->atLeast()->once()
+        ->with(1)
+        ->andReturn([]);
+    $messageRepo->shouldReceive('countByTicketId')
+        ->atLeast()->once()
+        ->with(1)
+        ->andReturn(0);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, supportTicketMessageRepo: $messageRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $result = $service->toApiArray($ticket);
+
+    expect($result)->toBeArray();
+    expect($result)->toHaveKey('messages');
+    expect($result['messages'])->toBe([]);
+});
