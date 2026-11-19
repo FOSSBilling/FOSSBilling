@@ -545,6 +545,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
         if ($deep) {
             $messages = $this->getSupportTicketMessageRepository()->findByTicketId($model->getId() ?? 0);
+            $data['messages'] = [];
             foreach ($messages as $msg) {
                 $data['messages'][] = $this->messageToApiArray($msg, true, $identity);
             }
