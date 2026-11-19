@@ -432,7 +432,7 @@ class Service implements InjectionAwareInterface
         return $this->buildThemeConfig($code, $client, $mod);
     }
 
-    public function getThemesPath()
+    public function getThemesPath(): string
     {
         return PATH_THEMES;
     }
