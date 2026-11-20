@@ -36,7 +36,7 @@
     "ckeditor5": "49.1.0",
     "esbuild": "0.28.2",
     "github-markdown-css": "5.9.0",
-    "postcss": "8.5.32",
+    "postcss": "8.5.33",
     "purgecss": "9.1.0",
     "sass": "1.108.2",
     "svg-sprite": "2.0.4",
