@@ -141,7 +141,7 @@ test('gets summary income', function (): void {
         ->and($result)->toBe($expected);
 });
 
-test('income queries exclude deposit invoices', function (): void {
+test('income queries split out deposit portions', function (): void {
     $queries = [];
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
     $resultMock->shouldReceive('fetchOne')->andReturn(0);
@@ -160,10 +160,12 @@ test('income queries exclude deposit invoices', function (): void {
     $service = new Box\Mod\Stats\Service();
     $service->setDi($di);
 
+    // getRefunds is intentionally absent: 0.8.x nets refunds through
+    // negative-income credit documents, which the income split below already
+    // handles symmetrically, instead of a base_refund column.
     $service->getSummaryIncome();
     $service->incomeAndRefundStats([]);
     $service->getIncome(['date_from' => 'yesterday', 'date_to' => 'now']);
-    $service->getRefunds(['date_from' => 'yesterday', 'date_to' => 'now']);
     $service->getSalesByCountry([]);
 
     expect($queries)->not->toBeEmpty();
