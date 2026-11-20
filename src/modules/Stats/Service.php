@@ -156,11 +156,16 @@ class Service implements InjectionAwareInterface
      *
      * Pure deposit invoices contribute nothing. Mixed invoices (a draft
      * deposit proforma that gained service lines before issuance) contribute
-     * only their service portion: deposit lines are always untaxed, so the
-     * whole invoice tax belongs to the service portion and only the deposit
-     * item subtotal, converted at the invoice currency rate, is subtracted.
-     * Refunds mirror this through the credit-note documents, whose lines
-     * keep the refunded lines' types.
+     * only their service portion. Deposit lines are never taxed and every
+     * conversion is a flat rate, so the service share is exactly the stored
+     * base amount times the service item share of the invoice subtotal.
+     * Deriving the share from the stored base itself (instead of re-applying
+     * a rate) keeps income and refunds on the same basis through every
+     * recalculation, even after the currency rate moves. Refunds split
+     * through the credit-note documents, whose lines keep the refunded
+     * lines' types; a refund with no linked lines that covers the whole
+     * invoice is split by the original lines, while a partial unattributed
+     * refund stays explicitly unresolved (NULL) rather than guessing.
      */
     private function hasDepositLinesClause(): string
     {
@@ -172,38 +177,54 @@ class Service implements InjectionAwareInterface
         return "EXISTS (SELECT 1 FROM invoice_item si WHERE si.invoice_id = invoice.id AND (si.type <> 'deposit' OR si.type IS NULL))";
     }
 
-    private function depositShareExpr(): string
+    /**
+     * SUM(price × quantity) over an invoice's own lines, in invoice currency.
+     */
+    private function ownLinesTotalExpr(bool $serviceOnly): string
     {
-        return 'ROUND(COALESCE((SELECT SUM(di2.price * COALESCE(di2.quantity, 1)) FROM invoice_item di2 WHERE di2.invoice_id = invoice.id AND di2.type = \'deposit\'), 0) * COALESCE(invoice.currency_rate, 1), 2)';
+        $filter = $serviceOnly ? "AND (ii.type <> 'deposit' OR ii.type IS NULL)" : '';
+
+        return "(SELECT SUM(ii.price * COALESCE(ii.quantity, 1)) FROM invoice_item ii WHERE ii.invoice_id = invoice.id {$filter})";
     }
 
-    private function depositRefundedShareExpr(): string
+    /**
+     * SUM(price × quantity) over an invoice's credit-note lines, in invoice
+     * currency. Credit lines mirror the refunded lines' types with negated
+     * prices, so deposit refunds are directly attributable.
+     */
+    private function creditLinesTotalExpr(bool $serviceOnly): string
     {
-        return 'ROUND(COALESCE((SELECT SUM(-(ci.price * COALESCE(ci.quantity, 1))) FROM invoice cn JOIN invoice_item ci ON ci.invoice_id = cn.id WHERE cn.credit_note_for_invoice_id = invoice.id AND ci.type = \'deposit\'), 0) * COALESCE(invoice.currency_rate, 1), 2)';
+        $filter = $serviceOnly ? "AND ci.type <> 'deposit'" : '';
+
+        return "(SELECT SUM(ci.price * COALESCE(ci.quantity, 1)) FROM invoice cn JOIN invoice_item ci ON ci.invoice_id = cn.id WHERE cn.credit_note_for_invoice_id = invoice.id {$filter})";
     }
 
     private function serviceIncomeExpr(): string
     {
         $dep = $this->hasDepositLinesClause();
         $svc = $this->hasServiceLinesClause();
-        $share = $this->depositShareExpr();
+        $svcSub = $this->ownLinesTotalExpr(true);
+        $totSub = $this->ownLinesTotalExpr(false);
 
-        // The mixed branch keeps bare base_income (no COALESCE) so credit-note
-        // documents, which carry no income of their own, stay NULL and are
-        // ignored instead of picking up an inverted deposit share.
-        return "(CASE WHEN NOT ({$dep}) THEN COALESCE(invoice.base_income, 0) WHEN ({$svc}) THEN invoice.base_income - ({$share}) ELSE 0 END)";
+        return "(CASE WHEN NOT ({$dep}) THEN COALESCE(invoice.base_income, 0) WHEN ({$svc}) THEN ROUND(COALESCE(invoice.base_income, 0) * COALESCE(({$svcSub}), 0) / NULLIF(({$totSub}), 0), 2) ELSE 0 END)";
     }
 
     private function serviceRefundExpr(bool $taxAware): string
     {
         $dep = $this->hasDepositLinesClause();
         $svc = $this->hasServiceLinesClause();
-        $share = $this->depositRefundedShareExpr();
+        $svcSub = $this->ownLinesTotalExpr(true);
+        $totSub = $this->ownLinesTotalExpr(false);
+        $cnSvcSub = $this->creditLinesTotalExpr(true);
+        $cnTotSub = $this->creditLinesTotalExpr(false);
         $base = $taxAware
             ? 'CASE WHEN invoice.refund IS NOT NULL AND invoice.base_refund_tax IS NULL THEN NULL ELSE invoice.base_refund END'
             : 'invoice.base_refund';
 
-        return "(CASE WHEN NOT ({$dep}) THEN COALESCE({$base}, 0) WHEN ({$svc}) THEN ({$base}) - ({$share}) ELSE 0 END)";
+        return "(CASE WHEN NOT ({$dep}) THEN COALESCE({$base}, 0)"
+            . " WHEN COALESCE(({$cnTotSub}), 0) <> 0 THEN ({$base}) * COALESCE(({$cnSvcSub}), 0) / NULLIF(({$cnTotSub}), 0)"
+            . " WHEN ({$base}) IS NOT NULL AND ABS(COALESCE(({$base}), 0) - COALESCE(invoice.base_income, 0)) <= 0.01 THEN ({$base}) * COALESCE(({$svcSub}), 0) / NULLIF(({$totSub}), 0)"
+            . ' ELSE NULL END)';
     }
 
     public function getSummaryIncome(): array

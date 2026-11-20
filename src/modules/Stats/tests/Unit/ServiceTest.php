@@ -110,7 +110,9 @@ test('income stats split mixed invoices and exclude pure deposits', function ():
     // Ordinary 30 service invoice.
     $connection->insert('invoice', ['id' => 3, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 30.0, 'base_refund' => 0, 'currency_rate' => 1]);
     // Mixed invoice in a foreign currency at rate 2: 10 deposit + 50 service.
-    $connection->insert('invoice', ['id' => 4, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 120.0, 'base_refund' => 0, 'currency_rate' => 2]);
+    // Production base amounts divide by the rate, so the stored 30 backs out
+    // to a 25 service share.
+    $connection->insert('invoice', ['id' => 4, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 30.0, 'base_refund' => 0, 'currency_rate' => 2]);
     $connection->insert('invoice_item', ['id' => 1, 'invoice_id' => 1, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
     $connection->insert('invoice_item', ['id' => 2, 'invoice_id' => 2, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
     $connection->insert('invoice_item', ['id' => 3, 'invoice_id' => 2, 'type' => 'order', 'price' => 25, 'quantity' => 1]);
@@ -123,18 +125,18 @@ test('income stats split mixed invoices and exclude pure deposits', function ():
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
-    // 0 + 25 + 30 + (120 - 10 * 2).
+    // 0 + 25 + 30 + (30 - 10 / 2).
     $summary = $service->getSummaryIncome();
-    expect((float) $summary['total'])->toBe(155.0);
+    expect((float) $summary['total'])->toBe(80.0);
 
     $totals = $service->incomeAndRefundStats([]);
-    expect((float) $totals['income'])->toBe(155.0);
+    expect((float) $totals['income'])->toBe(80.0);
 
     $yesterday = (new DateTimeImmutable('yesterday'))->format('Y-m-d');
     $tomorrow = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
     $incomeByDay = $service->getIncome(['date_from' => $yesterday, 'date_to' => $tomorrow]);
     $dayTotal = array_sum(array_column($incomeByDay, 1));
-    expect($dayTotal)->toBe(155.0);
+    expect($dayTotal)->toBe(80.0);
 });
 
 test('refund stats split mixed invoices and exclude pure deposits', function (): void {
@@ -176,6 +178,37 @@ test('refund stats split mixed invoices and exclude pure deposits', function ():
     $tomorrow = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
     $refundsByDay = $service->getRefunds(['date_from' => $yesterday, 'date_to' => $tomorrow]);
     expect(array_sum(array_column($refundsByDay, 1)))->toBe(35.0);
+});
+
+test('legacy refunds without credit notes split when fully backed, else unresolved', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
+
+    $today = (new DateTimeImmutable('today'))->format('Y-m-d H:i:s');
+
+    // Mixed invoice with a legacy full refund and no credit-note paper trail:
+    // the deposit share is reconstructed from the original lines.
+    $connection->insert('invoice', ['id' => 20, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'base_income' => 50.0, 'base_refund' => 50.0, 'currency_rate' => 1]);
+    // Mixed invoice with a legacy partial refund: unattributable, stays out.
+    $connection->insert('invoice', ['id' => 21, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 50.0, 'base_refund' => 10.0, 'currency_rate' => 1]);
+    $connection->insert('invoice_item', ['id' => 20, 'invoice_id' => 20, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 21, 'invoice_id' => 20, 'type' => 'order', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 22, 'invoice_id' => 21, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 23, 'invoice_id' => 21, 'type' => 'order', 'price' => 25, 'quantity' => 1]);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    // Income 25 + 25, refunds 25 + 0.
+    $summary = $service->getSummaryIncome();
+    expect((float) $summary['total'])->toBe(25.0);
+
+    $totals = $service->incomeAndRefundStats([]);
+    expect((float) $totals['income'])->toBe(50.0)
+        ->and((float) $totals['refund'])->toBe(25.0);
 });
 
 test('sales by country excludes only pure deposit invoices', function (): void {
