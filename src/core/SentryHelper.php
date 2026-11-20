@@ -203,7 +203,7 @@ class SentryHelper
                     }
 
                     // Tag the theme name
-                    if (str_starts_with($exceptionPath, (string) PATH_THEMES)) {
+                    if (str_starts_with($exceptionPath, PATH_THEMES)) {
                         $theme = self::extractName($exceptionPath, PATH_THEMES);
                         $event->setTag('theme.name', $theme);
                     }
