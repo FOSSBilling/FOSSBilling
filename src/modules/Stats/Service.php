@@ -212,7 +212,6 @@ class Service implements InjectionAwareInterface
     private function serviceRefundExpr(bool $taxAware): string
     {
         $dep = $this->hasDepositLinesClause();
-        $svc = $this->hasServiceLinesClause();
         $svcSub = $this->ownLinesTotalExpr(true);
         $totSub = $this->ownLinesTotalExpr(false);
         $cnSvcSub = $this->creditLinesTotalExpr(true);
