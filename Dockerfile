@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.29@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
 
 # Renovate needs the complete image reference to update both the tag and digest.
-ARG PHP_IMAGE=php:8.5-apache@sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46
+ARG PHP_IMAGE=php:8.5-apache@sha256:0a785eab8b7eb4836f9c6093771c8ea15ff8ba7269444f3da70a1d33d15fe664
 # Keep PHP_VERSION overrides working without applying the default image's digest.
 ARG PHP_VERSION
 ARG PHP_VERSION_IMAGE=${PHP_VERSION:+php:${PHP_VERSION}-apache}
