@@ -2182,27 +2182,27 @@
         },
         {
             "name": "maxmind-db/reader",
-            "version": "v1.14.0",
+            "version": "v1.15.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/maxmind/MaxMind-DB-Reader-php.git",
-                "reference": "f3c92f68b3bec42a9aa780368399e03dc6b91e89"
+                "reference": "135915ad1ce99520fccfebb8f4ce53cf848dcc78"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maxmind/MaxMind-DB-Reader-php/zipball/f3c92f68b3bec42a9aa780368399e03dc6b91e89",
-                "reference": "f3c92f68b3bec42a9aa780368399e03dc6b91e89",
+                "url": "https://api.github.com/repos/maxmind/MaxMind-DB-Reader-php/zipball/135915ad1ce99520fccfebb8f4ce53cf848dcc78",
+                "reference": "135915ad1ce99520fccfebb8f4ce53cf848dcc78",
                 "shasum": ""
             },
             "require": {
                 "php": ">=7.2"
             },
             "conflict": {
-                "ext-maxminddb": "<1.14.0 || >=2.0.0"
+                "ext-maxminddb": "<1.15.0 || >=2.0.0"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "3.*",
-                "phpstan/phpstan": "*",
+                "phpstan/phpstan": "^1.12 || ^2.2",
                 "phpunit/phpunit": ">=8.0.0,<10.0.0",
                 "squizlabs/php_codesniffer": "4.*",
                 "symfony/polyfill-php80": "^1.33"
@@ -2241,10 +2241,10 @@
             ],
             "support": {
                 "issues": "https://github.com/maxmind/MaxMind-DB-Reader-php/issues",
-                "source": "https://github.com/maxmind/MaxMind-DB-Reader-php/tree/v1.14.0"
+                "source": "https://github.com/maxmind/MaxMind-DB-Reader-php/tree/v1.15.0"
             },
-            "time": "2026-09-10T22:02:38+00:00",
-            "published-time": "2026-09-10T22:02:45+00:00"
+            "time": "2026-11-17T21:46:48+00:00",
+            "published-time": "2026-11-17T21:46:54+00:00"
         },
         {
             "name": "monolog/monolog",
