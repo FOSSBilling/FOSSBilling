@@ -150,15 +150,60 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Deposit (Add funds) invoices top up the client's balance instead of
-     * selling anything, so they are not revenue. They must stay out of every
-     * income/refund aggregate, otherwise the same external cash is counted
-     * twice: once when the deposit is paid, and again when the balance it
-     * created pays a service invoice.
+     * Deposit (Add funds) top-ups are balance liability, not revenue: the
+     * same external cash must not count both when the deposit is paid and
+     * again when the balance it created pays a service invoice.
+     *
+     * Pure deposit invoices contribute nothing. Mixed invoices (a draft
+     * deposit proforma that gained service lines before issuance) contribute
+     * only their service portion: deposit lines are always untaxed, so the
+     * whole invoice tax belongs to the service portion and only the deposit
+     * item subtotal, converted at the invoice currency rate, is subtracted.
+     * Refunds mirror this through the credit-note documents, whose lines
+     * keep the refunded lines' types.
      */
-    private function depositExclusionClause(): string
+    private function hasDepositLinesClause(): string
     {
-        return "AND NOT EXISTS (SELECT 1 FROM invoice_item WHERE invoice_item.invoice_id = invoice.id AND invoice_item.type = 'deposit')";
+        return "EXISTS (SELECT 1 FROM invoice_item di WHERE di.invoice_id = invoice.id AND di.type = 'deposit')";
+    }
+
+    private function hasServiceLinesClause(): string
+    {
+        return "EXISTS (SELECT 1 FROM invoice_item si WHERE si.invoice_id = invoice.id AND (si.type <> 'deposit' OR si.type IS NULL))";
+    }
+
+    private function depositShareExpr(): string
+    {
+        return 'ROUND(COALESCE((SELECT SUM(di2.price * COALESCE(di2.quantity, 1)) FROM invoice_item di2 WHERE di2.invoice_id = invoice.id AND di2.type = \'deposit\'), 0) * COALESCE(invoice.currency_rate, 1), 2)';
+    }
+
+    private function depositRefundedShareExpr(): string
+    {
+        return 'ROUND(COALESCE((SELECT SUM(-(ci.price * COALESCE(ci.quantity, 1))) FROM invoice cn JOIN invoice_item ci ON ci.invoice_id = cn.id WHERE cn.credit_note_for_invoice_id = invoice.id AND ci.type = \'deposit\'), 0) * COALESCE(invoice.currency_rate, 1), 2)';
+    }
+
+    private function serviceIncomeExpr(): string
+    {
+        $dep = $this->hasDepositLinesClause();
+        $svc = $this->hasServiceLinesClause();
+        $share = $this->depositShareExpr();
+
+        // The mixed branch keeps bare base_income (no COALESCE) so credit-note
+        // documents, which carry no income of their own, stay NULL and are
+        // ignored instead of picking up an inverted deposit share.
+        return "(CASE WHEN NOT ({$dep}) THEN COALESCE(invoice.base_income, 0) WHEN ({$svc}) THEN invoice.base_income - ({$share}) ELSE 0 END)";
+    }
+
+    private function serviceRefundExpr(bool $taxAware): string
+    {
+        $dep = $this->hasDepositLinesClause();
+        $svc = $this->hasServiceLinesClause();
+        $share = $this->depositRefundedShareExpr();
+        $base = $taxAware
+            ? 'CASE WHEN invoice.refund IS NOT NULL AND invoice.base_refund_tax IS NULL THEN NULL ELSE invoice.base_refund END'
+            : 'invoice.base_refund';
+
+        return "(CASE WHEN NOT ({$dep}) THEN COALESCE({$base}, 0) WHEN ({$svc}) THEN ({$base}) - ({$share}) ELSE 0 END)";
     }
 
     public function getSummaryIncome(): array
@@ -168,7 +213,9 @@ class Service implements InjectionAwareInterface
         $dbal = $this->di['em']->getConnection();
         $boundaries = $this->getDayBoundaries();
 
-        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded') " . $this->depositExclusionClause();
+        $income = $this->serviceIncomeExpr();
+        $refund = $this->serviceRefundExpr(false);
+        $base = "SELECT (COALESCE(SUM({$income}), 0) - COALESCE(SUM({$refund}), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')";
         $total_query = $base;
         $yeste_query = $base . ' AND paid_at >= :yesterday_start AND paid_at < :today_start';
         $today_query = $base . ' AND paid_at >= :today_start AND paid_at < :tomorrow_start';
@@ -253,12 +300,13 @@ class Service implements InjectionAwareInterface
         // SUM(base_income) over all rows - base_income never mixed bases, so it
         // needs no such filter. Gross cash of classified refunds is
         // refund + refund_tax.
-        $query = 'SELECT COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN NULL ELSE base_refund END), 0) AS refund, COALESCE(SUM(base_income), 0) AS income, COALESCE(SUM(base_refund_tax), 0) AS refund_tax, (COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN NULL ELSE base_refund END), 0) + COALESCE(SUM(base_refund_tax), 0)) AS refund_gross, COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN 1 ELSE 0 END), 0) AS refund_tax_unresolved
+        $income = $this->serviceIncomeExpr();
+        $refund = $this->serviceRefundExpr(true);
+        $query = "SELECT COALESCE(SUM({$refund}), 0) AS refund, COALESCE(SUM({$income}), 0) AS income, COALESCE(SUM(base_refund_tax), 0) AS refund_tax, (COALESCE(SUM({$refund}), 0) + COALESCE(SUM(base_refund_tax), 0)) AS refund_gross, COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN 1 ELSE 0 END), 0) AS refund_tax_unresolved
                 FROM invoice
                 WHERE issued = true
                 AND (status = :status1 OR status = :status2)
-                ' . $this->depositExclusionClause() . '
-                ';
+                ";
 
         $result = $dbal->executeQuery($query, [
             'status1' => Invoice::STATUS_PAID,
@@ -288,13 +336,13 @@ class Service implements InjectionAwareInterface
         // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
         // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
         $date = SqlExpr::dateOnly($dbal, 'created_at');
-        $query = "SELECT {$date} AS date, COALESCE(SUM(base_refund), 0) AS refund
+        $refund = $this->serviceRefundExpr(false);
+        $query = "SELECT {$date} AS date, COALESCE(SUM({$refund}), 0) AS refund
                 FROM invoice
                 WHERE created_at BETWEEN :date_from AND :date_to
                 AND issued = true
                 AND (status = :refunded OR (status = :paid AND base_refund > 0))
-                " . $this->depositExclusionClause() . '
-                GROUP BY date';
+                GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
             'refunded' => Invoice::STATUS_REFUNDED,
@@ -326,13 +374,14 @@ class Service implements InjectionAwareInterface
         // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
         // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
         $date = SqlExpr::dateOnly($dbal, 'paid_at');
-        $query = "SELECT {$date} AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income
+        $income = $this->serviceIncomeExpr();
+        $refund = $this->serviceRefundExpr(false);
+        $query = "SELECT {$date} AS date, (COALESCE(SUM({$income}), 0) - COALESCE(SUM({$refund}), 0)) AS income
                 FROM invoice
                 WHERE paid_at BETWEEN :date_from AND :date_to
                 AND issued = true
                 AND (status = :paid OR status = :refunded)
-                " . $this->depositExclusionClause() . '
-                GROUP BY date';
+                GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
             'paid' => Invoice::STATUS_PAID,
@@ -365,11 +414,15 @@ class Service implements InjectionAwareInterface
     public function getSalesByCountry($data)
     {
         $limit = (int) ($data['limit'] ?? 10);
+        $dep = $this->hasDepositLinesClause();
+        $svc = $this->hasServiceLinesClause();
+        // Mixed invoices hold a real sale, so only pure deposit top-ups are
+        // excluded from the sales count.
         $q = "
             SELECT buyer_country, COUNT(id) as sales
             FROM invoice
             WHERE status = 'paid'
-            " . $this->depositExclusionClause() . "
+            AND NOT (({$dep}) AND NOT ({$svc}))
             GROUP BY buyer_country
             ORDER BY sales DESC
             LIMIT $limit
