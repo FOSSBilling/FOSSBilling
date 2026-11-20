@@ -121,17 +121,30 @@ class Service implements InjectionAwareInterface
         return $stats;
     }
 
+    /**
+     * Deposit (Add funds) invoices top up the client's balance instead of
+     * selling anything, so they are not revenue. They must stay out of every
+     * income/refund aggregate, otherwise the same external cash is counted
+     * twice: once when the deposit is paid, and again when the balance it
+     * created pays a service invoice.
+     */
+    private function depositExclusionClause(): string
+    {
+        return "AND NOT EXISTS (SELECT 1 FROM `invoice_item` WHERE `invoice_item`.`invoice_id` = `invoice`.`id` AND `invoice_item`.`type` = 'deposit')";
+    }
+
     public function getSummaryIncome(): array
     {
         $stats = [];
 
         $dbal = $this->di['dbal'];
 
-        $total_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded')";
-        $yeste_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m-%d') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
-        $today_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m-%d') = CURDATE()";
-        $month_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')";
-        $last_month_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND paid_at BETWEEN DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%Y-%m-01') AND DATE_FORMAT(NOW() ,'%Y-%m-01')";
+        $excl = ' ' . $this->depositExclusionClause();
+        $total_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded')" . $excl;
+        $yeste_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m-%d') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)" . $excl;
+        $today_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m-%d') = CURDATE()" . $excl;
+        $month_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')" . $excl;
+        $last_month_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND paid_at BETWEEN DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%Y-%m-01') AND DATE_FORMAT(NOW() ,'%Y-%m-01')" . $excl;
 
         $result = $dbal->executeQuery($total_query);
         $stats['total'] = $result->fetchOne();
@@ -207,6 +220,7 @@ class Service implements InjectionAwareInterface
                 FROM `invoice`
                 WHERE approved = 1
                 AND (status = :status1 OR status = :status2)
+                ' . $this->depositExclusionClause() . '
                 ';
 
         $result = $dbal->executeQuery($query, [
@@ -239,7 +253,8 @@ class Service implements InjectionAwareInterface
                 WHERE `created_at` BETWEEN :date_from AND :date_to
                 AND approved = 1
                 AND status = :status
-                GROUP BY `date`";
+                " . $this->depositExclusionClause() . '
+                GROUP BY `date`';
 
         $result = $dbal->executeQuery($query, [
             'status' => \Model_Invoice::STATUS_REFUNDED,
@@ -272,7 +287,8 @@ class Service implements InjectionAwareInterface
                 WHERE `paid_at` BETWEEN :date_from AND :date_to
                 AND approved = 1
                 AND status = :status
-                GROUP BY `date`";
+                " . $this->depositExclusionClause() . '
+                GROUP BY `date`';
 
         $result = $dbal->executeQuery($query, [
             'status' => \Model_Invoice::STATUS_PAID,
@@ -308,6 +324,7 @@ class Service implements InjectionAwareInterface
             SELECT buyer_country, COUNT(id) as sales
             FROM `invoice`
             WHERE status = 'paid'
+            " . $this->depositExclusionClause() . "
             GROUP BY `buyer_country`
             ORDER BY sales DESC
             LIMIT $limit

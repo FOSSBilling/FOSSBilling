@@ -141,6 +141,38 @@ test('gets summary income', function (): void {
         ->and($result)->toBe($expected);
 });
 
+test('income queries exclude deposit invoices', function (): void {
+    $queries = [];
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    $resultMock->shouldReceive('fetchOne')->andReturn(0);
+    $resultMock->shouldReceive('fetchAllAssociative')->andReturn([['refund' => 0, 'income' => 0]]);
+    $resultMock->shouldReceive('fetchAllKeyValue')->andReturn([]);
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('executeQuery')->andReturnUsing(function ($query) use (&$queries, $resultMock) {
+        $queries[] = $query;
+
+        return $resultMock;
+    });
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service = new Box\Mod\Stats\Service();
+    $service->setDi($di);
+
+    $service->getSummaryIncome();
+    $service->incomeAndRefundStats([]);
+    $service->getIncome(['date_from' => 'yesterday', 'date_to' => 'now']);
+    $service->getRefunds(['date_from' => 'yesterday', 'date_to' => 'now']);
+    $service->getSalesByCountry([]);
+
+    expect($queries)->not->toBeEmpty();
+    foreach ($queries as $query) {
+        expect($query)->toContain('invoice_item')
+            ->and($query)->toContain('deposit');
+    }
+});
+
 test('gets product sales', function (): void {
     $service = new Box\Mod\Stats\Service();
     $res = ['testProduct' => 1];
