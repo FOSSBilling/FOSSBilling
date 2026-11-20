@@ -162,10 +162,13 @@ class Service implements InjectionAwareInterface
      * Deriving the share from the stored base itself (instead of re-applying
      * a rate) keeps income and refunds on the same basis through every
      * recalculation, even after the currency rate moves. Refunds split
-     * through the credit-note documents, whose lines keep the refunded
-     * lines' types; a refund with no linked lines that covers the whole
-     * invoice is split by the original lines, while a partial unattributed
-     * refund stays explicitly unresolved (NULL) rather than guessing.
+     * through the credit-note documents, whose mirrored lines keep the
+     * refunded lines' types (synthetic custom lines carry no attribution and
+     * are skipped): the linked ratio applies only when the linked notes cover
+     * the whole refund, pure deposits contribute nothing, a linked-less
+     * refund that covers the whole invoice is split by the original lines,
+     * and anything else stays explicitly unresolved (NULL) rather than
+     * guessing. Every allocation is rounded to cents, matching income.
      */
     private function hasDepositLinesClause(): string
     {
@@ -190,11 +193,15 @@ class Service implements InjectionAwareInterface
     /**
      * SUM(price × quantity) over an invoice's credit-note lines, in invoice
      * currency. Credit lines mirror the refunded lines' types with negated
-     * prices, so deposit refunds are directly attributable.
+     * prices, so deposit refunds are directly attributable. Synthetic custom
+     * lines carry no type attribution, so both totals skip them: a custom
+     * refund falls back to the fully-backed reconstruction, if any.
      */
     private function creditLinesTotalExpr(bool $serviceOnly): string
     {
-        $filter = $serviceOnly ? "AND ci.type <> 'deposit'" : '';
+        $filter = $serviceOnly
+            ? "AND (ci.type IS NULL OR (ci.type <> 'deposit' AND ci.type <> 'custom'))"
+            : "AND ci.type <> 'custom'";
 
         return "(SELECT SUM(ci.price * COALESCE(ci.quantity, 1)) FROM invoice cn JOIN invoice_item ci ON ci.invoice_id = cn.id WHERE cn.credit_note_for_invoice_id = invoice.id {$filter})";
     }
@@ -212,6 +219,7 @@ class Service implements InjectionAwareInterface
     private function serviceRefundExpr(bool $taxAware): string
     {
         $dep = $this->hasDepositLinesClause();
+        $svc = $this->hasServiceLinesClause();
         $svcSub = $this->ownLinesTotalExpr(true);
         $totSub = $this->ownLinesTotalExpr(false);
         $cnSvcSub = $this->creditLinesTotalExpr(true);
@@ -219,10 +227,16 @@ class Service implements InjectionAwareInterface
         $base = $taxAware
             ? 'CASE WHEN invoice.refund IS NOT NULL AND invoice.base_refund_tax IS NULL THEN NULL ELSE invoice.base_refund END'
             : 'invoice.base_refund';
+        // Coverage gate: the linked ratio only applies when the linked notes
+        // account for the whole refund (compared in invoice currency via the
+        // income-implied rate, so no stored rate is needed). Anything less is
+        // an incomplete history: the remainder stays unresolved (NULL).
+        $coverage = "COALESCE(({$cnTotSub}), 0) <> 0 AND ABS(ABS(({$cnTotSub})) - ABS(({$base}) * ({$totSub}) / NULLIF(invoice.base_income, 0))) <= 0.02";
 
-        return "(CASE WHEN NOT ({$dep}) THEN COALESCE({$base}, 0)"
-            . " WHEN COALESCE(({$cnTotSub}), 0) <> 0 THEN ({$base}) * COALESCE(({$cnSvcSub}), 0) / NULLIF(({$cnTotSub}), 0)"
-            . " WHEN ({$base}) IS NOT NULL AND ABS(COALESCE(({$base}), 0) - COALESCE(invoice.base_income, 0)) <= 0.01 THEN ({$base}) * COALESCE(({$svcSub}), 0) / NULLIF(({$totSub}), 0)"
+        return "(CASE WHEN NOT ({$dep}) THEN ROUND(COALESCE({$base}, 0), 2)"
+            . " WHEN ({$dep}) AND NOT ({$svc}) THEN 0"
+            . " WHEN ({$coverage}) THEN ROUND(({$base}) * COALESCE(({$cnSvcSub}), 0) / NULLIF(({$cnTotSub}), 0), 2)"
+            . " WHEN ({$base}) IS NOT NULL AND ABS(COALESCE(({$base}), 0) - COALESCE(invoice.base_income, 0)) <= 0.02 THEN ROUND(({$base}) * COALESCE(({$svcSub}), 0) / NULLIF(({$totSub}), 0), 2)"
             . ' ELSE NULL END)';
     }
 
