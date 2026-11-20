@@ -195,13 +195,14 @@ class Service implements InjectionAwareInterface
      * currency. Credit lines mirror the refunded lines' types with negated
      * prices, so deposit refunds are directly attributable. Synthetic custom
      * lines carry no type attribution, so both totals skip them: a custom
-     * refund falls back to the fully-backed reconstruction, if any.
+     * refund falls back to the fully-backed reconstruction, if any. NULL
+     * types count as service lines, mirroring the income side.
      */
     private function creditLinesTotalExpr(bool $serviceOnly): string
     {
         $filter = $serviceOnly
             ? "AND (ci.type IS NULL OR (ci.type <> 'deposit' AND ci.type <> 'custom'))"
-            : "AND ci.type <> 'custom'";
+            : "AND (ci.type IS NULL OR ci.type <> 'custom')";
 
         return "(SELECT SUM(ci.price * COALESCE(ci.quantity, 1)) FROM invoice cn JOIN invoice_item ci ON ci.invoice_id = cn.id WHERE cn.credit_note_for_invoice_id = invoice.id {$filter})";
     }
@@ -229,9 +230,13 @@ class Service implements InjectionAwareInterface
             : 'invoice.base_refund';
         // Coverage gate: the linked ratio only applies when the linked notes
         // account for the whole refund (compared in invoice currency via the
-        // income-implied rate, so no stored rate is needed). Anything less is
-        // an incomplete history: the remainder stays unresolved (NULL).
-        $coverage = "COALESCE(({$cnTotSub}), 0) <> 0 AND ABS(ABS(({$cnTotSub})) - ABS(({$base}) * ({$totSub}) / NULLIF(invoice.base_income, 0))) <= 0.02";
+        // income-implied rate, so no stored rate is needed). The tolerance
+        // scales with that rate, since base_refund is rounded to cents and
+        // the rounding error grows with the conversion factor. Anything less
+        // is an incomplete history: the remainder stays unresolved (NULL).
+        $impliedRefund = "({$base}) * ({$totSub}) / NULLIF(invoice.base_income, 0)";
+        $rateFactor = "ABS(({$totSub}) / NULLIF(invoice.base_income, 0))";
+        $coverage = "COALESCE(({$cnTotSub}), 0) <> 0 AND ABS(ABS(({$cnTotSub})) - ABS({$impliedRefund})) <= (0.02 + 0.01 * ({$rateFactor}))";
 
         return "(CASE WHEN NOT ({$dep}) THEN ROUND(COALESCE({$base}, 0), 2)"
             . " WHEN ({$dep}) AND NOT ({$svc}) THEN 0"
