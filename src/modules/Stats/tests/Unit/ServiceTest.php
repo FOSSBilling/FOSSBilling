@@ -17,8 +17,8 @@ use function Tests\Helpers\container;
 
 /**
  * A real SQLite connection (not a mock) with minimal `client`/`client_order`/`invoice`/
- * `support_ticket` tables - just enough columns for getSummary()/getSummaryIncome() to run their
- * real SQL against. This is the regression test for the DATE_FORMAT()/CURDATE()/DATE_SUB()
+ * `invoice_item`/`support_ticket` tables - just enough columns for getSummary()/getSummaryIncome()
+ * to run their real SQL against. This is the regression test for the DATE_FORMAT()/CURDATE()/DATE_SUB()
  * portability fix: those MySQL-only functions would raise a syntax error on SQLite, so a plain
  * pass here already proves the rewritten day/month boundary queries are portable syntax. It also
  * pins the actual day-boundary math against real inserted rows.
@@ -30,6 +30,7 @@ function statsConnectionWithRows(): Doctrine\DBAL\Connection
     foreach (['client', 'client_order', 'invoice', 'support_ticket'] as $table) {
         $connection->executeStatement("CREATE TABLE {$table} (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL DEFAULT 0, base_refund REAL DEFAULT 0)");
     }
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT)');
 
     $today = new DateTimeImmutable('today');
     $rows = [
@@ -92,6 +93,56 @@ test('getSummaryIncome sums paid invoices into the correct day bucket on SQLite'
     expect($result['total'])->toBe(100.0)
         ->and($result['today'])->toBe(100.0)
         ->and((float) $result['yesterday'])->toBe(0.0);
+});
+
+test('income stats exclude deposit invoices so top-ups are not double-counted', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL DEFAULT 0, base_refund REAL DEFAULT 0, base_refund_tax REAL DEFAULT 0, refund REAL)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT)');
+
+    $today = (new DateTimeImmutable('today'))->format('Y-m-d H:i:s');
+
+    // 25 external top-up + 25 service invoice paid with that balance: real revenue is 25, not 50.
+    $connection->insert('invoice', ['id' => 1, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 25.0, 'base_refund' => 0]);
+    $connection->insert('invoice', ['id' => 2, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 25.0, 'base_refund' => 0]);
+    $connection->insert('invoice_item', ['id' => 1, 'invoice_id' => 1, 'type' => 'deposit']);
+    $connection->insert('invoice_item', ['id' => 2, 'invoice_id' => 2, 'type' => 'order']);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    $summary = $service->getSummaryIncome();
+    expect((float) $summary['total'])->toBe(25.0);
+
+    $totals = $service->incomeAndRefundStats([]);
+    expect((float) $totals['income'])->toBe(25.0);
+
+    $yesterday = (new DateTimeImmutable('yesterday'))->format('Y-m-d');
+    $tomorrow = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
+    $incomeByDay = $service->getIncome(['date_from' => $yesterday, 'date_to' => $tomorrow]);
+    $dayTotal = array_sum(array_column($incomeByDay, 1));
+    expect($dayTotal)->toBe(25.0);
+});
+
+test('sales by country excludes deposit invoices', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, buyer_country TEXT, status TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT)');
+
+    // One deposit top-up + one real service sale in the same country: only 1 sale.
+    $connection->insert('invoice', ['id' => 1, 'buyer_country' => 'PL', 'status' => 'paid']);
+    $connection->insert('invoice', ['id' => 2, 'buyer_country' => 'PL', 'status' => 'paid']);
+    $connection->insert('invoice_item', ['id' => 1, 'invoice_id' => 1, 'type' => 'deposit']);
+    $connection->insert('invoice_item', ['id' => 2, 'invoice_id' => 2, 'type' => 'order']);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    expect($service->getSalesByCountry([]))->toBe(['PL' => 1]);
 });
 
 test('gets dependency injection container', function (): void {
@@ -287,6 +338,7 @@ test('gets income and refund stats', function (): void {
 test('income and refund stats count unresolved refund tax separately from zero tax', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT)');
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'refunded', 100.0, 100.0, 20.0, 120.0)");
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'paid', 50.0, 0.0, 0.0, 0.0)");
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'refunded', 100.0, 120.0, NULL, 120.0)");
@@ -310,6 +362,7 @@ test('income and refund stats count unresolved refund tax separately from zero t
 test('income and refund stats return zeros, not nulls, with no matching invoices', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT)');
 
     $service = new Box\Mod\Stats\Service();
     $di = container();

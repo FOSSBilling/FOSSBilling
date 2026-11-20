@@ -149,6 +149,18 @@ class Service implements InjectionAwareInterface
         return $stats;
     }
 
+    /**
+     * Deposit (Add funds) invoices top up the client's balance instead of
+     * selling anything, so they are not revenue. They must stay out of every
+     * income/refund aggregate, otherwise the same external cash is counted
+     * twice: once when the deposit is paid, and again when the balance it
+     * created pays a service invoice.
+     */
+    private function depositExclusionClause(): string
+    {
+        return "AND NOT EXISTS (SELECT 1 FROM invoice_item WHERE invoice_item.invoice_id = invoice.id AND invoice_item.type = 'deposit')";
+    }
+
     public function getSummaryIncome(): array
     {
         $stats = [];
@@ -156,7 +168,7 @@ class Service implements InjectionAwareInterface
         $dbal = $this->di['em']->getConnection();
         $boundaries = $this->getDayBoundaries();
 
-        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')";
+        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded') " . $this->depositExclusionClause();
         $total_query = $base;
         $yeste_query = $base . ' AND paid_at >= :yesterday_start AND paid_at < :today_start';
         $today_query = $base . ' AND paid_at >= :today_start AND paid_at < :tomorrow_start';
@@ -245,6 +257,7 @@ class Service implements InjectionAwareInterface
                 FROM invoice
                 WHERE issued = true
                 AND (status = :status1 OR status = :status2)
+                ' . $this->depositExclusionClause() . '
                 ';
 
         $result = $dbal->executeQuery($query, [
@@ -280,7 +293,8 @@ class Service implements InjectionAwareInterface
                 WHERE created_at BETWEEN :date_from AND :date_to
                 AND issued = true
                 AND (status = :refunded OR (status = :paid AND base_refund > 0))
-                GROUP BY date";
+                " . $this->depositExclusionClause() . '
+                GROUP BY date';
 
         $result = $dbal->executeQuery($query, [
             'refunded' => Invoice::STATUS_REFUNDED,
@@ -317,7 +331,8 @@ class Service implements InjectionAwareInterface
                 WHERE paid_at BETWEEN :date_from AND :date_to
                 AND issued = true
                 AND (status = :paid OR status = :refunded)
-                GROUP BY date";
+                " . $this->depositExclusionClause() . '
+                GROUP BY date';
 
         $result = $dbal->executeQuery($query, [
             'paid' => Invoice::STATUS_PAID,
@@ -354,6 +369,7 @@ class Service implements InjectionAwareInterface
             SELECT buyer_country, COUNT(id) as sales
             FROM invoice
             WHERE status = 'paid'
+            " . $this->depositExclusionClause() . "
             GROUP BY buyer_country
             ORDER BY sales DESC
             LIMIT $limit
