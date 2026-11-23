@@ -6,6 +6,25 @@
 
 {% block content %}
 <div class="p-3 d-flex flex-column gap-3">
+    {% set progress = msg.send_progress %}
+    {% if msg.status == 'sending' %}
+        <div class="alert alert-info mb-0" role="status" id="massmailer-send-status">
+            {{ 'This message is being sent in the background with the scheduled tasks.'|trans }}
+            {% if progress %}
+                {{ ':queued of :total clients queued so far.'|trans({':queued': progress.queued, ':total': progress.total}) }}
+                {% if progress.failed %}{{ ':failed could not be queued; see the error log.'|trans({':failed': progress.failed}) }}{% endif %}
+            {% endif %}
+        </div>
+    {% elseif msg.status == 'sent' %}
+        <div class="alert alert-success mb-0" role="status" id="massmailer-send-status">
+            {{ 'Sent on :date.'|trans({':date': msg.sent_at|format_datetime}) }}
+            {% if progress %}
+                {{ 'Queued for :queued of :total clients.'|trans({':queued': progress.queued, ':total': progress.total}) }}
+                {% if progress.failed %}{{ ':failed could not be queued; see the error log.'|trans({':failed': progress.failed}) }}{% endif %}
+            {% endif %}
+            {{ 'Copy the message to send it again.'|trans }}
+        </div>
+    {% endif %}
     <form method="post" action="admin/massmailer/update" id="msg-form" {{ fb_api_form({callback: 'onAfterMessageUpdate'}) }}>
             {% embed 'partial_admin_form_card.html.twig' with {
                 title: 'Message Details'|trans,
@@ -162,7 +181,9 @@
                             <input type="submit" value="{{ 'Update and Preview'|trans }}" class="btn btn-secondary">
                             <input type="button" value="{{ 'Send Test Message'|trans }}" class="btn btn-success" id="send-test-msg">
                         </div>
+                        {% if msg.status == 'draft' %}
                         <input type="button" value="{{ 'Send Message to Clients'|trans }}" class="btn btn-primary" id="send-msg">
+                        {% endif %}
                     </div>
                 {% endblock %}
             {% endembed %}
@@ -199,7 +220,7 @@
             });
     }
 
-    document.querySelector('#send-msg').addEventListener('click', function() {
+    document.querySelector('#send-msg')?.addEventListener('click', function() {
         Modals.create({
             type: 'small-confirm',
             title: 'Send message to clients?',
@@ -207,7 +228,8 @@
             confirmCallback: () => {
                 FOSSBilling.api.admin.post('massmailer/send', { id: {{ msg.id }} },
                     (result) => {
-                        FOSSBilling.message("{{ 'Message was added to mail queue and will be sent with scheduled tasks.'|trans }}");
+                        FOSSBilling.message("{{ 'The message will be sent to its clients in the background with the scheduled tasks. This page shows the progress.'|trans }}");
+                        setTimeout(() => window.location.reload(), 2500);
                     });
             },
         });

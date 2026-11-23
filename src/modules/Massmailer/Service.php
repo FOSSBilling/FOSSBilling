@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Massmailer;
 
 use Box\Mod\Client\Enum\Status as ClientStatus;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Box\Mod\Order\Enum\Status as OrderStatus;
@@ -23,6 +24,9 @@ use FOSSBilling\Core\System\Environment;
 
 class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
+    /** Seconds each cron run spends queueing mass mail, leaving time for the email batch to send it. */
+    public const int SEND_SECONDS_PER_CRON_RUN = 180;
+
     private const string FILTER_CLIENT_STATUS = 'client_status';
     private const string FILTER_CLIENT_GROUPS = 'client_groups';
     private const string FILTER_HAS_ORDER = 'has_order';
@@ -256,6 +260,88 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $emailService->sendMail($data['to'], $data['from'], $data['subject'], $data['content'], $data['to_name'], $data['from_name'], $data['client_id'], null, $sendNow);
 
         return true;
+    }
+
+    /**
+     * Marks a draft for sending to its recipients and returns how many there
+     * are. The recipients are queued in the background by
+     * sendQueuedBatch(), a slice per cron run: rendering and queueing a
+     * message for each client takes long enough that a large list inside a
+     * single request outlasts web server timeouts.
+     *
+     * @throws InformationException when the message was sent, is being sent or matches no client
+     */
+    public function queueForSending(MassmailerMessage $message): int
+    {
+        if ($message->getStatus() === MassmailerMessage::STATUS_SENT) {
+            throw new InformationException('This message has already been sent. Copy it to send it again.');
+        }
+        if ($message->getStatus() === MassmailerMessage::STATUS_SENDING) {
+            throw new InformationException('This message is already being sent.');
+        }
+
+        $recipientCount = count($this->getMessageReceivers($message));
+        if ($recipientCount === 0) {
+            throw new InformationException('No clients match the filters of this message.');
+        }
+
+        $message->startSending($recipientCount);
+        $this->di['em']->flush();
+
+        return $recipientCount;
+    }
+
+    /**
+     * Queues the next recipients of the messages being sent, for at most
+     * $seconds, and marks a message sent once it has no recipients left.
+     * Progress is saved after each client, so a run that is cut short
+     * resumes where it stopped. A client that cannot be queued is logged
+     * and skipped. Returns how many emails were queued.
+     *
+     * @param (\Closure(): float)|null $clock seconds, for tests
+     */
+    public function sendQueuedBatch(int $seconds = self::SEND_SECONDS_PER_CRON_RUN, ?\Closure $clock = null): int
+    {
+        $clock ??= static fn (): float => microtime(true);
+        $deadline = $clock() + $seconds;
+        $emailsQueued = 0;
+
+        foreach ($this->getMessageRepository()->findBy(['status' => MassmailerMessage::STATUS_SENDING], ['id' => 'ASC']) as $message) {
+            $lastClientId = $message->getSendLastClientId();
+            // getMessageReceivers() lists the newest client first.
+            $remainingClientIds = array_filter(
+                array_map(static fn (array $receiver): int => (int) $receiver['id'], $this->getMessageReceivers($message)),
+                static fn (int $clientId): bool => $lastClientId === null || $clientId < $lastClientId
+            );
+
+            foreach ($remainingClientIds as $clientId) {
+                if ($clock() >= $deadline) {
+                    return $emailsQueued;
+                }
+
+                try {
+                    $this->sendMessage($message, $clientId);
+                    $message->recordSendAttempt($clientId, true);
+                    ++$emailsQueued;
+                } catch (\Throwable $exception) {
+                    $message->recordSendAttempt($clientId, false);
+                    $this->di['logger']->error('Mass mail message #{message_id} could not be queued for client #{client_id}: {error}', ['message_id' => $message->getId(), 'client_id' => $clientId, 'error' => $exception->getMessage()]);
+                }
+                $this->di['em']->flush();
+            }
+
+            $message->setStatus(MassmailerMessage::STATUS_SENT);
+            $message->setSentAt(new \DateTimeImmutable());
+            $this->di['em']->flush();
+            $this->di['logger']->info('Queued mass mail message #{message_id} for {queued} of {total} clients', ['message_id' => $message->getId(), 'queued' => $message->getSendQueued(), 'total' => $message->getSendTotal()]);
+        }
+
+        return $emailsQueued;
+    }
+
+    public function sendQueuedBeforeAdminCronRun(BeforeAdminCronRunEvent $event): void
+    {
+        $this->sendQueuedBatch();
     }
 
     public function toApiArray(MassmailerMessage|array $row): array
