@@ -267,11 +267,17 @@ final class Extractor
             return 'core';
         }
         $s = self::literal($tokens);
-        if ($s !== null && preg_match('/\A[a-z][a-z0-9_-]*\z/', $s)) {
+        if ($s !== null && self::validSource($s)) {
             return $s;
         }
 
         throw new \RuntimeException('from must be a literal lowercase source ID or null');
+    }
+
+    /** Match module IDs or the theme namespace accepted by TranslationResolver. */
+    private static function validSource(string $source): bool
+    {
+        return preg_match('/\A(?:[a-z][a-z0-9_-]*|theme:[A-Za-z0-9_-]+)\z/', $source) === 1;
     }
 
     private static function resolveName(string $name, array $context): string
@@ -555,7 +561,7 @@ final class Extractor
                             $from = $source->getAttribute('value');
                             if ($from === null) {
                                 $from = 'core';
-                            } elseif (!is_string($from) || !preg_match('/\A[a-z][a-z0-9_-]*\z/', $from)) {
+                            } elseif (!is_string($from) || !self::validSource($from)) {
                                 throw new \RuntimeException('from must be a literal lowercase source ID or null');
                             }
                         }
