@@ -52,7 +52,7 @@
         "ext-zlib": "*",
         "composer/semver": "^3.5",
         "dicebear/core": "^11.0",
-        "dicebear/styles": "^10.0",
+        "dicebear/styles": "^11.0",
         "doctrine/dbal": "^4.5",
         "doctrine/orm": "^3.8",
         "dompdf/dompdf": "^3.1.4",
