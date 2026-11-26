@@ -50,7 +50,7 @@ workflows:
     '.github/workflows/release-sentry.yml':
         - '1password/load-secrets-action@v5.0.1'
         - 'actions/checkout@v7.0.1'
-        - 'getsentry/action-release@v3.8.0'
+        - 'getsentry/action-release@v3.9.1'
     '.github/workflows/validate-manifests.yml':
         - 'actions/checkout@v7.0.1'
         - 'shivammathur/setup-php@2.40.0'
@@ -120,9 +120,9 @@ dependencies:
         commit: 'sha1-54042514f505b273907334ae2b9cdbb9a0213c1a'
         owner_id: 5429470
         repo_id: 919443384
-    'getsentry/action-release@v3.8.0':
-        ref: 'v3.8.0'
-        commit: 'sha1-d55c8c3b7375607e972b710f12926b676d89d7d2'
+    'getsentry/action-release@v3.9.1':
+        ref: 'v3.9.1'
+        commit: 'sha1-2e505a70ff06dac263413242aa3617fec90134e5'
         owner_id: 1396951
         repo_id: 273043452
         uses:
