@@ -1251,16 +1251,16 @@
         },
         {
             "name": "symfony/string",
-            "version": "v8.1.10",
+            "version": "v8.1.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/string.git",
-                "reference": "6c6110979c0150393bbb336170e286d51ab4d76c"
+                "reference": "b3f937ce8203f33efea3cce084ad4a9f0cce97c5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/string/zipball/6c6110979c0150393bbb336170e286d51ab4d76c",
-                "reference": "6c6110979c0150393bbb336170e286d51ab4d76c",
+                "url": "https://api.github.com/repos/symfony/string/zipball/b3f937ce8203f33efea3cce084ad4a9f0cce97c5",
+                "reference": "b3f937ce8203f33efea3cce084ad4a9f0cce97c5",
                 "shasum": ""
             },
             "require": {
@@ -1317,7 +1317,7 @@
                 "utf8"
             ],
             "support": {
-                "source": "https://github.com/symfony/string/tree/v8.1.10"
+                "source": "https://github.com/symfony/string/tree/v8.1.12"
             },
             "funding": [
                 {
@@ -1337,8 +1337,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-10-23T17:06:53+00:00",
-            "published-time": "2026-10-28T18:24:27+00:00"
+            "time": "2026-11-24T15:59:55+00:00",
+            "published-time": "2026-11-25T09:30:00+00:00"
         },
         {
             "name": "twig/twig",
@@ -2781,16 +2781,16 @@
         },
         {
             "name": "phpstan/phpdoc-parser",
-            "version": "2.4.1",
+            "version": "2.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpdoc-parser.git",
-                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10"
+                "reference": "f80e753caa465ab4f93cb265ae32e2e8cb02c3f3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/af8e840551031d254cfdb3a18a62c3470a309c10",
-                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10",
+                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/f80e753caa465ab4f93cb265ae32e2e8cb02c3f3",
+                "reference": "f80e753caa465ab4f93cb265ae32e2e8cb02c3f3",
                 "shasum": ""
             },
             "require": {
@@ -2822,10 +2822,10 @@
             "description": "PHPDoc parser with support for nullable, intersection and generic types",
             "support": {
                 "issues": "https://github.com/phpstan/phpdoc-parser/issues",
-                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.4.1"
+                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.4.2"
             },
-            "time": "2026-10-30T19:36:28+00:00",
-            "published-time": "2026-10-30T19:37:11+00:00"
+            "time": "2026-11-25T13:45:51+00:00",
+            "published-time": "2026-11-25T13:46:33+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
