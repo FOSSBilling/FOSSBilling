@@ -26,6 +26,8 @@ class MassmailerMessage implements ArrayInterface, TimestampInterface
 
     public const STATUS_DRAFT = 'draft';
     public const STATUS_SENT = 'sent';
+    /** Queued for its recipients in the background, a slice per cron run. */
+    public const STATUS_SENDING = 'sending';
 
     public function __construct(
         #[ORM\Id]
@@ -56,6 +58,23 @@ class MassmailerMessage implements ArrayInterface, TimestampInterface
     #[ORM\Column(name: 'sent_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $sentAt = null;
 
+    /** Recipients when sending started; null until the message is sent. */
+    #[ORM\Column(name: 'send_total', type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true)]
+    private ?int $sendTotal = null;
+
+    #[ORM\Column(name: 'send_queued', type: \Doctrine\DBAL\Types\Types::INTEGER, options: ['default' => 0])]
+    private int $sendQueued = 0;
+
+    #[ORM\Column(name: 'send_failed', type: \Doctrine\DBAL\Types\Types::INTEGER, options: ['default' => 0])]
+    private int $sendFailed = 0;
+
+    /**
+     * The last client a background send handled. Recipients are processed
+     * newest client first, so the send resumes with the clients below it.
+     */
+    #[ORM\Column(name: 'send_last_client_id', type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
+    private ?int $sendLastClientId = null;
+
     public function toApiArray(): array
     {
         return [
@@ -67,6 +86,11 @@ class MassmailerMessage implements ArrayInterface, TimestampInterface
             'filter' => $this->getFilter() ?? [],
             'status' => $this->status,
             'sent_at' => $this->sentAt?->format('Y-m-d H:i:s'),
+            'send_progress' => $this->sendTotal === null ? null : [
+                'total' => $this->sendTotal,
+                'queued' => $this->sendQueued,
+                'failed' => $this->sendFailed,
+            ],
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
         ];
@@ -157,6 +181,55 @@ class MassmailerMessage implements ArrayInterface, TimestampInterface
     public function setSentAt(?\DateTimeImmutable $sentAt): self
     {
         $this->sentAt = $sentAt;
+
+        return $this;
+    }
+
+    public function getSendTotal(): ?int
+    {
+        return $this->sendTotal;
+    }
+
+    public function getSendQueued(): int
+    {
+        return $this->sendQueued;
+    }
+
+    public function getSendFailed(): int
+    {
+        return $this->sendFailed;
+    }
+
+    public function getSendLastClientId(): ?int
+    {
+        return $this->sendLastClientId;
+    }
+
+    /**
+     * Resets the progress for a send to $total recipients.
+     */
+    public function startSending(int $recipientCount): self
+    {
+        $this->status = self::STATUS_SENDING;
+        $this->sendTotal = $recipientCount;
+        $this->sendQueued = 0;
+        $this->sendFailed = 0;
+        $this->sendLastClientId = null;
+
+        return $this;
+    }
+
+    /**
+     * Records that the background send handled $clientId.
+     */
+    public function recordSendAttempt(int $clientId, bool $wasQueued): self
+    {
+        $this->sendLastClientId = $clientId;
+        if ($wasQueued) {
+            ++$this->sendQueued;
+        } else {
+            ++$this->sendFailed;
+        }
 
         return $this;
     }

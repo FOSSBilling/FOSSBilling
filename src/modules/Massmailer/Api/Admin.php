@@ -181,16 +181,11 @@ Order our services at {{ "order"|url }}
             throw new \FOSSBilling\Core\Exception\InformationException('Add some content before sending message');
         }
 
-        $clients = $this->getService()->getMessageReceivers($model);
-        foreach ($clients as $c) {
-            $this->getService()->sendMessage($model, (int) $c['id']);
-        }
+        // The recipients are queued in the background by the cron, so this
+        // returns at once however many clients the message is for.
+        $recipientCount = $this->getService()->queueForSending($model);
 
-        $model->setStatus(MassmailerMessage::STATUS_SENT);
-        $model->setSentAt(new \DateTimeImmutable());
-        $this->getDi()['em']->flush();
-
-        $this->getDi()['logger']->info('Added mass mail messages #{model_id} to queue', ['model_id' => $model->getId()]);
+        $this->getDi()['logger']->info('Mass mail message #{model_id} will be sent to {total} clients', ['model_id' => $model->getId(), 'total' => $recipientCount]);
 
         return true;
     }

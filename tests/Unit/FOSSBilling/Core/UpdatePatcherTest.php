@@ -4973,9 +4973,9 @@ test('a transient approval inspection failure stops additive sync and preserves 
 
 test('installations at the latest main migration still receive every Phase B and C migration', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 149);
-    expect(array_keys($patches))->toBe(range(150, 164))
+    expect(array_keys($patches))->toBe(range(150, 165))
         ->and($patches[150][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch150::class)
-        ->and($patches[164][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch164::class);
+        ->and($patches[165][0])->toBeInstanceOf(FOSSBilling\Core\Update\Patch\Patch165::class);
     $patcher = Mockery::mock(Patcher::class);
     $patcher->shouldReceive('tableExists')->once()->with('client_order_cancel_request')->andReturnFalse();
     $patcher->shouldReceive('executeSql')->once()->withArgs(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `client_order_cancel_request`') && str_contains($sql, 'CHARSET=utf8mb4'));
@@ -4987,4 +4987,23 @@ test('Unicode repair covers table defaults even when all columns are identifiers
     $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($db);
     $tables = array_map(fn ($metadata): string => trim($metadata->getTableName(), '`'), $em->getMetadataFactory()->getAllMetadata());
     expect(array_values(array_diff($tables, array_keys((new Patcher())->legacyUnicodeColumns()))))->toBe([]);
+});
+
+test('the mass mail send progress columns are added once', function (): void {
+    $columns = ['send_total', 'send_queued', 'send_failed', 'send_last_client_id'];
+    $added = [];
+    $patcher = Mockery::mock(Patcher::class);
+    $patcher->shouldReceive('tableHasColumn')->andReturnUsing(function (string $table, string $column) use (&$added): bool {
+        return in_array($column, $added, true);
+    });
+    $patcher->shouldReceive('executeSql')->times(4)->andReturnUsing(function (string $sql) use (&$added): void {
+        preg_match('/ALTER TABLE `mod_massmailer` ADD COLUMN `(\w+)`/', $sql, $matches);
+        $added[] = $matches[1];
+    });
+
+    $patch = new FOSSBilling\Core\Update\Patch\Patch165();
+    $patch->apply($patcher);
+    $patch->apply($patcher);
+
+    expect($added)->toBe($columns);
 });

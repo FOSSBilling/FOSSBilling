@@ -68,6 +68,7 @@
                                             <select class="form-select" id="massmailer-status" name="status">
                                                 <option value="">{{ 'All Messages'|trans }}</option>
                                                 <option value="draft"{% if request.status == 'draft' %} selected{% endif %}>{{ 'Draft'|trans }}</option>
+                                                <option value="sending"{% if request.status == 'sending' %} selected{% endif %}>{{ 'Sending'|trans }}</option>
                                                 <option value="sent"{% if request.status == 'sent' %} selected{% endif %}>{{ 'Sent'|trans }}</option>
                                             </select>
                                         </div>
