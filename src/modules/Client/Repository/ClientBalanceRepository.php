@@ -18,6 +18,161 @@ use FOSSBilling\Core\Doctrine\RowLock;
 
 class ClientBalanceRepository extends EntityRepository
 {
+    /** Caller holds the client credit lock and payment transaction. */
+    public function reconcileHistoricalGatewayReceiptsForInvoice(int $invoiceId): void
+    {
+        $classification = $this->classifyGatewayReceiptsForInvoice($invoiceId);
+        $connection = $this->getEntityManager()->getConnection();
+        foreach ($classification['links'] as $link) {
+            $connection->executeStatement('UPDATE client_balance SET gateway_transaction_id = ? WHERE id = ? AND gateway_transaction_id IS NULL', [$link['transaction_id'], $link['receipt_id']]);
+        }
+    }
+
+    /** Read-only reservation, including identifiable historical receipts. */
+    public function getGatewayReceiptReservationForInvoice(int $invoiceId): float
+    {
+        return $this->classifyGatewayReceiptsForInvoice($invoiceId)['sum'];
+    }
+
+    /** @return array{sum: float, links: list<array{receipt_id: int, transaction_id: int}>} */
+    private function classifyGatewayReceiptsForInvoice(int $invoiceId): array
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        $txTable = $connection->quoteSingleIdentifier('transaction');
+        // Match historical receipts only when their provider fingerprint and
+        // original transaction reference identify one processed transaction.
+        $clientId = $connection->fetchOne('SELECT client_id FROM invoice WHERE id = ?', [$invoiceId]);
+        $receipts = $connection->fetchAllAssociative("SELECT b.id, b.type, b.rel_id, b.description, b.amount, b.gateway_receipt_key, b.gateway_transaction_id, t.invoice_id AS linked_invoice_id, t.status AS linked_status FROM client_balance b LEFT JOIN $txTable t ON t.id = b.gateway_transaction_id WHERE b.client_id = ? AND ((b.gateway_transaction_id IS NOT NULL AND b.gateway_receipt_key IS NOT NULL) OR (b.amount > 0 AND b.gateway_transaction_id IS NULL AND (b.gateway_receipt_key IS NOT NULL OR (b.type = 'transaction' AND b.description LIKE 'Stripe %') OR (b.type = 'PayPal' AND b.description LIKE 'PayPal transaction %')))) ORDER BY b.id", [$clientId]);
+        $sum = 0.0;
+        $links = [];
+        $historical = [];
+        $stripeIds = [];
+        $paypalIds = [];
+        foreach ($receipts as $receipt) {
+            if ($receipt['gateway_transaction_id'] !== null) {
+                if ((int) $receipt['linked_invoice_id'] === $invoiceId && $receipt['linked_status'] === 'processed') {
+                    $sum += (float) $receipt['amount'];
+                }
+
+                continue;
+            }
+            $historical[] = $receipt;
+            if ($receipt['type'] === 'transaction' && ctype_digit((string) $receipt['rel_id'])) {
+                $stripeIds[] = (int) $receipt['rel_id'];
+            } elseif ($receipt['type'] === 'PayPal') {
+                $provider = $this->extractGatewayProviderId((string) $receipt['description']);
+                if ($provider !== null && $provider !== '') {
+                    $paypalIds[] = $provider;
+                }
+            }
+        }
+        $transactions = $historical === [] ? [] : $connection->executeQuery(
+            "SELECT t.id, t.invoice_id, t.txn_id, t.amount, t.status, t.gateway_id, g.gateway, (SELECT MIN(b.id) FROM client_balance b WHERE b.gateway_transaction_id = t.id) AS linked_receipt_id FROM $txTable t LEFT JOIN invoice i ON i.id = t.invoice_id JOIN pay_gateway g ON g.id = t.gateway_id WHERE i.client_id = ? OR (t.invoice_id IS NULL AND ((g.gateway = 'Stripe' AND t.id IN (?)) OR (g.gateway = 'PayPalEmail' AND t.txn_id IN (?))))",
+            [$clientId, array_values(array_unique($stripeIds)), array_values(array_unique($paypalIds))],
+            [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ArrayParameterType::STRING],
+        )->fetchAllAssociative();
+        $claimed = [];
+        foreach ($historical as $receipt) {
+            $provider = $this->extractGatewayProviderId((string) $receipt['description']);
+            $matches = [];
+            foreach ($transactions as $tx) {
+                $sameReference = ($tx['gateway'] === 'Stripe' && $receipt['type'] === 'transaction' && (string) $receipt['rel_id'] === (string) $tx['id'])
+                    || ($tx['gateway'] === 'PayPalEmail' && $receipt['type'] === 'PayPal' && $provider !== null && (string) $tx['txn_id'] === $provider);
+                if ($tx['status'] === 'processed' && $sameReference && $provider !== null && $provider !== '' && $receipt['gateway_receipt_key'] !== null
+                    && hash_equals((string) $receipt['gateway_receipt_key'], hash('sha256', $tx['gateway_id'] . ':' . $provider))
+                    && round((float) $receipt['amount'], 2) === round((float) $tx['amount'], 2)) {
+                    $matches[] = $tx;
+                }
+            }
+            if (count($matches) === 1 && !isset($claimed[$matches[0]['id']])
+                && ($matches[0]['linked_receipt_id'] === null || (int) $matches[0]['linked_receipt_id'] === (int) $receipt['id'])) {
+                $match = $matches[0];
+                $claimed[$match['id']] = true;
+                $links[] = ['receipt_id' => (int) $receipt['id'], 'transaction_id' => (int) $match['id']];
+                if ((int) $match['invoice_id'] === $invoiceId) {
+                    $sum += (float) $receipt['amount'];
+                }
+
+                continue;
+            }
+            // An unresolved receipt could belong to this invoice only when a
+            // processed transaction has the same amount. Never release it by
+            // making an unsupported association.
+            foreach ($transactions as $tx) {
+                // A retained provider reference can rule out an unrelated
+                // same-amount attempt without guessing the receipt's owner.
+                if ($receipt['type'] === 'transaction' && $receipt['rel_id'] !== null && $receipt['rel_id'] !== ''
+                    && (string) $receipt['rel_id'] !== (string) $tx['id']) {
+                    continue;
+                }
+                if ($receipt['type'] === 'PayPal' && $provider !== null && $tx['txn_id'] !== null && $tx['txn_id'] !== ''
+                    && (string) $tx['txn_id'] !== $provider) {
+                    continue;
+                }
+                if ((int) $tx['invoice_id'] === $invoiceId && round((float) $tx['amount'], 2) === round((float) $receipt['amount'], 2)) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('A gateway receipt needs staff reconciliation before this invoice can be settled. Use invoice/transaction_reconcile_receipt after checking the provider payment.');
+                }
+            }
+        }
+
+        return ['sum' => $sum, 'links' => $links];
+    }
+
+    private function extractGatewayProviderId(string $description): ?string
+    {
+        foreach (['Stripe transaction ', 'Stripe subscription initial payment ', 'Stripe subscription recurring payment ', 'PayPal transaction '] as $prefix) {
+            if (str_starts_with($description, $prefix)) {
+                return substr($description, strlen($prefix));
+            }
+        }
+
+        return null;
+    }
+
+    /** Receipt-backed funds attached to an invoice, excluding manual payments. */
+    public function getGatewayReceiptSumForInvoice(int $invoiceId): float
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        $txTable = $connection->quoteSingleIdentifier('transaction');
+
+        return (float) $connection->fetchOne("SELECT COALESCE(SUM(b.amount), 0) FROM client_balance b JOIN $txTable t ON t.id = b.gateway_transaction_id WHERE t.invoice_id = ? AND t.status = ? AND b.gateway_receipt_key IS NOT NULL", [$invoiceId, 'processed']);
+    }
+
+    /** @return array<int, float> */
+    public function getUnpaidDepositReceiptReservations(array $clientIds, int $exceptInvoiceId = 0): array
+    {
+        if ($clientIds === []) {
+            return [];
+        }
+        $connection = $this->getEntityManager()->getConnection();
+        $txTable = $connection->quoteSingleIdentifier('transaction');
+        $rows = $connection->executeQuery("SELECT i.client_id, SUM(b.amount) AS amount FROM client_balance b JOIN $txTable t ON t.id = b.gateway_transaction_id JOIN invoice i ON i.id = t.invoice_id WHERE i.client_id IN (?) AND i.status = ? AND i.id <> ? AND t.status = ? AND b.gateway_receipt_key IS NOT NULL AND EXISTS (SELECT 1 FROM invoice_item ii WHERE ii.invoice_id = i.id AND ii.type = ?) GROUP BY i.client_id", [$clientIds, 'unpaid', $exceptInvoiceId, 'processed', 'deposit'], [\Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING])->fetchAllAssociative();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(int) $row['client_id']] = (float) $row['amount'];
+        }
+        // Reserve unlinked old receipts while they may belong to an unpaid
+        // deposit or to a transaction whose processing has not completed.
+        // CAST(number AS CHAR) inherits the connection collation on MySQL,
+        // which may differ from the historical ledger column's collation.
+        // Provider references and decimal IDs require exact byte comparisons.
+        $mysql = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+        $equals = static fn (string $left, string $right): string => $mysql
+            ? "CAST($left AS BINARY) = CAST($right AS BINARY)"
+            : "$left = $right";
+        $legacyTransactionMatch = $equals('b.rel_id', 'TRIM(CAST(t.id AS CHAR(20)))');
+        $paidTransactionMatch = $equals('b.rel_id', 'TRIM(CAST(pt.id AS CHAR(20)))');
+        $legacyPayPalMatch = $equals('t.txn_id', 'SUBSTR(b.description, 20)');
+        $paidPayPalMatch = $equals('pt.txn_id', 'SUBSTR(b.description, 20)');
+        $legacy = $connection->executeQuery("SELECT b.client_id, SUM(b.amount) AS amount FROM client_balance b WHERE b.client_id IN (?) AND b.amount > 0 AND b.gateway_transaction_id IS NULL AND (b.gateway_receipt_key IS NOT NULL OR (b.type = 'transaction' AND b.description LIKE 'Stripe %') OR (b.type = 'PayPal' AND b.description LIKE 'PayPal transaction %')) AND EXISTS (SELECT 1 FROM $txTable t JOIN invoice i ON i.id = t.invoice_id WHERE i.client_id = b.client_id AND i.status = ? AND t.amount = b.amount AND ((b.type = 'transaction' AND (b.rel_id IS NULL OR b.rel_id = '' OR {$legacyTransactionMatch})) OR (b.type = 'PayPal' AND (t.txn_id IS NULL OR t.txn_id = '' OR {$legacyPayPalMatch}))) AND ((t.status = ? AND EXISTS (SELECT 1 FROM invoice_item ii WHERE ii.invoice_id = i.id AND ii.type = ?)) OR t.status IN (?, ?, ?))) AND NOT EXISTS (SELECT 1 FROM $txTable pt JOIN invoice pi ON pi.id = pt.invoice_id JOIN pay_gateway pg ON pg.id = pt.gateway_id WHERE pi.client_id = b.client_id AND pi.id <> ? AND pi.status = ? AND pt.status = ? AND pt.amount = b.amount AND NOT EXISTS (SELECT 1 FROM invoice_item paid_item WHERE paid_item.invoice_id = pi.id AND paid_item.type = ?) AND ((pg.gateway = 'Stripe' AND b.type = 'transaction' AND {$paidTransactionMatch}) OR (pg.gateway = 'PayPalEmail' AND b.type = 'PayPal' AND {$paidPayPalMatch}))) GROUP BY b.client_id", [$clientIds, 'unpaid', 'processed', 'deposit', 'received', 'processing', 'error', $exceptInvoiceId, 'unpaid', 'processed', 'deposit'], [\Doctrine\DBAL\ArrayParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING, \Doctrine\DBAL\ParameterType::STRING])->fetchAllAssociative();
+        foreach ($legacy as $row) {
+            $clientId = (int) $row['client_id'];
+            $result[$clientId] = ($result[$clientId] ?? 0.0) + (float) $row['amount'];
+        }
+
+        return $result;
+    }
+
     public function getClientBalanceSum(int $clientId): float
     {
         $result = $this->getEntityManager()->getConnection()->fetchOne(

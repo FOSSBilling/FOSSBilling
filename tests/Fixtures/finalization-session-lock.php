@@ -11,7 +11,9 @@ use Symfony\Component\Process\Process;
 
 require dirname(__DIR__, 2) . '/src/vendor/autoload.php';
 define('PATH_DATA', $argv[1]);
+define('PATH_ROOT', PATH_DATA);
 $filesystem = new Filesystem();
+$filesystem->mkdir(PATH_ROOT . '/data/uploads');
 session_save_path(PATH_DATA);
 $session = new SymfonySession(new NativeSessionStorage(['use_cookies' => false, 'use_strict_mode' => false, 'cache_limiter' => '']));
 $session->setId('finalization-lock-review');
@@ -40,7 +42,7 @@ try {
         }
         usleep(1000);
     }
-    (new ReflectionMethod($finalization, 'withFinalizationLock'))->invoke($finalization, function () use ($filesystem): void {
+    (new ReflectionMethod($finalization, ($argv[2] ?? '') === 'update' ? 'withUpdateLock' : 'withFinalizationLock'))->invoke($finalization, function () use ($filesystem): void {
         if ($filesystem->readFile(PATH_DATA . '/saved') !== 'saved-value') {
             throw new RuntimeException('Session was not saved before finalization.');
         }

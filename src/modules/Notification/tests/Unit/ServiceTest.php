@@ -55,8 +55,8 @@ test('get search query builder applies supported filters', function (): void {
     expect($parameters['metaKey'])->toBe('message');
     expect($parameters['id'])->toBe(9);
     expect($parameters['search'])->toBe('%backup%');
-    expect($parameters['date_from'])->toBeInstanceOf(DateTime::class);
-    expect($parameters['date_to'])->toBeInstanceOf(DateTime::class);
+    expect($parameters['date_from'])->toBeInstanceOf(DateTimeImmutable::class);
+    expect($parameters['date_to'])->toBeInstanceOf(DateTimeImmutable::class);
     expect($parameters['date_from']->format('Y-m-d H:i:s'))->toBe('2026-02-10 00:00:00');
     expect($parameters['date_to']->format('Y-m-d H:i:s'))->toBe('2026-02-11 23:59:59');
 });

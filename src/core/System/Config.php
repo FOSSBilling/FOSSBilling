@@ -25,6 +25,10 @@ class Config
 
     public static function getConfig(): array
     {
+        if (!(new Filesystem())->exists(PATH_CONFIG)) {
+            throw new \RuntimeException('The FOSSBilling configuration file does not exist.', 3);
+        }
+
         $config = include PATH_CONFIG;
 
         if (!is_array($config)) {

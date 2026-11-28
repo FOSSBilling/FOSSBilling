@@ -252,6 +252,15 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return $this->getService()->cancelFromOrder($order, $reason, $skip_event);
     }
 
+    /** Resolve an interrupted scheduled cancellation after checking the service provider. */
+    #[RequiredParams(['id' => 'Order ID is missing', 'decision' => 'Review decision is missing'])]
+    public function review_scheduled_cancellation($data): bool
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->getService()->reviewScheduledCancellation($this->_getOrder($data), (string) $data['decision']);
+    }
+
     /**
      * Check whether an order's active gateway subscription supports cancellation at period end.
      */
@@ -356,6 +365,78 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         return $this->getService()->batchCancelUnpaid();
+    }
+
+    /**
+     * Accept waiting cancellation requests when automatic processing is on.
+     *
+     * @return bool
+     */
+    public function batch_process_cancel_requests($data)
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->di['mod_service']('Order', 'CancelRequest')->runAutoProcess();
+    }
+
+    /**
+     * The waiting cancellation requests, oldest first.
+     *
+     * @return array
+     */
+    public function cancel_request_list($data)
+    {
+        $this->checkPermissions('order', 'view');
+
+        return $this->di['mod_service']('Order', 'CancelRequest')->pendingList();
+    }
+
+    /**
+     * The waiting cancellation request of an order, or null.
+     *
+     * @return array|null
+     */
+    public function cancel_request_get($data)
+    {
+        $this->checkPermissions('order', 'view');
+
+        $request = $this->di['mod_service']('Order', 'CancelRequest')->pending($this->_getOrder($data));
+
+        return $request === null ? null : $this->di['mod_service']('Order', 'CancelRequest')->toApiArray($request);
+    }
+
+    /**
+     * Accepts a cancellation request: the service is cancelled now or at the
+     * end of its period.
+     */
+    #[RequiredParams(['id' => 'Request ID was not passed'])]
+    public function cancel_request_accept($data): bool
+    {
+        $this->checkPermissions('order', 'manage');
+        $this->di['mod_service']('Order', 'CancelRequest')->accept($this->cancelRequestId($data['id'] ?? null));
+
+        return true;
+    }
+
+    /**
+     * Stops a cancellation request; the service is not cancelled.
+     */
+    #[RequiredParams(['id' => 'Request ID was not passed'])]
+    public function cancel_request_stop($data): bool
+    {
+        $this->checkPermissions('order', 'manage');
+        $this->di['mod_service']('Order', 'CancelRequest')->stop($this->cancelRequestId($data['id'] ?? null));
+
+        return true;
+    }
+
+    private function cancelRequestId(mixed $id): int
+    {
+        if ((!is_int($id) && !is_string($id)) || filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            throw new InformationException('A positive cancellation request ID is required.');
+        }
+
+        return (int) $id;
     }
 
     /**

@@ -197,13 +197,13 @@ class SentryHelper
                     $event->setTag('exception.category', $errorInfo['category']);
 
                     // Tag the module name
-                    if (str_starts_with($exceptionPath, (string) PATH_MODS)) {
+                    if (str_starts_with($exceptionPath, PATH_MODS)) {
                         $module = self::extractName($exceptionPath, PATH_MODS);
                         $event->setTag('module.name', $module);
                     }
 
                     // Tag the theme name
-                    if (str_starts_with($exceptionPath, (string) PATH_THEMES)) {
+                    if (str_starts_with($exceptionPath, PATH_THEMES)) {
                         $theme = self::extractName($exceptionPath, PATH_THEMES);
                         $event->setTag('theme.name', $theme);
                     }

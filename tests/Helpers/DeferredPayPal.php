@@ -36,7 +36,9 @@ function deferredPayPalApi(array $c): object
             $service = new Box\Mod\Invoice\ServiceTransaction();
             $service->setDi($this->c['di']);
 
-            return $service->update($this->c['em']->find(Box\Mod\Invoice\Entity\Transaction::class, $data['id']), $data);
+            // This adapter harness supplies the trusted API, without the outer processing
+            // claim. ServiceTransaction and PaymentFence tests cover that boundary.
+            return (new ReflectionMethod($service, 'applyUpdate'))->invoke($service, $this->c['em']->find(Box\Mod\Invoice\Entity\Transaction::class, $data['id']), $data);
         }
 
         public function invoice_get(array $data): array
@@ -79,14 +81,15 @@ function deferredPayPalApi(array $c): object
     };
 }
 
-function deferredPayPalMysqlEntityManager(?string $connectionClass = null): EntityManager
+function deferredPayPalMysqlEntityManager(?string $connectionClass = null, string $database = 'hold_regression'): EntityManager
 {
     $connection = Doctrine\DBAL\DriverManager::getConnection([
         'driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) getenv('DELETION_HOLD_MYSQL_PORT'),
-        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
+        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => $database,
     ] + ($connectionClass === null ? [] : ['wrapperClass' => $connectionClass]));
     $connection->executeStatement('SET SESSION innodb_lock_wait_timeout = 4'); // cspell:ignore innodb
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('DeferredPayPalMysqlProxies');
 
@@ -96,13 +99,17 @@ function deferredPayPalMysqlEntityManager(?string $connectionClass = null): Enti
 function heldOrderPaymentContext(?string $databasePath = null): array
 {
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('HeldOrderPaymentProxies');
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
     $em = new EntityManager($connection, $config);
-    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Order::class, OrderMeta::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
+    (new Doctrine\ORM\Tools\SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\GatewayRefundAttempt::class, Box\Mod\Order\Entity\ClientOrderCancelRequest::class, Order::class, OrderMeta::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
     $order = (new Order())->setServiceType('custom')->setServiceId(1)->setStatus(Order::STATUS_ACTIVE)->setGroupMaster(false)
-        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTime('+1 day'));
+        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTimeImmutable('+1 day'));
     $em->persist($order);
     $em->flush();
     $di = Tests\Helpers\container();

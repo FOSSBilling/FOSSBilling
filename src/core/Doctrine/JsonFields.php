@@ -19,6 +19,27 @@ namespace FOSSBilling\Core\Doctrine;
  */
 final class JsonFields
 {
+    /**
+     * Columns where NULL is fail-open (removes an enforced restriction), so
+     * incompatible values keep blocking the migration for manual review
+     * instead of being quarantined: recipient filters would mail everyone,
+     * license bindings would accept and record any value, promos would apply
+     * without their product, period, group or bundle limits, and gateways
+     * would fall back to every installed currency.
+     */
+    public const array QUARANTINE_BLOCKED = [
+        'mod_massmailer.filter',
+        'promo.products',
+        'promo.periods',
+        'promo.client_groups',
+        'promo.requires_products',
+        'service_license.ips',
+        'service_license.hosts',
+        'service_license.paths',
+        'service_license.versions',
+        'pay_gateway.accepted_currencies',
+    ];
+
     /** @var array<string, array{entity: class-string, columns: array<string, string>}> */
     public const array FIELDS = [
         'mod_massmailer' => ['entity' => \Box\Mod\Massmailer\Entity\MassmailerMessage::class, 'columns' => ['filter' => 'filter']],

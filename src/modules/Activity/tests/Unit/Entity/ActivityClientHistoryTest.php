@@ -30,5 +30,5 @@ test('stores client activity history and initializes its timestamp', function ()
     expect($history->getId())->toBeNull()
         ->and($history->getClientId())->toBe(3)
         ->and($history->getIp())->toBe('192.0.2.2')
-        ->and($history->getCreatedAt())->toBeInstanceOf(DateTime::class);
+        ->and($history->getCreatedAt())->toBeInstanceOf(DateTimeImmutable::class);
 });

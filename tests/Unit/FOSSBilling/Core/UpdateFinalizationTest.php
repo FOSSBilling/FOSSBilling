@@ -77,7 +77,7 @@ test('creates one pending state and keeps it unchanged across repeated checks', 
     $maintenanceMode = Config::getProperty('maintenance_mode');
     expect($maintenanceMode['enabled'])->toBeTrue()
         ->and($maintenanceMode['allowed_urls'])->toContain('/existing-finalization-url')
-        ->and($maintenanceMode['allowed_urls'])->toContain(rtrim((string) ADMIN_PREFIX, '/') . '/system/update/finalize');
+        ->and($maintenanceMode['allowed_urls'])->toContain(rtrim(ADMIN_PREFIX, '/') . '/system/update/finalize');
 });
 
 test('does not re-run a finalized update before the session service is initialized', function (): void {
@@ -185,6 +185,12 @@ function stubUpdatePatcherWithPendingPatches(): object
     return new class extends Patcher {
         public int $pendingPatches = 1;
         public bool $corePatchesApplied = false;
+        public bool $schemaFailed = false;
+
+        public function schemaSyncFailed(): bool
+        {
+            return $this->schemaFailed;
+        }
 
         public function availablePatches(): int
         {
@@ -266,6 +272,34 @@ test('completion reports the pending patch levels instead of a bare message', fu
     })->toThrow(InformationException::class, 'There are still 1 pending update patches (database level 120, code level 124)');
 });
 
+test('schema sync failures keep the upgrade pending until a successful retry', function (): void {
+    $patcher = stubUpdatePatcherWithPendingPatches();
+    $patcher->schemaFailed = true;
+    $service = finalizationWithStubPatcher($patcher);
+
+    expect(fn () => $service->finalizeUpdate())->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'schema update could not finish')
+        ->and($service->getStatus(false)['status'])->toBe('pending')
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue();
+    $patcher->schemaFailed = false;
+    $service->finalizePendingUpdate();
+    expect($service->getStatus(false)['status'])->toBe('finalized');
+});
+
+test('extraction times out safely while an older cron reader is active', function (): void {
+    $directory = sys_get_temp_dir() . '/fb-legacy-drain-timeout-' . bin2hex(random_bytes(6));
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($directory . '/data/uploads');
+
+    try {
+        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/runtime-update-lock.php', $directory, 'legacy-timeout', 'timeout']);
+        $process->setTimeout(5);
+        $process->mustRun();
+        expect($process->getOutput())->toBe('timed out without extraction');
+    } finally {
+        $filesystem->remove($directory);
+    }
+});
+
 test('reports schema drift state alongside the finalization status', function (): void {
     $finalization = new Finalization();
     $status = $finalization->getStatus(false);
@@ -300,19 +334,25 @@ test('application readers share a lock that blocks an updater until active work 
     }
 });
 
-test('normal finalization migrates JSON and clears retired previews before restoring maintenance mode', function (): void {
+test('finalization completes with invalid JSON and unreadable extension settings', function (): void {
     $config = Config::getConfig();
     $config['maintenance_mode']['enabled'] = false;
     Config::setConfig($config, false);
     $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
     $c->executeStatement('CREATE TABLE email_template (id INTEGER PRIMARY KEY, vars TEXT)');
+    $c->executeStatement('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, meta_key TEXT, meta_value TEXT, rel_type TEXT, rel_id TEXT, client_id BIGINT)');
     $c->insert('product', ['id' => 1, 'config' => '{broken']);
     $c->insert('email_template', ['id' => 1, 'vars' => 'old-live-reset-token']);
+    $crypt = new FOSSBilling\Core\Security\Crypt();
+    $unreadable = $crypt->encrypt('{"private":true}', 'different-installation-salt');
+    $c->insert('extension_meta', ['id' => 9, 'extension' => 'mod_example', 'meta_key' => 'config', 'meta_value' => $unreadable]);
+    $logger = new Tests\Helpers\TestLogger();
     $di = new Pimple\Container([
         'em' => FOSSBilling\Core\Doctrine\EntityManagerFactory::create($c),
-        'crypt' => new FOSSBilling\Core\Security\Crypt(),
+        'crypt' => $crypt,
         'cache' => new Symfony\Component\Cache\Adapter\ArrayAdapter(),
+        'logger' => $logger,
     ]);
     $patcher = new class extends Patcher {
         public function applyConfigPatches(bool $force = false): void
@@ -337,17 +377,20 @@ test('normal finalization migrates JSON and clears retired previews before resto
     $patcher->setDi($di);
     $finalization = finalizationWithStubPatcher($patcher);
     $finalization->setDi($di);
-    expect(fn () => $finalization->finalizeAndComplete())->toThrow(FOSSBilling\Core\Doctrine\JsonMigrationException::class)
-        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
-        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('pending')
-        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('old-live-reset-token');
-    $c->update('product', ['config' => ''], ['id' => 1]);
     $finalization->finalizeAndComplete();
     expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
         ->and($c->fetchOne('SELECT vars FROM email_template'))->toBeNull()
+        ->and($c->fetchOne('SELECT meta_value FROM extension_meta WHERE id = 9'))->toBe($unreadable)
         ->and(Config::getProperty('maintenance_mode.enabled'))->toBeFalse()
         ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete')
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+    $status = $finalization->getStatus(false);
+    expect($status['json_migration']['quarantined'])->toHaveCount(1)
+        ->and($status['json_migration']['quarantined'][0]['table'])->toBe('product');
+    expect($logger->calls)->toHaveCount(2)
+        ->and($logger->calls[1])->toMatchArray(['method' => 'warning', 'channel' => 'update'])
+        ->and($logger->calls[1]['params'][0])->toContain('id=9', 'mod_example', 'cannot be decrypted')
+        ->not->toContain($unreadable)->not->toContain('"private"');
 });
 
 test('manual update entry point delegates to the same locked finalization flow', function (): void {
@@ -414,17 +457,17 @@ test('same-version deployments finalize pending JSON before serving application 
     expect($patcher->runs)->toBe(1);
 });
 
-test('finalization releases the active session before waiting for another runtime reader', function (): void {
+test('finalization releases the active session before waiting for another runtime reader', function (string $operation): void {
     $directory = sys_get_temp_dir() . '/fb-session-lock-' . bin2hex(random_bytes(6));
     $filesystem = new Filesystem();
     $filesystem->mkdir($directory);
 
     try {
-        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/finalization-session-lock.php', $directory]);
+        $process = new Symfony\Component\Process\Process([PHP_BINARY, PATH_TESTS . '/Fixtures/finalization-session-lock.php', $directory, $operation]);
         $process->setTimeout(10);
         $process->mustRun();
         expect($process->getOutput())->toBe('complete');
     } finally {
         $filesystem->remove($directory);
     }
-});
+})->with(['finalization', 'update']);

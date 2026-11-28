@@ -70,8 +70,19 @@ test('falls back to a working filesystem cache when config.php does not exist ye
     $filesystem = new Filesystem();
     $backup = PATH_CONFIG . '.cache-factory-test-backup';
     $filesystem->rename(PATH_CONFIG, $backup);
+    $warnings = [];
+    // CacheFactory catches Throwable, so converting warnings to exceptions alone
+    // would still let the fallback hide a regression. Record them independently.
+    set_error_handler(static function (int $severity, string $message) use (&$warnings): bool {
+        $warnings[] = $message;
+
+        return true;
+    }, E_WARNING | E_NOTICE);
 
     try {
+        expect(fn () => Config::getConfig())->toThrow(RuntimeException::class)
+            ->and(Config::isConfigValid())->toBeFalse();
+
         $pool = CacheFactory::create('cache_factory_test');
 
         expect($pool)->toBeInstanceOf(CacheItemPoolInterface::class);
@@ -83,7 +94,9 @@ test('falls back to a working filesystem cache when config.php does not exist ye
         expect($pool->getItem('probe')->get())->toBe('value');
 
         $pool->deleteItem('probe');
+        expect($warnings)->toBe([]);
     } finally {
+        restore_error_handler();
         $filesystem->rename($backup, PATH_CONFIG, true);
         clearstatcache(true, PATH_CONFIG);
     }

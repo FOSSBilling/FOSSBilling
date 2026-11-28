@@ -17,8 +17,8 @@ use function Tests\Helpers\container;
 
 /**
  * A real SQLite connection (not a mock) with minimal `client`/`client_order`/`invoice`/
- * `support_ticket` tables - just enough columns for getSummary()/getSummaryIncome() to run their
- * real SQL against. This is the regression test for the DATE_FORMAT()/CURDATE()/DATE_SUB()
+ * `invoice_item`/`support_ticket` tables - just enough columns for getSummary()/getSummaryIncome()
+ * to run their real SQL against. This is the regression test for the DATE_FORMAT()/CURDATE()/DATE_SUB()
  * portability fix: those MySQL-only functions would raise a syntax error on SQLite, so a plain
  * pass here already proves the rewritten day/month boundary queries are portable syntax. It also
  * pins the actual day-boundary math against real inserted rows.
@@ -27,9 +27,11 @@ function statsConnectionWithRows(): Doctrine\DBAL\Connection
 {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
 
-    foreach (['client', 'client_order', 'invoice', 'support_ticket'] as $table) {
+    foreach (['client', 'client_order', 'support_ticket'] as $table) {
         $connection->executeStatement("CREATE TABLE {$table} (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL DEFAULT 0, base_refund REAL DEFAULT 0)");
     }
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL DEFAULT 0, base_refund REAL DEFAULT 0, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
 
     $today = new DateTimeImmutable('today');
     $rows = [
@@ -92,6 +94,201 @@ test('getSummaryIncome sums paid invoices into the correct day bucket on SQLite'
     expect($result['total'])->toBe(100.0)
         ->and($result['today'])->toBe(100.0)
         ->and((float) $result['yesterday'])->toBe(0.0);
+});
+
+test('income stats split mixed invoices and exclude pure deposits', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
+
+    $today = (new DateTimeImmutable('today'))->format('Y-m-d H:i:s');
+
+    // Pure 25 top-up: not revenue.
+    $connection->insert('invoice', ['id' => 1, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 25.0, 'base_refund' => 0, 'currency_rate' => 1]);
+    // Mixed 25 deposit + 25 service: only the service portion counts.
+    $connection->insert('invoice', ['id' => 2, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 50.0, 'base_refund' => 0, 'currency_rate' => 1]);
+    // Ordinary 30 service invoice.
+    $connection->insert('invoice', ['id' => 3, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 30.0, 'base_refund' => 0, 'currency_rate' => 1]);
+    // Mixed invoice in a foreign currency at rate 2: 10 deposit + 50 service.
+    // Production base amounts divide by the rate, so the stored 30 backs out
+    // to a 25 service share.
+    $connection->insert('invoice', ['id' => 4, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 30.0, 'base_refund' => 0, 'currency_rate' => 2]);
+    $connection->insert('invoice_item', ['id' => 1, 'invoice_id' => 1, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 2, 'invoice_id' => 2, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 3, 'invoice_id' => 2, 'type' => 'order', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 4, 'invoice_id' => 3, 'type' => 'order', 'price' => 30, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 5, 'invoice_id' => 4, 'type' => 'deposit', 'price' => 10, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 6, 'invoice_id' => 4, 'type' => 'order', 'price' => 50, 'quantity' => 1]);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    // 0 + 25 + 30 + (30 - 10 / 2).
+    $summary = $service->getSummaryIncome();
+    expect((float) $summary['total'])->toBe(80.0);
+
+    $totals = $service->incomeAndRefundStats([]);
+    expect((float) $totals['income'])->toBe(80.0);
+
+    $yesterday = (new DateTimeImmutable('yesterday'))->format('Y-m-d');
+    $tomorrow = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
+    $incomeByDay = $service->getIncome(['date_from' => $yesterday, 'date_to' => $tomorrow]);
+    $dayTotal = array_sum(array_column($incomeByDay, 1));
+    expect($dayTotal)->toBe(80.0);
+});
+
+test('refund stats split mixed invoices and exclude pure deposits', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
+
+    $today = (new DateTimeImmutable('today'))->format('Y-m-d H:i:s');
+
+    // Pure deposit top-up, later refunded: neither side counts.
+    $connection->insert('invoice', ['id' => 10, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'base_income' => 25.0, 'base_refund' => 25.0, 'base_refund_tax' => 0, 'refund' => 25.0, 'currency_rate' => 1]);
+    // Mixed invoice, fully refunded: 25 service in, 25 service out.
+    $connection->insert('invoice', ['id' => 11, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'base_income' => 50.0, 'base_refund' => 50.0, 'base_refund_tax' => 0, 'refund' => 50.0, 'currency_rate' => 1]);
+    // The refund paper trail mirrors the refunded lines' types with negative prices.
+    $connection->insert('invoice', ['id' => 12, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'credit_note_for_invoice_id' => 11, 'currency_rate' => 1]);
+    // Ordinary service invoice, partly refunded.
+    $connection->insert('invoice', ['id' => 13, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 40.0, 'base_refund' => 10.0, 'base_refund_tax' => 0, 'refund' => 10.0, 'currency_rate' => 1]);
+    // Pure deposit refunded through a synthetic custom line: still nothing.
+    $connection->insert('invoice', ['id' => 14, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'base_income' => 25.0, 'base_refund' => 25.0, 'base_refund_tax' => 0, 'refund' => 25.0, 'currency_rate' => 1]);
+    $connection->insert('invoice', ['id' => 15, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'credit_note_for_invoice_id' => 14, 'currency_rate' => 1]);
+    // Mixed invoice with an untyped service line, fully refunded with mirrored lines.
+    $connection->insert('invoice', ['id' => 16, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'base_income' => 50.0, 'base_refund' => 50.0, 'base_refund_tax' => 0, 'refund' => 50.0, 'currency_rate' => 1]);
+    $connection->insert('invoice', ['id' => 17, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'credit_note_for_invoice_id' => 16, 'currency_rate' => 1]);
+    $connection->insert('invoice_item', ['id' => 10, 'invoice_id' => 10, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 11, 'invoice_id' => 11, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 12, 'invoice_id' => 11, 'type' => 'order', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 13, 'invoice_id' => 12, 'type' => 'deposit', 'price' => -25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 14, 'invoice_id' => 12, 'type' => 'order', 'price' => -25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 15, 'invoice_id' => 13, 'type' => 'order', 'price' => 40, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 16, 'invoice_id' => 14, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 17, 'invoice_id' => 15, 'type' => 'custom', 'price' => -25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 18, 'invoice_id' => 16, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 19, 'invoice_id' => 16, 'type' => null, 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 20, 'invoice_id' => 17, 'type' => 'deposit', 'price' => -25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 21, 'invoice_id' => 17, 'type' => null, 'price' => -25, 'quantity' => 1]);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    // Income 0 + 25 + 40 + 0 + 25, refunds 0 + 25 + 10 + 0 + 25.
+    $summary = $service->getSummaryIncome();
+    expect((float) $summary['total'])->toBe(30.0);
+
+    $totals = $service->incomeAndRefundStats([]);
+    expect((float) $totals['income'])->toBe(90.0)
+        ->and((float) $totals['refund'])->toBe(60.0);
+
+    $yesterday = (new DateTimeImmutable('yesterday'))->format('Y-m-d');
+    $tomorrow = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
+    $refundsByDay = $service->getRefunds(['date_from' => $yesterday, 'date_to' => $tomorrow]);
+    expect(array_sum(array_column($refundsByDay, 1)))->toBe(60.0);
+});
+
+test('legacy refunds without credit notes split when fully backed, else unresolved', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
+
+    $today = (new DateTimeImmutable('today'))->format('Y-m-d H:i:s');
+
+    // Mixed invoice with a legacy full refund and no credit-note paper trail:
+    // the deposit share is reconstructed from the original lines. Legacy rows
+    // carry a populated refund with unknown tax, so they stay out of the
+    // classified refund totals and count as unresolved instead.
+    $connection->insert('invoice', ['id' => 20, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'base_income' => 50.0, 'base_refund' => 50.0, 'refund' => 50.0, 'currency_rate' => 1]);
+    // Mixed invoice with a legacy partial refund: unattributable, stays out.
+    $connection->insert('invoice', ['id' => 21, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 50.0, 'base_refund' => 10.0, 'refund' => 10.0, 'currency_rate' => 1]);
+    $connection->insert('invoice_item', ['id' => 20, 'invoice_id' => 20, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 21, 'invoice_id' => 20, 'type' => 'order', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 22, 'invoice_id' => 21, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 23, 'invoice_id' => 21, 'type' => 'order', 'price' => 25, 'quantity' => 1]);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    // Income 25 + 25, classified refunds 0 (legacy rows stay unresolved),
+    // while the summary still nets the reconstructed full refund.
+    $summary = $service->getSummaryIncome();
+    expect((float) $summary['total'])->toBe(25.0);
+
+    $totals = $service->incomeAndRefundStats([]);
+    expect((float) $totals['income'])->toBe(50.0)
+        ->and((float) $totals['refund'])->toBe(0.0)
+        ->and((int) $totals['refund_tax_unresolved'])->toBe(2);
+});
+
+test('partial linked refunds stay covered with null types and scaled tolerance', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
+
+    $today = (new DateTimeImmutable('today'))->format('Y-m-d H:i:s');
+
+    // Mixed invoice with an untyped service line, partly refunded through a
+    // mirrored NULL-type credit line.
+    $connection->insert('invoice', ['id' => 30, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 50.0, 'base_refund' => 10.0, 'base_refund_tax' => 0, 'refund' => 10.0, 'currency_rate' => 1]);
+    $connection->insert('invoice', ['id' => 31, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'credit_note_for_invoice_id' => 30, 'currency_rate' => 1]);
+    // Mixed invoice in a foreign currency at rate 10: the 12.34 service line
+    // is refunded, storing a rounded base_refund of 1.23.
+    $connection->insert('invoice', ['id' => 32, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'paid', 'base_income' => 100.0, 'base_refund' => 1.23, 'base_refund_tax' => 0, 'refund' => 12.34, 'currency_rate' => 10]);
+    $connection->insert('invoice', ['id' => 33, 'created_at' => $today, 'paid_at' => $today, 'issued' => 1, 'status' => 'refunded', 'credit_note_for_invoice_id' => 32, 'currency_rate' => 10]);
+    $connection->insert('invoice_item', ['id' => 30, 'invoice_id' => 30, 'type' => 'deposit', 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 31, 'invoice_id' => 30, 'type' => null, 'price' => 25, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 32, 'invoice_id' => 31, 'type' => null, 'price' => -10, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 33, 'invoice_id' => 32, 'type' => 'deposit', 'price' => 500, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 34, 'invoice_id' => 32, 'type' => 'order', 'price' => 12.34, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 35, 'invoice_id' => 32, 'type' => 'order', 'price' => 487.66, 'quantity' => 1]);
+    $connection->insert('invoice_item', ['id' => 36, 'invoice_id' => 33, 'type' => 'order', 'price' => -12.34, 'quantity' => 1]);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    // Income 25 + 50, refunds 10 + 1.23.
+    $summary = $service->getSummaryIncome();
+    expect(round((float) $summary['total'], 2))->toBe(63.77);
+
+    $totals = $service->incomeAndRefundStats([]);
+    expect((float) $totals['income'])->toBe(75.0)
+        ->and(round((float) $totals['refund'], 2))->toBe(11.23);
+
+    $yesterday = (new DateTimeImmutable('yesterday'))->format('Y-m-d');
+    $tomorrow = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
+    $incomeByDay = $service->getIncome(['date_from' => $yesterday, 'date_to' => $tomorrow]);
+    expect(round(array_sum(array_column($incomeByDay, 1)), 2))->toBe(63.77);
+});
+
+test('sales by country excludes only pure deposit invoices', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, buyer_country TEXT, status TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT)');
+
+    // A pure deposit top-up is no sale, but a mixed invoice holds a real sale.
+    $connection->insert('invoice', ['id' => 1, 'buyer_country' => 'PL', 'status' => 'paid']);
+    $connection->insert('invoice', ['id' => 2, 'buyer_country' => 'PL', 'status' => 'paid']);
+    $connection->insert('invoice', ['id' => 3, 'buyer_country' => 'PL', 'status' => 'paid']);
+    $connection->insert('invoice_item', ['id' => 1, 'invoice_id' => 1, 'type' => 'deposit']);
+    $connection->insert('invoice_item', ['id' => 2, 'invoice_id' => 2, 'type' => 'deposit']);
+    $connection->insert('invoice_item', ['id' => 3, 'invoice_id' => 2, 'type' => 'order']);
+    $connection->insert('invoice_item', ['id' => 4, 'invoice_id' => 3, 'type' => 'order']);
+
+    $service = new Box\Mod\Stats\Service();
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    expect($service->getSalesByCountry([]))->toBe(['PL' => 2]);
 });
 
 test('gets dependency injection container', function (): void {
@@ -286,7 +483,8 @@ test('gets income and refund stats', function (): void {
 
 test('income and refund stats count unresolved refund tax separately from zero tax', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL)');
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'refunded', 100.0, 100.0, 20.0, 120.0)");
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'paid', 50.0, 0.0, 0.0, 0.0)");
     $connection->executeStatement("INSERT INTO invoice (issued, status, base_income, base_refund, base_refund_tax, refund) VALUES (1, 'refunded', 100.0, 120.0, NULL, 120.0)");
@@ -309,7 +507,8 @@ test('income and refund stats count unresolved refund tax separately from zero t
 
 test('income and refund stats return zeros, not nulls, with no matching invoices', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL)');
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, issued INTEGER, status TEXT, base_income REAL, base_refund REAL, base_refund_tax REAL, refund REAL, currency_rate REAL DEFAULT 1, credit_note_for_invoice_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, invoice_id INTEGER, type TEXT, price REAL, quantity INTEGER)');
 
     $service = new Box\Mod\Stats\Service();
     $di = container();

@@ -8,9 +8,6 @@ on:
   pull_request:
     branches: main
     types: [opened, reopened, synchronize, labeled, unlabeled]
-  pull_request_target:
-    branches: main
-    types: [opened, reopened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && 'labels' || 'run' }}-${{ github.event.pull_request.number || github.ref }}
@@ -33,20 +30,6 @@ jobs:
 
           echo "Pull request not labeled 'merge-hold'"
           echo "The pull request can be merged as no 'merge-hold' label is set."
-
-  labeler:
-    name: 'Pull Request Labeler'
-    permissions:
-      contents: read
-      pull-requests: write
-    if: ${{ github.event_name == 'pull_request_target' }}
-    runs-on: ubuntu-slim
-    timeout-minutes: 5
-    steps:
-      - uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7
-        with:
-          repo-token: '${{ secrets.GITHUB_TOKEN }}'
-          sync-labels: true
 
   release-drafter:
     name: 'Release Drafter'
@@ -203,7 +186,7 @@ jobs:
         run: |
           GITHUB_SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
           echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> "$GITHUB_ENV"
-          zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip .
+          zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip . -x '.update-lock' '.update-extraction-pending' 'data/uploads/.update-runtime.lock' 'data/update-finalization.*' 'config.php' 'config.old.php'
           echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
 

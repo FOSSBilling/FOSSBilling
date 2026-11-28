@@ -2244,7 +2244,7 @@ test('toActivityAdminHistoryRowApiArray returns paginated history data without a
 });
 
 test('toActivityAdminHistoryApiArray returns history array data', function (): void {
-    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $createdAt = new DateTimeImmutable('2026-01-01 12:00:00');
     $adminHistory = (new ActivityAdminHistory())
         ->setAdminId(2)
         ->setIp('192.0.2.1')
@@ -2394,4 +2394,23 @@ test('i18n::validateTimezone accepts any IANA identifier', function (): void {
 
 test('i18n::validateTimezone throws InformationException for unknown identifier', function (): void {
     expect(fn (): ?string => FOSSBilling\Core\I18n\I18n::validateTimezone('Not/A_Zone'))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+});
+
+test('update revokes reset links when the staff email changes', function (): void {
+    $adminModel = \Tests\Helpers\admin(['id' => 5, 'email' => 'old@example.com']);
+    [$eventDispatcher] = staffAccountCrudEventDispatcher();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
+
+    $passwordResetRepository = Mockery::mock(AdminPasswordResetRepository::class);
+    $passwordResetRepository->shouldReceive('deleteResetsForAdmin')->once()->with(5)->andReturn(1);
+
+    $di = container();
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), Mockery::mock(AdminGroupMemberRepository::class), null, $passwordResetRepository);
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->update($adminModel, ['email' => 'new@example.com']))->toBeTrue();
 });

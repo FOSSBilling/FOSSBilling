@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
 use Box\Mod\Order\DeletionRecovery;
+use Box\Mod\Order\Entity\ClientOrderCancelRequest;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Entity\OrderMeta;
 use Box\Mod\Order\Entity\OrderStatus;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 use Doctrine\DBAL\DriverManager;
@@ -24,16 +27,20 @@ require_once PATH_TESTS . '/Helpers/DeferredPayPal.php';
 function deletionRecoveryContext(?string $databasePath = null): array
 {
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('DeletionRecoveryTestProxies');
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite'] + ($databasePath === null ? ['memory' => true] : ['path' => $databasePath]));
     $em = new EntityManager($connection, $config);
-    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [Order::class, OrderMeta::class, OrderStatus::class, ServiceLicense::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), [ClientOrderCancelRequest::class, Order::class, OrderMeta::class, OrderStatus::class, ServiceLicense::class, Invoice::class, InvoiceItem::class, Box\Mod\Invoice\Entity\GatewayChargeAttempt::class, Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class, Box\Mod\Invoice\Entity\PayGateway::class, Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class]));
     $license = new ServiceLicense();
     $em->persist($license);
     $em->flush();
     $order = (new Order())->setServiceType('license')->setServiceId($license->getId())->setStatus(Order::STATUS_ACTIVE)->setGroupMaster(false)
-        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTime('+1 day'));
+        ->setPrice(10)->setPeriod('1M')->setInvoiceOption('issue-invoice')->setExpiresAt(new DateTimeImmutable('+1 day'));
     $em->persist($order);
     $em->flush();
     $di = container();
@@ -106,6 +113,105 @@ function failDeletionAtGateway(array $context): Order
     return $context['em']->find(Order::class, $context['order']->getId());
 }
 
+test('stale order deletion revalidates billing and order state when it claims the order', function (string $change): void {
+    $context = deletionRecoveryContext();
+    $order = $context['order'];
+    $orderId = $order->getId();
+    $connection = $context['connection'];
+    $context['subscription']->fail = false;
+    $cutoff = new DateTimeImmutable('2026-02-01');
+    $order->setStatus(Order::STATUS_PENDING_SETUP)->setCreatedAt($cutoff->modify('-1 day'));
+    $context['em']->flush();
+
+    // The batch saw a pending order with no draft. Model changes committed
+    // between that check and the start of the deletion claim.
+    if ($change === 'paid') {
+        $invoice = (new Invoice())->setStatus(Invoice::STATUS_PAID);
+        $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)
+            ->setRelId('0' . $orderId . ' ')->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+        $context['em']->persist($invoice);
+        $context['em']->persist($item);
+        $context['em']->flush();
+    } elseif ($change === 'attached') {
+        $connection->update('client_order', ['unpaid_invoice_id' => 78], ['id' => $orderId]);
+    } elseif ($change === 'activated') {
+        $connection->update('client_order', ['status' => Order::STATUS_ACTIVE], ['id' => $orderId]);
+    } elseif ($change === 'age reset') {
+        $connection->update('client_order', ['created_at' => $cutoff->format('Y-m-d H:i:s')], ['id' => $orderId]);
+    }
+
+    $service = new class extends Service {
+        public function removeStaleOrder(Order $order, DateTimeImmutable $cutoff): bool
+        {
+            return $this->deleteStaleUnpaidOrder($order, null, $cutoff);
+        }
+    };
+    $service->setDi($context['di']);
+
+    $shouldDelete = $change === 'unchanged';
+    expect($service->removeStaleOrder($order, $cutoff))->toBe($shouldDelete)
+        ->and($context['backend']->calls)->toBe($shouldDelete ? 1 : 0)
+        ->and($connection->fetchOne('SELECT id FROM client_order WHERE id = ?', [$orderId]))->toBe($shouldDelete ? false : $orderId)
+        ->and(DeletionRecovery::getState($connection, $orderId))->toBeNull();
+})->with(['paid', 'attached', 'activated', 'age reset', 'unchanged']);
+
+test('staff cannot attach a pending order once a deletion hold is committed', function (): void {
+    $context = deletionRecoveryContext();
+    $order = $context['order'];
+    $order->setStatus(Order::STATUS_PENDING_SETUP);
+    $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setIssued(false);
+    $context['em']->persist($invoice);
+    $context['em']->flush();
+    DeletionRecovery::setState($context['connection'], $order->getId(), DeletionRecovery::STARTED);
+
+    $billing = new Box\Mod\Invoice\Service();
+    $billing->setDi($context['di']);
+
+    expect(fn () => $billing->attachOrderToInvoice($invoice, ['order_id' => $order->getId()]))
+        ->toThrow(InformationException::class, 'awaiting recovery');
+    expect($context['connection']->fetchOne('SELECT COUNT(*) FROM invoice_item'))->toBe(0)
+        ->and($context['connection']->fetchOne('SELECT unpaid_invoice_id FROM client_order'))->toBeNull();
+});
+
+test('stale order cleanup retains the draft attached between selection and hydration', function (): void {
+    $context = deletionRecoveryContext();
+    $em = $context['em'];
+    $connection = $context['connection'];
+    $connection->executeStatement('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    $connection->insert('setting', [
+        'param' => 'invoice_item_order_id_backfill_done',
+        'value' => FOSSBilling\Core\Update\Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION,
+    ]);
+    $order = $context['order']->setStatus(Order::STATUS_PENDING_SETUP)->setCreatedAt(new DateTimeImmutable('-30 days'));
+    $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setDueAt(new DateTimeImmutable('+10 days'));
+    $em->persist($invoice);
+    $em->flush();
+    $em->clear();
+
+    $repository = Mockery::mock(OrderRepository::class, [$em, $em->getClassMetadata(Order::class)])->makePartial();
+    $repository->shouldReceive('findBy')->once()->andReturnUsing(static function (array $criteria, array $orderBy) use ($em, $connection, $invoice, $order): array {
+        $connection->update('client_order', ['unpaid_invoice_id' => $invoice->getId()], ['id' => $order->getId()]);
+
+        return $em->getRepository(Order::class)->findBy($criteria, $orderBy);
+    });
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getOrderRepository')->andReturn($repository);
+    $billing = Mockery::mock(Box\Mod\Invoice\Service::class)->makePartial();
+    $billing->shouldNotReceive('deleteInvoiceByAdmin');
+
+    $di = $context['di'];
+    $module = Mockery::mock();
+    $module->shouldReceive('getConfig')->andReturn(['batch_cancel_unpaid' => true]);
+    $di['mod'] = $di->protect(fn () => $module);
+    $di['mod_service'] = $di->protect(fn () => $billing);
+    $service->setDi($di);
+    $billing->setDi($di);
+
+    expect($service->batchCancelUnpaid())->toBeTrue()
+        ->and($connection->fetchOne('SELECT unpaid_invoice_id FROM client_order WHERE id = ?', [$order->getId()]))->toBe($invoice->getId())
+        ->and($connection->fetchOne('SELECT status FROM invoice WHERE id = ?', [$invoice->getId()]))->toBe(Invoice::STATUS_UNPAID);
+});
+
 test('gateway failure leaves a durable billing hold and retry skips completed backend deletion', function (): void {
     $c = deletionRecoveryContext();
     $order = failDeletionAtGateway($c);
@@ -164,6 +270,9 @@ test('failed local cleanup cannot remove the hold before the order is removed', 
     expect(fn () => $c['service']->deleteFromOrder($c['order']))->toThrow(RuntimeException::class, 'Local cleanup failed');
     expect(DeletionRecovery::getState($c['connection'], $c['order']->getId()))->toBe(DeletionRecovery::SERVICE_DELETED);
     $em = new EntityManager($c['connection'], $c['config']);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
     $c['di']['em'] = $em;
     $service = new Service();
     $service->setDi($c['di']);
@@ -199,6 +308,12 @@ test('held paid invoice tasks and subscription callbacks cannot renew a deleted 
     $c = deletionRecoveryContext();
     $order = failDeletionAtGateway($c);
     $invoice = (new Invoice())->setStatus(Invoice::STATUS_PAID)->setIssued(true)->setClientId(1);
+    if ($operation === 'subscription') {
+        $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('Stripe');
+        $c['em']->persist($gateway);
+        $invoice->setGateway($gateway);
+        $order->setClientId(1);
+    }
     $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setRelId((string) $order->getId())->setTask(InvoiceItem::TASK_RENEW)->setStatus(InvoiceItem::STATUS_PENDING_SETUP)->setPrice(10)->setQuantity(1);
     $c['em']->persist($invoice);
     $c['em']->persist($item);
@@ -210,12 +325,16 @@ test('held paid invoice tasks and subscription callbacks cannot renew a deleted 
         $items->executeTask($item);
         expect($item->getStatus())->not->toBe(InvoiceItem::STATUS_EXECUTED);
     } else {
-        $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('held-subscription')->setRelType('invoice')->setRelId($invoice->getId());
+        $subscription = (new Box\Mod\Invoice\Entity\Subscription())->setSid('held-subscription')->setPayGateway($invoice->getGateway())->setRelType('invoice')->setRelId($invoice->getId());
         $c['em']->persist($subscription);
         $c['em']->flush();
         $billing = new Box\Mod\Invoice\Service();
         $billing->setDi($c['di']);
-        expect($billing->generateRenewalInvoiceForSubscriptionPayment('held-subscription', 1))->toBeNull();
+        $logger = new Tests\Helpers\TestLogger();
+        $c['di']['logger'] = $logger;
+        expect($billing->generateRenewalInvoiceForSubscriptionPayment('held-subscription', 1, (int) $invoice->getGateway()?->getId(), (int) $invoice->getId()))->toBeNull();
+        $holds = array_filter($logger->calls, fn (array $call): bool => ($call['params'][1]['message'] ?? '') === 'Order deletion is awaiting recovery. Retry deletion before billing or changing the service.');
+        expect($holds)->toHaveCount(1);
     }
     expect($order->getExpiresAt()->format(DATE_ATOM))->toBe($expiry)
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM service_license'))->toBe(0)
@@ -262,7 +381,7 @@ test('a concurrent callback reads the durable hold after acquiring the shared li
     }
 });
 
-test('received gateway funds remain credit without settling or fulfilling a held invoice', function (bool $directItem): void {
+test('received gateway funds remain credit without settling or fulfilling a held invoice', function (bool $directItem, bool $typed): void {
     $c = deletionRecoveryContext();
     $order = failDeletionAtGateway($c);
     $client = new Box\Mod\Client\Entity\Client();
@@ -270,11 +389,25 @@ test('received gateway funds remain credit without settling or fulfilling a held
     $c['em']->flush();
     $incoming = (new Box\Mod\Client\Entity\ClientBalance())->setClient($client)->setType('transaction')->setRelId('incoming-payment')->setAmount('10');
     $invoice = (new Invoice())->setStatus(Invoice::STATUS_UNPAID)->setIssued(true)->setClientId($client->getId());
-    $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setRelId((string) $order->getId())->setTask(InvoiceItem::TASK_RENEW)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(10)->setQuantity(1);
+    $item = (new InvoiceItem())->setInvoice($invoice)->setType(InvoiceItem::TYPE_ORDER)->setTask(InvoiceItem::TASK_RENEW)->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT)->setPrice(10)->setQuantity(1);
+    if ($typed) {
+        $item->setOrderId($order->getId());
+    } else {
+        $item->setRelId('00' . $order->getId() . ' ');
+    }
     foreach ([$incoming, $invoice, $item] as $entity) {
         $c['em']->persist($entity);
     }
     $c['em']->flush();
+
+    $paymentEvents = [];
+    $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $dispatcher->addListener(AfterAdminInvoicePaymentReceivedEvent::class, static function (AfterAdminInvoicePaymentReceivedEvent $event) use (&$paymentEvents): void {
+        $paymentEvents[] = $event;
+    });
+    unset($c['di']['event_dispatcher']);
+    $c['di']['event_dispatcher'] = $dispatcher;
+
     if ($directItem) {
         $items = new Box\Mod\Invoice\ServiceInvoiceItem();
         $items->setDi($c['di']);
@@ -286,12 +419,17 @@ test('received gateway funds remain credit without settling or fulfilling a held
         expect($billing->markAsPaid($invoice, true, true, actuallyPaid: $actuallyPaid))->toBeTrue()
             ->and($actuallyPaid)->toBeFalse();
     }
-    expect($c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10)
+    $storedItem = $c['connection']->fetchAssociative('SELECT status, attempts, charged FROM invoice_item WHERE id = ?', [$item->getId()]);
+    expect($storedItem)->not->toBeFalse()
+        ->and($storedItem['status'])->toBe(InvoiceItem::STATUS_PENDING_PAYMENT)
+        ->and((int) $storedItem['attempts'])->toBe(0)
+        ->and((bool) $storedItem['charged'])->toBeFalse()
+        ->and($paymentEvents)->toBe([])
+        ->and($c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(10)
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance WHERE amount < 0'))->toBe(0)
         ->and($c['connection']->fetchOne('SELECT status FROM invoice'))->toBe(Invoice::STATUS_UNPAID)
-        ->and($item->getCharged())->toBeFalse()
         ->and($c['backend']->calls)->toBe(1);
-})->with([false, true]);
+})->with([false, true])->with(['legacy link with trailing space' => false, 'typed link' => true]);
 
 test('MySQL and MariaDB snapshot conflicts roll back billing and preserve deletion holds on transaction retry', function (): void {
     $params = [
@@ -426,9 +564,13 @@ test('MySQL checkpoint aliases respect the metadata column collation and roll ba
         }
         $connection->insert('client_order_meta', ['client_order_id' => 1, 'name' => 'ordinary', 'value' => 'original']);
         $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+        $config->setUseSchemaEditorApi(true);
         $config->setProxyDir(sys_get_temp_dir());
         $config->setProxyNamespace('DeletionRecoveryTestProxies');
         $em = new EntityManager($connection, $config);
+        if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+            $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+        }
         $di = container();
         $di['em'] = $em;
         $service = new Service();
@@ -622,3 +764,129 @@ test('activation rechecks current status under the lifecycle lock and still supp
     expect($c['service']->activateOrder($c['order'], ['force' => true]))->toBeTrue()
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order_status'))->toBe(1);
 });
+
+test('MySQL renewal checkpoint aliases cannot be forged overwritten or removed through order updates', function (string $prefix, string $form, bool $existing, bool $clear): void {
+    $connection = DriverManager::getConnection([
+        'driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => (int) getenv('DELETION_HOLD_MYSQL_PORT'),
+        'user' => 'root', 'password' => getenv('DELETION_HOLD_MYSQL_PASSWORD'), 'dbname' => 'hold_regression',
+    ]);
+    $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS], true);
+    $config->setUseSchemaEditorApi(true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('RenewalAliasTestProxies');
+    $em = new EntityManager($connection, $config);
+    if ($em->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $em->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
+    $alias = match ($form) {
+        'case' => strtoupper($prefix) . '11',
+        'accent' => str_replace('renewal', 'rénewal', $prefix) . '11', // cspell:ignore rénewal
+        default => $prefix . '11 ',
+    };
+
+    try {
+        (new SchemaTool($em))->createSchema([$em->getClassMetadata(Order::class), $em->getClassMetadata(OrderMeta::class)]);
+        $connection->executeStatement('ALTER TABLE client_order_meta MODIFY name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $connection->executeStatement('SET NAMES utf8mb4 COLLATE utf8mb4_bin');
+        $order = (new Order())->setStatus(Order::STATUS_ACTIVE);
+        $em->persist($order);
+        $em->flush();
+        $connection->insert('client_order_meta', ['client_order_id' => $order->getId(), 'name' => 'ordinary', 'value' => 'original']);
+        if ($existing) {
+            $connection->insert('client_order_meta', ['client_order_id' => $order->getId(), 'name' => $clear ? $alias : $prefix . '11', 'value' => 'pending']);
+        }
+        $di = container();
+        $di['em'] = $em;
+        $service = new Service();
+        $service->setDi($di);
+        expect(fn () => $service->updateOrder($order, ['meta' => $clear ? [] : ['ordinary' => 'changed', $alias => 'completed']]))
+            ->toThrow(InformationException::class);
+        expect($connection->fetchOne("SELECT value FROM client_order_meta WHERE name = 'ordinary'"))->toBe('original')
+            ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_order_meta'))->toBe($existing ? 2 : 1);
+        if ($existing) {
+            expect($connection->fetchOne("SELECT value FROM client_order_meta WHERE name <> 'ordinary'"))->toBe('pending');
+        }
+    } finally {
+        $connection->executeStatement('DROP TABLE IF EXISTS client_order_meta');
+        $connection->executeStatement('DROP TABLE IF EXISTS client_order');
+        $connection->close();
+    }
+})->with([Service::META_PAID_RENEWAL_OUTCOME_PREFIX, Service::META_FREE_RENEWAL_CLAIM_PREFIX, Service::META_FREE_RENEWAL_RETRY_PREFIX])
+    ->with(['case', 'accent', 'space'])
+    ->with(['new alias' => [false, false], 'existing checkpoint' => [true, false], 'clear stored alias' => [true, true]])
+    ->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+
+test('order deletion removes every cancellation request with or without foreign keys', function (string $path, bool $foreignKeys): void {
+    $c = deletionRecoveryContext();
+    $client = (new Box\Mod\Client\Entity\Client())->setEmail('erase@example.com');
+    $c['em']->persist($client);
+    $c['em']->flush();
+    $c['order']->setClientId($client->getId());
+    $otherClient = (new Box\Mod\Client\Entity\Client())->setEmail('keep@example.com');
+    $c['em']->persist($otherClient);
+    $c['em']->flush();
+    foreach (['pending', 'accepted', 'stopped', 'withdrawn'] as $status) {
+        $request = (new ClientOrderCancelRequest())->setOrder($c['order'])->setClient($client)->setStatus($status);
+        $c['em']->persist($request);
+    }
+    $otherRequest = (new ClientOrderCancelRequest())->setClient($otherClient)->setStatus('withdrawn');
+    $c['em']->persist($otherRequest);
+    $c['em']->flush();
+    if ($foreignKeys) {
+        $c['connection']->executeStatement('PRAGMA foreign_keys = ON');
+    }
+    $c['subscription']->fail = false;
+    if ($path === 'order') {
+        expect($c['service']->deleteFromOrder($c['order']))->toBeTrue();
+    } else {
+        $orphan = (new ClientOrderCancelRequest())->setClient($client)->setStatus('withdrawn');
+        $c['em']->persist($orphan);
+        $c['em']->flush();
+        $c['service']->rmByClient($client);
+        $c['em']->remove($client);
+        $c['em']->flush();
+    }
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order'))->toBe(0)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_order_cancel_request'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT client_id FROM client_order_cancel_request'))->toBe($otherClient->getId());
+    $c['connection']->close();
+})->with(['order', 'client'])->with([false, true]);
+
+test('request history deletion rolls back with parent removal and recovers without repeating backend deletion', function (bool $foreignKeys): void {
+    $c = deletionRecoveryContext();
+    $connection = $c['connection'];
+    $connection->executeStatement('PRAGMA foreign_keys = ' . ($foreignKeys ? 'ON' : 'OFF'));
+    $client = (new Box\Mod\Client\Entity\Client())->setCurrency('USD');
+    $c['em']->persist($client);
+    $c['em']->flush();
+    $request = (new ClientOrderCancelRequest())->setOrder($c['order'])->setClient($client)->setStatus(ClientOrderCancelRequest::STATUS_WITHDRAWN);
+    $c['em']->persist($request);
+    $c['em']->flush();
+    $c['subscription']->fail = false;
+    $orderId = $c['order']->getId();
+    $observer = new class {
+        public function preRemove(Doctrine\ORM\Event\PreRemoveEventArgs $event): void
+        {
+            if ($event->getObject() instanceof Order) {
+                throw new RuntimeException('parent removal interrupted');
+            }
+        }
+    };
+    $c['em']->getEventManager()->addEventListener(['preRemove'], $observer);
+    expect(fn () => $c['service']->deleteFromOrder($c['order']))->toThrow(RuntimeException::class, 'parent removal interrupted');
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM client_order_cancel_request'))->toBe(1)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_order'))->toBe(1)
+        ->and(DeletionRecovery::getState($connection, $orderId))->toBe(DeletionRecovery::SERVICE_DELETED)
+        ->and($c['backend']->calls)->toBe(1);
+    // A restarted worker retains the confirmed external outcome and retries only cleanup.
+    $fresh = new EntityManager($connection, $c['config']);
+    $c['di']['em'] = $fresh;
+    $c['backend']->setDi($c['di']);
+    $service = new Service();
+    $service->setDi($c['di']);
+    expect($service->deleteFromOrder($fresh->find(Order::class, $orderId)))->toBeTrue();
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM client_order_cancel_request'))->toBe(0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_order'))->toBe(0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_order_meta'))->toBe(0)
+        ->and($c['backend']->calls)->toBe(1);
+})->with([true, false]);

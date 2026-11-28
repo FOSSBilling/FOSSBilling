@@ -1,0 +1,69 @@
+{# The ticket list's "With Selected" bar: Pin, Unpin, Close, Merge. #}
+<div class="d-flex flex-wrap align-items-center gap-2">
+    <span class="text-secondary small">{{ 'With Selected:'|trans }}</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-pin-btn">{{ 'Pin'|trans }}</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-unpin-btn">{{ 'Unpin'|trans }}</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-close-btn">{{ 'Close'|trans }}</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="bulk-merge-btn">{{ 'Merge'|trans }}</button>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function bulkTicketIds() {
+            return Array.from(document.querySelectorAll('input.batch-delete-checkbox:checked')).map(function(checkbox) {
+                return checkbox.getAttribute("data-item-id");
+            });
+        }
+
+        function bulkPost(endpoint, confirmTitle, confirmText) {
+            const ids = bulkTicketIds();
+            if (!ids.length) {
+                Modals.create({
+                    type: 'small',
+                    title: "{{ 'No tickets selected'|trans }}",
+                    content: "{{ 'Tick the tickets first.'|trans }}",
+                });
+                return;
+            }
+            Modals.create({
+                type: 'small-confirm',
+                title: confirmTitle,
+                content: confirmText,
+                confirmCallback: () => {
+                    FOSSBilling.api.admin.post(endpoint, { ids: ids },
+                        (result) => {
+                            window.location.reload();
+                        });
+                }
+            });
+        }
+
+        document.getElementById('bulk-pin-btn').addEventListener('click', () => bulkPost('support/batch_ticket_pin', "{{ 'Pin tickets?'|trans }}", "{{ 'Tickets will stay at the top of the list.'|trans }}"));
+        document.getElementById('bulk-unpin-btn').addEventListener('click', () => bulkPost('support/batch_ticket_unpin', "{{ 'Unpin tickets?'|trans }}", "{{ 'Tickets will return to their normal place in the list.'|trans }}"));
+        document.getElementById('bulk-close-btn').addEventListener('click', () => bulkPost('support/batch_ticket_close', "{{ 'Close tickets?'|trans }}", "{{ 'Tickets will be closed.'|trans }}"));
+        document.getElementById('bulk-merge-btn').addEventListener('click', () => {
+            const ids = bulkTicketIds().map((id) => parseInt(id, 10)).filter((id) => id > 0).sort((a, b) => a - b);
+            if (ids.length < 2) {
+                Modals.create({
+                    type: 'small',
+                    title: "{{ 'No tickets selected'|trans }}",
+                    content: "{{ 'Tick two or more tickets to merge.'|trans }}",
+                });
+                return;
+            }
+            const survivor = ids[0];
+            Modals.create({
+                type: 'danger',
+                title: "{{ 'Merge tickets?'|trans }}",
+                content: "{{ 'Tickets %list% will be merged into ticket %id%, the oldest. It gets all their messages, notes and attachments, and the others are deleted. This cannot be undone.'|trans }}".replace('%list%', '#' + ids.join(', #')).replace('%id%', '#' + survivor),
+                confirmCallback: () => {
+                    FOSSBilling.api.admin.post('support/ticket_merge', { ids: ids },
+                        (result) => {
+                            window.location = "{{ 'support/ticket'|url }}/" + result + "?merged=" + ids.filter((id) => id !== result).join(',');
+                        });
+                }
+            });
+        });
+
+    });
+</script>

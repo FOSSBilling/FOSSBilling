@@ -1,0 +1,102 @@
+{% set report = admin.support_ticket_feedback_report({ 'period': request.period|default('90') }) %}
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Ratings & Feedback'|trans }}{% endblock %}
+{% block page_header %}{{ 'Ratings & Feedback'|trans }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Ratings & Feedback'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Reply stars and closing feedback from clients.'|trans }}</p>
+        </div>
+        <div class="card-actions">
+            <a href="{{ 'support/ratings'|url(query: { 'period': '30' }) }}" class="btn btn-sm{% if report.period == '30' %} btn-primary{% else %} btn-outline-secondary{% endif %}">{{ '30 days'|trans }}</a>
+            <a href="{{ 'support/ratings'|url(query: { 'period': '90' }) }}" class="btn btn-sm{% if report.period == '90' %} btn-primary{% else %} btn-outline-secondary{% endif %}">{{ '90 days'|trans }}</a>
+            <a href="{{ 'support/ratings'|url(query: { 'period': '365' }) }}" class="btn btn-sm{% if report.period == '365' %} btn-primary{% else %} btn-outline-secondary{% endif %}">{{ 'Year'|trans }}</a>
+            <a href="{{ 'support/ratings'|url(query: { 'period': 'all' }) }}" class="btn btn-sm{% if report.period == 'all' %} btn-primary{% else %} btn-outline-secondary{% endif %}">{{ 'All time'|trans }}</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <h4 class="card-title mb-2">{{ 'Reply Ratings'|trans }}</h4>
+        <div class="table-responsive mb-4">
+            <table class="table card-table table-vcenter text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Staff'|trans }}</th>
+                        <th class="text-end">{{ 'Ratings'|trans }}</th>
+                        <th class="text-end">{{ 'Average'|trans }} /5</th>
+                        {% for star in 5..1 %}<th class="text-end">{{ star }}★</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in report.ratings %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td class="text-end">{{ row.total }}</td>
+                        <td class="text-end">{{ row.average }}</td>
+                        {% for star in 5..1 %}<td class="text-end">{{ row.stars[star] }}</td>{% endfor %}
+                    </tr>
+                {% else %}
+                    <tr><td colspan="8" class="text-secondary">{{ 'No reply ratings yet.'|trans }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h4 class="card-title mb-2">{{ 'Feedback Scores'|trans }}</h4>
+        <div class="table-responsive mb-4">
+            <table class="table card-table table-vcenter text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Staff'|trans }}</th>
+                        <th class="text-end">{{ 'Answers'|trans }}</th>
+                        <th class="text-end">{{ 'Average'|trans }} /10</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in report.feedback %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td class="text-end">{{ row.total }}</td>
+                        <td class="text-end">{{ row.average }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="3" class="text-secondary">{{ 'No feedback yet.'|trans }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h4 class="card-title mb-2">{{ 'Feedback Comments'|trans }}</h4>
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Date'|trans }}</th>
+                        <th>{{ 'Ticket'|trans }}</th>
+                        <th>{{ 'About'|trans }}</th>
+                        <th class="text-end">{{ 'Score'|trans }}</th>
+                        <th>{{ 'Comment'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in report.comments %}
+                    <tr>
+                        <td class="text-muted">{{ item.created_at|format_date }}</td>
+                        <td><a href='{{ "support/ticket/#{item.ticket_id}"|url }}#ticket-feedback'>#{{ item.ticket_id }}</a> <span class="text-muted">{{ item.subject|truncate(40) }}</span></td>
+                        <td>{{ item.name is not empty ? item.name : ('Support in general'|trans) }}</td>
+                        <td class="text-end">{{ item.rating is not null ? item.rating ~ '/10' : '-' }}</td>
+                        <td class="text-wrap">{{ item.comments|nl2br }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-secondary">{{ 'No comments yet.'|trans }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

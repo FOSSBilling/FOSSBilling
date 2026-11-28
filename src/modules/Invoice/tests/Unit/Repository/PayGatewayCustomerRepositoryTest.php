@@ -25,9 +25,13 @@ use Doctrine\ORM\Tools\SchemaTool;
 function payGatewayCustomerEntityManager(): EntityManager
 {
     $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 3) . '/Entity'], true);
+    $config->setUseSchemaEditorApi(true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+    if ($entityManager->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $entityManager->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
 
     $metadata = array_map(
         $entityManager->getClassMetadata(...),
@@ -92,6 +96,39 @@ test('findOneByGatewayAndClient does not cross gateways for the same client', fu
         ->and($em->getRepository(PayGatewayCustomer::class)->findOneByGatewayAndClient($gatewayB->getId(), 7))->toBeNull();
 });
 
+test('findOneByGatewayAndClient keeps test and live customer namespaces apart', function (): void {
+    // A gateway's test and live API keys are separate customer namespaces
+    // sharing one PayGateway row: the lookup must stay in its own mode.
+    $em = payGatewayCustomerEntityManager();
+
+    $gateway = new PayGateway();
+    $gateway->setName('Stripe');
+    $em->persist($gateway);
+    $em->flush();
+
+    $live = new PayGatewayCustomer();
+    $live->setPayGateway($gateway);
+    $live->setClientId(7);
+    $live->setTestMode(false);
+    $live->setExternalCustomerId('cus_live');
+    $em->persist($live);
+
+    $test = new PayGatewayCustomer();
+    $test->setPayGateway($gateway);
+    $test->setClientId(7);
+    $test->setTestMode(true);
+    $test->setExternalCustomerId('cus_test');
+    $em->persist($test);
+    $em->flush();
+    $em->clear();
+
+    $repository = $em->getRepository(PayGatewayCustomer::class);
+
+    expect($repository->findOneByGatewayAndClient($gateway->getId(), 7)?->getExternalCustomerId())->toBe('cus_live')
+        ->and($repository->findOneByGatewayAndClient($gateway->getId(), 7, false)?->getExternalCustomerId())->toBe('cus_live')
+        ->and($repository->findOneByGatewayAndClient($gateway->getId(), 7, true)?->getExternalCustomerId())->toBe('cus_test');
+});
+
 test('a second customer row for the same gateway and client violates the unique constraint', function (): void {
     // This is the DB-level backstop Payment_Adapter_Stripe::cacheGatewayCustomer() relies on:
     // if two requests race and both try to cache a customer for the same (gateway, client),
@@ -116,4 +153,31 @@ test('a second customer row for the same gateway and client violates the unique 
     $em->persist($second);
 
     expect(fn () => $em->flush())->toThrow(UniqueConstraintViolationException::class);
+});
+
+test('customer rows for the same gateway and client may differ by test mode', function (): void {
+    $em = payGatewayCustomerEntityManager();
+
+    $gateway = new PayGateway();
+    $gateway->setName('Stripe');
+    $em->persist($gateway);
+    $em->flush();
+
+    $live = new PayGatewayCustomer();
+    $live->setPayGateway($gateway);
+    $live->setClientId(7);
+    $live->setTestMode(false);
+    $live->setExternalCustomerId('cus_live');
+    $em->persist($live);
+
+    $test = new PayGatewayCustomer();
+    $test->setPayGateway($gateway);
+    $test->setClientId(7);
+    $test->setTestMode(true);
+    $test->setExternalCustomerId('cus_test');
+    $em->persist($test);
+
+    $em->flush();
+
+    expect($em->getRepository(PayGatewayCustomer::class)->findOneByGatewayAndClient($gateway->getId(), 7, true)?->getExternalCustomerId())->toBe('cus_test');
 });

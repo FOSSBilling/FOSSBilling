@@ -20,6 +20,40 @@ use FOSSBilling\Core\SortOptions;
 
 class TransactionRepository extends EntityRepository
 {
+    /**
+     * @param list<int> $invoiceIds
+     *
+     * @return array<int, float> processed-transaction sums keyed by invoice id
+     */
+    public function getProcessedSumsByInvoiceIds(array $invoiceIds): array
+    {
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('t')
+            ->select('IDENTITY(t.invoice) AS invoice_id, SUM(t.amount) AS amount, t.currency, i.currency AS invoice_currency')
+            ->join('t.invoice', 'i')
+            ->where('IDENTITY(t.invoice) IN (:invoice_ids)')
+            ->andWhere('t.status = :status')
+            ->setParameter('invoice_ids', $invoiceIds)
+            ->setParameter('status', Transaction::STATUS_PROCESSED)
+            ->groupBy('t.invoice', 't.currency', 'i.currency')
+            ->getQuery()
+            ->getScalarResult();
+
+        $sums = [];
+        foreach ($rows as $row) {
+            if ((float) $row['amount'] != 0.0 && ($row['currency'] === null || $row['currency'] === '' || strcasecmp($row['currency'], (string) $row['invoice_currency']) !== 0)) {
+                throw new \FOSSBilling\Core\Exception\InformationException('A processed payment currency does not match its invoice and needs staff reconciliation.');
+            }
+            $id = (int) $row['invoice_id'];
+            $sums[$id] = round(($sums[$id] ?? 0.0) + (float) $row['amount'], 2);
+        }
+
+        return $sums;
+    }
+
     public function existsByGatewayId(int $gatewayId): bool
     {
         return (bool) $this->createQueryBuilder('t')
@@ -191,6 +225,29 @@ class TransactionRepository extends EntityRepository
     }
 
     /**
+     * Find a bank debit still clearing: a received or locally failed transaction whose gateway
+     * status is still processing, excluding a given id. Used by the Stripe
+     * adapter to settle a clearing payment once the gateway answers it.
+     */
+    public function findClearingByTxnId(string $txnId, int $gatewayId, int $excludeId): ?Transaction
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.txnId = :txn_id')
+            ->andWhere('IDENTITY(t.gateway) = :gateway_id')
+            ->andWhere('t.id != :exclude_id')
+            ->andWhere('t.status IN (:statuses)')
+            ->andWhere('t.txnStatus = :txn_status')
+            ->setParameter('txn_id', $txnId)
+            ->setParameter('gateway_id', $gatewayId)
+            ->setParameter('exclude_id', $excludeId)
+            ->setParameter('statuses', [Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR])
+            ->setParameter('txn_status', 'processing')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * Find an active (received/processing/processed) transaction with the
      * given gateway transaction id and gateway id, excluding a given id.
      *
@@ -200,6 +257,10 @@ class TransactionRepository extends EntityRepository
      */
     public function findActiveByTxnIdAndGatewayId(string $txnId, int $gatewayId, int $excludeId): ?Transaction
     {
+        if ($this->ownsRecordedGatewayReceipt($excludeId, $txnId, $gatewayId)) {
+            return null;
+        }
+
         return $this->competingTransactionQuery($txnId, $gatewayId, $excludeId, [
             Transaction::STATUS_RECEIVED,
             Transaction::STATUS_PROCESSING,
@@ -214,10 +275,25 @@ class TransactionRepository extends EntityRepository
      */
     public function findProcessingOrProcessedByTxnId(string $txnId, ?int $gatewayId = null, ?int $excludeId = null): ?Transaction
     {
+        if ($excludeId !== null && $this->ownsRecordedGatewayReceipt($excludeId, $txnId, $gatewayId)) {
+            return null;
+        }
+
         return $this->competingTransactionQuery($txnId, $gatewayId, $excludeId, [
             Transaction::STATUS_PROCESSING,
             Transaction::STATUS_PROCESSED,
         ])->getQuery()->getOneOrNullResult();
+    }
+
+    private function ownsRecordedGatewayReceipt(int $id, string $txnId, ?int $gatewayId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        $table = $connection->quoteSingleIdentifier('transaction');
+
+        return $connection->fetchOne(
+            "SELECT b.id FROM client_balance b JOIN $table t ON t.id = b.gateway_transaction_id WHERE t.id = :id AND t.txn_id = :txn_id AND (:any_gateway = 1 OR t.gateway_id = :gateway_id) LIMIT 1",
+            ['id' => $id, 'txn_id' => $txnId, 'any_gateway' => $gatewayId === null ? 1 : 0, 'gateway_id' => $gatewayId],
+        ) !== false;
     }
 
     /**

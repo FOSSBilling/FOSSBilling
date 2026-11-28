@@ -2077,6 +2077,14 @@ test('hosting provisioning retries failed steps without saving passwords', funct
     });
     $orderService->shouldReceive('getConfig')->andReturn($configuredPassword ? ['password' => 'configured-secret'] : []);
     $orderService->shouldReceive('saveStatusChange')->andReturnNull();
+    if ($uncancel) {
+        $connection = Mockery::mock(Connection::class);
+        $connection->shouldReceive('getDatabasePlatform')->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+        $em->shouldReceive('getConnection')->andReturn($connection);
+        $metadata = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+        $metadata->shouldReceive('getPairsForOrder')->with(1)->andReturn([]);
+        $orderService->shouldReceive('getOrderMetaRepository')->andReturn($metadata);
+    }
     $orderService->setDi($di);
     $di['mod_service'] = $di->protect(fn () => $orderService);
     $hosting = Mockery::mock(Service::class)->makePartial();

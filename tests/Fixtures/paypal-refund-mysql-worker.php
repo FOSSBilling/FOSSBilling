@@ -29,7 +29,7 @@ class PayPalRefundBarrierConnection extends Doctrine\DBAL\Connection
     }
 }
 
-$em = deferredPayPalMysqlEntityManager(PayPalRefundBarrierConnection::class);
+$em = deferredPayPalMysqlEntityManager(PayPalRefundBarrierConnection::class, $argv[3]);
 $connection = $em->getConnection();
 $receipt = $em->find(Box\Mod\Invoice\Entity\Transaction::class, (int) $argv[2]);
 $invoice = $receipt->getInvoice();

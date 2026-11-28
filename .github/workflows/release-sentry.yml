@@ -20,14 +20,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
           persist-credentials: false
 
       - name: 'Load Sentry Auth Token'
-        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        uses: 1password/load-secrets-action@v5.0.1
         with:
           export-env: true
           version: '2.39.0'
@@ -38,7 +38,7 @@ jobs:
 
       - name: 'Report Release to Sentry'
         id: sentry-release
-        uses: getsentry/action-release@d55c8c3b7375607e972b710f12926b676d89d7d2 # v3.8.0
+        uses: getsentry/action-release@v3.9.1
         env:
           SENTRY_ORG: fossbilling
           SENTRY_PROJECT: fossbilling

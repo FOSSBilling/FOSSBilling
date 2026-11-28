@@ -165,13 +165,32 @@
                         <div class="col-md-6 col-xl-3">
                             <div>
                                 <label class="form-label text-muted small mb-1" for="filter-ticket-priority">{{ 'Priority'|trans }}</label>
-                                <input class="form-control" type="text" id="filter-ticket-priority" name="priority" value="{{ request.priority }}" placeholder="{{ 'Priority'|trans }}">
+                                <select class="form-select" id="filter-ticket-priority" name="priority">
+                                    <option value="">{{ 'All Priorities'|trans }}</option>
+                                    {% for level, title in guest.support_ticket_priorities %}
+                                        <option value="{{ level }}"{% if request.priority|default('') == level %} selected{% endif %}>{{ title }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6 col-xl-3">
                             <div>
                                 <label class="form-label text-muted small mb-1" for="status">{{ 'Status'|trans }}</label>
                                 {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), request.status, 0, 'All Statuses'|trans) }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="filter-ticket-assigned">{{ 'Assigned To'|trans }}</label>
+                                <select class="form-select" id="filter-ticket-assigned" name="assigned">
+                                    <option value="">{{ 'Anyone or nobody'|trans }}</option>
+                                    <option value="me"{% if request.assigned|default('') == 'me' %} selected{% endif %}>{{ 'Me'|trans }}</option>
+                                    <option value="none"{% if request.assigned|default('') == 'none' %} selected{% endif %}>{{ 'Nobody'|trans }}</option>
+                                    <option value="any"{% if request.assigned|default('') == 'any' %} selected{% endif %}>{{ 'Any staff member'|trans }}</option>
+                                    {% for staff_id, staff_name in admin.support_ticket_assignable_staff %}
+                                        <option value="{{ staff_id }}"{% if request.assigned|default('') == staff_id ~ '' %} selected{% endif %}>{{ staff_name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6 col-xl-3">
@@ -219,6 +238,10 @@
                     </div>
                 </form>
             </section>
+            {% set ticket_pins = admin.support_ticket_pinned_ids() %}
+            <div class="px-3 pt-3">
+                {{ include('mod_support_tickets_bulk.html.twig') }}
+            </div>
             <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
@@ -229,6 +252,8 @@
                         <th>{{ 'Author'|trans }}</th>
                         {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                         {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        <th>{{ 'Priority'|trans }}</th>
+                        <th>{{ 'Assigned To'|trans }}</th>
                         <th>{{ 'Helpdesk'|trans }}</th>
                         <th class="w-1"></th>
                     </tr>
@@ -269,6 +294,7 @@
                         <td>
                             <div>
                                 <a href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
+                                {% if ticket.id in ticket_pins %}<span class="badge bg-yellow-lt ms-1">{{ 'Pinned'|trans }}</span>{% endif %}
                             </div>
                             {% if ticket.notes is defined and ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
@@ -280,6 +306,8 @@
                             <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
                         </td>
                         <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                        <td>{{ include('mod_support_ticket_priority.html.twig', { level: ticket.priority_level|default('medium') }) }}</td>
+                        <td>{{ ticket.assigned_to.name|default('-') }}</td>
                         <td>{{ ticket.helpdesk.name|default('-') }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>
@@ -297,7 +325,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -20,7 +20,7 @@ test('maps the existing admin activity history table', function (): void {
 });
 
 test('stores admin activity history and preserves its timestamp', function (): void {
-    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $createdAt = new DateTimeImmutable('2026-01-01 12:00:00');
     $history = (new ActivityAdminHistory())
         ->setAdminId(2)
         ->setIp('192.0.2.1')
@@ -39,5 +39,5 @@ test('initializes the timestamp when it is unset', function (): void {
 
     $history->onPrePersist();
 
-    expect($history->getCreatedAt())->toBeInstanceOf(DateTime::class);
+    expect($history->getCreatedAt())->toBeInstanceOf(DateTimeImmutable::class);
 });

@@ -149,6 +149,102 @@ class Service implements InjectionAwareInterface
         return $stats;
     }
 
+    /**
+     * Deposit (Add funds) top-ups are balance liability, not revenue: the
+     * same external cash must not count both when the deposit is paid and
+     * again when the balance it created pays a service invoice.
+     *
+     * Pure deposit invoices contribute nothing. Mixed invoices (a draft
+     * deposit proforma that gained service lines before issuance) contribute
+     * only their service portion. Deposit lines are never taxed and every
+     * conversion is a flat rate, so the service share is exactly the stored
+     * base amount times the service item share of the invoice subtotal.
+     * Deriving the share from the stored base itself (instead of re-applying
+     * a rate) keeps income and refunds on the same basis through every
+     * recalculation, even after the currency rate moves. Refunds split
+     * through the credit-note documents, whose mirrored lines keep the
+     * refunded lines' types (synthetic custom lines carry no attribution and
+     * are skipped): the linked ratio applies only when the linked notes cover
+     * the whole refund, pure deposits contribute nothing, a linked-less
+     * refund that covers the whole invoice is split by the original lines,
+     * and anything else stays explicitly unresolved (NULL) rather than
+     * guessing. Every allocation is rounded to cents, matching income.
+     */
+    private function hasDepositLinesClause(): string
+    {
+        return "EXISTS (SELECT 1 FROM invoice_item di WHERE di.invoice_id = invoice.id AND di.type = 'deposit')";
+    }
+
+    private function hasServiceLinesClause(): string
+    {
+        return "EXISTS (SELECT 1 FROM invoice_item si WHERE si.invoice_id = invoice.id AND (si.type <> 'deposit' OR si.type IS NULL))";
+    }
+
+    /**
+     * SUM(price × quantity) over an invoice's own lines, in invoice currency.
+     */
+    private function ownLinesTotalExpr(bool $serviceOnly): string
+    {
+        $filter = $serviceOnly ? "AND (ii.type <> 'deposit' OR ii.type IS NULL)" : '';
+
+        return "(SELECT SUM(ii.price * COALESCE(ii.quantity, 1)) FROM invoice_item ii WHERE ii.invoice_id = invoice.id {$filter})";
+    }
+
+    /**
+     * SUM(price × quantity) over an invoice's credit-note lines, in invoice
+     * currency. Credit lines mirror the refunded lines' types with negated
+     * prices, so deposit refunds are directly attributable. Synthetic custom
+     * lines carry no type attribution, so both totals skip them: a custom
+     * refund falls back to the fully-backed reconstruction, if any. NULL
+     * types count as service lines, mirroring the income side.
+     */
+    private function creditLinesTotalExpr(bool $serviceOnly): string
+    {
+        $filter = $serviceOnly
+            ? "AND (ci.type IS NULL OR (ci.type <> 'deposit' AND ci.type <> 'custom'))"
+            : "AND (ci.type IS NULL OR ci.type <> 'custom')";
+
+        return "(SELECT SUM(ci.price * COALESCE(ci.quantity, 1)) FROM invoice cn JOIN invoice_item ci ON ci.invoice_id = cn.id WHERE cn.credit_note_for_invoice_id = invoice.id {$filter})";
+    }
+
+    private function serviceIncomeExpr(): string
+    {
+        $dep = $this->hasDepositLinesClause();
+        $svc = $this->hasServiceLinesClause();
+        $svcSub = $this->ownLinesTotalExpr(true);
+        $totSub = $this->ownLinesTotalExpr(false);
+
+        return "(CASE WHEN NOT ({$dep}) THEN COALESCE(invoice.base_income, 0) WHEN ({$svc}) THEN ROUND(COALESCE(invoice.base_income, 0) * COALESCE(({$svcSub}), 0) / NULLIF(({$totSub}), 0), 2) ELSE 0 END)";
+    }
+
+    private function serviceRefundExpr(bool $taxAware): string
+    {
+        $dep = $this->hasDepositLinesClause();
+        $svc = $this->hasServiceLinesClause();
+        $svcSub = $this->ownLinesTotalExpr(true);
+        $totSub = $this->ownLinesTotalExpr(false);
+        $cnSvcSub = $this->creditLinesTotalExpr(true);
+        $cnTotSub = $this->creditLinesTotalExpr(false);
+        $base = $taxAware
+            ? 'CASE WHEN invoice.refund IS NOT NULL AND invoice.base_refund_tax IS NULL THEN NULL ELSE invoice.base_refund END'
+            : 'invoice.base_refund';
+        // Coverage gate: the linked ratio only applies when the linked notes
+        // account for the whole refund (compared in invoice currency via the
+        // income-implied rate, so no stored rate is needed). The tolerance
+        // scales with that rate, since base_refund is rounded to cents and
+        // the rounding error grows with the conversion factor. Anything less
+        // is an incomplete history: the remainder stays unresolved (NULL).
+        $impliedRefund = "({$base}) * ({$totSub}) / NULLIF(invoice.base_income, 0)";
+        $rateFactor = "ABS(({$totSub}) / NULLIF(invoice.base_income, 0))";
+        $coverage = "COALESCE(({$cnTotSub}), 0) <> 0 AND ABS(ABS(({$cnTotSub})) - ABS({$impliedRefund})) <= (0.02 + 0.01 * ({$rateFactor}))";
+
+        return "(CASE WHEN NOT ({$dep}) THEN ROUND(COALESCE({$base}, 0), 2)"
+            . " WHEN ({$dep}) AND NOT ({$svc}) THEN 0"
+            . " WHEN ({$coverage}) THEN ROUND(({$base}) * COALESCE(({$cnSvcSub}), 0) / NULLIF(({$cnTotSub}), 0), 2)"
+            . " WHEN ({$base}) IS NOT NULL AND ABS(COALESCE(({$base}), 0) - COALESCE(invoice.base_income, 0)) <= 0.02 THEN ROUND(({$base}) * COALESCE(({$svcSub}), 0) / NULLIF(({$totSub}), 0), 2)"
+            . ' ELSE NULL END)';
+    }
+
     public function getSummaryIncome(): array
     {
         $stats = [];
@@ -156,7 +252,9 @@ class Service implements InjectionAwareInterface
         $dbal = $this->di['em']->getConnection();
         $boundaries = $this->getDayBoundaries();
 
-        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')";
+        $income = $this->serviceIncomeExpr();
+        $refund = $this->serviceRefundExpr(false);
+        $base = "SELECT (COALESCE(SUM({$income}), 0) - COALESCE(SUM({$refund}), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')";
         $total_query = $base;
         $yeste_query = $base . ' AND paid_at >= :yesterday_start AND paid_at < :today_start';
         $today_query = $base . ' AND paid_at >= :today_start AND paid_at < :tomorrow_start';
@@ -241,11 +339,13 @@ class Service implements InjectionAwareInterface
         // SUM(base_income) over all rows - base_income never mixed bases, so it
         // needs no such filter. Gross cash of classified refunds is
         // refund + refund_tax.
-        $query = 'SELECT COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN NULL ELSE base_refund END), 0) AS refund, COALESCE(SUM(base_income), 0) AS income, COALESCE(SUM(base_refund_tax), 0) AS refund_tax, (COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN NULL ELSE base_refund END), 0) + COALESCE(SUM(base_refund_tax), 0)) AS refund_gross, COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN 1 ELSE 0 END), 0) AS refund_tax_unresolved
+        $income = $this->serviceIncomeExpr();
+        $refund = $this->serviceRefundExpr(true);
+        $query = "SELECT COALESCE(SUM({$refund}), 0) AS refund, COALESCE(SUM({$income}), 0) AS income, COALESCE(SUM(base_refund_tax), 0) AS refund_tax, (COALESCE(SUM({$refund}), 0) + COALESCE(SUM(base_refund_tax), 0)) AS refund_gross, COALESCE(SUM(CASE WHEN refund IS NOT NULL AND base_refund_tax IS NULL THEN 1 ELSE 0 END), 0) AS refund_tax_unresolved
                 FROM invoice
                 WHERE issued = true
                 AND (status = :status1 OR status = :status2)
-                ';
+                ";
 
         $result = $dbal->executeQuery($query, [
             'status1' => Invoice::STATUS_PAID,
@@ -275,7 +375,8 @@ class Service implements InjectionAwareInterface
         // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
         // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
         $date = SqlExpr::dateOnly($dbal, 'created_at');
-        $query = "SELECT {$date} AS date, COALESCE(SUM(base_refund), 0) AS refund
+        $refund = $this->serviceRefundExpr(false);
+        $query = "SELECT {$date} AS date, COALESCE(SUM({$refund}), 0) AS refund
                 FROM invoice
                 WHERE created_at BETWEEN :date_from AND :date_to
                 AND issued = true
@@ -312,7 +413,9 @@ class Service implements InjectionAwareInterface
         // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
         // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
         $date = SqlExpr::dateOnly($dbal, 'paid_at');
-        $query = "SELECT {$date} AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income
+        $income = $this->serviceIncomeExpr();
+        $refund = $this->serviceRefundExpr(false);
+        $query = "SELECT {$date} AS date, (COALESCE(SUM({$income}), 0) - COALESCE(SUM({$refund}), 0)) AS income
                 FROM invoice
                 WHERE paid_at BETWEEN :date_from AND :date_to
                 AND issued = true
@@ -350,10 +453,15 @@ class Service implements InjectionAwareInterface
     public function getSalesByCountry($data)
     {
         $limit = (int) ($data['limit'] ?? 10);
+        $dep = $this->hasDepositLinesClause();
+        $svc = $this->hasServiceLinesClause();
+        // Mixed invoices hold a real sale, so only pure deposit top-ups are
+        // excluded from the sales count.
         $q = "
             SELECT buyer_country, COUNT(id) as sales
             FROM invoice
             WHERE status = 'paid'
+            AND NOT (({$dep}) AND NOT ({$svc}))
             GROUP BY buyer_country
             ORDER BY sales DESC
             LIMIT $limit

@@ -18,6 +18,7 @@ namespace Box\Mod\Order\Api;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
@@ -136,6 +137,51 @@ class Client extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         return $order;
+    }
+
+    /**
+     * Asks to cancel the service, with a type (immediate or end_of_period)
+     * and a reason.
+     */
+    #[RequiredParams(['type' => 'Choose when the service ends', 'reason' => 'Please tell us why you want to cancel.'])]
+    public function cancel_request($data): bool
+    {
+        if (!is_string($data['type'] ?? null) || !is_string($data['reason'] ?? null)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Cancellation type and reason must be strings.');
+        }
+        $this->di['mod_service']('Order', 'CancelRequest')->create($this->_getOrder($data), $data['type'], $data['reason']);
+
+        return true;
+    }
+
+    /**
+     * The waiting cancellation request of the service, or null.
+     *
+     * @return array|null
+     */
+    public function cancel_request_get($data)
+    {
+        $request = $this->di['mod_service']('Order', 'CancelRequest')->pending($this->_getOrder($data));
+
+        return $request === null ? null : $this->di['mod_service']('Order', 'CancelRequest')->toApiArray($request);
+    }
+
+    /**
+     * Takes back the waiting cancellation request of the service.
+     */
+    public function cancel_request_withdraw($data): bool
+    {
+        $identity = $this->getIdentity();
+        if (!$identity instanceof ClientEntity) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Client identity not found');
+        }
+        $id = $data['request_id'] ?? null;
+        if ((!is_int($id) && !is_string($id)) || filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            throw new \FOSSBilling\Core\Exception\InformationException('A positive cancellation request ID is required.');
+        }
+        $this->di['mod_service']('Order', 'CancelRequest')->withdraw($this->_getOrder($data), $identity, (int) $id);
+
+        return true;
     }
 
     private function getClientId(object $identity): int

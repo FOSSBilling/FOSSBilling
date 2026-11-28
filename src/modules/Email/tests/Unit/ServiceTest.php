@@ -17,6 +17,19 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
+test('bundled email templates have unique action codes for fresh installation', function (): void {
+    $pathsByCode = [];
+    $finder = (new Symfony\Component\Finder\Finder())->files()->in(PATH_MODS . '/*/templates/email/')->name('*.html.twig');
+    foreach ($finder as $file) {
+        $pathsByCode[$file->getBasename('.html.twig')][] = $file->getPathname();
+    }
+
+    expect($pathsByCode)->not->toBeEmpty();
+    foreach ($pathsByCode as $paths) {
+        expect($paths)->toHaveCount(1);
+    }
+});
+
 function emailTemplate(string $actionCode = '', ?int $id = null, array $data = []): EmailTemplate
 {
     $template = new EmailTemplate($actionCode, $id);
@@ -135,8 +148,8 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
     $subject = 'Subject';
     $content_html = '<script>alert("x")</script><p>HTML</p>';
     $content_text = 'TEXT';
-    $created = new DateTime('-1 day');
-    $updated = new DateTime();
+    $created = new DateTimeImmutable('-1 day');
+    $updated = new DateTimeImmutable();
 
     $model = new Box\Mod\Email\Entity\ActivityClientEmail();
     \Tests\Helpers\setEntityId($model, $id);

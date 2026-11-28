@@ -38,7 +38,8 @@ final class JsonAudit extends Command implements InjectionAwareInterface
     {
         $this->addOption('table', null, InputOption::VALUE_REQUIRED, 'Inspect one table from the JSON migration inventory')
             ->addOption('batch-size', null, InputOption::VALUE_REQUIRED, 'Rows per read', '500')
-            ->setHelp('Reports row IDs and issue categories without JSON payloads; session IDs are hashed. Uses the automatic migration\'s interpretation of old form defaults and interrupted work. Repair reported rows, then retry normal update finalization.');
+            ->addOption('quarantined', null, InputOption::VALUE_NONE, 'Also list values quarantined during migration (ids and issue categories only)')
+            ->setHelp('Reports row IDs and issue categories without JSON payloads; session IDs are hashed. Uses the automatic migration\'s interpretation of old form defaults and interrupted work. Repair reported rows, then retry normal update finalization. Pass --quarantined to also list values the migration already quarantined; inspect one with database:json:quarantine:show.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -55,6 +56,12 @@ final class JsonAudit extends Command implements InjectionAwareInterface
             foreach ((new \FOSSBilling\Core\Doctrine\JsonAudit())->inspect($this->di['em']->getConnection(), $input->getOption('table'), $batch) as $issue) {
                 $output->writeln(sprintf('%s.%s id=%s %s', $issue['table'], $issue['column'], $issue['id'], $issue['issue']));
                 ++$count;
+            }
+            if ($input->getOption('quarantined')) {
+                $store = new \FOSSBilling\Core\Doctrine\JsonQuarantineStore($this->di['em']->getConnection(), $this->di['crypt']);
+                foreach ($store->list($input->getOption('table')) as $entry) {
+                    $output->writeln(sprintf('%s.%s id=%s quarantined:%s (value was set to NULL during migration; inspect with database:json:quarantine:show)', $entry['table'], $entry['column'], $entry['id'], $entry['issue']));
+                }
             }
         } catch (\InvalidArgumentException $exception) {
             $output->writeln('<error>' . $exception->getMessage() . '</error>');

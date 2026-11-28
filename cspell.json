@@ -5,6 +5,7 @@
         "libzip",
         "OPSYS",
         "TINYTEXT",
+        "BIGSERIAL",
         "FULLTEXT",
         "MEDIUMTEXT",
         "dropup",
@@ -134,7 +135,12 @@
         "Ucfirst",
         "ungroup",
         "nullsafe",
-        "pluraltrans"
+        "pluraltrans",
+        "autopay",
+        "chargeback",
+        "gatewayfees",
+        "savedcards",
+        "sepa"
     ],
 
     "ignoreWords": [
@@ -683,6 +689,54 @@
         {
             "filename": "tools/tests/I18n/fixtures/extraction.php",
             "words": ["mple"]
+        },
+        {
+            "filename": "tests/Unit/Payment/Adapter/PayPalAutoPayTest.php",
+            "words": [
+                "BILLINGAGREEMENTID",
+                "CURRENCYCODE",
+                "LONGMESSAGE",
+                "MSGSUBID",
+                "PAYERID",
+                "PAYMENTINFO",
+                "PAYMENTREQUEST",
+                "PAYMENTSTATUS",
+                "REFUNDTRANSACTIONID",
+                "TRANSACTIONID"
+            ]
+        },
+        {
+            "filename": "src/modules/Client/ClientRowLock.php",
+            "words": [
+                "hashtextextended",
+                "xact"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/TicketFiles.php",
+            "words": [
+                "hashtextextended",
+                "xact"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/tests/Unit/Api/AdminTest.php",
+            "words": [
+                "tftest"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/tests/Unit/TicketMergeTest.php",
+            "words": [
+                "guesthash",
+                "oldhash"
+            ]
+        },
+        {
+            "filename": "src/modules/Support/tests/Unit/TicketFeedbackTest.php",
+            "words": [
+                "guesthash"
+            ]
         }
     ],
     "ignorePaths": [
@@ -690,6 +744,9 @@
         "src/themes/**/assets/**",
         "src/install/assets/**",
         "src/install/sql/**",
+        "tests/Fixtures/upgrades/**/*.sql",
+        "tests/Fixtures/upgrades/**/*.php.txt",
+        "tools/upgrade-bridge/*.patch",
         "src/modules/*/assets/**",
         "composer.json",
         "composer.lock",

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\InvoiceOperation;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
@@ -72,6 +73,36 @@ class Guest extends \FOSSBilling\Core\Api\AbstractApi
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->getActive($data);
+    }
+
+    /**
+     * Per-gateway payment fees for an invoice, so the client sees each
+     * method's surcharge before paying. Read-only: nothing is changed.
+     *
+     * @throws \FOSSBilling\Core\Exception\BaseException
+     */
+    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
+    public function gateway_fees($data): array
+    {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid invoice hash', null, 4001);
+        }
+
+        // Same dual-bucket pattern as invoice_get: per-IP first so hash
+        // links cannot be enumerated, per-hash only after the read is allowed.
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_gateway_fees_ip', $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_gateway_fees_hash', (string) $data['hash'], 0);
+
+        $model = $this->getService()->getInvoiceRepository()->findByHash((string) $data['hash']);
+        if (!$model) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Invoice was not found');
+        }
+        $service = $this->getService();
+        $service->checkInvoiceAuth($model, InvoiceOperation::READ);
+
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_gateway_fees_hash', (string) $data['hash']);
+
+        return $this->getDi()['mod_service']('Invoice', 'GatewayFees')->quote($model);
     }
 
     /**

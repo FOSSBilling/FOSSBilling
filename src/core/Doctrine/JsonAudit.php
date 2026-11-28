@@ -67,6 +67,12 @@ final class JsonAudit
             return 'empty_string';
         }
 
+        return self::classifyIssue($raw, $scalar);
+    }
+
+    /** Classify an incompatible document without exposing its payload. */
+    public static function classifyIssue(string $raw, bool $scalar = false): ?string
+    {
         try {
             $value = json_decode($raw, false, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {

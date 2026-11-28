@@ -1,0 +1,6 @@
+# Historical fixtures must retain the exact bytes pinned by their SHA-256 digests.
+tests/Fixtures/upgrades/*/*.sql -text -whitespace
+tests/Fixtures/upgrades/*/*.txt -text -whitespace
+
+# Blank unified-diff context lines contain one required space.
+tools/upgrade-bridge/*.patch -text whitespace=-blank-at-eol

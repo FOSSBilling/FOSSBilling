@@ -1987,3 +1987,475 @@ test('ignores the gateway_returned flag from API callers', function (): void {
 
     expect($api->refund($data))->toBe(3);
 });
+
+test('applies credit to an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1, 'amount' => 25.5];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('applyCredit')
+        ->once()
+        ->with(Mockery::type(Invoice::class), 25.5)
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->apply_credit($data))->toBeTrue();
+});
+
+test('removes credit from an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('removeCredit')
+        ->once()
+        ->with(Mockery::type(Invoice::class))
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->remove_credit($data))->toBeTrue();
+});
+
+test('gets an invoice with the client free credit', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->andReturn(['id' => 1]);
+    $serviceMock->shouldReceive('getInvoicePromoApplications')
+        ->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getDebitingInvoiceIds')
+        ->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getFreeCredit')
+        ->once()
+        ->with(7)
+        ->andReturn(42.50);
+
+    $model = createEntity(Invoice::class, ['client_id' => 7]);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $result = $api->get(['id' => 1]);
+    expect($result['client_credit'])->toBe(42.50);
+});
+
+test('refunds an invoice to account credit instead of the gateway', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'to_credit' => true,
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('refundInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), null, null, ['to_credit' => true, 'gateway_refund' => false])
+        ->andReturn(3);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->once()
+        ->andReturn(false);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->refund($data))->toBeInt()->toBe(3);
+});
+
+test('domain renewal review requires permission to manage invoices', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $staff = $di['mod_service']('staff');
+    $staff->shouldReceive('checkPermissionsAndThrowException')
+        ->once()->with('invoice', 'manage_invoices', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+
+    expect(fn () => $api->item_review_domain_renewal(['id' => 11, 'decision' => 'retry_zero']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('paid renewal review requires permission to manage invoices', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $di['mod_service']('staff')->shouldReceive('checkPermissionsAndThrowException')
+        ->once()->with('invoice', 'manage_invoices', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+    expect(fn () => $api->item_review_paid_renewal(['id' => 11, 'decision' => 'retry']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('receipt reconciliation requires permission to manage both invoices and client balances', function (): void {
+    $api = apiEndpoint(new Admin());
+    $di = container();
+    $staff = $di['mod_service']('staff');
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('invoice', 'manage_invoices', null, Mockery::any())->andReturn(true);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('client', 'manage_balance', null, Mockery::any())->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $api->setDi($di);
+    expect(fn () => $api->transaction_reconcile_receipt(['receipt_id' => 1, 'transaction_id' => 2, 'provider_object_id' => 'pi_1']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('charges saved cards in batch', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('runDue')->once();
+
+    $di = $api->getDi();
+    $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+    $api->setDi($di);
+
+    expect($api->batch_charge_saved_cards([]))->toBeTrue();
+});
+
+test('updates saved card charge settings', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+    $savedCards->shouldReceive('saveSettings')->once()->with(['card_days_before' => '3']);
+
+    $di = $api->getDi();
+    $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+    $api->setDi($di);
+
+    expect($api->card_settings_update(['card_days_before' => '3']))->toBeTrue();
+});
+
+describe('saved cards', function (): void {
+    test('shows the invoice client saved method', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('card')->once()->with(7)->andReturn(['payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => '2026-01-05 10:00:00']);
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(false);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_get(['id' => 21]))->toBe('Visa •••• 4242');
+    });
+
+    test('hides the saved method while a payment is still clearing', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldNotReceive('card');
+
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
+        $connection->shouldReceive('fetchAssociative')->once()->andReturn(['amount' => '10.00', 'currency' => 'USD', 'created_at' => '2026-01-01 10:00:00']);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_get(['id' => 21]))->toBeNull();
+    });
+
+    test('charges the saved method for an invoice', function (string $adapterClass): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $adapter = Mockery::mock($adapterClass);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter, 'payment_method' => 'pm_1', 'card' => 'Visa •••• 4242', 'auto_pay_at' => 'x']);
+        $savedCards->shouldReceive('charge')->once()->with($invoice, $adapter, true)->andReturn(['paid' => true, 'error' => null]);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_charge(['id' => 21]))->toBeTrue();
+    })->with([Payment_Adapter_Stripe::class, Payment_Adapter_PayPalAutoPay::class, Payment_Adapter_PayPalEmail::class]);
+
+    test('refuses to charge without a saved method', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(null);
+        $savedCards->shouldNotReceive('charge');
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect(fn () => $api->card_charge(['id' => 21]))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'no saved payment method');
+    });
+
+    test('refuses to charge when the charge fails', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $invoice = createEntity(Invoice::class, ['id' => 21, 'client_id' => 7]);
+        $serviceMock = Mockery::mock(Service::class);
+        $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo = Mockery::mock(InvoiceRepository::class));
+        $invoiceRepo->shouldReceive('find')->once()->with(21)->andReturn($invoice);
+        $api->setService($serviceMock);
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('method')->once()->with(7)->andReturn(['adapter' => $adapter]);
+        $savedCards->shouldReceive('charge')->once()->andReturn(['paid' => false, 'error' => 'The card was declined.']);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect(fn () => $api->card_charge(['id' => 21]))
+            ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'declined');
+    });
+
+    test('finds saved cards at Stripe for clients without one', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $adapter = Mockery::mock(Payment_Adapter_Stripe::class);
+        $adapter->shouldReceive('findCards')->once()->with(0, 25)->andReturn(['checked' => 25, 'found' => 3, 'next' => 40]);
+        $savedCards = Mockery::mock(Box\Mod\Invoice\ServiceSavedCards::class);
+        $savedCards->shouldReceive('stripe')->once()->andReturn($adapter);
+
+        $di = $api->getDi();
+        $di['mod_service'] = $di->protect(moduleService(['invoice:savedcards' => $savedCards]));
+        $api->setDi($di);
+
+        expect($api->card_find([]))->toBe(['checked' => 25, 'found' => 3, 'next' => 40]);
+    });
+});
+
+describe('paypal balances', function (): void {
+    test('returns the cached balances of enabled PayPal gateways', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $autopay = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'PayPalAutoPay', 'name' => 'PayPalAutoPay']);
+        $stripe = createEntity(PayGateway::class, ['id' => 1, 'gateway' => 'Stripe', 'name' => 'Stripe']);
+
+        $repo = Mockery::mock(PayGatewayRepository::class);
+        $repo->shouldReceive('findEnabledOrderedByIdDesc')->once()->andReturn([$autopay, $stripe]);
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('balances')->once()->andReturn([['currency' => 'USD', 'amount' => 10.0]]);
+        $payGatewayService = Mockery::mock(ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($autopay)->andReturn($adapter);
+
+        $item = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+        $item->shouldReceive('isHit')->once()->andReturn(false);
+        $item->shouldReceive('set')->once();
+        $item->shouldReceive('expiresAfter')->once()->with(600);
+        $item->shouldReceive('get')->andReturn(['balances' => [['currency' => 'USD', 'amount' => 10.0]], 'error' => null]);
+        $cache = Mockery::mock(Psr\Cache\CacheItemPoolInterface::class);
+        $cache->shouldReceive('getItem')->once()->with('fossbilling_paypal_balance_5_0')->andReturn($item);
+        $cache->shouldReceive('save')->once()->with($item);
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $payGatewayService]));
+        $di['cache'] = $cache;
+        $api->setDi($di);
+
+        expect($api->paypal_balances())->toBe([
+            ['gateway' => 'PayPal Auto-Pay', 'test_mode' => false, 'balances' => [['currency' => 'USD', 'amount' => 10.0]], 'error' => null],
+        ]);
+    });
+
+    test('a gateway that fails to answer reports the error', function (): void {
+        $api = apiEndpoint(new Admin());
+
+        $gateway = createEntity(PayGateway::class, ['id' => 5, 'gateway' => 'PayPalAutoPay', 'name' => 'Shop PayPal']);
+
+        $repo = Mockery::mock(PayGatewayRepository::class);
+        $repo->shouldReceive('findEnabledOrderedByIdDesc')->once()->andReturn([$gateway]);
+
+        $adapter = Mockery::mock(Payment_Adapter_PayPalAutoPay::class);
+        $adapter->shouldReceive('balances')->once()->andThrow(new FOSSBilling\Core\Exception\InformationException('nope'));
+        $payGatewayService = Mockery::mock(ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+
+        $item = Mockery::mock(Psr\Cache\CacheItemInterface::class);
+        $item->shouldReceive('isHit')->once()->andReturn(false);
+        $item->shouldReceive('set')->once();
+        $item->shouldReceive('expiresAfter')->once()->with(600);
+        $item->shouldReceive('get')->andReturn(['balances' => [], 'error' => 'nope']);
+        $cache = Mockery::mock(Psr\Cache\CacheItemPoolInterface::class);
+        $cache->shouldReceive('getItem')->once()->andReturn($item);
+        $cache->shouldReceive('save')->once();
+
+        $di = $api->getDi();
+        $di['em']->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+        $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $payGatewayService]));
+        $di['cache'] = $cache;
+        $api->setDi($di);
+
+        expect($api->paypal_balances())->toBe([
+            ['gateway' => 'Shop PayPal', 'test_mode' => false, 'balances' => [], 'error' => 'nope'],
+        ]);
+    });
+});
+
+test('staff must explicitly verify the PayPal outcome before reconciliation', function (): void {
+    $api = apiEndpoint(new Admin());
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $service = Mockery::mock(Service::class);
+    $repo = Mockery::mock(InvoiceRepository::class);
+    $repo->shouldReceive('find')->with(10)->andReturn($invoice);
+    $service->shouldReceive('getInvoiceRepository')->andReturn($repo);
+    $service->shouldNotReceive('dismissGatewayRefundAttempt');
+    $api->setDi(container());
+    $api->setService($service);
+
+    expect(fn () => $api->refund_attempt_reconcile(['id' => 10, 'attempt_id' => str_repeat('a', 32), 'outcome' => 'not_refunded']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Confirm that you checked PayPal');
+});
+
+test('staff can record a returned PayPal refund with its original selection', function (): void {
+    $api = apiEndpoint(new Admin());
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $identity = Tests\Helpers\admin();
+    $service = Mockery::mock(Service::class);
+    $repo = Mockery::mock(InvoiceRepository::class);
+    $repo->shouldReceive('find')->with(10)->andReturn($invoice);
+    $service->shouldReceive('getInvoiceRepository')->andReturn($repo);
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturnFalse();
+    $service->shouldReceive('reconcileGatewayRefund')->once()->with($invoice, str_repeat('a', 32), 'REF-1', [5 => '2'], (int) $identity->getId())->andReturn(42);
+    $api->setDi(container());
+    $api->setService($service);
+    $api->setIdentity($identity);
+
+    expect($api->refund_attempt_reconcile(['id' => 10, 'attempt_id' => str_repeat('a', 32), 'outcome' => 'refunded', 'verified' => '1', 'selection' => 'partial', 'items' => [5 => '2'], 'refund_id' => 'REF-1']))->toBe(42);
+});
+
+test('PayPal reconciliation requires invoice management permission', function (): void {
+    $api = apiEndpoint(new Admin());
+    $service = Mockery::mock(Service::class);
+    $service->shouldNotReceive('getInvoiceRepository');
+    $staff = Mockery::mock();
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('invoice', 'manage_invoices', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Permission denied'));
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staff]));
+    $api->setDi($di);
+    $api->setService($service);
+
+    expect(fn () => $api->refund_attempt_reconcile(['id' => 10, 'attempt_id' => str_repeat('a', 32), 'outcome' => 'not_refunded', 'verified' => '1']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Permission denied');
+});
+
+test('recording a returned deposit refund requires balance management permission', function (): void {
+    $api = apiEndpoint(new Admin());
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $service = Mockery::mock(Service::class);
+    $repo = Mockery::mock(InvoiceRepository::class);
+    $repo->shouldReceive('find')->with(10)->andReturn($invoice);
+    $service->shouldReceive('getInvoiceRepository')->andReturn($repo);
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->andReturnTrue();
+    $service->shouldNotReceive('reconcileGatewayRefund');
+    $staff = Mockery::mock();
+    $staff->shouldReceive('checkPermissionsAndThrowException')->with('invoice', 'manage_invoices', null, Mockery::any())->andReturnTrue();
+    $staff->shouldReceive('checkPermissionsAndThrowException')->with('client', 'manage_balance', null, Mockery::any())
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Balance permission denied'));
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staff]));
+    $api->setDi($di);
+    $api->setService($service);
+
+    expect(fn () => $api->refund_attempt_reconcile(['id' => 10, 'attempt_id' => str_repeat('a', 32), 'outcome' => 'refunded', 'verified' => '1', 'selection' => 'full', 'refund_id' => 'REF-1']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Balance permission denied');
+});
+
+test('staff can clear an attempt after confirming PayPal issued no refund', function (): void {
+    $api = apiEndpoint(new Admin());
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $identity = Tests\Helpers\admin();
+    $service = Mockery::mock(Service::class);
+    $repo = Mockery::mock(InvoiceRepository::class);
+    $repo->shouldReceive('find')->with(10)->andReturn($invoice);
+    $service->shouldReceive('getInvoiceRepository')->andReturn($repo);
+    $service->shouldReceive('dismissGatewayRefundAttempt')->once()->with($invoice, str_repeat('a', 32), (int) $identity->getId())->andReturnTrue();
+    $api->setDi(container());
+    $api->setService($service);
+    $api->setIdentity($identity);
+
+    expect($api->refund_attempt_reconcile(['id' => 10, 'attempt_id' => str_repeat('a', 32), 'outcome' => 'not_refunded', 'verified' => '1']))->toBeTrue();
+});
+
+test('releasing a stale transaction requires explicit reconciliation confirmation', function (): void {
+    $api = apiEndpoint(new Admin());
+    $service = Mockery::mock(ServiceTransaction::class);
+    $service->shouldReceive('releaseStaleProcessing')->once()->with(10, $api->getIdentity()->getId(), str_repeat('a', 32))->andReturnTrue();
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $service]));
+    $api->setDi($di);
+    expect(fn () => $api->transaction_release_stale(['id' => 10]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Confirm');
+    expect(fn () => $api->transaction_release_stale(['id' => 10, 'confirmed' => '1']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Reload');
+    expect($api->transaction_release_stale(['id' => 10, 'confirmed' => '1', 'claim_token' => str_repeat('a', 32)]))->toBeTrue();
+});
+
+test('wallet reconciliation requires confirmation and binds to the reviewed claim', function (): void {
+    $api = apiEndpoint(new Admin());
+    $service = Mockery::mock(ServiceTransaction::class);
+    $service->shouldReceive('reconcileWalletCredit')->once()->with(10, null, true, str_repeat('a', 32), $api->getIdentity()->getId(), 'Wallet checked')->andReturnTrue();
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $service]));
+    $api->setDi($di);
+    expect(fn () => $api->transaction_reconcile_wallet(['id' => 10, 'note' => 'Wallet checked']))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+    expect($api->transaction_reconcile_wallet(['id' => 10, 'note' => 'Wallet checked', 'confirmed' => '1', 'claim_token' => str_repeat('a', 32), 'no_credit' => '1']))->toBeTrue();
+});

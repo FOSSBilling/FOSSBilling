@@ -21,6 +21,7 @@ use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
+use Box\Mod\Invoice\PendingPayments;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Pagination\Options;
@@ -81,6 +82,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         // toApiArray, where per-invoice promo lookups would be N+1 queries.
         $result = $this->getService()->toApiArray($model, true, $this->getIdentity());
         $result['promo_applications'] = $this->getService()->getInvoicePromoApplications($model);
+        $result['client_credit'] = $model->getClientId() ? $this->getService()->getFreeCredit((int) $model->getClientId()) : 0.0;
         $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
 
         if (!empty($result['lines'])) {
@@ -185,6 +187,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional float $expected_amount - require this exact refund amount under the invoice lock
      * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      * @optional bool $gateway_refund - also return the money through the payment gateway when it supports refunds (default true). Pass false to record an offline-only refund.
+     * @optional bool $to_credit - add the refunded amount to the client's account credit instead of returning it
      *
      * @return int $id - newly generated refund document ID
      */
@@ -207,6 +210,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         if (array_key_exists('gateway_refund', $data)) {
             $options['gateway_refund'] = $gatewayRefund;
         }
+        $toCredit = array_key_exists('to_credit', $data) && \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['to_credit'], false);
+        if ($toCredit) {
+            // Adding funds to the balance needs the same permission as crediting it directly.
+            $this->checkPermissions('client', 'manage_balance');
+            $options['to_credit'] = true;
+            // The credit is the refund destination instead of the gateway.
+            $options['gateway_refund'] = false;
+        }
 
         // Refunding a deposit returns wallet credit as card money, so it
         // needs the same permission as crediting the balance directly.
@@ -215,6 +226,46 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         return $this->getService()->refundInvoice($model, $note, $items, $options);
+    }
+
+    /** Get the unresolved PayPal refund attempt for this invoice. */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function refund_attempt_get($data): ?array
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->pendingGatewayRefund($this->_getInvoice($data));
+    }
+
+    /** Record the result staff verified in PayPal. */
+    #[RequiredParams(['id' => 'Invoice ID is missing', 'attempt_id' => 'Refund attempt is missing', 'outcome' => 'Refund outcome is missing'])]
+    public function refund_attempt_reconcile($data): int|bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $invoice = $this->_getInvoice($data);
+        $attemptId = (string) $data['attempt_id'];
+        if (!preg_match('/^[a-f0-9]{32}$/', $attemptId)) {
+            throw new InformationException('Invalid refund attempt.');
+        }
+        if (($data['verified'] ?? null) !== '1') {
+            throw new InformationException('Confirm that you checked PayPal before continuing.');
+        }
+        $adminId = (int) $this->getIdentity()->getId();
+        if ($data['outcome'] === 'not_refunded') {
+            return $this->getService()->dismissGatewayRefundAttempt($invoice, $attemptId, $adminId);
+        }
+        if ($data['outcome'] !== 'refunded') {
+            throw new InformationException('Choose the verified refund outcome.');
+        }
+        if ($this->getService()->isInvoiceTypeDeposit($invoice)) {
+            $this->checkPermissions('client', 'manage_balance');
+        }
+        $items = ($data['selection'] ?? '') === 'partial' ? ($data['items'] ?? null) : null;
+        if (!in_array($data['selection'] ?? '', ['full', 'partial'], true) || (($data['selection'] ?? '') === 'partial' && (!is_array($items) || $items === []))) {
+            throw new InformationException('Select the original refund lines.');
+        }
+
+        return $this->getService()->reconcileGatewayRefund($invoice, $attemptId, (string) ($data['refund_id'] ?? ''), $items, $adminId);
     }
 
     /**
@@ -388,7 +439,20 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
         $items = $invoiceItemService->getFailedItems();
 
-        return array_map(fn (\Box\Mod\Invoice\Entity\InvoiceItem $item): array => $item->toApiArray(), $items);
+        return array_map(function (\Box\Mod\Invoice\Entity\InvoiceItem $item): array {
+            $data = $item->toApiArray();
+            if ($item->getType() === \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER && $item->getTask() === \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW) {
+                $order = $this->getDi()['em']->find(Order::class, (int) $item->getRelId());
+                $product = $order instanceof Order ? $this->getDi()['em']->find(\Box\Mod\Product\Entity\Product::class, (int) $order->getProductId()) : null;
+                $data['product_type'] = $product?->getType();
+                $meta = $this->getDi()['mod_service']('Order')->getOrderMetaRepository()->getPairsForOrder((int) $item->getRelId());
+                if (isset($meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()])) {
+                    $data['renewal_outcome'] = $meta[\Box\Mod\Order\Service::META_PAID_RENEWAL_OUTCOME_PREFIX . $item->getId()];
+                }
+            }
+
+            return $data;
+        }, $items);
     }
 
     /**
@@ -401,6 +465,39 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->requeueItem((int) $data['id']);
+
+        return true;
+    }
+
+    /** Resolve an interrupted paid renewal after checking its provider outcome. */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed', 'decision' => 'Review decision was not passed'])]
+    public function item_review_paid_renewal($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'InvoiceItem')->reviewPaidRenewal((int) $data['id'], (string) $data['decision']);
+
+        return true;
+    }
+
+    /** Record a staff decision after checking a held zero-priced domain renewal. */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed', 'decision' => 'Review decision was not passed'])]
+    public function item_review_domain_renewal($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'InvoiceItem')->reviewDomainRenewal((int) $data['id'], (string) $data['decision']);
+
+        return true;
+    }
+
+    /**
+     * Link a legacy gateway receipt after checking the payment at the provider.
+     */
+    #[RequiredParams(['receipt_id' => 'Receipt ID is missing', 'transaction_id' => 'Transaction ID is missing', 'provider_object_id' => 'Provider payment ID is missing'])]
+    public function transaction_reconcile_receipt($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('client', 'manage_balance');
+        $this->getService()->reconcileGatewayReceipt((int) $data['receipt_id'], (int) $data['transaction_id'], (string) $data['provider_object_id']);
 
         return true;
     }
@@ -480,6 +577,32 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     }
 
     /**
+     * Apply part or all of the client's credit to an unpaid invoice.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing', 'amount' => 'Amount is missing'])]
+    public function apply_credit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->applyCredit($this->_getInvoice($data), (float) $data['amount']);
+    }
+
+    /**
+     * Take the credit applied to an unpaid invoice back to the client's credit.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function remove_credit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->removeCredit($this->_getInvoice($data));
+    }
+
+    /**
      * Generate invoices for expiring orders.
      *
      * @return bool
@@ -493,9 +616,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Action to activate paid invoices lines.
-     *
-     * @return bool
      */
+    public function batch_deliver_issued_notifications(): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        return $this->getService()->doBatchDeliverIssuedNotifications();
+    }
+
     public function batch_activate_paid()
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -533,6 +661,117 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_invoices');
 
         return $this->getService()->doBatchInvokeDueEvent($data);
+    }
+
+    /**
+     * Charges the saved payment methods of invoices whose next automatic
+     * try is due (see ServiceSavedCards). Run from the cron.
+     */
+    public function batch_charge_saved_cards($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'SavedCards')->runDue();
+
+        return true;
+    }
+
+    /**
+     * Updates the automatic saved-method charge schedule (days before the
+     * due date, retries, days between retries).
+     */
+    public function card_settings_update($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->getDi()['mod_service']('Invoice', 'SavedCards')->saveSettings($data);
+
+        return true;
+    }
+
+    /** The saved method an invoice's client is charged to, or null (also while a payment is still clearing). */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function card_get($data): ?string
+    {
+        $this->checkPermissions('invoice', 'view');
+        $invoice = $this->getService()->getInvoiceRepository()->find((int) $data['id'])
+            ?? throw new InformationException('Invoice was not found');
+        $savedCards = $this->getDi()['mod_service']('Invoice', 'SavedCards');
+        if (PendingPayments::forInvoice($this->getDi()['em']->getConnection(), (int) $invoice->getId()) !== null) {
+            return null;
+        }
+
+        return $savedCards->card((int) $invoice->getClientId())['card'] ?? null;
+    }
+
+    /** Charges the client's saved payment method for an unpaid invoice now; a failed charge is an error. */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function card_charge($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+        $invoice = $this->getService()->getInvoiceRepository()->find((int) $data['id'])
+            ?? throw new InformationException('Invoice was not found');
+        $savedCards = $this->getDi()['mod_service']('Invoice', 'SavedCards');
+        $method = $savedCards->method((int) $invoice->getClientId());
+        $adapter = $method['adapter'] ?? null;
+        if (!$adapter instanceof \Payment_Adapter_Stripe && !$adapter instanceof \Payment_Adapter_PayPalAutoPay && !$adapter instanceof \Payment_Adapter_PayPalEmail) {
+            throw new InformationException('The client has no saved payment method.');
+        }
+
+        $result = $savedCards->charge($invoice, $adapter, true);
+        if (!$result['paid']) {
+            throw new InformationException((string) $result['error']);
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks available cards on already-owned Stripe customers without
+     * enabling automatic payments, 25 clients after `after_id` per call:
+     * {checked, found, next}.
+     */
+    public function card_find($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $adapter = $this->getDi()['mod_service']('Invoice', 'SavedCards')->stripe()
+            ?? throw new InformationException('Saved cards are not available.');
+        $result = $adapter->findCards((int) ($data['after_id'] ?? 0), 25);
+        $this->getDi()['logger']->info('Invoice: looked for saved cards at Stripe for {checked} clients, found {found}', ['checked' => $result['checked'], 'found' => $result['found']]);
+
+        return $result;
+    }
+
+    /** The balance of each enabled PayPal gateway whose dashboard balance is on, as the gateway balance widget. PayPal is asked at most every 10 minutes. */
+    public function paypal_balances(): array
+    {
+        $this->checkPermissions('invoice', 'view');
+        $di = $this->getDi();
+        $result = [];
+        foreach ($di['em']->getRepository(PayGateway::class)->findEnabledOrderedByIdDesc() as $gateway) {
+            if (!in_array($gateway->getGateway(), ['PayPalEmail', 'PayPalAutoPay'], true)) {
+                continue;
+            }
+            if ((string) (($gateway->getConfig() ?? [])['balance'] ?? '1') === '0') {
+                continue;
+            }
+            $name = (string) $gateway->getName() === $gateway->getGateway()
+                ? ($gateway->getGateway() === 'PayPalAutoPay' ? 'PayPal Auto-Pay' : 'PayPal')
+                : (string) $gateway->getName();
+            $key = 'fossbilling_paypal_balance_' . $gateway->getId() . '_' . (int) $gateway->isTestMode();
+            $item = $di['cache']->getItem($key);
+            if (!$item->isHit()) {
+                try {
+                    $balances = ['balances' => $di['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway)->balances(), 'error' => null];
+                } catch (\Throwable $e) {
+                    $balances = ['balances' => [], 'error' => $e instanceof InformationException ? $e->getMessage() : 'PayPal did not answer. Please try again later.'];
+                }
+                $item->set($balances);
+                $item->expiresAfter(600);
+                $di['cache']->save($item);
+            }
+            $result[] = ['gateway' => $name, 'test_mode' => $gateway->isTestMode()] + (is_array($item->get()) ? $item->get() : []);
+        }
+
+        return $result;
     }
 
     /**
@@ -722,7 +961,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
-        return $transactionService->toApiArray($model, true);
+        return ['claim_token' => $model->getProcessingToken(), 'credit_recovery_state' => $model->getCreditRecoveryState()] + $transactionService->toApiArray($model, true);
     }
 
     /**
@@ -843,6 +1082,78 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return $transactionService->claimForProcessing((int) $data['id']);
     }
 
+    #[RequiredParams(['id' => 'Transaction ID is required'])]
+    public function transaction_inspect_payment($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->inspectTransaction((int) $data['id']);
+    }
+
+    public function payment_recovery_list($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->queue();
+    }
+
+    #[RequiredParams(['id' => 'Payment attempt ID is required'])]
+    public function payment_recovery_inspect($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->inspect((string) $data['id'], isset($data['reference']) ? (string) $data['reference'] : null);
+    }
+
+    #[RequiredParams(['id' => 'Payment attempt ID is required'])]
+    public function payment_recovery_reconcile($data): array
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+        if ((string) ($data['confirmed'] ?? '') !== '1') {
+            throw new InformationException('Confirm that the previous worker has stopped and the gateway outcome has been checked.');
+        }
+
+        return $this->getDi()['mod_service']('Invoice', 'PaymentRecovery')->reconcile(
+            (string) $data['id'], isset($data['reference']) ? (string) $data['reference'] : null,
+            (string) ($data['no_payment'] ?? '') === '1', (string) ($data['note'] ?? ''), (int) $this->getIdentity()->getId()
+        );
+    }
+
+    #[RequiredParams(['id' => 'Transaction ID is required', 'note' => 'Reconciliation note is required'])]
+    public function transaction_reconcile_wallet($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+        if ((string) ($data['confirmed'] ?? '') !== '1' || !array_key_exists('claim_token', $data) || !is_string($data['claim_token'])
+            || ($data['claim_token'] !== '' && preg_match('/^[a-f0-9]{32}$/', $data['claim_token']) !== 1)) {
+            throw new InformationException('Stop the previous worker, verify the gateway and wallet history, and reload the current processing claim.');
+        }
+        $creditId = ($data['credit_id'] ?? '') === '' ? null : filter_var($data['credit_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if ($creditId === false) {
+            throw new InformationException('Enter a valid wallet credit ID.');
+        }
+
+        return $this->getDi()['mod_service']('Invoice', 'Transaction')->reconcileWalletCredit(
+            (int) $data['id'], $creditId, (string) ($data['no_credit'] ?? '') === '1', $data['claim_token'] === '' ? null : $data['claim_token'],
+            (int) $this->getIdentity()->getId(), (string) $data['note']
+        );
+    }
+
+    /** Release an interrupted transaction after checking the worker and gateway. */
+    #[RequiredParams(['id' => 'Transaction ID is required'])]
+    public function transaction_release_stale($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+        if (($data['confirmed'] ?? null) !== '1' && ($data['confirmed'] ?? null) !== 1) {
+            throw new InformationException('Confirm that the previous worker has stopped and check the gateway outcome.');
+        }
+
+        if (!array_key_exists('claim_token', $data) || !is_string($data['claim_token']) || ($data['claim_token'] !== '' && preg_match('/^[a-f0-9]{32}$/', $data['claim_token']) !== 1)) {
+            throw new InformationException('Reload this transaction and review its current processing claim before releasing it.');
+        }
+
+        return $this->getDi()['mod_service']('Invoice', 'Transaction')->releaseStaleProcessing((int) $data['id'], $this->getIdentity()->getId(), $data['claim_token'] === '' ? null : $data['claim_token']);
+    }
+
     /**
      * Get available gateways.
      *
@@ -957,6 +1268,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional array $config - gateway config array
      * @optional array $accepted_currencies - list of currencies this gateway supports
      * @optional bool $enabled - flag to enable or disable gateway
+     * @optional int $replacement_id - when disabling, move unpaid invoices to this enabled gateway
      * @optional bool $allow_single - flag to enable or disable single payment option
      * @optional bool $allow_recurrent - flag to enable or disable recurrent payment option
      * @optional bool $test_mode - flag to enable or disable test mode for gateway

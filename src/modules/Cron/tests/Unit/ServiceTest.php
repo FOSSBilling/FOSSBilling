@@ -221,6 +221,7 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
         ->and($positions['invoice_batch_send_reminders'])
         ->toBeLessThan($positions['invoice_batch_invoke_due_event'])
         ->and($api->methods)->toContain('email_batch_sendmail')
+        ->and(end($api->methods))->toBe('support_batch_ticket_retry_close_events')
         ->and(array_map(static fn (Event $event): string => $event::class, $eventDispatcher->events))
         ->toBe([
             Box\Mod\Cron\Event\BeforeAdminCronRunEvent::class,
@@ -230,11 +231,14 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     'invoice generation' => 'invoice_batch_generate',
     'invoice reminders' => 'invoice_batch_send_reminders',
     'invoice due events' => 'invoice_batch_invoke_due_event',
+    'saved card charges' => 'invoice_batch_charge_saved_cards',
     'order suspension warning' => 'order_batch_send_suspension_warnings',
     'order suspension' => 'order_batch_suspend_expired',
     'order cancellation' => 'order_batch_cancel_suspended',
     'order cancellation (unpaid)' => 'order_batch_cancel_unpaid',
+    'order cancellation requests' => 'order_batch_process_cancel_requests',
     'support ticket auto-close' => 'support_batch_ticket_auto_close',
+    'support close delivery' => 'support_batch_ticket_retry_close_events',
     'password reminder expiry' => 'client_batch_expire_password_reminders',
     'cart expiry' => 'cart_batch_expire',
     'email queue' => 'email_batch_sendmail',

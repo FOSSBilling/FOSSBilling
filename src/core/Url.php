@@ -71,7 +71,7 @@ class Url implements InjectionAwareInterface
         }
 
         $uri = ltrim($uri, '/');
-        $adminPrefix = defined('ADMIN_PREFIX') ? trim((string) ADMIN_PREFIX, '/') : '';
+        $adminPrefix = defined('ADMIN_PREFIX') ? trim(ADMIN_PREFIX, '/') : '';
         if ($adminPrefix !== '' && str_starts_with($uri, $adminPrefix . '/')) {
             return substr($uri, strlen($adminPrefix) + 1);
         }

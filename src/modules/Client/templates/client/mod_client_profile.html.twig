@@ -175,6 +175,10 @@
                                     </div>
                                 {% endif %}
                             {% endfor %}
+                            <div class="mb-3">
+                                <label class="form-label" for="profile-current-password">{{ 'Current password (required to change email)'|trans }}</label>
+                                <input type="password" class="form-control" id="profile-current-password" name="current_password" autocomplete="current-password">
+                            </div>
                             <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
                         </form>
                     </div>

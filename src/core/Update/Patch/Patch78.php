@@ -59,7 +59,7 @@ class Patch78 implements PatchInterface
                 UNIQUE KEY `admin_group_member_unique` (`admin_id`, `admin_group_id`),
                 KEY `admin_group_member_admin_id_idx` (`admin_id`),
                 KEY `admin_group_member_group_id_idx` (`admin_group_id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;');
         }
 
         // Convert the existing admin group into the protected Super Administrator group.

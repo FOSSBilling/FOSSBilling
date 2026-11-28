@@ -74,14 +74,14 @@ test('balanceGetTotal returns float', function (): void {
     $balanceAmount = 0.00;
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    $serviceMock = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $serviceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
     $serviceMock
-    ->shouldReceive('getClientBalance')
+    ->shouldReceive('getFreeCredit')
     ->atLeast()->once()
     ->andReturn($balanceAmount);
 
     $di = container();
-    $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock]));
+    $di['mod_service'] = $di->protect(moduleService(['invoice' => $serviceMock]));
 
     $api->setDi($di);
     $api->setIdentity($model);

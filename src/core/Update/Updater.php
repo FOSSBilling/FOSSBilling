@@ -200,9 +200,7 @@ class Updater implements InjectionAwareInterface
                 ];
             });
         }
-        // The response shape changed when the API digest became mandatory; do not reuse
-        // cached metadata created before that contract existed.
-        $key = "Update.latest_{$branch}_version_info_v2";
+        $key = "Update.latest_{$branch}_version_info_v3";
 
         // Delete the cached result to force a refetch
         if ($refetch) {
@@ -344,6 +342,10 @@ class Updater implements InjectionAwareInterface
             throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
         }
 
+        if ($this->filesystem->exists(PATH_ROOT . '/' . RuntimeLock::EXTRACTION_MARKER_FILENAME)) {
+            throw new InformationException('A previous update extraction did not complete. Restore a complete verified release before clearing the extraction recovery marker.');
+        }
+
         $readiness = $this->di['update_readiness']->check();
         if (!$readiness['can_update']) {
             throw new BaseException('This server does not meet the requirements to perform the update. Resolve the reported issues before trying again.', null, 820);
@@ -356,7 +358,6 @@ class Updater implements InjectionAwareInterface
 
         $this->di['logger']->withChannel('update')->info('Started FOSSBilling auto-update script');
         $latestVersionNum = $this->getLatestVersion();
-        $archiveFile = Path::join(PATH_CACHE, "{$latestVersionNum}.zip");
 
         $releaseInfo = $this->getLatestVersionInfo($updateBranch);
 
@@ -378,119 +379,128 @@ class Updater implements InjectionAwareInterface
             }
         }
 
-        // Download latest version archive for configured update branch.
+        $archiveFile = null;
+
         try {
-            $httpClient = $this->di['http_client']->withOptions([
-                'timeout' => 30,
-                'max_duration' => 120,
-            ]);
-            $downloadOptions = [];
-            if (str_starts_with((string) $releaseInfo['download_url'], 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/')) {
-                $downloadOptions['headers'] = ['Accept' => 'application/octet-stream'];
-            }
-
-            $response = $httpClient->request('GET', $releaseInfo['download_url'], $downloadOptions);
-
-            $fileHandler = fopen($archiveFile, 'w');
-            if ($fileHandler === false) {
-                throw new \RuntimeException('Unable to create the update archive.');
-            }
-
+            // Download latest version archive for configured update branch.
             try {
-                foreach ($httpClient->stream($response) as $chunk) {
-                    $content = (string) $chunk->getContent();
-                    $written = fwrite($fileHandler, $content);
-                    if ($written === false || $written !== strlen($content)) {
-                        throw new \RuntimeException('Unable to write the update archive.');
-                    }
+                // Cache clearing can remove PATH_CACHE at any point during a download.
+                // Each updater owns a private file outside that directory, so concurrent
+                // downloads cannot truncate each other's archive either.
+                $archiveFile = $this->filesystem->tempnam(PATH_DATA, 'fossbilling-update-', '.zip');
+                $httpClient = $this->di['http_client']->withOptions([
+                    'timeout' => 30,
+                    'max_duration' => 120,
+                ]);
+                $downloadOptions = [];
+                if (str_starts_with((string) $releaseInfo['download_url'], 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/')) {
+                    $downloadOptions['headers'] = ['Accept' => 'application/octet-stream'];
                 }
-            } finally {
-                fclose($fileHandler);
-            }
-        } catch (\Throwable $e) {
-            $this->removeDownloadedArchive($archiveFile);
-            $this->di['logger']->withChannel('update')->error($e->getMessage());
 
-            throw new BaseException('Failed to download the update archive. Further details are available in the error log.');
-        }
+                $response = $httpClient->request('GET', $releaseInfo['download_url'], $downloadOptions);
 
-        $this->validateDownloadedArchive($archiveFile, $releaseInfo);
+                $fileHandler = fopen($archiveFile, 'wb');
+                if ($fileHandler === false) {
+                    throw new \RuntimeException('Unable to create the update archive.');
+                }
 
-        /*
-         * From here until the lock is released below, files under PATH_ROOT are
-         * being overwritten in place while the site may still be serving other
-         * requests (this HTTP request is the only one that knows an update is
-         * running). A request that lands mid-extraction can autoload a mix of
-         * old and new class files and fatal out with an "incompatible
-         * declaration" error - see https://github.com/FOSSBilling/FOSSBilling/issues/4159.
-         *
-         * load.php refuses to serve any request while this lock file exists (and
-         * self-expires it in case this process dies before the `finally` below
-         * runs), so create it before touching any files and make sure PHP keeps
-         * running even if the client triggering the update disconnects mid-request.
-         *
-         * The create is exclusive (fails if the file already exists) so two
-         * updates triggered at the same time can't both extract into PATH_ROOT
-         * concurrently - the loser is turned away instead of corrupting the
-         * extraction. A leftover lock from a run that never reached the
-         * `finally` below (the process was killed outright) is treated as
-         * abandoned once it's older than LOCK_STALE_SECONDS.
-         */
-        $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
-        if ($this->filesystem->exists($lockFile) && (time() - (int) @filemtime($lockFile)) > self::LOCK_STALE_SECONDS) {
-            $this->filesystem->remove($lockFile);
-        }
-
-        // fopen(..., 'x') rather than Filesystem here: it's the only way to make the
-        // create atomic (it fails if the file already exists), which is what makes
-        // this a real mutex against two updates racing each other below.
-        $lockHandle = @fopen($lockFile, 'x');
-        if ($lockHandle === false) {
-            throw new InformationException('Another update appears to already be in progress. Please wait for it to finish before trying again.');
-        }
-        fclose($lockHandle);
-        ignore_user_abort(true);
-
-        /*
-         * Do not finalize in this process. Once extraction completes, this
-         * request is still running the old loaded code; the next request must
-         * run the new code before constructing the session handler so database
-         * patches and removed-file cleanup are applied safely.
-         */
-        try {
-            // Extract latest version archive on top of the current version.
-            try {
-                (new ZipExtractor())->extract($archiveFile, PATH_ROOT, static function (string $entryName): void {
-                    if (!self::isSafeArchiveEntry($entryName)) {
-                        throw new BaseException('The update archive contains an unsafe file path and cannot be extracted.');
+                try {
+                    foreach ($httpClient->stream($response) as $chunk) {
+                        $content = (string) $chunk->getContent();
+                        $written = fwrite($fileHandler, $content);
+                        if ($written === false || $written !== strlen($content)) {
+                            throw new \RuntimeException('Unable to write the update archive.');
+                        }
                     }
-                });
-            } catch (\RuntimeException $e) {
+                } finally {
+                    fclose($fileHandler);
+                }
+            } catch (\Throwable $e) {
                 $this->di['logger']->withChannel('update')->error($e->getMessage());
 
-                throw new BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+                throw new BaseException('Failed to download the update archive. Further details are available in the error log.');
             }
 
-            // Mark extraction complete so the short finalization handoff below
-            // is not mistaken for an abandoned update.
-            $this->filesystem->touch($lockFile);
+            $this->validateDownloadedArchive($archiveFile, $releaseInfo);
 
-            // Files on disk just changed underneath the running workers - reset
-            // opcache so the next request finalizes against the new code rather
-            // than stale pre-update classes.
-            $this->invalidateOpcodeCache();
+            // Publish a bootstrap maintenance marker before draining readers.
+            // Its advisory lock keeps a live extraction active beyond the legacy
+            // stale-marker window; the early runtime gate then drains existing
+            // requests/cron and prevents Composer loading during replacement.
+            // Exclusive creation also rejects ordinary competing update requests.
+            $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
+            $lockHandle = RuntimeLock::claimMarker($lockFile, self::LOCK_STALE_SECONDS);
+            if ($lockHandle === false) {
+                throw new InformationException('Another update appears to already be in progress. Please wait for it to finish before trying again.');
+            }
+            ignore_user_abort(true);
 
-            $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
-                'branch' => $updateBranch,
-                'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
-                'source' => 'auto-update',
-            ]);
+            /*
+             * Do not finalize in this process. Once extraction completes, this
+             * request is still running the old loaded code; the next request must
+             * run the new code before constructing the session handler so database
+             * patches and removed-file cleanup are applied safely.
+             */
+            try {
+                $finalization->withUpdateLock(function () use ($finalization, $archiveFile, $lockFile, $latestVersionNum, $updateBranch, $releaseInfo): void {
+                    // A different updater may have completed extraction while this
+                    // request downloaded its archive. Recheck under the extraction
+                    // lock, without running finalization from the old loaded code.
+                    if ($finalization->isRequired(false)) {
+                        throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
+                    }
+
+                    if ($this->filesystem->exists(PATH_ROOT . '/' . RuntimeLock::EXTRACTION_MARKER_FILENAME)) {
+                        throw new InformationException('A previous update extraction did not complete. Restore a complete verified release before clearing the extraction recovery marker.');
+                    }
+
+                    // Extract latest version archive on top of the current version.
+                    try {
+                        (new ZipExtractor())->extract($archiveFile, PATH_ROOT, static function (string $entryName): void {
+                            if (!self::isSafeArchiveEntry($entryName)) {
+                                throw new BaseException('The update archive contains an unsafe file path and cannot be extracted.');
+                            }
+                        }, beforeWrite: function (): void {
+                            $this->filesystem->dumpFile(PATH_ROOT . '/' . RuntimeLock::EXTRACTION_MARKER_FILENAME, 'Core update extraction has started. Remove only after restoring a complete verified release.');
+                        });
+                    } catch (\RuntimeException $e) {
+                        $this->di['logger']->withChannel('update')->error($e->getMessage());
+
+                        throw new BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+                    }
+
+                    // Mark extraction complete so the short finalization handoff below
+                    // is not mistaken for an abandoned update.
+                    $this->filesystem->touch($lockFile);
+
+                    // Files on disk just changed underneath the running workers - reset
+                    // opcache so the next request finalizes against the new code rather
+                    // than stale pre-update classes.
+                    $this->invalidateOpcodeCache();
+
+                    $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
+                        'branch' => $updateBranch,
+                        'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
+                        'source' => 'auto-update',
+                    ]);
+                    // Only a verified extraction and durable finalization handoff clear recovery.
+                    $this->filesystem->remove(PATH_ROOT . '/' . RuntimeLock::EXTRACTION_MARKER_FILENAME);
+                });
+            } finally {
+                try {
+                    $this->filesystem->remove($lockFile);
+                } finally {
+                    fclose($lockHandle);
+                }
+            }
+
+            // Log off the current user and destroy the session.
+            $this->di['session']->destroy('admin');
         } finally {
-            $this->filesystem->remove($lockFile);
+            if ($archiveFile !== null) {
+                $this->removeDownloadedArchive($archiveFile);
+            }
         }
-
-        // Log off the current user and destroy the session.
-        $this->di['session']->destroy('admin');
     }
 
     /**
@@ -521,7 +531,8 @@ class Updater implements InjectionAwareInterface
             return false;
         }
 
-        foreach (explode('/', $normalized) as $segment) {
+        $segments = explode('/', $normalized);
+        foreach ($segments as $segment) {
             // Windows strips trailing spaces and periods from path components, so
             // '.. .' or '...' resolve to '..' at extraction time even though they
             // don't match it literally here. Reject any segment that is nothing
@@ -531,6 +542,14 @@ class Updater implements InjectionAwareInterface
             }
         }
 
-        return true;
+        $canonical = strtolower(implode('/', array_filter(array_map(static fn (string $segment): string => rtrim($segment, ' .'), $segments), static fn (string $segment): bool => $segment !== '')));
+
+        // A release must never replace live lock inodes, finalization state,
+        // or an installation's configuration and encryption key.
+        return !in_array($canonical, [
+            '.update-lock', RuntimeLock::FILENAME, RuntimeLock::EXTRACTION_MARKER_FILENAME,
+            'data/update-finalization.lock', 'data/update-finalization.json',
+            'config.php', 'config.old.php',
+        ], true);
     }
 }

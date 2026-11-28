@@ -85,11 +85,11 @@ class Promo implements ArrayInterface, TimestampInterface
     #[ORM\Column(name: 'requires_products', type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
     private ?array $requiresProducts = null;
 
-    #[ORM\Column(name: 'start_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $startAt = null;
+    #[ORM\Column(name: 'start_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $startAt = null;
 
-    #[ORM\Column(name: 'end_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $endAt = null;
+    #[ORM\Column(name: 'end_at', type: \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $endAt = null;
 
     #[ORM\Column(name: 'auto_apply', type: \Doctrine\DBAL\Types\Types::BOOLEAN, nullable: true, options: ['default' => false])]
     /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
@@ -304,24 +304,24 @@ class Promo implements ArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getStartAt(): ?\DateTime
+    public function getStartAt(): ?\DateTimeImmutable
     {
         return $this->startAt;
     }
 
-    public function setStartAt(?\DateTime $startAt): self
+    public function setStartAt(?\DateTimeImmutable $startAt): self
     {
         $this->startAt = $startAt;
 
         return $this;
     }
 
-    public function getEndAt(): ?\DateTime
+    public function getEndAt(): ?\DateTimeImmutable
     {
         return $this->endAt;
     }
 
-    public function setEndAt(?\DateTime $endAt): self
+    public function setEndAt(?\DateTimeImmutable $endAt): self
     {
         $this->endAt = $endAt;
 

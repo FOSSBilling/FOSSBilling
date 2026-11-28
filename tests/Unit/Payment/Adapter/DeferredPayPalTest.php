@@ -16,7 +16,8 @@ test('verified PayPal renewal receipts remain credit during deletion recovery, i
     $payload['get']['sig'] = FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId());
     $api = $c['api'];
     $adapter = $c['adapter'];
-    $expiresAt = clone $c['order']->getExpiresAt();
+    $orderId = $c['order']->getId();
+    $expiresAt = $c['connection']->fetchOne('SELECT expires_at FROM client_order WHERE id = ?', [$orderId]);
     if ($crash) {
         $api->crash = true;
         expect(fn () => $adapter->processTransaction($api, $transaction->getId(), $payload, $c['gateway']->getId()))
@@ -38,7 +39,7 @@ test('verified PayPal renewal receipts remain credit during deletion recovery, i
         ->and($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processed')
         ->and($c['connection']->fetchOne('SELECT invoice_id FROM "transaction"'))->toBe($c['invoice']->getId())
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
-        ->and($c['order']->getExpiresAt())->toEqual($expiresAt);
+        ->and($c['connection']->fetchOne('SELECT expires_at FROM client_order WHERE id = ?', [$orderId]))->toBe($expiresAt);
 })->with(['subscr_payment', 'recurring_payment'])->with([false, true])->with(['10.00', '3.00']);
 
 test('deferred PayPal renewal credits reject invalid amounts and currencies before adding funds', function (string $amount, string $currency): void {
@@ -89,7 +90,7 @@ test('overlapping PayPal workers credit an expired claim only once and refresh s
         $input->close();
         $worker->wait();
         expect($worker->getExitCode())->toBe(0)
-            ->and($worker->getOutput())->toContain('processed')
+            ->and($worker->getOutput())->toContain($mode === 'claim' ? 'retained' : 'processed')
             ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0)
             ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
             ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM invoice'))->toBe(1)
@@ -226,19 +227,24 @@ test('out-of-order PayPal refunds wait for the parent receipt and retry without 
 })->with([null, 'received', 'processing', 'error']);
 
 test('MySQL deferred PayPal refunds for independent clients do not lock each others ledger rows', function (): void {
-    $em = deferredPayPalMysqlEntityManager();
-    $connection = $em->getConnection();
-    $metadata = array_map($em->getClassMetadata(...), [
-        Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class,
-        Invoice::class, Box\Mod\Invoice\Entity\PayGateway::class,
-        Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class,
-    ]);
-    $schema = new SchemaTool($em);
+    $admin = deferredPayPalMysqlEntityManager(database: 'mysql')->getConnection();
+    $database = 'fb_paypal_refunds_' . bin2hex(random_bytes(8));
+    $created = false;
+    $connection = null;
     $workers = [];
     $inputs = [];
 
     try {
-        $schema->createSchema($metadata);
+        $admin->executeStatement('CREATE DATABASE ' . $admin->quoteSingleIdentifier($database));
+        $created = true;
+        $em = deferredPayPalMysqlEntityManager(database: $database);
+        $connection = $em->getConnection();
+        $metadata = array_map($em->getClassMetadata(...), [
+            Box\Mod\Client\Entity\Client::class, Box\Mod\Client\Entity\ClientBalance::class,
+            Invoice::class, Box\Mod\Invoice\Entity\PayGateway::class,
+            Box\Mod\Invoice\Entity\Transaction::class, Box\Mod\Invoice\Entity\Subscription::class,
+        ]);
+        (new SchemaTool($em))->createSchema($metadata);
         $gateway = (new Box\Mod\Invoice\Entity\PayGateway())->setGateway('PayPalEmail')->setEnabled(true);
         $em->persist($gateway);
         $em->flush();
@@ -280,7 +286,7 @@ test('MySQL deferred PayPal refunds for independent clients do not lock each oth
         foreach ($refundIds as $refundId) {
             $input = new Symfony\Component\Process\InputStream();
             $worker = new Symfony\Component\Process\Process([
-                PHP_BINARY, '-d', 'sys_temp_dir=' . sys_get_temp_dir(), PATH_TESTS . '/Fixtures/paypal-refund-mysql-worker.php', PATH_DATA, (string) $refundId,
+                PHP_BINARY, '-d', 'sys_temp_dir=' . sys_get_temp_dir(), PATH_TESTS . '/Fixtures/paypal-refund-mysql-worker.php', PATH_DATA, (string) $refundId, $database,
             ]);
             $worker->setInput($input);
             $worker->setTimeout(20);
@@ -310,10 +316,20 @@ test('MySQL deferred PayPal refunds for independent clients do not lock each oth
         foreach ($inputs as $input) {
             $input->close();
         }
-        $schema->dropSchema($metadata);
-        $connection->close();
+        $connection?->close();
+
+        try {
+            if ($created) {
+                // SchemaTool::dropSchema() ignores failed parent-table drops.
+                // Drop the owned database so foreign keys cannot leak fixtures.
+                $admin->executeStatement('DROP DATABASE ' . $admin->quoteSingleIdentifier($database));
+                expect((int) $admin->fetchOne('SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = ?', [$database]))->toBe(0);
+            }
+        } finally {
+            $admin->close();
+        }
     }
-})->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL hold_regression database');
+})->skip(fn (): bool => getenv('DELETION_HOLD_MYSQL_PORT') === false, 'Requires an isolated MySQL server with CREATE/DROP DATABASE privileges');
 
 test('a completed PayPal receipt without a settled invoice is not treated as an invoice refund', function (): void {
     $c = deferredPayPalReceiptContext();
@@ -402,6 +418,8 @@ test('receipt deletion refuses an outer transaction and still removes an ordinar
     } finally {
         $c['connection']->rollBack();
     }
+    $c['receipt']->setStatus('received');
+    $c['em']->flush();
     expect($service->delete($c['receipt']))->toBeTrue()
         ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(0);
 });
@@ -526,7 +544,7 @@ test('duplicate renewal refund receipts recover after completion crashes without
     [$unrelated] = deferredPayPalRefund($c, 'UNRELATED', '-3');
     $service = new Box\Mod\Invoice\ServiceTransaction();
     $service->setDi($c['di']);
-    expect(fn () => $service->update($unrelated, ['invoice_id' => $renewal->getId()]))->toThrow(InformationException::class, 'refunded');
+    expect(fn () => $service->update($unrelated, ['invoice_id' => $renewal->getId()]))->toThrow(InformationException::class, 'Release the interrupted transaction');
 })->with([[false, false], [true, false], [false, true], [true, true]]);
 
 test('renewal refund accounting commits once and rejects a partial accounting race under the invoice lock', function (bool $partialRace): void {
@@ -580,3 +598,154 @@ test('renewal refund accounting commits once and rejects a partial accounting ra
             ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction" WHERE txn_status = \'Refunded\' AND status = \'processed\' AND invoice_id = ?', [$renewal->getId()]))->toBe(2);
     }
 })->with([false, true]);
+
+test('canonical PayPal gateway receipts survive stale errors and discard only independent duplicates', function (bool $duplicate): void {
+    $c = deferredPayPalReceiptContext();
+    $parentId = $c['receipt']->getId();
+    $c['receipt']->setStatus('error');
+    $credit = (new Box\Mod\Client\Entity\ClientBalance())->setClient($c['client'])->setType('PayPal')->setAmount('3')
+        ->setDescription('PayPal transaction PAYPAL-DEFERRED')->setRelId('PAYPAL-DEFERRED')
+        ->setGatewayReceiptKey(hash('sha256', $c['gateway']->getId() . ':PAYPAL-DEFERRED'))->setGatewayTransactionId($parentId);
+    $c['em']->persist($credit);
+    $receipt = $c['receipt'];
+    if ($duplicate) {
+        $receipt = (clone $receipt)->setStatus('processing');
+        $c['em']->persist($receipt);
+    }
+    $c['em']->flush();
+    $c['adapter']->processTransaction($c['api'], $receipt->getId(), $c['payload'], $c['gateway']->getId());
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT id FROM "transaction"'))->toBe($parentId)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0);
+    expect($c['connection']->fetchOne('SELECT status FROM "transaction"'))->toBe('processed');
+    $c['connection']->update($c['connection']->quoteSingleIdentifier('transaction'), ['status' => 'error'], ['id' => $parentId]);
+    $c['em']->refresh($c['receipt']);
+    $transactions = new Box\Mod\Invoice\ServiceTransaction();
+    $transactions->setDi($c['di']);
+    expect(fn () => $transactions->delete($c['receipt']))->toThrow(InformationException::class, 'backing gateway receipt');
+})->with([false, true]);
+
+test('independent PayPal deliveries retain only one deferred payment during a renewal hold', function (): void {
+    $c = deferredPayPalReceiptContext();
+    $duplicate = (clone $c['receipt']);
+    $c['em']->persist($duplicate);
+    $c['em']->flush();
+    foreach ([$c['receipt'], $duplicate] as $receipt) {
+        $c['adapter']->processTransaction($c['api'], $receipt->getId(), $c['payload'], $c['gateway']->getId());
+    }
+    expect($c['connection']->fetchOne('SELECT COUNT(*) FROM "transaction"'))->toBe(1)
+        ->and($c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(3.0);
+    [$refund, $payload] = deferredPayPalRefund($c, 'REFUND-SINGLE', '-3');
+    $c['adapter']->processTransaction($c['api'], $refund->getId(), $payload, $c['gateway']->getId());
+    expect((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(0.0);
+});
+
+test('PayPal resumes financially processed receipts through the transaction worker', function (bool $crash): void {
+    require_once PATH_MODS . '/Invoice/tests/Fixtures/GatewayReceiptContext.php';
+    [, $em, $client, $gateway, $receipt] = receiptTestContext();
+    $gateway->setGateway('PayPalEmail');
+    $invoice = (new Invoice())->setClientId($client->getId())->setGateway($gateway)->setCurrency('USD')->setStatus(Invoice::STATUS_UNPAID)->setIssued(true);
+    $em->persist($invoice);
+    $em->flush();
+    $em->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($invoice)->setType('custom')->setTask('void')->setPrice(15)->setQuantity(1));
+    $receipt->setInvoice($invoice)->setTxnId('PAYPAL-COMPLETION')->setStatus('received');
+    $em->flush();
+    $calls = 0;
+    $dispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $dispatcher->addListener(Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent::class, function () use (&$calls, $crash): void {
+        if (++$calls === 1) {
+            throw $crash ? new Error('process stopped') : new RuntimeException('listener failed');
+        }
+    });
+    $payload = ['get' => ['invoice_id' => $invoice->getId(), 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams($gateway->getId(), $invoice->getId())],
+        'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed', 'txn_id' => 'PAYPAL-COMPLETION', 'mc_gross' => '15', 'mc_currency' => 'USD']];
+    $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com']);
+    $adapterCalls = 0;
+    $configure = function (EntityManager $manager) use ($dispatcher, $adapter, $payload, $client, $gateway, &$adapterCalls): array {
+        $billing = gatewayDepositTestService($manager);
+        $di = $billing->getDi();
+        $di['event_dispatcher'] = $dispatcher;
+        $api = deferredPayPalApi(['connection' => $manager->getConnection(), 'client' => $client, 'em' => $manager, 'di' => $di, 'billing' => $billing]);
+        $adapter->setDi($di);
+        $di['api_system'] = $api;
+        $bridge = new class($adapter, $payload, $gateway->getId(), $adapterCalls) {
+            public function __construct(private readonly Payment_Adapter_PayPalEmail $adapter, private readonly array $payload, private readonly int $gatewayId, private int &$calls)
+            {
+            }
+
+            public function processTransaction(mixed $api, int $id, array $payload, int $gatewayId): void
+            {
+                ++$this->calls;
+                $this->adapter->processTransaction($api, $id, $this->payload, $this->gatewayId);
+            }
+        };
+        $gateways = Mockery::mock(Box\Mod\Invoice\ServicePayGateway::class);
+        $gateways->shouldReceive('getPaymentAdapter')->andReturn($bridge);
+        $services = $di['mod_service'];
+        unset($di['mod_service']);
+        $di['mod_service'] = $di->protect(fn (string $module, string $sub = ''): object => $sub === 'PayGateway' ? $gateways : $services($module, $sub));
+        $worker = new Box\Mod\Invoice\ServiceTransaction();
+        $worker->setDi($di);
+
+        return [$worker, $api, $billing];
+    };
+    [$worker, $api] = $configure($em);
+    if ($crash) {
+        expect(fn () => $adapter->processTransaction($api, $receipt->getId(), $payload, $gateway->getId()))->toThrow(Error::class);
+    } else {
+        $worker->processAndCatchErrors($receipt->getId());
+    }
+    $connection = $em->getConnection();
+    $table = $connection->quoteSingleIdentifier('transaction');
+    expect($connection->fetchOne("SELECT status FROM $table WHERE id = ?", [$receipt->getId()]))->toBe('processed');
+    if ($crash) {
+        $connection->update($table, ['updated_at' => date('Y-m-d H:i:s', time() - 600)], ['id' => $receipt->getId()]);
+    }
+    $fresh = new EntityManager($connection, $em->getConfiguration());
+    if ($fresh->getConnection()->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $fresh->getEventManager()->addEventListener(Doctrine\ORM\Tools\ToolEvents::postGenerateSchemaTable, new FOSSBilling\Core\Doctrine\IndexLengthsListener());
+    }
+    [$retry, , $billing] = $configure($fresh);
+    expect(array_column($retry->getReceived(), 'id'))->toContain($receipt->getId());
+    $beforeRetry = $adapterCalls;
+    $retry->processAndCatchErrors($receipt->getId());
+    expect($adapterCalls)->toBe($beforeRetry);
+    $stored = $fresh->find(Box\Mod\Invoice\Entity\Transaction::class, $receipt->getId());
+    expect($stored->getError())->toBeEmpty();
+    expect($stored->getGatewayCompletionState())->toBe(Box\Mod\Invoice\Entity\Transaction::GATEWAY_COMPLETION_DONE)
+        ->and($stored->getStatus())->toBe('processed')->and($stored->getError())->toBeEmpty()
+        ->and($billing->getFreeCredit($client->getId()))->toBe(0.0)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM client_balance WHERE gateway_receipt_key IS NOT NULL'))->toBe(1)
+        ->and($calls)->toBe(2);
+})->with([false, true]);
+
+test('PayPal records collected funds after checkout credit is removed and retries without duplication', function (): void {
+    $c = deferredPayPalReceiptContext(null, false, 'web_accept', '60');
+    (new SchemaTool($c['em']))->createSchema([$c['em']->getClassMetadata(Box\Mod\Invoice\Entity\InvoiceCredit::class)]);
+    $c['invoice']->setStatus('unpaid')->setIssued(true);
+    $c['connection']->executeStatement('DELETE FROM client_order_meta');
+    $c['connection']->executeStatement('DELETE FROM invoice_item');
+    $c['em']->persist((new Box\Mod\Invoice\Entity\InvoiceItem())->setInvoice($c['invoice'])->setType('custom')->setTask('void')->setStatus('pending_payment')->setPrice(100)->setQuantity(1)->setCharged(false));
+    $c['em']->flush();
+    $fees = new Box\Mod\Invoice\ServiceGatewayFees();
+    $fees->setDi($c['di']);
+    $balance = new Box\Mod\Client\ServiceBalance();
+    $balance->setDi($c['di']);
+    $services = $c['di']['mod_service'];
+    unset($c['di']['mod_service']);
+    $c['di']['mod_service'] = $c['di']->protect(fn (string $module, ?string $sub = null): object => match ($sub) {
+        'GatewayFees' => $fees,
+        'Balance' => $balance,
+        default => $services($module, $sub),
+    });
+    $payload = $c['payload'];
+    $payload['get'] = ['invoice_id' => $c['invoice']->getId(), 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams($c['gateway']->getId(), $c['invoice']->getId())];
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $payload, $c['gateway']->getId());
+    expect($c['invoice']->getStatus())->toBe('unpaid')
+        ->and($c['billing']->getBalanceDue($c['invoice']))->toBe(40.0);
+    $c['adapter']->processTransaction($c['api'], $c['receipt']->getId(), $payload, $c['gateway']->getId());
+    expect((int) $c['connection']->fetchOne('SELECT COUNT(*) FROM client_balance'))->toBe(1)
+        ->and((float) $c['connection']->fetchOne('SELECT SUM(amount) FROM client_balance'))->toBe(60.0);
+});

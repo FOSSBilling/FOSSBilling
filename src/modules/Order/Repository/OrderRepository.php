@@ -6,10 +6,12 @@ namespace Box\Mod\Order\Repository;
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
 use FOSSBilling\Core\Doctrine\RowLock;
 use FOSSBilling\Core\Doctrine\SqlExpr;
+use Psr\Log\LoggerInterface;
 
 class OrderRepository extends EntityRepository
 {
@@ -33,7 +35,7 @@ class OrderRepository extends EntityRepository
      * Must be called within a transaction, held for as long as the invoice
      * link is acted on.
      */
-    public function lockAndGetUnpaidInvoiceId(int $orderId): ?int
+    public function lockAndGetUnpaidInvoiceId(int $orderId, bool $requireOrder = false): ?int
     {
         $connection = $this->getEntityManager()->getConnection();
 
@@ -46,6 +48,9 @@ class OrderRepository extends EntityRepository
             ['id' => $orderId],
         );
 
+        if ($row === false && $requireOrder) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Order not found');
+        }
         if ($row === false || $row['unpaid_invoice_id'] === null) {
             return null;
         }
@@ -205,21 +210,51 @@ class OrderRepository extends EntityRepository
      */
     public function getStaleUnpaid(int $days): array
     {
-        // DATEDIFF(NOW(), X) > :days, compared only by calendar date, is equivalent to
-        // X < cutoff, where cutoff is midnight $days days ago - a portable stand-in that also
-        // lets $days collapse to a single bound parameter computed once in PHP.
-        $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days")->format('Y-m-d H:i:s');
+        $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days");
+        $invoiceLinks = $this->findStaleUnpaidInvoiceLinks($cutoff);
 
-        $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+        return $invoiceLinks === [] ? [] : $this->findBy(['id' => array_keys($invoiceLinks)], ['id' => 'ASC']);
+    }
+
+    /** @return array<int, ?int> Selected order IDs and their invoice links at selection time */
+    public function findStaleUnpaidInvoiceLinks(\DateTimeImmutable $cutoff, ?LoggerInterface $logger = null): array
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        // Destructive-caller guard: the NOT EXISTS below excludes orders with any
+        // paid invoice item, matched through invoice_item.order_id. Until the
+        // backfill that populates it has recorded completion (see
+        // Patcher::backfillInvoiceItemOrderIds()), a paid order with only legacy
+        // (rel_id) references would read as never-paid and be deleted. Defer
+        // instead: a skipped run only delays cleanup of orders that are already
+        // overdue, while a wrongful deletion cannot be undone.
+        try {
+            $backfilled = $connection->fetchOne(
+                'SELECT value FROM setting WHERE param = :param',
+                ['param' => 'invoice_item_order_id_backfill_done']
+            );
+        } catch (\Throwable $e) {
+            $logger?->warning('Stale unpaid order cleanup deferred because the invoice-item backfill marker could not be read.', ['exception' => $e]);
+
+            return [];
+        }
+        // The completion records the derivation rule version (see
+        // Patcher::backfillInvoiceItemOrderIds()): an older version means a repeat
+        // scan is still converging, so cleanup waits for it like a missing flag.
+        if ($backfilled !== \FOSSBilling\Core\Update\Patcher::INVOICE_ITEM_ORDER_BACKFILL_RULE_VERSION) {
+            return [];
+        }
+
+        $rows = $connection->fetchAllAssociative(
             <<<'SQL'
-                SELECT o.id
+                SELECT o.id, o.unpaid_invoice_id
                 FROM client_order o
                 WHERE o.status = :status
                   AND NOT EXISTS (
                       SELECT 1
                       FROM invoice_item ii
                       INNER JOIN invoice pi ON pi.id = ii.invoice_id
-                      WHERE ii.rel_id = o.id AND ii.type = :item_type AND pi.status = :paid_status
+                      WHERE ii.order_id = o.id AND ii.type = :item_type AND pi.status = :paid_status
                   )
                   AND (
                       EXISTS (
@@ -243,10 +278,44 @@ class OrderRepository extends EntityRepository
                 'item_type' => InvoiceItem::TYPE_ORDER,
                 'paid_status' => Invoice::STATUS_PAID,
                 'unpaid_status' => Invoice::STATUS_UNPAID,
-                'cutoff' => $cutoff,
+                'cutoff' => $cutoff->format('Y-m-d H:i:s'),
             ]
         );
 
-        return $ids === [] ? [] : $this->findBy(['id' => array_map(intval(...), $ids)]);
+        $invoiceLinks = [];
+        foreach ($rows as $row) {
+            $invoiceLinks[(int) $row['id']] = $row['unpaid_invoice_id'] === null ? null : (int) $row['unpaid_invoice_id'];
+        }
+
+        return $invoiceLinks;
+    }
+
+    /**
+     * Whether any paid invoice item references the order, through the typed
+     * linkage or - for rows the backfill has not reached yet - the legacy
+     * rel_id reference. Check the indexed typed link first, and only normalize
+     * legacy references in rows that are still missing the typed link.
+     *
+     * Used as a last-moment re-check before a destructive batch acts: the
+     * stale-order scan matches on the typed linkage alone, so an order whose
+     * paid item missed the backfill (a concurrent write during its final page,
+     * a manual row, or a downgraded writer) would otherwise read as never paid.
+     */
+    public function hasPaidInvoiceItem(int $orderId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        $query = 'SELECT 1 FROM invoice_item ii INNER JOIN invoice pi ON pi.id = ii.invoice_id
+                  WHERE ii.type = :item_type AND pi.status = :paid_status';
+        $params = ['order_id' => $orderId, 'item_type' => InvoiceItem::TYPE_ORDER, 'paid_status' => Invoice::STATUS_PAID];
+        $legacyReference = InvoiceItemRepository::normalizedLegacyPaidOrderReference($connection, 'ii.rel_id');
+        $orderReference = InvoiceItemRepository::orderIdAsReference($connection, ':order_id');
+
+        return $connection->fetchOne(
+            "$query AND ii.order_id = :order_id
+             UNION ALL
+             $query AND ii.order_id IS NULL AND $legacyReference = $orderReference
+             LIMIT 1",
+            $params,
+        ) !== false;
     }
 }

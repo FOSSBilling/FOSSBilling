@@ -429,7 +429,42 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Funds description is invalid');
         }
 
+        $paymentKey = \Box\Mod\Invoice\PaymentCredit::key($this->di['em'], $data);
+        if ($paymentKey !== null) {
+            $db = $this->di['em']->getConnection();
+            $existing = $db->fetchAssociative('SELECT client_id, amount FROM client_balance WHERE payment_key = ?', [$paymentKey]);
+            if ($existing === false) {
+                \Box\Mod\Invoice\PaymentCredit::assertNoLegacyCredit($this->di['em'], (int) $client->getId(), $data);
+
+                try {
+                    // A savepoint contains a concurrent unique-key collision on
+                    // PostgreSQL without closing the shared ORM manager.
+                    $db->transactional(fn () => $db->insert('client_balance', [
+                        'client_id' => $client->getId(), 'type' => $data['type'] ?? 'gift',
+                        'rel_id' => isset($data['rel_id']) ? (string) $data['rel_id'] : null,
+                        'description' => $description, 'amount' => (string) $amount,
+                        'payment_key' => $paymentKey, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
+                    ]));
+
+                    return true;
+                } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $exception) {
+                    // A locking read sees the winning row even when MySQL's
+                    // repeatable-read snapshot predates its committed insert.
+                    $existing = $db->fetchAssociative('SELECT client_id, amount FROM client_balance WHERE payment_key = ?' . RowLock::suffix($db), [$paymentKey]);
+                    if ($existing === false) {
+                        throw $exception;
+                    }
+                }
+            }
+            if ((int) $existing['client_id'] !== $client->getId() || round((float) $existing['amount'], 2) !== round((float) $amount, 2)) {
+                throw new InformationException('This gateway payment already credited a different client or amount. Reconcile its wallet history before continuing.');
+            }
+
+            return true;
+        }
+
         $credit = new ClientBalance();
+        $credit->setPaymentKey($paymentKey);
         $credit->setClient($client);
         $credit->setType($data['type'] ?? 'gift');
         $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
@@ -445,7 +480,7 @@ class Service implements InjectionAwareInterface
     public function getExpiredPasswordReminders()
     {
         $expireAfterHours = 2;
-        $cutoff = new \DateTime("-{$expireAfterHours} hours");
+        $cutoff = new \DateTimeImmutable("-{$expireAfterHours} hours");
 
         return $this->clientPasswordResetRepository->findExpiredBefore($cutoff);
     }
@@ -557,7 +592,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($deep) {
-            $details['balance'] = $this->getClientBalance($client);
+            // The credit the client can spend; what unpaid invoices received waits on them.
+            $details['balance'] = $this->di['mod_service']('Invoice')->getFreeCredit((int) $client->getId());
         }
 
         if ($isAdmin) {
@@ -734,7 +770,7 @@ class Service implements InjectionAwareInterface
         $client->setGender($data['gender'] ?? null);
         $birthday = $data['birthday'] ?? null;
         if ($birthday) {
-            $client->setBirthday(new \DateTime($birthday));
+            $client->setBirthday(new \DateTimeImmutable($birthday));
         }
         $client->setCompany($data['company'] ?? null);
         $client->setCompanyVat($data['company_vat'] ?? null);
@@ -783,7 +819,7 @@ class Service implements InjectionAwareInterface
 
         $createdAt = $data['created_at'] ?? null;
         if (!empty($createdAt)) {
-            $client->setCreatedAt(new \DateTime((string) $createdAt));
+            $client->setCreatedAt(new \DateTimeImmutable((string) $createdAt));
         }
 
         $this->di['em']->persist($client);
@@ -917,6 +953,9 @@ class Service implements InjectionAwareInterface
         $entityManager->beginTransaction();
 
         try {
+            if (!ClientRowLock::acquire($connection, (int) $model->getId())) {
+                throw new InformationException('Client not found');
+            }
             $orderService->rmByClient($model, $lockedOrderIds);
             $service = $this->di['mod_service']('Invoice');
             $service->rmByClient($model);
@@ -1154,7 +1193,7 @@ class Service implements InjectionAwareInterface
         $di = $this->di ?? throw new \LogicException('The Client service dependency injection container has not been set.');
 
         try {
-            $cutoff = new \DateTime('-900 seconds');
+            $cutoff = new \DateTimeImmutable('-900 seconds');
             $this->clientPasswordResetRepository
                 ->createQueryBuilder('r')
                 ->delete()

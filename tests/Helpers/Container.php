@@ -29,7 +29,7 @@ function container(): Container
     ];
     $di['url'] = function (): \FOSSBilling\Core\Url {
         $url = new \FOSSBilling\Core\Url();
-        $url->setBaseUri(defined('SYSTEM_URL') ? (string) SYSTEM_URL : '/');
+        $url->setBaseUri(defined('SYSTEM_URL') ? SYSTEM_URL : '/');
 
         return $url;
     };
@@ -119,11 +119,13 @@ function container(): Container
         $queryBuilder->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
         $queryBuilder->shouldReceive('fetchOne')->byDefault()->andReturn(false);
 
+        $dbal->shouldReceive('fetchAssociative')->with(\Mockery::pattern('/SELECT client_id, gateway_transaction_id/'), \Mockery::any())->byDefault()->andReturn(false);
         $dbal->shouldReceive('fetchAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchOne')->byDefault()->andReturn(null);
         $dbal->shouldReceive('executeQuery')->byDefault()->andReturn($result);
         $dbal->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+        $dbal->shouldReceive('transactional')->byDefault()->andReturnUsing(static fn (callable $operation): mixed => $operation($dbal));
         $dbal->shouldReceive('insert')->byDefault()->andReturn(1);
         $dbal->shouldReceive('update')->byDefault()->andReturn(1);
         $dbal->shouldReceive('lastInsertId')->byDefault()->andReturn(1);
@@ -494,8 +496,8 @@ function createEntity(string $class, array $properties = []): object
                                 $parameter = (new \ReflectionMethod($this, $method))->getParameters()[0] ?? null;
                                 $type = $parameter?->getType();
                                 if ($type instanceof \ReflectionNamedType) {
-                                    if ($type->getName() === \DateTime::class && is_string($value)) {
-                                        $value = new \DateTime($value);
+                                    if ($type->getName() === \DateTimeImmutable::class && is_string($value)) {
+                                        $value = new \DateTimeImmutable($value);
                                     } elseif ($type->getName() === 'int' && is_string($value) && ctype_digit($value)) {
                                         $value = (int) $value;
                                     } elseif ($type->getName() === 'float' && is_numeric($value)) {
@@ -519,8 +521,8 @@ function createEntity(string $class, array $properties = []): object
                                 $property = $reflection->getProperty($propertyName);
                                 $type = $property->getType();
                                 if ($type instanceof \ReflectionNamedType) {
-                                    if ($type->getName() === \DateTime::class && is_string($value)) {
-                                        $value = new \DateTime($value);
+                                    if ($type->getName() === \DateTimeImmutable::class && is_string($value)) {
+                                        $value = new \DateTimeImmutable($value);
                                     } elseif ($type->getName() === 'int' && is_numeric($value)) {
                                         $value = (int) $value;
                                     } elseif ($type->getName() === 'bool' && is_int($value)) {

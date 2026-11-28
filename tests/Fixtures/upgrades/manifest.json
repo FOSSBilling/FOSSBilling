@@ -1,0 +1,28 @@
+{
+  "0.7.2": {
+    "commit": "23e3ab55b5cd01bb164b4d28324992b2972f854f",
+    "files": {
+      "structure.sql": "9914f95f3488219f68218282805f7a123f650197a8984f3e582e0183fd090954",
+      "content.sql": "afcb0ef6545c8e94f882a530b7f3d18966c0b13fa8edbb88ab94ce1b68cc604b",
+      "config.php.txt": "f1eea3c033be7d73e1fa3c1355a3ca472d62e304a656ed30de27d21e31686265"
+    }
+  },
+  "0.8.1": {
+    "commit": "1f7e35e50ea5268f4c5c5c24f839a20a65c0e7fd",
+    "files": {
+      "structure.sql": "5651d9f2d2fcebe96ecd5708230c5f1d2c03b44bcaa3950cd2a72a2a6ce832e6",
+      "content.sql": "06bb7529b9033cad9f9591af10b89c891f7180ed915783ff4623c39010ebe958",
+      "config.php.txt": "5d4b1c156bbd530f234da96c823c6fc615230ead83a8d4e966695e26d6ec9118"
+    }
+  },
+  "0.8.9": {
+    "commit": "e594f8a5f91ea4cc905708f8dc1e42ccb752ed21",
+    "files": {
+      "structure.sql": "0ae4e3aed15e09fc7352eb73879869bc3839c227bf053b39ab62bdb0fd1a9c41",
+      "content.sql": "c34461244afa55bc61ed0f85c389b5cae953c1b4d6657ee1a7a5d261e4c344af",
+      "config.php.txt": "d5976a00a5ef459af6515a4d7a1cdf0bdab1fffec3c8b69dae893f96f1882dbb",
+      "load.php.txt": "041aa0e19f7b12313394fd623e89a0acd98c0fb58a1fa43b3efd72591ed3cc4f",
+      "Updater.php.txt": "2c75695dc0352b9625693513dcd861eb38f355b49da81f879ba1c29d8c0090fe"
+    }
+  }
+}
