@@ -15,7 +15,7 @@
     ":rebaseStalePrs"
   ],
   "constraints": {
-    "php": "~8.3.31"
+    "php": "~8.6.0"
   },
   "customManagers": [
     {
