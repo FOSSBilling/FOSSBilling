@@ -3,7 +3,7 @@
     "description": "FOSSBilling development and CI tooling: translations, manifests, demo seeding.",
     "license": "Apache-2.0",
     "require": {
-        "php": "~8.5.0",
+        "php": "~8.6.0",
         "ext-curl": "*",
         "ext-mbstring": "*",
         "ext-tokenizer": "*",
