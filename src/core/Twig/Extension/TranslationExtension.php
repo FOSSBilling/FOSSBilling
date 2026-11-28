@@ -18,7 +18,7 @@ use Twig\Node\Node;
 use Twig\Node\Nodes;
 use Twig\NodeVisitor\NodeVisitorInterface;
 
-/** Infers module translation sources from template paths during compilation. */
+/** Infers module and theme translation sources from template paths. */
 final class TranslationExtension extends AbstractExtension implements NodeVisitorInterface
 {
     /** @return list<NodeVisitorInterface> */
@@ -39,14 +39,24 @@ final class TranslationExtension extends AbstractExtension implements NodeVisito
         }
 
         $path = $node->getSourceContext()?->getPath();
-        if (!$path || !Path::isAbsolute($path) || !Path::isBasePath(PATH_MODS, $path)) {
+        if (!$path || !Path::isAbsolute($path)) {
             return $node;
         }
 
-        $relative = Path::makeRelative($path, PATH_MODS);
-        $module = explode('/', $relative)[0];
-        $from = strtolower($module);
-        if ($module !== ucfirst($from) || preg_match('/\A[a-z][a-z0-9_-]*\z/', $from) !== 1) {
+        if (defined('PATH_THEMES') && Path::isBasePath(PATH_THEMES, $path)) {
+            $theme = explode('/', Path::makeRelative($path, PATH_THEMES))[0];
+            if (preg_match('/\A[A-Za-z0-9_-]+\z/', $theme) !== 1) {
+                return $node;
+            }
+            $from = 'theme:' . $theme;
+        } elseif (Path::isBasePath(PATH_MODS, $path)) {
+            $relative = Path::makeRelative($path, PATH_MODS);
+            $module = explode('/', $relative)[0];
+            $from = strtolower($module);
+            if ($module !== ucfirst($from) || preg_match('/\A[a-z][a-z0-9_-]*\z/', $from) !== 1) {
+                return $node;
+            }
+        } else {
             return $node;
         }
 

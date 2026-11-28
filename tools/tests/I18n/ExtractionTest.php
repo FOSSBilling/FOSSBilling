@@ -71,6 +71,38 @@ test('accepts parenthesized constant source arguments', function (): void {
     expect(array_column($result['occurrences'], 3))->toBe(['example', 'core', 'example', 'core']);
 });
 
+test('extracts explicit theme sources from PHP and Twig into a POT', function (): void {
+    $this->fixture->write('input/Case.php', <<<'PHP'
+        <?php
+        __trans('PHP theme', from: 'theme:sampletheme');
+        __pluralTrans('One theme', 'Many themes', $count, from: 'theme:Brand_2');
+        PHP);
+    $this->fixture->write('input/page.twig', "{{ 'Twig theme'|trans(from: 'theme:sampletheme') }}");
+
+    $input = $this->fixture->root . '/input';
+    $result = Extractor::extract($input);
+    expect($result['source_errors'])->toBe([]);
+    expect(array_column($result['occurrences'], 3))->toBe(['theme:sampletheme', 'theme:Brand_2', 'theme:sampletheme']);
+
+    $target = $this->fixture->root . '/messages.pot';
+    $process = $this->fixture->cli(['i18n:extract', $input, $target]);
+    expect($process->getExitCode())->toBe(0);
+    expect(TranslationCatalog::entries($target))->toBe([
+        'One theme' => 'Many themes',
+        'PHP theme' => null,
+        'Twig theme' => null,
+    ]);
+});
+
+test('rejects malformed explicit theme sources in PHP and Twig', function (string $source): void {
+    $this->fixture->write('input/Case.php', "<?php __trans('PHP theme', from: " . var_export($source, true) . ');');
+    $this->fixture->write('input/page.twig', "{{ 'Twig theme'|trans(from: '$source') }}");
+
+    $result = Extractor::extract($this->fixture->root . '/input');
+    expect($result['occurrences'])->toBe([]);
+    expect($result['source_errors'])->toHaveCount(2);
+})->with(['theme:', 'theme:../private', 'theme:foo/bar', 'theme:foo.bar', 'theme:foo:bar', 'Theme:sampletheme']);
+
 test('includes embedded templates and keeps duplicate AST nodes out of generated references', function (): void {
     $this->fixture->write('input/page.twig', "{% embed 'base.twig' %}{% block content %}{{ value|default('Embedded'|trans) }}{% endblock %}{% endembed %}");
     $result = Extractor::extract($this->fixture->root . '/input');

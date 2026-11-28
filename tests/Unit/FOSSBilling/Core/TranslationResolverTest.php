@@ -44,6 +44,7 @@ function runTranslationRuntime(string $root, string $script, string $domain = 'm
         'DEBUG' => false,
         'PATH_ROOT' => PATH_ROOT,
         'PATH_MODS' => Path::join($root, 'modules'),
+        'PATH_THEMES' => Path::join($root, 'themes'),
         'PATH_LANGS' => Path::join($root, 'locale'),
         'PATH_CONFIG' => Path::join($root, 'config.php'),
     ] as $name => $value) {
@@ -400,4 +401,43 @@ test('Twig does not infer module ownership from logical names or paths outside t
         ]));
         $result = [$twig->render('@example/inline.twig'), $twig->render('page.twig')];
         PHP))->toBe(['Enregistrer', 'Enregistrer|Sauvegarder']);
+});
+
+test('theme translations supplement core and are inferred from theme templates', function (): void {
+    $filesystem = new Filesystem();
+    writeTranslationMo(Path::join($this->translationRoot, 'themes/sampletheme/locale/fr_FR/LC_MESSAGES/theme_sampletheme.mo'), [
+        'Save' => 'Sauvegarder Sampletheme',
+        'Theme only' => 'Sampletheme uniquement',
+        'Theme hello :name' => 'Bonjour de Sampletheme :name',
+    ]);
+    $filesystem->dumpFile(
+        Path::join($this->translationRoot, 'themes/sampletheme/html/page.twig'),
+        '{{ "Save"|trans }}|{{ "Theme only"|trans }}|{{ "Theme hello :name"|trans({":name": name}) }}|{% include "@example/module.twig" %}|{{ "Theme only"|trans(from: "core") }}',
+    );
+    $filesystem->dumpFile(Path::join($this->translationRoot, 'modules/Example/templates/module.twig'), '{{ "Save"|trans }}');
+
+    expect(runTranslationRuntime($this->translationRoot, <<<'PHP'
+        $root = dirname(PATH_MODS);
+        $loader = new Twig\Loader\FilesystemLoader($root . '/themes/sampletheme/html');
+        $loader->addPath(PATH_MODS . '/Example/templates', 'example');
+        $twig = new Twig\Environment($loader, ['autoescape' => 'html']);
+        $twig->addExtension(new FOSSBilling\Core\Twig\Extension\TranslationExtension());
+        $twig->addExtension(new Twig\Extension\AttributeExtension(FOSSBilling\Core\Twig\Extension\FOSSBillingExtension::class));
+        $twig->addRuntimeLoader(new Twig\RuntimeLoader\FactoryRuntimeLoader([
+            FOSSBilling\Core\Twig\Extension\FOSSBillingExtension::class => fn () => new FOSSBilling\Core\Twig\Extension\FOSSBillingExtension(new Pimple\Container()),
+        ]));
+        $result = [
+            $twig->render('page.twig', ['name' => '<Ada>']),
+            __trans('Theme only', from: 'theme:sampletheme'),
+            __trans('Theme only', from: 'theme:../sampletheme'),
+            __trans('Save', from: 'theme:missing'),
+            __trans('Theme only'),
+        ];
+        PHP))->toBe([
+        'Enregistrer|Sampletheme uniquement|Bonjour de Sampletheme &lt;Ada&gt;|Sauvegarder|Theme only',
+        'Sampletheme uniquement',
+        'Theme only',
+        'Enregistrer',
+        'Theme only',
+    ]);
 });
