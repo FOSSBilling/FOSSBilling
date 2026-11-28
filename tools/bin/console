@@ -18,6 +18,7 @@ use FOSSBilling\Tools\I18n\Command\CompileCommand;
 use FOSSBilling\Tools\I18n\Command\DiffCommand;
 use FOSSBilling\Tools\I18n\Command\ExtractCommand;
 use FOSSBilling\Tools\I18n\Command\ExtractModulesCommand;
+use FOSSBilling\Tools\I18n\Command\MergeCommand;
 use FOSSBilling\Tools\I18n\Command\ValidateCommand;
 use FOSSBilling\Tools\Manifest\Command\ValidateCommand as ManifestValidateCommand;
 use Symfony\Component\Console\Application;
@@ -29,6 +30,7 @@ $application = new Application('FOSSBilling tools');
 $application->addCommands([
     new ExtractCommand(),
     new ExtractModulesCommand(),
+    new MergeCommand(),
     new DiffCommand(),
     new ValidateCommand(),
     new CompileCommand(),
