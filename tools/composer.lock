@@ -163,16 +163,16 @@
         },
         {
             "name": "justinrainbow/json-schema",
-            "version": "6.15.1",
+            "version": "6.16.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jsonrainbow/json-schema.git",
-                "reference": "24021a898c17193ed7c2111b5fbf1c6486ae85ff"
+                "reference": "17a3a7903640817c1a4878d7c71c0221f9b5de97"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/24021a898c17193ed7c2111b5fbf1c6486ae85ff",
-                "reference": "24021a898c17193ed7c2111b5fbf1c6486ae85ff",
+                "url": "https://api.github.com/repos/jsonrainbow/json-schema/zipball/17a3a7903640817c1a4878d7c71c0221f9b5de97",
+                "reference": "17a3a7903640817c1a4878d7c71c0221f9b5de97",
                 "shasum": ""
             },
             "require": {
@@ -188,6 +188,9 @@
                 "phpspec/prophecy": "^1.19",
                 "phpstan/phpstan": "^1.12",
                 "phpunit/phpunit": "^8.5"
+            },
+            "suggest": {
+                "ext-intl": "Required to validate the idn-hostname format in Draft-07 and Draft 2019-09"
             },
             "bin": [
                 "bin/validate-json"
@@ -222,7 +225,7 @@
             ],
             "support": {
                 "issues": "https://github.com/jsonrainbow/json-schema/issues",
-                "source": "https://github.com/jsonrainbow/json-schema/tree/6.15.1"
+                "source": "https://github.com/jsonrainbow/json-schema/tree/6.16.0"
             },
             "funding": [
                 {
@@ -230,8 +233,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-11-24T20:35:12+00:00",
-            "published-time": "2026-11-24T20:35:18+00:00"
+            "time": "2026-11-27T15:41:07+00:00",
+            "published-time": "2026-11-27T15:41:12+00:00"
         },
         {
             "name": "marc-mabe/php-enum",
